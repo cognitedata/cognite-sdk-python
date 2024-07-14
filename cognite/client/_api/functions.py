@@ -40,7 +40,12 @@ from cognite.client.data_classes.functions import (
     FunctionWrite,
     RunTime,
 )
-from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
+from cognite.client.utils._auxiliary import (
+    at_most_one_is_not_none,
+    exactly_one_is_not_none,
+    is_unlimited,
+    split_into_chunks,
+)
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -189,7 +194,8 @@ class FunctionsAPI(APIClient):
 
     def create(
         self,
-        name: str | FunctionWrite,
+        name: str | None = None,
+        function: FunctionWrite | None = None,
         folder: str | None = None,
         file_id: int | None = None,
         function_path: str = HANDLER_FILE_NAME,
@@ -225,8 +231,8 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite object
-                is passed, the other arguments are ignored except for `folder`, `function_handle` and `data_set_id`.
+            name (str | None): The name of the function.
+            function (FunctionWrite | None): A FunctionWrite object. If a FunctionWrite object is passed, all other arguments are ignored.
             folder (str | None): Path to the folder where the function source code is located.
             file_id (int | None): File ID of the code uploaded to the Files API.
             function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
@@ -285,37 +291,35 @@ class FunctionsAPI(APIClient):
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
 
             .. note::
-                When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring. The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
+                When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
+                The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
-        if isinstance(name, FunctionWrite):
-            file_id = name.file_id
-            function_path = name.function_path
-            name_input = name.name
-            external_id = name.external_id
-        else:
-            name_input = name
-        self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
-
-        if folder:
-            validate_function_folder(folder, function_path, skip_folder_validation)
-            file_id = self._zip_and_upload_folder(folder, name_input, external_id, data_set_id)
-        elif function_handle:
-            _validate_function_handle(function_handle)
-            file_id = self._zip_and_upload_handle(function_handle, name_input, external_id, data_set_id)
-        assert_type(cpu, "cpu", [Number], allow_none=True)
-        assert_type(memory, "memory", [Number], allow_none=True)
-
-        sleep_time = 1.0  # seconds
-        for i in range(MAX_RETRIES):
-            file = self._cognite_client.files.retrieve(id=file_id)
-            if file and file.uploaded:
-                break
-            time.sleep(sleep_time)
-            sleep_time *= 2
-        else:
-            raise OSError("Could not retrieve file from files API")
-
+        if not exactly_one_is_not_none(function, name):
+            raise TypeError("Exactly one of name or function must be specified.")
         if isinstance(name, str):
+            self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
+            # This is extra functionality on top of the API to allow deploying functions
+            # without having uploaded the code to the files API.
+            if folder:
+                validate_function_folder(folder, function_path, skip_folder_validation)
+                file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
+            elif function_handle:
+                _validate_function_handle(function_handle)
+                file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
+
+            assert_type(cpu, "cpu", [Number], allow_none=True)
+            assert_type(memory, "memory", [Number], allow_none=True)
+
+            sleep_time = 1.0  # seconds
+            for i in range(MAX_RETRIES):
+                file = self._cognite_client.files.retrieve(id=file_id)
+                if file and file.uploaded:
+                    break
+                time.sleep(sleep_time)
+                sleep_time *= 2
+            else:
+                raise OSError("Could not retrieve file from files API")
+
             function = FunctionWrite(
                 name=name,
                 file_id=cast(int, file_id),  # We know that file id is set
@@ -332,13 +336,9 @@ class FunctionsAPI(APIClient):
                 index_url=index_url,
                 extra_index_urls=extra_index_urls,
             )
-        elif isinstance(name, FunctionWrite):
-            function = name
-            function.file_id = cast(int, file_id)
-        else:
-            raise TypeError("name must be a string or a FunctionWrite object")
 
-        res = self._post(self._RESOURCE_PATH, json={"items": [function.dump(camel_case=True)]})
+        # The exactly_one_is_not_none check ensures that function is not None
+        res = self._post(self._RESOURCE_PATH, json={"items": [cast(FunctionWrite, function).dump(camel_case=True)]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(
