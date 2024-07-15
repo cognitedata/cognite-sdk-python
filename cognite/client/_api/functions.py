@@ -104,8 +104,6 @@ class FunctionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
-        self._CREATE_LIMIT = 1
-        self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 10
         self._DELETE_LIMIT = 10
 
