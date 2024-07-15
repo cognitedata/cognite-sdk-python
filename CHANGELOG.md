@@ -22,8 +22,10 @@ Changes are grouped as follows
 ### Fixed
 - Calling `client.functions.retrieve` or `client.functions.delete` with more than 10 ids no longer
   raises a `CogniteAPIError`.
-- Iterating over a functions using `client.functions` or `client.functions(...)` no longer raises a `CogniteAPIError`.
+- Iterating over functions using `client.functions` or `client.functions(...)` no longer raises a `CogniteAPIError`.
+### Added
 - Added missing filter parameter `metadata` to `client.functions.list`.
+### Changed
 - When creating a new function without specifying `description` or `owner`, the default values are now
   correctly set to `None` instead of `""`.
 

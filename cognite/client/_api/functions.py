@@ -10,7 +10,6 @@ import time
 from collections.abc import Iterator
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
-from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Literal, NoReturn, Sequence, cast, overload
@@ -106,8 +105,6 @@ class FunctionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
-        # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
-        self._LIST_LIMIT_CEILING = 10_000
         self._CREATE_LIMIT = 1
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 10
@@ -295,52 +292,95 @@ class FunctionsAPI(APIClient):
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
         if not exactly_one_is_not_none(function, name):
-            raise TypeError("Exactly one of name or function must be specified.")
+            raise ValueError(
+                "Either pass a FunctionWrite object to be created via the 'function' argument, or pass all "
+                "individual arguments (in which case 'name' is required)."
+            )
         if isinstance(name, str):
-            self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
-            # This is extra functionality on top of the API to allow deploying functions
-            # without having uploaded the code to the files API.
-            if folder:
-                validate_function_folder(folder, function_path, skip_folder_validation)
-                file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
-            elif function_handle:
-                _validate_function_handle(function_handle)
-                file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
-
-            assert_type(cpu, "cpu", [Number], allow_none=True)
-            assert_type(memory, "memory", [Number], allow_none=True)
-
-            sleep_time = 1.0  # seconds
-            for i in range(MAX_RETRIES):
-                file = self._cognite_client.files.retrieve(id=file_id)
-                if file and file.uploaded:
-                    break
-                time.sleep(sleep_time)
-                sleep_time *= 2
-            else:
-                raise OSError("Could not retrieve file from files API")
-
-            function = FunctionWrite(
-                name=name,
-                # Due to _assert_exactly_one_of_folder_or_file_id_or_function_handle we know that file_id is not None
-                file_id=cast(int, file_id),
-                external_id=external_id,
-                description=description,
-                owner=owner,
-                secrets=secrets,
-                env_vars=env_vars,
-                function_path=function_path,
-                cpu=cpu,
-                memory=memory,
-                runtime=runtime,
-                metadata=metadata,
-                index_url=index_url,
-                extra_index_urls=extra_index_urls,
+            function = self._create_function_obj(
+                name,
+                folder,
+                file_id,
+                function_path,
+                function_handle,
+                external_id,
+                description,
+                owner,
+                secrets,
+                env_vars,
+                cpu,
+                memory,
+                runtime,
+                metadata,
+                index_url,
+                extra_index_urls,
+                skip_folder_validation,
+                data_set_id,
             )
 
         # The exactly_one_is_not_none check ensures that function is not None
         res = self._post(self._RESOURCE_PATH, json={"items": [cast(FunctionWrite, function).dump(camel_case=True)]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
+
+    def _create_function_obj(
+        self,
+        name: str,
+        folder: str | None = None,
+        file_id: int | None = None,
+        function_path: str = HANDLER_FILE_NAME,
+        function_handle: Callable | None = None,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        secrets: dict[str, str] | None = None,
+        env_vars: dict[str, str] | None = None,
+        cpu: float | None = None,
+        memory: float | None = None,
+        runtime: RunTime | None = None,
+        metadata: dict[str, str] | None = None,
+        index_url: str | None = None,
+        extra_index_urls: list[str] | None = None,
+        skip_folder_validation: bool = False,
+        data_set_id: int | None = None,
+    ) -> FunctionWrite:
+        self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
+        # This is extra functionality on top of the API to allow deploying functions
+        # without having uploaded the code to the files API.
+        if folder:
+            validate_function_folder(folder, function_path, skip_folder_validation)
+            file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
+        elif function_handle:
+            _validate_function_handle(function_handle)
+            file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
+        assert_type(cpu, "cpu", [float], allow_none=True)
+        assert_type(memory, "memory", [float], allow_none=True)
+        sleep_time = 1.0  # seconds
+        for i in range(5):
+            file = self._cognite_client.files.retrieve(id=file_id)
+            if file and file.uploaded:
+                break
+            time.sleep(sleep_time)
+            sleep_time *= 2
+        else:
+            raise RuntimeError("Could not retrieve file from files API")
+        function = FunctionWrite(
+            name=name,
+            # Due to _assert_exactly_one_of_folder_or_file_id_or_function_handle we know that file_id is not None
+            file_id=cast(int, file_id),
+            external_id=external_id,
+            description=description,
+            owner=owner,
+            secrets=secrets,
+            env_vars=env_vars,
+            function_path=function_path,
+            cpu=cpu,
+            memory=memory,
+            runtime=runtime,
+            metadata=metadata,
+            index_url=index_url,
+            extra_index_urls=extra_index_urls,
+        )
+        return function
 
     def delete(
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
@@ -396,7 +436,8 @@ class FunctionsAPI(APIClient):
                 >>> functions_list = client.functions.list()
         """
         if is_unlimited(limit):
-            limit = self._LIST_LIMIT_CEILING
+            # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
+            limit = 10_000
 
         filter = FunctionFilter(
             name=name,
