@@ -41,7 +41,6 @@ from cognite.client.data_classes.functions import (
 )
 from cognite.client.utils._auxiliary import (
     at_most_one_is_not_none,
-    exactly_one_is_not_none,
     is_unlimited,
     split_into_chunks,
 )
@@ -191,8 +190,7 @@ class FunctionsAPI(APIClient):
 
     def create(
         self,
-        name: str | None = None,
-        function: FunctionWrite | None = None,
+        name: str | FunctionWrite,
         folder: str | None = None,
         file_id: int | None = None,
         function_path: str = HANDLER_FILE_NAME,
@@ -228,8 +226,8 @@ class FunctionsAPI(APIClient):
         For help with troubleshooting, please see `this page. <https://docs.cognite.com/cdf/functions/known_issues/>`_
 
         Args:
-            name (str | None): The name of the function.
-            function (FunctionWrite | None): A FunctionWrite object. If a FunctionWrite object is passed, all other arguments are ignored.
+            name (str | FunctionWrite): The name of the function or a FunctionWrite object. If a FunctionWrite
+                object is passed, all other arguments are ignored.
             folder (str | None): Path to the folder where the function source code is located.
             file_id (int | None): File ID of the code uploaded to the Files API.
             function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
@@ -291,13 +289,8 @@ class FunctionsAPI(APIClient):
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
-        if not exactly_one_is_not_none(function, name):
-            raise ValueError(
-                "Either pass a FunctionWrite object to be created via the 'function' argument, or pass all "
-                "individual arguments (in which case 'name' is required)."
-            )
         if isinstance(name, str):
-            function = self._create_function_obj(
+            function_input = self._create_function_obj(
                 name,
                 folder,
                 file_id,
@@ -317,9 +310,11 @@ class FunctionsAPI(APIClient):
                 skip_folder_validation,
                 data_set_id,
             )
+        else:
+            function_input = name
 
         # The exactly_one_is_not_none check ensures that function is not None
-        res = self._post(self._RESOURCE_PATH, json={"items": [cast(FunctionWrite, function).dump(camel_case=True)]})
+        res = self._post(self._RESOURCE_PATH, json={"items": [function_input.dump(camel_case=True)]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def _create_function_obj(
