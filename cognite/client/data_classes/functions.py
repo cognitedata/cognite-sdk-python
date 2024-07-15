@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 RunTime: TypeAlias = Literal["py38", "py39", "py310", "py311"]
+FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
+HANDLER_FILE_NAME = "handler.py"
 
 
 class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
@@ -35,13 +37,13 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
         file_id (int | None): File id of the code represented by this object.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
-        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
+        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
     """
 
     def __init__(
@@ -51,13 +53,13 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         description: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        function_path: str | None = None,
-        secrets: dict | None = None,
-        env_vars: dict | None = None,
+        function_path: str = HANDLER_FILE_NAME,
+        secrets: dict[str, str] | None = None,
+        env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
         memory: float | None = None,
         runtime: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         # name/file_id are required when using the class to read,
         # but don't make sense passing in when creating a new object. So in order to make the typing
@@ -90,15 +92,15 @@ class Function(FunctionCore):
         owner (str | None): Owner of the function.
         status (str | None): Status of the function.
         file_id (int | None): File id of the code represented by this object.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         created_time (int | None): Created time in UNIX.
-        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
-        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
@@ -112,15 +114,15 @@ class Function(FunctionCore):
         owner: str | None = None,
         status: str | None = None,
         file_id: int | None = None,
-        function_path: str | None = None,
+        function_path: str = HANDLER_FILE_NAME,
         created_time: int | None = None,
-        secrets: dict | None = None,
-        env_vars: dict | None = None,
+        secrets: dict[str, str] | None = None,
+        env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
         memory: float | None = None,
         runtime: str | None = None,
         runtime_version: str | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, str] | None = None,
         error: dict | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
@@ -255,13 +257,13 @@ class FunctionWrite(FunctionCore):
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
-        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
-        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
-        cpu (float | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (float | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
-        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+        function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
+        metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         index_url (str | None): Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
         extra_index_urls (list[str] | None): Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
     """
@@ -273,13 +275,13 @@ class FunctionWrite(FunctionCore):
         external_id: str | None = None,
         description: str | None = None,
         owner: str | None = None,
-        function_path: str | None = None,
-        secrets: dict | None = None,
-        env_vars: dict | None = None,
+        function_path: str = HANDLER_FILE_NAME,
+        secrets: dict[str, str] | None = None,
+        env_vars: dict[str, str] | None = None,
         cpu: float | None = None,
         memory: float | None = None,
         runtime: RunTime | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, str] | None = None,
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
     ) -> None:
@@ -308,7 +310,7 @@ class FunctionWrite(FunctionCore):
             description=resource.get("description"),
             owner=resource.get("owner"),
             file_id=resource["fileId"],
-            function_path=resource.get("functionPath"),
+            function_path=resource.get("functionPath", HANDLER_FILE_NAME),
             secrets=resource.get("secrets"),
             env_vars=resource.get("envVars"),
             cpu=resource.get("cpu"),
@@ -330,9 +332,10 @@ class FunctionFilter(CogniteFilter):
         name: str | None = None,
         owner: str | None = None,
         file_id: int | None = None,
-        status: str | None = None,
+        status: FunctionStatus | None = None,
         external_id_prefix: str | None = None,
-        created_time: dict[str, int] | TimestampRange | None = None,
+        created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> None:
         self.name = name
         self.owner = owner
@@ -340,6 +343,7 @@ class FunctionFilter(CogniteFilter):
         self.status = status
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
+        self.metadata = metadata
 
 
 class FunctionCallsFilter(CogniteFilter):

@@ -17,6 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.1] - 2024-07-13
+
+### Fixed
+- Calling `client.functions.retrieve` or `client.functions.delete` with more than 10 ids no longer
+  raises a `CogniteAPIError`.
+- Iterating over functions using `client.functions` or `client.functions(...)` no longer raises a `CogniteAPIError`.
+### Added
+- Added missing filter parameter `metadata` to `client.functions.list`.
+### Changed
+- When creating a new function without specifying `description` or `owner`, the default values are now
+  correctly set to `None` instead of `""`.
+
 ## [7.54.0] - 2024-07-12
 ### Added
 - In the `client.data_modeling.instances` the methods `.search`, `.retrieve`,`.list`, `.query`, and `.sync` now

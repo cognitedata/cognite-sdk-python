@@ -444,7 +444,7 @@ class TestFunctionsAPI:
 
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
     def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client):
-        with pytest.raises(IOError):
+        with pytest.raises(RuntimeError):
             cognite_client.functions.create(name="myfunction", file_id=123)
 
     def test_create_with_path(self, mock_functions_create_response, cognite_client):
@@ -489,7 +489,7 @@ class TestFunctionsAPI:
             )
 
     def test_create_with_cpu_and_memory(self, mock_functions_create_response, cognite_client):
-        res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1)
+        res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1.0)
 
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
