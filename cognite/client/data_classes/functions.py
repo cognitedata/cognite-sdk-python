@@ -42,7 +42,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
     """
 
@@ -98,7 +98,7 @@ class Function(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
@@ -262,7 +262,7 @@ class FunctionWrite(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py38", "py39","py310", "py311"]. The runtime "py38" resolves to the latest version of the Python 3.8 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         index_url (str | None): Specify a different python package index, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.
         extra_index_urls (list[str] | None): Extra package index URLs to use when building the function, allowing for packages published in private repositories. Supports basic HTTP authentication as described in pip basic authentication. See the documentation for additional information related to the security risks of using this option.

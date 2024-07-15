@@ -287,7 +287,9 @@ class FunctionsAPI(APIClient):
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
-        if isinstance(name, str):
+        if isinstance(name, FunctionWrite):
+            function_input = name
+        else:
             function_input = self._create_function_obj(
                 name,
                 folder,
@@ -308,8 +310,6 @@ class FunctionsAPI(APIClient):
                 skip_folder_validation,
                 data_set_id,
             )
-        else:
-            function_input = name
 
         # The exactly_one_is_not_none check ensures that function is not None
         res = self._post(self._RESOURCE_PATH, json={"items": [function_input.dump(camel_case=True)]})
@@ -1050,7 +1050,6 @@ class FunctionSchedulesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._LIST_LIMIT_CEILING = 10_000
 
     @overload
     def __call__(
@@ -1187,7 +1186,8 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         if is_unlimited(limit):
-            limit = self._LIST_LIMIT_CEILING
+            # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
+            limit = 10_000
 
         _ensure_at_most_one_id_given(function_id, function_external_id)
         filter = FunctionSchedulesFilter(
