@@ -5,7 +5,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
-from cognite.client.data_classes.cdm.v1 import TimesSeriesBaseApply
+from cognite.client.data_classes.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
@@ -278,10 +278,9 @@ class TestTimeSeriesAPI:
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client_alpha: CogniteClient, alpha_test_space: Space, alpha_test_dataset: DataSet
     ) -> None:
-        my_ts = TimesSeriesBaseApply(
+        my_ts = CogniteTimeSeriesApply(
             space=alpha_test_space.space,
             external_id="ts_python_sdk_instance_id_tests",
-            is_string=False,
             is_step=False,
             source_unit="pressure:psi",
             name="Create Retrieve Delete with instance_id",
