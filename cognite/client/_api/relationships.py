@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import copy
+import itertools
+from functools import partial
 from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
@@ -14,7 +15,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.data_classes.relationships import RelationshipCore
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type, process_data_set_ids
@@ -137,15 +138,12 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         ).dump(camel_case=True)
-        if (
-            len(filter.get("targetExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
-            or len(filter.get("sourceExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
-        ):
+        n_target_xids, n_source_xids = len(target_external_ids or []), len(source_external_ids or [])
+        if n_target_xids > self._LIST_SUBQUERY_LIMIT or n_source_xids > self._LIST_SUBQUERY_LIMIT:
             raise ValueError(
                 f"For queries with more than {self._LIST_SUBQUERY_LIMIT} source_external_ids or "
-                "target_external_ids, only list is supported"
+                "target_external_ids, only `list` is supported"
             )
-
         return self._list_generator(
             list_cls=RelationshipList,
             resource_cls=Relationship,
@@ -296,12 +294,9 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         ).dump(camel_case=True)
-        target_external_id_list: list[str] = filter.get("targetExternalIds", [])
-        source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
-        if (
-            len(target_external_id_list) <= self._LIST_SUBQUERY_LIMIT
-            and len(source_external_id_list) <= self._LIST_SUBQUERY_LIMIT
-        ):
+
+        target_external_ids, source_external_ids = target_external_ids or [], source_external_ids or []
+        if all(len(xids) <= self._LIST_SUBQUERY_LIMIT for xids in (target_external_ids, source_external_ids)):
             return self._list(
                 list_cls=RelationshipList,
                 resource_cls=Relationship,
@@ -312,36 +307,36 @@ class RelationshipsAPI(APIClient):
             )
         if not is_unlimited(limit):
             raise ValueError(
-                f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
-                f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
+                f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids is only "
+                f"supported for unlimited queries (pass -1 / None / inf instead of {limit})"
             )
         tasks = []
+        target_chunks = split_into_chunks(target_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
+        source_chunks = split_into_chunks(source_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
 
-        for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-            for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                task_filter = copy.copy(filter)
-                if target_external_id_list:  # keep null if it was
-                    task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
-                if source_external_id_list:  # keep null if it was
-                    task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
-                tasks.append((task_filter,))
+        for target_xids, source_xids in itertools.product(target_chunks, source_chunks):
+            task_filter = filter.copy()
+            if target_external_ids:  # keep null if it was
+                task_filter["targetExternalIds"] = target_xids
+            if source_external_ids:
+                task_filter["sourceExternalIds"] = source_xids
+            tasks.append({"filter": task_filter})
 
         tasks_summary = execute_tasks(
-            lambda filter: self._list(
+            partial(
+                self._list,
                 list_cls=RelationshipList,
                 resource_cls=Relationship,
                 method="POST",
-                limit=limit,
-                filter=filter,
+                limit=None,
+                partitions=None,
                 other_params={"fetchResources": fetch_resources},
-                partitions=partitions,
             ),
             tasks,
             max_workers=self._config.max_workers,
         )
         tasks_summary.raise_compound_exception_if_failed_tasks()
-
-        return RelationshipList(tasks_summary.joined_results())
+        return RelationshipList(tasks_summary.joined_results(), cognite_client=self._cognite_client)
 
     @overload
     def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
