@@ -27,12 +27,14 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
+K = TypeVar("K")
 THashable = TypeVar("THashable", bound=Hashable)
 
 
@@ -176,19 +178,21 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: set | list, chunk_size: int) -> list[list]: ...
+def split_into_chunks(collection: set[T] | SequenceNotStr[T], chunk_size: int) -> list[list[T]]: ...
 
 
 @overload
-def split_into_chunks(collection: dict, chunk_size: int) -> list[dict]: ...
+def split_into_chunks(collection: dict[K, T], chunk_size: int) -> list[dict[K, T]]: ...
 
 
-def split_into_chunks(collection: set | list | dict, chunk_size: int) -> list[list] | list[dict]:
+def split_into_chunks(
+    collection: SequenceNotStr[T] | set[T] | dict[K, T], chunk_size: int
+) -> list[list[T]] | list[dict[K, T]]:
     if isinstance(collection, set):
         collection = list(collection)
 
-    if isinstance(collection, list):
-        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
+    if isinstance(collection, SequenceNotStr):
+        return [list(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
     if isinstance(collection, dict):
         collection = list(collection.items())
