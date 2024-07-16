@@ -331,49 +331,49 @@ class RelationshipsAPI(APIClient):
         target_external_id_list: list[str] = filter.get("targetExternalIds", [])
         source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
         if (
-            len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
-            or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
+            len(target_external_id_list) <= self._LIST_SUBQUERY_LIMIT
+            and len(source_external_id_list) <= self._LIST_SUBQUERY_LIMIT
         ):
-            if not is_unlimited(limit):
-                raise ValueError(
-                    f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
-                    f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
-                )
-            tasks = []
-
-            for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
-                    task_filter = copy.copy(filter)
-                    if target_external_id_list:  # keep null if it was
-                        task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
-                    if source_external_id_list:  # keep null if it was
-                        task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
-                    tasks.append((task_filter,))
-
-            tasks_summary = execute_tasks(
-                lambda filter: self._list(
-                    list_cls=RelationshipList,
-                    resource_cls=Relationship,
-                    method="POST",
-                    limit=limit,
-                    filter=filter,
-                    other_params={"fetchResources": fetch_resources},
-                    partitions=partitions,
-                ),
-                tasks,
-                max_workers=self._config.max_workers,
+            return self._list(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                method="POST",
+                limit=limit,
+                filter=filter,
+                other_params={"fetchResources": fetch_resources},
             )
-            tasks_summary.raise_compound_exception_if_failed_tasks()
+        if not is_unlimited(limit):
+            raise ValueError(
+                f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
+                f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
+            )
+        tasks = []
 
-            return RelationshipList(tasks_summary.joined_results())
-        return self._list(
-            list_cls=RelationshipList,
-            resource_cls=Relationship,
-            method="POST",
-            limit=limit,
-            filter=filter,
-            other_params={"fetchResources": fetch_resources},
+        for ti in range(0, max(1, len(target_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+            for si in range(0, max(1, len(source_external_id_list)), self._LIST_SUBQUERY_LIMIT):
+                task_filter = copy.copy(filter)
+                if target_external_id_list:  # keep null if it was
+                    task_filter["targetExternalIds"] = target_external_id_list[ti : ti + self._LIST_SUBQUERY_LIMIT]
+                if source_external_id_list:  # keep null if it was
+                    task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
+                tasks.append((task_filter,))
+
+        tasks_summary = execute_tasks(
+            lambda filter: self._list(
+                list_cls=RelationshipList,
+                resource_cls=Relationship,
+                method="POST",
+                limit=limit,
+                filter=filter,
+                other_params={"fetchResources": fetch_resources},
+                partitions=partitions,
+            ),
+            tasks,
+            max_workers=self._config.max_workers,
         )
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+
+        return RelationshipList(tasks_summary.joined_results())
 
     @overload
     def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
