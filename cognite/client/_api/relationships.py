@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -31,36 +31,6 @@ class RelationshipsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
-
-    def _create_filter(
-        self,
-        source_external_ids: SequenceNotStr[str] | None = None,
-        source_types: SequenceNotStr[str] | None = None,
-        target_external_ids: SequenceNotStr[str] | None = None,
-        target_types: SequenceNotStr[str] | None = None,
-        data_set_ids: Sequence[dict[str, Any]] | None = None,
-        start_time: dict[str, int] | None = None,
-        end_time: dict[str, int] | None = None,
-        confidence: dict[str, int] | None = None,
-        last_updated_time: dict[str, int] | None = None,
-        created_time: dict[str, int] | None = None,
-        active_at_time: dict[str, int] | None = None,
-        labels: LabelFilter | None = None,
-    ) -> dict[str, Any]:
-        return RelationshipFilter(
-            source_external_ids=source_external_ids,
-            source_types=source_types,
-            target_external_ids=target_external_ids,
-            target_types=target_types,
-            data_set_ids=data_set_ids,
-            start_time=start_time,
-            end_time=end_time,
-            confidence=confidence,
-            last_updated_time=last_updated_time,
-            created_time=created_time,
-            active_at_time=active_at_time,
-            labels=labels,
-        ).dump(camel_case=True)
 
     @overload
     def __call__(
@@ -153,8 +123,7 @@ class RelationshipsAPI(APIClient):
             Iterator[Relationship] | Iterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = self._create_filter(
+        filter = RelationshipFilter(
             source_external_ids=source_external_ids,
             source_types=source_types,
             target_external_ids=target_external_ids,
@@ -167,7 +136,7 @@ class RelationshipsAPI(APIClient):
             created_time=created_time,
             active_at_time=active_at_time,
             labels=labels,
-        )
+        ).dump(camel_case=True)
         if (
             len(filter.get("targetExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
             or len(filter.get("sourceExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
@@ -313,8 +282,7 @@ class RelationshipsAPI(APIClient):
                 ...     relationship # do something with the relationship
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = self._create_filter(
+        filter = RelationshipFilter(
             source_external_ids=source_external_ids,
             source_types=source_types,
             target_external_ids=target_external_ids,
@@ -327,7 +295,7 @@ class RelationshipsAPI(APIClient):
             created_time=created_time,
             active_at_time=active_at_time,
             labels=labels,
-        )
+        ).dump(camel_case=True)
         target_external_id_list: list[str] = filter.get("targetExternalIds", [])
         source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
         if (
