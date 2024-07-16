@@ -17,8 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.1] - 2024-07-13
+## [7.54.2] - 2024-07-16
+### Fixed
+- A bug in the list method of the RelationshipsAPI that could cause a thread deadlock.
 
+## [7.54.1] - 2024-07-15
 ### Fixed
 - Calling `client.functions.retrieve` or `client.functions.delete` with more than 10 ids no longer
   raises a `CogniteAPIError`.
