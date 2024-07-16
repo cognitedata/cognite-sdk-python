@@ -178,11 +178,7 @@ def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
 
 
 @overload
-def split_into_chunks(collection: SequenceNotStr[T], chunk_size: int) -> list[list[T]]: ...
-
-
-@overload
-def split_into_chunks(collection: set[T], chunk_size: int) -> list[list[T]]: ...
+def split_into_chunks(collection: set[T] | SequenceNotStr[T], chunk_size: int) -> list[list[T]]: ...
 
 
 @overload

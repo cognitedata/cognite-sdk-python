@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from functools import partial
 from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
@@ -303,6 +304,7 @@ class RelationshipsAPI(APIClient):
                 method="POST",
                 limit=limit,
                 filter=filter,
+                partitions=partitions,
                 other_params={"fetchResources": fetch_resources},
             )
         if not is_unlimited(limit):
@@ -314,6 +316,8 @@ class RelationshipsAPI(APIClient):
         target_chunks = split_into_chunks(target_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
         source_chunks = split_into_chunks(source_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
 
+        # All sources (if any) must be checked against all targets (if any). When either is not
+        # given, we must exhaustively list all matching just the source or the target:
         for target_xids, source_xids in itertools.product(target_chunks, source_chunks):
             task_filter = filter.copy()
             if target_external_ids:  # keep null if it was
@@ -322,6 +326,12 @@ class RelationshipsAPI(APIClient):
                 task_filter["sourceExternalIds"] = source_xids
             tasks.append({"filter": task_filter})
 
+        if partitions is not None:
+            warnings.warn(
+                f"When one or both of source/target external IDs have more than {self._LIST_SUBQUERY_LIMIT} "
+                "elements, `partitions` is ignored",
+                UserWarning,
+            )
         tasks_summary = execute_tasks(
             partial(
                 self._list,
@@ -329,7 +339,7 @@ class RelationshipsAPI(APIClient):
                 resource_cls=Relationship,
                 method="POST",
                 limit=None,
-                partitions=None,
+                partitions=None,  # Otherwise, workers will spawn workers -> deadlock (singleton threadpool)
                 other_params={"fetchResources": fetch_resources},
             ),
             tasks,
