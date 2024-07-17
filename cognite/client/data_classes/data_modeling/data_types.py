@@ -105,6 +105,9 @@ class PropertyType(CogniteObject, ABC):
                 # to avoid breaking changes. When used as a read object, the `list` will always be present.
                 is_list=resource.get("list", False),
             )
+        elif type_ == "enum":
+            values = {key: EnumValue.load(value) for key, value in resource["values"].items()}
+            obj = Enum(values=values, unknown_value=resource.get("unknownValue"))
         else:
             logger.warning(f"Unknown property type: {type_}")
             obj = UnknownCogniteObject(resource)
@@ -247,7 +250,7 @@ class DirectRelation(ListablePropertyType):
 
 
 @dataclass
-class EnumValue:
+class EnumValue(CogniteObject):
     name: str | None = None
     description: str | None = None
 
