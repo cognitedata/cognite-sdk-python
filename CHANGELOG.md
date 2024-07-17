@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.3] - 2024-07-17
+### Fixed
+- Reintroduced `ListablePropertyType` that was removed in `7.37.0`. This is used to represent all container properties
+  that can be listed. This is an internal change and should not affect users of the SDK, but might affect developers
+  that have created libraries that depend on the SDK.
+- [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
+  yet supported in the API, and is an experimental feature that may change without warning.
+
 ## [7.54.2] - 2024-07-16
 ### Fixed
 - A bug in the list method of the RelationshipsAPI that could cause a thread deadlock.
