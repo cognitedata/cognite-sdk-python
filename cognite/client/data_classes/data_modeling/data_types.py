@@ -72,7 +72,7 @@ class PropertyType(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         type_ = resource["type"]
-        obj: Any
+        obj: Any  # This is a hack to avoid a mypy error
         if type_ == "text":
             obj = Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
         elif type_ == "boolean":
