@@ -240,3 +240,16 @@ class DirectRelation(PropertyType):
             elif output["container"] is None:
                 output.pop("container")
         return output
+
+
+@dataclass
+class EnumValue:
+    name: str | None = None
+    description: str | None = None
+
+
+@dataclass
+class Enum(PropertyType):
+    _type = "enum"
+    values: dict[str, EnumValue] | None = None
+    unknown_value: str | None = None
