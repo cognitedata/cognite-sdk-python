@@ -52,7 +52,6 @@ class DirectRelationReference:
 @dataclass
 class PropertyType(CogniteObject, ABC):
     _type: ClassVar[str]
-    is_list: bool = False
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
@@ -117,32 +116,37 @@ UnknownPropertyType: TypeAlias = UnknownCogniteObject
 
 
 @dataclass
-class Text(PropertyType):
+class ListablePropertyType(PropertyType, ABC):
+    is_list: bool = False
+
+
+@dataclass
+class Text(ListablePropertyType):
     _type = "text"
     collation: str = "ucs_basic"
 
 
 @dataclass
-class Primitive(PropertyType, ABC): ...
+class Primitive(ListablePropertyType, ABC): ...
 
 
 @dataclass
-class Boolean(PropertyType):
+class Boolean(ListablePropertyType):
     _type = "boolean"
 
 
 @dataclass
-class Timestamp(PropertyType):
+class Timestamp(ListablePropertyType):
     _type = "timestamp"
 
 
 @dataclass
-class Date(PropertyType):
+class Date(ListablePropertyType):
     _type = "date"
 
 
 @dataclass
-class Json(PropertyType):
+class Json(ListablePropertyType):
     _type = "json"
 
 
@@ -178,7 +182,7 @@ class UnitSystemReference:
 
 
 @dataclass
-class PropertyTypeWithUnit(PropertyType, ABC):
+class PropertyTypeWithUnit(ListablePropertyType, ABC):
     unit: UnitReference | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -209,7 +213,7 @@ class Int64(PropertyTypeWithUnit):
 
 
 @dataclass
-class CDFExternalIdReference(PropertyType, ABC): ...
+class CDFExternalIdReference(ListablePropertyType, ABC): ...
 
 
 @dataclass
@@ -228,7 +232,7 @@ class SequenceReference(CDFExternalIdReference):
 
 
 @dataclass
-class DirectRelation(PropertyType):
+class DirectRelation(ListablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
@@ -251,5 +255,5 @@ class EnumValue:
 @dataclass
 class Enum(PropertyType):
     _type = "enum"
-    values: dict[str, EnumValue] | None = None
+    values: dict[str, EnumValue]
     unknown_value: str | None = None
