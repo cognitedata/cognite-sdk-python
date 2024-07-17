@@ -37,12 +37,28 @@ class TestPropertyType:
                 "container": {"space": "mySpace", "externalId": "myId", "type": "container"},
                 "list": True,
             },
+            {
+                "type": "enum",
+                "values": {
+                    "string": {
+                        "name": "string",
+                        "description": "Time series with string data points.",
+                    },
+                    "numeric": {
+                        "name": "numeric",
+                        "description": "Time series with double floating point data points.",
+                    },
+                },
+            },
         ],
+        ids=lambda d: d.get("type", "unknown"),
     )
     def test_load_dump(self, data: dict) -> None:
-        actual = PropertyType.load(data).dump(camel_case=True)
+        loaded = PropertyType.load(data)
+        dumped = loaded.dump(camel_case=True)
 
-        assert data == actual
+        assert isinstance(loaded, PropertyType)
+        assert data == dumped
 
     def test_load_ignore_unknown_properties(self) -> None:
         data = {"type": "float64", "list": True, "unit": {"externalId": "known"}, "unknownProperty": "unknown"}
