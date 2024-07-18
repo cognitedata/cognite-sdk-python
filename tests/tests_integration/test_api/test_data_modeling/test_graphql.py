@@ -67,11 +67,11 @@ class TestDataModelingGraphQLAPI:
     def test_wipe_and_regenerate_dml(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
         res = cognite_client.data_modeling.graphql._unsafely_wipe_and_regenerate_dml(data_model.as_id())
         expected = """
-            type SomeType @view(version: "31e24bb338352b") {
+            type SomeType {
               someProp: String!
             }
 
-            type AnotherType @view(version: "855f080c9de22f") {
+            type AnotherType {
               anotherProp: String!
             }
         """
