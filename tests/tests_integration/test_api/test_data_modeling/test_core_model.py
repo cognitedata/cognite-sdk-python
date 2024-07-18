@@ -35,7 +35,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             aliases=["test_asset_alias"],
         ),
         cdm.CogniteAsset,
-        id="Asset",
+        id="CogniteAsset",
     )
     yield pytest.param(
         cdm.CogniteActivityApply(
@@ -56,7 +56,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             scheduled_end_time=today,
         ),
         cdm.CogniteActivity,
-        id="Activity",
+        id="CogniteActivity",
     )
 
     yield pytest.param(
@@ -69,7 +69,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             code="101",
         ),
         cdm.CogniteAssetType,
-        id="AssetType",
+        id="CogniteAssetType",
     )
     yield pytest.param(
         cdm.CogniteDescribableNodeApply(
@@ -80,7 +80,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             aliases=["test_describable_alias"],
         ),
         cdm.CogniteDescribableNode,
-        id="Describable",
+        id="CogniteDescribableNode",
     )
     yield pytest.param(
         cdm.CogniteEquipmentApply(
@@ -96,7 +96,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_updated_user="Also me",
         ),
         cdm.CogniteEquipment,
-        id="Equipment",
+        id="CogniteEquipment",
     )
     yield pytest.param(
         cdm.CogniteModel3DApply(
@@ -107,7 +107,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             aliases=["test_model_3d_alias"],
         ),
         cdm.CogniteModel3D,
-        id="Model3D",
+        id="CogniteModel3D",
     )
     yield pytest.param(
         cdm.CogniteObject3DApply(
@@ -118,7 +118,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             aliases=["test_object_3d_alias"],
         ),
         cdm.CogniteObject3D,
-        id="Object3D",
+        id="CogniteObject3D",
     )
 
     yield pytest.param(
@@ -131,7 +131,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             scheduled_end_time=today,
         ),
         cdm.CogniteSchedulable,
-        id="Schedulable",
+        id="CogniteSchedulable",
     )
 
     yield pytest.param(
@@ -145,7 +145,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_updated_user="Also me",
         ),
         cdm.CogniteSourceableNode,
-        id="Sourceable",
+        id="CogniteSourceableNode",
     )
 
     yield pytest.param(
@@ -164,7 +164,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_updated_user="Also me",
         ),
         cdm.CogniteTimeSeries,
-        id="TimeSeriesBase",
+        id="CogniteTimeSeries",
     )
 
 
@@ -194,7 +194,7 @@ class TestCoreModelv1:
 
         read_dumped = read.as_write().dump()
         write_instance_dumped = write_instance.dump()
-        # Existing version will be bumped by the server
+        # The existing version will be bumped by the server,
         # so we need to remove it from the comparison
         read_dumped.pop("existingVersion", None)
         write_instance_dumped.pop("existingVersion", None)
