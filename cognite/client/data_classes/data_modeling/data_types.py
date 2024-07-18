@@ -127,10 +127,6 @@ class Text(ListablePropertyType):
 
 
 @dataclass
-class Primitive(ListablePropertyType, ABC): ...
-
-
-@dataclass
 class Boolean(ListablePropertyType):
     _type = "boolean"
 
