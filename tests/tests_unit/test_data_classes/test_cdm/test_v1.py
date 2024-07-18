@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from cognite.client.data_classes.cdm.v1 import CogniteModel3DApply, CogniteSourceableApply
+from cognite.client.data_classes.cdm.v1 import CogniteModel3DApply, CogniteSourceableNodeApply
 
 
 class TestSourceable:
     def test_dump_load(self) -> None:
         today = datetime.today()
-        source = CogniteSourceableApply(
+        source = CogniteSourceableNodeApply(
             "sp_data_space",
             "my_source",
             source_id="source_id",
