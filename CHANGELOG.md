@@ -8,7 +8,7 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-``Changes are grouped as follows
+Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
@@ -16,7 +16,7 @@ For users wanting to upgrade major version, a migration guide can be found [here
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-``
+
 ## [7.54.3] - 2024-07-17
 ### Added
 - [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
