@@ -18,7 +18,7 @@ For users wanting to upgrade major version, a migration guide can be found [here
 - `Security` in case of vulnerabilities.
 ``
 ## [7.54.3] - 2024-07-17
-### Fixed
+### Added
 - [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
   yet supported in the API, and is an experimental feature that may change without warning.
 
