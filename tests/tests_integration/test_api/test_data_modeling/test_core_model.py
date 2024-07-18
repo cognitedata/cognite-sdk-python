@@ -72,14 +72,14 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
         id="AssetType",
     )
     yield pytest.param(
-        cdm.CogniteDescribableApply(
+        cdm.CogniteDescribableNodeApply(
             space=DATA_SPACE,
             external_id="test_describable",
             name="Test describable",
             description="Test describable for core model v1 tests with Python SDK",
             aliases=["test_describable_alias"],
         ),
-        cdm.CogniteDescribable,
+        cdm.CogniteDescribableNode,
         id="Describable",
     )
     yield pytest.param(
@@ -135,7 +135,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     )
 
     yield pytest.param(
-        cdm.CogniteSourceableApply(
+        cdm.CogniteSourceableNodeApply(
             space=DATA_SPACE,
             external_id="test_sourceable",
             source_id="SAP",
@@ -144,7 +144,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_created_user="Me",
             source_updated_user="Also me",
         ),
-        cdm.CogniteSourceable,
+        cdm.CogniteSourceableNode,
         id="Sourceable",
     )
 
@@ -152,6 +152,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
         cdm.CogniteTimeSeriesApply(
             space=DATA_SPACE,
             external_id="test_time_series_base",
+            type_="numeric",
             is_step=False,
             name="Test time series base",
             description="Test time series base for core model v1 tests with Python SDK",
