@@ -105,11 +105,10 @@ class PropertyType(CogniteObject, ABC):
                 is_list=resource.get("list", False),
             )
         elif type_ == "enum":
-            values = {key: EnumValue.load(value) for key, value in resource["values"].items()}
+            values = {key: EnumValue._load(value) for key, value in resource["values"].items()}
             return Enum(values=values, unknown_value=resource.get("unknownValue"))
-        else:
-            logger.warning(f"Unknown property type: {type_}")
-            return cast(Self, UnknownCogniteObject(resource))
+        logger.warning(f"Unknown property type: {type_}")
+        return cast(Self, UnknownCogniteObject(resource))
 
 
 # Kept around for backwards compatibility

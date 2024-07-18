@@ -8,7 +8,7 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-Changes are grouped as follows
+``Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
@@ -16,12 +16,9 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-
+``
 ## [7.54.3] - 2024-07-17
 ### Fixed
-- Reintroduced `ListablePropertyType` that was removed in `7.37.0`. This is used to represent all container properties
-  that can be listed. This is an internal change and should not affect users of the SDK, but might affect developers
-  that have created libraries that depend on the SDK.
 - [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
   yet supported in the API, and is an experimental feature that may change without warning.
 
