@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from typing_extensions import Self, TypeAlias
 
@@ -52,7 +52,6 @@ class DirectRelationReference:
 @dataclass
 class PropertyType(CogniteObject, ABC):
     _type: ClassVar[str]
-    is_list: bool = False
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
@@ -71,45 +70,45 @@ class PropertyType(CogniteObject, ABC):
         return unit
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyType:
         type_ = resource["type"]
-        obj: Any
         if type_ == "text":
-            obj = Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
+            return Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
         elif type_ == "boolean":
-            obj = Boolean(is_list=resource["list"])
+            return Boolean(is_list=resource["list"])
         elif type_ == "float32":
-            obj = Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "float64":
-            obj = Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int32":
-            obj = Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int64":
-            obj = Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "timestamp":
-            obj = Timestamp(is_list=resource["list"])
+            return Timestamp(is_list=resource["list"])
         elif type_ == "date":
-            obj = Date(is_list=resource["list"])
+            return Date(is_list=resource["list"])
         elif type_ == "json":
-            obj = Json(is_list=resource["list"])
+            return Json(is_list=resource["list"])
         elif type_ == "timeseries":
-            obj = TimeSeriesReference(is_list=resource["list"])
+            return TimeSeriesReference(is_list=resource["list"])
         elif type_ == "file":
-            obj = FileReference(is_list=resource["list"])
+            return FileReference(is_list=resource["list"])
         elif type_ == "sequence":
-            obj = SequenceReference(is_list=resource["list"])
+            return SequenceReference(is_list=resource["list"])
         elif type_ == "direct":
-            obj = DirectRelation(
+            return DirectRelation(
                 container=ContainerId.load(container) if (container := resource.get("container")) else None,
                 # The PropertyTypes are used as both read and write objects. The `list` was added later
                 # in the API for DirectRelations. Thus, we need to set the default value to False
                 # to avoid breaking changes. When used as a read object, the `list` will always be present.
                 is_list=resource.get("list", False),
             )
-        else:
-            logger.warning(f"Unknown property type: {type_}")
-            obj = UnknownCogniteObject(resource)
-        return obj
+        elif type_ == "enum":
+            values = {key: EnumValue._load(value) for key, value in resource["values"].items()}
+            return Enum(values=values, unknown_value=resource.get("unknownValue"))
+        logger.warning(f"Unknown property type: {type_}")
+        return cast(Self, UnknownCogniteObject(resource))
 
 
 # Kept around for backwards compatibility
@@ -117,32 +116,33 @@ UnknownPropertyType: TypeAlias = UnknownCogniteObject
 
 
 @dataclass
-class Text(PropertyType):
+class ListablePropertyType(PropertyType, ABC):
+    is_list: bool = False
+
+
+@dataclass
+class Text(ListablePropertyType):
     _type = "text"
     collation: str = "ucs_basic"
 
 
 @dataclass
-class Primitive(PropertyType, ABC): ...
-
-
-@dataclass
-class Boolean(PropertyType):
+class Boolean(ListablePropertyType):
     _type = "boolean"
 
 
 @dataclass
-class Timestamp(PropertyType):
+class Timestamp(ListablePropertyType):
     _type = "timestamp"
 
 
 @dataclass
-class Date(PropertyType):
+class Date(ListablePropertyType):
     _type = "date"
 
 
 @dataclass
-class Json(PropertyType):
+class Json(ListablePropertyType):
     _type = "json"
 
 
@@ -178,7 +178,7 @@ class UnitSystemReference:
 
 
 @dataclass
-class PropertyTypeWithUnit(PropertyType, ABC):
+class PropertyTypeWithUnit(ListablePropertyType, ABC):
     unit: UnitReference | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -209,7 +209,7 @@ class Int64(PropertyTypeWithUnit):
 
 
 @dataclass
-class CDFExternalIdReference(PropertyType, ABC): ...
+class CDFExternalIdReference(ListablePropertyType, ABC): ...
 
 
 @dataclass
@@ -228,7 +228,7 @@ class SequenceReference(CDFExternalIdReference):
 
 
 @dataclass
-class DirectRelation(PropertyType):
+class DirectRelation(ListablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
@@ -240,3 +240,16 @@ class DirectRelation(PropertyType):
             elif output["container"] is None:
                 output.pop("container")
         return output
+
+
+@dataclass
+class EnumValue(CogniteObject):
+    name: str | None = None
+    description: str | None = None
+
+
+@dataclass
+class Enum(PropertyType):
+    _type = "enum"
+    values: dict[str, EnumValue]
+    unknown_value: str | None = None
