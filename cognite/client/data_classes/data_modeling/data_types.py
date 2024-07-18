@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from typing_extensions import Self, TypeAlias
 
@@ -70,35 +70,34 @@ class PropertyType(CogniteObject, ABC):
         return unit
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyType:
         type_ = resource["type"]
-        obj: Any  # This is a hack to avoid a mypy error
         if type_ == "text":
-            obj = Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
+            return Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
         elif type_ == "boolean":
-            obj = Boolean(is_list=resource["list"])
+            return Boolean(is_list=resource["list"])
         elif type_ == "float32":
-            obj = Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "float64":
-            obj = Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int32":
-            obj = Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "int64":
-            obj = Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
+            return Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
         elif type_ == "timestamp":
-            obj = Timestamp(is_list=resource["list"])
+            return Timestamp(is_list=resource["list"])
         elif type_ == "date":
-            obj = Date(is_list=resource["list"])
+            return Date(is_list=resource["list"])
         elif type_ == "json":
-            obj = Json(is_list=resource["list"])
+            return Json(is_list=resource["list"])
         elif type_ == "timeseries":
-            obj = TimeSeriesReference(is_list=resource["list"])
+            return TimeSeriesReference(is_list=resource["list"])
         elif type_ == "file":
-            obj = FileReference(is_list=resource["list"])
+            return FileReference(is_list=resource["list"])
         elif type_ == "sequence":
-            obj = SequenceReference(is_list=resource["list"])
+            return SequenceReference(is_list=resource["list"])
         elif type_ == "direct":
-            obj = DirectRelation(
+            return DirectRelation(
                 container=ContainerId.load(container) if (container := resource.get("container")) else None,
                 # The PropertyTypes are used as both read and write objects. The `list` was added later
                 # in the API for DirectRelations. Thus, we need to set the default value to False
@@ -107,11 +106,10 @@ class PropertyType(CogniteObject, ABC):
             )
         elif type_ == "enum":
             values = {key: EnumValue.load(value) for key, value in resource["values"].items()}
-            obj = Enum(values=values, unknown_value=resource.get("unknownValue"))
+            return Enum(values=values, unknown_value=resource.get("unknownValue"))
         else:
             logger.warning(f"Unknown property type: {type_}")
-            obj = UnknownCogniteObject(resource)
-        return obj
+            return cast(Self, UnknownCogniteObject(resource))
 
 
 # Kept around for backwards compatibility
