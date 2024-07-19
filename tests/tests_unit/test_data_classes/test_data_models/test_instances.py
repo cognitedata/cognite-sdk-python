@@ -65,7 +65,7 @@ class TestEdgeApply:
 
         assert edge.dump(camel_case=False) == {
             "space": "mySpace",
-            "externalId": "relation:arnold_schwarzenegger:actor",
+            "external_id": "relation:arnold_schwarzenegger:actor",
             "instance_type": "edge",
             "type": {
                 "space": "mySpace",
