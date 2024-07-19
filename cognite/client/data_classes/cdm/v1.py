@@ -2491,14 +2491,14 @@ class CogniteImage360(CogniteImage360Properties, CogniteTransformation3DNode, Co
             self.scale_x,
             self.scale_y,
             self.scale_z,
-            self.front,  # type: ignore[arg-type]
-            self.back,  # type: ignore[arg-type]
-            self.left,  # type: ignore[arg-type]
-            self.right,  # type: ignore[arg-type]
-            self.top,  # type: ignore[arg-type]
-            self.bottom,  # type: ignore[arg-type]
-            self.collection_360,  # type: ignore[arg-type]
-            self.station_360,  # type: ignore[arg-type]
+            self.front,
+            self.back,
+            self.left,
+            self.right,
+            self.top,
+            self.bottom,
+            self.collection_360,
+            self.station_360,
             self.taken_at,
             self.version,
             self.type,
