@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.5] - 2024-07-19
+### Changed
+- [Feature Preview] Updated the Core Model to the newest version released on July 12th, 2024. The
+  introduction of the `Cognite` prefix for all classes.
+
 ## [7.54.4] - 2024-07-19
 ### Changed
 - Instance classes like `Node` and `NodeList` now expand properties by default in notebook-like environments.
