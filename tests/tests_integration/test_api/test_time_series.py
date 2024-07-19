@@ -281,6 +281,7 @@ class TestTimeSeriesAPI:
         my_ts = CogniteTimeSeriesApply(
             space=alpha_test_space.space,
             external_id="ts_python_sdk_instance_id_tests",
+            type_="numeric",
             is_step=False,
             source_unit="pressure:psi",
             name="Create Retrieve Delete with instance_id",

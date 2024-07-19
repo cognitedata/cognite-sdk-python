@@ -10,6 +10,8 @@ class TestSourceable:
             "sp_data_space",
             "my_source",
             source_id="source_id",
+            source=("sp_data_space", "sap"),
+            source_context="imagination",
             source_created_time=today,
             source_updated_time=today,
             source_created_user="Anders",
@@ -24,12 +26,13 @@ class TestSourceable:
                 {
                     "source": {
                         "space": "cdf_cdm_experimental",
-                        "externalId": "Sourceable",
+                        "externalId": "CogniteSourceable",
                         "version": "v1",
                         "type": "view",
                     },
                     "properties": {
-                        "source": "imagination",
+                        "source": {"space": "sp_data_space", "externalId": "sap"},
+                        "sourceContext": "imagination",
                         "sourceId": "source_id",
                         "sourceCreatedTime": today.isoformat(timespec="milliseconds"),
                         "sourceUpdatedTime": today.isoformat(timespec="milliseconds"),
@@ -46,7 +49,11 @@ class TestModel3D:
         my_model = CogniteModel3DApply(
             "sp_data_space",
             "my_model",
+            name="The model",
             description="A model",
+            type_="PointCloud",
+            aliases=["alias1", "alias2"],
+            tags=["tag1", "tag2"],
         )
 
         assert my_model.dump() == {
@@ -57,14 +64,16 @@ class TestModel3D:
                 {
                     "source": {
                         "space": "cdf_cdm_experimental",
-                        "externalId": "Model3D",
+                        "externalId": "CogniteModel3D",
                         "version": "v1",
                         "type": "view",
                     },
                     "properties": {
-                        "source": "imagination",
-                        "sourceId": "source_id",
+                        "name": "The model",
                         "description": "A model",
+                        "type": "PointCloud",
+                        "aliases": ["alias1", "alias2"],
+                        "tags": ["tag1", "tag2"],
                     },
                 }
             ],

@@ -107,7 +107,7 @@ class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
         super().__init__(space, external_id, existing_version, None, type)
         self.source_id = source_id
         self.source_context = source_context
-        self.source = source
+        self.source = DirectRelationReference.load(source) if source else None
         self.source_created_time = source_created_time
         self.source_updated_time = source_updated_time
         self.source_created_user = source_created_user
