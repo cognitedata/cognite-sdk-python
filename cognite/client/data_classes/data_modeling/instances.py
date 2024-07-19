@@ -214,10 +214,10 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         output: dict[str, Any] = {
             "space": self.space,
             "externalId" if camel_case else "external_id": self.external_id,
-            "instanceType": self.instance_type,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
         }
         if self.existing_version is not None:
-            output["existingVersion"] = self.existing_version
+            output["existingVersion" if camel_case else "existing_version"] = self.existing_version
         if self.sources:
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         return output
