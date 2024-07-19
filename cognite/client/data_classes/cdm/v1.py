@@ -2744,8 +2744,18 @@ class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
         aliases: list[str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(
-            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+        TypedEdge.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            type,
+            last_updated_time,
+            created_time,
+            start_node,
+            end_node,
+            deleted_time,
+            None,
         )
         self.name = name
         self.description = description
