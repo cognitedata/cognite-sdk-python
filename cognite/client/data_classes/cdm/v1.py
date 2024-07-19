@@ -76,87 +76,6 @@ class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
         )
 
 
-class CogniteSourceableProperties:
-    source_id = PropertyOptions("sourceId")
-    source_context = PropertyOptions("sourceContext")
-    source_created_time = PropertyOptions("sourceCreatedTime")
-    source_updated_time = PropertyOptions("sourceUpdatedTime")
-    source_created_user = PropertyOptions("sourceCreatedUser")
-    source_updated_user = PropertyOptions("sourceUpdatedUser")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteSourceable", "v1")
-
-
-class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(space, external_id, existing_version, None, type)
-        self.source_id = source_id
-        self.source_context = source_context
-        self.source = DirectRelationReference.load(source) if source else None
-        self.source_created_time = source_created_time
-        self.source_updated_time = source_updated_time
-        self.source_created_user = source_created_user
-        self.source_updated_user = source_updated_user
-
-
-class CogniteSourceableNode(CogniteSourceableProperties, TypedNode):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.source_id = source_id
-        self.source_context = source_context
-        self.source = source
-        self.source_created_time = source_created_time
-        self.source_updated_time = source_updated_time
-        self.source_created_user = source_created_user
-        self.source_updated_user = source_updated_user
-
-    def as_write(self) -> CogniteSourceableNodeApply:
-        return CogniteSourceableNodeApply(
-            self.space,
-            self.external_id,
-            self.source_id,
-            self.source_context,
-            self.source,
-            self.source_created_time,
-            self.source_updated_time,
-            self.source_created_user,
-            self.source_updated_user,
-            self.version,
-            self.type,
-        )
-
-
 class CogniteSchedulableProperties:
     start_time = PropertyOptions("startTime")
     end_time = PropertyOptions("endTime")
@@ -221,6 +140,87 @@ class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
         )
 
 
+class CogniteSourceableProperties:
+    source_id = PropertyOptions("sourceId")
+    source_context = PropertyOptions("sourceContext")
+    source_created_time = PropertyOptions("sourceCreatedTime")
+    source_updated_time = PropertyOptions("sourceUpdatedTime")
+    source_created_user = PropertyOptions("sourceCreatedUser")
+    source_updated_user = PropertyOptions("sourceUpdatedUser")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteSourceable", "v1")
+
+
+class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, existing_version, None, type)
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+
+
+class CogniteSourceableNode(CogniteSourceableProperties, TypedNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+
+    def as_write(self) -> CogniteSourceableNodeApply:
+        return CogniteSourceableNodeApply(
+            self.space,
+            self.external_id,
+            self.source_id,
+            self.source_context,
+            self.source,  # type: ignore[arg-type]
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.version,
+            self.type,
+        )
+
+
 class CogniteVisualizableProperties:
     object_3_d = PropertyOptions("object3D")
 
@@ -239,7 +239,7 @@ class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, existing_version, None, type)
-        self.object_3_d = object_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
 
 
 class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
@@ -255,13 +255,13 @@ class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
         deleted_time: int | None = None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.object_3_d = object_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
 
     def as_write(self) -> CogniteVisualizableApply:
         return CogniteVisualizableApply(
             self.space,
             self.external_id,
-            self.object_3_d,
+            self.object_3_d,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -292,7 +292,7 @@ class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
         self.status = status
         self.published = published
         self.type_ = type_
-        self.model_3_d = model_3_d
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
 
 
 class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
@@ -314,7 +314,7 @@ class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
         self.status = status
         self.published = published
         self.type_ = type_
-        self.model_3_d = model_3_d
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
 
     def as_write(self) -> CogniteRevision3DApply:
         return CogniteRevision3DApply(
@@ -323,7 +323,7 @@ class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
             self.status,
             self.published,
             self.type_,
-            self.model_3_d,
+            self.model_3_d,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -350,12 +350,12 @@ class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, existing_version, None, type)
-        self.front = front
-        self.back = back
-        self.left = left
-        self.right = right
-        self.top = top
-        self.bottom = bottom
+        self.front = DirectRelationReference.load(front) if front else None
+        self.back = DirectRelationReference.load(back) if back else None
+        self.left = DirectRelationReference.load(left) if left else None
+        self.right = DirectRelationReference.load(right) if right else None
+        self.top = DirectRelationReference.load(top) if top else None
+        self.bottom = DirectRelationReference.load(bottom) if bottom else None
 
 
 class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
@@ -376,23 +376,23 @@ class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
         deleted_time: int | None = None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.front = front
-        self.back = back
-        self.left = left
-        self.right = right
-        self.top = top
-        self.bottom = bottom
+        self.front = DirectRelationReference.load(front) if front else None
+        self.back = DirectRelationReference.load(back) if back else None
+        self.left = DirectRelationReference.load(left) if left else None
+        self.right = DirectRelationReference.load(right) if right else None
+        self.top = DirectRelationReference.load(top) if top else None
+        self.bottom = DirectRelationReference.load(bottom) if bottom else None
 
     def as_write(self) -> CogniteCubeMapApply:
         return CogniteCubeMapApply(
             self.space,
             self.external_id,
-            self.front,
-            self.back,
-            self.left,
-            self.right,
-            self.top,
-            self.bottom,
+            self.front,  # type: ignore[arg-type]
+            self.back,  # type: ignore[arg-type]
+            self.left,  # type: ignore[arg-type]
+            self.right,  # type: ignore[arg-type]
+            self.top,  # type: ignore[arg-type]
+            self.bottom,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -589,7 +589,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
     ) -> None:
         super().__init__(space, external_id, name, description, tags, aliases, existing_version, type)
         self.code = code
-        self.asset_class = asset_class
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
 
 
 class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
@@ -623,7 +623,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
             deleted_time,
         )
         self.code = code
-        self.asset_class = asset_class
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
 
     def as_write(self) -> CogniteAssetTypeApply:
         return CogniteAssetTypeApply(
@@ -634,7 +634,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
             self.tags,
             self.aliases,
             self.code,
-            self.asset_class,
+            self.asset_class,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -671,10 +671,10 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, name, description, tags, aliases, existing_version, type)
-        self.object_3_d = object_3_d
-        self.model_3_d = model_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
         self.cad_node_reference = cad_node_reference
-        self.revisions = revisions
+        self.revisions = [DirectRelationReference.load(revision) for revision in revisions] if revisions else None
         self.tree_indexes = tree_indexes
         self.sub_tree_sizes = sub_tree_sizes
 
@@ -713,10 +713,10 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
             type,
             deleted_time,
         )
-        self.object_3_d = object_3_d
-        self.model_3_d = model_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
         self.cad_node_reference = cad_node_reference
-        self.revisions = revisions
+        self.revisions = [DirectRelationReference.load(revision) for revision in revisions] if revisions else None
         self.tree_indexes = tree_indexes
         self.sub_tree_sizes = sub_tree_sizes
 
@@ -728,10 +728,10 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
             self.description,
             self.tags,
             self.aliases,
-            self.object_3_d,
-            self.model_3_d,
+            self.object_3_d,  # type: ignore[arg-type]
+            self.model_3_d,  # type: ignore[arg-type]
             self.cad_node_reference,
-            self.revisions,
+            self.revisions,  # type: ignore[arg-type]
             self.tree_indexes,
             self.sub_tree_sizes,
             self.version,
@@ -1177,10 +1177,10 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, name, description, tags, aliases, existing_version, type)
-        self.object_3_d = object_3_d
-        self.model_3_d = model_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
         self.volume_references = volume_references
-        self.revisions = revisions
+        self.revisions = [DirectRelationReference.load(revision) for revision in revisions] if revisions else None
         self.volume_type = volume_type
         self.volume = volume
         self.format_version = format_version
@@ -1221,10 +1221,10 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
             type,
             deleted_time,
         )
-        self.object_3_d = object_3_d
-        self.model_3_d = model_3_d
+        self.object_3_d = DirectRelationReference.load(object_3_d) if object_3_d else None
+        self.model_3_d = DirectRelationReference.load(model_3_d) if model_3_d else None
         self.volume_references = volume_references
-        self.revisions = revisions
+        self.revisions = [DirectRelationReference.load(revision) for revision in revisions] if revisions else None
         self.volume_type = volume_type
         self.volume = volume
         self.format_version = format_version
@@ -1237,10 +1237,10 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
             self.description,
             self.tags,
             self.aliases,
-            self.object_3_d,
-            self.model_3_d,
+            self.object_3_d,  # type: ignore[arg-type]
+            self.model_3_d,  # type: ignore[arg-type]
             self.volume_references,
-            self.revisions,
+            self.revisions,  # type: ignore[arg-type]
             self.volume_type,
             self.volume,
             self.format_version,
@@ -1324,451 +1324,6 @@ class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode)
         )
 
 
-class CogniteEquipmentProperties:
-    serial_number = PropertyOptions("serialNumber")
-    equipment_type = PropertyOptions("equipmentType")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteEquipment", "v1")
-
-
-class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        serial_number: str | None = None,
-        manufacturer: str | None = None,
-        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
-        files: list[DirectRelationReference | tuple[str, str]] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        CogniteDescribableNodeApply.__init__(
-            self, space, external_id, name, description, tags, aliases, existing_version, type
-        )
-        CogniteSourceableNodeApply.__init__(
-            self,
-            space,
-            external_id,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            existing_version,
-            type,
-        )
-        self.serial_number = serial_number
-        self.manufacturer = manufacturer
-        self.equipment_type = equipment_type
-        self.files = files
-
-
-class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, CogniteSourceableNode):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        serial_number: str | None = None,
-        manufacturer: str | None = None,
-        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
-        files: list[DirectRelationReference | tuple[str, str]] | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        CogniteDescribableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name,
-            description,
-            tags,
-            aliases,
-            type,
-            deleted_time,
-        )
-        CogniteSourceableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            type,
-            deleted_time,
-        )
-        self.serial_number = serial_number
-        self.manufacturer = manufacturer
-        self.equipment_type = equipment_type
-        self.files = files
-
-    def as_write(self) -> CogniteEquipmentApply:
-        return CogniteEquipmentApply(
-            self.space,
-            self.external_id,
-            self.name,
-            self.description,
-            self.tags,
-            self.aliases,
-            self.source_id,
-            self.source_context,
-            self.source,
-            self.source_created_time,
-            self.source_updated_time,
-            self.source_created_user,
-            self.source_updated_user,
-            self.serial_number,
-            self.manufacturer,
-            self.equipment_type,
-            self.files,
-            self.version,
-            self.type,
-        )
-
-
-class CogniteFileProperties:
-    mime_type = PropertyOptions("mimeType")
-    is_uploaded = PropertyOptions("isUploaded")
-    uploaded_time = PropertyOptions("uploadedTime")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteFile", "v1")
-
-
-class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
-        mime_type: str | None = None,
-        directory: str | None = None,
-        is_uploaded: bool | None = None,
-        uploaded_time: datetime | None = None,
-        category: DirectRelationReference | tuple[str, str] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        CogniteDescribableNodeApply.__init__(
-            self, space, external_id, name, description, tags, aliases, existing_version, type
-        )
-        CogniteSourceableNodeApply.__init__(
-            self,
-            space,
-            external_id,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            existing_version,
-            type,
-        )
-        self.assets = assets
-        self.mime_type = mime_type
-        self.directory = directory
-        self.is_uploaded = is_uploaded
-        self.uploaded_time = uploaded_time
-        self.category = category
-
-
-class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceableNode):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
-        mime_type: str | None = None,
-        directory: str | None = None,
-        is_uploaded: bool | None = None,
-        uploaded_time: datetime | None = None,
-        category: DirectRelationReference | tuple[str, str] | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        CogniteDescribableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name,
-            description,
-            tags,
-            aliases,
-            type,
-            deleted_time,
-        )
-        CogniteSourceableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            type,
-            deleted_time,
-        )
-        self.assets = assets
-        self.mime_type = mime_type
-        self.directory = directory
-        self.is_uploaded = is_uploaded
-        self.uploaded_time = uploaded_time
-        self.category = category
-
-    def as_write(self) -> CogniteFileApply:
-        return CogniteFileApply(
-            self.space,
-            self.external_id,
-            self.name,
-            self.description,
-            self.tags,
-            self.aliases,
-            self.source_id,
-            self.source_context,
-            self.source,
-            self.source_created_time,
-            self.source_updated_time,
-            self.source_created_user,
-            self.source_updated_user,
-            self.assets,
-            self.mime_type,
-            self.directory,
-            self.is_uploaded,
-            self.uploaded_time,
-            self.category,
-            self.version,
-            self.type,
-        )
-
-
-class CogniteTimeSeriesProperties:
-    type_ = PropertyOptions("type")
-    is_step = PropertyOptions("isStep")
-    source_unit = PropertyOptions("sourceUnit")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1")
-
-
-class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type_: Literal["numeric", "string"],
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        is_step: bool | None = None,
-        source_unit: str | None = None,
-        unit: DirectRelationReference | tuple[str, str] | None = None,
-        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
-        equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        CogniteDescribableNodeApply.__init__(
-            self, space, external_id, name, description, tags, aliases, existing_version, type
-        )
-        CogniteSourceableNodeApply.__init__(
-            self,
-            space,
-            external_id,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            existing_version,
-            type,
-        )
-        self.type_ = type_
-        self.is_step = is_step
-        self.source_unit = source_unit
-        self.unit = unit
-        self.assets = assets
-        self.equipment = equipment
-
-
-class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, CogniteSourceableNode):
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        type_: Literal["numeric", "string"],
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        is_step: bool | None = None,
-        source_unit: str | None = None,
-        unit: DirectRelationReference | tuple[str, str] | None = None,
-        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
-        equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        CogniteDescribableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name,
-            description,
-            tags,
-            aliases,
-            type,
-            deleted_time,
-        )
-        CogniteSourceableNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            source_id,
-            source_context,
-            source,
-            source_created_time,
-            source_updated_time,
-            source_created_user,
-            source_updated_user,
-            type,
-            deleted_time,
-        )
-        self.type_ = type_
-        self.is_step = is_step
-        self.source_unit = source_unit
-        self.unit = unit
-        self.assets = assets
-        self.equipment = equipment
-
-    def as_write(self) -> CogniteTimeSeriesApply:
-        return CogniteTimeSeriesApply(
-            self.space,
-            self.external_id,
-            self.type_,
-            self.name,
-            self.description,
-            self.tags,
-            self.aliases,
-            self.source_id,
-            self.source_context,
-            self.source,
-            self.source_created_time,
-            self.source_updated_time,
-            self.source_created_user,
-            self.source_updated_user,
-            self.is_step,
-            self.source_unit,
-            self.unit,
-            self.assets,
-            self.equipment,
-            self.version,
-            self.type,
-        )
-
-
 class CogniteActivityProperties:
     time_series = PropertyOptions("timeSeries")
 
@@ -1833,9 +1388,11 @@ class CogniteActivityApply(
             existing_version,
             type,
         )
-        self.assets = assets
-        self.equipment = equipment
-        self.time_series = time_series
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+        self.time_series = (
+            [DirectRelationReference.load(time_series) for time_series in time_series] if time_series else None
+        )
 
 
 class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, CogniteSourceableNode, CogniteSchedulable):
@@ -1912,9 +1469,11 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             type,
             deleted_time,
         )
-        self.assets = assets
-        self.equipment = equipment
-        self.time_series = time_series
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+        self.time_series = (
+            [DirectRelationReference.load(time_series) for time_series in time_series] if time_series else None
+        )
 
     def as_write(self) -> CogniteActivityApply:
         return CogniteActivityApply(
@@ -1926,7 +1485,7 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             self.aliases,
             self.source_id,
             self.source_context,
-            self.source,
+            self.source,  # type: ignore[arg-type]
             self.source_created_time,
             self.source_updated_time,
             self.source_created_user,
@@ -1935,9 +1494,454 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             self.end_time,
             self.scheduled_start_time,
             self.scheduled_end_time,
-            self.assets,
-            self.equipment,
-            self.time_series,
+            self.assets,  # type: ignore[arg-type]
+            self.equipment,  # type: ignore[arg-type]
+            self.time_series,  # type: ignore[arg-type]
+            self.version,
+            self.type,
+        )
+
+
+class CogniteEquipmentProperties:
+    serial_number = PropertyOptions("serialNumber")
+    equipment_type = PropertyOptions("equipmentType")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteEquipment", "v1")
+
+
+class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        serial_number: str | None = None,
+        manufacturer: str | None = None,
+        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
+        files: list[DirectRelationReference | tuple[str, str]] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        CogniteDescribableNodeApply.__init__(
+            self, space, external_id, name, description, tags, aliases, existing_version, type
+        )
+        CogniteSourceableNodeApply.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        self.serial_number = serial_number
+        self.manufacturer = manufacturer
+        self.equipment_type = DirectRelationReference.load(equipment_type) if equipment_type else None
+        self.files = [DirectRelationReference.load(file) for file in files] if files else None
+
+
+class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, CogniteSourceableNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        serial_number: str | None = None,
+        manufacturer: str | None = None,
+        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
+        files: list[DirectRelationReference | tuple[str, str]] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        CogniteDescribableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        CogniteSourceableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        self.serial_number = serial_number
+        self.manufacturer = manufacturer
+        self.equipment_type = DirectRelationReference.load(equipment_type) if equipment_type else None
+        self.files = [DirectRelationReference.load(file) for file in files] if files else None
+
+    def as_write(self) -> CogniteEquipmentApply:
+        return CogniteEquipmentApply(
+            self.space,
+            self.external_id,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.source_id,
+            self.source_context,
+            self.source,  # type: ignore[arg-type]
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.serial_number,
+            self.manufacturer,
+            self.equipment_type,  # type: ignore[arg-type]
+            self.files,  # type: ignore[arg-type]
+            self.version,
+            self.type,
+        )
+
+
+class CogniteFileProperties:
+    mime_type = PropertyOptions("mimeType")
+    is_uploaded = PropertyOptions("isUploaded")
+    uploaded_time = PropertyOptions("uploadedTime")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteFile", "v1")
+
+
+class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
+        mime_type: str | None = None,
+        directory: str | None = None,
+        is_uploaded: bool | None = None,
+        uploaded_time: datetime | None = None,
+        category: DirectRelationReference | tuple[str, str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        CogniteDescribableNodeApply.__init__(
+            self, space, external_id, name, description, tags, aliases, existing_version, type
+        )
+        CogniteSourceableNodeApply.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.is_uploaded = is_uploaded
+        self.uploaded_time = uploaded_time
+        self.category = DirectRelationReference.load(category) if category else None
+
+
+class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceableNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
+        mime_type: str | None = None,
+        directory: str | None = None,
+        is_uploaded: bool | None = None,
+        uploaded_time: datetime | None = None,
+        category: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        CogniteDescribableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        CogniteSourceableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.is_uploaded = is_uploaded
+        self.uploaded_time = uploaded_time
+        self.category = DirectRelationReference.load(category) if category else None
+
+    def as_write(self) -> CogniteFileApply:
+        return CogniteFileApply(
+            self.space,
+            self.external_id,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.source_id,
+            self.source_context,
+            self.source,  # type: ignore[arg-type]
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.assets,  # type: ignore[arg-type]
+            self.mime_type,
+            self.directory,
+            self.is_uploaded,
+            self.uploaded_time,
+            self.category,  # type: ignore[arg-type]
+            self.version,
+            self.type,
+        )
+
+
+class CogniteTimeSeriesProperties:
+    type_ = PropertyOptions("type")
+    is_step = PropertyOptions("isStep")
+    source_unit = PropertyOptions("sourceUnit")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1")
+
+
+class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type_: Literal["numeric", "string"],
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        is_step: bool | None = None,
+        source_unit: str | None = None,
+        unit: DirectRelationReference | tuple[str, str] | None = None,
+        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
+        equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        CogniteDescribableNodeApply.__init__(
+            self, space, external_id, name, description, tags, aliases, existing_version, type
+        )
+        CogniteSourceableNodeApply.__init__(
+            self,
+            space,
+            external_id,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            existing_version,
+            type,
+        )
+        self.type_ = type_
+        self.is_step = is_step
+        self.source_unit = source_unit
+        self.unit = DirectRelationReference.load(unit) if unit else None
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+
+
+class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, CogniteSourceableNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        type_: Literal["numeric", "string"],
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        is_step: bool | None = None,
+        source_unit: str | None = None,
+        unit: DirectRelationReference | tuple[str, str] | None = None,
+        assets: list[DirectRelationReference | tuple[str, str]] | None = None,
+        equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        CogniteDescribableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name,
+            description,
+            tags,
+            aliases,
+            type,
+            deleted_time,
+        )
+        CogniteSourceableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            source_id,
+            source_context,
+            source,
+            source_created_time,
+            source_updated_time,
+            source_created_user,
+            source_updated_user,
+            type,
+            deleted_time,
+        )
+        self.type_ = type_
+        self.is_step = is_step
+        self.source_unit = source_unit
+        self.unit = DirectRelationReference.load(unit) if unit else None
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+
+    def as_write(self) -> CogniteTimeSeriesApply:
+        return CogniteTimeSeriesApply(
+            self.space,
+            self.external_id,
+            self.type_,
+            self.name,
+            self.description,
+            self.tags,
+            self.aliases,
+            self.source_id,
+            self.source_context,
+            self.source,  # type: ignore[arg-type]
+            self.source_created_time,
+            self.source_updated_time,
+            self.source_created_user,
+            self.source_updated_user,
+            self.is_step,
+            self.source_unit,
+            self.unit,  # type: ignore[arg-type]
+            self.assets,  # type: ignore[arg-type]
+            self.equipment,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -2000,13 +2004,13 @@ class CogniteAssetApply(
             existing_version,
             type,
         )
-        self.parent = parent
-        self.root = root
-        self.path = path
+        self.parent = DirectRelationReference.load(parent) if parent else None
+        self.root = DirectRelationReference.load(root) if root else None
+        self.path = [DirectRelationReference.load(path) for path in path] if path else None
         self.last_path_materialization_time = last_path_materialization_time
-        self.equipment = equipment
-        self.asset_class = asset_class
-        self.type_ = type_
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
+        self.type_ = DirectRelationReference.load(type_) if type_ else None
 
 
 class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):
@@ -2073,37 +2077,37 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
             type,
             deleted_time,
         )
-        self.parent = parent
-        self.root = root
-        self.path = path
+        self.parent = DirectRelationReference.load(parent) if parent else None
+        self.root = DirectRelationReference.load(root) if root else None
+        self.path = [DirectRelationReference.load(path) for path in path] if path else None
         self.last_path_materialization_time = last_path_materialization_time
-        self.equipment = equipment
-        self.asset_class = asset_class
-        self.type_ = type_
+        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
+        self.type_ = DirectRelationReference.load(type_) if type_ else None
 
     def as_write(self) -> CogniteAssetApply:
         return CogniteAssetApply(
             self.space,
             self.external_id,
-            self.object_3_d,
+            self.object_3_d,  # type: ignore[arg-type]
             self.name,
             self.description,
             self.tags,
             self.aliases,
             self.source_id,
             self.source_context,
-            self.source,
+            self.source,  # type: ignore[arg-type]
             self.source_created_time,
             self.source_updated_time,
             self.source_created_user,
             self.source_updated_user,
-            self.parent,
-            self.root,
-            self.path,
+            self.parent,  # type: ignore[arg-type]
+            self.root,  # type: ignore[arg-type]
+            self.path,  # type: ignore[arg-type]
             self.last_path_materialization_time,
-            self.equipment,
-            self.asset_class,
-            self.type_,
+            self.equipment,  # type: ignore[arg-type]
+            self.asset_class,  # type: ignore[arg-type]
+            self.type_,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -2172,7 +2176,7 @@ class CogniteCADRevision(CogniteCADRevisionProperties, CogniteRevision3D):
             self.status,
             self.published,
             self.type_,
-            self.model_3_d,
+            self.model_3_d,  # type: ignore[arg-type]
             self.revision_id,
             self.version,
             self.type,
@@ -2270,7 +2274,7 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
             self.status,
             self.published,
             self.type_,
-            self.model_3_d,
+            self.model_3_d,  # type: ignore[arg-type]
             self.version,
             self.type,
         )
@@ -2339,7 +2343,7 @@ class CognitePointCloudRevision(CognitePointCloudRevisionProperties, CogniteRevi
             self.status,
             self.published,
             self.type_,
-            self.model_3_d,
+            self.model_3_d,  # type: ignore[arg-type]
             self.revision_id,
             self.version,
             self.type,
@@ -2401,8 +2405,8 @@ class CogniteImage360Apply(CogniteImage360Properties, CogniteTransformation3DNod
         CogniteCubeMapApply.__init__(
             self, space, external_id, front, back, left, right, top, bottom, existing_version, type
         )
-        self.collection_360 = collection_360
-        self.station_360 = station_360
+        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
+        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
         self.taken_at = taken_at
 
 
@@ -2470,8 +2474,8 @@ class CogniteImage360(CogniteImage360Properties, CogniteTransformation3DNode, Co
             type,
             deleted_time,
         )
-        self.collection_360 = collection_360
-        self.station_360 = station_360
+        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
+        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
         self.taken_at = taken_at
 
     def as_write(self) -> CogniteImage360Apply:
@@ -2487,14 +2491,14 @@ class CogniteImage360(CogniteImage360Properties, CogniteTransformation3DNode, Co
             self.scale_x,
             self.scale_y,
             self.scale_z,
-            self.front,
-            self.back,
-            self.left,
-            self.right,
-            self.top,
-            self.bottom,
-            self.collection_360,
-            self.station_360,
+            self.front,  # type: ignore[arg-type]
+            self.back,  # type: ignore[arg-type]
+            self.left,  # type: ignore[arg-type]
+            self.right,  # type: ignore[arg-type]
+            self.top,  # type: ignore[arg-type]
+            self.bottom,  # type: ignore[arg-type]
+            self.collection_360,  # type: ignore[arg-type]
+            self.station_360,  # type: ignore[arg-type]
             self.taken_at,
             self.version,
             self.type,
@@ -2722,7 +2726,7 @@ class CogniteSourceableEdgeApply(CogniteSourceableProperties, TypedEdgeApply):
         super().__init__(space, external_id, type, start_node, end_node, existing_version)
         self.source_id = source_id
         self.source_context = source_context
-        self.source = source
+        self.source = DirectRelationReference.load(source) if source else None
         self.source_created_time = source_created_time
         self.source_updated_time = source_updated_time
         self.source_created_user = source_created_user
@@ -2754,7 +2758,7 @@ class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
         )
         self.source_id = source_id
         self.source_context = source_context
-        self.source = source
+        self.source = DirectRelationReference.load(source) if source else None
         self.source_created_time = source_created_time
         self.source_updated_time = source_updated_time
         self.source_created_user = source_created_user
