@@ -1941,7 +1941,7 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             self.scheduled_end_time,
             self.assets,  # type: ignore[arg-type]
             self.equipment,  # type: ignore[arg-type]
-            self.time_series,  # type: ignore[arg-type]
+            self.time_series,
             self.version,
             self.type,
         )
