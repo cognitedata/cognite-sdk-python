@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.3] - 2024-07-17
+## [7.54.4] - 2024-07-19
+### Changed
+- Instance classes like `Node` and `NodeList` now expand properties by default in notebook-like environments.
+
+## [7.54.3] - 2024-07-18
 ### Added
 - [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
   yet supported in the API, and is an experimental feature that may change without warning.
