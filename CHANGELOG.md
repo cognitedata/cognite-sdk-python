@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.6] - 2024-07-19
+### Fixed
+- In the data classe, `NodeApply` and `EdgeApply` the argument `camel_case=False` is now
+  respected in `.dump()`.
+
 ## [7.54.5] - 2024-07-19
 ### Changed
 - [Feature Preview] Updated the Core Model to the newest version released on July 12th, 2024. The
