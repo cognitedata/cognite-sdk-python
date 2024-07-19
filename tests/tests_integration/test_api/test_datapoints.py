@@ -186,11 +186,11 @@ def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space)
         external_id="ts_python_sdk_instance_id_tests",
         sources=[
             NodeOrEdgeData(
-                source=ViewId("cdf_cdm_experimental", "TimeSeriesBase", "v1"),
+                source=ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1"),
                 properties={
                     "name": "ts_python_sdk_instance_id_tests",
                     "isStep": False,
-                    "isString": False,
+                    "type": "numeric",
                 },
             )
         ],

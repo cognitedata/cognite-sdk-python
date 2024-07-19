@@ -60,16 +60,17 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     )
 
     yield pytest.param(
-        cdm.CogniteAssetTypeApply(
+        cdm.CogniteAssetClassApply(
             space=DATA_SPACE,
             external_id="test_asset_type",
             name="Test asset type",
             description="Test asset type for core model v1 tests with Python SDK",
             aliases=["test_asset_type_alias"],
             code="101",
+            standard="ISO",
         ),
-        cdm.CogniteAssetType,
-        id="CogniteAssetType",
+        cdm.CogniteAssetClass,
+        id="CogniteAssetClass",
     )
     yield pytest.param(
         cdm.CogniteDescribableNodeApply(
