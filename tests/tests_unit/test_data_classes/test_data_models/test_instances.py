@@ -54,6 +54,30 @@ class TestEdgeApply:
             "endNode": {"space": "mySpace", "externalId": "actor.external_id"},
         }
 
+    def test_dump_camel_case_false(self) -> None:
+        edge = EdgeApply(
+            space="mySpace",
+            external_id="relation:arnold_schwarzenegger:actor",
+            type=DirectRelationReference("mySpace", "Person.role"),
+            start_node=DirectRelationReference("mySpace", "source"),
+            end_node=DirectRelationReference("mySpace", "target"),
+        )
+
+        assert edge.dump(camel_case=False) == {
+            "space": "mySpace",
+            "external_id": "relation:arnold_schwarzenegger:actor",
+            "instance_type": "edge",
+            "type": {
+                "space": "mySpace",
+                "external_id": "Person.role",
+            },
+            "start_node": {
+                "space": "mySpace",
+                "external_id": "source",
+            },
+            "end_node": {"space": "mySpace", "external_id": "target"},
+        }
+
 
 class TestNodeOrEdgeData:
     def test_direct_relation_serialization(self) -> None:
@@ -141,6 +165,18 @@ class TestNodeApply:
             ],
             "space": "IntegrationTestsImmutable",
             "type": {"externalId": "someType", "space": "someSpace"},
+        }
+
+    def test_dump_camel_case_false(self) -> None:
+        node = NodeApply(
+            space="IntegrationTestsImmutable",
+            external_id="shop:case:integration_test",
+        )
+
+        assert node.dump(camel_case=False) == {
+            "external_id": "shop:case:integration_test",
+            "instance_type": "node",
+            "space": "IntegrationTestsImmutable",
         }
 
 
