@@ -64,6 +64,50 @@ def mock_retrieve_raw_row_response(rsps, cognite_client):
     yield rsps
 
 
+@pytest.fixture
+def mock_retrieve_raw_rows_response_two_rows(rsps, cognite_client):
+    response_body = {
+        "items": [
+            {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": {"c1": 2, "c2": "3"}, "lastUpdatedTime": 1},
+        ]
+    }
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+@pytest.fixture
+def mock_retrieve_raw_rows_response_one_rows(rsps, cognite_client):
+    response_body = {
+        "items": [
+            {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}
+        ]
+    }
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+@pytest.fixture
+def mock_retrieve_raw_rows_response_no_rows(rsps, cognite_client):
+    response_body = {
+        "items": []
+    }
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
 class TestRawDatabases:
     def test_create_single(self, cognite_client, mock_raw_db_response):
         res = cognite_client.raw.databases.create(name="db1")
@@ -189,6 +233,31 @@ class TestRawRows:
         res = cognite_client.raw.rows.retrieve(db_name="db1", table_name="table1", key="row1")
         assert mock_retrieve_raw_row_response.calls[0].response.json() == res.dump(camel_case=True)
         assert mock_retrieve_raw_row_response.calls[0].request.url.endswith("/rows/row1")
+
+    def test_retrieve_dataframe_empty(self, cognite_client, mock_retrieve_raw_rows_response_no_rows):
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+
+        assert res_df.shape == (0, 0)
+        assert res_df_last_updated_time_in_index.shape == (0, 0)
+        assert res_df.equals(res_df_last_updated_time_in_index)
+
+    def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_rows):
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+        assert res_df.shape == (1, 2)
+        assert res_df_last_updated_time_in_index.shape == (1, 2)
+        assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
+
+    def test_retrieve_dataframe_two_rows(self, cognite_client, mock_retrieve_raw_rows_response_two_rows):
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+        assert res_df.shape == (2, 2)
+        assert res_df_last_updated_time_in_index.shape == (2, 2)
+        assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
 
     def test_insert_w_rows_as_dict(self, cognite_client, mock_raw_row_response):
         res = cognite_client.raw.rows.insert(
