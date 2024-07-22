@@ -82,7 +82,7 @@ def mock_retrieve_raw_rows_response_two_rows(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_retrieve_raw_rows_response_one_rows(rsps, cognite_client):
+def mock_retrieve_raw_rows_response_one_row(rsps, cognite_client):
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}]}
     rsps.add(
         rsps.GET,
