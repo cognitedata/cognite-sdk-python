@@ -232,32 +232,38 @@ class TestRawRows:
         assert mock_retrieve_raw_row_response.calls[0].request.url.endswith("/rows/row1")
 
     def test_retrieve_dataframe_empty(self, cognite_client, mock_retrieve_raw_rows_response_no_rows):
-        import pandas
+        import pandas as pd
+
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
             db_name="db1", table_name="table1", last_updated_time_in_index=True
         )
 
+        assert isinstance(res_df, pd.DataFrame)
         assert res_df.shape == (0, 0)
         assert res_df_last_updated_time_in_index.shape == (0, 0)
         assert res_df.equals(res_df_last_updated_time_in_index)
 
     def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_rows):
-        import pandas
+        import pandas as pd
+
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
             db_name="db1", table_name="table1", last_updated_time_in_index=True
         )
+        assert isinstance(res_df, pd.DataFrame)
         assert res_df.shape == (1, 2)
         assert res_df_last_updated_time_in_index.shape == (1, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
 
     def test_retrieve_dataframe_two_rows(self, cognite_client, mock_retrieve_raw_rows_response_two_rows):
-        import pandas
+        import pandas as pd
+
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
             db_name="db1", table_name="table1", last_updated_time_in_index=True
         )
+        assert isinstance(res_df, pd.DataFrame)
         assert res_df.shape == (2, 2)
         assert res_df_last_updated_time_in_index.shape == (2, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
