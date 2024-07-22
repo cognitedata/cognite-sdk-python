@@ -5,7 +5,7 @@ from contextlib import suppress
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionList, FunctionSchedule, FunctionScheduleWrite, FunctionWrite
+from cognite.client.data_classes import Function, FunctionList, FunctionSchedule, FunctionScheduleWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 
@@ -15,23 +15,17 @@ def handle(client, data) -> str:
 
 @pytest.fixture(scope="module")
 def a_function(cognite_client: CogniteClient) -> Function:
-    my_function = FunctionWrite(
-        name="python-sdk-test-function",
-        # Will be set by the fixture
-        file_id=0,
-        external_id="python-sdk-test-function",
-        description="test function",
-    )
-    retrieved = cognite_client.functions.retrieve_multiple(
-        external_ids=[my_function.external_id], ignore_unknown_ids=True
-    )
+    name = "python-sdk-test-function"
+    external_id = "python-sdk-test-function"
+    description = "test function"
+    retrieved = cognite_client.functions.retrieve_multiple(external_ids=[external_id], ignore_unknown_ids=True)
     if retrieved:
         return retrieved[0]
 
     function = cognite_client.functions.create(
-        name=my_function.name,
-        external_id=my_function.external_id,
-        description=my_function.description,
+        name=name,
+        external_id=external_id,
+        description=description,
         function_handle=handle,
     )
     return function
