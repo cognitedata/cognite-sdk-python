@@ -16,7 +16,6 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionUpdate,
     ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
-    ThreeDModelWrite,
     ThreeDNode,
     ThreeDNodeList,
 )
@@ -178,22 +177,19 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
 
     @overload
-    def update(self, item: ThreeDModel | ThreeDModelWrite) -> ThreeDModel: ...
+    def update(self, item: ThreeDModel | ThreeDModelUpdate) -> ThreeDModel: ...
 
     @overload
-    def update(self, item: Sequence[ThreeDModel | ThreeDModelWrite]) -> ThreeDModelList: ...
+    def update(self, item: Sequence[ThreeDModel | ThreeDModelUpdate]) -> ThreeDModelList: ...
 
     def update(
         self,
-        item: ThreeDModel
-        | ThreeDModelWrite
-        | ThreeDModelUpdate
-        | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate],
+        item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
-            item (ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelWrite | ThreeDModelUpdate]): ThreeDModel(s) to update
+            item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
 
         Returns:
             ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
@@ -217,6 +213,8 @@ class ThreeDModelsAPI(APIClient):
                 >>> res = client.three_d.models.update(my_update)
 
         """
+        # Note that we cannot use the ThreeDModelWrite to update as the write format of a 3D model
+        # does not have ID or External ID, thus no identifier to know which model to update.
         return self._update_multiple(
             list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
         )
