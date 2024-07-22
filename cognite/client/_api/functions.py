@@ -34,6 +34,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.functions import (
     HANDLER_FILE_NAME,
     FunctionCallsFilter,
+    FunctionScheduleWrite,
     FunctionsStatus,
     FunctionStatus,
     FunctionWrite,
@@ -1048,9 +1049,6 @@ class FunctionCallsAPI(APIClient):
 class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-
     @overload
     def __call__(
         self,
@@ -1203,8 +1201,8 @@ class FunctionSchedulesAPI(APIClient):
 
     def create(
         self,
-        name: str,
-        cron_expression: str,
+        name: str | FunctionScheduleWrite,
+        cron_expression: str | None = None,
         function_id: int | None = None,
         function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
@@ -1214,8 +1212,8 @@ class FunctionSchedulesAPI(APIClient):
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
         Args:
-            name (str): Name of the schedule.
-            cron_expression (str): Cron expression.
+            name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
+            cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
@@ -1263,23 +1261,22 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = create_session_and_return_nonce(
+        if isinstance(name, str):
+            if cron_expression is None:
+                raise ValueError("cron_expression must be specified when creating a new schedule.")
+            item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
+        else:
+            item = name
+        dumped = item.dump()
+        dumped["nonce"] = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
-        item = {
-            "name": name,
-            "description": description,
-            "functionId": function_id,
-            "cronExpression": cron_expression,
-            "nonce": nonce,
-        }
-        if data:
-            item["data"] = data
-
-        res = self._post(self._RESOURCE_PATH, json={"items": [item]})
-        return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return self._create_multiple(
+            items=dumped,
+            resource_cls=FunctionSchedule,
+            input_resource_cls=FunctionScheduleWrite,
+            list_cls=FunctionSchedulesList,
+        )
 
     def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
