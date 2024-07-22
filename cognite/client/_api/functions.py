@@ -34,6 +34,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.functions import (
     HANDLER_FILE_NAME,
     FunctionCallsFilter,
+    FunctionScheduleWrite,
     FunctionsStatus,
     FunctionStatus,
     FunctionWrite,
@@ -1048,9 +1049,6 @@ class FunctionCallsAPI(APIClient):
 class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-
     @overload
     def __call__(
         self,
@@ -1124,14 +1122,23 @@ class FunctionSchedulesAPI(APIClient):
         """Iterate over all function schedules"""
         return self()
 
-    def retrieve(self, id: int) -> FunctionSchedule | None:
+    @overload
+    def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
+
+    @overload
+    def retrieve(self, id: Sequence[int], ignore_unknown_ids: bool = False) -> FunctionSchedulesList: ...
+
+    def retrieve(
+        self, id: int | Sequence[int], ignore_unknown_ids: bool = False
+    ) -> FunctionSchedule | None | FunctionSchedulesList:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
-            id (int): Schedule ID
+            id (int | Sequence[int]): Schedule ID
+            ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionSchedule | None: Requested function schedule or None if not found.
+            FunctionSchedule | None | FunctionSchedulesList: Requested function schedule or None if not found.
 
         Examples:
 
@@ -1142,9 +1149,12 @@ class FunctionSchedulesAPI(APIClient):
                 >>> res = client.functions.schedules.retrieve(id=1)
 
         """
-        identifier = IdentifierSequence.load(ids=id).as_singleton()
+        identifiers = IdentifierSequence.load(ids=id)
         return self._retrieve_multiple(
-            identifiers=identifier, resource_cls=FunctionSchedule, list_cls=FunctionSchedulesList
+            identifiers=identifiers,
+            resource_cls=FunctionSchedule,
+            list_cls=FunctionSchedulesList,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
@@ -1203,23 +1213,23 @@ class FunctionSchedulesAPI(APIClient):
 
     def create(
         self,
-        name: str,
-        cron_expression: str,
+        name: str | FunctionScheduleWrite,
+        cron_expression: str | None = None,
         function_id: int | None = None,
         function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
-        description: str = "",
+        description: str | None = None,
         data: dict | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
         Args:
-            name (str): Name of the schedule.
-            cron_expression (str): Cron expression.
+            name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
+            cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
-            description (str): Description of the schedule.
+            description (str | None): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
         Returns:
@@ -1263,23 +1273,28 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = create_session_and_return_nonce(
+        if isinstance(name, str):
+            if cron_expression is None:
+                raise ValueError("cron_expression must be specified when creating a new schedule.")
+            item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
+        else:
+            item = name
+        identifier = _get_function_identifier(item.function_id, item.function_external_id)
+        if item.function_id is None:
+            item.function_id = _get_function_internal_id(self._cognite_client, identifier)
+            # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
+            item.function_external_id = None
+
+        dumped = item.dump()
+        dumped["nonce"] = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
         )
-        item = {
-            "name": name,
-            "description": description,
-            "functionId": function_id,
-            "cronExpression": cron_expression,
-            "nonce": nonce,
-        }
-        if data:
-            item["data"] = data
-
-        res = self._post(self._RESOURCE_PATH, json={"items": [item]})
-        return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        return self._create_multiple(
+            items=dumped,
+            resource_cls=FunctionSchedule,
+            input_resource_cls=FunctionScheduleWrite,
+            list_cls=FunctionSchedulesList,
+        )
 
     def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
