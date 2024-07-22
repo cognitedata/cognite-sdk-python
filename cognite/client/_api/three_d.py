@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload
+from typing import TYPE_CHECKING, Iterator, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
     ThreeDModelRevisionUpdate,
     ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
+    ThreeDModelWrite,
     ThreeDNode,
     ThreeDNodeList,
 )
@@ -147,12 +148,16 @@ class ThreeDModelsAPI(APIClient):
         )
 
     def create(
-        self, name: str | SequenceNotStr[str], data_set_id: int | None = None, metadata: dict[str, str] | None = None
+        self,
+        name: str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite],
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
-            name (str | SequenceNotStr[str]): The name of the 3d model(s) to create.
+            name (str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite]): The name of the 3d model(s) or 3D
+                model object to create. If a 3D model object is provided, the other arguments are ignored.
             data_set_id (int | None): The id of the dataset this 3D model belongs to.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
                 Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -167,14 +172,25 @@ class ThreeDModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.three_d.models.create(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+
+            Create multiple new 3D Models::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ThreeDModelWrite
+                >>> client = CogniteClient()
+                >>> my_model = ThreeDModelWrite(name="My Model", dataSetId=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_other_model = ThreeDModelWrite(name="My Other Model", dataSetId=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> res = client.three_d.models.create([my_model, my_other_model])
+
         """
-        assert_type(name, "name", [str, Sequence])
-        item_processed: dict[str, Any] | list[dict[str, Any]]
+        items: ThreeDModelWrite | list[ThreeDModelWrite]
         if isinstance(name, str):
-            item_processed = {"name": name, "dataSetId": data_set_id, "metadata": metadata}
+            items = ThreeDModelWrite(name, data_set_id, metadata)
+        elif isinstance(name, ThreeDModelWrite):
+            items = name
         else:
-            item_processed = [{"name": n, "dataSetId": data_set_id, "metadata": metadata} for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=item_processed)
+            items = [ThreeDModelWrite(n, data_set_id, metadata) if isinstance(n, str) else n for n in name]
+        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
     def update(self, item: ThreeDModel | ThreeDModelUpdate) -> ThreeDModel: ...
