@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.8] - 2024-07-22
+### Fixed
+- The method `client.functions.schedules.retrieve` now accepts the missing parameter `ignore_unknown_ids` as well
+  as retrieving multiple schedules at once.
+- The method `client.functions.schedules.create` now supports creating using a `FunctionScheduleWrite` object.
+
 ## [7.54.7] - 2024-07-22
 ### Fixed
 - The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`. 
