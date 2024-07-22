@@ -11,6 +11,7 @@ from cognite.client.data_classes.data_modeling import (
     Edge,
     EdgeApply,
     EdgeList,
+    Float64,
     Node,
     NodeApply,
     NodeId,
@@ -19,7 +20,13 @@ from cognite.client.data_classes.data_modeling import (
     NodeOrEdgeData,
     ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import EdgeListWithCursor, Instance
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.instances import (
+    EdgeListWithCursor,
+    Instance,
+    TypeInformation,
+    TypePropertyDefinition,
+)
 
 
 class TestEdgeApply:
@@ -45,6 +52,30 @@ class TestEdgeApply:
                 "externalId": "person.external_id",
             },
             "endNode": {"space": "mySpace", "externalId": "actor.external_id"},
+        }
+
+    def test_dump_camel_case_false(self) -> None:
+        edge = EdgeApply(
+            space="mySpace",
+            external_id="relation:arnold_schwarzenegger:actor",
+            type=DirectRelationReference("mySpace", "Person.role"),
+            start_node=DirectRelationReference("mySpace", "source"),
+            end_node=DirectRelationReference("mySpace", "target"),
+        )
+
+        assert edge.dump(camel_case=False) == {
+            "space": "mySpace",
+            "external_id": "relation:arnold_schwarzenegger:actor",
+            "instance_type": "edge",
+            "type": {
+                "space": "mySpace",
+                "external_id": "Person.role",
+            },
+            "start_node": {
+                "space": "mySpace",
+                "external_id": "source",
+            },
+            "end_node": {"space": "mySpace", "external_id": "target"},
         }
 
 
@@ -134,6 +165,18 @@ class TestNodeApply:
             ],
             "space": "IntegrationTestsImmutable",
             "type": {"externalId": "someType", "space": "someSpace"},
+        }
+
+    def test_dump_camel_case_false(self) -> None:
+        node = NodeApply(
+            space="IntegrationTestsImmutable",
+            external_id="shop:case:integration_test",
+        )
+
+        assert node.dump(camel_case=False) == {
+            "external_id": "shop:case:integration_test",
+            "instance_type": "node",
+            "space": "IntegrationTestsImmutable",
         }
 
 
@@ -437,3 +480,45 @@ class TestInstancesToPandas:
         )
 
         assert "properties" not in expanded_with_empty_properties.columns
+
+
+class TestTypeInformation:
+    @pytest.mark.dsl
+    def test_to_pandas(self) -> None:
+        import pandas as pd
+
+        info = TypeInformation(
+            {
+                "my_space": {
+                    "view_id/v1": {
+                        "pressure": TypePropertyDefinition(
+                            type=Float64(unit=UnitReference(external_id="pressure:pa")),
+                            nullable=True,
+                            auto_increment=False,
+                        ),
+                    }
+                }
+            }
+        )
+        expected = pd.DataFrame.from_dict(
+            {
+                ("my_space", "view_id/v1"): {
+                    "identifier": "pressure",
+                    "type.list": False,
+                    "type.unit.external_id": "pressure:pa",
+                    "type.type": "float64",
+                    "nullable": True,
+                    "autoIncrement": False,
+                    "defaultValue": None,
+                    "name": None,
+                    "description": None,
+                    "immutable": False,
+                }
+            },
+            orient="index",
+        )
+        expected.index.names = "space_name", "view_or_container"
+
+        df = info.to_pandas()
+
+        pd.testing.assert_frame_equal(df, expected)

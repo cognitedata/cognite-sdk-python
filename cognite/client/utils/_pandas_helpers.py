@@ -88,9 +88,13 @@ def concat_dps_dataframe_list(
 
 
 def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceList, **kwargs: Any) -> str:
-    if "camel_case" in signature(inst.to_pandas).parameters:
-        # Default of False enforced (when accepted by method):
+    params = signature(inst.to_pandas).parameters
+    # Default of False enforced (when accepted by method):
+    if "camel_case" in params:
         kwargs["camel_case"] = False
+    # TODO: Next major, flip this default to True in the method itself (and delete here):
+    if "expand_properties" in params:
+        kwargs["expand_properties"] = True
     try:
         return inst.to_pandas(**kwargs)._repr_html_()
     except CogniteImportError:

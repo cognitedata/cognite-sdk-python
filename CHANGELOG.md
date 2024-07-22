@@ -17,6 +17,65 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.8] - 2024-07-22
+### Added
+- The method `client.functions.schedules.retrieve` now accepts the missing parameter `ignore_unknown_ids` as well
+  as retrieving multiple schedules at once.
+- The method `client.functions.schedules.create` now supports creating using a `FunctionScheduleWrite` object.
+
+### Changed
+- When creating a new function schedule without specifying `description`, the default value is now
+  correctly set to `None` instead of `""`.
+
+## [7.54.7] - 2024-07-22
+### Fixed
+- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`. 
+- The method `client.three_d.models.create` now supports creating multiple models with different metdata fields
+  in a single call.
+
+## [7.54.6] - 2024-07-19
+### Fixed
+- In the data classe, `NodeApply` and `EdgeApply` the argument `camel_case=False` is now
+  respected in `.dump()`.
+
+## [7.54.5] - 2024-07-19
+### Changed
+- [Feature Preview] Updated the Core Model to the newest version released on July 12th, 2024. The
+  introduction of the `Cognite` prefix for all classes.
+
+## [7.54.4] - 2024-07-19
+### Changed
+- Instance classes like `Node` and `NodeList` now expand properties by default in notebook-like environments.
+
+## [7.54.3] - 2024-07-18
+### Added
+- [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
+  yet supported in the API, and is an experimental feature that may change without warning.
+
+## [7.54.2] - 2024-07-16
+### Fixed
+- A bug in the list method of the RelationshipsAPI that could cause a thread deadlock.
+
+## [7.54.1] - 2024-07-15
+### Fixed
+- Calling `client.functions.retrieve` or `client.functions.delete` with more than 10 ids no longer
+  raises a `CogniteAPIError`.
+- Iterating over functions using `client.functions` or `client.functions(...)` no longer raises a `CogniteAPIError`.
+### Added
+- Added missing filter parameter `metadata` to `client.functions.list`.
+### Changed
+- When creating a new function without specifying `description` or `owner`, the default values are now
+  correctly set to `None` instead of `""`.
+
+## [7.54.0] - 2024-07-12
+### Added
+- In the `client.data_modeling.instances` the methods `.search`, `.retrieve`,`.list`, `.query`, and `.sync` now
+  support the `include_typing` parameter. This parameter is used to include typing information in the response,
+  that can be accessed via the `.typing` attribute on the result object.
+
+## [7.53.4] - 2024-07-11
+### Added
+- `FilesAPI.upload_bytes` and `FilesAPI.upload` are updated to be compatible with Private Link projects.
 
 ## [7.53.3] - 2024-07-11
 ### Added

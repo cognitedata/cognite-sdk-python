@@ -24,7 +24,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     today = datetime.now()
     yesterday = today.replace(day=today.day - 1)
     yield pytest.param(
-        cdm.AssetApply(
+        cdm.CogniteAssetApply(
             space=DATA_SPACE,
             external_id="test_asset",
             source_id="SAP",
@@ -36,11 +36,11 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             description="Test asset for core model v1 tests with Python SDK",
             aliases=["test_asset_alias"],
         ),
-        cdm.Asset,
-        id="Asset",
+        cdm.CogniteAsset,
+        id="CogniteAsset",
     )
     yield pytest.param(
-        cdm.ActivityApply(
+        cdm.CogniteActivityApply(
             space=DATA_SPACE,
             external_id="test_activity",
             assets=[(DATA_SPACE, "test_asset")],
@@ -57,35 +57,36 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             scheduled_start_time=yesterday,
             scheduled_end_time=today,
         ),
-        cdm.Activity,
-        id="Activity",
+        cdm.CogniteActivity,
+        id="CogniteActivity",
     )
 
     yield pytest.param(
-        cdm.AssetTypeApply(
+        cdm.CogniteAssetClassApply(
             space=DATA_SPACE,
             external_id="test_asset_type",
             name="Test asset type",
             description="Test asset type for core model v1 tests with Python SDK",
             aliases=["test_asset_type_alias"],
             code="101",
+            standard="ISO",
         ),
-        cdm.AssetType,
-        id="AssetType",
+        cdm.CogniteAssetClass,
+        id="CogniteAssetClass",
     )
     yield pytest.param(
-        cdm.DescribableApply(
+        cdm.CogniteDescribableNodeApply(
             space=DATA_SPACE,
             external_id="test_describable",
             name="Test describable",
             description="Test describable for core model v1 tests with Python SDK",
             aliases=["test_describable_alias"],
         ),
-        cdm.Describable,
-        id="Describable",
+        cdm.CogniteDescribableNode,
+        id="CogniteDescribableNode",
     )
     yield pytest.param(
-        cdm.EquipmentApply(
+        cdm.CogniteEquipmentApply(
             space=DATA_SPACE,
             external_id="test_equipment",
             name="Test equipment",
@@ -97,44 +98,34 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_created_user="Me",
             source_updated_user="Also me",
         ),
-        cdm.Equipment,
-        id="Equipment",
+        cdm.CogniteEquipment,
+        id="CogniteEquipment",
     )
     yield pytest.param(
-        cdm.Model3DApply(
+        cdm.CogniteModel3DApply(
             space=DATA_SPACE,
             external_id="test_model_3d",
             name="Test model 3D",
             description="Test model 3D for core model v1 tests with Python SDK",
             aliases=["test_model_3d_alias"],
-            source_id="SAP",
-            source_created_time=yesterday,
-            source_updated_time=today,
-            source_created_user="Me",
-            source_updated_user="Also me",
         ),
-        cdm.Model3D,
-        id="Model3D",
+        cdm.CogniteModel3D,
+        id="CogniteModel3D",
     )
     yield pytest.param(
-        cdm.Object3DApply(
+        cdm.CogniteObject3DApply(
             space=DATA_SPACE,
             external_id="test_object_3d",
             name="Test object 3D",
             description="Test object 3D for core model v1 tests with Python SDK",
             aliases=["test_object_3d_alias"],
-            source_id="SAP",
-            source_created_time=yesterday,
-            source_updated_time=today,
-            source_created_user="Me",
-            source_updated_user="Also me",
         ),
-        cdm.Object3D,
-        id="Object3D",
+        cdm.CogniteObject3D,
+        id="CogniteObject3D",
     )
 
     yield pytest.param(
-        cdm.SchedulableApply(
+        cdm.CogniteSchedulableApply(
             space=DATA_SPACE,
             external_id="test_schedulable",
             start_time=yesterday,
@@ -142,12 +133,12 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             scheduled_start_time=yesterday,
             scheduled_end_time=today,
         ),
-        cdm.Schedulable,
-        id="Schedulable",
+        cdm.CogniteSchedulable,
+        id="CogniteSchedulable",
     )
 
     yield pytest.param(
-        cdm.SourceableApply(
+        cdm.CogniteSourceableNodeApply(
             space=DATA_SPACE,
             external_id="test_sourceable",
             source_id="SAP",
@@ -156,16 +147,16 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_created_user="Me",
             source_updated_user="Also me",
         ),
-        cdm.Sourceable,
-        id="Sourceable",
+        cdm.CogniteSourceableNode,
+        id="CogniteSourceableNode",
     )
 
     yield pytest.param(
-        cdm.TimesSeriesBaseApply(
+        cdm.CogniteTimeSeriesApply(
             space=DATA_SPACE,
             external_id="test_time_series_base",
+            type_="numeric",
             is_step=False,
-            is_string=False,
             name="Test time series base",
             description="Test time series base for core model v1 tests with Python SDK",
             aliases=["test_time_series_base_alias"],
@@ -175,24 +166,37 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             source_created_user="Me",
             source_updated_user="Also me",
         ),
-        cdm.TimeSeriesBase,
-        id="TimeSeriesBase",
+        cdm.CogniteTimeSeries,
+        id="CogniteTimeSeries",
     )
 
 
 def core_model_v1_edge_test_cases() -> Iterable[ParameterSet]:
     yield pytest.param(
-        cdm.Connection3DApply(
+        cdm.CogniteAnnotationApply(
             space=DATA_SPACE,
-            external_id="test_connection_3d",
-            type=(DATA_SPACE, "test_asset_type"),
-            start_node=(DATA_SPACE, "test_object_3d_start"),
-            end_node=(DATA_SPACE, "test_object_3d_end"),
-            revision_id=4,
-            revision_node_id=42,
+            external_id="test_connection",
+            type=(DATA_SPACE, "Flow"),
+            start_node=(DATA_SPACE, "source"),
+            end_node=(DATA_SPACE, "target"),
+            status="Suggested",
+            source_context="SAP",
+            name="Test connection",
         ),
-        cdm.Connection3D,
-        id="Connection3D",
+        cdm.CogniteAnnotation,
+        id="CogniteAnnotation",
+    )
+    yield pytest.param(
+        cdm.CogniteSourceableEdgeApply(
+            space=DATA_SPACE,
+            external_id="test_sourceable_edge",
+            type=(DATA_SPACE, "Flow"),
+            start_node=(DATA_SPACE, "source"),
+            end_node=(DATA_SPACE, "target"),
+            source_context="SAP",
+        ),
+        cdm.CogniteSourceableEdge,
+        id="CogniteSourceableEdge",
     )
 
 
@@ -222,7 +226,7 @@ class TestCoreModelv1:
 
         read_dumped = read.as_write().dump()
         write_instance_dumped = write_instance.dump()
-        # Existing version will be bumped by the server
+        # The existing version will be bumped by the server,
         # so we need to remove it from the comparison
         read_dumped.pop("existingVersion", None)
         write_instance_dumped.pop("existingVersion", None)
