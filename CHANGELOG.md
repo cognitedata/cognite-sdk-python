@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.7] - 2024-07-22
+### Fixed
+- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`. 
+- The method `client.three_d.models.create` now supports creating multiple models with different metdata fields
+  in a single call.
+
 ## [7.54.6] - 2024-07-19
 ### Fixed
 - In the data classe, `NodeApply` and `EdgeApply` the argument `camel_case=False` is now
