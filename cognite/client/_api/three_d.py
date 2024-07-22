@@ -178,8 +178,8 @@ class ThreeDModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelWrite
                 >>> client = CogniteClient()
-                >>> my_model = ThreeDModelWrite(name="My Model", dataSetId=1, metadata={"key1": "value1", "key2": "value2"})
-                >>> my_other_model = ThreeDModelWrite(name="My Other Model", dataSetId=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_model = ThreeDModelWrite(name="My Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
+                >>> my_other_model = ThreeDModelWrite(name="My Other Model", data_set_id=1, metadata={"key1": "value1", "key2": "value2"})
                 >>> res = client.three_d.models.create([my_model, my_other_model])
 
         """
