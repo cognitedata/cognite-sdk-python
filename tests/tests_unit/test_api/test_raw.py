@@ -80,13 +80,10 @@ def mock_retrieve_raw_rows_response_two_rows(rsps, cognite_client):
     )
     yield rsps
 
+
 @pytest.fixture
 def mock_retrieve_raw_rows_response_one_rows(rsps, cognite_client):
-    response_body = {
-        "items": [
-            {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}
-        ]
-    }
+    response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}]}
     rsps.add(
         rsps.GET,
         cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
@@ -95,11 +92,10 @@ def mock_retrieve_raw_rows_response_one_rows(rsps, cognite_client):
     )
     yield rsps
 
+
 @pytest.fixture
 def mock_retrieve_raw_rows_response_no_rows(rsps, cognite_client):
-    response_body = {
-        "items": []
-    }
+    response_body = {"items": []}
     rsps.add(
         rsps.GET,
         cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
@@ -107,6 +103,7 @@ def mock_retrieve_raw_rows_response_no_rows(rsps, cognite_client):
         json=response_body,
     )
     yield rsps
+
 
 class TestRawDatabases:
     def test_create_single(self, cognite_client, mock_raw_db_response):
@@ -237,7 +234,8 @@ class TestRawRows:
     def test_retrieve_dataframe_empty(self, cognite_client, mock_retrieve_raw_rows_response_no_rows):
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
-            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
 
         assert res_df.shape == (0, 0)
         assert res_df_last_updated_time_in_index.shape == (0, 0)
@@ -246,7 +244,8 @@ class TestRawRows:
     def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_rows):
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
-            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
         assert res_df.shape == (1, 2)
         assert res_df_last_updated_time_in_index.shape == (1, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
@@ -254,7 +253,8 @@ class TestRawRows:
     def test_retrieve_dataframe_two_rows(self, cognite_client, mock_retrieve_raw_rows_response_two_rows):
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
         res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
-            db_name="db1", table_name="table1", last_updated_time_in_index = True)
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
         assert res_df.shape == (2, 2)
         assert res_df_last_updated_time_in_index.shape == (2, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
