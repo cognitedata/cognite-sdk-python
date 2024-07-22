@@ -1122,14 +1122,23 @@ class FunctionSchedulesAPI(APIClient):
         """Iterate over all function schedules"""
         return self()
 
-    def retrieve(self, id: int) -> FunctionSchedule | None:
+    @overload
+    def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
+
+    @overload
+    def retrieve(self, id: Sequence[int], ignore_unknown_ids: bool = False) -> FunctionSchedulesList: ...
+
+    def retrieve(
+        self, id: int | Sequence[int], ignore_unknown_ids: bool = False
+    ) -> FunctionSchedule | None | FunctionSchedulesList:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
-            id (int): Schedule ID
+            id (int | Sequence[int]): Schedule ID
+            ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionSchedule | None: Requested function schedule or None if not found.
+            FunctionSchedule | None | FunctionSchedulesList: Requested function schedule or None if not found.
 
         Examples:
 
@@ -1140,9 +1149,12 @@ class FunctionSchedulesAPI(APIClient):
                 >>> res = client.functions.schedules.retrieve(id=1)
 
         """
-        identifier = IdentifierSequence.load(ids=id).as_singleton()
+        identifiers = IdentifierSequence.load(ids=id)
         return self._retrieve_multiple(
-            identifiers=identifier, resource_cls=FunctionSchedule, list_cls=FunctionSchedulesList
+            identifiers=identifiers,
+            resource_cls=FunctionSchedule,
+            list_cls=FunctionSchedulesList,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
@@ -1267,6 +1279,14 @@ class FunctionSchedulesAPI(APIClient):
             item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
         else:
             item = name
+        if item.function_id is None:
+            identifier = _get_function_identifier(item.function_id, item.function_external_id)
+            item.function_id = _get_function_internal_id(self._cognite_client, identifier)
+            # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
+            item.function_external_id = None
+        elif item.function_id and item.function_external_id:
+            item.function_external_id = None
+
         dumped = item.dump()
         dumped["nonce"] = create_session_and_return_nonce(
             self._cognite_client, api_name="Functions API", client_credentials=client_credentials
