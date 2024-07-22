@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.54.8] - 2024-07-22
-### Fixed
+### Added
 - The method `client.functions.schedules.retrieve` now accepts the missing parameter `ignore_unknown_ids` as well
   as retrieving multiple schedules at once.
 - The method `client.functions.schedules.create` now supports creating using a `FunctionScheduleWrite` object.
