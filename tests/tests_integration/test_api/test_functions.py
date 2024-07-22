@@ -132,3 +132,7 @@ class TestFunctionSchedulesAPI:
             if created:
                 with suppress(CogniteAPIError):
                     cognite_client.functions.schedules.delete(id=created.id)
+
+    def test_raise_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteNotFoundError):
+            cognite_client.functions.schedules.retrieve(id=[123])
