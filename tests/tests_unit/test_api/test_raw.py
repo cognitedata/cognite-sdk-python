@@ -258,6 +258,8 @@ class TestRawRows:
         assert res_df.shape == (2, 2)
         assert res_df_last_updated_time_in_index.shape == (2, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
+        assert res_df_last_updated_time_in_index.index.names == ["key", "last_updated_time"]
+        assert list(res_df_last_updated_time_in_index.index.levels[1]) == [0, 1]
 
     def test_insert_w_rows_as_dict(self, cognite_client, mock_raw_row_response):
         res = cognite_client.raw.rows.insert(
