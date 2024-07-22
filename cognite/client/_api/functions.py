@@ -1218,7 +1218,7 @@ class FunctionSchedulesAPI(APIClient):
         function_id: int | None = None,
         function_external_id: str | None = None,
         client_credentials: dict | ClientCredentials | None = None,
-        description: str = "",
+        description: str | None = None,
         data: dict | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
@@ -1229,7 +1229,7 @@ class FunctionSchedulesAPI(APIClient):
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
-            description (str): Description of the schedule.
+            description (str | None): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
         Returns:
