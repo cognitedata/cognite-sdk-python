@@ -1279,12 +1279,10 @@ class FunctionSchedulesAPI(APIClient):
             item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
         else:
             item = name
+        identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_id is None:
-            identifier = _get_function_identifier(item.function_id, item.function_external_id)
             item.function_id = _get_function_internal_id(self._cognite_client, identifier)
             # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
-            item.function_external_id = None
-        elif item.function_id and item.function_external_id:
             item.function_external_id = None
 
         dumped = item.dump()
