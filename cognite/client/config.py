@@ -46,6 +46,36 @@ class GlobalConfig:
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
 
+    @classmethod
+    def load(cls, config: dict) -> GlobalConfig:
+        """Loads a dictionary of configuration fields into a client config object.
+
+        Note: This must be done before instantiating a CogniteClient for the configuration to take effect.
+
+        Args:
+            config (dict): A dictionary containing configuration values defined in the GlobalConfig class.
+
+        Returns:
+            GlobalConfig: A global configuration object.
+
+        Examples:
+                Create a global config object from a dictionary input:
+
+                >>> from cognite.client.config import GlobalConfig
+                >>> config = {
+                ...     "max_retries": 5,
+                ...     "disable_ssl": True,
+                ... }
+                >>> global_config = GlobalConfig.load(config)
+        """
+        global_config = cls()
+        for key, value in config.items():
+            if not hasattr(global_config, key):
+                raise ValueError(f"Invalid key in global config: {key}")
+            setattr(global_config, key, value)
+
+        return global_config
+
 
 global_config = GlobalConfig()
 
@@ -163,3 +193,41 @@ class ClientConfig:
             credentials=credentials,
             base_url=f"https://{cdf_cluster}.cognitedata.com/",
         )
+
+    @classmethod
+    def load(cls, config: dict) -> ClientConfig:
+        """Loads a dictionary of configuration fields into a client config object.
+
+        Args:
+            config (dict): A dictionary containing configuration values defined in the ClientConfig class.
+
+        Returns:
+            ClientConfig: A client config object.
+
+        Examples:
+                Create a client config object from a dictionary input:
+
+                >>> from cognite.client.config import ClientConfig
+                >>> import os
+                >>> config = {
+                ...     "client_name": "abcd",
+                ...     "project": "cdf-project",
+                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "client_credentials": {
+                ...         "client_id": "abcd",
+                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...         "token_url": os.environ["TOKEN_URL"],
+                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
+                ...         # Any additional IDP-specific token args. e.g.
+                ...         "audience": "some-audience",
+                ...     }
+                ... }
+                >>> client_config = ClientConfig.load(config)
+        """
+        try:
+            credentials_config_input = config.pop("credentials")
+        except KeyError:
+            raise ValueError("'credentials' is a required field and must be included in the input dictionary.")
+
+        credentials = CredentialProvider.load(credentials_config_input)
+        return ClientConfig(credentials=credentials, **config)

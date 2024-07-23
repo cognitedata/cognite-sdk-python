@@ -60,7 +60,7 @@ def set_env_vars(monkeypatch):
     env_vars = {
         "COGNITE_PROJECT": "test-project",
         "COGNITE_CLIENT_NAME": "test-project",
-        "credential_type": "o_auth_client_credentials",
+        "credential_type": "client_credentials",
         "URL": "test",
         "COGNITE_CLIENT_SECRET": "test-client-secret",
         "COGNITE_DEBUG": "true",
@@ -116,9 +116,21 @@ class TestCogniteClient:
         assert client._api_client._http_client_with_retry.session.verify is True
         assert client._api_client._http_client.session.verify is True
 
-    def test_client_from_yaml(self):
-        path = os.path.join(os.path.dirname(__file__), "test_config.yaml")
-        client = CogniteClient.from_yaml(path)
+    def test_client_load(self):
+        config = {
+            "project": "test-project",
+            "client_name": "cognite-sdk-python",
+            "debug": True,
+            "credentials": {
+                "client_credentials": {
+                    "client_id": "test-client-id",
+                    "client_secret": "test-client-secret",
+                    "token_url": TOKEN_URL,
+                    "scopes": ["https://test.com/.default", "https://test.com/.admin"],
+                }
+            },
+        }
+        client = CogniteClient.load(config)
         assert client.config.project == "test-project"
         assert client.config.credentials.client_id == "test-client-id"
         assert client.config.credentials.client_secret == "test-client-secret"
@@ -138,7 +150,7 @@ class TestCogniteClient:
 
     def test_client_from_yaml_missing_envs(self):
         path = os.path.join(os.path.dirname(__file__), "test_config_envs.yaml")
-        with pytest.raises(ValueError, match="Missing environment variables: .*"):
+        with pytest.raises(ValueError, match=r"Error substituting environment variable: .*"):
             CogniteClient.from_yaml(path)
 
 

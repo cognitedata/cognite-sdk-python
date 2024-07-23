@@ -24,37 +24,64 @@ class CredentialProvider(Protocol):
         raise NotImplementedError
 
     @classmethod
-    def load(cls, resource: dict) -> CredentialProvider:
+    def load(cls, config: dict) -> CredentialProvider:
         """Create a CredentialProvider from a configuration dictionary.
 
         Args:
-            resource (dict): The type of credential provider.
+            config (dict): A dictionary containing the configuration for the credential provider.
+                The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings:
+                "token", "client_credentials", "interactive", "device_code", "client_certificate".
+                The value of the key is a dictionary containing the configuration for the credential provider.
 
         Returns:
             CredentialProvider: Initialized credential provider of the specified type.
 
         Examples:
+                Get a token credential provider:
 
                 >>> from cognite.client.credentials import CredentialProvider
-                >>> credential_provider = CredentialProvider.from_config("token",  "my secret token")
+                >>> config = {"token": "my secret token"}
+                >>> credential_provider = CredentialProvider.load(config)
+
+                Get a client credential provider:
+
+                >>> from cognite.client.credentials import CredentialProvider
+                >>> import os
+                >>> config = {
+                ...     "client_credentials": {
+                ...         "client_id": "abcd",
+                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...         "token_url": os.environ["TOKEN_URL"],
+                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
+                ...         # Any additional IDP-specific token args. e.g.
+                ...         "audience": "some-audience",
+                ...     }
+                ... }
+                >>> credential_provider = CredentialProvider.load(config)
         """
-        if len(resource) != 1:
-            raise ValueError("Credential provider configuration must contain exactly one key-value pair.")
+        if not isinstance(config, dict) or len(config) != 1:
+            raise ValueError(
+                "Credential provider configuration must be a dictionary containing exactly one top level key."
+            )
 
-        credential_type, config = next(iter(resource.items()))
+        credential_type, credential_config = next(iter(config.items()))
 
-        if credential_type == "token":
-            return Token(config)
-        elif credential_type == "o_auth_client_credentials":
-            return OAuthClientCredentials(**config)
-        elif credential_type == "o_auth_interactive":
-            return OAuthInteractive(**config)
-        elif credential_type == "o_auth_device_code":
-            return OAuthDeviceCode(**config)
-        elif credential_type == "o_auth_client_certificate":
-            return OAuthClientCertificate(**config)
+        supported_credential_types = {
+            "token": Token,
+            "client_credentials": OAuthClientCredentials,
+            "interactive": OAuthInteractive,
+            "device_code": OAuthDeviceCode,
+            "client_certificate": OAuthClientCertificate,
+        }
+
+        if credential_type not in supported_credential_types.keys():
+            raise ValueError(
+                f"Invalid credential provider type: '{credential_type}', the valid options are {list(supported_credential_types.keys())}."
+            )
+        elif credential_type == "token":
+            return supported_credential_types[credential_type](credential_config)
         else:
-            raise ValueError(f"The provided credential type {credential_type} is not supported.")
+            return supported_credential_types[credential_type](**credential_config)
 
 
 class Token(CredentialProvider):
