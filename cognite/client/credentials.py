@@ -24,12 +24,11 @@ class CredentialProvider(Protocol):
         raise NotImplementedError
 
     @classmethod
-    def from_config(cls, credential_type: str, config: Any) -> CredentialProvider:
+    def load(cls, resource: dict) -> CredentialProvider:
         """Create a CredentialProvider from a configuration dictionary.
 
         Args:
-            credential_type (str): The type of credential provider.
-            config (Any): The input data for the credential provider.
+            resource (dict): The type of credential provider.
 
         Returns:
             CredentialProvider: Initialized credential provider of the specified type.
@@ -39,16 +38,17 @@ class CredentialProvider(Protocol):
                 >>> from cognite.client.credentials import CredentialProvider
                 >>> credential_provider = CredentialProvider.from_config("token",  "my secret token")
         """
+        if len(resource) != 1:
+            raise ValueError("Credential provider configuration must contain exactly one key-value pair.")
+
+        credential_type, config = next(iter(resource.items()))
+
         if credential_type == "token":
             return Token(config)
         elif credential_type == "o_auth_client_credentials":
             return OAuthClientCredentials(**config)
-        elif credential_type == "o_auth_client_certificate_default_for_azure_ad":  # FIXME: do we want this?
-            return OAuthClientCredentials.default_for_azure_ad(**config)
         elif credential_type == "o_auth_interactive":
             return OAuthInteractive(**config)
-        elif credential_type == "o_auth_interactive_default_for_azure_ad":  # FIXME: do we want this?
-            return OAuthInteractive.default_for_azure_ad(**config)
         elif credential_type == "o_auth_device_code":
             return OAuthDeviceCode(**config)
         elif credential_type == "o_auth_client_certificate":
