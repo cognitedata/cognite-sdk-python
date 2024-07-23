@@ -13,6 +13,30 @@ from cognite.client.credentials import (
 from cognite.client.exceptions import CogniteAuthError
 
 
+class TestCredentialProvider:
+    INVALID_CREDENTIAL_ERROR = r"Invalid credential provider type: .*"
+    INVALID_INPUT_TYPE_ERROR = (
+        r"Credential provider configuration must be a dictionary containing exactly one top level key."
+    )
+
+    @pytest.mark.parametrize(
+        "config,error_message",
+        [
+            pytest.param({"foo": "abc"}, INVALID_CREDENTIAL_ERROR, id="Invalid input: credential type"),
+            pytest.param("token", INVALID_INPUT_TYPE_ERROR, id="Invalid input: not a dict, str"),
+            pytest.param({}, INVALID_INPUT_TYPE_ERROR, id="Invalid input: empty dict"),
+            pytest.param(
+                {"token": "abc", "client_credentials": {"client_id": "abc"}},
+                INVALID_INPUT_TYPE_ERROR,
+                id="Invalid input: multiple keys",
+            ),
+        ],
+    )
+    def test_invalid_not_dict(self, config, error_message):
+        with pytest.raises(ValueError, match=error_message):
+            CredentialProvider.load(config)
+
+
 class TestToken:
     def test_token_auth_header(self):
         creds = Token("abc")
@@ -22,16 +46,15 @@ class TestToken:
         creds = Token(lambda: "abc")
         assert "Authorization", "Bearer abc" == creds.authorization_header()
 
-    def test_create_from_credential_provider(self):
-        creds = CredentialProvider.from_config(credential_type="token", config="abc")
-        assert isinstance(creds, Token)
-        assert "Authorization", "Bearer abc" == creds.authorization_header()
-
-    def test_create_from_credential_provider_invalid(self):
+    def test_token_non_string(self):
         with pytest.raises(
             TypeError, match=r"'token' must be a string or a no-argument-callable returning a string, not .*"
         ):
-            CredentialProvider.from_config(credential_type="token", config={"foo": "bar"})
+            Token({"foo": "bar"})
+
+    def test_create_from_credential_provider(self):
+        creds = CredentialProvider.load({"token": "abc"})
+        assert isinstance(creds, Token)
 
 
 class TestOauthClientCredentials:
@@ -78,9 +101,7 @@ class TestOauthClientCredentials:
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
 
     def test_create_from_credential_provider(self):
-        creds = CredentialProvider.from_config(
-            credential_type="o_auth_client_credentials", config=self.DEFAULT_PROVIDER_ARGS
-        )
+        creds = CredentialProvider.load({"client_credentials": self.DEFAULT_PROVIDER_ARGS})
         assert isinstance(creds, OAuthClientCredentials)
         assert creds.client_id == "azure-client-id"
         assert creds.client_secret == "azure-client-secret"
@@ -113,9 +134,7 @@ class TestOAuthClientCertificate:
             "access_token": "azure_token",
             "expires_in": 1000,
         }
-        creds = CredentialProvider.from_config(
-            credential_type="o_auth_client_certificate", config=self.DEFAULT_PROVIDER_ARGS
-        )
+        creds = CredentialProvider.load({"client_certificate": self.DEFAULT_PROVIDER_ARGS})
         assert isinstance(creds, OAuthClientCertificate)
         assert creds.authority_url == "https://login.microsoftonline.com/xyz"
         assert creds.client_id == "azure-client-id"

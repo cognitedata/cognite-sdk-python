@@ -33,7 +33,7 @@ from cognite.client._api.units import UnitAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, GlobalConfig, global_config
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version
 
@@ -219,59 +219,89 @@ class CogniteClient:
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def from_dict(cls, config: dict[str, Any]) -> CogniteClient:
-        cognite_sdk_config_input = config.get("cognite")
-        if cognite_sdk_config_input is None:
-            raise ValueError("cognite section is missing in the configuration file")
+    def load(cls, config: dict) -> CogniteClient:
+        """Loads a dictionary of configuration fields into a cognite client object.
 
-        global_config_input = cognite_sdk_config_input.get("global_config")
-        if global_config_input:
-            # TODO: set global config based on input
-            # GlobalConfig.from_dictionary(**global_config_input)
-            global_config = GlobalConfig()  # noqa: F841
+        Args:
+            config (dict): A dictionary containing configuration values needed to create a CogniteClient.
 
-        client_config_input = cognite_sdk_config_input.get("client_config")
-        if client_config_input:
-            credentials_config_input = client_config_input.get("credentials")
-            if credentials_config_input is None:
-                raise ValueError("credentials section is missing in the configuration file")
-            else:
-                credentials = CredentialProvider.load(credentials_config_input)
-                client_config_input["credentials"] = credentials
-                client_config = ClientConfig(**client_config_input)
-        else:
-            raise ValueError("client_config section is missing in the configuration file")
+        Returns:
+            CogniteClient: A cognite client object.
 
-        return cls(client_config)
+        Examples:
+                Create a cognite client object from a dictionary input:
 
-    @classmethod
+                >>> from cognite.client import CogniteClient
+                >>> import os
+                >>> config = {
+                ...     "client_name": "abcd",
+                ...     "project": "cdf-project",
+                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "client_credentials": {
+                ...         "client_id": "abcd",
+                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...         "token_url": os.environ["TOKEN_URL"],
+                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
+                ...         # Any additional IDP-specific token args. e.g.
+                ...         "audience": "some-audience",
+                ...     }
+                ... }
+                >>> client = CogniteClient.load(config)
+        """
+        return cls(ClientConfig.load(config))
+
+    @classmethod  # TODO: design discussion on if we should have this method or not, and if it should sub envs or not
     def from_yaml(cls, file_path: str | Path) -> CogniteClient:
-        # TODO: docstring, type hints, and error handling
+        """Loads a YAML file containing configuration fields into a cognite client object.
+        Any environment variables in the YAML file will be replaced with their defined values given they are referenced
+        using the following syntax: ${ENV_VAR_NAME} (recommended) or $ENV_VAR_NAME.
 
+        Note: The environment variables must be defined in the current environment and there are no implicit environment
+                variables available in the YAML file (e.g. CDF_PROJECT will not automatically replace the project name
+                unless `project: ${CDF_PROJECT}` is defined in the YAML file).
+
+        Args:
+            file_path (str | Path): The path to the YAML file containing the configuration values needed to create a CogniteClient.
+
+        Returns:
+            CogniteClient: A cognite client object.
+
+        Examples:
+                Create a cognite client object from a YAML file, using envs from the current environment:
+
+                >>> config.yaml
+                >>> project: $MY_CDF_PROJECT
+                >>> base_url: https://${MY_CDF_CLUSTER}.cognitedata.com/
+                >>> client_credentials:
+                >>>     token: ${MY_CDF_TOKEN}
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient.from_yaml("config.yaml")
+
+                Create a cognite client object from a YAML file, using envs from a .env file:
+
+                >>> from cognite.client import CogniteClient
+                >>> from dotenv import load_dotenv
+                >>> load_dotenv()
+                >>> client = CogniteClient.from_yaml("config.yaml")
+        """
         file_path = Path(file_path)
         if not file_path.is_file():
             raise ValueError(f"File {file_path} is not a file")
 
         try:
             with file_path.open("r") as file_raw:
-                sub_template = Template(file_raw.read())  # FIXME: use string.Template or expand yaml.SafeLoader class
+                env_sub_template = Template(file_raw.read())
 
-                env_dict = dict(os.environ)  # FIXME: is load_dotenv() needed?
-
-                # TODO: get all missing env vars and raise error if any (without using 3.11 Template attributes)
-                # if not sub_template.is_valid():  # type: ignore[attr-defined]
-                #     raise ValueError("Invalid template")
-
-                # all_identifiers = sub_template.get_identifiers()  # type: ignore[attr-defined]
-
-                # missing_env_vars = set(all_identifiers) - set(env_dict.keys())
-                # if missing_env_vars:
-                #     raise ValueError(f"Missing environment variables: {missing_env_vars}")
-
-                file_env_parsed = sub_template.safe_substitute(env_dict)
+                try:
+                    file_env_parsed = env_sub_template.substitute(dict(os.environ))
+                except KeyError as e:
+                    raise ValueError(f"Error substituting environment variable: {e}")
+                except ValueError as e:
+                    raise ValueError(f"Error substituting environment variable: {e}")
 
                 config_input = yaml.safe_load(file_env_parsed)
         except yaml.YAMLError as e:
             raise ValueError(f"Error parsing YAML file {file_path}: {e}")
 
-        return cls.from_dict(config_input)
+        return cls.load(config_input)
