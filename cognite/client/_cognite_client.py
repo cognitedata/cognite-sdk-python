@@ -258,6 +258,7 @@ class CogniteClient:
 
                 env_dict = dict(os.environ)  # FIXME: is load_dotenv() needed?
 
+                # TODO: get all missing env vars and raise error if any (without using 3.11 Template attributes)
                 # if not sub_template.is_valid():  # type: ignore[attr-defined]
                 #     raise ValueError("Invalid template")
 
