@@ -235,15 +235,10 @@ class CogniteClient:
             credentials_config_input = client_config_input.get("credentials")
             if credentials_config_input is None:
                 raise ValueError("credentials section is missing in the configuration file")
-            elif isinstance(credentials_config_input, dict) and len(credentials_config_input) == 1:
-                credential_type, credential_provider_input = next(iter(credentials_config_input.items()))
-                credentials = CredentialProvider.from_config(
-                    credential_type=credential_type, config=credential_provider_input
-                )
+            else:
+                credentials = CredentialProvider.load(credentials_config_input)
                 client_config_input["credentials"] = credentials
                 client_config = ClientConfig(**client_config_input)
-            else:
-                raise ValueError("credentials section should contain exactly one key-value pair")
         else:
             raise ValueError("client_config section is missing in the configuration file")
 
@@ -261,15 +256,16 @@ class CogniteClient:
             with file_path.open("r") as file_raw:
                 sub_template = Template(file_raw.read())  # FIXME: use string.Template or expand yaml.SafeLoader class
 
-                if not sub_template.is_valid():  # type: ignore[attr-defined]
-                    raise ValueError("Invalid template")
-
-                all_identifiers = sub_template.get_identifiers()  # type: ignore[attr-defined]
                 env_dict = dict(os.environ)  # FIXME: is load_dotenv() needed?
 
-                missing_env_vars = set(all_identifiers) - set(env_dict.keys())
-                if missing_env_vars:
-                    raise ValueError(f"Missing environment variables: {missing_env_vars}")
+                # if not sub_template.is_valid():  # type: ignore[attr-defined]
+                #     raise ValueError("Invalid template")
+
+                # all_identifiers = sub_template.get_identifiers()  # type: ignore[attr-defined]
+
+                # missing_env_vars = set(all_identifiers) - set(env_dict.keys())
+                # if missing_env_vars:
+                #     raise ValueError(f"Missing environment variables: {missing_env_vars}")
 
                 file_env_parsed = sub_template.safe_substitute(env_dict)
 

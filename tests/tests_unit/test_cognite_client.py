@@ -1,6 +1,5 @@
 import logging
 import os
-from unittest.mock import patch
 
 import pytest
 
@@ -56,20 +55,17 @@ def mock_token_inspect(rsps) -> None:
     yield
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def set_env_vars(monkeypatch):
-    with patch.dict(os.environ, clear=True):
-        env_vars = {
-            "COGNITE_PROJECT": "test-project",
-            "COGNITE_CLIENT_NAME": "test-project",
-            "credential_type": "o_auth_client_credentials",
-            "URL": "test",
-            "COGNITE_CLIENT_SECRET": "test-client-secret",
-            "COGNITE_DEBUG": "true",
-        }
-        for key, value in env_vars.items():
-            monkeypatch.setenv(key, value)
-        yield
+    env_vars = {
+        "COGNITE_PROJECT": "test-project",
+        "COGNITE_CLIENT_NAME": "test-project",
+        "credential_type": "o_auth_client_credentials",
+        "URL": "test",
+        "COGNITE_CLIENT_SECRET": "test-client-secret",
+        "COGNITE_DEBUG": "true",
+    }
+    monkeypatch.setattr(os, "environ", env_vars)
 
 
 class TestCogniteClient:
