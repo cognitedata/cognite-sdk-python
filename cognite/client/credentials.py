@@ -23,6 +23,39 @@ class CredentialProvider(Protocol):
     def authorization_header(self) -> tuple[str, str]:
         raise NotImplementedError
 
+    @classmethod
+    def from_config(cls, credential_type: str, config: Any) -> CredentialProvider:
+        """Create a CredentialProvider from a configuration dictionary.
+
+        Args:
+            credential_type (str): The type of credential provider.
+            config (Any): The input data for the credential provider.
+
+        Returns:
+            CredentialProvider: Initialized credential provider of the specified type.
+
+        Examples:
+
+                >>> from cognite.client.credentials import CredentialProvider
+                >>> credential_provider = CredentialProvider.from_config("token",  "my secret token")
+        """
+        if credential_type == "token":
+            return Token(config)
+        elif credential_type == "o_auth_client_credentials":
+            return OAuthClientCredentials(**config)
+        elif credential_type == "o_auth_client_certificate_default_for_azure_ad":  # FIXME: do we want this?
+            return OAuthClientCredentials.default_for_azure_ad(**config)
+        elif credential_type == "o_auth_interactive":
+            return OAuthInteractive(**config)
+        elif credential_type == "o_auth_interactive_default_for_azure_ad":  # FIXME: do we want this?
+            return OAuthInteractive.default_for_azure_ad(**config)
+        elif credential_type == "o_auth_device_code":
+            return OAuthDeviceCode(**config)
+        elif credential_type == "o_auth_client_certificate":
+            return OAuthClientCertificate(**config)
+        else:
+            raise ValueError(f"The provided credential type {credential_type} is not supported.")
+
 
 class Token(CredentialProvider):
     """Token credential provider

@@ -5,6 +5,7 @@ import pytest
 from oauthlib.oauth2 import InvalidClientIdError
 
 from cognite.client.credentials import (
+    CredentialProvider,
     OAuthClientCertificate,
     OAuthClientCredentials,
     Token,
@@ -21,6 +22,17 @@ class TestToken:
         creds = Token(lambda: "abc")
         assert "Authorization", "Bearer abc" == creds.authorization_header()
 
+    def test_create_from_credential_provider(self):
+        creds = CredentialProvider.from_config(credential_type="token", config="abc")
+        assert isinstance(creds, Token)
+        assert "Authorization", "Bearer abc" == creds.authorization_header()
+
+    def test_create_from_credential_provider_invalid(self):
+        with pytest.raises(
+            TypeError, match=r"'token' must be a string or a no-argument-callable returning a string, not .*"
+        ):
+            CredentialProvider.from_config(credential_type="token", config={"foo": "bar"})
+
 
 class TestOauthClientCredentials:
     DEFAULT_PROVIDER_ARGS: ClassVar = {
@@ -28,6 +40,7 @@ class TestOauthClientCredentials:
         "client_secret": "azure-client-secret",
         "token_url": "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token",
         "scopes": ["https://greenfield.cognitedata.com/.default"],
+        "other_custom_arg": "some_value",
     }
 
     @patch("cognite.client.credentials.BackendApplicationClient")
@@ -64,6 +77,17 @@ class TestOauthClientCredentials:
         assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
 
+    def test_create_from_credential_provider(self):
+        creds = CredentialProvider.from_config(
+            credential_type="o_auth_client_credentials", config=self.DEFAULT_PROVIDER_ARGS
+        )
+        assert isinstance(creds, OAuthClientCredentials)
+        assert creds.client_id == "azure-client-id"
+        assert creds.client_secret == "azure-client-secret"
+        assert creds.token_url == "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token"
+        assert creds.scopes == ["https://greenfield.cognitedata.com/.default"]
+        assert creds.token_custom_args == {"other_custom_arg": "some_value"}
+
 
 class TestOAuthClientCertificate:
     DEFAULT_PROVIDER_ARGS: ClassVar = {
@@ -82,3 +106,19 @@ class TestOAuthClientCertificate:
         }
         creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.ConfidentialClientApplication")
+    def test_create_from_credential_provider(self, mock_msal_app):
+        mock_msal_app().acquire_token_for_client.return_value = {
+            "access_token": "azure_token",
+            "expires_in": 1000,
+        }
+        creds = CredentialProvider.from_config(
+            credential_type="o_auth_client_certificate", config=self.DEFAULT_PROVIDER_ARGS
+        )
+        assert isinstance(creds, OAuthClientCertificate)
+        assert creds.authority_url == "https://login.microsoftonline.com/xyz"
+        assert creds.client_id == "azure-client-id"
+        assert creds.cert_thumbprint == "XYZ123"
+        assert creds.certificate == "certificatecontents123"
+        assert creds.scopes == ["https://greenfield.cognitedata.com/.default"]
