@@ -1,4 +1,6 @@
 import logging
+import os
+from unittest.mock import patch
 
 import pytest
 
@@ -54,6 +56,22 @@ def mock_token_inspect(rsps) -> None:
     yield
 
 
+@pytest.fixture(scope="function")
+def set_env_vars(monkeypatch):
+    with patch.dict(os.environ, clear=True):
+        env_vars = {
+            "COGNITE_PROJECT": "test-project",
+            "COGNITE_CLIENT_NAME": "test-project",
+            "credential_type": "o_auth_client_credentials",
+            "URL": "test",
+            "COGNITE_CLIENT_SECRET": "test-client-secret",
+            "COGNITE_DEBUG": "true",
+        }
+        for key, value in env_vars.items():
+            monkeypatch.setenv(key, value)
+        yield
+
+
 class TestCogniteClient:
     def test_project_is_empty(self):
         with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: <>"):
@@ -101,6 +119,31 @@ class TestCogniteClient:
         assert rsps.calls[0][0].req_kwargs["verify"] is True
         assert client._api_client._http_client_with_retry.session.verify is True
         assert client._api_client._http_client.session.verify is True
+
+    def test_client_from_yaml(self):
+        path = os.path.join(os.path.dirname(__file__), "test_config.yaml")
+        client = CogniteClient.from_yaml(path)
+        assert client.config.project == "test-project"
+        assert client.config.credentials.client_id == "test-client-id"
+        assert client.config.credentials.client_secret == "test-client-secret"
+        assert client.config.credentials.token_url == TOKEN_URL
+        assert client.config.credentials.scopes == ["https://test.com/.default", "https://test.com/.admin"]
+
+    def test_client_from_yaml_with_envs(self, set_env_vars):
+        path = os.path.join(os.path.dirname(__file__), "test_config_envs.yaml")
+
+        client = CogniteClient.from_yaml(path)
+        assert client.config.project == "test-project"
+        assert client.config.credentials.client_id == "test-client-id-with-escaped-$"
+        assert client.config.credentials.client_secret == "test-client-secret"
+        assert client.config.credentials.token_url == TOKEN_URL
+        assert client.config.credentials.scopes == ["https://test.com/.default", "https://test.com/.admin"]
+        assert client.config.debug is True
+
+    def test_client_from_yaml_missing_envs(self):
+        path = os.path.join(os.path.dirname(__file__), "test_config_envs.yaml")
+        with pytest.raises(ValueError, match="Missing environment variables: .*"):
+            CogniteClient.from_yaml(path)
 
 
 class TestInstantiateWithClient:

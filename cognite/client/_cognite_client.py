@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+from string import Template
 from typing import Any
 
+import yaml
 from requests import Response
 
 from cognite.client._api.annotations import AnnotationsAPI
@@ -29,7 +33,7 @@ from cognite.client._api.units import UnitAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import ClientConfig, GlobalConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version
 
@@ -213,3 +217,64 @@ class CogniteClient:
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
+
+    @classmethod
+    def from_dict(cls, config: dict[str, Any]) -> CogniteClient:
+        cognite_sdk_config_input = config.get("cognite")
+        if cognite_sdk_config_input is None:
+            raise ValueError("cognite section is missing in the configuration file")
+
+        global_config_input = cognite_sdk_config_input.get("global_config")
+        if global_config_input:
+            # TODO: set global config based on input
+            # GlobalConfig.from_dictionary(**global_config_input)
+            global_config = GlobalConfig()  # noqa: F841
+
+        client_config_input = cognite_sdk_config_input.get("client_config")
+        if client_config_input:
+            credentials_config_input = client_config_input.get("credentials")
+            if credentials_config_input is None:
+                raise ValueError("credentials section is missing in the configuration file")
+            elif isinstance(credentials_config_input, dict) and len(credentials_config_input) == 1:
+                credential_type, credential_provider_input = next(iter(credentials_config_input.items()))
+                credentials = CredentialProvider.from_config(
+                    credential_type=credential_type, config=credential_provider_input
+                )
+                client_config_input["credentials"] = credentials
+                client_config = ClientConfig(**client_config_input)
+            else:
+                raise ValueError("credentials section should contain exactly one key-value pair")
+        else:
+            raise ValueError("client_config section is missing in the configuration file")
+
+        return cls(client_config)
+
+    @classmethod
+    def from_yaml(cls, file_path: str | Path) -> CogniteClient:
+        # TODO: docstring, type hints, and error handling
+
+        file_path = Path(file_path)
+        if not file_path.is_file():
+            raise ValueError(f"File {file_path} is not a file")
+
+        try:
+            with file_path.open("r") as file_raw:
+                sub_template = Template(file_raw.read())  # FIXME: use string.Template or expand yaml.SafeLoader class
+
+                if not sub_template.is_valid():  # type: ignore[attr-defined]
+                    raise ValueError("Invalid template")
+
+                all_identifiers = sub_template.get_identifiers()  # type: ignore[attr-defined]
+                env_dict = dict(os.environ)  # FIXME: is load_dotenv() needed?
+
+                missing_env_vars = set(all_identifiers) - set(env_dict.keys())
+                if missing_env_vars:
+                    raise ValueError(f"Missing environment variables: {missing_env_vars}")
+
+                file_env_parsed = sub_template.safe_substitute(env_dict)
+
+                config_input = yaml.safe_load(file_env_parsed)
+        except yaml.YAMLError as e:
+            raise ValueError(f"Error parsing YAML file {file_path}: {e}")
+
+        return cls.from_dict(config_input)
