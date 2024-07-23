@@ -304,4 +304,6 @@ class CogniteClient:
         except yaml.YAMLError as e:
             raise ValueError(f"Error parsing YAML file {file_path}: {e}")
 
+        # TODO: should yaml format use a cognite.client and cognite.global_config format to include both in same file?
+
         return cls.load(config_input)
