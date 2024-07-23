@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
@@ -21,7 +22,6 @@ from cognite.client.data_classes.data_modeling.instances import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -152,8 +152,11 @@ class Query(CogniteObject):
 
     @classmethod
     def load_yaml(cls, data: str) -> Query:
-        yaml = local_import("yaml")
-        return cls.load(yaml.safe_load(data))
+        warnings.warn(
+            "Query.load_yaml is deprecated and will be removed after Oct 2024, please use Query.load",
+            UserWarning,
+        )
+        return cls.load(data)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
