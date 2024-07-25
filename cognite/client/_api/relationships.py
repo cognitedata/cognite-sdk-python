@@ -14,7 +14,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.data_classes.relationships import RelationshipCore
-from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._auxiliary import is_unlimited, remove_duplicates_keep_order, split_into_chunks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -293,8 +293,11 @@ class RelationshipsAPI(APIClient):
             labels=labels,
         ).dump(camel_case=True)
 
-        target_external_ids, source_external_ids = target_external_ids or [], source_external_ids or []
-        if all(len(xids) <= self._LIST_SUBQUERY_LIMIT for xids in (target_external_ids, source_external_ids)):
+        # The API is fine with duplicated target/source IDs - but since we fetch in chunks, we must ensure
+        # we don't ask for the same across chunks so that we don't return duplicates back to the user:
+        unique_target_xids = remove_duplicates_keep_order(target_external_ids or [])
+        unique_source_xids = remove_duplicates_keep_order(source_external_ids or [])
+        if all(len(xids) <= self._LIST_SUBQUERY_LIMIT for xids in (unique_target_xids, unique_source_xids)):
             return self._list(
                 list_cls=RelationshipList,
                 resource_cls=Relationship,
@@ -309,17 +312,17 @@ class RelationshipsAPI(APIClient):
                 f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids is only "
                 f"supported for unlimited queries (pass -1 / None / inf instead of {limit})"
             )
-        target_chunks = split_into_chunks(target_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
-        source_chunks = split_into_chunks(source_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
+        target_chunks = split_into_chunks(unique_target_xids, self._LIST_SUBQUERY_LIMIT) or [[]]
+        source_chunks = split_into_chunks(unique_source_xids, self._LIST_SUBQUERY_LIMIT) or [[]]
 
         # All sources (if any) must be checked against all targets (if any). When either is not
         # given, we must exhaustively list all matching just the source or the target:
         results = []
         for target_xids, source_xids in itertools.product(target_chunks, source_chunks):
             task_filter = filter.copy()
-            if target_external_ids:  # keep null if it was
+            if unique_target_xids:  # keep null if it was
                 task_filter["targetExternalIds"] = target_xids
-            if source_external_ids:
+            if unique_source_xids:
                 task_filter["sourceExternalIds"] = source_xids
             results.extend(
                 self._list(
