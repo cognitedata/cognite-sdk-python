@@ -21,7 +21,7 @@ class CogniteDescribableProperties:
 
 
 class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
-    """This represents the writing format of cognite describable node.
+    """This represents the writing format of Cognite describable node.
 
     It is used to when data is written to CDF.
 
@@ -30,7 +30,7 @@ class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite describable node.
+        external_id (str): The external id of the Cognite describable node.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -59,7 +59,7 @@ class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
 
 
 class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
-    """This represents the reading format of cognite describable node.
+    """This represents the reading format of Cognite describable node.
 
     It is used to when data is read from CDF.
 
@@ -68,7 +68,7 @@ class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite describable node.
+        external_id (str): The external id of the Cognite describable node.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -126,7 +126,7 @@ class CogniteSchedulableProperties:
 
 
 class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
-    """This represents the writing format of cognite schedulable.
+    """This represents the writing format of Cognite schedulable.
 
     It is used to when data is written to CDF.
 
@@ -134,7 +134,7 @@ class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite schedulable.
+        external_id (str): The external id of the Cognite schedulable.
         start_time (datetime | None): The actual start time of an activity (or similar that extends this)
         end_time (datetime | None): The actual end time of an activity (or similar that extends this)
         scheduled_start_time (datetime | None): The planned start time of an activity (or similar that extends this)
@@ -163,7 +163,7 @@ class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
 
 
 class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
-    """This represents the reading format of cognite schedulable.
+    """This represents the reading format of Cognite schedulable.
 
     It is used to when data is read from CDF.
 
@@ -171,7 +171,7 @@ class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite schedulable.
+        external_id (str): The external id of the Cognite schedulable.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -231,12 +231,12 @@ class CogniteSourceableProperties:
 
 
 class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
-    """This represents the writing format of cognite sourceable node.
+    """This represents the writing format of Cognite sourceable node.
 
     It is used to when data is written to CDF.
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite sourceable node.
+        external_id (str): The external id of the Cognite sourceable node.
         source_id (str | None): Identifier from the source system
         source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
         source (DirectRelationReference | tuple[str, str] | None): Direct relation to a source system
@@ -274,13 +274,13 @@ class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
 
 
 class CogniteSourceableNode(CogniteSourceableProperties, TypedNode):
-    """This represents the reading format of cognite sourceable node.
+    """This represents the reading format of Cognite sourceable node.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite sourceable node.
+        external_id (str): The external id of the Cognite sourceable node.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -347,7 +347,7 @@ class CogniteVisualizableProperties:
 
 
 class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
-    """This represents the writing format of cognite visualizable.
+    """This represents the writing format of Cognite visualizable.
 
     It is used to when data is written to CDF.
 
@@ -355,7 +355,7 @@ class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite visualizable.
+        external_id (str): The external id of the Cognite visualizable.
         object_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to an Object3D instance representing the 3D resource
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -375,7 +375,7 @@ class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
 
 
 class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
-    """This represents the reading format of cognite visualizable.
+    """This represents the reading format of Cognite visualizable.
 
     It is used to when data is read from CDF.
 
@@ -383,7 +383,7 @@ class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite visualizable.
+        external_id (str): The external id of the Cognite visualizable.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -427,7 +427,7 @@ class CogniteRevision3DProperties:
 
 
 class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
-    """This represents the writing format of cognite revision 3d.
+    """This represents the writing format of Cognite revision 3D.
 
     It is used to when data is written to CDF.
 
@@ -436,11 +436,11 @@ class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite revision 3d.
+        external_id (str): The external id of the Cognite revision 3D.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -465,7 +465,7 @@ class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
 
 
 class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
-    """This represents the reading format of cognite revision 3d.
+    """This represents the reading format of Cognite revision 3D.
 
     It is used to when data is read from CDF.
 
@@ -474,14 +474,14 @@ class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite revision 3d.
+        external_id (str): The external id of the Cognite revision 3D.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): The model 3d field.
+        model_3d (DirectRelationReference | None): The model 3D field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -527,7 +527,7 @@ class CogniteCubeMapProperties:
 
 
 class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
-    """This represents the writing format of cognite cube map.
+    """This represents the writing format of Cognite cube map.
 
     It is used to when data is written to CDF.
 
@@ -536,7 +536,7 @@ class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cube map.
+        external_id (str): The external id of the Cognite cube map.
         front (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the front projection of the cube map
         back (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the back projection of the cube map
         left (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the left projection of the cube map
@@ -571,7 +571,7 @@ class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
 
 
 class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
-    """This represents the reading format of cognite cube map.
+    """This represents the reading format of Cognite cube map.
 
     It is used to when data is read from CDF.
 
@@ -580,7 +580,7 @@ class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cube map.
+        external_id (str): The external id of the Cognite cube map.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -651,7 +651,7 @@ class CogniteTransformation3DProperties:
 
 
 class CogniteTransformation3DNodeApply(CogniteTransformation3DProperties, TypedNodeApply):
-    """This represents the writing format of cognite transformation 3 d node.
+    """This represents the writing format of Cognite transformation 3D node.
 
     It is used to when data is written to CDF.
 
@@ -660,7 +660,7 @@ class CogniteTransformation3DNodeApply(CogniteTransformation3DProperties, TypedN
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite transformation 3 d node.
+        external_id (str): The external id of the Cognite transformation 3D node.
         translation_x (float | None): The displacement of the object along the X-axis in 3D space
         translation_y (float | None): The displacement of the object along the Y-axis in 3D space
         translation_z (float | None): The displacement of the object along the Z-axis in 3D space
@@ -704,7 +704,7 @@ class CogniteTransformation3DNodeApply(CogniteTransformation3DProperties, TypedN
 
 
 class CogniteTransformation3DNode(CogniteTransformation3DProperties, TypedNode):
-    """This represents the reading format of cognite transformation 3 d node.
+    """This represents the reading format of Cognite transformation 3D node.
 
     It is used to when data is read from CDF.
 
@@ -713,7 +713,7 @@ class CogniteTransformation3DNode(CogniteTransformation3DProperties, TypedNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite transformation 3 d node.
+        external_id (str): The external id of the Cognite transformation 3D node.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -786,7 +786,7 @@ class CogniteAssetClassProperties:
 
 
 class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite asset clas.
+    """This represents the writing format of Cognite asset class.
 
     It is used to when data is written to CDF.
 
@@ -794,7 +794,7 @@ class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNode
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset clas.
+        external_id (str): The external id of the Cognite asset class.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -834,7 +834,7 @@ class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNode
 
 
 class CogniteAssetClass(CogniteAssetClassProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite asset clas.
+    """This represents the reading format of Cognite asset class.
 
     It is used to when data is read from CDF.
 
@@ -842,7 +842,7 @@ class CogniteAssetClass(CogniteAssetClassProperties, CogniteDescribableNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset clas.
+        external_id (str): The external id of the Cognite asset class.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -913,7 +913,7 @@ class CogniteAssetTypeProperties:
 
 
 class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite asset type.
+    """This represents the writing format of Cognite asset type.
 
     It is used to when data is written to CDF.
 
@@ -921,7 +921,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset type.
+        external_id (str): The external id of the Cognite asset type.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -961,7 +961,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
 
 
 class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite asset type.
+    """This represents the reading format of Cognite asset type.
 
     It is used to when data is read from CDF.
 
@@ -969,7 +969,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset type.
+        external_id (str): The external id of the Cognite asset type.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1044,7 +1044,7 @@ class CogniteCADNodeProperties:
 
 
 class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite cad node.
+    """This represents the writing format of Cognite cad node.
 
     It is used to when data is written to CDF.
 
@@ -1052,7 +1052,7 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad node.
+        external_id (str): The external id of the Cognite cad node.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1104,7 +1104,7 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
 
 
 class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite cad node.
+    """This represents the reading format of Cognite cad node.
 
     It is used to when data is read from CDF.
 
@@ -1112,7 +1112,7 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad node.
+        external_id (str): The external id of the Cognite cad node.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1200,7 +1200,7 @@ class CogniteEquipmentTypeProperties:
 
 
 class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite equipment type.
+    """This represents the writing format of Cognite equipment type.
 
     It is used to when data is written to CDF.
 
@@ -1208,7 +1208,7 @@ class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribab
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite equipment type.
+        external_id (str): The external id of the Cognite equipment type.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1254,7 +1254,7 @@ class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribab
 
 
 class CogniteEquipmentType(CogniteEquipmentTypeProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite equipment type.
+    """This represents the reading format of Cognite equipment type.
 
     It is used to when data is read from CDF.
 
@@ -1262,7 +1262,7 @@ class CogniteEquipmentType(CogniteEquipmentTypeProperties, CogniteDescribableNod
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite equipment type.
+        external_id (str): The external id of the Cognite equipment type.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1341,7 +1341,7 @@ class CogniteFileCategoryProperties:
 
 
 class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite file category.
+    """This represents the writing format of Cognite file category.
 
     It is used to when data is written to CDF.
 
@@ -1349,7 +1349,7 @@ class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribable
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite file category.
+        external_id (str): The external id of the Cognite file category.
         code (str): Identified category code, such as 'AA' for Accounting (from Norsok)
         name (str | None): Name of the instance
         description (str | None): Description of the instance
@@ -1392,7 +1392,7 @@ class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribable
 
 
 class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite file category.
+    """This represents the reading format of Cognite file category.
 
     It is used to when data is read from CDF.
 
@@ -1400,7 +1400,7 @@ class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode)
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite file category.
+        external_id (str): The external id of the Cognite file category.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1475,7 +1475,7 @@ class CogniteImage360StationProperties:
 
 
 class CogniteImage360StationApply(CogniteImage360StationProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite image 360 station.
+    """This represents the writing format of Cognite image 360 station.
 
     It is used to when data is written to CDF.
 
@@ -1483,7 +1483,7 @@ class CogniteImage360StationApply(CogniteImage360StationProperties, CogniteDescr
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 station.
+        external_id (str): The external id of the Cognite image 360 station.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1520,7 +1520,7 @@ class CogniteImage360StationApply(CogniteImage360StationProperties, CogniteDescr
 
 
 class CogniteImage360Station(CogniteImage360StationProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite image 360 station.
+    """This represents the reading format of Cognite image 360 station.
 
     It is used to when data is read from CDF.
 
@@ -1528,7 +1528,7 @@ class CogniteImage360Station(CogniteImage360StationProperties, CogniteDescribabl
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 station.
+        external_id (str): The external id of the Cognite image 360 station.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1595,7 +1595,7 @@ class CogniteModel3DProperties:
 
 
 class CogniteModel3DApply(CogniteModel3DProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite model 3d.
+    """This represents the writing format of Cognite model 3D.
 
     It is used to when data is written to CDF.
 
@@ -1603,7 +1603,7 @@ class CogniteModel3DApply(CogniteModel3DProperties, CogniteDescribableNodeApply)
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite model 3d.
+        external_id (str): The external id of the Cognite model 3D.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1640,7 +1640,7 @@ class CogniteModel3DApply(CogniteModel3DProperties, CogniteDescribableNodeApply)
 
 
 class CogniteModel3D(CogniteModel3DProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite model 3d.
+    """This represents the reading format of Cognite model 3D.
 
     It is used to when data is read from CDF.
 
@@ -1648,7 +1648,7 @@ class CogniteModel3D(CogniteModel3DProperties, CogniteDescribableNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite model 3d.
+        external_id (str): The external id of the Cognite model 3D.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1720,7 +1720,7 @@ class CogniteObject3DProperties:
 
 
 class CogniteObject3DApply(CogniteObject3DProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite object 3d.
+    """This represents the writing format of Cognite object 3D.
 
     It is used to when data is written to CDF.
 
@@ -1728,7 +1728,7 @@ class CogniteObject3DApply(CogniteObject3DProperties, CogniteDescribableNodeAppl
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite object 3d.
+        external_id (str): The external id of the Cognite object 3D.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1780,7 +1780,7 @@ class CogniteObject3DApply(CogniteObject3DProperties, CogniteDescribableNodeAppl
 
 
 class CogniteObject3D(CogniteObject3DProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite object 3d.
+    """This represents the reading format of Cognite object 3D.
 
     It is used to when data is read from CDF.
 
@@ -1788,7 +1788,7 @@ class CogniteObject3D(CogniteObject3DProperties, CogniteDescribableNode):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite object 3d.
+        external_id (str): The external id of the Cognite object 3D.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1879,7 +1879,7 @@ class CognitePointCloudVolumeProperties:
 
 
 class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite point cloud volume.
+    """This represents the writing format of Cognite point cloud volume.
 
     It is used to when data is written to CDF.
 
@@ -1887,7 +1887,7 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud volume.
+        external_id (str): The external id of the Cognite point cloud volume.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -1942,7 +1942,7 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
 
 
 class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite point cloud volume.
+    """This represents the reading format of Cognite point cloud volume.
 
     It is used to when data is read from CDF.
 
@@ -1950,7 +1950,7 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud volume.
+        external_id (str): The external id of the Cognite point cloud volume.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -2041,7 +2041,7 @@ class CogniteSourceSystemProperties:
 
 
 class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of cognite source system.
+    """This represents the writing format of Cognite source system.
 
     It is used to when data is written to CDF.
 
@@ -2049,7 +2049,7 @@ class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribable
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite source system.
+        external_id (str): The external id of the Cognite source system.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -2089,7 +2089,7 @@ class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribable
 
 
 class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode):
-    """This represents the reading format of cognite source system.
+    """This represents the reading format of Cognite source system.
 
     It is used to when data is read from CDF.
 
@@ -2097,7 +2097,7 @@ class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode)
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite source system.
+        external_id (str): The external id of the Cognite source system.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -2170,7 +2170,7 @@ class CogniteActivityProperties:
 class CogniteActivityApply(
     CogniteActivityProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply, CogniteSchedulableApply
 ):
-    """This represents the writing format of cognite activity.
+    """This represents the writing format of Cognite activity.
 
     It is used to when data is written to CDF.
 
@@ -2178,7 +2178,7 @@ class CogniteActivityApply(
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite activity.
+        external_id (str): The external id of the Cognite activity.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -2271,7 +2271,7 @@ class CogniteActivityApply(
 
 
 class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, CogniteSourceableNode, CogniteSchedulable):
-    """This represents the reading format of cognite activity.
+    """This represents the reading format of Cognite activity.
 
     It is used to when data is read from CDF.
 
@@ -2279,7 +2279,7 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite activity.
+        external_id (str): The external id of the Cognite activity.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -2422,7 +2422,7 @@ class CogniteEquipmentProperties:
 
 
 class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    """This represents the writing format of cognite equipment.
+    """This represents the writing format of Cognite equipment.
 
     It is used to when data is written to CDF.
 
@@ -2430,7 +2430,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite equipment.
+        external_id (str): The external id of the Cognite equipment.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -2505,7 +2505,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
 
 
 class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, CogniteSourceableNode):
-    """This represents the reading format of cognite equipment.
+    """This represents the reading format of Cognite equipment.
 
     It is used to when data is read from CDF.
 
@@ -2513,7 +2513,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite equipment.
+        external_id (str): The external id of the Cognite equipment.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -2633,7 +2633,7 @@ class CogniteFileProperties:
 
 
 class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    """This represents the writing format of cognite file.
+    """This represents the writing format of Cognite file.
 
     It is used to when data is written to CDF.
 
@@ -2641,7 +2641,7 @@ class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, Cogni
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite file.
+        external_id (str): The external id of the Cognite file.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -2722,7 +2722,7 @@ class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, Cogni
 
 
 class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceableNode):
-    """This represents the reading format of cognite file.
+    """This represents the reading format of Cognite file.
 
     It is used to when data is read from CDF.
 
@@ -2730,7 +2730,7 @@ class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceab
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite file.
+        external_id (str): The external id of the Cognite file.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -2858,12 +2858,12 @@ class CogniteTimeSeriesProperties:
 
 
 class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
-    """This represents the writing format of cognite time series.
+    """This represents the writing format of Cognite time series.
 
     It is used to when data is written to CDF.
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite time series.
+        external_id (str): The external id of the Cognite time series.
         type_ (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
@@ -2944,13 +2944,13 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
 
 
 class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, CogniteSourceableNode):
-    """This represents the reading format of cognite time series.
+    """This represents the reading format of Cognite time series.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite time series.
+        external_id (str): The external id of the Cognite time series.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3080,7 +3080,7 @@ class CogniteAssetProperties:
 class CogniteAssetApply(
     CogniteAssetProperties, CogniteVisualizableApply, CogniteDescribableNodeApply, CogniteSourceableNodeApply
 ):
-    """This represents the writing format of cognite asset.
+    """This represents the writing format of Cognite asset.
 
     It is used to when data is written to CDF.
 
@@ -3088,7 +3088,7 @@ class CogniteAssetApply(
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset.
+        external_id (str): The external id of the Cognite asset.
         object_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to an Object3D instance representing the 3D resource
         name (str | None): Name of the instance
         description (str | None): Description of the instance
@@ -3177,7 +3177,7 @@ class CogniteAssetApply(
 
 
 class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):
-    """This represents the reading format of cognite asset.
+    """This represents the reading format of Cognite asset.
 
     It is used to when data is read from CDF.
 
@@ -3185,7 +3185,7 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite asset.
+        external_id (str): The external id of the Cognite asset.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3329,12 +3329,12 @@ class CogniteCADRevisionProperties:
 
 
 class CogniteCADRevisionApply(CogniteCADRevisionProperties, CogniteRevision3DApply):
-    """This represents the writing format of cognite cad revision.
+    """This represents the writing format of Cognite cad revision.
 
     It is used to when data is written to CDF.
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad revision.
+        external_id (str): The external id of the Cognite cad revision.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
@@ -3371,13 +3371,13 @@ class CogniteCADRevisionApply(CogniteCADRevisionProperties, CogniteRevision3DApp
 
 
 class CogniteCADRevision(CogniteCADRevisionProperties, CogniteRevision3D):
-    """This represents the reading format of cognite cad revision.
+    """This represents the reading format of Cognite cad revision.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad revision.
+        external_id (str): The external id of the Cognite cad revision.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3444,7 +3444,7 @@ class CogniteImage360CollectionProperties:
 class CogniteImage360CollectionApply(
     CogniteImage360CollectionProperties, CogniteDescribableNodeApply, CogniteRevision3DApply
 ):
-    """This represents the writing format of cognite image 360 collection.
+    """This represents the writing format of Cognite image 360 collection.
 
     It is used to when data is written to CDF.
 
@@ -3452,7 +3452,7 @@ class CogniteImage360CollectionApply(
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 collection.
+        external_id (str): The external id of the Cognite image 360 collection.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3460,7 +3460,7 @@ class CogniteImage360CollectionApply(
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -3506,7 +3506,7 @@ class CogniteImage360CollectionApply(
 
 
 class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDescribableNode, CogniteRevision3D):
-    """This represents the reading format of cognite image 360 collection.
+    """This represents the reading format of Cognite image 360 collection.
 
     It is used to when data is read from CDF.
 
@@ -3514,7 +3514,7 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 collection.
+        external_id (str): The external id of the Cognite image 360 collection.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3525,7 +3525,7 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): The model 3d field.
+        model_3d (DirectRelationReference | None): The model 3D field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -3604,7 +3604,7 @@ class CognitePointCloudRevisionProperties:
 
 
 class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, CogniteRevision3DApply):
-    """This represents the writing format of cognite point cloud revision.
+    """This represents the writing format of Cognite point cloud revision.
 
     It is used to when data is written to CDF.
 
@@ -3612,7 +3612,7 @@ class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognit
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud revision.
+        external_id (str): The external id of the Cognite point cloud revision.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
         type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
@@ -3649,7 +3649,7 @@ class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognit
 
 
 class CognitePointCloudRevision(CognitePointCloudRevisionProperties, CogniteRevision3D):
-    """This represents the reading format of cognite point cloud revision.
+    """This represents the reading format of Cognite point cloud revision.
 
     It is used to when data is read from CDF.
 
@@ -3657,7 +3657,7 @@ class CognitePointCloudRevision(CognitePointCloudRevisionProperties, CogniteRevi
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud revision.
+        external_id (str): The external id of the Cognite point cloud revision.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3726,12 +3726,12 @@ class CogniteImage360Properties:
 
 
 class CogniteImage360Apply(CogniteImage360Properties, CogniteTransformation3DNodeApply, CogniteCubeMapApply):
-    """This represents the writing format of cognite image 360.
+    """This represents the writing format of Cognite image 360.
 
     It is used to when data is written to CDF.
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360.
+        external_id (str): The external id of the Cognite image 360.
         translation_x (float | None): The displacement of the object along the X-axis in 3D space
         translation_y (float | None): The displacement of the object along the Y-axis in 3D space
         translation_z (float | None): The displacement of the object along the Z-axis in 3D space
@@ -3815,13 +3815,13 @@ class CogniteImage360Apply(CogniteImage360Properties, CogniteTransformation3DNod
 
 
 class CogniteImage360(CogniteImage360Properties, CogniteTransformation3DNode, CogniteCubeMap):
-    """This represents the reading format of cognite image 360.
+    """This represents the reading format of Cognite image 360.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360.
+        external_id (str): The external id of the Cognite image 360.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3949,7 +3949,7 @@ class CogniteCADModelProperties:
 
 
 class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
-    """This represents the writing format of cognite cad model.
+    """This represents the writing format of Cognite cad model.
 
     It is used to when data is written to CDF.
 
@@ -3957,7 +3957,7 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad model.
+        external_id (str): The external id of the Cognite cad model.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3994,7 +3994,7 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
 
 
 class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
-    """This represents the reading format of cognite cad model.
+    """This represents the reading format of Cognite cad model.
 
     It is used to when data is read from CDF.
 
@@ -4002,7 +4002,7 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite cad model.
+        external_id (str): The external id of the Cognite cad model.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -4067,7 +4067,7 @@ class CogniteImage360ModelProperties:
 
 
 class CogniteImage360ModelApply(CogniteImage360ModelProperties, CogniteModel3DApply):
-    """This represents the writing format of cognite image 360 model.
+    """This represents the writing format of Cognite image 360 model.
 
     It is used to when data is written to CDF.
 
@@ -4075,7 +4075,7 @@ class CogniteImage360ModelApply(CogniteImage360ModelProperties, CogniteModel3DAp
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 model.
+        external_id (str): The external id of the Cognite image 360 model.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -4112,7 +4112,7 @@ class CogniteImage360ModelApply(CogniteImage360ModelProperties, CogniteModel3DAp
 
 
 class CogniteImage360Model(CogniteImage360ModelProperties, CogniteModel3D):
-    """This represents the reading format of cognite image 360 model.
+    """This represents the reading format of Cognite image 360 model.
 
     It is used to when data is read from CDF.
 
@@ -4120,7 +4120,7 @@ class CogniteImage360Model(CogniteImage360ModelProperties, CogniteModel3D):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 model.
+        external_id (str): The external id of the Cognite image 360 model.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -4185,7 +4185,7 @@ class CognitePointCloudModelProperties:
 
 
 class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel3DApply):
-    """This represents the writing format of cognite point cloud model.
+    """This represents the writing format of Cognite point cloud model.
 
     It is used to when data is written to CDF.
 
@@ -4193,7 +4193,7 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud model.
+        external_id (str): The external id of the Cognite point cloud model.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -4230,7 +4230,7 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
 
 
 class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
-    """This represents the reading format of cognite point cloud model.
+    """This represents the reading format of Cognite point cloud model.
 
     It is used to when data is read from CDF.
 
@@ -4238,7 +4238,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite point cloud model.
+        external_id (str): The external id of the Cognite point cloud model.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -4297,7 +4297,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
 
 
 class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
-    """This represents the writing format of cognite describable edge.
+    """This represents the writing format of Cognite describable edge.
 
     It is used to when data is written to CDF.
 
@@ -4306,7 +4306,7 @@ class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite describable edge.
+        external_id (str): The external id of the Cognite describable edge.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4339,7 +4339,7 @@ class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
 
 
 class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
-    """This represents the reading format of cognite describable edge.
+    """This represents the reading format of Cognite describable edge.
 
     It is used to when data is read from CDF.
 
@@ -4348,7 +4348,7 @@ class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite describable edge.
+        external_id (str): The external id of the Cognite describable edge.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4413,13 +4413,13 @@ class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
 
 
 class CogniteSourceableEdgeApply(CogniteSourceableProperties, TypedEdgeApply):
-    """This represents the writing format of cognite sourceable edge.
+    """This represents the writing format of Cognite sourceable edge.
 
     It is used to when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite sourceable edge.
+        external_id (str): The external id of the Cognite sourceable edge.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4461,13 +4461,13 @@ class CogniteSourceableEdgeApply(CogniteSourceableProperties, TypedEdgeApply):
 
 
 class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
-    """This represents the reading format of cognite sourceable edge.
+    """This represents the reading format of Cognite sourceable edge.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite sourceable edge.
+        external_id (str): The external id of the Cognite sourceable edge.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4544,7 +4544,7 @@ class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
 
 
 class CogniteTransformation3DEdgeApply(CogniteTransformation3DProperties, TypedEdgeApply):
-    """This represents the writing format of cognite transformation 3 d edge.
+    """This represents the writing format of Cognite transformation 3D edge.
 
     It is used to when data is written to CDF.
 
@@ -4553,7 +4553,7 @@ class CogniteTransformation3DEdgeApply(CogniteTransformation3DProperties, TypedE
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite transformation 3 d edge.
+        external_id (str): The external id of the Cognite transformation 3D edge.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4601,7 +4601,7 @@ class CogniteTransformation3DEdgeApply(CogniteTransformation3DProperties, TypedE
 
 
 class CogniteTransformation3DEdge(CogniteTransformation3DProperties, TypedEdge):
-    """This represents the reading format of cognite transformation 3 d edge.
+    """This represents the reading format of Cognite transformation 3D edge.
 
     It is used to when data is read from CDF.
 
@@ -4610,7 +4610,7 @@ class CogniteTransformation3DEdge(CogniteTransformation3DProperties, TypedEdge):
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite transformation 3 d edge.
+        external_id (str): The external id of the Cognite transformation 3D edge.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4701,7 +4701,7 @@ class CogniteAnnotationProperties:
 
 
 class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdgeApply, CogniteSourceableEdgeApply):
-    """This represents the writing format of cognite annotation.
+    """This represents the writing format of Cognite annotation.
 
     It is used to when data is written to CDF.
 
@@ -4709,7 +4709,7 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite annotation.
+        external_id (str): The external id of the Cognite annotation.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4786,7 +4786,7 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
 
 
 class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, CogniteSourceableEdge):
-    """This represents the reading format of cognite annotation.
+    """This represents the reading format of Cognite annotation.
 
     It is used to when data is read from CDF.
 
@@ -4794,7 +4794,7 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite annotation.
+        external_id (str): The external id of the Cognite annotation.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -4925,7 +4925,7 @@ class CogniteDiagramAnnotationProperties:
 
 
 class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteAnnotationApply):
-    """This represents the writing format of cognite diagram annotation.
+    """This represents the writing format of Cognite diagram annotation.
 
     It is used to when data is written to CDF.
 
@@ -4933,7 +4933,7 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite diagram annotation.
+        external_id (str): The external id of the Cognite diagram annotation.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -5036,7 +5036,7 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
 
 
 class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnotation):
-    """This represents the reading format of cognite diagram annotation.
+    """This represents the reading format of Cognite diagram annotation.
 
     It is used to when data is read from CDF.
 
@@ -5044,7 +5044,7 @@ class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnota
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite diagram annotation.
+        external_id (str): The external id of the Cognite diagram annotation.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -5199,13 +5199,13 @@ class CogniteImage360AnnotationProperties:
 
 
 class CogniteImage360AnnotationApply(CogniteImage360AnnotationProperties, CogniteAnnotationApply):
-    """This represents the writing format of cognite image 360 annotation.
+    """This represents the writing format of Cognite image 360 annotation.
 
     It is used to when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 annotation.
+        external_id (str): The external id of the Cognite image 360 annotation.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -5278,13 +5278,13 @@ class CogniteImage360AnnotationApply(CogniteImage360AnnotationProperties, Cognit
 
 
 class CogniteImage360Annotation(CogniteImage360AnnotationProperties, CogniteAnnotation):
-    """This represents the reading format of cognite image 360 annotation.
+    """This represents the reading format of Cognite image 360 annotation.
 
     It is used to when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the cognite image 360 annotation.
+        external_id (str): The external id of the Cognite image 360 annotation.
         type (DirectRelationReference): The type of edge.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
