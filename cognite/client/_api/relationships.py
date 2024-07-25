@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import itertools
-import warnings
-from functools import partial
 from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
@@ -17,7 +15,6 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.data_classes.relationships import RelationshipCore
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -312,41 +309,30 @@ class RelationshipsAPI(APIClient):
                 f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids is only "
                 f"supported for unlimited queries (pass -1 / None / inf instead of {limit})"
             )
-        tasks = []
         target_chunks = split_into_chunks(target_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
         source_chunks = split_into_chunks(source_external_ids, self._LIST_SUBQUERY_LIMIT) or [[]]
 
         # All sources (if any) must be checked against all targets (if any). When either is not
         # given, we must exhaustively list all matching just the source or the target:
+        results = []
         for target_xids, source_xids in itertools.product(target_chunks, source_chunks):
             task_filter = filter.copy()
             if target_external_ids:  # keep null if it was
                 task_filter["targetExternalIds"] = target_xids
             if source_external_ids:
                 task_filter["sourceExternalIds"] = source_xids
-            tasks.append({"filter": task_filter})
-
-        if partitions is not None:
-            warnings.warn(
-                f"When one or both of source/target external IDs have more than {self._LIST_SUBQUERY_LIMIT} "
-                "elements, `partitions` is ignored",
-                UserWarning,
+            results.extend(
+                self._list(
+                    list_cls=RelationshipList,
+                    resource_cls=Relationship,
+                    method="POST",
+                    limit=None,
+                    filter=task_filter,
+                    partitions=partitions,
+                    other_params={"fetchResources": fetch_resources},
+                ).data
             )
-        tasks_summary = execute_tasks(
-            partial(
-                self._list,
-                list_cls=RelationshipList,
-                resource_cls=Relationship,
-                method="POST",
-                limit=None,
-                partitions=None,  # Otherwise, workers will spawn workers -> deadlock (singleton threadpool)
-                other_params={"fetchResources": fetch_resources},
-            ),
-            tasks,
-            max_workers=self._config.max_workers,
-        )
-        tasks_summary.raise_compound_exception_if_failed_tasks()
-        return RelationshipList(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+        return RelationshipList(results, cognite_client=self._cognite_client)
 
     @overload
     def create(self, relationship: Relationship | RelationshipWrite) -> Relationship: ...
