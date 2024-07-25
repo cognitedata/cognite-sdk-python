@@ -12,9 +12,6 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
     TypedNode,
     TypedNodeApply,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
-
-FeaturePreviewWarning("alpha", "alpha", "Core Data Model").warn()
 
 
 class CogniteDescribableProperties:
