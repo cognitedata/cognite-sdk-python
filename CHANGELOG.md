@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.9] - 2024-07-22
+### Changed
+- [Feature Preview] Updated the Core Model to require keyword arguments for all classes and include
+  docstring.
+
+
 ## [7.54.8] - 2024-07-22
 ### Added
 - The method `client.functions.schedules.retrieve` now accepts the missing parameter `ignore_unknown_ids` as well
