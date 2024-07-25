@@ -927,7 +927,7 @@ class TestFunctionSchedulesAPI:
                 description="Hi",
             )
 
-        call_args = post_mock.call_args[1]["json"]["items"][0]
+        call_args = post_mock.call_args[0][1]["items"][0]
         assert "functionId" in call_args
         assert "functionExternalId" not in call_args
         assert isinstance(res, FunctionSchedule)

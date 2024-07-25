@@ -1,10 +1,34 @@
 from __future__ import annotations
 
+from contextlib import suppress
+
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function, FunctionList
-from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.data_classes import Function, FunctionList, FunctionSchedule, FunctionScheduleWrite
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+
+
+def handle(client, data) -> str:
+    return "Hello, world!"
+
+
+@pytest.fixture(scope="module")
+def a_function(cognite_client: CogniteClient) -> Function:
+    name = "python-sdk-test-function"
+    external_id = "python-sdk-test-function"
+    description = "test function"
+    retrieved = cognite_client.functions.retrieve_multiple(external_ids=[external_id], ignore_unknown_ids=True)
+    if retrieved:
+        return retrieved[0]
+
+    function = cognite_client.functions.create(
+        name=name,
+        external_id=external_id,
+        description=description,
+        function_handle=handle,
+    )
+    return function
 
 
 class TestFunctionsAPI:
@@ -51,3 +75,58 @@ class TestFunctionsAPI:
             break
         else:
             assert False, "Expected at least one function"
+
+
+class TestFunctionSchedulesAPI:
+    def test_create_retrieve_delete(self, cognite_client: CogniteClient, a_function: Function) -> None:
+        my_schedule = FunctionScheduleWrite(
+            name="python-sdk-test-schedule",
+            cron_expression="0 0 1 1 *",
+            function_external_id=a_function.external_id,
+            data={"key": "value"},
+        )
+
+        created: FunctionSchedule | None = None
+        try:
+            created = cognite_client.functions.schedules.create(my_schedule)
+
+            assert created.as_write().dump() == my_schedule.dump()
+
+            retrieved = cognite_client.functions.schedules.retrieve(id=created.id)
+            assert isinstance(retrieved, FunctionSchedule)
+            assert retrieved.dump() == created.dump()
+
+            cognite_client.functions.schedules.delete(id=created.id)
+        finally:
+            if created:
+                with suppress(CogniteAPIError):
+                    cognite_client.functions.schedules.delete(id=created.id)
+
+    def test_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
+        # The ID 123 should not exist
+        retrieved = cognite_client.functions.schedules.retrieve(id=123)
+
+        assert retrieved is None
+
+    def test_retrieve_known_and_unknown(self, cognite_client: CogniteClient, a_function: Function) -> None:
+        my_schedule = FunctionScheduleWrite(
+            name="python-sdk-test-schedule-known",
+            cron_expression="0 0 1 1 *",
+            function_id=a_function.id,
+            data={"key": "value"},
+        )
+        created: FunctionSchedule | None = None
+        try:
+            created = cognite_client.functions.schedules.create(my_schedule)
+
+            retrieved = cognite_client.functions.schedules.retrieve([created.id, 123], ignore_unknown_ids=True)
+            assert len(retrieved) == 1
+            assert retrieved[0].id == created.id
+        finally:
+            if created:
+                with suppress(CogniteAPIError):
+                    cognite_client.functions.schedules.delete(id=created.id)
+
+    def test_raise_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteNotFoundError):
+            cognite_client.functions.schedules.retrieve(id=[123])
