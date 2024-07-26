@@ -370,9 +370,9 @@ class GroupsAPI(APIClient):
                 cls,
                 resource_list: Iterable[dict[str, Any]],
                 cognite_client: CogniteClient | None = None,
-                allow_unknown: bool = True,
+                allow_unknown: bool = False,
             ) -> GroupList:
-                return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=allow_unknown)
+                return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
 
         class GroupAdapter(Group):
             @classmethod
@@ -380,9 +380,9 @@ class GroupsAPI(APIClient):
                 cls,
                 resource: dict[str, Any],
                 cognite_client: CogniteClient | None = None,
-                allow_unknown: bool = True,
+                allow_unknown: bool = False,
             ) -> Group:
-                return Group._load(resource, cognite_client=cognite_client, allow_unknown=allow_unknown)
+                return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
 
         return self._create_multiple(
             list_cls=GroupListAdapter, resource_cls=GroupAdapter, items=group, input_resource_cls=GroupWrite
