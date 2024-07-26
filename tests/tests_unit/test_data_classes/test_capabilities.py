@@ -429,7 +429,7 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
         action_err_match = "^'UN-KN-OWN' is not a valid AssetsAcl.Action$"
         scope_err_match = "^Could not instantiate AssetsAcl due to: Unable to parse Scope, 'astronautSpace' is not"
         with pytest.raises(ValueError, match=acl_err_match):
-            GroupList.load(groups.dump(camel_case=True))
+            GroupList._load(groups.dump(camel_case=True), allow_unknown=False)
 
         # ...and ensure each individual (acl/action/scope) raises:
         u1, u2, u3, u4 = unknown_acls_items
