@@ -267,7 +267,7 @@ class IAMAPI(APIClient):
         return self.compare_capabilities(existing_capabilities, desired_capabilities)
 
 
-class GroupListAdapter(GroupList):
+class _GroupListAdapter(GroupList):
     @classmethod
     def _load(  # type: ignore[override]
         cls,
@@ -278,7 +278,7 @@ class GroupListAdapter(GroupList):
         return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
 
 
-class GroupAdapter(Group):
+class _GroupAdapter(Group):
     @classmethod
     def _load(  # type: ignore[override]
         cls,
@@ -292,7 +292,7 @@ class GroupAdapter(Group):
 # We need an adapter for GroupWrite in case the API returns a non 200-status code.
 # As, then, in the unwrap_element method, the _create_multiple method will try to load the resource.
 # This will fail if the GroupWrite contains an UnknownAcl.
-class GroupWriteAdapter(GroupWrite):
+class _GroupWriteAdapter(GroupWrite):
     @classmethod
     def _load(  # type: ignore[override]
         cls,
@@ -401,7 +401,7 @@ class GroupsAPI(APIClient):
         """
 
         return self._create_multiple(
-            list_cls=GroupListAdapter, resource_cls=GroupAdapter, items=group, input_resource_cls=GroupWriteAdapter
+            list_cls=_GroupListAdapter, resource_cls=_GroupAdapter, items=group, input_resource_cls=_GroupWriteAdapter
         )
 
     def delete(self, id: int | Sequence[int]) -> None:

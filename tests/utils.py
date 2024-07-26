@@ -89,6 +89,7 @@ def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
         # as these use the PropertyOptions descriptor.
         and all(parent not in {TypedNodeApply, TypedEdgeApply, TypedEdge, TypedNode} for parent in sub.__mro__)
+        and not sub.__name__.startswith("_")
     ]
 
 
