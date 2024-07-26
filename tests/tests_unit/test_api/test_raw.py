@@ -349,7 +349,7 @@ class TestRawRowsDataframe:
         assert res_df_last_updated_time_in_index.shape == (0, 0)
         assert res_df.equals(res_df_last_updated_time_in_index)
 
-    def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_rows):
+    def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_row):
         import pandas as pd
 
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
@@ -373,7 +373,10 @@ class TestRawRowsDataframe:
         assert res_df_last_updated_time_in_index.shape == (2, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
         assert res_df_last_updated_time_in_index.index.names == ["key", "last_updated_time"]
-        assert list(res_df_last_updated_time_in_index.index.levels[1]) == [0, 1]
+        assert list(res_df_last_updated_time_in_index.index.levels[1]) == [
+            pd.Timestamp(0, unit="ms"),
+            pd.Timestamp(1, unit="ms"),
+        ]
 
 
 @pytest.mark.parametrize("raw_cls", (Row, RowWrite))

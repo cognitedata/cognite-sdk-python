@@ -757,7 +757,8 @@ class RawRowsAPI(APIClient):
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
         if last_updated_time_in_index:
             idx = pd.MultiIndex.from_tuples(
-                [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows], names=["key", "last_updated_time"]
+                [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
+                names=["key", "last_updated_time"],
             )
         else:
             idx = [r.key for r in rows]
