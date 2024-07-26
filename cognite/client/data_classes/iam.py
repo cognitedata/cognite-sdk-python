@@ -141,7 +141,7 @@ class Group(GroupCore):
         return self.members is not None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = True) -> Group:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
@@ -231,7 +231,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         cls,
         resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
-        allow_unknown: bool = True,
+        allow_unknown: bool = False,
     ) -> Self:
         return cls(
             [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],

@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -363,7 +363,30 @@ class GroupsAPI(APIClient):
                 >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
-        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
+
+        class GroupListAdapter(GroupList):
+            @classmethod
+            def _load(  # type: ignore[override]
+                cls,
+                resource_list: Iterable[dict[str, Any]],
+                cognite_client: CogniteClient | None = None,
+                allow_unknown: bool = True,
+            ) -> GroupList:
+                return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=allow_unknown)
+
+        class GroupAdapter(Group):
+            @classmethod
+            def _load(  # type: ignore[override]
+                cls,
+                resource: dict[str, Any],
+                cognite_client: CogniteClient | None = None,
+                allow_unknown: bool = True,
+            ) -> Group:
+                return Group._load(resource, cognite_client=cognite_client, allow_unknown=allow_unknown)
+
+        return self._create_multiple(
+            list_cls=GroupListAdapter, resource_cls=GroupAdapter, items=group, input_resource_cls=GroupWrite
+        )
 
     def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
