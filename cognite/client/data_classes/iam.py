@@ -54,11 +54,12 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         self.members = members
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
-            capabilities=[Capability.load(c, allow_unknown=False) for c in resource.get("capabilities", [])] or None,
+            capabilities=[Capability.load(c, allow_unknown=allow_unknown) for c in resource.get("capabilities", [])]
+            or None,
             metadata=resource.get("metadata"),
             members=resource.get("members"),
         )
@@ -140,7 +141,7 @@ class Group(GroupCore):
         return self.members is not None
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = True) -> Group:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
@@ -209,6 +210,18 @@ class GroupWrite(GroupCore):
 class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
     _RESOURCE = GroupWrite
 
+    @classmethod
+    def _load(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
+        allow_unknown: bool = False,
+    ) -> Self:
+        return cls(
+            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
+            cognite_client=cognite_client,
+        )
+
 
 class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
@@ -218,7 +231,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         cls,
         resource_list: Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
-        allow_unknown: bool = False,
+        allow_unknown: bool = True,
     ) -> Self:
         return cls(
             [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
