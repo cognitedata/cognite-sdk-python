@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.11] - 2024-07-26
+### Fixed
+- Creating a Group with an `UnknownAcl` supported by the API no longer raises a client-side `ValueError` after
+  successfully creating the group.
+
 ## [7.54.10] - 2024-07-26
 ### Changed
 - Added option to add last_updated_time to the index of client.raw.rows.retrieve_dataframe.
