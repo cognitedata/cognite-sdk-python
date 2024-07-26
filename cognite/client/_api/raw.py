@@ -723,6 +723,7 @@ class RawRowsAPI(APIClient):
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
+        last_updated_time_in_index: bool = False,
     ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -739,6 +740,7 @@ class RawRowsAPI(APIClient):
                 When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
                 (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+            last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
 
         Returns:
             pd.DataFrame: The requested rows in a pandas dataframe.
@@ -753,7 +755,13 @@ class RawRowsAPI(APIClient):
         """
         pd = local_import("pandas")
         rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
-        idx = [r.key for r in rows]
+        if last_updated_time_in_index:
+            idx = pd.MultiIndex.from_tuples(
+                [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
+                names=["key", "last_updated_time"],
+            )
+        else:
+            idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx)
 

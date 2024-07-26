@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.10] - 2024-07-26
+### Changed
+- Added option to add last_updated_time to the index of client.raw.rows.retrieve_dataframe.
+
 ## [7.54.9] - 2024-07-22
 ### Changed
 - [Feature Preview] Updated the Core Model to require keyword arguments for all classes and include
