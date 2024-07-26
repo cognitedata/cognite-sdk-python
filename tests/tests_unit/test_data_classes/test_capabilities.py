@@ -435,13 +435,13 @@ class TestCogniteClientDoesntRaiseOnUnknownAcls:
         u1, u2, u3, u4 = unknown_acls_items
         group = {"name": "me", "id": 123, "source_id": "huh"}
         with pytest.raises(ValueError, match=acl_err_match):
-            Group.load({**group, "capabilities": [u1]})  # Unknown capability
+            Group._load({**group, "capabilities": [u1]}, allow_unknown=False)  # Unknown capability
         with pytest.raises(ValueError, match=action_err_match):
-            Group.load({**group, "capabilities": [u2]})  # Unknown action
+            Group._load({**group, "capabilities": [u2]}, allow_unknown=False)  # Unknown action
         with pytest.raises(ValueError, match=scope_err_match):
-            Group.load({**group, "capabilities": [u3]})  # Unknown scope
+            Group._load({**group, "capabilities": [u3]}, allow_unknown=False)  # Unknown scope
         with pytest.raises(ValueError, match=acl_err_match):
-            Group.load({**group, "capabilities": [u4]})  # Unknown -everything-
+            Group._load({**group, "capabilities": [u4]}, allow_unknown=False)  # Unknown -everything-
 
     def test_token_inspect(self, cognite_client, mock_token_inspect_resp):
         # Mostly a repeat of test_groups_list, ensuring token/inspect won't ever raise
