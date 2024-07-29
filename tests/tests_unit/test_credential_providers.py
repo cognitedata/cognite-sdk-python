@@ -14,26 +14,28 @@ from cognite.client.exceptions import CogniteAuthError
 
 
 class TestCredentialProvider:
-    INVALID_CREDENTIAL_ERROR = r"Invalid credential provider type: .*"
-    INVALID_INPUT_TYPE_ERROR = (
-        r"Credential provider configuration must be a dictionary containing exactly one top level key."
+    INVALID_CREDENTIAL_ERROR = "Invalid credential provider type provided, the valid options are:"
+    INVALID_INPUT_LENGTH_ERROR = (
+        "Credential provider configuration must be a dictionary containing exactly one top level key."
     )
+    INVALID_INPUT_TYPE_ERROR = "Resource must be json or yaml str, or dict, not"
 
     @pytest.mark.parametrize(
-        "config,error_message",
+        "config,error_type,error_message",
         [
-            pytest.param({"foo": "abc"}, INVALID_CREDENTIAL_ERROR, id="Invalid input: credential type"),
-            pytest.param("token", INVALID_INPUT_TYPE_ERROR, id="Invalid input: not a dict, str"),
-            pytest.param({}, INVALID_INPUT_TYPE_ERROR, id="Invalid input: empty dict"),
+            pytest.param({"foo": "abc"}, ValueError, INVALID_CREDENTIAL_ERROR, id="Invalid input: credential type"),
+            pytest.param("token", TypeError, INVALID_INPUT_TYPE_ERROR, id="Invalid input: not a dict, str"),
+            pytest.param({}, ValueError, INVALID_INPUT_LENGTH_ERROR, id="Invalid input: empty dict"),
             pytest.param(
                 {"token": "abc", "client_credentials": {"client_id": "abc"}},
-                INVALID_INPUT_TYPE_ERROR,
+                ValueError,
+                INVALID_INPUT_LENGTH_ERROR,
                 id="Invalid input: multiple keys",
             ),
         ],
     )
-    def test_invalid_not_dict(self, config, error_message):
-        with pytest.raises(ValueError, match=error_message):
+    def test_invalid_not_dict(self, config, error_type, error_message):
+        with pytest.raises(error_type, match=error_message):
             CredentialProvider.load(config)
 
 

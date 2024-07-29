@@ -14,6 +14,7 @@ from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
+from cognite.client.utils._auxiliary import load_dict_or_str
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
@@ -24,11 +25,11 @@ class CredentialProvider(Protocol):
         raise NotImplementedError
 
     @classmethod
-    def load(cls, config: dict) -> CredentialProvider:
+    def load(cls, config: dict | str) -> CredentialProvider:
         """Create a CredentialProvider from a configuration dictionary.
 
         Args:
-            config (dict): A dictionary containing the configuration for the credential provider.
+            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
                 The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings:
                 "token", "client_credentials", "interactive", "device_code", "client_certificate".
                 The value of the key is a dictionary containing the configuration for the credential provider.
@@ -59,12 +60,15 @@ class CredentialProvider(Protocol):
                 ... }
                 >>> credential_provider = CredentialProvider.load(config)
         """
-        if not isinstance(config, dict) or len(config) != 1:
+
+        loaded = load_dict_or_str(config)
+
+        if len(loaded) != 1:
             raise ValueError(
                 "Credential provider configuration must be a dictionary containing exactly one top level key."
             )
 
-        credential_type, credential_config = next(iter(config.items()))
+        credential_type, credential_config = next(iter(loaded.items()))
 
         supported_credential_types = {
             "token": Token,
@@ -76,7 +80,7 @@ class CredentialProvider(Protocol):
 
         if credential_type not in supported_credential_types.keys():
             raise ValueError(
-                f"Invalid credential provider type: '{credential_type}', the valid options are {list(supported_credential_types.keys())}."
+                f"Invalid credential provider type provided, the valid options are: {list(supported_credential_types.keys())}."
             )
         elif credential_type == "token":
             return supported_credential_types[credential_type](credential_config)

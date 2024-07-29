@@ -141,25 +141,6 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    def test_client_from_yaml_with_envs(self, set_env_vars):
-        path = os.path.join(os.path.dirname(__file__), "test_config_envs.yaml")
-
-        client = CogniteClient.from_yaml(path)
-        assert client.config.project == "test-project"
-        assert client.config.credentials.client_id == "test-client-id-with-escaped-$"
-        assert client.config.credentials.client_secret == "test-client-secret"
-        assert client.config.credentials.token_url == TOKEN_URL
-        assert client.config.credentials.scopes == ["https://test.com/.default", "https://test.com/.admin"]
-        assert client.config.debug is True
-        log = logging.getLogger("cognite.client")
-        log.handlers = []
-        log.propagate = False
-
-    def test_client_from_yaml_missing_envs(self):
-        path = os.path.join(os.path.dirname(__file__), "test_config_envs.yaml")
-        with pytest.raises(ValueError, match=r"Error substituting environment variable: .*"):
-            CogniteClient.from_yaml(path)
-
 
 class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])

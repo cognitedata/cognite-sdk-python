@@ -7,6 +7,7 @@ from contextlib import suppress
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
+from cognite.client.utils._auxiliary import load_dict_or_str
 
 
 class GlobalConfig:
@@ -47,13 +48,13 @@ class GlobalConfig:
         self.silence_feature_preview_warnings: bool = False
 
     @classmethod
-    def load(cls, config: dict) -> GlobalConfig:
+    def load(cls, config: dict | str) -> GlobalConfig:
         """Loads a dictionary of configuration fields into a client config object.
 
         Note: This must be done before instantiating a CogniteClient for the configuration to take effect.
 
         Args:
-            config (dict): A dictionary containing configuration values defined in the GlobalConfig class.
+            config (dict | str): A dictionary or dictionary parsable string containing configuration values defined in the GlobalConfig class.
 
         Returns:
             GlobalConfig: A global configuration object.
@@ -68,8 +69,11 @@ class GlobalConfig:
                 ... }
                 >>> global_config = GlobalConfig.load(config)
         """
+
+        loaded = load_dict_or_str(config)
+
         global_config = cls()
-        for key, value in config.items():
+        for key, value in loaded.items():
             if not hasattr(global_config, key):
                 raise ValueError(f"Invalid key in global config: {key}")
             setattr(global_config, key, value)
@@ -195,11 +199,11 @@ class ClientConfig:
         )
 
     @classmethod
-    def load(cls, config: dict) -> ClientConfig:
+    def load(cls, config: dict | str) -> ClientConfig:
         """Loads a dictionary of configuration fields into a client config object.
 
         Args:
-            config (dict): A dictionary containing configuration values defined in the ClientConfig class.
+            config (dict | str): A dictionary or dictionary parsable string containing configuration values defined in the ClientConfig class.
 
         Returns:
             ClientConfig: A client config object.
@@ -224,10 +228,12 @@ class ClientConfig:
                 ... }
                 >>> client_config = ClientConfig.load(config)
         """
+        loaded = load_dict_or_str(config)
+
         try:
-            credentials_config_input = config.pop("credentials")
+            credentials_config_input = loaded.pop("credentials")
         except KeyError:
             raise ValueError("'credentials' is a required field and must be included in the input dictionary.")
 
         credentials = CredentialProvider.load(credentials_config_input)
-        return ClientConfig(credentials=credentials, **config)
+        return ClientConfig(credentials=credentials, **loaded)
