@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-from string import Template
 from typing import Any
 
-import yaml
 from requests import Response
 
 from cognite.client._api.annotations import AnnotationsAPI
@@ -249,61 +245,3 @@ class CogniteClient:
                 >>> client = CogniteClient.load(config)
         """
         return cls(ClientConfig.load(config))
-
-    @classmethod  # TODO: design discussion on if we should have this method or not, and if it should sub envs or not
-    def from_yaml(cls, file_path: str | Path) -> CogniteClient:
-        """Loads a YAML file containing configuration fields into a cognite client object.
-        Any environment variables in the YAML file will be replaced with their defined values given they are referenced
-        using the following syntax: ${ENV_VAR_NAME} (recommended) or $ENV_VAR_NAME.
-
-        Note: The environment variables must be defined in the current environment and there are no implicit environment
-                variables available in the YAML file (e.g. CDF_PROJECT will not automatically replace the project name
-                unless `project: ${CDF_PROJECT}` is defined in the YAML file).
-
-        Args:
-            file_path (str | Path): The path to the YAML file containing the configuration values needed to create a CogniteClient.
-
-        Returns:
-            CogniteClient: A cognite client object.
-
-        Examples:
-                Create a cognite client object from a YAML file, using envs from the current environment:
-
-                >>> config.yaml
-                >>> project: $MY_CDF_PROJECT
-                >>> base_url: https://${MY_CDF_CLUSTER}.cognitedata.com/
-                >>> client_credentials:
-                >>>     token: ${MY_CDF_TOKEN}
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient.from_yaml("config.yaml")
-
-                Create a cognite client object from a YAML file, using envs from a .env file:
-
-                >>> from cognite.client import CogniteClient
-                >>> from dotenv import load_dotenv
-                >>> load_dotenv()
-                >>> client = CogniteClient.from_yaml("config.yaml")
-        """
-        file_path = Path(file_path)
-        if not file_path.is_file():
-            raise ValueError(f"File {file_path} is not a file")
-
-        try:
-            with file_path.open("r") as file_raw:
-                env_sub_template = Template(file_raw.read())
-
-                try:
-                    file_env_parsed = env_sub_template.substitute(dict(os.environ))
-                except KeyError as e:
-                    raise ValueError(f"Error substituting environment variable: {e}")
-                except ValueError as e:
-                    raise ValueError(f"Error substituting environment variable: {e}")
-
-                config_input = yaml.safe_load(file_env_parsed)
-        except yaml.YAMLError as e:
-            raise ValueError(f"Error parsing YAML file {file_path}: {e}")
-
-        # TODO: should yaml format use a cognite.client and cognite.global_config format to include both in same file?
-
-        return cls.load(config_input)
