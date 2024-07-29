@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from cognite.client import config
 from cognite.client._api import (
     assets,
     data_sets,
@@ -100,3 +101,6 @@ class TestDocstringExamples:
 
     def test_units(self):
         run_docstring_tests(units)
+
+    def test_config(self):
+        run_docstring_tests(config)

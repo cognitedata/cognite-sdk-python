@@ -76,7 +76,10 @@ class GlobalConfig:
         for key, value in loaded.items():
             if not hasattr(global_config, key):
                 raise ValueError(f"Invalid key in global config: {key}")
-            setattr(global_config, key, value)
+            if key == "default_client_config":
+                global_config.default_client_config = ClientConfig.load(value)
+            else:
+                setattr(global_config, key, value)
 
         return global_config
 
@@ -217,14 +220,16 @@ class ClientConfig:
                 ...     "client_name": "abcd",
                 ...     "project": "cdf-project",
                 ...     "base_url": "https://api.cognitedata.com/",
-                ...     "client_credentials": {
-                ...         "client_id": "abcd",
-                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
-                ...         "token_url": os.environ["TOKEN_URL"],
-                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
-                ...         # Any additional IDP-specific token args. e.g.
-                ...         "audience": "some-audience",
-                ...     }
+                ...     "credentials": {
+                ...         "client_credentials": {
+                ...             "client_id": "abcd",
+                ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...             "token_url": os.environ["TOKEN_URL"],
+                ...             "scopes": ["https://greenfield.cognitedata.com/.default"],
+                ...             # Any additional IDP-specific token args. e.g.
+                ...             "audience": "some-audience",
+                ...         },
+                ...     },
                 ... }
                 >>> client_config = ClientConfig.load(config)
         """

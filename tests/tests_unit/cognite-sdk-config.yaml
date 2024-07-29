@@ -1,0 +1,13 @@
+client:
+  project: "my-project"
+  client_name: "my-special-client"
+  base_url: "https://${MY_CLUSTER}.cognitedata.com"
+  credentials:
+    client_credentials:
+      token_url: "https://login.microsoftonline.com/${MY_TENANT_ID}/oauth2/v2.0/token"
+      client_id: "${MY_CLIENT_ID}"
+      client_secret: "${MY_CLIENT_SECRET}"
+      scopes: ["https://${MY_CLUSTER}.cognitedata.com/.default"]
+global:
+  max_retries: 5
+  max_retry_backoff: 5
