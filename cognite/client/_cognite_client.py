@@ -31,7 +31,7 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
-from cognite.client.utils._auxiliary import get_current_sdk_version
+from cognite.client.utils._auxiliary import get_current_sdk_version, load_dict_or_str
 
 
 class CogniteClient:
@@ -215,11 +215,11 @@ class CogniteClient:
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict) -> CogniteClient:
+    def load(cls, config: dict | str) -> CogniteClient:
         """Loads a dictionary of configuration fields into a cognite client object.
 
         Args:
-            config (dict): A dictionary containing configuration values needed to create a CogniteClient.
+            config (dict | str): A dictionary or dictionary parsable string containing configuration values needed to create a CogniteClient.
 
         Returns:
             CogniteClient: A cognite client object.
@@ -244,4 +244,5 @@ class CogniteClient:
                 ... }
                 >>> client = CogniteClient.load(config)
         """
-        return cls(ClientConfig.load(config))
+        loaded = load_dict_or_str(config)
+        return cls(ClientConfig.load(loaded))

@@ -1,9 +1,0 @@
-project: "test-project"
-client_name: "cognite-sdk-python"
-credentials:
-  client_credentials:
-    token_url: "https://test.com/token"
-    client_id: "test-client-id"
-    client_secret: "test-client-secret"
-    scopes: ["https://test.com/.default", "https://test.com/.admin"]
-debug: true

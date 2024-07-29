@@ -1,9 +1,0 @@
-project: ${COGNITE_PROJECT}
-client_name: $COGNITE_CLIENT_NAME
-credentials:
-  ${credential_type}:
-    token_url: "https://${URL}.com/token"
-    client_id: "test-client-id-with-escaped-$$"
-    client_secret: ${COGNITE_CLIENT_SECRET}
-    scopes: ["https://${URL}.com/.default", "https://${URL}.com/.admin"]
-debug: ${COGNITE_DEBUG}

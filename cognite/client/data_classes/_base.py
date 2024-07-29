@@ -403,7 +403,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
-        # Certain classes may need more than just 'items' from the raw repsonse. These need to provide
+        # Certain classes may need more than just 'items' from the raw response. These need to provide
         # an implementation of this method
         raise NotImplementedError
 
@@ -760,7 +760,7 @@ class CogniteSort:
                 nulls=data[2],
             )
         elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
-            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            # Syntax "<fieldname>:asc|desc" is deprecated but handled for compatibility
             return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)
