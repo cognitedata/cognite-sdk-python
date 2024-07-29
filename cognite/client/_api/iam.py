@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -267,6 +267,42 @@ class IAMAPI(APIClient):
         return self.compare_capabilities(existing_capabilities, desired_capabilities)
 
 
+class _GroupListAdapter(GroupList):
+    @classmethod
+    def _load(  # type: ignore[override]
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
+        allow_unknown: bool = False,
+    ) -> GroupList:
+        return GroupList._load(resource_list, cognite_client=cognite_client, allow_unknown=True)
+
+
+class _GroupAdapter(Group):
+    @classmethod
+    def _load(  # type: ignore[override]
+        cls,
+        resource: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+        allow_unknown: bool = False,
+    ) -> Group:
+        return Group._load(resource, cognite_client=cognite_client, allow_unknown=True)
+
+
+# We need an adapter for GroupWrite in case the API returns a non 200-status code.
+# As, then, in the unwrap_element method, the _create_multiple method will try to load the resource.
+# This will fail if the GroupWrite contains an UnknownAcl.
+class _GroupWriteAdapter(GroupWrite):
+    @classmethod
+    def _load(  # type: ignore[override]
+        cls,
+        resource: dict[str, Any],
+        cognite_client: CogniteClient | None = None,
+        allow_unknown: bool = False,
+    ) -> GroupWrite:
+        return GroupWrite._load(resource, cognite_client=cognite_client, allow_unknown=True)
+
+
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
@@ -363,7 +399,10 @@ class GroupsAPI(APIClient):
                 >>> acls = [Capability.load(cap) for cap in unparsed_capabilities]
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
-        return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group, input_resource_cls=GroupWrite)
+
+        return self._create_multiple(
+            list_cls=_GroupListAdapter, resource_cls=_GroupAdapter, items=group, input_resource_cls=_GroupWriteAdapter
+        )
 
     def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
