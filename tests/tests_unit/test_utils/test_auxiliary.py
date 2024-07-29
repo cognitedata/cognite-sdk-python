@@ -13,6 +13,7 @@ from cognite.client.utils._auxiliary import (
     get_accepted_params,
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
+    load_dict_or_str,
     remove_duplicates_keep_order,
     split_into_chunks,
     split_into_n_parts,
@@ -228,3 +229,27 @@ class TestFastDictLoad:
     def test_load(self, item, expected):
         get_accepted_params.cache_clear()  # For good measure
         assert expected == fast_dict_load(MyTestResource, item, cognite_client=None)
+
+
+class TestLoadDictOrStr:
+    @pytest.mark.parametrize(
+        "input, expected",
+        (
+            ({"foo": "bar"}, {"foo": "bar"}),
+            ('{"foo": "bar"}', {"foo": "bar"}),
+            ("foo: bar", {"foo": "bar"}),
+        ),
+    )
+    def test_load_dict_or_str(self, input, expected):
+        assert expected == load_dict_or_str(input)
+
+    @pytest.mark.parametrize(
+        "input",
+        (
+            "foo",
+            100,
+        ),
+    )
+    def test_load_dict_or_str_raises(self, input):
+        with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
+            load_dict_or_str(input)
