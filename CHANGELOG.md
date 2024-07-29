@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.12] - 2024-07-29
+### Added
+- Add a load method to CogniteClient, GlobalConfig, ClientConfig, and CredenitalProvider
+
 ## [7.54.11] - 2024-07-26
 ### Fixed
 - Creating a Group with an `UnknownAcl` supported by the API no longer raises a client-side `ValueError` after
@@ -43,7 +47,7 @@ Changes are grouped as follows
 
 ## [7.54.7] - 2024-07-22
 ### Fixed
-- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`. 
+- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`.
 - The method `client.three_d.models.create` now supports creating multiple models with different metdata fields
   in a single call.
 
