@@ -55,6 +55,18 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
     return {to_camel_case(k): k for k in vars(cls()) if not k.startswith("_")}
 
 
+def load_dict_or_str(resource: dict | str) -> dict:
+    if isinstance(resource, dict):
+        return resource
+
+    if isinstance(resource, str):
+        resource = load_yaml_or_json(resource)
+        if isinstance(resource, dict):
+            return resource
+
+    raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+
+
 def fast_dict_load(
     cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
 ) -> T_CogniteObject:
