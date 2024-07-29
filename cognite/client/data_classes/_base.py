@@ -155,8 +155,9 @@ class CogniteObject:
             return cls._load(resource, cognite_client=cognite_client)
 
         if isinstance(resource, str):
-            resource = cast(dict, load_yaml_or_json(resource))
-            return cls._load(resource, cognite_client=cognite_client)
+            resource = load_yaml_or_json(resource)
+            if isinstance(resource, dict):
+                return cls._load(resource, cognite_client=cognite_client)
 
         raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
 
