@@ -15,9 +15,7 @@ from cognite.client.exceptions import CogniteAuthError
 
 class TestCredentialProvider:
     INVALID_CREDENTIAL_ERROR = "Invalid credential provider type provided, the valid options are:"
-    INVALID_INPUT_LENGTH_ERROR = (
-        "Credential provider configuration must be a dictionary containing exactly one top level key."
-    )
+    INVALID_INPUT_LENGTH_ERROR = "Credential provider configuration must be a dictionary containing exactly one of the following supported types as the top level key:"
     INVALID_INPUT_TYPE_ERROR = "Resource must be json or yaml str, or dict, not"
 
     @pytest.mark.parametrize(

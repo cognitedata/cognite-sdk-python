@@ -7,6 +7,7 @@ import threading
 import time
 from abc import abstractmethod
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Callable, Protocol
 
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
@@ -47,7 +48,6 @@ class CredentialProvider(Protocol):
 
             Get a client credential provider:
 
-                >>> from cognite.client.credentials import CredentialProvider
                 >>> import os
                 >>> config = {
                 ...     "client_credentials": {
@@ -64,27 +64,25 @@ class CredentialProvider(Protocol):
 
         if len(loaded) != 1:
             raise ValueError(
-                "Credential provider configuration must be a dictionary containing exactly one top level key."
+                f"Credential provider configuration must be a dictionary containing exactly one of the following "
+                f"supported types as the top level key: {list(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
 
         credential_type, credential_config = next(iter(loaded.items()))
 
-        supported_credential_types = {
-            "token": Token,
-            "client_credentials": OAuthClientCredentials,
-            "interactive": OAuthInteractive,
-            "device_code": OAuthDeviceCode,
-            "client_certificate": OAuthClientCertificate,
-        }
-
-        if credential_type not in supported_credential_types.keys():
+        if credential_type not in _SUPPORTED_CREDENTIAL_TYPES:
             raise ValueError(
-                f"Invalid credential provider type provided, the valid options are: {list(supported_credential_types.keys())}."
+                f"Invalid credential provider type provided, the valid options are: {list(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
         elif credential_type == "token":
-            return supported_credential_types[credential_type](credential_config)
+            if isinstance(credential_config, dict):
+                return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
+            elif isinstance(credential_config, str):
+                return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load({"token": credential_config})  # type: ignore [attr-defined]
+            else:
+                raise TypeError(f"Token resource must be json or yaml str, or dict, not {type(credential_config)}")
         else:
-            return supported_credential_types[credential_type](**credential_config)
+            return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
 
 
 class Token(CredentialProvider):
@@ -122,6 +120,27 @@ class Token(CredentialProvider):
 
     def authorization_header(self) -> tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> Token:
+        """Create a Token credential provider from a configuration string.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+
+        Returns:
+            Token: Initialized token credential provider.
+
+        Warning:
+            A callable token is not supported if passing in a yaml string.
+
+        Examples:
+
+            >>> from cognite.client.credentials import Token
+            >>> credential_provider = Token.load({"token": "my secret token"})
+        """
+        loaded = load_dict_or_str(config)
+        return cls(**loaded)
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
@@ -285,6 +304,29 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
+    @classmethod
+    def load(cls, config: dict | str) -> OAuthDeviceCode:
+        """Create an OAuthDeviceCode credential provider from a configuration dictionary.
+
+        Args:
+            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+
+        Returns:
+            OAuthDeviceCode: Initialized OAuthDeviceCode credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthDeviceCode
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credential_provider = OAuthDeviceCode.load(config)
+        """
+        loaded = load_dict_or_str(config)
+        return cls(**loaded)
+
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for an interactive login flow.
@@ -364,6 +406,29 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
+
+    @classmethod
+    def load(cls, config: dict | str) -> OAuthInteractive:
+        """Create an OAuthInteractive credential provider from a configuration dictionary.
+
+        Args:
+            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+
+        Returns:
+            OAuthInteractive: Initialized OAuthInteractive credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthInteractive
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credential_provider = OAuthInteractive.load(config)
+        """
+        loaded = load_dict_or_str(config)
+        return cls(**loaded)
 
     @classmethod
     def default_for_azure_ad(
@@ -507,6 +572,32 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ) from oauth_err
 
     @classmethod
+    def load(cls, config: dict | str) -> OAuthClientCredentials:
+        """Create an OAuthClientCredentials credential provider from a configuration dictionary.
+
+        Args:
+            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+
+        Returns:
+            OAuthClientCredentials: Initialized OAuthClientCredentials credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCredentials
+            >>> import os
+            >>> config = {
+            ...     "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+            ...     "client_id": "abcd",
+            ...     "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ...     "audience": "some-audience"
+            ... }
+            >>> credential_provider = OAuthClientCredentials.load(config)
+        """
+        loaded = load_dict_or_str(config)
+        return cls(**loaded)
+
+    @classmethod
     def default_for_azure_ad(
         cls,
         tenant_id: str,
@@ -616,3 +707,40 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
 
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
+
+    @classmethod
+    def load(cls, config: dict | str) -> OAuthClientCertificate:
+        """Create an OAuthClientCertificate credential provider from a configuration dictionary.
+
+        Args:
+            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+
+        Returns:
+            OAuthClientCertificate: Initialized OAuthClientCertificate credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCertificate
+            >>> from pathlib import Path
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "cert_thumbprint": "XYZ123",
+            ...     "certificate": Path("certificate.pem").read_text(),
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credential_provider = OAuthClientCertificate.load(config)
+        """
+        loaded = load_dict_or_str(config)
+        return cls(**loaded)
+
+
+_SUPPORTED_CREDENTIAL_TYPES = MappingProxyType(
+    {
+        "token": Token,
+        "client_credentials": OAuthClientCredentials,
+        "interactive": OAuthInteractive,
+        "device_code": OAuthDeviceCode,
+        "client_certificate": OAuthClientCertificate,
+    }
+)
