@@ -216,10 +216,10 @@ class CogniteClient:
 
     @classmethod
     def load(cls, config: dict | str) -> CogniteClient:
-        """Loads a dictionary of configuration fields into a cognite client object.
+        """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing configuration values needed to create a CogniteClient.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
 
         Returns:
             CogniteClient: A cognite client object.
