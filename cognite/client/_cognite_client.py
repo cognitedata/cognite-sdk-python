@@ -246,4 +246,4 @@ class CogniteClient:
                 >>> client = CogniteClient.load(config)
         """
         loaded = load_resource_to_dict(config)
-        return cls(ClientConfig.load(loaded))
+        return cls(config=ClientConfig.load(loaded))
