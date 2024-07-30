@@ -49,13 +49,13 @@ class GlobalConfig:
 
     @classmethod
     def load(cls, config: dict | str) -> GlobalConfig:
-        """Loads a dictionary of configuration fields into a client config object.
+        """Load a global configuration object from a YAML/JSON string or dict.
 
         Warning:
             This must be done before instantiating a CogniteClient for the configuration to take effect.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing configuration values defined in the GlobalConfig class.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
 
         Returns:
             GlobalConfig: A global configuration object.
@@ -205,10 +205,10 @@ class ClientConfig:
 
     @classmethod
     def load(cls, config: dict | str) -> ClientConfig:
-        """Loads a dictionary of configuration fields into a client config object.
+        """Load a client config object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing configuration values defined in the ClientConfig class.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
 
         Returns:
             ClientConfig: A client config object.

@@ -27,11 +27,11 @@ class CredentialProvider(Protocol):
 
     @classmethod
     def load(cls, config: dict | str) -> CredentialProvider:
-        """Create a CredentialProvider from a configuration dictionary.
+        """Load a credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
-                The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings:
+            config (dict | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
+                Note: The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings:
                 "token", "client_credentials", "interactive", "device_code", "client_certificate".
                 The value of the key is a dictionary containing the configuration for the credential provider.
 
@@ -123,10 +123,10 @@ class Token(CredentialProvider):
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> Token:
-        """Create a Token credential provider from a configuration string.
+        """Load a token credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the Token class.
 
         Returns:
             Token: Initialized token credential provider.
@@ -306,10 +306,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     @classmethod
     def load(cls, config: dict | str) -> OAuthDeviceCode:
-        """Create an OAuthDeviceCode credential provider from a configuration dictionary.
+        """Load a oauth device code credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
 
         Returns:
             OAuthDeviceCode: Initialized OAuthDeviceCode credential provider.
@@ -409,10 +409,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
     @classmethod
     def load(cls, config: dict | str) -> OAuthInteractive:
-        """Create an OAuthInteractive credential provider from a configuration dictionary.
+        """Load a oauth interactive credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
 
         Returns:
             OAuthInteractive: Initialized OAuthInteractive credential provider.
@@ -573,10 +573,10 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
     @classmethod
     def load(cls, config: dict | str) -> OAuthClientCredentials:
-        """Create an OAuthClientCredentials credential provider from a configuration dictionary.
+        """Load a oauth client credentials credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
 
         Returns:
             OAuthClientCredentials: Initialized OAuthClientCredentials credential provider.
@@ -710,10 +710,10 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
 
     @classmethod
     def load(cls, config: dict | str) -> OAuthClientCertificate:
-        """Create an OAuthClientCertificate credential provider from a configuration dictionary.
+        """Load a oauth client certificate credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or dictionary parsable string containing the configuration for the credential provider.
+            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
 
         Returns:
             OAuthClientCertificate: Initialized OAuthClientCertificate credential provider.
