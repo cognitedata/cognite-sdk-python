@@ -225,7 +225,8 @@ class CogniteClient:
             CogniteClient: A cognite client object.
 
         Examples:
-                Create a cognite client object from a dictionary input:
+
+            Create a cognite client object from a dictionary input:
 
                 >>> from cognite.client import CogniteClient
                 >>> import os
@@ -233,14 +234,14 @@ class CogniteClient:
                 ...     "client_name": "abcd",
                 ...     "project": "cdf-project",
                 ...     "base_url": "https://api.cognitedata.com/",
-                ...     "client_credentials": {
-                ...         "client_id": "abcd",
-                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
-                ...         "token_url": os.environ["TOKEN_URL"],
-                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
-                ...         # Any additional IDP-specific token args. e.g.
-                ...         "audience": "some-audience",
-                ...     }
+                ...     "credentials": {
+                ...         "client_credentials": {
+                ...             "client_id": "abcd",
+                ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...             "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...             "scopes": ["https://api.cognitedata.com/.default"],
+                ...         },
+                ...     },
                 ... }
                 >>> client = CogniteClient.load(config)
         """

@@ -397,7 +397,8 @@ class WorkflowTask(CogniteResource):
     """
     This class represents a workflow task.
 
-    Note: tasks do not distinguish between write and read versions.
+    Note:
+        Tasks do not distinguish between write and read versions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
