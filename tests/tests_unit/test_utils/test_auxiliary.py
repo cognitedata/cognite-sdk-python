@@ -238,6 +238,7 @@ class TestLoadDictOrStr:
             ({"foo": "bar"}, {"foo": "bar"}),
             ('{"foo": "bar"}', {"foo": "bar"}),
             ("foo: bar", {"foo": "bar"}),
+            ('{"foo": {"bar": "thing"}}', {"foo": {"bar": "thing"}}),
         ),
     )
     def test_load_dict_or_str(self, input, expected):
@@ -245,10 +246,7 @@ class TestLoadDictOrStr:
 
     @pytest.mark.parametrize(
         "input",
-        (
-            "foo",
-            100,
-        ),
+        ("foo", 100),
     )
     def test_load_dict_or_str_raises(self, input):
         with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
