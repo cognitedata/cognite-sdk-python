@@ -31,7 +31,7 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
-from cognite.client.utils._auxiliary import get_current_sdk_version, load_dict_or_str
+from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
 
 
 class CogniteClient:
@@ -245,5 +245,5 @@ class CogniteClient:
                 ... }
                 >>> client = CogniteClient.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(ClientConfig.load(loaded))

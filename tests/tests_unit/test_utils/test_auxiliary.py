@@ -13,7 +13,7 @@ from cognite.client.utils._auxiliary import (
     get_accepted_params,
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
-    load_dict_or_str,
+    load_resource_to_dict,
     remove_duplicates_keep_order,
     split_into_chunks,
     split_into_n_parts,
@@ -241,13 +241,13 @@ class TestLoadDictOrStr:
             ('{"foo": {"bar": "thing"}}', {"foo": {"bar": "thing"}}),
         ),
     )
-    def test_load_dict_or_str(self, input, expected):
-        assert expected == load_dict_or_str(input)
+    def test_load_resource_to_dict(self, input, expected):
+        assert expected == load_resource_to_dict(input)
 
     @pytest.mark.parametrize(
         "input",
         ("foo", 100),
     )
-    def test_load_dict_or_str_raises(self, input):
+    def test_load_resource_to_dict_raises(self, input):
         with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
-            load_dict_or_str(input)
+            load_resource_to_dict(input)

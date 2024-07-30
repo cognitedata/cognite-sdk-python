@@ -15,7 +15,7 @@ from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
-from cognite.client.utils._auxiliary import load_dict_or_str
+from cognite.client.utils._auxiliary import load_resource_to_dict
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
@@ -60,7 +60,7 @@ class CredentialProvider(Protocol):
                 >>> credential_provider = CredentialProvider.load(config)
         """
 
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
 
         if len(loaded) != 1:
             raise ValueError(
@@ -139,7 +139,7 @@ class Token(CredentialProvider):
             >>> from cognite.client.credentials import Token
             >>> credential_provider = Token.load({"token": "my secret token"})
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(**loaded)
 
 
@@ -324,7 +324,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ... }
             >>> credential_provider = OAuthDeviceCode.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(**loaded)
 
 
@@ -427,7 +427,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             ... }
             >>> credential_provider = OAuthInteractive.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(**loaded)
 
     @classmethod
@@ -594,7 +594,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ... }
             >>> credential_provider = OAuthClientCredentials.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(**loaded)
 
     @classmethod
@@ -731,7 +731,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
             ... }
             >>> credential_provider = OAuthClientCertificate.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
         return cls(**loaded)
 
 

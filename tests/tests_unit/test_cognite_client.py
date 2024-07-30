@@ -158,7 +158,7 @@ class TestCogniteClient:
         with file_path.open("r") as file_raw:
             env_sub_template = Template(file_raw.read())
         try:
-            file_env_parsed = env_sub_template.substitute(dict(os.environ))
+            file_env_parsed = env_sub_template.substitute(os.environ)
         except (KeyError, ValueError) as e:
             raise ValueError(f"Error substituting environment variable: {e}")
 

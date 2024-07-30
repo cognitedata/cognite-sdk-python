@@ -7,7 +7,7 @@ from contextlib import suppress
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
-from cognite.client.utils._auxiliary import load_dict_or_str
+from cognite.client.utils._auxiliary import load_resource_to_dict
 
 
 class GlobalConfig:
@@ -72,7 +72,7 @@ class GlobalConfig:
                 >>> global_config = GlobalConfig.load(config)
         """
 
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
 
         global_config = cls()
         for key, value in loaded.items():
@@ -234,7 +234,7 @@ class ClientConfig:
                 ... }
                 >>> client_config = ClientConfig.load(config)
         """
-        loaded = load_dict_or_str(config)
+        loaded = load_resource_to_dict(config)
 
         try:
             credentials_config_input = loaded.pop("credentials")
