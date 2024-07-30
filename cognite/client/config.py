@@ -51,7 +51,8 @@ class GlobalConfig:
     def load(cls, config: dict | str) -> GlobalConfig:
         """Loads a dictionary of configuration fields into a client config object.
 
-        Note: This must be done before instantiating a CogniteClient for the configuration to take effect.
+        Warning:
+            This must be done before instantiating a CogniteClient for the configuration to take effect.
 
         Args:
             config (dict | str): A dictionary or dictionary parsable string containing configuration values defined in the GlobalConfig class.
@@ -60,7 +61,8 @@ class GlobalConfig:
             GlobalConfig: A global configuration object.
 
         Examples:
-                Create a global config object from a dictionary input:
+
+            Create a global config object from a dictionary input:
 
                 >>> from cognite.client.config import GlobalConfig
                 >>> config = {
@@ -212,7 +214,8 @@ class ClientConfig:
             ClientConfig: A client config object.
 
         Examples:
-                Create a client config object from a dictionary input:
+
+            Create a client config object from a dictionary input:
 
                 >>> from cognite.client.config import ClientConfig
                 >>> import os
@@ -224,10 +227,8 @@ class ClientConfig:
                 ...         "client_credentials": {
                 ...             "client_id": "abcd",
                 ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
-                ...             "token_url": os.environ["TOKEN_URL"],
-                ...             "scopes": ["https://greenfield.cognitedata.com/.default"],
-                ...             # Any additional IDP-specific token args. e.g.
-                ...             "audience": "some-audience",
+                ...             "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...             "scopes": ["https://api.cognitedata.com/.default"],
                 ...         },
                 ...     },
                 ... }

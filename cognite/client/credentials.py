@@ -38,13 +38,14 @@ class CredentialProvider(Protocol):
             CredentialProvider: Initialized credential provider of the specified type.
 
         Examples:
-                Get a token credential provider:
+
+            Get a token credential provider:
 
                 >>> from cognite.client.credentials import CredentialProvider
                 >>> config = {"token": "my secret token"}
                 >>> credential_provider = CredentialProvider.load(config)
 
-                Get a client credential provider:
+            Get a client credential provider:
 
                 >>> from cognite.client.credentials import CredentialProvider
                 >>> import os
@@ -52,10 +53,8 @@ class CredentialProvider(Protocol):
                 ...     "client_credentials": {
                 ...         "client_id": "abcd",
                 ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
-                ...         "token_url": os.environ["TOKEN_URL"],
-                ...         "scopes": ["https://greenfield.cognitedata.com/.default"],
-                ...         # Any additional IDP-specific token args. e.g.
-                ...         "audience": "some-audience",
+                ...         "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...         "scopes": ["https://api.cognitedata.com/.default"],
                 ...     }
                 ... }
                 >>> credential_provider = CredentialProvider.load(config)
