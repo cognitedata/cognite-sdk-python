@@ -55,14 +55,24 @@ def get_accepted_params(cls: type[T_CogniteResource]) -> dict[str, str]:
     return {to_camel_case(k): k for k in vars(cls()) if not k.startswith("_")}
 
 
-def load_dict_or_str(resource: dict | str) -> dict:
+def load_resource_to_dict(resource: dict[str, Any] | str) -> dict[str, Any]:
     if isinstance(resource, dict):
-        return resource
+        if all(isinstance(key, str) for key in resource):
+            return resource
+        else:
+            raise TypeError(
+                "Resource must be a dictionary with string keys"
+            )  # FIXME: might not want to raise this error if it could cause breaking changes in the old load methods? (fast_dict_load expects dict[str, Any] so should be fine?)
 
     if isinstance(resource, str):
         resource = load_yaml_or_json(resource)
         if isinstance(resource, dict):
-            return resource
+            if all(isinstance(key, str) for key in resource):
+                return resource
+            else:
+                raise TypeError(
+                    "Resource must be a dictionary with string keys"
+                )  # FIXME: might not want to raise this error if it could cause breaking changes in the old load methods?
 
     raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
 

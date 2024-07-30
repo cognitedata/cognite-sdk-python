@@ -29,7 +29,7 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_dict_or_str, load_yaml_or_json
+from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -151,7 +151,7 @@ class CogniteObject:
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
-        loaded = load_dict_or_str(resource)
+        loaded = load_resource_to_dict(resource)
         return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
