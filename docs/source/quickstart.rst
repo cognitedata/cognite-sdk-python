@@ -6,7 +6,7 @@ Use this code to instantiate a client in order to execute API calls to Cognite D
 
 .. note::
     How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method only
-    accepts a dictionary. So for the purposes of this example, we will use the yaml library to read in a yaml file and
+    accepts a dictionary or a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
 
 See :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
