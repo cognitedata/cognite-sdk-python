@@ -26,14 +26,11 @@ class CredentialProvider(Protocol):
         raise NotImplementedError
 
     @classmethod
-    def load(cls, config: dict | str) -> CredentialProvider:
+    def load(cls, config: dict[str, Any] | str) -> CredentialProvider:
         """Load a credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
-                Note: The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings:
-                "token", "client_credentials", "interactive", "device_code", "client_certificate".
-                The value of the key is a dictionary containing the configuration for the credential provider.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider. Note: The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings: "token", "client_credentials", "interactive", "device_code", "client_certificate". The value of the key is a dictionary containing the configuration for the credential provider.
 
         Returns:
             CredentialProvider: Initialized credential provider of the specified type.
@@ -140,7 +137,7 @@ class Token(CredentialProvider):
             >>> credential_provider = Token.load({"token": "my secret token"})
         """
         loaded = load_resource_to_dict(config)
-        return cls(**loaded)
+        return cls(token=loaded["token"])
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
@@ -305,11 +302,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
-    def load(cls, config: dict | str) -> OAuthDeviceCode:
+    def load(cls, config: dict[str, Any] | str) -> OAuthDeviceCode:
         """Load a oauth device code credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
 
         Returns:
             OAuthDeviceCode: Initialized OAuthDeviceCode credential provider.
@@ -325,7 +322,15 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             >>> credential_provider = OAuthDeviceCode.load(config)
         """
         loaded = load_resource_to_dict(config)
-        return cls(**loaded)
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            scopes=loaded["scopes"],
+            token_cache_path=loaded.get("token_cache_path"),
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -408,11 +413,11 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
-    def load(cls, config: dict | str) -> OAuthInteractive:
+    def load(cls, config: dict[str, Any] | str) -> OAuthInteractive:
         """Load a oauth interactive credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
 
         Returns:
             OAuthInteractive: Initialized OAuthInteractive credential provider.
@@ -428,7 +433,16 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             >>> credential_provider = OAuthInteractive.load(config)
         """
         loaded = load_resource_to_dict(config)
-        return cls(**loaded)
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            scopes=loaded["scopes"],
+            redirect_port=int(loaded.get("redirect_port", 53000)),
+            token_cache_path=loaded.get("token_cache_path"),
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
 
     @classmethod
     def default_for_azure_ad(
@@ -572,11 +586,11 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ) from oauth_err
 
     @classmethod
-    def load(cls, config: dict | str) -> OAuthClientCredentials:
+    def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
         """Load a oauth client credentials credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
 
         Returns:
             OAuthClientCredentials: Initialized OAuthClientCredentials credential provider.
@@ -594,8 +608,17 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ... }
             >>> credential_provider = OAuthClientCredentials.load(config)
         """
-        loaded = load_resource_to_dict(config)
-        return cls(**loaded)
+        loaded = load_resource_to_dict(config).copy()
+        return cls(
+            token_url=loaded.pop("token_url"),
+            client_id=loaded.pop("client_id"),
+            client_secret=loaded.pop("client_secret"),
+            scopes=loaded.pop("scopes"),
+            token_expiry_leeway_seconds=int(
+                loaded.pop("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+            **loaded,
+        )
 
     @classmethod
     def default_for_azure_ad(
@@ -709,11 +732,11 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
-    def load(cls, config: dict | str) -> OAuthClientCertificate:
+    def load(cls, config: dict[str, Any] | str) -> OAuthClientCertificate:
         """Load a oauth client certificate credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
 
         Returns:
             OAuthClientCertificate: Initialized OAuthClientCertificate credential provider.
@@ -732,7 +755,17 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
             >>> credential_provider = OAuthClientCertificate.load(config)
         """
         loaded = load_resource_to_dict(config)
-        return cls(**loaded)
+
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            cert_thumbprint=loaded["cert_thumbprint"],
+            certificate=loaded["certificate"],
+            scopes=loaded["scopes"],
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
 
 
 _SUPPORTED_CREDENTIAL_TYPES = MappingProxyType(

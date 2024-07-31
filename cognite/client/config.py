@@ -4,6 +4,7 @@ import getpass
 import pprint
 import warnings
 from contextlib import suppress
+from typing import Any
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -48,14 +49,14 @@ class GlobalConfig:
         self.silence_feature_preview_warnings: bool = False
 
     @classmethod
-    def load(cls, config: dict | str) -> GlobalConfig:
+    def load(cls, config: dict[str, Any] | str) -> GlobalConfig:
         """Load a global configuration object from a YAML/JSON string or dict.
 
         Warning:
             This must be done before instantiating a CogniteClient for the configuration to take effect.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
 
         Returns:
             GlobalConfig: A global configuration object.
@@ -204,11 +205,11 @@ class ClientConfig:
         )
 
     @classmethod
-    def load(cls, config: dict | str) -> ClientConfig:
+    def load(cls, config: dict[str, Any] | str) -> ClientConfig:
         """Load a client config object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
 
         Returns:
             ClientConfig: A client config object.
@@ -236,10 +237,15 @@ class ClientConfig:
         """
         loaded = load_resource_to_dict(config)
 
-        try:
-            credentials_config_input = loaded.pop("credentials")
-        except KeyError:
-            raise ValueError("'credentials' is a required field and must be included in the input dictionary.")
-
-        credentials = CredentialProvider.load(credentials_config_input)
-        return ClientConfig(credentials=credentials, **loaded)
+        return cls(
+            client_name=loaded["client_name"],
+            project=loaded["project"],
+            credentials=CredentialProvider.load(loaded["credentials"]),
+            api_subversion=loaded.get("api_subversion"),
+            base_url=loaded.get("base_url"),
+            max_workers=loaded.get("max_workers"),
+            headers=loaded.get("headers"),
+            timeout=loaded.get("timeout"),
+            file_transfer_timeout=loaded.get("file_transfer_timeout"),
+            debug=loaded.get("debug", False),
+        )
