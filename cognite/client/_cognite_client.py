@@ -215,11 +215,11 @@ class CogniteClient:
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict | str) -> CogniteClient:
+    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
 
         Returns:
             CogniteClient: A cognite client object.
