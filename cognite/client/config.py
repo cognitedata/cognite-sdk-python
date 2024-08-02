@@ -37,7 +37,9 @@ class GlobalConfig:
     def __new__(cls) -> GlobalConfig:
         if hasattr(cls, "_instance"):
             raise ValueError(
-                "GlobalConfig is a singleton and should not be instantiated directly. Use `global_config` instead, from cognite.client import global_config."
+                "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
+                "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
+                "Settings are only guaranteed to take effect if applied before instantiating a CogniteClient."
             )
 
         cls._instance = super().__new__(cls)

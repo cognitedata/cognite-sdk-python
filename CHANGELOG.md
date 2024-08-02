@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.57.0] - 2024-09-03
 ### Added
-- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
 - Add `apply_settings` method to `global_config` to pass in a dict of settings
 
 ## [7.56.0] - 2024-09-02
