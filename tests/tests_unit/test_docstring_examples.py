@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cognite.client import config
+from cognite.client import _cognite_client, config
 from cognite.client._api import (
     assets,
     data_sets,
@@ -40,8 +40,13 @@ def run_docstring_tests(module):
     assert 0 == len(s.failures)
 
 
-@patch("cognite.client.CogniteClient", CogniteClientMock)
 @patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
+def test_cognite_client_load():
+    run_docstring_tests(_cognite_client)
+
+
+@patch("cognite.client.CogniteClient", CogniteClientMock)
+@patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
