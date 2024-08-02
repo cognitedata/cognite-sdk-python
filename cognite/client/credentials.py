@@ -56,20 +56,19 @@ class CredentialProvider(Protocol):
                 ... }
                 >>> credential_provider = CredentialProvider.load(config)
         """
-
         loaded = load_resource_to_dict(config)
 
         if len(loaded) != 1:
             raise ValueError(
                 f"Credential provider configuration must be a dictionary containing exactly one of the following "
-                f"supported types as the top level key: {list(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
+                f"supported types as the top level key: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
 
         credential_type, credential_config = next(iter(loaded.items()))
 
         if credential_type not in _SUPPORTED_CREDENTIAL_TYPES:
             raise ValueError(
-                f"Invalid credential provider type provided, the valid options are: {list(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
+                f"Invalid credential provider type provided, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
         elif credential_type == "token":
             if isinstance(credential_config, dict):
@@ -119,11 +118,11 @@ class Token(CredentialProvider):
         return "Authorization", f"Bearer {self.__token_factory()}"
 
     @classmethod
-    def load(cls, config: dict[str, Any] | str) -> Token:
+    def load(cls, config: dict[str, str | Callable[[], str]] | str) -> Token:
         """Load a token credential provider object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the Token class.
+            config (dict[str, str | Callable[[], str]] | str): A dictionary or YAML/JSON string containing configuration values defined in the Token class.
 
         Returns:
             Token: Initialized token credential provider.
@@ -608,7 +607,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ... }
             >>> credential_provider = OAuthClientCredentials.load(config)
         """
-        loaded = load_resource_to_dict(config).copy()
+        loaded = load_resource_to_dict(config).copy()  # doing a shallow copy to avoid mutating the user input config
         return cls(
             token_url=loaded.pop("token_url"),
             client_id=loaded.pop("client_id"),
@@ -755,7 +754,6 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
             >>> credential_provider = OAuthClientCertificate.load(config)
         """
         loaded = load_resource_to_dict(config)
-
         return cls(
             authority_url=loaded["authority_url"],
             client_id=loaded["client_id"],

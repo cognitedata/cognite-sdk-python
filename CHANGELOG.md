@@ -21,7 +21,7 @@ Changes are grouped as follows
 ### Improved
 - Made GlobalConfig into a singleton to ensure proper usage from the `global_config` instance
 ### Added
-- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
 - Add `apply_settings` method to `global_config` to pass in a dict of settings
 
 ## [7.54.11] - 2024-07-26
