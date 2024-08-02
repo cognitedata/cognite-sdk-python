@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Collection
 
 from typing_extensions import Self
 
@@ -124,9 +124,31 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
 class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     _RESOURCE = Space
 
+    def _build_id_mappings(self) -> None:
+        self._space_to_item = {inst.space: inst for inst in self.data}
+
+    def get(self, space: str) -> Space | None:  # type: ignore [override]
+        """Get a space object from this list by space ID.
+
+        Args:
+            space (str): The space identifier to get.
+
+        Returns:
+            Space | None: The requested space if present, else None
+        """
+        return self._space_to_item.get(space)
+
+    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if set(self._space_to_item).isdisjoint(other_res_list._space_to_item):
+            super().extend(other)
+            self._space_to_item.update(other_res_list._space_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
+
     def as_ids(self) -> list[str]:
         """
-        Converts all the spaces to a space id list..
+        Converts all the spaces to a space id list.
 
         Returns:
             list[str]: A list of space ids.
