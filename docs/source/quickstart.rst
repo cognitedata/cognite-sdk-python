@@ -38,8 +38,7 @@ for more information on the configuration options.
 
     import yaml
 
-    from cognite.client import CogniteClient
-    from cognite.client.config import GlobalConfig
+    from cognite.client import CogniteClient, global_config
 
     file_path = Path("cognite-sdk-config.yaml")
 
@@ -55,7 +54,7 @@ for more information on the configuration options.
     cognite_config = yaml.safe_load(file_env_parsed)
 
     # If you want to set a global configuration it must be done before creating the client
-    global_config = GlobalConfig.load(cognite_config["global"])
+    global_config.apply_settings(cognite_config["global"])
     client = CogniteClient.load(cognite_config["client"])
 
 Instantiate a new client

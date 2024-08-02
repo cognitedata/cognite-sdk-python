@@ -17,9 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.12] - 2024-07-29
+## [7.55.0] - 2024-08-02
+### Improved
+- Made GlobalConfig into a singleton to ensure proper usage from the `global_config` instance
 ### Added
-- Add a load method to CogniteClient, GlobalConfig, ClientConfig, and CredenitalProvider
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
 
 ## [7.54.11] - 2024-07-26
 ### Fixed

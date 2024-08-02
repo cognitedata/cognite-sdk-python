@@ -34,6 +34,15 @@ class GlobalConfig:
             features. Defaults to False.
     """
 
+    def __new__(cls) -> GlobalConfig:
+        if hasattr(cls, "_instance"):
+            raise ValueError(
+                "GlobalConfig is a singleton and should not be instantiated directly. Use `global_config` instead, from cognite.client import global_config."
+            )
+
+        cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self) -> None:
         self.default_client_config: ClientConfig | None = None
         self.disable_gzip: bool = False
@@ -48,43 +57,39 @@ class GlobalConfig:
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
 
-    @classmethod
-    def load(cls, config: dict[str, Any] | str) -> GlobalConfig:
-        """Load a global configuration object from a YAML/JSON string or dict.
+    def apply_settings(self, settings: dict[str, Any] | str) -> None:
+        """Apply settings to the global configuration object from a YAML/JSON string or dict.
 
         Warning:
             This must be done before instantiating a CogniteClient for the configuration to take effect.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
-
-        Returns:
-            GlobalConfig: A global configuration object.
+            settings (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
 
         Examples:
 
             Create a global config object from a dictionary input:
 
-                >>> from cognite.client.config import GlobalConfig
-                >>> config = {
+                >>> from cognite.client import global_config
+                >>> settings = {
                 ...     "max_retries": 5,
                 ...     "disable_ssl": True,
                 ... }
-                >>> global_config = GlobalConfig.load(config)
+                >>> global_config.apply_settings(settings)
         """
 
-        loaded = load_resource_to_dict(config)
+        loaded = load_resource_to_dict(settings)
 
-        global_config = cls()
         for key, value in loaded.items():
             if not hasattr(global_config, key):
                 raise ValueError(f"Invalid key in global config: {key}")
             if key == "default_client_config":
-                global_config.default_client_config = ClientConfig.load(value)
+                if isinstance(value, ClientConfig):
+                    self.default_client_config = value
+                else:
+                    self.default_client_config = ClientConfig.load(value)
             else:
-                setattr(global_config, key, value)
-
-        return global_config
+                setattr(self, key, value)
 
 
 global_config = GlobalConfig()

@@ -1,25 +1,33 @@
 import pytest
 
+from cognite.client import global_config
 from cognite.client.config import ClientConfig, GlobalConfig
 from cognite.client.credentials import Token
 
 
 class TestGlobalConfig:
-    def test_load(self):
-        config = {
+    def test_global_config_singleton(self):
+        with pytest.raises(
+            ValueError,
+            match=r"GlobalConfig is a singleton and should not be instantiated directly. Use `global_config` instead, from cognite.client import global_config.",
+        ):
+            GlobalConfig()
+
+    def test_apply_settings(self):
+        settings = {
             "max_workers": 5,
             "max_retries": 3,
         }
-        global_config = GlobalConfig.load(config)
+        global_config.apply_settings(settings)
         assert global_config.max_workers == 5
         assert global_config.max_retries == 3
 
     def test_load_non_existent_attr(self):
-        config = {
+        settings = {
             "test": 10,
         }
         with pytest.raises(ValueError, match=r"Invalid key in global config: .*"):
-            GlobalConfig.load(config)
+            global_config.apply_settings(settings)
 
 
 class TestClientConfig:
