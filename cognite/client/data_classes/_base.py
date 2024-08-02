@@ -270,14 +270,16 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
+        self._build_id_mappings()
+
+    def _build_id_mappings(self) -> None:
         self._id_to_item, self._external_id_to_item = {}, {}
-        if self.data:
-            if hasattr(self.data[0], "external_id"):
-                self._external_id_to_item = {
-                    item.external_id: item for item in self.data if item.external_id is not None
-                }
-            if hasattr(self.data[0], "id"):
-                self._id_to_item = {item.id: item for item in self.data if item.id is not None}
+        if not self.data:
+            return
+        if hasattr(self.data[0], "external_id"):
+            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
+        if hasattr(self.data[0], "id"):
+            self._id_to_item = {item.id: item for item in self.data if item.id is not None}
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
