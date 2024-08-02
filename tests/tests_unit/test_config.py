@@ -9,7 +9,7 @@ class TestGlobalConfig:
     def test_global_config_singleton(self):
         with pytest.raises(
             ValueError,
-            match=r"GlobalConfig is a singleton and should not be instantiated directly. Use `global_config` instead, from cognite.client import global_config.",
+            match=r"GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead,",
         ):
             GlobalConfig()
 
