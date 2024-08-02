@@ -127,7 +127,7 @@ class Token(CredentialProvider):
         Returns:
             Token: Initialized token credential provider.
 
-        Warning:
+        Note:
             A callable token is not supported if passing in a yaml string.
 
         Examples:
