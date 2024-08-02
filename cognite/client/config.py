@@ -244,10 +244,15 @@ class ClientConfig:
         """
         loaded = load_resource_to_dict(config)
 
+        if isinstance(loaded["credentials"], CredentialProvider):
+            credentials = loaded["credentials"]
+        else:
+            credentials = CredentialProvider.load(loaded["credentials"])
+
         return cls(
             client_name=loaded["client_name"],
             project=loaded["project"],
-            credentials=CredentialProvider.load(loaded["credentials"]),
+            credentials=credentials,
             api_subversion=loaded.get("api_subversion"),
             base_url=loaded.get("base_url"),
             max_workers=loaded.get("max_workers"),

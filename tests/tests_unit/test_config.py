@@ -13,6 +13,7 @@ class TestGlobalConfig:
         ):
             GlobalConfig()
 
+    # TODO: Add test for default_client_config
     def test_apply_settings(self):
         settings = {
             "max_workers": 5,
@@ -44,15 +45,20 @@ class TestClientConfig:
         assert isinstance(client_config.credentials, Token)
         assert client_config.client_name == "test-client"
 
-    def test_load(self):
+    @pytest.mark.parametrize(
+        "credentials",
+        [{"token": "abc"}, '{"token": "abc"}', {"token": (lambda: "abc")}, Token("abc"), Token(lambda: "abc")],
+    )
+    def test_load(self, credentials):
         config = {
             "project": "test-project",
             "base_url": "https://test-cluster.cognitedata.com/",
-            "credentials": {"token": "abc"},
+            "credentials": credentials,
             "client_name": "test-client",
         }
         client_config = ClientConfig.load(config)
         assert client_config.project == "test-project"
         assert client_config.base_url == "https://test-cluster.cognitedata.com"
         assert isinstance(client_config.credentials, Token)
+        assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
         assert client_config.client_name == "test-client"

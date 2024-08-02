@@ -8,7 +8,7 @@ import time
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, runtime_checkable
 
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
@@ -20,6 +20,7 @@ from cognite.client.utils._auxiliary import load_resource_to_dict
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
 
+@runtime_checkable
 class CredentialProvider(Protocol):
     @abstractmethod
     def authorization_header(self) -> tuple[str, str]:
@@ -71,7 +72,7 @@ class CredentialProvider(Protocol):
                 f"Invalid credential provider type provided, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
 
-        if credential_type == "token" and isinstance(credential_config, str):
+        if credential_type == "token" and (isinstance(credential_config, str) or callable(credential_config)):
             credential_config = {"token": credential_config}
         return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
 

@@ -52,9 +52,21 @@ class TestToken:
         ):
             Token({"foo": "bar"})
 
-    def test_create_from_credential_provider(self):
-        creds = CredentialProvider.load({"token": "abc"})
+    @pytest.mark.parametrize(
+        "config",
+        [
+            {"token": "abc"},
+            {"token": {"token": "abc"}},
+            '{"token": "abc"}',
+            '{"token": {"token": "abc"}}',
+            {"token": (lambda: "abc")},
+            {"token": {"token": (lambda: "abc")}},
+        ],
+    )
+    def test_create_from_credential_provider(self, config):
+        creds = CredentialProvider.load(config)
         assert isinstance(creds, Token)
+        assert "Authorization", "Bearer abc" == creds.authorization_header()
 
 
 class TestOauthClientCredentials:
