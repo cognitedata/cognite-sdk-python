@@ -70,15 +70,10 @@ class CredentialProvider(Protocol):
             raise ValueError(
                 f"Invalid credential provider type provided, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
-        elif credential_type == "token":
-            if isinstance(credential_config, dict):
-                return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
-            elif isinstance(credential_config, str):
-                return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load({"token": credential_config})  # type: ignore [attr-defined]
-            else:
-                raise TypeError(f"Token resource must be json or yaml str, or dict, not {type(credential_config)}")
-        else:
-            return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
+
+        if credential_type == "token" and isinstance(credential_config, str):
+            credential_config = {"token": credential_config}
+        return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
 
 
 class Token(CredentialProvider):
