@@ -147,8 +147,7 @@ class TestCogniteClient:
 
         import yaml
 
-        from cognite.client import CogniteClient
-        from cognite.client.config import GlobalConfig
+        from cognite.client import CogniteClient, global_config
 
         # use the path to the test file, not the same path used in the docs
         test_path = os.path.join(os.path.dirname(__file__), "cognite-sdk-config.yaml")
@@ -166,7 +165,7 @@ class TestCogniteClient:
         cognite_config = yaml.safe_load(file_env_parsed)
 
         # If you want to set a global configuration it must be done before creating the client
-        global_config = GlobalConfig.load(cognite_config["global"])
+        global_config.apply_settings(cognite_config["global"])
         client = CogniteClient.load(cognite_config["client"])
 
         assert global_config.max_retries == 5
