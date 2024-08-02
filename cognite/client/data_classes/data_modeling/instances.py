@@ -1094,8 +1094,13 @@ class NodeListWithCursor(NodeList[T_Node]):
     def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
         if not isinstance(other, type(self)):
             raise TypeError("Unable to extend as the types do not match")
-        super().extend(other)
-        self.cursor = other.cursor
+        other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self.cursor = other.cursor
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -1185,8 +1190,13 @@ class EdgeListWithCursor(EdgeList):
     def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
         if not isinstance(other, type(self)):
             raise TypeError("Unable to extend as the types do not match")
-        super().extend(other)
-        self.cursor = other.cursor
+        other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self.cursor = other.cursor
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
 
 # This is a utility class. It is not used by in the SDK codebase, but used in projects that use the SDK.
