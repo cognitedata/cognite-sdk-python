@@ -308,7 +308,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+        if self._id_to_item.keys().isdisjoint(other_res_list._id_to_item):
             super().extend(other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
             self._id_to_item.update(other_res_list._id_to_item)

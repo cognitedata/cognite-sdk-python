@@ -140,7 +140,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
 
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
-        if set(self._space_to_item).isdisjoint(other_res_list._space_to_item):
+        if self._space_to_item.keys().isdisjoint(other_res_list._space_to_item):
             super().extend(other)
             self._space_to_item.update(other_res_list._space_to_item)
         else:
