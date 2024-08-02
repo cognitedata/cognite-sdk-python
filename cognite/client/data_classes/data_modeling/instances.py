@@ -978,7 +978,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
             id = id.as_tuple()
         return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
 
-    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+    def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if set(self._instance_id_to_item).isdisjoint(other_res_list._instance_id_to_item):
             super().extend(other)

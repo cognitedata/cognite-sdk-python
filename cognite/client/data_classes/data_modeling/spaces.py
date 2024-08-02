@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Collection
+from typing import TYPE_CHECKING, Any, Iterable
 
 from typing_extensions import Self
 
@@ -138,7 +138,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         """
         return self._space_to_item.get(space)
 
-    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+    def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if set(self._space_to_item).isdisjoint(other_res_list._space_to_item):
             super().extend(other)

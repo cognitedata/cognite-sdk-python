@@ -261,7 +261,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     _RESOURCE: type[T_CogniteResource]
     __cognite_client: CogniteClient | None
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Iterable[Any], cognite_client: CogniteClient | None = None) -> None:
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -306,7 +306,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return _json.dumps(item, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
-    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+    def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
             super().extend(other)
