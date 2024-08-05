@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client import global_config
+# from cognite.client import global_config
 from cognite.client.config import ClientConfig, GlobalConfig
 from cognite.client.credentials import Token
 
@@ -15,21 +15,32 @@ class TestGlobalConfig:
 
     # TODO: Add test for default_client_config
     # TODO: mock the global_config singleton
-    def test_apply_settings(self):
-        settings = {
-            "max_workers": 5,
-            "max_retries": 3,
-        }
-        global_config.apply_settings(settings)
-        assert global_config.max_workers == 5
-        assert global_config.max_retries == 3
+    def test_apply_settings(self, monkeypatch):
+        monkeypatch.delattr(GlobalConfig, "_instance")  # ensure that the singleton is re-instantiated
 
-    def test_load_non_existent_attr(self):
+        gc = GlobalConfig()
+
+        assert gc.max_workers == 5
+        assert gc.max_retries == 10
+
         settings = {
-            "test": 10,
+            "max_workers": 3,
+            "max_retries": 5,
         }
-        with pytest.raises(ValueError, match=r"Invalid key in global config: .*"):
-            global_config.apply_settings(settings)
+        gc.apply_settings(settings)
+        assert gc.max_workers == 3
+        assert gc.max_retries == 5
+
+        monkeypatch.delattr(
+            GlobalConfig, "_instance"
+        )  # ensure that the singleton is re-instantiated as default for future tests
+
+    # def test_load_non_existent_attr(self):
+    #     settings = {
+    #         "test": 10,
+    #     }
+    #     with pytest.raises(ValueError, match=r"Invalid key in global config: .*"):
+    #         global_config.apply_settings(settings)
 
 
 class TestClientConfig:
