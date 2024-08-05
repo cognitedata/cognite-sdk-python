@@ -950,6 +950,8 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
     def _build_id_mappings(self) -> None:
         self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
+        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
+        self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
 
     def get(
         self,
@@ -972,8 +974,8 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
                 "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
                 UserWarning,
             )
-            # Gotta do a linear search and stop at first match to keep existing behaviour:
-            return next((inst for (space, xid), inst in self._instance_id_to_item.items() if xid == external_id), None)
+            return self._ext_id_to_item.get(external_id)
+
         if isinstance(id, InstanceId):
             id = id.as_tuple()
         return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
