@@ -236,7 +236,9 @@ class TestLoadDictOrStr:
         "input, expected",
         (
             ({"foo": "bar"}, {"foo": "bar"}),
+            ({"foo": None}, {"foo": None}),
             ('{"foo": "bar"}', {"foo": "bar"}),
+            ('{"foo": null}', {"foo": None}),
             ("foo: bar", {"foo": "bar"}),
             ('{"foo": {"bar": "thing"}}', {"foo": {"bar": "thing"}}),
         ),

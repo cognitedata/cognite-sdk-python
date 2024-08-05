@@ -36,7 +36,7 @@ class GlobalConfig:
 
     def __new__(cls) -> GlobalConfig:
         if hasattr(cls, "_instance"):
-            raise ValueError(
+            raise ValueError(  # TODO: raise a different error type?
                 "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
                 "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
                 "Settings are only guaranteed to take effect if applied before instantiating a CogniteClient."
@@ -82,13 +82,16 @@ class GlobalConfig:
 
         loaded = load_resource_to_dict(settings)
 
+        if not set(loaded).issubset(set(self.__dict__)):
+            raise ValueError(
+                f"Invalid keys provided for global_config, no settings applied: {set(loaded) - set(self.__dict__)}"
+            )
+
         for key, value in loaded.items():
-            if not hasattr(global_config, key):
-                raise ValueError(f"Invalid key in global config: {key}")
             if key == "default_client_config":
-                if isinstance(value, ClientConfig):
+                if isinstance(value, ClientConfig) or value is None:
                     self.default_client_config = value
-                else:
+                elif value:
                     self.default_client_config = ClientConfig.load(value)
             else:
                 setattr(self, key, value)
@@ -244,7 +247,7 @@ class ClientConfig:
         """
         loaded = load_resource_to_dict(config)
 
-        if isinstance(loaded["credentials"], CredentialProvider):
+        if not loaded["credentials"] or isinstance(loaded["credentials"], CredentialProvider):
             credentials = loaded["credentials"]
         else:
             credentials = CredentialProvider.load(loaded["credentials"])
