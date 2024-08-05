@@ -44,7 +44,7 @@ def edge_lst(instance_lst: list[dict[str, Any]]) -> EdgeList:
             startNode={"space": "foo", "externalId": "bar2"},
             endNode={"space": "foo", "externalId": "bar3"},
         )
-    return EdgeList([Edge.load(inst) for inst in instance_lst])
+    return EdgeList.load(instance_lst)
 
 
 @pytest.fixture

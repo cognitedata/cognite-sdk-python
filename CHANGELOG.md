@@ -17,12 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.12] - 2024-08-02
+## [7.54.12] - 2024-08-05
 ### Fixed
 - NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.
   Using just an `external_id` is still possible, but deprecated as it is ambiguous in the absence of the space
-  identifier, and will just return the first matching instance (as previously).
-- SpaceList now expects a space identifier in the `.get` method.
+  identifier, and will just return the last matching instance (as previously).
+- SpaceList.get now works and expects a space identifier in the `.get` method.
 
 ## [7.54.11] - 2024-07-26
 ### Fixed
