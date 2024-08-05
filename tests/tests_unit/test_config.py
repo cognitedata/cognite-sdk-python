@@ -31,10 +31,6 @@ class TestGlobalConfig:
         assert gc.max_workers == 3
         assert gc.max_retries == 5
 
-        monkeypatch.delattr(
-            GlobalConfig, "_instance"
-        )  # ensure that the singleton is re-instantiated as default for future tests
-
     # def test_load_non_existent_attr(self):
     #     settings = {
     #         "test": 10,
