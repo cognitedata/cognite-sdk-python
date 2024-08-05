@@ -8,6 +8,8 @@ from cognite.client.credentials import (
     CredentialProvider,
     OAuthClientCertificate,
     OAuthClientCredentials,
+    OAuthDeviceCode,
+    OAuthInteractive,
     Token,
 )
 from cognite.client.exceptions import CogniteAuthError
@@ -67,6 +69,46 @@ class TestToken:
         creds = CredentialProvider.load(config)
         assert isinstance(creds, Token)
         assert "Authorization", "Bearer abc" == creds.authorization_header()
+
+
+class TestOAuthDeviceCode:
+    DEFAULT_PROVIDER_ARGS: ClassVar = {
+        "authority_url": "https://login.microsoftonline.com/xyz",
+        "client_id": "azure-client-id",
+        "scopes": ["https://greenfield.cognitedata.com/.default"],
+    }
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
+    def test_access_token_generated(self, mock_public_client, expires_in):
+        mock_public_client().return_value = Mock()
+        mock_public_client().acquire_token_silent.return_value = {
+            "access_token": "azure_token",
+            "expires_in": expires_in,
+        }
+        creds = OAuthDeviceCode(**self.DEFAULT_PROVIDER_ARGS)
+        creds._refresh_access_token()
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+
+class TestOAuthInteractive:
+    DEFAULT_PROVIDER_ARGS: ClassVar = {
+        "authority_url": "https://login.microsoftonline.com/xyz",
+        "client_id": "azure-client-id",
+        "scopes": ["https://greenfield.cognitedata.com/.default"],
+    }
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
+    def test_access_token_generated(self, mock_public_client, expires_in):
+        mock_public_client().return_value = Mock()
+        mock_public_client().acquire_token_silent.return_value = {
+            "access_token": "azure_token",
+            "expires_in": expires_in,
+        }
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        creds._refresh_access_token()
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
 
 class TestOauthClientCredentials:
