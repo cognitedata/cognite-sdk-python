@@ -8,12 +8,13 @@ from cognite.client.credentials import Token
 class TestGlobalConfig:
     def test_global_config_singleton(self):
         with pytest.raises(
-            ValueError,
+            ValueError,  # TODO: raise a different error type?
             match=r"GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead,",
         ):
             GlobalConfig()
 
     # TODO: Add test for default_client_config
+    # TODO: mock the global_config singleton
     def test_apply_settings(self):
         settings = {
             "max_workers": 5,
