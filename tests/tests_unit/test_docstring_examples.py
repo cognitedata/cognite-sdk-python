@@ -1,11 +1,11 @@
 import doctest
 from collections import defaultdict
 from unittest import TextTestRunner
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from cognite.client import _cognite_client, config
+from cognite.client import _cognite_client, config, credentials
 from cognite.client._api import (
     assets,
     data_sets,
@@ -41,8 +41,22 @@ def run_docstring_tests(module):
 
 
 @patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
-def test_cognite_client_load():
+def test_cognite_client():
     run_docstring_tests(_cognite_client)
+
+
+@patch("cognite.client.credentials.ConfidentialClientApplication")
+@patch("cognite.client.credentials.PublicClientApplication")
+@patch("pathlib.Path.read_text", Mock(return_value="certificatecontents123"))
+@patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
+def test_credential_providers(mock_msal_app, mock_public_client):
+    mock_msal_app().acquire_token_for_client.return_value = {
+        "access_token": "azure_token",
+        "expires_in": 1000,
+    }
+    mock_public_client().return_value = Mock()
+    mock_public_client().acquire_token_silent.return_value = {"access_token": "azure_token", "expires_in": 1000}
+    run_docstring_tests(credentials)
 
 
 @patch("cognite.client.CogniteClient", CogniteClientMock)
