@@ -58,6 +58,19 @@ class TestToken:
         "config",
         [
             {"token": "abc"},
+            '{"token": "abc"}',
+            {"token": (lambda: "abc")},
+        ],
+    )
+    def test_load(self, config):
+        creds = Token.load(config)
+        assert isinstance(creds, Token)
+        assert "Authorization", "Bearer abc" == creds.authorization_header()
+
+    @pytest.mark.parametrize(
+        "config",
+        [
+            {"token": "abc"},
             {"token": {"token": "abc"}},
             '{"token": "abc"}',
             '{"token": {"token": "abc"}}',
@@ -90,6 +103,21 @@ class TestOAuthDeviceCode:
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_load(self, mock_public_client):
+        mock_public_client().return_value = Mock()
+        creds = OAuthDeviceCode.load(self.DEFAULT_PROVIDER_ARGS)
+        assert isinstance(creds, OAuthDeviceCode)
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_create_from_credential_provider(self, mock_public_client):
+        mock_public_client().return_value = Mock()
+        config = {"device_code": self.DEFAULT_PROVIDER_ARGS}
+        creds = CredentialProvider.load(config)
+        assert isinstance(creds, OAuthDeviceCode)
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
 
 class TestOAuthInteractive:
     DEFAULT_PROVIDER_ARGS: ClassVar = {
@@ -108,6 +136,21 @@ class TestOAuthInteractive:
         }
         creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_load(self, mock_public_client):
+        mock_public_client().return_value = Mock()
+        creds = OAuthInteractive.load(self.DEFAULT_PROVIDER_ARGS)
+        assert isinstance(creds, OAuthInteractive)
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_create_from_credential_provider(self, mock_public_client):
+        mock_public_client().return_value = Mock()
+        config = {"interactive": self.DEFAULT_PROVIDER_ARGS}
+        creds = CredentialProvider.load(config)
+        assert isinstance(creds, OAuthInteractive)
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
 
@@ -154,6 +197,10 @@ class TestOauthClientCredentials:
         assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
 
+    def test_load(self):
+        creds = OAuthClientCredentials.load(self.DEFAULT_PROVIDER_ARGS)
+        assert isinstance(creds, OAuthClientCredentials)
+
     def test_create_from_credential_provider(self):
         creds = CredentialProvider.load({"client_credentials": self.DEFAULT_PROVIDER_ARGS})
         assert isinstance(creds, OAuthClientCredentials)
@@ -181,6 +228,20 @@ class TestOAuthClientCertificate:
         }
         creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
+
+    @patch("cognite.client.credentials.ConfidentialClientApplication")
+    def test_load(self, mock_msal_app):
+        mock_msal_app().acquire_token_for_client.return_value = {
+            "access_token": "azure_token",
+            "expires_in": 1000,
+        }
+        creds = OAuthClientCertificate.load(self.DEFAULT_PROVIDER_ARGS)
+        assert isinstance(creds, OAuthClientCertificate)
+        assert creds.authority_url == "https://login.microsoftonline.com/xyz"
+        assert creds.client_id == "azure-client-id"
+        assert creds.cert_thumbprint == "XYZ123"
+        assert creds.certificate == "certificatecontents123"
+        assert creds.scopes == ["https://greenfield.cognitedata.com/.default"]
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
     def test_create_from_credential_provider(self, mock_msal_app):
