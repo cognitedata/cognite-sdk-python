@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling import Edge, EdgeId, EdgeList, Node, NodeId, NodeList, Space, SpaceList
+from cognite.client.data_classes.data_modeling import EdgeId, EdgeList, Node, NodeId, NodeList, Space, SpaceList
 from cognite.client.data_classes.data_modeling.instances import DataModelingInstancesList
 from cognite.client.utils._identifier import InstanceId
 
