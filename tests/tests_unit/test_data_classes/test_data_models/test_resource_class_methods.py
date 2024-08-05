@@ -78,7 +78,7 @@ def test_get_space_list(space_lst: SpaceList, space: str) -> None:
     item = space_lst.get(space)
     assert item.space == space  # type: ignore [union-attr]
 
-    assert space_lst.get(space + "doesnt-exist") is None  # type: ignore [union-attr]
+    assert space_lst.get(space + "doesnt-exist") is None
 
 
 @pytest.mark.parametrize("which", ("space", "node", "edge"))
