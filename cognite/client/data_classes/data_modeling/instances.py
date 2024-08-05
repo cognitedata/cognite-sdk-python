@@ -983,7 +983,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
-            super().extend(other)
+            self.data.extend(other_res_list.data)
             self._instance_id_to_item.update(other_res_list._instance_id_to_item)
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")

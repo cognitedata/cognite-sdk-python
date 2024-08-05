@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling import Edge, EdgeId, EdgeList, Node, NodeId, NodeList, Space, SpaceList
 from cognite.client.data_classes.data_modeling.instances import DataModelingInstancesList
 from cognite.client.utils._identifier import InstanceId
@@ -78,3 +79,17 @@ def test_get_space_list(space_lst: SpaceList, space: str) -> None:
     assert item.space == space  # type: ignore [union-attr]
 
     assert space_lst.get(space + "doesnt-exist") is None  # type: ignore [union-attr]
+
+
+@pytest.mark.parametrize("which", ("space", "node", "edge"))
+def test_extend_method(node_lst: NodeList, edge_lst: EdgeList, space_lst: SpaceList, which: str) -> None:
+    lst: CogniteResourceList = {"node": node_lst, "edge": edge_lst, "space": space_lst}[which]  # type: ignore [assignment]
+    empty = lst[:0]
+    overlapping = lst[:]
+    not_overlapping = lst[2:]
+    lst = lst[:2]
+
+    lst.extend(empty)
+    lst.extend(not_overlapping)
+    with pytest.raises(ValueError, match=r"^Unable to extend as this would introduce duplicates$"):
+        lst.extend(overlapping)

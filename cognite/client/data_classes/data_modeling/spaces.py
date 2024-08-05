@@ -141,7 +141,7 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if self._space_to_item.keys().isdisjoint(other_res_list._space_to_item):
-            super().extend(other)
+            self.data.extend(other_res_list.data)
             self._space_to_item.update(other_res_list._space_to_item)
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
