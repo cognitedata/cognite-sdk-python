@@ -8,7 +8,7 @@ from cognite.client.credentials import Token
 class TestGlobalConfig:
     def test_global_config_singleton(self):
         with pytest.raises(
-            ValueError,
+            TypeError,
             match=r"GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead,",
         ):
             GlobalConfig()
@@ -60,12 +60,11 @@ class TestGlobalConfig:
             "invalid_2": "foo",
         }
 
-        with pytest.raises(ValueError, match=r"Invalid keys provided for global_config, no settings applied:"):
+        with pytest.raises(ValueError, match=r"One or more invalid keys provided for global_config"):
             global_config.apply_settings(settings)
 
-        assert (
-            global_config.max_workers != 0
-        )  # confirm that the valid keys were not applied since we don't want a partial application
+        # confirm that the valid keys were not applied since we don't want a partial application
+        assert global_config.max_workers != 0
 
 
 class TestClientConfig:
