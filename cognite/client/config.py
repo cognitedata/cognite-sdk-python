@@ -89,7 +89,7 @@ class GlobalConfig:
 
         for key, value in loaded.items():
             if key == "default_client_config":
-                if isinstance(value, ClientConfig) or value is None:
+                if isinstance(value, ClientConfig):
                     self.default_client_config = value
                 else:
                     self.default_client_config = ClientConfig.load(value)
@@ -247,7 +247,7 @@ class ClientConfig:
         """
         loaded = load_resource_to_dict(config)
 
-        if not loaded["credentials"] or isinstance(loaded["credentials"], CredentialProvider):
+        if isinstance(loaded["credentials"], CredentialProvider):
             credentials = loaded["credentials"]
         else:
             credentials = CredentialProvider.load(loaded["credentials"])

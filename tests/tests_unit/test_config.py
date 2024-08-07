@@ -28,7 +28,6 @@ class TestGlobalConfig:
                 credentials=Token("abc"),
                 client_name="test-client",
             ),
-            None,
         ],
     )
     def test_apply_settings(self, monkeypatch, client_config):
@@ -45,13 +44,9 @@ class TestGlobalConfig:
         gc.apply_settings(settings)
         assert gc.max_workers == 6
         assert gc.max_retries == 11
-
-        if client_config:
-            assert isinstance(gc.default_client_config, ClientConfig)
-            assert isinstance(gc.default_client_config.credentials, Token)
-            assert gc.default_client_config.project == "test-project"
-        else:
-            assert gc.default_client_config is None
+        assert isinstance(gc.default_client_config, ClientConfig)
+        assert isinstance(gc.default_client_config.credentials, Token)
+        assert gc.default_client_config.project == "test-project"
 
     def test_load_non_existent_attr(self):
         settings = {
