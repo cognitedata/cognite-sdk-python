@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.12] - 2024-08-05
+## [7.54.12] - 2024-08-08
 ### Fixed
 - NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.
   Using just an `external_id` is still possible, but deprecated as it is ambiguous in the absence of the space
