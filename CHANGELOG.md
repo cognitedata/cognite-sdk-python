@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.12] - 2024-08-08
+### Fixed
+- NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.
+  Using just an `external_id` is still possible, but deprecated as it is ambiguous in the absence of the space
+  identifier, and will just return the last matching instance (as previously).
+- SpaceList.get now works and expects a space identifier in the `.get` method.
+
 ## [7.54.11] - 2024-07-26
 ### Fixed
 - Creating a Group with an `UnknownAcl` supported by the API no longer raises a client-side `ValueError` after
@@ -43,7 +50,7 @@ Changes are grouped as follows
 
 ## [7.54.7] - 2024-07-22
 ### Fixed
-- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`. 
+- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`.
 - The method `client.three_d.models.create` now supports creating multiple models with different metdata fields
   in a single call.
 

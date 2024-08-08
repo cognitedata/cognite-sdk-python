@@ -58,6 +58,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewIdentifier,
 )
 from cognite.client.utils._auxiliary import flatten_dict
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -193,7 +194,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         instance_type (Literal["node", "edge"]): No description.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
@@ -947,6 +948,46 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 
 
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
+    def _build_id_mappings(self) -> None:
+        self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
+        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
+        self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
+
+    def get(
+        self,
+        id: InstanceId | tuple[str, str] | None = None,  # type: ignore [override]
+        external_id: str | None = None,
+    ) -> T_Instance | None:
+        """Get an instance from this list by instance ID.
+
+        Args:
+            id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
+            external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
+
+        Returns:
+            T_Instance | None: The requested instance if present, else None
+        """
+        # TODO: Remove when we ditch PY3.8
+        if external_id is not None:
+            warnings.warn(
+                "Calling .get with an external ID is deprecated due to being ambiguous in the absense of 'space', and "
+                "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
+                UserWarning,
+            )
+            return self._ext_id_to_item.get(external_id)
+
+        if isinstance(id, InstanceId):
+            id = id.as_tuple()
+        return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
+
+    def extend(self, other: Iterable[Any]) -> None:
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other_res_list.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
+
     def to_pandas(  # type: ignore [override]
         self,
         camel_case: bool = False,
@@ -988,7 +1029,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:
                 warnings.warn(
-                    "Can't remove view ID prefix from expanded property columns as source was not unique",
+                    "Can't remove view ID prefix from expanded property columns as multiple sources exist",
                     RuntimeWarning,
                 )
         return df.join(prop_df)
@@ -1056,9 +1097,9 @@ class NodeListWithCursor(NodeList[T_Node]):
         if not isinstance(other, type(self)):
             raise TypeError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
-        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item):
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
@@ -1152,9 +1193,9 @@ class EdgeListWithCursor(EdgeList):
         if not isinstance(other, type(self)):
             raise TypeError("Unable to extend as the types do not match")
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
-        if self._external_id_to_item.keys().isdisjoint(other_res_list._external_id_to_item):
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
