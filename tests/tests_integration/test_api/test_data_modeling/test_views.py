@@ -225,7 +225,7 @@ class TestViewsAPI:
     ) -> None:
         new_container = ContainerApply(
             space=integration_test_space.space,
-            external_id="Critic",
+            external_id=f"Critic_{random_string(10)}",
             name="Critic",
             description="This is a test container, and should not persist.",
             properties={
