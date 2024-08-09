@@ -330,14 +330,10 @@ class TestGeospatialAPI:
     def test_retrieve_multiple_feature_types_by_external_id(
         self, cognite_client, test_feature_type, another_test_feature_type
     ):
-        assert (
-            len(
-                cognite_client.geospatial.retrieve_feature_types(
-                    external_id=[test_feature_type.external_id, another_test_feature_type.external_id]
-                )
-            )
-            == 2
+        res = cognite_client.geospatial.retrieve_feature_types(
+            external_id=[test_feature_type.external_id, another_test_feature_type.external_id]
         )
+        assert len(res) == 2
 
     def test_retrieve_multiple_features_by_external_id(
         self, cognite_client, test_feature_type, test_feature, another_test_feature
