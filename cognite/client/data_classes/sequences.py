@@ -628,7 +628,7 @@ class SequenceRow(CogniteResource):
         )
 
 
-ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
+ColumnNames: TypeAlias = Literal[
     "externalId",
     "id",
     "columnExternalId",
@@ -761,13 +761,13 @@ class SequenceRows(CogniteResource):
                 f"Invalid column_names value '{column_names}', should be one of {list(_VALID_COLUMN_NAMES)}"
             )
 
-        column_names = (
+        column_fmt = (
             column_names.replace("columnExternalId", "{columnExternalId}")
             .replace("externalId", "{externalId}")
             .replace("id", "{id}")
         )
         df_columns = [
-            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+            column_fmt.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
         index: Any
