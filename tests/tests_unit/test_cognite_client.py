@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pytest
 
@@ -54,6 +55,17 @@ def mock_token_inspect(rsps) -> None:
     yield
 
 
+@pytest.fixture
+def set_env_vars(monkeypatch):
+    env_vars = {
+        "MY_CLUSTER": "api",
+        "MY_TENANT_ID": "my-tenant-id",
+        "MY_CLIENT_ID": "my-client-id",
+        "MY_CLIENT_SECRET": "my-client-secret",
+    }
+    monkeypatch.setattr(os, "environ", env_vars)
+
+
 class TestCogniteClient:
     def test_project_is_empty(self):
         with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: <>"):
@@ -101,6 +113,70 @@ class TestCogniteClient:
         assert rsps.calls[0][0].req_kwargs["verify"] is True
         assert client._api_client._http_client_with_retry.session.verify is True
         assert client._api_client._http_client.session.verify is True
+
+    def test_client_load(self):
+        config = {
+            "project": "test-project",
+            "client_name": "cognite-sdk-python",
+            "debug": True,
+            "credentials": {
+                "client_credentials": {
+                    "client_id": "test-client-id",
+                    "client_secret": "test-client-secret",
+                    "token_url": TOKEN_URL,
+                    "scopes": ["https://test.com/.default", "https://test.com/.admin"],
+                }
+            },
+        }
+        client = CogniteClient.load(config)
+        assert client.config.project == "test-project"
+        assert client.config.credentials.client_id == "test-client-id"
+        assert client.config.credentials.client_secret == "test-client-secret"
+        assert client.config.credentials.token_url == TOKEN_URL
+        assert client.config.credentials.scopes == ["https://test.com/.default", "https://test.com/.admin"]
+        assert client.config.debug is True
+        log = logging.getLogger("cognite.client")
+        log.handlers = []
+        log.propagate = False
+
+    def test_client_load_docs_example(self, set_env_vars):
+        """Test the example in the Quickstart docs, docs/source/quickstart.rst"""
+        import os
+        from pathlib import Path
+        from string import Template
+
+        import yaml
+
+        from cognite.client import CogniteClient, global_config
+
+        # use the path to the test file, not the same path used in the docs
+        test_path = os.path.join(os.path.dirname(__file__), "cognite-sdk-config.yaml")
+        file_path = Path(test_path)
+
+        # Read in yaml file and substitute environment variables in the file string
+        with file_path.open("r") as file_raw:
+            env_sub_template = Template(file_raw.read())
+        try:
+            file_env_parsed = env_sub_template.substitute(os.environ)
+        except (KeyError, ValueError) as e:
+            raise ValueError(f"Error substituting environment variable: {e}")
+
+        # Load yaml file string into a dictionary
+        cognite_config = yaml.safe_load(file_env_parsed)
+
+        # If you want to set a global configuration it must be done before creating the client
+        global_config.apply_settings(cognite_config["global"])
+        client = CogniteClient.load(cognite_config["client"])
+
+        assert global_config.max_retries == 5
+        assert global_config.max_retry_backoff == 5
+
+        assert client.config.project == "my-project"
+        assert client.config.client_name == "my-special-client"
+        assert client.config.credentials.client_id == "my-client-id"
+        assert client.config.credentials.client_secret == "my-client-secret"
+        assert client.config.credentials.token_url == "https://login.microsoftonline.com/my-tenant-id/oauth2/v2.0/token"
+        assert client.config.credentials.scopes == ["https://api.cognitedata.com/.default"]
 
 
 class TestInstantiateWithClient:

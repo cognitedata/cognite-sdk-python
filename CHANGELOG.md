@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.55.0] - 2024-08-02
+### Improved
+- Made GlobalConfig into a singleton to ensure proper usage from the `global_config` instance
+### Added
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
+
 ## [7.54.12] - 2024-08-08
 ### Fixed
 - NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.

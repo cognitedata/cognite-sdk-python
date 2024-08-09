@@ -4,9 +4,11 @@ import getpass
 import pprint
 import warnings
 from contextlib import suppress
+from typing import Any
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
+from cognite.client.utils._auxiliary import load_resource_to_dict
 
 
 class GlobalConfig:
@@ -32,6 +34,17 @@ class GlobalConfig:
             features. Defaults to False.
     """
 
+    def __new__(cls) -> GlobalConfig:
+        if hasattr(cls, "_instance"):
+            raise TypeError(
+                "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
+                "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
+                "Settings are only guaranteed to take effect if applied before instantiating a CogniteClient."
+            )
+
+        cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self) -> None:
         self.default_client_config: ClientConfig | None = None
         self.disable_gzip: bool = False
@@ -45,6 +58,43 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
+
+    def apply_settings(self, settings: dict[str, Any] | str) -> None:
+        """Apply settings to the global configuration object from a YAML/JSON string or dict.
+
+        Warning:
+            This must be done before instantiating a CogniteClient for the configuration to take effect.
+
+        Args:
+            settings (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the GlobalConfig class.
+
+        Examples:
+
+            Create a global config object from a dictionary input:
+
+                >>> from cognite.client import global_config
+                >>> settings = {
+                ...     "max_retries": 5,
+                ...     "disable_ssl": True,
+                ... }
+                >>> global_config.apply_settings(settings)
+        """
+
+        loaded = load_resource_to_dict(settings)
+
+        if not loaded.keys() <= self.__dict__.keys():
+            raise ValueError(
+                f"One or more invalid keys provided for global_config, no settings applied: {set(loaded) - set(self.__dict__)}"
+            )
+
+        for key, value in loaded.items():
+            if key == "default_client_config":
+                if isinstance(value, ClientConfig):
+                    self.default_client_config = value
+                else:
+                    self.default_client_config = ClientConfig.load(value)
+            else:
+                setattr(self, key, value)
 
 
 global_config = GlobalConfig()
@@ -162,4 +212,55 @@ class ClientConfig:
             project=project,
             credentials=credentials,
             base_url=f"https://{cdf_cluster}.cognitedata.com/",
+        )
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> ClientConfig:
+        """Load a client config object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the ClientConfig class.
+
+        Returns:
+            ClientConfig: A client config object.
+
+        Examples:
+
+            Create a client config object from a dictionary input:
+
+                >>> from cognite.client.config import ClientConfig
+                >>> import os
+                >>> config = {
+                ...     "client_name": "abcd",
+                ...     "project": "cdf-project",
+                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "credentials": {
+                ...         "client_credentials": {
+                ...             "client_id": "abcd",
+                ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...             "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...             "scopes": ["https://api.cognitedata.com/.default"],
+                ...         },
+                ...     },
+                ... }
+                >>> client_config = ClientConfig.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+
+        if isinstance(loaded["credentials"], CredentialProvider):
+            credentials = loaded["credentials"]
+        else:
+            credentials = CredentialProvider.load(loaded["credentials"])
+
+        return cls(
+            client_name=loaded["client_name"],
+            project=loaded["project"],
+            credentials=credentials,
+            api_subversion=loaded.get("api_subversion"),
+            base_url=loaded.get("base_url"),
+            max_workers=loaded.get("max_workers"),
+            headers=loaded.get("headers"),
+            timeout=loaded.get("timeout"),
+            file_transfer_timeout=loaded.get("file_transfer_timeout"),
+            debug=loaded.get("debug", False),
         )
