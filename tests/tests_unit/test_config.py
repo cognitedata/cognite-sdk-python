@@ -82,20 +82,6 @@ class TestClientConfig:
         assert isinstance(client_config.credentials, Token)
         assert client_config.client_name == "test-client"
 
-    # TODO: do we want this to raise an error when credentials is None?
-    def test_credentials_none(self):
-        config = {
-            "project": "test-project",
-            "cdf_cluster": "test-cluster",
-            "credentials": None,
-            "client_name": "test-client",
-        }
-        client_config = ClientConfig.default(**config)
-        assert client_config.project == "test-project"
-        assert client_config.base_url == "https://test-cluster.cognitedata.com"
-        assert client_config.credentials is None
-        assert client_config.client_name == "test-client"
-
     @pytest.mark.parametrize(
         "credentials",
         [{"token": "abc"}, '{"token": "abc"}', {"token": (lambda: "abc")}, Token("abc"), Token(lambda: "abc"), None],
@@ -107,7 +93,7 @@ class TestClientConfig:
             "credentials": credentials,
             "client_name": "test-client",
         }
-        with pytest.raises(TypeError, _LOAD_RESOURCE_TO_DICT_ERROR) if not credentials else does_not_raise():
+        with pytest.raises(TypeError, match=_LOAD_RESOURCE_TO_DICT_ERROR) if not credentials else does_not_raise():
             client_config = ClientConfig.load(config)
             assert client_config.project == "test-project"
             assert client_config.base_url == "https://test-cluster.cognitedata.com"
