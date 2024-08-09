@@ -1,8 +1,12 @@
+from contextlib import nullcontext as does_not_raise
+
 import pytest
 
 from cognite.client import global_config
 from cognite.client.config import ClientConfig, GlobalConfig
 from cognite.client.credentials import Token
+
+_LOAD_RESOURCE_TO_DICT_ERROR = r"Resource must be json or yaml str, or dict, not"
 
 
 class TestGlobalConfig:
@@ -28,6 +32,7 @@ class TestGlobalConfig:
                 credentials=Token("abc"),
                 client_name="test-client",
             ),
+            None,
         ],
     )
     def test_apply_settings(self, monkeypatch, client_config):
@@ -41,12 +46,13 @@ class TestGlobalConfig:
             "max_retries": 11,
             "default_client_config": client_config,
         }
-        gc.apply_settings(settings)
-        assert gc.max_workers == 6
-        assert gc.max_retries == 11
-        assert isinstance(gc.default_client_config, ClientConfig)
-        assert isinstance(gc.default_client_config.credentials, Token)
-        assert gc.default_client_config.project == "test-project"
+        with pytest.raises(TypeError, match=_LOAD_RESOURCE_TO_DICT_ERROR) if not client_config else does_not_raise():
+            gc.apply_settings(settings)
+            assert gc.max_workers == 6
+            assert gc.max_retries == 11
+            assert isinstance(gc.default_client_config, ClientConfig)
+            assert isinstance(gc.default_client_config.credentials, Token)
+            assert gc.default_client_config.project == "test-project"
 
     def test_load_non_existent_attr(self):
         settings = {
@@ -92,7 +98,7 @@ class TestClientConfig:
 
     @pytest.mark.parametrize(
         "credentials",
-        [{"token": "abc"}, '{"token": "abc"}', {"token": (lambda: "abc")}, Token("abc"), Token(lambda: "abc")],
+        [{"token": "abc"}, '{"token": "abc"}', {"token": (lambda: "abc")}, Token("abc"), Token(lambda: "abc"), None],
     )
     def test_load(self, credentials):
         config = {
@@ -101,9 +107,10 @@ class TestClientConfig:
             "credentials": credentials,
             "client_name": "test-client",
         }
-        client_config = ClientConfig.load(config)
-        assert client_config.project == "test-project"
-        assert client_config.base_url == "https://test-cluster.cognitedata.com"
-        assert isinstance(client_config.credentials, Token)
-        assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
-        assert client_config.client_name == "test-client"
+        with pytest.raises(TypeError, _LOAD_RESOURCE_TO_DICT_ERROR) if not credentials else does_not_raise():
+            client_config = ClientConfig.load(config)
+            assert client_config.project == "test-project"
+            assert client_config.base_url == "https://test-cluster.cognitedata.com"
+            assert isinstance(client_config.credentials, Token)
+            assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
+            assert client_config.client_name == "test-client"

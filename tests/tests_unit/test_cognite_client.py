@@ -154,8 +154,7 @@ class TestCogniteClient:
         file_path = Path(test_path)
 
         # Read in yaml file and substitute environment variables in the file string
-        with file_path.open("r") as file_raw:
-            env_sub_template = Template(file_raw.read())
+        env_sub_template = Template(file_path.read_text())
         try:
             file_env_parsed = env_sub_template.substitute(os.environ)
         except (KeyError, ValueError) as e:

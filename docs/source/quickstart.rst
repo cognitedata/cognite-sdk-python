@@ -1,12 +1,18 @@
 Quickstart
 ==========
+
+There are multiple ways that a CogniteClient can be configured to authenticate with Cognite Data Fusion (CDF). For the purpose of
+this quickstart we'll demonstrate the most common/recommended patterns. More details and usage examples can be found in each respective
+section: :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
+:ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`.
+
 Instantiate a new client from a configuration file
 --------------------------------------------------
-Use this code to instantiate a client in order to execute API calls to Cognite Data Fusion (CDF) using a configuration file.
+Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
 
 .. note::
-    How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method only
-    accepts a dictionary or a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
+    How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method
+    accepts both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
 
 See :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
@@ -43,8 +49,7 @@ for more information on the configuration options.
     file_path = Path("cognite-sdk-config.yaml")
 
     # Read in yaml file and substitute environment variables in the file string
-    with file_path.open("r") as file_raw:
-        env_sub_template = Template(file_raw.read())
+    env_sub_template = Template(file_path.read_text())
     try:
         file_env_parsed = env_sub_template.substitute(dict(os.environ))
     except (KeyError, ValueError) as e:
@@ -57,10 +62,10 @@ for more information on the configuration options.
     global_config.apply_settings(cognite_config["global"])
     client = CogniteClient.load(cognite_config["client"])
 
-Instantiate a new client
-------------------------
+Instantiate a new client using ClientConfig
+-------------------------------------------
 
-Alternatively, you can create a client directly using the ClientConfig class.
+Use this code to instantiate a client using the ClientConfig and global_config in order to execute API calls to Cognite Data Fusion (CDF).
 
 Use this code to instantiate a client in order to execute API calls to Cognite Data Fusion (CDF).
 The :code:`client_name` is a user-defined string intended to give the client a unique identifier. You

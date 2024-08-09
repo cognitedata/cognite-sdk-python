@@ -54,7 +54,6 @@ def test_credential_providers(mock_msal_app, mock_public_client):
         "access_token": "azure_token",
         "expires_in": 1000,
     }
-    mock_public_client().return_value = Mock()
     mock_public_client().acquire_token_silent.return_value = {"access_token": "azure_token", "expires_in": 1000}
     run_docstring_tests(credentials)
 

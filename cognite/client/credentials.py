@@ -42,7 +42,7 @@ class CredentialProvider(Protocol):
 
                 >>> from cognite.client.credentials import CredentialProvider
                 >>> config = {"token": "my secret token"}
-                >>> credential_provider = CredentialProvider.load(config)
+                >>> credentials = CredentialProvider.load(config)
 
             Get a client credential provider:
 
@@ -55,7 +55,7 @@ class CredentialProvider(Protocol):
                 ...         "scopes": ["https://api.cognitedata.com/.default"],
                 ...     }
                 ... }
-                >>> credential_provider = CredentialProvider.load(config)
+                >>> credentials = CredentialProvider.load(config)
         """
         loaded = load_resource_to_dict(config)
 
@@ -69,7 +69,7 @@ class CredentialProvider(Protocol):
 
         if credential_type not in _SUPPORTED_CREDENTIAL_TYPES:
             raise ValueError(
-                f"Invalid credential provider type provided, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
+                f"Invalid credential provider type given, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
             )
 
         if credential_type == "token" and (isinstance(credential_config, str) or callable(credential_config)):
@@ -129,7 +129,7 @@ class Token(CredentialProvider):
         Examples:
 
             >>> from cognite.client.credentials import Token
-            >>> credential_provider = Token.load({"token": "my secret token"})
+            >>> credentials = Token.load({"token": "my secret token"})
         """
         loaded = load_resource_to_dict(config)
         return cls(token=loaded["token"])
@@ -298,7 +298,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthDeviceCode:
-        """Load a oauth device code credential provider object from a YAML/JSON string or dict.
+        """Load a OAuth device code credential provider object from a YAML/JSON string or dict.
 
         Args:
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
@@ -314,7 +314,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ...     "client_id": "abcd",
             ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
             ... }
-            >>> credential_provider = OAuthDeviceCode.load(config)
+            >>> credentials = OAuthDeviceCode.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(
@@ -409,7 +409,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthInteractive:
-        """Load a oauth interactive credential provider object from a YAML/JSON string or dict.
+        """Load a OAuth interactive credential provider object from a YAML/JSON string or dict.
 
         Args:
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
@@ -425,7 +425,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             ...     "client_id": "abcd",
             ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
             ... }
-            >>> credential_provider = OAuthInteractive.load(config)
+            >>> credentials = OAuthInteractive.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(
@@ -433,7 +433,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             client_id=loaded["client_id"],
             scopes=loaded["scopes"],
             redirect_port=int(loaded.get("redirect_port", 53000)),
-            token_cache_path=loaded.get("token_cache_path"),
+            token_cache_path=Path(str(loaded.get("token_cache_path"))),
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),
@@ -582,7 +582,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
-        """Load a oauth client credentials credential provider object from a YAML/JSON string or dict.
+        """Load a OAuth client credentials credential provider object from a YAML/JSON string or dict.
 
         Args:
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
@@ -601,7 +601,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
             ...     "audience": "some-audience"
             ... }
-            >>> credential_provider = OAuthClientCredentials.load(config)
+            >>> credentials = OAuthClientCredentials.load(config)
         """
         loaded = load_resource_to_dict(config).copy()  # doing a shallow copy to avoid mutating the user input config
         return cls(
@@ -728,7 +728,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCertificate:
-        """Load a oauth client certificate credential provider object from a YAML/JSON string or dict.
+        """Load a OAuth client certificate credential provider object from a YAML/JSON string or dict.
 
         Args:
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
@@ -747,7 +747,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
             ...     "certificate": Path("certificate.pem").read_text(),
             ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
             ... }
-            >>> credential_provider = OAuthClientCertificate.load(config)
+            >>> credentials = OAuthClientCertificate.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(

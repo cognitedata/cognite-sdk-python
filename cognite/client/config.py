@@ -62,6 +62,9 @@ class GlobalConfig:
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
         """Apply settings to the global configuration object from a YAML/JSON string or dict.
 
+        Note:
+            All settings in the dictionary will be applied unless an invalid key is provided, a ValueError will instead be raised and no settings will be applied.
+
         Warning:
             This must be done before instantiating a CogniteClient for the configuration to take effect.
 
@@ -70,7 +73,7 @@ class GlobalConfig:
 
         Examples:
 
-            Create a global config object from a dictionary input:
+            Apply settings to the global_config from a dictionary input:
 
                 >>> from cognite.client import global_config
                 >>> settings = {
@@ -80,21 +83,18 @@ class GlobalConfig:
                 >>> global_config.apply_settings(settings)
         """
 
-        loaded = load_resource_to_dict(settings)
+        loaded = load_resource_to_dict(settings).copy()  # doing a shallow copy to avoid mutating the user input config
 
         if not loaded.keys() <= self.__dict__.keys():
             raise ValueError(
                 f"One or more invalid keys provided for global_config, no settings applied: {set(loaded) - set(self.__dict__)}"
             )
 
-        for key, value in loaded.items():
-            if key == "default_client_config":
-                if isinstance(value, ClientConfig):
-                    self.default_client_config = value
-                else:
-                    self.default_client_config = ClientConfig.load(value)
-            else:
-                setattr(self, key, value)
+        if "default_client_config" in loaded:
+            if not isinstance(loaded["default_client_config"], ClientConfig):
+                loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
+
+        vars(self).update(loaded)
 
 
 global_config = GlobalConfig()
