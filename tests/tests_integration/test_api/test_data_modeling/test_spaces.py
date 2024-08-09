@@ -23,7 +23,11 @@ def cdf_spaces(cognite_client: CogniteClient, integration_test_space: Space) -> 
 class TestSpacesAPI:
     def test_list(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
-        assert actual_space_in_cdf.as_apply() == cdf_spaces.as_apply()
+        # There's a lot of CRUD ops going on in parallel, check that we have at least some overlap:
+        space_ids = set(actual_space_in_cdf.as_ids()).intersection(cdf_spaces.as_ids())
+        assert space_ids
+        for space in space_ids:
+            assert actual_space_in_cdf.get(space).as_apply() == cdf_spaces.get(space).as_apply()  # type: ignore [union-attr]
 
     def test_list_include_global(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         spaces_with_global = cognite_client.data_modeling.spaces.list(include_global=True, limit=-1)
