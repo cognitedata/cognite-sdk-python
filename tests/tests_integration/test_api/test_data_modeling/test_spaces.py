@@ -8,6 +8,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Space, SpaceApply, SpaceList
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -33,7 +34,9 @@ class TestSpacesAPI:
 
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient) -> None:
         my_space = SpaceApply(
-            space="myNewSpace", name="My New Space", description="This is part of the integration testing for the SDK."
+            space=f"myNewSpace-{random_string(10)}",
+            name="My New Space",
+            description="This is part of the integration testing for the SDK.",
         )
         created_space: Space | None = None
         deleted_spaces: list[str] = []
