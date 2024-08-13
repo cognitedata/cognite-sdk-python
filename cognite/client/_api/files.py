@@ -475,6 +475,7 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata | FileMetadataList: No description.
         """
+        fh: bytes | BufferedReader
         if os.path.isfile(path):
             with open(path, "rb") as fh:
                 if _RUNNING_IN_BROWSER:
