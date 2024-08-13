@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.13] - 2024-08-13
+### Added
+- [Feature Preview - alpha] Support for `instanceId` in the `client.files`. This is an experimental feature and may 
+  change without warning.
+
 ## [7.54.12] - 2024-08-08
 ### Fixed
 - NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.

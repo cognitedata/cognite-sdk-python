@@ -865,6 +865,70 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
+    def multipart_upload_content_session(
+        self,
+        parts: int,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> FileMultipartUploadSession:
+        """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
+        must be greater than 5MiB.
+
+        The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
+        the parts are stored in the correct order by uploading each chunk to the correct upload URL.
+
+        This returns a context object you must enter (using the `with` keyword), then call `upload_part` on
+        for each part before exiting.
+
+        Args:
+            parts (int): The number of parts to upload, must be between 1 and 250.
+            external_id (str | None): The external ID provided by the client. Must be unique within the project.
+            instance_id (NodeId | None): Instance ID of the file.
+
+        Returns:
+            FileMultipartUploadSession: Object containing metadata about the created file,
+            and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once
+            all parts are uploaded.
+
+        Examples:
+
+            Upload binary data in two chunks
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> with client.files.multipart_upload_content_session(external_id="external-id", parts=2) as session:
+                ...     # Note that the minimum chunk size is 5 MiB.
+                ...     session.upload_part(0, "hello" * 1_200_000)
+                ...     session.upload_part(1, " world")
+        """
+        headers: dict | None = None
+        if instance_id is not None:
+            self._warn_alpha()
+            headers = {"cdf-version": "alpha"}
+        identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
+
+        try:
+            res = self._post(
+                url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
+                json=identifiers.as_dicts()[0],
+                params={"parts": parts},
+                headers=headers,
+            )
+        except CogniteAPIError as e:
+            if e.code == 403 and "insufficient access rights" in e.message:
+                msg = "Could not create a file due to insufficient access rights."
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            raise
+
+        returned_file_metadata = res.json()
+        upload_urls = returned_file_metadata["uploadUrls"]
+        upload_id = returned_file_metadata["uploadId"]
+
+        return FileMultipartUploadSession(
+            FileMetadata.load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
+        )
+
     def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
         Note that if `content` does not somehow expose its length, this method may not work
@@ -897,9 +961,13 @@ class FilesAPI(APIClient):
         Args:
             session (FileMultipartUploadSession): Multipart upload session returned from
         """
+        headers: dict | None = None
+        if session.file_metadata.instance_id is not None:
+            headers = {"cdf-version": "alpha"}
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
+            headers=headers
         )
 
     def retrieve_download_urls(
