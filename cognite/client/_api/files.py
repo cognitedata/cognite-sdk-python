@@ -643,6 +643,7 @@ class FilesAPI(APIClient):
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
 
+        file_metadata = FileMetadata.load(returned_file_metadata)
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
             "PUT",
@@ -658,7 +659,7 @@ class FilesAPI(APIClient):
                 code=upload_response.status_code,
             )
 
-        return FileMetadata._load(returned_file_metadata)
+        return file_metadata
 
     def multipart_upload_session(
         self,
