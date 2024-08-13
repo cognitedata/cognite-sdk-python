@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
-from jaraco.functools import identity
 from requests import Response
 
 from cognite.client._api_client import APIClient
