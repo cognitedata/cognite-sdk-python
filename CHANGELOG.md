@@ -19,8 +19,13 @@ Changes are grouped as follows
 
 ## [7.54.13] - 2024-08-13
 ### Added
-- [Feature Preview - alpha] Support for `instanceId` in the `client.files`. This is an experimental feature and may 
-  change without warning.
+- [Feature Preview - alpha] Support for `instanceId` in the `client.files.retrieve`, `client.files.retrieve_multiple`,
+  `client.files.update`, `client.files.retrieve_download_urls`, `client.files.download_bytes`, `client.files.download_to_path`,
+  `client.files.download`. 
+- [Feature Preview - alpha] Add three new methods for uploading content: `client.files.upload_content`, 
+  `client.files.upload_content_bytes`, `client.files.multipart_upload_content_session`.
+
+  This is an experimental feature and may change without warning.
 
 ## [7.54.12] - 2024-08-08
 ### Fixed

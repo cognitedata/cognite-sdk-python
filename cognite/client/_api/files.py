@@ -967,7 +967,7 @@ class FilesAPI(APIClient):
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
-            headers=headers
+            headers=headers,
         )
 
     def retrieve_download_urls(

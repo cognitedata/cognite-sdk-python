@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Sequence, TextIO, TypeVar, cast, Literal
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, Sequence, TextIO, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -34,6 +34,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The instance ID for the file. (Only applicable for files created in DMS)
         name (str | None): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
@@ -399,7 +400,6 @@ class FileMetadataUpdate(CogniteUpdate):
                 camel_case=camel_case, include_instance_type=False
             )
         return output
-
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> FileMetadataUpdate:
