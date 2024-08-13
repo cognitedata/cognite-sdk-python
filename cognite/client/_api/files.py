@@ -1119,10 +1119,8 @@ class FilesAPI(APIClient):
         directory: Path,
         id_to_metadata: dict[int, FileMetadata],
         keep_directory_structure: bool = False,
-    ) -> tuple[list[dict[str, int]], list[Path], list[Path]]:
-        # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
-        # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
-        ids: list[dict[str, int]] = []
+    ) -> tuple[list[int], list[Path], list[Path]]:
+        ids: list[int] = []
         filepaths, file_directories = [], []
         for identifier, metadata in id_to_metadata.items():
             if not isinstance(identifier, int):
@@ -1132,7 +1130,7 @@ class FilesAPI(APIClient):
                 # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
                 file_directory /= metadata.directory[1:]
 
-            ids.append({"id": identifier})
+            ids.append(identifier)
             file_directories.append(file_directory)
             filepaths.append(file_directory / cast(str, metadata.name))
 
@@ -1166,7 +1164,7 @@ class FilesAPI(APIClient):
     def _download_files_to_directory(
         self,
         directory: Path,
-        all_ids: Sequence[dict[str, int]],
+        all_ids: Sequence[int],
         id_to_metadata: dict[int, FileMetadata],
         filepaths: list[Path],
         headers: dict | None = None,
