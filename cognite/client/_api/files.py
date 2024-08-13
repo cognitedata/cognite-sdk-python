@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
+from jaraco.functools import identity
 from requests import Response
 
 from cognite.client._api_client import APIClient
@@ -1170,10 +1171,10 @@ class FilesAPI(APIClient):
         headers: dict | None = None,
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
-        tasks = [(directory, id, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
+        tasks = [(directory, {"id": id}, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
         tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[task[1]],
+            task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]],
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
