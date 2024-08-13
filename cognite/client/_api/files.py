@@ -1175,7 +1175,7 @@ class FilesAPI(APIClient):
         tasks = [(directory, id, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
         tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[IdentifierSequence.unwrap_identifier(task[1])],
+            task_unwrap_fn=lambda task: id_to_metadata[task[1]],
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
