@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
+from requests import Response
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -661,7 +663,7 @@ class FilesAPI(APIClient):
 
         return file_metadata
 
-    def _upload_bytes(self, content, res):
+    def _upload_bytes(self, content: bytes | TextIO | BinaryIO, res: Response) -> FileMetadata:
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
@@ -1117,10 +1119,10 @@ class FilesAPI(APIClient):
         directory: Path,
         id_to_metadata: dict[int, FileMetadata],
         keep_directory_structure: bool = False,
-    ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
+    ) -> tuple[list[dict[str, int]], list[Path], list[Path]]:
         # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
         # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
-        ids: list[dict[str, str | int]] = []
+        ids: list[dict[str, int]] = []
         filepaths, file_directories = [], []
         for identifier, metadata in id_to_metadata.items():
             if not isinstance(identifier, int):
