@@ -465,7 +465,7 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
+        """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
