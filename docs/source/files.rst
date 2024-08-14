@@ -32,9 +32,21 @@ Upload a string or bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.upload_bytes
 
+Upload a file content
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.upload_content
+
+Upload a file content in string or bytes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.upload_content_bytes
+
 Upload a file in multiple parts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.multipart_upload_session
+
+Upload a file content in multiple parts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.multipart_upload_content_session
 
 Retrieve download urls
 ^^^^^^^^^^^^^^^^^^^^^^

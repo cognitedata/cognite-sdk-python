@@ -15,6 +15,8 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
+from cognite.client.data_classes.cdm.v1 import CogniteFileApply
+from cognite.client.data_classes.data_modeling import Space
 from cognite.client.utils._text import random_string
 
 
@@ -247,3 +249,59 @@ class TestFilesAPI:
         assert len(retrieved_content) == 6000005
 
         cognite_client.files.delete(session.file_metadata.id)
+
+    def test_create_retrieve_update_delete_with_instance_id(
+        self, cognite_client_alpha: CogniteClient, alpha_test_space: Space
+    ) -> None:
+        file = CogniteFileApply(
+            space=alpha_test_space.space,
+            external_id="file_python_sdk_instance_id_tests",
+            name="file_python_sdk_instance_id_tests",
+            description="This file was created by the Python SDK",
+            source_id="source:id",
+            mime_type="text/plain",
+            directory="/foo/bar/baz",
+        )
+        instance_id = file.as_id()
+        try:
+            created = cognite_client_alpha.data_modeling.instances.apply(file)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].as_id() == instance_id
+
+            f1 = cognite_client_alpha.files.upload_content_bytes(b"f1", instance_id=instance_id)
+            time.sleep(0.5)
+            download_links = cognite_client_alpha.files.retrieve_download_urls(instance_id=instance_id)
+            assert len(download_links.values()) == 1
+            assert download_links[f1.instance_id].startswith("http")
+
+            content_1 = "abcde" * 1_200_000
+            content_2 = "fghij"
+            with cognite_client_alpha.files.multipart_upload_content_session(
+                parts=2, instance_id=instance_id
+            ) as session:
+                session.upload_part(0, content_1)
+                session.upload_part(1, content_2)
+
+            retrieved_content = cognite_client_alpha.files.download_bytes(instance_id=instance_id)
+            assert len(retrieved_content) == 6000005
+
+            retrieved = cognite_client_alpha.files.retrieve(instance_id=instance_id)
+            assert retrieved is not None
+            assert retrieved.instance_id == instance_id
+
+            update_writable = retrieved.as_write()
+            update_writable.metadata = {"a": "b"}
+            update_writable.external_id = "file_python_sdk_instance_id_tests_updated"
+            updated_writable = cognite_client_alpha.files.update(update_writable)
+            assert updated_writable.metadata == {"a": "b"}
+            assert updated_writable.external_id == "file_python_sdk_instance_id_tests_updated"
+
+            updated = cognite_client_alpha.files.update(
+                FileMetadataUpdate(instance_id=instance_id).metadata.add({"c": "d"})
+            )
+            assert updated.metadata == {"a": "b", "c": "d"}
+
+            retrieved = cognite_client_alpha.files.retrieve_multiple(instance_ids=[instance_id])
+            assert retrieved.dump() == [updated.dump()]
+        finally:
+            cognite_client_alpha.data_modeling.instances.delete(nodes=instance_id)
