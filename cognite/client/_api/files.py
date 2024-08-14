@@ -465,7 +465,7 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata | FileMetadataList:
-        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
+        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -621,9 +621,7 @@ class FilesAPI(APIClient):
     ) -> FileMetadata:
         """Upload bytes or string.
 
-        You can also pass a file handle to content.
-
-        Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
+        Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_content_session`.
 
         Args:
             content (str | bytes | TextIO | BinaryIO): The content to upload.
@@ -655,9 +653,8 @@ class FilesAPI(APIClient):
                 url_path=f"{self._RESOURCE_PATH}/uploadlink", json=identifiers.as_dicts()[0], headers=headers
             )
         except CogniteAPIError as e:
-            if e.code == 403 and "insufficient access rights" in e.message:
-                msg = "Could not create a file due to insufficient access rights."
-                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            if e.code == 403:
+                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         file_metadata = self._upload_bytes(content, res)
@@ -671,7 +668,7 @@ class FilesAPI(APIClient):
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
-        file_metadata = FileMetadata._load(returned_file_metadata)
+        file_metadata = FileMetadata.load(returned_file_metadata)
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
             "PUT",
@@ -919,9 +916,8 @@ class FilesAPI(APIClient):
                 headers=headers,
             )
         except CogniteAPIError as e:
-            if e.code == 403 and "insufficient access rights" in e.message:
-                msg = "Could not create a file due to insufficient access rights."
-                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+            if e.code == 403:
+                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         returned_file_metadata = res.json()
