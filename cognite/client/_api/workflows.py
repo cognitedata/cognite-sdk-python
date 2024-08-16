@@ -17,6 +17,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowList,
     WorkflowStatus,
     WorkflowTaskExecution,
+    WorkflowTrigger,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -47,6 +48,45 @@ def wrap_workflow_ids(
     return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
 
+class WorkflowTriggerAPI(APIClient):
+    _RESOURCE_PATH = "/workflows/triggers"
+
+    def create(
+        self,
+        workflow_trigger: WorkflowTrigger,
+        client_credentials: ClientCredentials | None = None,
+    ) -> WorkflowTrigger:
+        """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
+
+        Args:
+            workflow_trigger (WorkflowTrigger): No description.
+            client_credentials (ClientCredentials | None): No description.
+
+        Returns:
+            WorkflowTrigger: No description.
+        Examples:
+
+            Create a new trigger for a workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.create(
+                ...     WorkflowTrigger(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_spec="0 0 * * *"),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...         input_data={"a": 1, "b": 2},
+                ...     )
+                ... )
+        """
+        response = self._post(
+            url_path=self._RESOURCE_PATH,
+            json=workflow_trigger.dump(camel_case=True),
+        )
+        return WorkflowTrigger._load(response.json().get("items")[0])
+
+
 class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
@@ -59,7 +99,7 @@ class WorkflowTaskAPI(APIClient):
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
@@ -540,6 +580,7 @@ class WorkflowAPI(APIClient):
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
+        self.triggers = WorkflowTriggerAPI(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
     @overload

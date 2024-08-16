@@ -235,7 +235,7 @@ class InstancesAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
@@ -1047,7 +1047,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
@@ -1189,7 +1189,7 @@ class InstancesAPI(APIClient):
             view (ViewId): View to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
             group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
-            instance_type (Literal["node", "edge"]): The type of instance.
+            instance_type (Literal['node', 'edge']): The type of instance.
             query (str | None): Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
             properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
@@ -1291,7 +1291,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to to aggregate over.
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
@@ -1506,7 +1506,7 @@ class InstancesAPI(APIClient):
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges.
+            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).

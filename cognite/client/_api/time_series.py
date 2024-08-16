@@ -671,7 +671,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).

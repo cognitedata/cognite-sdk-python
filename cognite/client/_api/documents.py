@@ -210,7 +210,7 @@ class DocumentsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
             filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Default to return all items.
             partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
@@ -565,7 +565,7 @@ class DocumentsAPI(APIClient):
             query (str): The free text search query.
             highlight (bool): Whether or not matches in search results should be highlighted.
             filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to search.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
         Returns:
@@ -641,7 +641,7 @@ class DocumentsAPI(APIClient):
 
         Args:
             filter (Filter | dict[str, Any] | None): Filter | dict[str, Any] | None): The filter to narrow down the documents to return.
-            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal['asc', 'desc']] | None): The property to sort by. The default order is ascending.
             limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:

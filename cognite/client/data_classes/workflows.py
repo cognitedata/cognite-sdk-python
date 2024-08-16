@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -258,7 +258,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
+        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
         query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
         body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
         request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
@@ -1175,3 +1175,78 @@ class WorkflowIds(UserList):
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
+
+
+WorkflowTriggerType: TypeAlias = Literal["scheduledTrigger"]
+
+
+class WorkflowScheduledTriggerRule(CogniteObject):
+    """
+    This class represents a scheduled trigger rule.
+
+    Args:
+        cron_spec (str | None): The cron specification for the scheduled trigger.
+    """
+
+    def __init__(self, cron_spec: str | None = None) -> None:
+        self.trigger_type: WorkflowTriggerType = "scheduledTrigger"
+        self.cron_spec = cron_spec
+
+
+class WorkflowTrigger(CogniteResource):
+    """
+    This class represents a workflow trigger.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowScheduledTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input_data (dict | None): The input data of the workflow version trigger. Defaults to None.
+        created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
+        last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowScheduledTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input_data: dict | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.trigger_rule = trigger_rule
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+        self.input_data = input_data
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item = {
+            "external_id": self.external_id,
+            "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+            "input_data": self.input_data,
+            "created_time": self.created_time,
+            "last_updated_time": self.last_updated_time,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTrigger:
+        return cls(
+            external_id=resource["externalId"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            trigger_rule=WorkflowScheduledTriggerRule._load(resource["triggerRule"]),
+            input_data=resource.get("inputData"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+        )

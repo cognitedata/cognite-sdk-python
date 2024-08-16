@@ -494,7 +494,7 @@ class RelationshipsAPI(APIClient):
 
         Args:
             item (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Relationship | RelationshipList: The upserted relationship(s).
