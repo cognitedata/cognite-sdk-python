@@ -64,6 +64,7 @@ class WorkflowTriggerAPI(APIClient):
 
         Returns:
             WorkflowTrigger: No description.
+
         Examples:
 
             Create a new trigger for a workflow:
@@ -83,9 +84,31 @@ class WorkflowTriggerAPI(APIClient):
         """
         response = self._post(
             url_path=self._RESOURCE_PATH,
-            json=workflow_trigger.dump(camel_case=True),
+            json={"items": [workflow_trigger.dump(camel_case=True)]},
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
+
+    def delete(
+            self,
+            external_id: str,
+    ) -> None:
+        """`Delete a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+
+        Args:
+            external_id (str): The external id of the trigger to delete.
+
+        Examples:
+
+            Delete a trigger with external id 'my_trigger':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.delete("my_trigger")
+        """
+        self._post(
+            url_path=self._RESOURCE_PATH+"/delete",
+            json={"items": [{"externalId": external_id}]},
+        )
 
 
 class WorkflowTaskAPI(APIClient):
