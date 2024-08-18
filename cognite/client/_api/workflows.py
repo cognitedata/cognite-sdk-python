@@ -89,8 +89,8 @@ class WorkflowTriggerAPI(APIClient):
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     def delete(
-            self,
-            external_id: str,
+        self,
+        external_id: str,
     ) -> None:
         """`Delete a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
@@ -106,7 +106,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client.workflows.triggers.delete("my_trigger")
         """
         self._post(
-            url_path=self._RESOURCE_PATH+"/delete",
+            url_path=self._RESOURCE_PATH + "/delete",
             json={"items": [{"externalId": external_id}]},
         )
 
