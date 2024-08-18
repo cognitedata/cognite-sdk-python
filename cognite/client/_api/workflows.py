@@ -115,9 +115,18 @@ class WorkflowTriggerAPI(APIClient):
         external_id: str,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerRunList:
-        response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}/history")
+        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/listTriggerRuns>`_
+
+        Args:
+            external_id (str): The external id of the trigger to list runs for.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            WorkflowTriggerRunList: The requested trigger runs.
+        """
         return self._list(
             method="GET",
+            url_path=self._RESOURCE_PATH + f"/{external_id}/history",
             resource_cls=WorkflowTriggerRun,
             list_cls=WorkflowTriggerRunList,
             limit=limit,
