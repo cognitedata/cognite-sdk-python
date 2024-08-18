@@ -18,13 +18,13 @@ from cognite.client.data_classes.workflows import (
     WorkflowStatus,
     WorkflowTaskExecution,
     WorkflowTrigger,
+    WorkflowTriggerRun,
+    WorkflowTriggerRunList,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
     WorkflowVersionList,
     WorkflowVersionUpsert,
-    WorkflowTriggerRunList,
-    WorkflowTriggerRun,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import (
