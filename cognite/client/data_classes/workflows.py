@@ -1250,3 +1250,53 @@ class WorkflowTrigger(CogniteResource):
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
         )
+
+
+class WorkflowTriggerRun(CogniteResource):
+    """
+    This class represents a workflow trigger run.
+    """
+
+    def __init__(
+        self,
+        trigger_external_id: str,
+        trigger_type: WorkflowTriggerType,
+        trigger_fire_time: int,
+        workflow_external_id: str,
+        workflow_version: str,
+    ) -> None:
+        self.trigger_external_id = trigger_external_id
+        self.trigger_type = trigger_type
+        self.trigger_fire_time = trigger_fire_time
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item = {
+            "trigger_external_id": self.trigger_external_id,
+            "trigger_type": self.trigger_type,
+            "trigger_fire_time": self.trigger_fire_time,
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
+        return cls(
+            trigger_external_id=resource["triggerExternalId"],
+            trigger_type=resource["triggerType"],
+            trigger_fire_time=resource["triggerFireTime"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+        )
+
+
+class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun]):
+    """
+    This class represents a list of workflow trigger runs.
+    """
+
+    _RESOURCE = WorkflowTriggerRun

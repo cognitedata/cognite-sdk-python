@@ -22,7 +22,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersion,
     WorkflowVersionId,
     WorkflowVersionList,
-    WorkflowVersionUpsert,
+    WorkflowVersionUpsert, WorkflowTriggerRunList, WorkflowTriggerRun,
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import (
@@ -108,6 +108,19 @@ class WorkflowTriggerAPI(APIClient):
         self._post(
             url_path=self._RESOURCE_PATH + "/delete",
             json={"items": [{"externalId": external_id}]},
+        )
+
+    def run_history(
+        self,
+        external_id: str,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> WorkflowTriggerRunList:
+        response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}/history")
+        return self._list(
+            method="GET",
+            resource_cls=WorkflowTriggerRun,
+            list_cls=WorkflowTriggerRunList,
+            limit=limit,
         )
 
 
