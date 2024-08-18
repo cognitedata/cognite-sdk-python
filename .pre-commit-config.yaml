@@ -43,7 +43,6 @@ repos:
         name: custom repo checks
         entry: |
           poetry run python scripts/run_checks.py
-          git diff
         files: ^cognite/.*.(py|pyi)$
         language: system
         pass_filenames: true
