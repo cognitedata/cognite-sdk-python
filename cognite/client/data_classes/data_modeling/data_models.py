@@ -221,7 +221,7 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
         created_time or last_updated_time field.
 
         Args:
-            key (Literal['created_time', 'last_updated_time']): The field to use for determining the latest version.
+            key (Literal["created_time", "last_updated_time"]): The field to use for determining the latest version.
 
         Returns:
             DataModel[T_View]: The data model with the latest version.

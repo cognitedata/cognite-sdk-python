@@ -811,7 +811,7 @@ class DatapointsArray(CogniteResource):
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id']): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
@@ -1348,7 +1348,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id']): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
@@ -1434,7 +1434,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (Literal['id', 'external_id']): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.

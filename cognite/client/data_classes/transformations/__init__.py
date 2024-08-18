@@ -471,7 +471,7 @@ class TransformationWrite(TransformationCore):
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
         query (str | None): SQL query of the transformation.
         destination (TransformationDestination | None): see TransformationDestination for options.
-        conflict_mode (Literal['abort', 'delete', 'update', 'upsert'] | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        conflict_mode (Literal["abort", "delete", "update", "upsert"] | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         source_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials key on the destination.
         destination_oidc_credentials (OidcCredentials | None): Configure the transformation to authenticate with the given oidc credentials on the destination.

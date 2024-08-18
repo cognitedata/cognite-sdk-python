@@ -472,7 +472,7 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
 
     Args:
         extpipe_external_id (str): The external ID of the extraction pipeline.
-        status (Literal['success', 'failure', 'seen']): success/failure/seen.
+        status (Literal["success", "failure", "seen"]): success/failure/seen.
         message (str | None): Optional status message.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """

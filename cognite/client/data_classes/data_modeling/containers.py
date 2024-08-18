@@ -81,7 +81,7 @@ class ContainerApply(ContainerCore):
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
         description (str | None): Textual description of the container
         name (str | None): Human readable name for the container.
-        used_for (Literal['node', 'edge', 'all'] | None): Should this operation apply to nodes, edges or both.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
@@ -133,7 +133,7 @@ class Container(ContainerCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (str | None): Textual description of the container
         name (str | None): Human readable name for the container.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
+        used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
         constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
         indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
