@@ -69,6 +69,7 @@ class WorkflowTriggerAPI(APIClient):
             Create a new trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.workflows import WorkflowTrigger, WorkflowScheduledTriggerRule
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.create(
                 ...     WorkflowTrigger(

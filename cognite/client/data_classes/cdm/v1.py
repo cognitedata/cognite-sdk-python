@@ -437,9 +437,9 @@ class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite revision 3D.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -478,9 +478,9 @@ class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | None): The model 3D field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -1608,7 +1608,7 @@ class CogniteModel3DApply(CogniteModel3DProperties, CogniteDescribableNodeApply)
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1656,7 +1656,7 @@ class CogniteModel3D(CogniteModel3DProperties, CogniteDescribableNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1896,7 +1896,7 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
         model_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to CogniteModel3D instance
         volume_references (list[str] | None): Unique volume metric hashes used to access the 3D specialized data storage
         revisions (list[DirectRelationReference | tuple[str, str]] | None): List of direct relations to revision information
-        volume_type (Literal["Box", "Cylinder"] | None): Type of volume (Cylinder or Box)
+        volume_type (Literal['Box', 'Cylinder'] | None): Type of volume (Cylinder or Box)
         volume (list[float] | None): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
         format_version (str | None): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -1962,7 +1962,7 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
         model_3d (DirectRelationReference | None): Direct relation to CogniteModel3D instance
         volume_references (list[str] | None): Unique volume metric hashes used to access the 3D specialized data storage
         revisions (list[DirectRelationReference] | None): List of direct relations to revision information
-        volume_type (Literal["Box", "Cylinder"] | None): Type of volume (Cylinder or Box)
+        volume_type (Literal['Box', 'Cylinder'] | None): Type of volume (Cylinder or Box)
         volume (list[float] | None): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
         format_version (str | None): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -2864,7 +2864,7 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        type_ (Literal['numeric', 'string']): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -2954,7 +2954,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        type_ (Literal['numeric', 'string']): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3335,9 +3335,9 @@ class CogniteCADRevisionApply(CogniteCADRevisionProperties, CogniteRevision3DApp
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad revision.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): .
         revision_id (int | None): The 3D API revision identifier for this CAD model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -3381,9 +3381,9 @@ class CogniteCADRevision(CogniteCADRevisionProperties, CogniteRevision3D):
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | None): .
         revision_id (int | None): The 3D API revision identifier for this CAD model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -3457,9 +3457,9 @@ class CogniteImage360CollectionApply(
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -3522,9 +3522,9 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | None): The model 3D field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -3613,9 +3613,9 @@ class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognit
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): .
         revision_id (int | None): The 3D API revision identifier for this PointCloud model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -3661,9 +3661,9 @@ class CognitePointCloudRevision(CognitePointCloudRevisionProperties, CogniteRevi
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The status field.
+        published (Literal['Done', 'Failed', 'Processing', 'Queued'] | None): The published field.
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): The type field.
         model_3d (DirectRelationReference | None): .
         revision_id (int | None): The 3D API revision identifier for this PointCloud model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -3962,7 +3962,7 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -4010,7 +4010,7 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4080,7 +4080,7 @@ class CogniteImage360ModelApply(CogniteImage360ModelProperties, CogniteModel3DAp
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -4128,7 +4128,7 @@ class CogniteImage360Model(CogniteImage360ModelProperties, CogniteModel3D):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4198,7 +4198,7 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -4246,7 +4246,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or CogniteImage360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4725,7 +4725,7 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4813,7 +4813,7 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
@@ -4949,7 +4949,7 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         start_node_page_number (int | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
         end_node_page_number (int | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
         start_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
@@ -5063,7 +5063,7 @@ class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnota
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         start_node_page_number (int | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
         end_node_page_number (int | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
         start_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
@@ -5221,7 +5221,7 @@ class CogniteImage360AnnotationApply(CogniteImage360AnnotationProperties, Cognit
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
         format_version (str | None): Specifies the storage representation for the polygon property
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -5303,7 +5303,7 @@ class CogniteImage360Annotation(CogniteImage360AnnotationProperties, CogniteAnno
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | None): The confidence that the annotation is a good match
         polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
         format_version (str | None): Specifies the storage representation for the polygon property
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results

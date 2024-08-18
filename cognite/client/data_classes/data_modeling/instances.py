@@ -171,7 +171,7 @@ class InstanceCore(DataModelingResource, ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal['node', 'edge']): No description.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
@@ -193,7 +193,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal['node', 'edge']): No description.
         existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
@@ -337,7 +337,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the instance.
     """
@@ -486,7 +486,7 @@ class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (int): DMS version of the instance.
