@@ -481,6 +481,22 @@ class TestWorkflowExecutions:
 
 
 class TestWorkflowTriggers:
+
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_create_delete(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        assert workflow_scheduled_trigger is not None
+        assert workflow_scheduled_trigger.external_id == "integration_test-workflow-scheduled-trigger"
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_spec="0 0 * * *")
+        assert workflow_scheduled_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
+        assert workflow_scheduled_trigger.workflow_version == "1"
+        assert workflow_scheduled_trigger.input_data == {"a": 1, "b": 2}
+        assert workflow_scheduled_trigger.created_time is not None
+        assert workflow_scheduled_trigger.last_updated_time is not None
+
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_trigger_list(
         self,
@@ -491,3 +507,15 @@ class TestWorkflowTriggers:
         external_ids = {trigger.external_id for trigger in triggers}
 
         assert workflow_scheduled_trigger.external_id in external_ids
+
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_trigger_run_history(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        history = cognite_client.workflows.triggers.get_trigger_run_history(
+            external_id=workflow_scheduled_trigger.external_id
+        )
+        # it would take too long to wait for the trigger to run, so we just check that the history is not None
+        assert history is not None

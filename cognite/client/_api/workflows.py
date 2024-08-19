@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
 from urllib.parse import quote
@@ -28,6 +29,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -51,7 +53,21 @@ def wrap_workflow_ids(
     return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
 
-class WorkflowTriggerAPI(APIClient):
+class BetaWorkflowAPIClient(APIClient, ABC):
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+    ) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._api_subversion = "beta"
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Workflow Orchestration"
+        )
+
+
+class WorkflowTriggerAPI(BetaWorkflowAPIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
     def create(
