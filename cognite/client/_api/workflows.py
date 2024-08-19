@@ -78,15 +78,15 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
         """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTrigger): No description.
-            client_credentials (ClientCredentials | None): No description.
+            workflow_trigger (WorkflowTrigger): The workflow trigger specitification.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: No description.
+            WorkflowTrigger: The created workflow trigger specification.
 
         Examples:
 
-            Create a new trigger for a workflow:
+            Create a new scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.workflows import WorkflowTrigger, WorkflowScheduledTriggerRule
