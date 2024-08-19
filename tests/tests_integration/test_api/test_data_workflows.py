@@ -15,7 +15,9 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionList,
     WorkflowList,
+    WorkflowScheduledTriggerRule,
     WorkflowTask,
+    WorkflowTrigger,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionList,
@@ -228,7 +230,36 @@ def clean_created_sessions(cognite_client: CogniteClient) -> None:
     current_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
     existing_ids = {session.id for session in existing_active_sessions}
     to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
-    cognite_client.iam.sessions.revoke(to_revoked)
+    if len(to_revoked) > 0:
+        cognite_client.iam.sessions.revoke(to_revoked)
+
+
+@pytest.fixture()
+def clean_created_workflow_triggers(cognite_client: CogniteClient) -> None:
+    existing_workflow_triggers = cognite_client.workflows.triggers.get_triggers(limit=-1)
+    yield None
+    current_workflow_triggers = cognite_client.workflows.triggers.get_triggers(limit=-1)
+    existing_external_ids = {trigger.external_id for trigger in existing_workflow_triggers}
+    to_clean = [
+        trigger.external_id for trigger in current_workflow_triggers if trigger.external_id not in existing_external_ids
+    ]
+    for external_id in to_clean:
+        cognite_client.workflows.triggers.delete(external_id)
+
+
+@pytest.fixture()
+def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
+    trigger = cognite_client.workflows.triggers.create(
+        WorkflowTrigger(
+            external_id="integration_test-workflow-scheduled-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_spec="0 0 * * *"),
+            workflow_external_id="integration_test-workflow-add_multiply",
+            workflow_version="1",
+            input_data={"a": 1, "b": 2},
+        )
+    )
+    yield trigger
+    cognite_client.workflows.triggers.delete(trigger.external_id)
 
 
 class TestWorkflows:
@@ -447,3 +478,16 @@ class TestWorkflowExecutions:
 
         retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
         assert retried_workflow_execution.status == "running"
+
+
+class TestWorkflowTriggers:
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_trigger_list(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        triggers = cognite_client.workflows.triggers.get_triggers()
+        external_ids = {trigger.external_id for trigger in triggers}
+
+        assert workflow_scheduled_trigger.external_id in external_ids

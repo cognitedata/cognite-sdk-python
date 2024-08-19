@@ -1189,7 +1189,8 @@ class WorkflowScheduledTriggerRule(CogniteObject):
     """
 
     def __init__(self, cron_spec: str | None = None) -> None:
-        self.trigger_type: WorkflowTriggerType = "scheduledTrigger"
+        self.type: WorkflowTriggerType = "scheduledTrigger"
+        # self.trigger_type: WorkflowTriggerType = "scheduledTrigger"
         self.cron_spec = cron_spec
 
 
@@ -1216,6 +1217,7 @@ class WorkflowTrigger(CogniteResource):
         input_data: dict | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
+        authentication: dict | None = None,
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
@@ -1224,6 +1226,7 @@ class WorkflowTrigger(CogniteResource):
         self.input_data = input_data
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.authentication = authentication
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
@@ -1231,10 +1234,15 @@ class WorkflowTrigger(CogniteResource):
             "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
-            "input_data": self.input_data,
-            "created_time": self.created_time,
-            "last_updated_time": self.last_updated_time,
         }
+        if self.input_data:
+            item["input_data"] = self.input_data
+        if self.created_time:
+            item["created_time"] = self.created_time
+        if self.last_updated_time:
+            item["last_updated_time"] = self.last_updated_time
+        if self.authentication:
+            item["authentication"] = self.authentication
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1249,6 +1257,7 @@ class WorkflowTrigger(CogniteResource):
             input_data=resource.get("inputData"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
+            authentication=resource.get("authentication"),
         )
 
 
