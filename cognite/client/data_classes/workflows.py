@@ -1229,7 +1229,7 @@ class WorkflowTrigger(CogniteResource):
         self.authentication = authentication
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        item = {
+        item: dict[str, Any] = {
             "external_id": self.external_id,
             "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
             "workflow_external_id": self.workflow_external_id,
