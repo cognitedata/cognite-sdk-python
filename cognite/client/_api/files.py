@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
-from requests import Response
-
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
