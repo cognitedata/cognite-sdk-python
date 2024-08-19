@@ -117,7 +117,7 @@ class WorkflowTriggerAPI(APIClient):
         self,
         external_id: str,
         limit: int = DEFAULT_LIMIT_READ,
-    ):
+    ) -> WorkflowTriggerList:
         """`Retrieve a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
