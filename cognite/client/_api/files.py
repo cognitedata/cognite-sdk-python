@@ -659,12 +659,11 @@ class FilesAPI(APIClient):
                 raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
-        file_metadata = self._upload_bytes(content, res)
+        file_metadata = self._upload_bytes(content, res.json()["items"][0])
 
         return file_metadata
 
-    def _upload_bytes(self, content: bytes | TextIO | BinaryIO, res: Response) -> FileMetadata:
-        returned_file_metadata = res.json()["items"][0]
+    def _upload_bytes(self, content: bytes | TextIO | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
@@ -768,7 +767,7 @@ class FilesAPI(APIClient):
                 raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
-        return self._upload_bytes(content, res)
+        return self._upload_bytes(content, res.json())
 
     def multipart_upload_session(
         self,
