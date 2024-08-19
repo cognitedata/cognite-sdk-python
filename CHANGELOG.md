@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ##  [7.54.14] - 2024-08-19
 ### Added
-- [Feature Preview - beta] Support for `client.workflows.triggers` 
+- [Feature Preview - beta] Support for `client.workflows.triggers`.
 
 ## [7.54.13] - 2024-08-13
 ### Added
