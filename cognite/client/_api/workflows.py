@@ -115,17 +115,15 @@ class WorkflowTriggerAPI(APIClient):
 
     def get_triggers(
         self,
-        external_id: str,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerList:
-        """`Retrieve a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+        """`Retrieve the trigger list. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
-            external_id (str): The external id of the trigger to retrieve.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            WorkflowTrigger: The requested trigger.
+            WorkflowTriggerList: The trigger list.
         """
         return self._list(
             method="GET",
