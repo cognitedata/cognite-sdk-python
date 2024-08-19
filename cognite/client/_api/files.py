@@ -464,7 +464,7 @@ class FilesAPI(APIClient):
         path: str,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-    ) -> FileMetadata | FileMetadataList:
+    ) -> FileMetadata:
         """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
@@ -472,7 +472,7 @@ class FilesAPI(APIClient):
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | None): Instance ID of the file.
         Returns:
-            FileMetadata | FileMetadataList: No description.
+            FileMetadata: No description.
         """
         fh: bytes | BufferedReader
         if os.path.isfile(path):
@@ -649,9 +649,7 @@ class FilesAPI(APIClient):
             content = content.encode("utf-8")
 
         try:
-            res = self._post(
-                url_path=f"{self._RESOURCE_PATH}/uploadlink", json=identifiers.as_dicts()[0], headers=headers
-            )
+            res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": [identifiers.as_dicts()[0]]}, headers=headers)
         except CogniteAPIError as e:
             if e.code == 403:
                 raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
@@ -662,7 +660,7 @@ class FilesAPI(APIClient):
         return file_metadata
 
     def _upload_bytes(self, content: bytes | TextIO | BinaryIO, res: Response) -> FileMetadata:
-        returned_file_metadata = res.json()
+        returned_file_metadata = res.json()["items"][0]
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
@@ -911,7 +909,7 @@ class FilesAPI(APIClient):
         try:
             res = self._post(
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
-                json=identifiers.as_dicts()[0],
+                json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
                 headers=headers,
             )
@@ -920,7 +918,7 @@ class FilesAPI(APIClient):
                 raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
-        returned_file_metadata = res.json()
+        returned_file_metadata = res.json()["items"][0]
         upload_urls = returned_file_metadata["uploadUrls"]
         upload_id = returned_file_metadata["uploadId"]
 
