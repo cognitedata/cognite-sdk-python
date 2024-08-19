@@ -481,7 +481,6 @@ class TestWorkflowExecutions:
 
 
 class TestWorkflowTriggers:
-
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_create_delete(
         self,
