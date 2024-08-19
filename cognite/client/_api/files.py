@@ -649,7 +649,11 @@ class FilesAPI(APIClient):
             content = content.encode("utf-8")
 
         try:
-            res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": [identifiers.as_dicts()[0]]}, headers=headers)
+            res = self._post(
+                url_path=f"{self._RESOURCE_PATH}/uploadlink",
+                json={"items": identifiers.as_dicts()},
+                headers=headers,
+            )
         except CogniteAPIError as e:
             if e.code == 403:
                 raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
