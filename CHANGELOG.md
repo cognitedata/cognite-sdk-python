@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.14] - 2024-08-19
+### Fixed
+- [Feature Preview - alpha] fix `files.upload_content`, `files.upload_content_bytes` and 
+  `files.multipart_upload_content_session`
+
 ## [7.54.13] - 2024-08-13
 ### Added
 - [Feature Preview - alpha] Support for `instanceId` in the `client.files.retrieve`, `client.files.retrieve_multiple`,
