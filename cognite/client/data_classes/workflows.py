@@ -1252,6 +1252,14 @@ class WorkflowTrigger(CogniteResource):
         )
 
 
+class WorkflowTriggerList(CogniteResourceList[WorkflowTrigger]):
+    """
+    This class represents a list of workflow triggers.
+    """
+
+    _RESOURCE = WorkflowTrigger
+
+
 class WorkflowTriggerRun(CogniteResource):
     """
     This class represents a workflow trigger run.
