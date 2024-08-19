@@ -1206,6 +1206,7 @@ class WorkflowTrigger(CogniteResource):
         input_data (dict | None): The input data of the workflow version trigger. Defaults to None.
         created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
         last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+        authentication (dict | None): The authentication of the workflow version trigger. Defaults to None.
     """
 
     def __init__(
