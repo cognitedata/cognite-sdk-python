@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.14] - 2024-08-19
+## [7.54.14] - 2024-08-21
 ### Added
 - [Feature Preview - beta] Support for `client.workflows.triggers`.
 
