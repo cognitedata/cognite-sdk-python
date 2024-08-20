@@ -80,8 +80,7 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
 
         Args:
             workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
-            client_credentials (ClientCredentials| dict | None): Specific credentials that should be used to trigger the workflow execution.
-             When passed will take precedence over the current credentials.
+            client_credentials (ClientCredentials| dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
             WorkflowTrigger: The created workflow trigger specification.
