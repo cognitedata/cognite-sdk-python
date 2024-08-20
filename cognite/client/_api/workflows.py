@@ -106,7 +106,7 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         workflow_trigger = workflow_trigger.dump(camel_case=True)
-        workflow_trigger["authentication"] = {"nonce": nonce}
+        workflow_trigger["authentication"] = {"nonce": nonce}  # type: ignore
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow_trigger]},
