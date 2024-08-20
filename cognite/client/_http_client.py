@@ -7,7 +7,6 @@ import time
 from http import cookiejar
 from typing import Any, Callable, Iterable, Literal, MutableMapping
 
-import httpx
 import requests
 import requests.adapters
 import urllib3
@@ -26,36 +25,37 @@ class BlockAll(cookiejar.CookiePolicy):
     rfc2965 = hide_cookie2 = False
 
 
-@functools.lru_cache(1)
+# @functools.lru_cache(1)
 # def get_global_httpx_client() -> httpx.Client:
-def get_global_requests_session():
-    client = httpx.Client(
-        verify=not global_config.disable_ssl,
-        proxies=global_config.proxies,
-        transport=httpx.HTTPTransport(
-            retries=0,  # Equivalent to disabling retries
-            limits=httpx.Limits(max_connections=global_config.max_connection_pool_size),
-        ),
-    )
-    if global_config.disable_ssl:
-        urllib3.disable_warnings()
-    return client
-
-
-# def get_global_requests_session() -> requests.Session:
-#     session = requests.Session()
-#     session.cookies.set_policy(BlockAll())
-#     adapter = requests.adapters.HTTPAdapter(
-#         pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+# def get_global_requests_session():
+#     client = httpx.Client(
+#         verify=not global_config.disable_ssl,
+#         proxies=global_config.proxies,
+#         transport=httpx.HTTPTransport(
+#             retries=0,  # Equivalent to disabling retries
+#             limits=httpx.Limits(max_connections=global_config.max_connection_pool_size),
+#         ),
 #     )
-#     session.mount("http://", adapter)
-#     session.mount("https://", adapter)
 #     if global_config.disable_ssl:
 #         urllib3.disable_warnings()
-#         session.verify = False
-#     if global_config.proxies is not None:
-#         session.proxies.update(global_config.proxies)
-#     return session
+#     return client
+
+
+@functools.lru_cache(1)
+def get_global_requests_session() -> requests.Session:
+    session = requests.Session()
+    session.cookies.set_policy(BlockAll())
+    adapter = requests.adapters.HTTPAdapter(
+        pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+    )
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    if global_config.disable_ssl:
+        urllib3.disable_warnings()
+        session.verify = False
+    if global_config.proxies is not None:
+        session.proxies.update(global_config.proxies)
+    return session
 
 
 class HTTPClientConfig:
