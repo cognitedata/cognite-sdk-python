@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
 from typing_extensions import Self, TypeAlias
 
+from cognite.client.data_classes import ClientCredentials
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
@@ -1203,7 +1204,6 @@ class WorkflowTriggerCreate(CogniteResource):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
-        authentication (dict | None): The authentication of the workflow version trigger. Defaults to None.
     """
 
     def __init__(
@@ -1213,14 +1213,12 @@ class WorkflowTriggerCreate(CogniteResource):
         workflow_external_id: str,
         workflow_version: str,
         input: dict | None = None,
-        authentication: dict | None = None,
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
         self.input = input
-        self.authentication = authentication
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -1231,8 +1229,6 @@ class WorkflowTriggerCreate(CogniteResource):
         }
         if self.input:
             item["input"] = self.input
-        if self.authentication:
-            item["authentication"] = self.authentication
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1245,7 +1241,6 @@ class WorkflowTriggerCreate(CogniteResource):
             workflow_version=resource["workflowVersion"],
             trigger_rule=WorkflowScheduledTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
-            authentication=resource.get("authentication"),
         )
 
 

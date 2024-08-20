@@ -74,13 +74,13 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
     def create(
         self,
         workflow_trigger: WorkflowTriggerCreate,
-        client_credentials: ClientCredentials | None = None,
+        client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
         """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
 
         Args:
             workflow_trigger (WorkflowTriggerWrite): The workflow trigger specitification.
-            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+            client_credentials (ClientCredentials| dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
             WorkflowTriggerRead: The created workflow trigger specification.
@@ -102,14 +102,14 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
                 ...     )
                 ... )
         """
-        if workflow_trigger.authentication is None:
-            nonce = create_session_and_return_nonce(
-                self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
-            )
-            workflow_trigger.authentication = {"nonce": nonce}
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
+        workflow_trigger = workflow_trigger.dump(camel_case=True)
+        workflow_trigger["authentication"] = {"nonce": nonce}
         response = self._post(
             url_path=self._RESOURCE_PATH,
-            json={"items": [workflow_trigger.dump(camel_case=True)]},
+            json={"items": [workflow_trigger]},
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
