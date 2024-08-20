@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes import ClientCredentials
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
