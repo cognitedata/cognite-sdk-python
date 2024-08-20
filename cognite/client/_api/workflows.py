@@ -109,7 +109,7 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
         dumped["authentication"] = {"nonce": nonce}
         response = self._post(
             url_path=self._RESOURCE_PATH,
-            json={"items": [workflow_trigger]},
+            json={"items": [dumped]},
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
