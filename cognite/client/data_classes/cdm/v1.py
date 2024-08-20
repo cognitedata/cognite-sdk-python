@@ -3167,13 +3167,20 @@ class CogniteAssetApply(
             existing_version=existing_version,
             type=type,
         )
-        self.parent = DirectRelationReference.load(parent) if parent else None
+        self.parent = DirectRelationReference.load(parent) if parent is not None else None
         self.root = DirectRelationReference.load(root) if root else None
         self.path = [DirectRelationReference.load(path) for path in path] if path else None
         self.last_path_materialization_time = last_path_materialization_time
         self.equipment = DirectRelationReference.load(equipment) if equipment else None
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.type_ = DirectRelationReference.load(type_) if type_ else None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        # Parent must be sent, especially when None (i.e. root):
+        dumped_parent = self.parent.dump(camel_case) if self.parent else None
+        output["sources"][0]["properties"].setdefault("parent", dumped_parent)
+        return output
 
 
 class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):

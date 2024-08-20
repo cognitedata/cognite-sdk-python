@@ -24,13 +24,14 @@ line-length = 120
 [tool.poetry.dependencies]
 python = "^3.8"
 
-requests = "^2"
-requests_oauthlib = "^1"
+httpx = "^0"
 msal = "^1"
+requests-oauthlib = "^2"
 protobuf = ">=4"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
 backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9" }
+graphlib-backport = { version = "^1.0.0", python = "<3.9" }
 # Windows does not have a ANSI database and need tzdata... pyodide also needs it:
 tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows' or platform_system == 'Emscripten'" }
 numpy = [
@@ -49,7 +50,6 @@ geopandas = [
 ]
 shapely = { version = ">=1.7.0", optional = true }
 pyodide-http = { version = "^0.2.1", optional = true }
-graphlib-backport = { version = "^1.0.0", python = "<3.9" }
 PyYAML = { version = "^6.0", optional = true }
 
 [tool.poetry.extras]

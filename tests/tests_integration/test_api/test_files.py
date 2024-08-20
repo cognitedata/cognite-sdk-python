@@ -1,5 +1,8 @@
+import platform
+import random
 import time
 import uuid
+from timeit import default_timer as timer
 
 import pytest
 
@@ -18,6 +21,31 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.cdm.v1 import CogniteFileApply
 from cognite.client.data_classes.data_modeling import Space
 from cognite.client.utils._text import random_string
+
+
+def random_bytes_of(size):
+    return bytes(random.getrandbits(8) for _ in range(size))
+
+
+file_size = 1024 * 1024 * 500  # 500 MB
+file_in_memory = random_bytes_of(size=file_size)
+BENCH_FILE_NAME = f"time bench file: {platform.system()}-{platform.python_version()}"
+
+print(f"---> {BENCH_FILE_NAME}: {len(file_in_memory)=}")
+
+
+def test_upload_file_time_benchmark(cognite_client):
+    t0 = timer()
+    res = cognite_client.files.upload_bytes(
+        content=file_in_memory,
+        name=BENCH_FILE_NAME,
+    )
+    t1 = timer()
+    time = t1 - t0
+    mbps = 8 * 500 / time
+    print(f"---> {BENCH_FILE_NAME}: {round(time, 4)} sec, {round(mbps, 4)} Mbps")
+    await_file_upload(cognite_client, res.id)
+    cognite_client.files.delete(id=res.id)
 
 
 def await_file_upload(client, file_id):
