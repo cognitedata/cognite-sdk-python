@@ -79,11 +79,11 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
         """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerWrite): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
             client_credentials (ClientCredentials| dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTriggerRead: The created workflow trigger specification.
+            WorkflowTrigger: The created workflow trigger specification.
 
         Examples:
 
