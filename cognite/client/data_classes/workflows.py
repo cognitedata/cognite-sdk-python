@@ -1177,7 +1177,7 @@ class WorkflowIds(UserList):
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
 
 
-WorkflowTriggerType: TypeAlias = Literal["scheduledTrigger"]
+WorkflowTriggerType: TypeAlias = Literal["schedule"]
 
 
 class WorkflowScheduledTriggerRule(CogniteObject):
@@ -1185,13 +1185,68 @@ class WorkflowScheduledTriggerRule(CogniteObject):
     This class represents a scheduled trigger rule.
 
     Args:
-        cron_spec (str | None): The cron specification for the scheduled trigger.
+        cron_expression(str | None): The cron specification for the scheduled trigger.
     """
 
-    def __init__(self, cron_spec: str | None = None) -> None:
-        self.type: WorkflowTriggerType = "scheduledTrigger"
-        # self.trigger_type: WorkflowTriggerType = "scheduledTrigger"
-        self.cron_spec = cron_spec
+    def __init__(self, cron_expression: str | None = None) -> None:
+        self.trigger_type: WorkflowTriggerType = "schedule"
+        self.cron_expression = cron_expression
+
+
+class WorkflowTriggerCreate(CogniteResource):
+    """
+    This class represents a workflow trigger for creation.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowScheduledTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input (dict | None): The input data of the workflow version trigger. Defaults to None.
+        authentication (dict | None): The authentication of the workflow version trigger. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowScheduledTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+        authentication: dict | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.trigger_rule = trigger_rule
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+        self.input = input
+        self.authentication = authentication
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "external_id": self.external_id,
+            "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+        }
+        if self.input:
+            item["input"] = self.input
+        if self.authentication:
+            item["authentication"] = self.authentication
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerCreate:
+        return cls(
+            external_id=resource["externalId"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            trigger_rule=WorkflowScheduledTriggerRule._load(resource["triggerRule"]),
+            input=resource.get("input"),
+            authentication=resource.get("authentication"),
+        )
 
 
 class WorkflowTrigger(CogniteResource):
@@ -1203,10 +1258,9 @@ class WorkflowTrigger(CogniteResource):
         trigger_rule (WorkflowScheduledTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
-        input_data (dict | None): The input data of the workflow version trigger. Defaults to None.
+        input (dict | None): The input data of the workflow version trigger. Defaults to None.
         created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
         last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
-        authentication (dict | None): The authentication of the workflow version trigger. Defaults to None.
     """
 
     def __init__(
@@ -1215,19 +1269,17 @@ class WorkflowTrigger(CogniteResource):
         trigger_rule: WorkflowScheduledTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
-        input_data: dict | None = None,
+        input: dict | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
-        authentication: dict | None = None,
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
-        self.input_data = input_data
+        self.input = input
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self.authentication = authentication
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -1236,14 +1288,12 @@ class WorkflowTrigger(CogniteResource):
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
         }
-        if self.input_data:
-            item["input_data"] = self.input_data
+        if self.input:
+            item["input"] = self.input
         if self.created_time:
             item["created_time"] = self.created_time
         if self.last_updated_time:
             item["last_updated_time"] = self.last_updated_time
-        if self.authentication:
-            item["authentication"] = self.authentication
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1255,10 +1305,9 @@ class WorkflowTrigger(CogniteResource):
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
             trigger_rule=WorkflowScheduledTriggerRule._load(resource["triggerRule"]),
-            input_data=resource.get("inputData"),
+            input=resource.get("input"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
-            authentication=resource.get("authentication"),
         )
 
 
@@ -1278,13 +1327,11 @@ class WorkflowTriggerRun(CogniteResource):
     def __init__(
         self,
         trigger_external_id: str,
-        trigger_type: WorkflowTriggerType,
         trigger_fire_time: int,
         workflow_external_id: str,
         workflow_version: str,
     ) -> None:
         self.trigger_external_id = trigger_external_id
-        self.trigger_type = trigger_type
         self.trigger_fire_time = trigger_fire_time
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
@@ -1292,7 +1339,6 @@ class WorkflowTriggerRun(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
             "trigger_external_id": self.trigger_external_id,
-            "trigger_type": self.trigger_type,
             "trigger_fire_time": self.trigger_fire_time,
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
@@ -1305,7 +1351,6 @@ class WorkflowTriggerRun(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
         return cls(
             trigger_external_id=resource["triggerExternalId"],
-            trigger_type=resource["triggerType"],
             trigger_fire_time=resource["triggerFireTime"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],

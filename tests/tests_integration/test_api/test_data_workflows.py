@@ -18,6 +18,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTrigger,
+    WorkflowTriggerCreate,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionList,
@@ -250,12 +251,12 @@ def clean_created_workflow_triggers(cognite_client: CogniteClient) -> None:
 @pytest.fixture()
 def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
     trigger = cognite_client.workflows.triggers.create(
-        WorkflowTrigger(
+        WorkflowTriggerCreate(
             external_id="integration_test-workflow-scheduled-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_spec="0 0 * * *"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
             workflow_external_id="integration_test-workflow-add_multiply",
             workflow_version="1",
-            input_data={"a": 1, "b": 2},
+            input={"a": 1, "b": 2},
         )
     )
     yield trigger
@@ -489,10 +490,10 @@ class TestWorkflowTriggers:
     ) -> None:
         assert workflow_scheduled_trigger is not None
         assert workflow_scheduled_trigger.external_id == "integration_test-workflow-scheduled-trigger"
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_spec="0 0 * * *")
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 0 * * *")
         assert workflow_scheduled_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
         assert workflow_scheduled_trigger.workflow_version == "1"
-        assert workflow_scheduled_trigger.input_data == {"a": 1, "b": 2}
+        assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
         assert workflow_scheduled_trigger.created_time is not None
         assert workflow_scheduled_trigger.last_updated_time is not None
 

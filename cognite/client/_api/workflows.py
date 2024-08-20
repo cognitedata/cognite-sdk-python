@@ -19,6 +19,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowStatus,
     WorkflowTaskExecution,
     WorkflowTrigger,
+    WorkflowTriggerCreate,
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
@@ -63,7 +64,7 @@ class BetaWorkflowAPIClient(APIClient, ABC):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
         self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Workflow Orchestration"
+            api_maturity="beta", sdk_maturity="beta", feature_name="Workflow Orchestration"
         )
 
 
@@ -72,32 +73,32 @@ class WorkflowTriggerAPI(BetaWorkflowAPIClient):
 
     def create(
         self,
-        workflow_trigger: WorkflowTrigger,
+        workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowTrigger:
         """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTrigger): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerWrite): The workflow trigger specitification.
             client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created workflow trigger specification.
+            WorkflowTriggerRead: The created workflow trigger specification.
 
         Examples:
 
             Create a new scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTrigger, WorkflowScheduledTriggerRule
+                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.create(
-                ...     WorkflowTrigger(
+                ...     WorkflowTriggerCreate(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_spec="0 0 * * *"),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
-                ...         input_data={"a": 1, "b": 2},
+                ...         input={"a": 1, "b": 2},
                 ...     )
                 ... )
         """
