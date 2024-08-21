@@ -14,7 +14,7 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
 )
 
 
-class Cognite3DTransformationProperties:
+class _Cognite3DTransformationProperties:
     translation_x = PropertyOptions("translationX")
     translation_y = PropertyOptions("translationY")
     translation_z = PropertyOptions("translationZ")
@@ -30,7 +30,7 @@ class Cognite3DTransformationProperties:
         return ViewId("cdf_cdm_experimental", "Cognite3DTransformation", "v1")
 
 
-class Cognite3DTransformationNodeApply(Cognite3DTransformationProperties, TypedNodeApply):
+class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D transformation node.
 
     It is used to when data is written to CDF.
@@ -82,7 +82,7 @@ class Cognite3DTransformationNodeApply(Cognite3DTransformationProperties, TypedN
         self.scale_z = scale_z
 
 
-class Cognite3DTransformationNode(Cognite3DTransformationProperties, TypedNode):
+class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode):
     """This represents the reading format of Cognite 3D transformation node.
 
     It is used to when data is read from CDF.
@@ -157,13 +157,13 @@ class Cognite3DTransformationNode(Cognite3DTransformationProperties, TypedNode):
         )
 
 
-class CogniteCubeMapProperties:
+class _CogniteCubeMapProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CogniteCubeMap", "v1")
 
 
-class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
+class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
     """This represents the writing format of Cognite cube map.
 
     It is used to when data is written to CDF.
@@ -206,7 +206,7 @@ class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
         self.bottom = DirectRelationReference.load(bottom) if bottom else None
 
 
-class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
+class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
     """This represents the reading format of Cognite cube map.
 
     It is used to when data is read from CDF.
@@ -269,7 +269,7 @@ class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
         )
 
 
-class Cognite3DRevisionProperties:
+class _Cognite3DRevisionProperties:
     type_ = PropertyOptions("type")
     model_3d = PropertyOptions("model3D")
 
@@ -278,7 +278,7 @@ class Cognite3DRevisionProperties:
         return ViewId("cdf_cdm_experimental", "Cognite3DRevision", "v1")
 
 
-class Cognite3DRevisionApply(Cognite3DRevisionProperties, TypedNodeApply):
+class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D revision.
 
     It is used to when data is written to CDF.
@@ -315,7 +315,7 @@ class Cognite3DRevisionApply(Cognite3DRevisionProperties, TypedNodeApply):
         self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
 
 
-class Cognite3DRevision(Cognite3DRevisionProperties, TypedNode):
+class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
     """This represents the reading format of Cognite 3D revision.
 
     It is used to when data is read from CDF.
@@ -370,13 +370,13 @@ class Cognite3DRevision(Cognite3DRevisionProperties, TypedNode):
         )
 
 
-class CogniteDescribableProperties:
+class _CogniteDescribableProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CogniteDescribable", "v1")
 
 
-class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
+class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply):
     """This represents the writing format of Cognite describable node.
 
     It is used to when data is written to CDF.
@@ -413,7 +413,7 @@ class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
         self.aliases = aliases
 
 
-class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
+class CogniteDescribableNode(_CogniteDescribableProperties, TypedNode):
     """This represents the reading format of Cognite describable node.
 
     It is used to when data is read from CDF.
@@ -468,7 +468,7 @@ class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
         )
 
 
-class CogniteSchedulableProperties:
+class _CogniteSchedulableProperties:
     start_time = PropertyOptions("startTime")
     end_time = PropertyOptions("endTime")
     scheduled_start_time = PropertyOptions("scheduledStartTime")
@@ -479,7 +479,7 @@ class CogniteSchedulableProperties:
         return ViewId("cdf_cdm_experimental", "CogniteSchedulable", "v1")
 
 
-class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
+class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
     """This represents the writing format of Cognite schedulable.
 
     It is used to when data is written to CDF.
@@ -515,7 +515,7 @@ class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
         self.scheduled_end_time = scheduled_end_time
 
 
-class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
+class CogniteSchedulable(_CogniteSchedulableProperties, TypedNode):
     """This represents the reading format of Cognite schedulable.
 
     It is used to when data is read from CDF.
@@ -569,7 +569,7 @@ class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
         )
 
 
-class CogniteSourceableProperties:
+class _CogniteSourceableProperties:
     source_id = PropertyOptions("sourceId")
     source_context = PropertyOptions("sourceContext")
     source_created_time = PropertyOptions("sourceCreatedTime")
@@ -582,7 +582,7 @@ class CogniteSourceableProperties:
         return ViewId("cdf_cdm_experimental", "CogniteSourceable", "v1")
 
 
-class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
+class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
     """This represents the writing format of Cognite sourceable node.
 
     It is used to when data is written to CDF.
@@ -626,7 +626,7 @@ class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
         self.source_updated_user = source_updated_user
 
 
-class CogniteSourceableNode(CogniteSourceableProperties, TypedNode):
+class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
     """This represents the reading format of Cognite sourceable node.
 
     It is used to when data is read from CDF.
@@ -691,7 +691,7 @@ class CogniteSourceableNode(CogniteSourceableProperties, TypedNode):
         )
 
 
-class CogniteVisualizableProperties:
+class _CogniteVisualizableProperties:
     object_3d = PropertyOptions("object3D")
 
     @classmethod
@@ -699,7 +699,7 @@ class CogniteVisualizableProperties:
         return ViewId("cdf_cdm_experimental", "CogniteVisualizable", "v1")
 
 
-class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
+class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
     """This represents the writing format of Cognite visualizable.
 
     It is used to when data is written to CDF.
@@ -726,7 +726,7 @@ class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else None
 
 
-class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
+class CogniteVisualizable(_CogniteVisualizableProperties, TypedNode):
     """This represents the reading format of Cognite visualizable.
 
     It is used to when data is read from CDF.
@@ -768,7 +768,7 @@ class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
         )
 
 
-class Cognite360ImageProperties:
+class _Cognite360ImageProperties:
     collection_360 = PropertyOptions("collection360")
     station_360 = PropertyOptions("station360")
     taken_at = PropertyOptions("takenAt")
@@ -778,7 +778,7 @@ class Cognite360ImageProperties:
         return ViewId("cdf_cdm_experimental", "Cognite360Image", "v1")
 
 
-class Cognite360ImageApply(Cognite360ImageProperties, Cognite3DTransformationNodeApply, CogniteCubeMapApply):
+class Cognite360ImageApply(_Cognite360ImageProperties, Cognite3DTransformationNodeApply, CogniteCubeMapApply):
     """This represents the writing format of Cognite 360 image.
 
     It is used to when data is written to CDF.
@@ -868,7 +868,7 @@ class Cognite360ImageApply(Cognite360ImageProperties, Cognite3DTransformationNod
         self.taken_at = taken_at
 
 
-class Cognite360Image(Cognite360ImageProperties, Cognite3DTransformationNode, CogniteCubeMap):
+class Cognite360Image(_Cognite360ImageProperties, Cognite3DTransformationNode, CogniteCubeMap):
     """This represents the reading format of Cognite 360 image.
 
     It is used to when data is read from CDF.
@@ -996,7 +996,7 @@ class Cognite360Image(Cognite360ImageProperties, Cognite3DTransformationNode, Co
         )
 
 
-class CogniteCADRevisionProperties:
+class _CogniteCADRevisionProperties:
     revision_id = PropertyOptions("revisionId")
 
     @classmethod
@@ -1004,7 +1004,7 @@ class CogniteCADRevisionProperties:
         return ViewId("cdf_cdm_experimental", "CogniteCADRevision", "v1")
 
 
-class CogniteCADRevisionApply(CogniteCADRevisionProperties, Cognite3DRevisionApply):
+class CogniteCADRevisionApply(_CogniteCADRevisionProperties, Cognite3DRevisionApply):
     """This represents the writing format of Cognite cad revision.
 
     It is used to when data is written to CDF.
@@ -1047,7 +1047,7 @@ class CogniteCADRevisionApply(CogniteCADRevisionProperties, Cognite3DRevisionApp
         self.revision_id = revision_id
 
 
-class CogniteCADRevision(CogniteCADRevisionProperties, Cognite3DRevision):
+class CogniteCADRevision(_CogniteCADRevisionProperties, Cognite3DRevision):
     """This represents the reading format of Cognite cad revision.
 
     It is used to when data is read from CDF.
@@ -1112,7 +1112,7 @@ class CogniteCADRevision(CogniteCADRevisionProperties, Cognite3DRevision):
         )
 
 
-class CognitePointCloudRevisionProperties:
+class _CognitePointCloudRevisionProperties:
     revision_id = PropertyOptions("revisionId")
 
     @classmethod
@@ -1120,7 +1120,7 @@ class CognitePointCloudRevisionProperties:
         return ViewId("cdf_cdm_experimental", "CognitePointCloudRevision", "v1")
 
 
-class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognite3DRevisionApply):
+class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Cognite3DRevisionApply):
     """This represents the writing format of Cognite point cloud revision.
 
     It is used to when data is written to CDF.
@@ -1164,7 +1164,7 @@ class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognit
         self.revision_id = revision_id
 
 
-class CognitePointCloudRevision(CognitePointCloudRevisionProperties, Cognite3DRevision):
+class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DRevision):
     """This represents the reading format of Cognite point cloud revision.
 
     It is used to when data is read from CDF.
@@ -1230,14 +1230,14 @@ class CognitePointCloudRevision(CognitePointCloudRevisionProperties, Cognite3DRe
         )
 
 
-class Cognite360ImageCollectionProperties:
+class _Cognite360ImageCollectionProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "Cognite360ImageCollection", "v1")
 
 
 class Cognite360ImageCollectionApply(
-    Cognite360ImageCollectionProperties, CogniteDescribableNodeApply, Cognite3DRevisionApply
+    _Cognite360ImageCollectionProperties, CogniteDescribableNodeApply, Cognite3DRevisionApply
 ):
     """This represents the writing format of Cognite 360 image collection.
 
@@ -1299,7 +1299,7 @@ class Cognite360ImageCollectionApply(
         )
 
 
-class Cognite360ImageCollection(Cognite360ImageCollectionProperties, CogniteDescribableNode, Cognite3DRevision):
+class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, CogniteDescribableNode, Cognite3DRevision):
     """This represents the reading format of Cognite 360 image collection.
 
     It is used to when data is read from CDF.
@@ -1388,7 +1388,7 @@ class Cognite360ImageCollection(Cognite360ImageCollectionProperties, CogniteDesc
         )
 
 
-class Cognite360ImageStationProperties:
+class _Cognite360ImageStationProperties:
     group_type = PropertyOptions("groupType")
 
     @classmethod
@@ -1396,7 +1396,7 @@ class Cognite360ImageStationProperties:
         return ViewId("cdf_cdm_experimental", "Cognite360ImageStation", "v1")
 
 
-class Cognite360ImageStationApply(Cognite360ImageStationProperties, CogniteDescribableNodeApply):
+class Cognite360ImageStationApply(_Cognite360ImageStationProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite 360 image station.
 
     It is used to when data is written to CDF.
@@ -1440,7 +1440,7 @@ class Cognite360ImageStationApply(Cognite360ImageStationProperties, CogniteDescr
         self.group_type = group_type
 
 
-class Cognite360ImageStation(Cognite360ImageStationProperties, CogniteDescribableNode):
+class Cognite360ImageStation(_Cognite360ImageStationProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite 360 image station.
 
     It is used to when data is read from CDF.
@@ -1506,7 +1506,7 @@ class Cognite360ImageStation(Cognite360ImageStationProperties, CogniteDescribabl
         )
 
 
-class Cognite3DModelProperties:
+class _Cognite3DModelProperties:
     type_ = PropertyOptions("type")
 
     @classmethod
@@ -1514,7 +1514,7 @@ class Cognite3DModelProperties:
         return ViewId("cdf_cdm_experimental", "Cognite3DModel", "v1")
 
 
-class Cognite3DModelApply(Cognite3DModelProperties, CogniteDescribableNodeApply):
+class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite 3D model.
 
     It is used to when data is written to CDF.
@@ -1561,7 +1561,7 @@ class Cognite3DModelApply(Cognite3DModelProperties, CogniteDescribableNodeApply)
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
-class Cognite3DModel(Cognite3DModelProperties, CogniteDescribableNode):
+class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite 3D model.
 
     It is used to when data is read from CDF.
@@ -1631,7 +1631,7 @@ class Cognite3DModel(Cognite3DModelProperties, CogniteDescribableNode):
         )
 
 
-class Cognite3DObjectProperties:
+class _Cognite3DObjectProperties:
     x_min = PropertyOptions("xMin")
     x_max = PropertyOptions("xMax")
     y_min = PropertyOptions("yMin")
@@ -1644,7 +1644,7 @@ class Cognite3DObjectProperties:
         return ViewId("cdf_cdm_experimental", "Cognite3DObject", "v1")
 
 
-class Cognite3DObjectApply(Cognite3DObjectProperties, CogniteDescribableNodeApply):
+class Cognite3DObjectApply(_Cognite3DObjectProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite 3D object.
 
     It is used to when data is written to CDF.
@@ -1703,7 +1703,7 @@ class Cognite3DObjectApply(Cognite3DObjectProperties, CogniteDescribableNodeAppl
         self.z_max = z_max
 
 
-class Cognite3DObject(Cognite3DObjectProperties, CogniteDescribableNode):
+class Cognite3DObject(_Cognite3DObjectProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite 3D object.
 
     It is used to when data is read from CDF.
@@ -1789,13 +1789,13 @@ class Cognite3DObject(Cognite3DObjectProperties, CogniteDescribableNode):
         )
 
 
-class CogniteAssetClassProperties:
+class _CogniteAssetClassProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CogniteAssetClass", "v1")
 
 
-class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNodeApply):
+class CogniteAssetClassApply(_CogniteAssetClassProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite asset clas.
 
     It is used to when data is written to CDF.
@@ -1842,7 +1842,7 @@ class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNode
         self.standard = standard
 
 
-class CogniteAssetClass(CogniteAssetClassProperties, CogniteDescribableNode):
+class CogniteAssetClass(_CogniteAssetClassProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite asset clas.
 
     It is used to when data is read from CDF.
@@ -1912,7 +1912,7 @@ class CogniteAssetClass(CogniteAssetClassProperties, CogniteDescribableNode):
         )
 
 
-class CogniteAssetTypeProperties:
+class _CogniteAssetTypeProperties:
     asset_class = PropertyOptions("assetClass")
 
     @classmethod
@@ -1920,7 +1920,7 @@ class CogniteAssetTypeProperties:
         return ViewId("cdf_cdm_experimental", "CogniteAssetType", "v1")
 
 
-class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeApply):
+class CogniteAssetTypeApply(_CogniteAssetTypeProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite asset type.
 
     It is used to when data is written to CDF.
@@ -1970,7 +1970,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
         self.standard = standard
 
 
-class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
+class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite asset type.
 
     It is used to when data is read from CDF.
@@ -2044,7 +2044,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
         )
 
 
-class CogniteCADNodeProperties:
+class _CogniteCADNodeProperties:
     object_3d = PropertyOptions("object3D")
     model_3d = PropertyOptions("model3D")
     cad_node_reference = PropertyOptions("cadNodeReference")
@@ -2056,7 +2056,7 @@ class CogniteCADNodeProperties:
         return ViewId("cdf_cdm_experimental", "CogniteCADNode", "v1")
 
 
-class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply):
+class CogniteCADNodeApply(_CogniteCADNodeProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite cad node.
 
     It is used to when data is written to CDF.
@@ -2115,7 +2115,7 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
         self.sub_tree_sizes = sub_tree_sizes
 
 
-class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
+class CogniteCADNode(_CogniteCADNodeProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite cad node.
 
     It is used to when data is read from CDF.
@@ -2201,7 +2201,7 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
         )
 
 
-class CogniteEquipmentTypeProperties:
+class _CogniteEquipmentTypeProperties:
     equipment_class = PropertyOptions("equipmentClass")
     standard_reference = PropertyOptions("standardReference")
 
@@ -2210,7 +2210,7 @@ class CogniteEquipmentTypeProperties:
         return ViewId("cdf_cdm_experimental", "CogniteEquipmentType", "v1")
 
 
-class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribableNodeApply):
+class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite equipment type.
 
     It is used to when data is written to CDF.
@@ -2263,7 +2263,7 @@ class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribab
         self.standard_reference = standard_reference
 
 
-class CogniteEquipmentType(CogniteEquipmentTypeProperties, CogniteDescribableNode):
+class CogniteEquipmentType(_CogniteEquipmentTypeProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite equipment type.
 
     It is used to when data is read from CDF.
@@ -2341,7 +2341,7 @@ class CogniteEquipmentType(CogniteEquipmentTypeProperties, CogniteDescribableNod
         )
 
 
-class CogniteFileCategoryProperties:
+class _CogniteFileCategoryProperties:
     standard_reference = PropertyOptions("standardReference")
 
     @classmethod
@@ -2349,7 +2349,7 @@ class CogniteFileCategoryProperties:
         return ViewId("cdf_cdm_experimental", "CogniteFileCategory", "v1")
 
 
-class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribableNodeApply):
+class CogniteFileCategoryApply(_CogniteFileCategoryProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite file category.
 
     It is used to when data is written to CDF.
@@ -2399,7 +2399,7 @@ class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribable
         self.standard_reference = standard_reference
 
 
-class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode):
+class CogniteFileCategory(_CogniteFileCategoryProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite file category.
 
     It is used to when data is read from CDF.
@@ -2473,7 +2473,7 @@ class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode)
         )
 
 
-class CognitePointCloudVolumeProperties:
+class _CognitePointCloudVolumeProperties:
     object_3d = PropertyOptions("object3D")
     model_3d = PropertyOptions("model3D")
     volume_references = PropertyOptions("volumeReferences")
@@ -2485,7 +2485,7 @@ class CognitePointCloudVolumeProperties:
         return ViewId("cdf_cdm_experimental", "CognitePointCloudVolume", "v1")
 
 
-class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDescribableNodeApply):
+class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite point cloud volume.
 
     It is used to when data is written to CDF.
@@ -2547,7 +2547,7 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
         self.format_version = format_version
 
 
-class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescribableNode):
+class CognitePointCloudVolume(_CognitePointCloudVolumeProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite point cloud volume.
 
     It is used to when data is read from CDF.
@@ -2637,7 +2637,7 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
         )
 
 
-class CogniteSourceSystemProperties:
+class _CogniteSourceSystemProperties:
     version_ = PropertyOptions("version")
 
     @classmethod
@@ -2645,7 +2645,7 @@ class CogniteSourceSystemProperties:
         return ViewId("cdf_cdm_experimental", "CogniteSourceSystem", "v1")
 
 
-class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribableNodeApply):
+class CogniteSourceSystemApply(_CogniteSourceSystemProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite source system.
 
     It is used to when data is written to CDF.
@@ -2692,7 +2692,7 @@ class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribable
         self.manufacturer = manufacturer
 
 
-class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode):
+class CogniteSourceSystem(_CogniteSourceSystemProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite source system.
 
     It is used to when data is read from CDF.
@@ -2762,7 +2762,7 @@ class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode)
         )
 
 
-class CogniteUnitProperties:
+class _CogniteUnitProperties:
     source_reference = PropertyOptions("sourceReference")
 
     @classmethod
@@ -2770,7 +2770,7 @@ class CogniteUnitProperties:
         return ViewId("cdf_cdm_experimental", "CogniteUnit", "v1")
 
 
-class CogniteUnitApply(CogniteUnitProperties, CogniteDescribableNodeApply):
+class CogniteUnitApply(_CogniteUnitProperties, CogniteDescribableNodeApply):
     """This represents the writing format of Cognite unit.
 
     It is used to when data is written to CDF.
@@ -2823,7 +2823,7 @@ class CogniteUnitApply(CogniteUnitProperties, CogniteDescribableNodeApply):
         self.source_reference = source_reference
 
 
-class CogniteUnit(CogniteUnitProperties, CogniteDescribableNode):
+class CogniteUnit(_CogniteUnitProperties, CogniteDescribableNode):
     """This represents the reading format of Cognite unit.
 
     It is used to when data is read from CDF.
@@ -2901,7 +2901,7 @@ class CogniteUnit(CogniteUnitProperties, CogniteDescribableNode):
         )
 
 
-class CogniteActivityProperties:
+class _CogniteActivityProperties:
     time_series = PropertyOptions("timeSeries")
 
     @classmethod
@@ -2910,7 +2910,7 @@ class CogniteActivityProperties:
 
 
 class CogniteActivityApply(
-    CogniteActivityProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply, CogniteSchedulableApply
+    _CogniteActivityProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply, CogniteSchedulableApply
 ):
     """This represents the writing format of Cognite activity.
 
@@ -3011,7 +3011,7 @@ class CogniteActivityApply(
         )
 
 
-class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, CogniteSourceableNode, CogniteSchedulable):
+class CogniteActivity(_CogniteActivityProperties, CogniteDescribableNode, CogniteSourceableNode, CogniteSchedulable):
     """This represents the reading format of Cognite activity.
 
     It is used to when data is read from CDF.
@@ -3146,13 +3146,13 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             scheduled_end_time=self.scheduled_end_time,
             assets=self.assets,  # type: ignore[arg-type]
             equipment=self.equipment,  # type: ignore[arg-type]
-            time_series=self.time_series,
+            time_series=self.time_series,  # type: ignore[arg-type]
             existing_version=self.version,
             type=self.type,
         )
 
 
-class CogniteEquipmentProperties:
+class _CogniteEquipmentProperties:
     serial_number = PropertyOptions("serialNumber")
     equipment_type = PropertyOptions("equipmentType")
 
@@ -3161,7 +3161,7 @@ class CogniteEquipmentProperties:
         return ViewId("cdf_cdm_experimental", "CogniteEquipment", "v1")
 
 
-class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+class CogniteEquipmentApply(_CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
     """This represents the writing format of Cognite equipment.
 
     It is used to when data is written to CDF.
@@ -3246,7 +3246,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
         self.files = [DirectRelationReference.load(file) for file in files] if files else None
 
 
-class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, CogniteSourceableNode):
+class CogniteEquipment(_CogniteEquipmentProperties, CogniteDescribableNode, CogniteSourceableNode):
     """This represents the reading format of Cognite equipment.
 
     It is used to when data is read from CDF.
@@ -3367,7 +3367,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
         )
 
 
-class CogniteFileProperties:
+class _CogniteFileProperties:
     mime_type = PropertyOptions("mimeType")
     is_uploaded = PropertyOptions("isUploaded")
     uploaded_time = PropertyOptions("uploadedTime")
@@ -3377,7 +3377,7 @@ class CogniteFileProperties:
         return ViewId("cdf_cdm_experimental", "CogniteFile", "v1")
 
 
-class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+class CogniteFileApply(_CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
     """This represents the writing format of Cognite file.
 
     It is used to when data is written to CDF.
@@ -3465,7 +3465,7 @@ class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, Cogni
         self.category = DirectRelationReference.load(category) if category else None
 
 
-class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceableNode):
+class CogniteFile(_CogniteFileProperties, CogniteDescribableNode, CogniteSourceableNode):
     """This represents the reading format of Cognite file.
 
     It is used to when data is read from CDF.
@@ -3590,7 +3590,7 @@ class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceab
         )
 
 
-class CogniteTimeSeriesProperties:
+class _CogniteTimeSeriesProperties:
     is_step = PropertyOptions("isStep")
     type_ = PropertyOptions("type")
     source_unit = PropertyOptions("sourceUnit")
@@ -3600,7 +3600,7 @@ class CogniteTimeSeriesProperties:
         return ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1")
 
 
-class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
+class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
     """This represents the writing format of Cognite time series.
 
     It is used to when data is written to CDF.
@@ -3687,7 +3687,7 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
         self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
 
 
-class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, CogniteSourceableNode):
+class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, CogniteSourceableNode):
     """This represents the reading format of Cognite time series.
 
     It is used to when data is read from CDF.
@@ -3811,7 +3811,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         )
 
 
-class CogniteAssetProperties:
+class _CogniteAssetProperties:
     path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
     asset_class = PropertyOptions("assetClass")
     type_ = PropertyOptions("type")
@@ -3822,7 +3822,7 @@ class CogniteAssetProperties:
 
 
 class CogniteAssetApply(
-    CogniteAssetProperties, CogniteVisualizableApply, CogniteDescribableNodeApply, CogniteSourceableNodeApply
+    _CogniteAssetProperties, CogniteVisualizableApply, CogniteDescribableNodeApply, CogniteSourceableNodeApply
 ):
     """This represents the writing format of Cognite asset.
 
@@ -3916,7 +3916,7 @@ class CogniteAssetApply(
         self.type_ = DirectRelationReference.load(type_) if type_ else None
 
 
-class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):
+class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):
     """This represents the reading format of Cognite asset.
 
     It is used to when data is read from CDF.
@@ -4055,13 +4055,13 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
         )
 
 
-class Cognite360ImageModelProperties:
+class _Cognite360ImageModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "Cognite360ImageModel", "v1")
 
 
-class Cognite360ImageModelApply(Cognite360ImageModelProperties, Cognite3DModelApply):
+class Cognite360ImageModelApply(_Cognite360ImageModelProperties, Cognite3DModelApply):
     """This represents the writing format of Cognite 360 image model.
 
     It is used to when data is written to CDF.
@@ -4108,7 +4108,7 @@ class Cognite360ImageModelApply(Cognite360ImageModelProperties, Cognite3DModelAp
         )
 
 
-class Cognite360ImageModel(Cognite360ImageModelProperties, Cognite3DModel):
+class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
     """This represents the reading format of Cognite 360 image model.
 
     It is used to when data is read from CDF.
@@ -4178,13 +4178,13 @@ class Cognite360ImageModel(Cognite360ImageModelProperties, Cognite3DModel):
         )
 
 
-class CogniteCADModelProperties:
+class _CogniteCADModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CogniteCADModel", "v1")
 
 
-class CogniteCADModelApply(CogniteCADModelProperties, Cognite3DModelApply):
+class CogniteCADModelApply(_CogniteCADModelProperties, Cognite3DModelApply):
     """This represents the writing format of Cognite cad model.
 
     It is used to when data is written to CDF.
@@ -4231,7 +4231,7 @@ class CogniteCADModelApply(CogniteCADModelProperties, Cognite3DModelApply):
         )
 
 
-class CogniteCADModel(CogniteCADModelProperties, Cognite3DModel):
+class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
     """This represents the reading format of Cognite cad model.
 
     It is used to when data is read from CDF.
@@ -4301,13 +4301,13 @@ class CogniteCADModel(CogniteCADModelProperties, Cognite3DModel):
         )
 
 
-class CognitePointCloudModelProperties:
+class _CognitePointCloudModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CognitePointCloudModel", "v1")
 
 
-class CognitePointCloudModelApply(CognitePointCloudModelProperties, Cognite3DModelApply):
+class CognitePointCloudModelApply(_CognitePointCloudModelProperties, Cognite3DModelApply):
     """This represents the writing format of Cognite point cloud model.
 
     It is used to when data is written to CDF.
@@ -4354,7 +4354,7 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, Cognite3DMod
         )
 
 
-class CognitePointCloudModel(CognitePointCloudModelProperties, Cognite3DModel):
+class CognitePointCloudModel(_CognitePointCloudModelProperties, Cognite3DModel):
     """This represents the reading format of Cognite point cloud model.
 
     It is used to when data is read from CDF.
@@ -4424,7 +4424,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, Cognite3DModel):
         )
 
 
-class Cognite3DTransformationEdgeApply(Cognite3DTransformationProperties, TypedEdgeApply):
+class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, TypedEdgeApply):
     """This represents the writing format of Cognite 3D transformation edge.
 
     It is used to when data is written to CDF.
@@ -4480,7 +4480,7 @@ class Cognite3DTransformationEdgeApply(Cognite3DTransformationProperties, TypedE
         self.scale_z = scale_z
 
 
-class Cognite3DTransformationEdge(Cognite3DTransformationProperties, TypedEdge):
+class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge):
     """This represents the reading format of Cognite 3D transformation edge.
 
     It is used to when data is read from CDF.
@@ -4573,7 +4573,7 @@ class Cognite3DTransformationEdge(Cognite3DTransformationProperties, TypedEdge):
         )
 
 
-class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
+class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply):
     """This represents the writing format of Cognite describable edge.
 
     It is used to when data is written to CDF.
@@ -4614,7 +4614,7 @@ class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
         self.aliases = aliases
 
 
-class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
+class CogniteDescribableEdge(_CogniteDescribableProperties, TypedEdge):
     """This represents the reading format of Cognite describable edge.
 
     It is used to when data is read from CDF.
@@ -4687,7 +4687,7 @@ class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
         )
 
 
-class CogniteSourceableEdgeApply(CogniteSourceableProperties, TypedEdgeApply):
+class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
     """This represents the writing format of Cognite sourceable edge.
 
     It is used to when data is written to CDF.
@@ -4735,7 +4735,7 @@ class CogniteSourceableEdgeApply(CogniteSourceableProperties, TypedEdgeApply):
         self.source_updated_user = source_updated_user
 
 
-class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
+class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
     """This represents the reading format of Cognite sourceable edge.
 
     It is used to when data is read from CDF.
@@ -4818,13 +4818,13 @@ class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
         )
 
 
-class CogniteAnnotationProperties:
+class _CogniteAnnotationProperties:
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_cdm_experimental", "CogniteAnnotation", "v1")
 
 
-class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdgeApply, CogniteSourceableEdgeApply):
+class CogniteAnnotationApply(_CogniteAnnotationProperties, CogniteDescribableEdgeApply, CogniteSourceableEdgeApply):
     """This represents the writing format of Cognite annotation.
 
     It is used to when data is written to CDF.
@@ -4908,7 +4908,7 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
         self.status = status
 
 
-class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, CogniteSourceableEdge):
+class CogniteAnnotation(_CogniteAnnotationProperties, CogniteDescribableEdge, CogniteSourceableEdge):
     """This represents the reading format of Cognite annotation.
 
     It is used to when data is read from CDF.
@@ -5027,7 +5027,7 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
         )
 
 
-class Cognite360ImageAnnotationProperties:
+class _Cognite360ImageAnnotationProperties:
     format_version = PropertyOptions("formatVersion")
 
     @classmethod
@@ -5035,7 +5035,7 @@ class Cognite360ImageAnnotationProperties:
         return ViewId("cdf_cdm_experimental", "Cognite360ImageAnnotation", "v1")
 
 
-class Cognite360ImageAnnotationApply(Cognite360ImageAnnotationProperties, CogniteAnnotationApply):
+class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, CogniteAnnotationApply):
     """This represents the writing format of Cognite 360 image annotation.
 
     It is used to when data is written to CDF.
@@ -5114,7 +5114,7 @@ class Cognite360ImageAnnotationApply(Cognite360ImageAnnotationProperties, Cognit
         self.format_version = format_version
 
 
-class Cognite360ImageAnnotation(Cognite360ImageAnnotationProperties, CogniteAnnotation):
+class Cognite360ImageAnnotation(_Cognite360ImageAnnotationProperties, CogniteAnnotation):
     """This represents the reading format of Cognite 360 image annotation.
 
     It is used to when data is read from CDF.
@@ -5227,7 +5227,7 @@ class Cognite360ImageAnnotation(Cognite360ImageAnnotationProperties, CogniteAnno
         )
 
 
-class CogniteDiagramAnnotationProperties:
+class _CogniteDiagramAnnotationProperties:
     start_node_page_number = PropertyOptions("startNodePageNumber")
     end_node_page_number = PropertyOptions("endNodePageNumber")
     start_node_x_min = PropertyOptions("startNodeXMin")
@@ -5246,7 +5246,7 @@ class CogniteDiagramAnnotationProperties:
         return ViewId("cdf_cdm_experimental", "CogniteDiagramAnnotation", "v1")
 
 
-class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteAnnotationApply):
+class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, CogniteAnnotationApply):
     """This represents the writing format of Cognite diagram annotation.
 
     It is used to when data is written to CDF.
@@ -5356,7 +5356,7 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
         self.end_node_text = end_node_text
 
 
-class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnotation):
+class CogniteDiagramAnnotation(_CogniteDiagramAnnotationProperties, CogniteAnnotation):
     """This represents the reading format of Cognite diagram annotation.
 
     It is used to when data is read from CDF.
