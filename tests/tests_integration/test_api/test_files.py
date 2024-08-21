@@ -28,16 +28,21 @@ def random_bytes_of(size):
 
 
 file_size = 1024 * 1024 * 500  # 500 MB
-file_in_memory = random_bytes_of(size=file_size)
 BENCH_FILE_NAME = f"time bench file: {platform.system()}-{platform.python_version()}"
+from pathlib import Path
 
-print(f"---> {BENCH_FILE_NAME}: {len(file_in_memory)=}")
 
+def test_upload_file_time_benchmark(cognite_client: CogniteClient, tmp_path: Path):
+    file_path = tmp_path / "random_file.txt"
+    content = random_bytes_of(size=file_size)
+    print(f"---> {BENCH_FILE_NAME}: {len(content)=}")
 
-def test_upload_file_time_benchmark(cognite_client):
+    with open(file_path, "wb") as file:
+        file.write(content)
+
     t0 = timer()
-    res = cognite_client.files.upload_bytes(
-        content=file_in_memory,
+    res = cognite_client.files.upload(
+        path=file_path,
         name=BENCH_FILE_NAME,
     )
     t1 = timer()
