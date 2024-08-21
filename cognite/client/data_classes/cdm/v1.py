@@ -3146,7 +3146,7 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             scheduled_end_time=self.scheduled_end_time,
             assets=self.assets,  # type: ignore[arg-type]
             equipment=self.equipment,  # type: ignore[arg-type]
-            time_series=self.time_series,  # type: ignore[arg-type]
+            time_series=self.time_series,
             existing_version=self.version,
             type=self.type,
         )

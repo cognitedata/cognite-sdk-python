@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from cognite.client.data_classes.cdm.v1 import CogniteModel3DApply, CogniteSourceableNodeApply
+from cognite.client.data_classes.cdm.v1 import Cognite3DModelApply, CogniteSourceableNodeApply
 
 
 class TestSourceable:
@@ -46,7 +46,7 @@ class TestSourceable:
 
 class TestModel3D:
     def test_dump(self) -> None:
-        my_model = CogniteModel3DApply(
+        my_model = Cognite3DModelApply(
             "sp_data_space",
             "my_model",
             name="The model",
