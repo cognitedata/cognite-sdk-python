@@ -64,7 +64,7 @@ class TestModel3D:
                 {
                     "source": {
                         "space": "cdf_cdm_experimental",
-                        "externalId": "CogniteModel3D",
+                        "externalId": "Cognite3DModel",
                         "version": "v1",
                         "type": "view",
                     },
