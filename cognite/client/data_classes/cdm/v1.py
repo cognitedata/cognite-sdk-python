@@ -14,6 +14,362 @@ from cognite.client.data_classes.data_modeling.typed_instances import (
 )
 
 
+class Cognite3DTransformationProperties:
+    translation_x = PropertyOptions("translationX")
+    translation_y = PropertyOptions("translationY")
+    translation_z = PropertyOptions("translationZ")
+    euler_rotation_x = PropertyOptions("eulerRotationX")
+    euler_rotation_y = PropertyOptions("eulerRotationY")
+    euler_rotation_z = PropertyOptions("eulerRotationZ")
+    scale_x = PropertyOptions("scaleX")
+    scale_y = PropertyOptions("scaleY")
+    scale_z = PropertyOptions("scaleZ")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite3DTransformation", "v1")
+
+
+class Cognite3DTransformationNodeApply(Cognite3DTransformationProperties, TypedNodeApply):
+    """This represents the writing format of Cognite 3D transformation node.
+
+    It is used to when data is written to CDF.
+
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D transformation node.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        self.translation_x = translation_x
+        self.translation_y = translation_y
+        self.translation_z = translation_z
+        self.euler_rotation_x = euler_rotation_x
+        self.euler_rotation_y = euler_rotation_y
+        self.euler_rotation_z = euler_rotation_z
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.scale_z = scale_z
+
+
+class Cognite3DTransformationNode(Cognite3DTransformationProperties, TypedNode):
+    """This represents the reading format of Cognite 3D transformation node.
+
+    It is used to when data is read from CDF.
+
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D transformation node.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        self.translation_x = translation_x
+        self.translation_y = translation_y
+        self.translation_z = translation_z
+        self.euler_rotation_x = euler_rotation_x
+        self.euler_rotation_y = euler_rotation_y
+        self.euler_rotation_z = euler_rotation_z
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.scale_z = scale_z
+
+    def as_write(self) -> Cognite3DTransformationNodeApply:
+        return Cognite3DTransformationNodeApply(
+            self.space,
+            self.external_id,
+            translation_x=self.translation_x,
+            translation_y=self.translation_y,
+            translation_z=self.translation_z,
+            euler_rotation_x=self.euler_rotation_x,
+            euler_rotation_y=self.euler_rotation_y,
+            euler_rotation_z=self.euler_rotation_z,
+            scale_x=self.scale_x,
+            scale_y=self.scale_y,
+            scale_z=self.scale_z,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class CogniteCubeMapProperties:
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteCubeMap", "v1")
+
+
+class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
+    """This represents the writing format of Cognite cube map.
+
+    It is used to when data is written to CDF.
+
+    The cube map holds references to 6 images in used to visually represent the surrounding environment
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite cube map.
+        front (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the front projection of the cube map
+        back (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the back projection of the cube map
+        left (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the left projection of the cube map
+        right (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the right projection of the cube map
+        top (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the top projection of the cube map
+        bottom (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the bottom projection of the cube map
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        front: DirectRelationReference | tuple[str, str] | None = None,
+        back: DirectRelationReference | tuple[str, str] | None = None,
+        left: DirectRelationReference | tuple[str, str] | None = None,
+        right: DirectRelationReference | tuple[str, str] | None = None,
+        top: DirectRelationReference | tuple[str, str] | None = None,
+        bottom: DirectRelationReference | tuple[str, str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        self.front = DirectRelationReference.load(front) if front else None
+        self.back = DirectRelationReference.load(back) if back else None
+        self.left = DirectRelationReference.load(left) if left else None
+        self.right = DirectRelationReference.load(right) if right else None
+        self.top = DirectRelationReference.load(top) if top else None
+        self.bottom = DirectRelationReference.load(bottom) if bottom else None
+
+
+class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
+    """This represents the reading format of Cognite cube map.
+
+    It is used to when data is read from CDF.
+
+    The cube map holds references to 6 images in used to visually represent the surrounding environment
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite cube map.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        front (DirectRelationReference | None): Direct relation to a file holding the front projection of the cube map
+        back (DirectRelationReference | None): Direct relation to a file holding the back projection of the cube map
+        left (DirectRelationReference | None): Direct relation to a file holding the left projection of the cube map
+        right (DirectRelationReference | None): Direct relation to a file holding the right projection of the cube map
+        top (DirectRelationReference | None): Direct relation to a file holding the top projection of the cube map
+        bottom (DirectRelationReference | None): Direct relation to a file holding the bottom projection of the cube map
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        front: DirectRelationReference | None = None,
+        back: DirectRelationReference | None = None,
+        left: DirectRelationReference | None = None,
+        right: DirectRelationReference | None = None,
+        top: DirectRelationReference | None = None,
+        bottom: DirectRelationReference | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        self.front = DirectRelationReference.load(front) if front else None
+        self.back = DirectRelationReference.load(back) if back else None
+        self.left = DirectRelationReference.load(left) if left else None
+        self.right = DirectRelationReference.load(right) if right else None
+        self.top = DirectRelationReference.load(top) if top else None
+        self.bottom = DirectRelationReference.load(bottom) if bottom else None
+
+    def as_write(self) -> CogniteCubeMapApply:
+        return CogniteCubeMapApply(
+            self.space,
+            self.external_id,
+            front=self.front,
+            back=self.back,
+            left=self.left,
+            right=self.right,
+            top=self.top,
+            bottom=self.bottom,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Cognite3DRevisionProperties:
+    type_ = PropertyOptions("type")
+    model_3d = PropertyOptions("model3D")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite3DRevision", "v1")
+
+
+class Cognite3DRevisionApply(Cognite3DRevisionProperties, TypedNodeApply):
+    """This represents the writing format of Cognite 3D revision.
+
+    It is used to when data is written to CDF.
+
+    Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D revision.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | tuple[str, str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        self.status = status
+        self.published = published
+        self.type_ = type_
+        self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
+
+
+class Cognite3DRevision(Cognite3DRevisionProperties, TypedNode):
+    """This represents the reading format of Cognite 3D revision.
+
+    It is used to when data is read from CDF.
+
+    Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D revision.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | None): The model 3d field.
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        self.status = status
+        self.published = published
+        self.type_ = type_
+        self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
+
+    def as_write(self) -> Cognite3DRevisionApply:
+        return Cognite3DRevisionApply(
+            self.space,
+            self.external_id,
+            status=self.status,
+            published=self.published,
+            type_=self.type_,
+            model_3d=self.model_3d,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class CogniteDescribableProperties:
     @classmethod
     def get_source(cls) -> ViewId:
@@ -26,7 +382,6 @@ class CogniteDescribableNodeApply(CogniteDescribableProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
-
 
     Args:
         space (str): The space where the node is located.
@@ -64,7 +419,6 @@ class CogniteDescribableNode(CogniteDescribableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
-
 
     Args:
         space (str): The space where the node is located.
@@ -131,7 +485,6 @@ class CogniteSchedulableApply(CogniteSchedulableProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -168,7 +521,6 @@ class CogniteSchedulable(CogniteSchedulableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -234,6 +586,7 @@ class CogniteSourceableNodeApply(CogniteSourceableProperties, TypedNodeApply):
     """This represents the writing format of Cognite sourceable node.
 
     It is used to when data is written to CDF.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite sourceable node.
@@ -352,7 +705,6 @@ class CogniteVisualizableApply(CogniteVisualizableProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -380,7 +732,6 @@ class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -417,132 +768,42 @@ class CogniteVisualizable(CogniteVisualizableProperties, TypedNode):
         )
 
 
-class CogniteRevision3DProperties:
-    type_ = PropertyOptions("type")
-    model_3d = PropertyOptions("model3D")
+class Cognite360ImageProperties:
+    collection_360 = PropertyOptions("collection360")
+    station_360 = PropertyOptions("station360")
+    taken_at = PropertyOptions("takenAt")
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteRevision3D", "v1")
+        return ViewId("cdf_cdm_experimental", "Cognite360Image", "v1")
 
 
-class CogniteRevision3DApply(CogniteRevision3DProperties, TypedNodeApply):
-    """This represents the writing format of Cognite revision 3D.
-
-    It is used to when data is written to CDF.
-
-    Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite revision 3D.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | tuple[str, str] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
-        self.status = status
-        self.published = published
-        self.type_ = type_
-        self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
-
-
-class CogniteRevision3D(CogniteRevision3DProperties, TypedNode):
-    """This represents the reading format of Cognite revision 3D.
-
-    It is used to when data is read from CDF.
-
-    Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite revision 3D.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): The model 3D field.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.status = status
-        self.published = published
-        self.type_ = type_
-        self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
-
-    def as_write(self) -> CogniteRevision3DApply:
-        return CogniteRevision3DApply(
-            self.space,
-            self.external_id,
-            status=self.status,
-            published=self.published,
-            type_=self.type_,
-            model_3d=self.model_3d,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteCubeMapProperties:
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCubeMap", "v1")
-
-
-class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
-    """This represents the writing format of Cognite cube map.
+class Cognite360ImageApply(Cognite360ImageProperties, Cognite3DTransformationNodeApply, CogniteCubeMapApply):
+    """This represents the writing format of Cognite 360 image.
 
     It is used to when data is written to CDF.
 
-    The cube map holds references to projections for a cube surrounding an 3D entity extending this, such as CogniteImage360
-
-
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cube map.
+        external_id (str): The external id of the Cognite 360 image.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
         front (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the front projection of the cube map
         back (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the back projection of the cube map
         left (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the left projection of the cube map
         right (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the right projection of the cube map
         top (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the top projection of the cube map
         bottom (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the bottom projection of the cube map
+        collection_360 (DirectRelationReference | tuple[str, str] | None): Direct relation to Cognite360ImageCollection
+        station_360 (DirectRelationReference | tuple[str, str] | None): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
+        taken_at (datetime | None): The timestamp when the 6 photos were taken
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -552,44 +813,90 @@ class CogniteCubeMapApply(CogniteCubeMapProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
         front: DirectRelationReference | tuple[str, str] | None = None,
         back: DirectRelationReference | tuple[str, str] | None = None,
         left: DirectRelationReference | tuple[str, str] | None = None,
         right: DirectRelationReference | tuple[str, str] | None = None,
         top: DirectRelationReference | tuple[str, str] | None = None,
         bottom: DirectRelationReference | tuple[str, str] | None = None,
+        collection_360: DirectRelationReference | tuple[str, str] | None = None,
+        station_360: DirectRelationReference | tuple[str, str] | None = None,
+        taken_at: datetime | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
-        self.front = DirectRelationReference.load(front) if front else None
-        self.back = DirectRelationReference.load(back) if back else None
-        self.left = DirectRelationReference.load(left) if left else None
-        self.right = DirectRelationReference.load(right) if right else None
-        self.top = DirectRelationReference.load(top) if top else None
-        self.bottom = DirectRelationReference.load(bottom) if bottom else None
+        Cognite3DTransformationNodeApply.__init__(
+            self,
+            space,
+            external_id,
+            translation_x=translation_x,
+            translation_y=translation_y,
+            translation_z=translation_z,
+            euler_rotation_x=euler_rotation_x,
+            euler_rotation_y=euler_rotation_y,
+            euler_rotation_z=euler_rotation_z,
+            scale_x=scale_x,
+            scale_y=scale_y,
+            scale_z=scale_z,
+            existing_version=existing_version,
+            type=type,
+        )
+        CogniteCubeMapApply.__init__(
+            self,
+            space,
+            external_id,
+            front=front,
+            back=back,
+            left=left,
+            right=right,
+            top=top,
+            bottom=bottom,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
+        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
+        self.taken_at = taken_at
 
 
-class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
-    """This represents the reading format of Cognite cube map.
+class Cognite360Image(Cognite360ImageProperties, Cognite3DTransformationNode, CogniteCubeMap):
+    """This represents the reading format of Cognite 360 image.
 
     It is used to when data is read from CDF.
 
-    The cube map holds references to projections for a cube surrounding an 3D entity extending this, such as CogniteImage360
-
-
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cube map.
+        external_id (str): The external id of the Cognite 360 image.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
         front (DirectRelationReference | None): Direct relation to a file holding the front projection of the cube map
         back (DirectRelationReference | None): Direct relation to a file holding the back projection of the cube map
         left (DirectRelationReference | None): Direct relation to a file holding the left projection of the cube map
         right (DirectRelationReference | None): Direct relation to a file holding the right projection of the cube map
         top (DirectRelationReference | None): Direct relation to a file holding the top projection of the cube map
         bottom (DirectRelationReference | None): Direct relation to a file holding the bottom projection of the cube map
+        collection_360 (DirectRelationReference | None): Direct relation to Cognite360ImageCollection
+        station_360 (DirectRelationReference | None): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
+        taken_at (datetime | None): The timestamp when the 6 photos were taken
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -602,167 +909,68 @@ class CogniteCubeMap(CogniteCubeMapProperties, TypedNode):
         last_updated_time: int,
         created_time: int,
         *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
         front: DirectRelationReference | None = None,
         back: DirectRelationReference | None = None,
         left: DirectRelationReference | None = None,
         right: DirectRelationReference | None = None,
         top: DirectRelationReference | None = None,
         bottom: DirectRelationReference | None = None,
+        collection_360: DirectRelationReference | None = None,
+        station_360: DirectRelationReference | None = None,
+        taken_at: datetime | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.front = DirectRelationReference.load(front) if front else None
-        self.back = DirectRelationReference.load(back) if back else None
-        self.left = DirectRelationReference.load(left) if left else None
-        self.right = DirectRelationReference.load(right) if right else None
-        self.top = DirectRelationReference.load(top) if top else None
-        self.bottom = DirectRelationReference.load(bottom) if bottom else None
-
-    def as_write(self) -> CogniteCubeMapApply:
-        return CogniteCubeMapApply(
-            self.space,
-            self.external_id,
-            front=self.front,
-            back=self.back,
-            left=self.left,
-            right=self.right,
-            top=self.top,
-            bottom=self.bottom,
-            existing_version=self.version,
-            type=self.type,
+        Cognite3DTransformationNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            translation_x=translation_x,
+            translation_y=translation_y,
+            translation_z=translation_z,
+            euler_rotation_x=euler_rotation_x,
+            euler_rotation_y=euler_rotation_y,
+            euler_rotation_z=euler_rotation_z,
+            scale_x=scale_x,
+            scale_y=scale_y,
+            scale_z=scale_z,
+            type=type,
+            deleted_time=deleted_time,
         )
+        CogniteCubeMap.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            front=front,
+            back=back,
+            left=left,
+            right=right,
+            top=top,
+            bottom=bottom,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
+        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
+        self.taken_at = taken_at
 
-
-class CogniteTransformation3DProperties:
-    translation_x = PropertyOptions("translationX")
-    translation_y = PropertyOptions("translationY")
-    translation_z = PropertyOptions("translationZ")
-    euler_rotation_x = PropertyOptions("eulerRotationX")
-    euler_rotation_y = PropertyOptions("eulerRotationY")
-    euler_rotation_z = PropertyOptions("eulerRotationZ")
-    scale_x = PropertyOptions("scaleX")
-    scale_y = PropertyOptions("scaleY")
-    scale_z = PropertyOptions("scaleZ")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteTransformation3D", "v1")
-
-
-class CogniteTransformation3DNodeApply(CogniteTransformation3DProperties, TypedNodeApply):
-    """This represents the writing format of Cognite transformation 3D node.
-
-    It is used to when data is written to CDF.
-
-    The CogniteTransformation3D object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in 3D space. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite transformation 3D node.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
-        self.translation_x = translation_x
-        self.translation_y = translation_y
-        self.translation_z = translation_z
-        self.euler_rotation_x = euler_rotation_x
-        self.euler_rotation_y = euler_rotation_y
-        self.euler_rotation_z = euler_rotation_z
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_z = scale_z
-
-
-class CogniteTransformation3DNode(CogniteTransformation3DProperties, TypedNode):
-    """This represents the reading format of Cognite transformation 3D node.
-
-    It is used to when data is read from CDF.
-
-    The CogniteTransformation3D object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in 3D space. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite transformation 3D node.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
-        self.translation_x = translation_x
-        self.translation_y = translation_y
-        self.translation_z = translation_z
-        self.euler_rotation_x = euler_rotation_x
-        self.euler_rotation_y = euler_rotation_y
-        self.euler_rotation_z = euler_rotation_z
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_z = scale_z
-
-    def as_write(self) -> CogniteTransformation3DNodeApply:
-        return CogniteTransformation3DNodeApply(
+    def as_write(self) -> Cognite360ImageApply:
+        return Cognite360ImageApply(
             self.space,
             self.external_id,
             translation_x=self.translation_x,
@@ -774,6 +982,808 @@ class CogniteTransformation3DNode(CogniteTransformation3DProperties, TypedNode):
             scale_x=self.scale_x,
             scale_y=self.scale_y,
             scale_z=self.scale_z,
+            front=self.front,
+            back=self.back,
+            left=self.left,
+            right=self.right,
+            top=self.top,
+            bottom=self.bottom,
+            collection_360=self.collection_360,
+            station_360=self.station_360,
+            taken_at=self.taken_at,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class CogniteCADRevisionProperties:
+    revision_id = PropertyOptions("revisionId")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteCADRevision", "v1")
+
+
+class CogniteCADRevisionApply(CogniteCADRevisionProperties, Cognite3DRevisionApply):
+    """This represents the writing format of Cognite cad revision.
+
+    It is used to when data is written to CDF.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite cad revision.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): .
+        revision_id (int | None): The 3D API revision identifier for this CAD model
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | tuple[str, str] | None = None,
+        revision_id: int | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.revision_id = revision_id
+
+
+class CogniteCADRevision(CogniteCADRevisionProperties, Cognite3DRevision):
+    """This represents the reading format of Cognite cad revision.
+
+    It is used to when data is read from CDF.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite cad revision.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | None): .
+        revision_id (int | None): The 3D API revision identifier for this CAD model
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | None = None,
+        revision_id: int | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.revision_id = revision_id
+
+    def as_write(self) -> CogniteCADRevisionApply:
+        return CogniteCADRevisionApply(
+            self.space,
+            self.external_id,
+            status=self.status,
+            published=self.published,
+            type_=self.type_,
+            model_3d=self.model_3d,
+            revision_id=self.revision_id,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class CognitePointCloudRevisionProperties:
+    revision_id = PropertyOptions("revisionId")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CognitePointCloudRevision", "v1")
+
+
+class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, Cognite3DRevisionApply):
+    """This represents the writing format of Cognite point cloud revision.
+
+    It is used to when data is written to CDF.
+
+    Navigational aid for traversing CognitePointCloudRevision instances
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite point cloud revision.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): .
+        revision_id (int | None): The 3D API revision identifier for this PointCloud model
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | tuple[str, str] | None = None,
+        revision_id: int | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.revision_id = revision_id
+
+
+class CognitePointCloudRevision(CognitePointCloudRevisionProperties, Cognite3DRevision):
+    """This represents the reading format of Cognite point cloud revision.
+
+    It is used to when data is read from CDF.
+
+    Navigational aid for traversing CognitePointCloudRevision instances
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite point cloud revision.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | None): .
+        revision_id (int | None): The 3D API revision identifier for this PointCloud model
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | None = None,
+        revision_id: int | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.revision_id = revision_id
+
+    def as_write(self) -> CognitePointCloudRevisionApply:
+        return CognitePointCloudRevisionApply(
+            self.space,
+            self.external_id,
+            status=self.status,
+            published=self.published,
+            type_=self.type_,
+            model_3d=self.model_3d,
+            revision_id=self.revision_id,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Cognite360ImageCollectionProperties:
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite360ImageCollection", "v1")
+
+
+class Cognite360ImageCollectionApply(
+    Cognite360ImageCollectionProperties, CogniteDescribableNodeApply, Cognite3DRevisionApply
+):
+    """This represents the writing format of Cognite 360 image collection.
+
+    It is used to when data is written to CDF.
+
+    Represents a logical collection of Cognite360Image instances
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image collection.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | tuple[str, str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        CogniteDescribableNodeApply.__init__(
+            self,
+            space,
+            external_id,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            existing_version=existing_version,
+            type=type,
+        )
+        Cognite3DRevisionApply.__init__(
+            self,
+            space,
+            external_id,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            existing_version=existing_version,
+            type=type,
+        )
+
+
+class Cognite360ImageCollection(Cognite360ImageCollectionProperties, CogniteDescribableNode, Cognite3DRevision):
+    """This represents the reading format of Cognite 360 image collection.
+
+    It is used to when data is read from CDF.
+
+    Represents a logical collection of Cognite360Image instances
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image collection.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
+        published (bool | None): The published field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        model_3d (DirectRelationReference | None): The model 3d field.
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
+        published: bool | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_3d: DirectRelationReference | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        CogniteDescribableNode.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        Cognite3DRevision.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            status=status,
+            published=published,
+            type_=type_,
+            model_3d=model_3d,
+            type=type,
+            deleted_time=deleted_time,
+        )
+
+    def as_write(self) -> Cognite360ImageCollectionApply:
+        return Cognite360ImageCollectionApply(
+            self.space,
+            self.external_id,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            status=self.status,
+            published=self.published,
+            type_=self.type_,
+            model_3d=self.model_3d,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Cognite360ImageStationProperties:
+    group_type = PropertyOptions("groupType")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite360ImageStation", "v1")
+
+
+class Cognite360ImageStationApply(Cognite360ImageStationProperties, CogniteDescribableNodeApply):
+    """This represents the writing format of Cognite 360 image station.
+
+    It is used to when data is written to CDF.
+
+    A way to group images across collections. Used for creating visual scan history
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image station.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        group_type (Literal['Station360'] | None): Type of group
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        group_type: Literal["Station360"] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.group_type = group_type
+
+
+class Cognite360ImageStation(Cognite360ImageStationProperties, CogniteDescribableNode):
+    """This represents the reading format of Cognite 360 image station.
+
+    It is used to when data is read from CDF.
+
+    A way to group images across collections. Used for creating visual scan history
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image station.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        group_type (Literal['Station360'] | None): Type of group
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        group_type: Literal["Station360"] | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.group_type = group_type
+
+    def as_write(self) -> Cognite360ImageStationApply:
+        return Cognite360ImageStationApply(
+            self.space,
+            self.external_id,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            group_type=self.group_type,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Cognite3DModelProperties:
+    type_ = PropertyOptions("type")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite3DModel", "v1")
+
+
+class Cognite3DModelApply(Cognite3DModelProperties, CogniteDescribableNodeApply):
+    """This represents the writing format of Cognite 3D model.
+
+    It is used to when data is written to CDF.
+
+    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Cognite360Image)
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D model.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.type_ = type_
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+
+
+class Cognite3DModel(Cognite3DModelProperties, CogniteDescribableNode):
+    """This represents the reading format of Cognite 3D model.
+
+    It is used to when data is read from CDF.
+
+    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Cognite360Image)
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D model.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.type_ = type_
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+
+    def as_write(self) -> Cognite3DModelApply:
+        return Cognite3DModelApply(
+            self.space,
+            self.external_id,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            type_=self.type_,
+            thumbnail=self.thumbnail,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Cognite3DObjectProperties:
+    x_min = PropertyOptions("xMin")
+    x_max = PropertyOptions("xMax")
+    y_min = PropertyOptions("yMin")
+    y_max = PropertyOptions("yMax")
+    z_min = PropertyOptions("zMin")
+    z_max = PropertyOptions("zMax")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite3DObject", "v1")
+
+
+class Cognite3DObjectApply(Cognite3DObjectProperties, CogniteDescribableNodeApply):
+    """This represents the writing format of Cognite 3D object.
+
+    It is used to when data is written to CDF.
+
+    This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D object.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        x_min (float | None): Lowest X value in bounding box
+        x_max (float | None): Highest X value in bounding box
+        y_min (float | None): Lowest Y value in bounding box
+        y_max (float | None): Highest Y value in bounding box
+        z_min (float | None): Lowest Z value in bounding box
+        z_max (float | None): Highest Z value in bounding box
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
+        z_min: float | None = None,
+        z_max: float | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+        self.z_min = z_min
+        self.z_max = z_max
+
+
+class Cognite3DObject(Cognite3DObjectProperties, CogniteDescribableNode):
+    """This represents the reading format of Cognite 3D object.
+
+    It is used to when data is read from CDF.
+
+    This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D object.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        x_min (float | None): Lowest X value in bounding box
+        x_max (float | None): Highest X value in bounding box
+        y_min (float | None): Lowest Y value in bounding box
+        y_max (float | None): Highest Y value in bounding box
+        z_min (float | None): Lowest Z value in bounding box
+        z_max (float | None): Highest Z value in bounding box
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
+        z_min: float | None = None,
+        z_max: float | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+        self.z_min = z_min
+        self.z_max = z_max
+
+    def as_write(self) -> Cognite3DObjectApply:
+        return Cognite3DObjectApply(
+            self.space,
+            self.external_id,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            x_min=self.x_min,
+            x_max=self.x_max,
+            y_min=self.y_min,
+            y_max=self.y_max,
+            z_min=self.z_min,
+            z_max=self.z_max,
             existing_version=self.version,
             type=self.type,
         )
@@ -786,15 +1796,14 @@ class CogniteAssetClassProperties:
 
 
 class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of Cognite asset class.
+    """This represents the writing format of Cognite asset clas.
 
     It is used to when data is written to CDF.
 
     This identifies the class of an asset
-
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset class.
+        external_id (str): The external id of the Cognite asset clas.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -834,15 +1843,14 @@ class CogniteAssetClassApply(CogniteAssetClassProperties, CogniteDescribableNode
 
 
 class CogniteAssetClass(CogniteAssetClassProperties, CogniteDescribableNode):
-    """This represents the reading format of Cognite asset class.
+    """This represents the reading format of Cognite asset clas.
 
     It is used to when data is read from CDF.
 
     This identifies the class of an asset
-
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite asset class.
+        external_id (str): The external id of the Cognite asset clas.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -918,7 +1926,6 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
     It is used to when data is written to CDF.
 
     This identifies the type of an asset
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -928,6 +1935,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
         aliases (list[str] | None): Alternative names for the node
         code (str | None): A unique identifier for the type of asset
         asset_class (DirectRelationReference | tuple[str, str] | None): Class of this type, direct relation to CogniteAssetClass
+        standard (str | None): Textual string for which standard the code is from
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -943,6 +1951,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
         aliases: list[str] | None = None,
         code: str | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
+        standard: str | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -958,6 +1967,7 @@ class CogniteAssetTypeApply(CogniteAssetTypeProperties, CogniteDescribableNodeAp
         )
         self.code = code
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
+        self.standard = standard
 
 
 class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
@@ -966,7 +1976,6 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
     It is used to when data is read from CDF.
 
     This identifies the type of an asset
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -979,6 +1988,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
         aliases (list[str] | None): Alternative names for the node
         code (str | None): A unique identifier for the type of asset
         asset_class (DirectRelationReference | None): Class of this type, direct relation to CogniteAssetClass
+        standard (str | None): Textual string for which standard the code is from
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -997,6 +2007,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
         aliases: list[str] | None = None,
         code: str | None = None,
         asset_class: DirectRelationReference | None = None,
+        standard: str | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -1015,6 +2026,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
         )
         self.code = code
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
+        self.standard = standard
 
     def as_write(self) -> CogniteAssetTypeApply:
         return CogniteAssetTypeApply(
@@ -1026,6 +2038,7 @@ class CogniteAssetType(CogniteAssetTypeProperties, CogniteDescribableNode):
             aliases=self.aliases,
             code=self.code,
             asset_class=self.asset_class,
+            standard=self.standard,
             existing_version=self.version,
             type=self.type,
         )
@@ -1049,7 +2062,6 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
     It is used to when data is written to CDF.
 
     Represents nodes from the 3D model that have been contextualized
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1058,9 +2070,9 @@ class CogniteCADNodeApply(CogniteCADNodeProperties, CogniteDescribableNodeApply)
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         object_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to CogniteModel3D
+        model_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to Cognite3DModel
         cad_node_reference (str | None): Reference to a node within a CAD model from the 3D API
-        revisions (list[DirectRelationReference | tuple[str, str]] | None): List of direct relations to instances of CogniteRevision3D which this CogniteCADNode exists in.
+        revisions (list[DirectRelationReference | tuple[str, str]] | None): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
         tree_indexes (list[int] | None): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
         sub_tree_sizes (list[int] | None): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -1109,7 +2121,6 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
     It is used to when data is read from CDF.
 
     Represents nodes from the 3D model that have been contextualized
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1121,9 +2132,9 @@ class CogniteCADNode(CogniteCADNodeProperties, CogniteDescribableNode):
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         object_3d (DirectRelationReference | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | None): Direct relation to CogniteModel3D
+        model_3d (DirectRelationReference | None): Direct relation to Cognite3DModel
         cad_node_reference (str | None): Reference to a node within a CAD model from the 3D API
-        revisions (list[DirectRelationReference] | None): List of direct relations to instances of CogniteRevision3D which this CogniteCADNode exists in.
+        revisions (list[DirectRelationReference] | None): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
         tree_indexes (list[int] | None): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
         sub_tree_sizes (list[int] | None): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -1205,7 +2216,6 @@ class CogniteEquipmentTypeApply(CogniteEquipmentTypeProperties, CogniteDescribab
     It is used to when data is written to CDF.
 
     This identifies the type of an equipment
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -1259,7 +2269,6 @@ class CogniteEquipmentType(CogniteEquipmentTypeProperties, CogniteDescribableNod
     It is used to when data is read from CDF.
 
     This identifies the type of an equipment
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -1346,7 +2355,6 @@ class CogniteFileCategoryApply(CogniteFileCategoryProperties, CogniteDescribable
     It is used to when data is written to CDF.
 
     This identifies the category of file as found through contextualization/categorization
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -1397,7 +2405,6 @@ class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode)
     It is used to when data is read from CDF.
 
     This identifies the category of file as found through contextualization/categorization
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -1466,406 +2473,6 @@ class CogniteFileCategory(CogniteFileCategoryProperties, CogniteDescribableNode)
         )
 
 
-class CogniteImage360StationProperties:
-    group_type = PropertyOptions("groupType")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteImage360Station", "v1")
-
-
-class CogniteImage360StationApply(CogniteImage360StationProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of Cognite image 360 station.
-
-    It is used to when data is written to CDF.
-
-    Navigational aid for traversing multiple CogniteImage360 instances for a single station
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 station.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        group_type (Literal['Station360'] | None): Type of group
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        group_type: Literal["Station360"] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.group_type = group_type
-
-
-class CogniteImage360Station(CogniteImage360StationProperties, CogniteDescribableNode):
-    """This represents the reading format of Cognite image 360 station.
-
-    It is used to when data is read from CDF.
-
-    Navigational aid for traversing multiple CogniteImage360 instances for a single station
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 station.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        group_type (Literal['Station360'] | None): Type of group
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        group_type: Literal["Station360"] | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.group_type = group_type
-
-    def as_write(self) -> CogniteImage360StationApply:
-        return CogniteImage360StationApply(
-            self.space,
-            self.external_id,
-            name=self.name,
-            description=self.description,
-            tags=self.tags,
-            aliases=self.aliases,
-            group_type=self.group_type,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteModel3DProperties:
-    type_ = PropertyOptions("type")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteModel3D", "v1")
-
-
-class CogniteModel3DApply(CogniteModel3DProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of Cognite model 3D.
-
-    It is used to when data is written to CDF.
-
-    Groups revisions of 3D data of various kinds together (CAD, PointCloud, CogniteImage360)
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite model 3D.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.type_ = type_
-
-
-class CogniteModel3D(CogniteModel3DProperties, CogniteDescribableNode):
-    """This represents the reading format of Cognite model 3D.
-
-    It is used to when data is read from CDF.
-
-    Groups revisions of 3D data of various kinds together (CAD, PointCloud, CogniteImage360)
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite model 3D.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.type_ = type_
-
-    def as_write(self) -> CogniteModel3DApply:
-        return CogniteModel3DApply(
-            self.space,
-            self.external_id,
-            name=self.name,
-            description=self.description,
-            tags=self.tags,
-            aliases=self.aliases,
-            type_=self.type_,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteObject3DProperties:
-    x_min = PropertyOptions("xMin")
-    x_max = PropertyOptions("xMax")
-    y_min = PropertyOptions("yMin")
-    y_max = PropertyOptions("yMax")
-    z_min = PropertyOptions("zMin")
-    z_max = PropertyOptions("zMax")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteObject3D", "v1")
-
-
-class CogniteObject3DApply(CogniteObject3DProperties, CogniteDescribableNodeApply):
-    """This represents the writing format of Cognite object 3D.
-
-    It is used to when data is written to CDF.
-
-    This is a virtual representation of an object in world space, tied to an asset and 3D resources.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite object 3D.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        x_min (float | None): Lowest X value
-        x_max (float | None): Highest X value
-        y_min (float | None): Lowest Y value
-        y_max (float | None): Highest Y value
-        z_min (float | None): Lowest Z value
-        z_max (float | None): Highest Z value
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        x_min: float | None = None,
-        x_max: float | None = None,
-        y_min: float | None = None,
-        y_max: float | None = None,
-        z_min: float | None = None,
-        z_max: float | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
-        self.z_min = z_min
-        self.z_max = z_max
-
-
-class CogniteObject3D(CogniteObject3DProperties, CogniteDescribableNode):
-    """This represents the reading format of Cognite object 3D.
-
-    It is used to when data is read from CDF.
-
-    This is a virtual representation of an object in world space, tied to an asset and 3D resources.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite object 3D.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        x_min (float | None): Lowest X value
-        x_max (float | None): Highest X value
-        y_min (float | None): Lowest Y value
-        y_max (float | None): Highest Y value
-        z_min (float | None): Lowest Z value
-        z_max (float | None): Highest Z value
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        x_min: float | None = None,
-        x_max: float | None = None,
-        y_min: float | None = None,
-        y_max: float | None = None,
-        z_min: float | None = None,
-        z_max: float | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
-        self.z_min = z_min
-        self.z_max = z_max
-
-    def as_write(self) -> CogniteObject3DApply:
-        return CogniteObject3DApply(
-            self.space,
-            self.external_id,
-            name=self.name,
-            description=self.description,
-            tags=self.tags,
-            aliases=self.aliases,
-            x_min=self.x_min,
-            x_max=self.x_max,
-            y_min=self.y_min,
-            y_max=self.y_max,
-            z_min=self.z_min,
-            z_max=self.z_max,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
 class CognitePointCloudVolumeProperties:
     object_3d = PropertyOptions("object3D")
     model_3d = PropertyOptions("model3D")
@@ -1884,7 +2491,6 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
     It is used to when data is written to CDF.
 
     PointCloud volume definition
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -1893,7 +2499,7 @@ class CognitePointCloudVolumeApply(CognitePointCloudVolumeProperties, CogniteDes
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         object_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to CogniteModel3D instance
+        model_3d (DirectRelationReference | tuple[str, str] | None): Direct relation to Cognite3DModel instance
         volume_references (list[str] | None): Unique volume metric hashes used to access the 3D specialized data storage
         revisions (list[DirectRelationReference | tuple[str, str]] | None): List of direct relations to revision information
         volume_type (Literal["Box", "Cylinder"] | None): Type of volume (Cylinder or Box)
@@ -1947,7 +2553,6 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
     It is used to when data is read from CDF.
 
     PointCloud volume definition
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -1959,7 +2564,7 @@ class CognitePointCloudVolume(CognitePointCloudVolumeProperties, CogniteDescriba
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         object_3d (DirectRelationReference | None): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | None): Direct relation to CogniteModel3D instance
+        model_3d (DirectRelationReference | None): Direct relation to Cognite3DModel instance
         volume_references (list[str] | None): Unique volume metric hashes used to access the 3D specialized data storage
         revisions (list[DirectRelationReference] | None): List of direct relations to revision information
         volume_type (Literal["Box", "Cylinder"] | None): Type of volume (Cylinder or Box)
@@ -2046,7 +2651,6 @@ class CogniteSourceSystemApply(CogniteSourceSystemProperties, CogniteDescribable
     It is used to when data is written to CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -2094,7 +2698,6 @@ class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode)
     It is used to when data is read from CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -2159,6 +2762,145 @@ class CogniteSourceSystem(CogniteSourceSystemProperties, CogniteDescribableNode)
         )
 
 
+class CogniteUnitProperties:
+    source_reference = PropertyOptions("sourceReference")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "CogniteUnit", "v1")
+
+
+class CogniteUnitApply(CogniteUnitProperties, CogniteDescribableNodeApply):
+    """This represents the writing format of Cognite unit.
+
+    It is used to when data is written to CDF.
+
+    Represents a single unit of measurement
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite unit.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        symbol (str | None): The symbol for the unit of measurement
+        quantity (str | None): Specifies the physical quantity the unit measures
+        source (str | None): Source of the unit definition
+        source_reference (str | None): Reference to the source of the unit definition
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        symbol: str | None = None,
+        quantity: str | None = None,
+        source: str | None = None,
+        source_reference: str | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            existing_version=existing_version,
+            type=type,
+        )
+        self.symbol = symbol
+        self.quantity = quantity
+        self.source = source
+        self.source_reference = source_reference
+
+
+class CogniteUnit(CogniteUnitProperties, CogniteDescribableNode):
+    """This represents the reading format of Cognite unit.
+
+    It is used to when data is read from CDF.
+
+    Represents a single unit of measurement
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite unit.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        symbol (str | None): The symbol for the unit of measurement
+        quantity (str | None): Specifies the physical quantity the unit measures
+        source (str | None): Source of the unit definition
+        source_reference (str | None): Reference to the source of the unit definition
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        symbol: str | None = None,
+        quantity: str | None = None,
+        source: str | None = None,
+        source_reference: str | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            type=type,
+            deleted_time=deleted_time,
+        )
+        self.symbol = symbol
+        self.quantity = quantity
+        self.source = source
+        self.source_reference = source_reference
+
+    def as_write(self) -> CogniteUnitApply:
+        return CogniteUnitApply(
+            self.space,
+            self.external_id,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            symbol=self.symbol,
+            quantity=self.quantity,
+            source=self.source,
+            source_reference=self.source_reference,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class CogniteActivityProperties:
     time_series = PropertyOptions("timeSeries")
 
@@ -2175,7 +2917,6 @@ class CogniteActivityApply(
     It is used to when data is written to CDF.
 
     Represent an activity
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -2276,7 +3017,6 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
     It is used to when data is read from CDF.
 
     Represent an activity
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -2406,7 +3146,7 @@ class CogniteActivity(CogniteActivityProperties, CogniteDescribableNode, Cognite
             scheduled_end_time=self.scheduled_end_time,
             assets=self.assets,  # type: ignore[arg-type]
             equipment=self.equipment,  # type: ignore[arg-type]
-            time_series=self.time_series,
+            time_series=self.time_series,  # type: ignore[arg-type]
             existing_version=self.version,
             type=self.type,
         )
@@ -2427,7 +3167,6 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
     It is used to when data is written to CDF.
 
     Represent a physical piece of equipment
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2442,6 +3181,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        asset (DirectRelationReference | tuple[str, str] | None): Asset associated with this equipment
         serial_number (str | None): Serial number of the equipment
         manufacturer (str | None): Manufacturer of the equipment
         equipment_type (DirectRelationReference | tuple[str, str] | None): Type of this equipment, direct relation to CogniteEquipmentType
@@ -2466,6 +3206,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
         source_updated_time: datetime | None = None,
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
+        asset: DirectRelationReference | tuple[str, str] | None = None,
         serial_number: str | None = None,
         manufacturer: str | None = None,
         equipment_type: DirectRelationReference | tuple[str, str] | None = None,
@@ -2498,6 +3239,7 @@ class CogniteEquipmentApply(CogniteEquipmentProperties, CogniteDescribableNodeAp
             existing_version=existing_version,
             type=type,
         )
+        self.asset = DirectRelationReference.load(asset) if asset else None
         self.serial_number = serial_number
         self.manufacturer = manufacturer
         self.equipment_type = DirectRelationReference.load(equipment_type) if equipment_type else None
@@ -2510,7 +3252,6 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
     It is used to when data is read from CDF.
 
     Represent a physical piece of equipment
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2528,6 +3269,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        asset (DirectRelationReference | None): Asset associated with this equipment
         serial_number (str | None): Serial number of the equipment
         manufacturer (str | None): Manufacturer of the equipment
         equipment_type (DirectRelationReference | None): Type of this equipment, direct relation to CogniteEquipmentType
@@ -2555,6 +3297,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
         source_updated_time: datetime | None = None,
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
+        asset: DirectRelationReference | None = None,
         serial_number: str | None = None,
         manufacturer: str | None = None,
         equipment_type: DirectRelationReference | None = None,
@@ -2593,6 +3336,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
             type=type,
             deleted_time=deleted_time,
         )
+        self.asset = DirectRelationReference.load(asset) if asset else None
         self.serial_number = serial_number
         self.manufacturer = manufacturer
         self.equipment_type = DirectRelationReference.load(equipment_type) if equipment_type else None
@@ -2613,6 +3357,7 @@ class CogniteEquipment(CogniteEquipmentProperties, CogniteDescribableNode, Cogni
             source_updated_time=self.source_updated_time,
             source_created_user=self.source_created_user,
             source_updated_user=self.source_updated_user,
+            asset=self.asset,
             serial_number=self.serial_number,
             manufacturer=self.manufacturer,
             equipment_type=self.equipment_type,
@@ -2638,7 +3383,6 @@ class CogniteFileApply(CogniteFileProperties, CogniteDescribableNodeApply, Cogni
     It is used to when data is written to CDF.
 
     This concept models the underlying file
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2727,7 +3471,6 @@ class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceab
     It is used to when data is read from CDF.
 
     This concept models the underlying file
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2848,8 +3591,8 @@ class CogniteFile(CogniteFileProperties, CogniteDescribableNode, CogniteSourceab
 
 
 class CogniteTimeSeriesProperties:
-    type_ = PropertyOptions("type")
     is_step = PropertyOptions("isStep")
+    type_ = PropertyOptions("type")
     source_unit = PropertyOptions("sourceUnit")
 
     @classmethod
@@ -2861,9 +3604,11 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
     """This represents the writing format of Cognite time series.
 
     It is used to when data is written to CDF.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
+        is_step (bool): Defines whether the time series is a step series or not.
         type_ (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
@@ -2876,9 +3621,8 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        is_step (bool | None): Defines whether the time series is a step series or not.
         source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | tuple[str, str] | None): direct relation to unit in the `cdf_units` space
+        unit (DirectRelationReference | tuple[str, str] | None): direct relation to the unit of the time series
         assets (list[DirectRelationReference | tuple[str, str]] | None): The asset field.
         equipment (list[DirectRelationReference | tuple[str, str]] | None): The equipment field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -2890,6 +3634,7 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
         space: str,
         external_id: str,
         *,
+        is_step: bool,
         type_: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
@@ -2902,7 +3647,6 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
         source_updated_time: datetime | None = None,
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
-        is_step: bool | None = None,
         source_unit: str | None = None,
         unit: DirectRelationReference | tuple[str, str] | None = None,
         assets: list[DirectRelationReference | tuple[str, str]] | None = None,
@@ -2935,8 +3679,8 @@ class CogniteTimeSeriesApply(CogniteTimeSeriesProperties, CogniteDescribableNode
             existing_version=existing_version,
             type=type,
         )
-        self.type_ = type_
         self.is_step = is_step
+        self.type_ = type_
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else None
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
@@ -2954,6 +3698,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_step (bool): Defines whether the time series is a step series or not.
         type_ (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
@@ -2966,9 +3711,8 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        is_step (bool | None): Defines whether the time series is a step series or not.
         source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | None): direct relation to unit in the `cdf_units` space
+        unit (DirectRelationReference | None): direct relation to the unit of the time series
         assets (list[DirectRelationReference] | None): The asset field.
         equipment (list[DirectRelationReference] | None): The equipment field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -2983,6 +3727,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         last_updated_time: int,
         created_time: int,
         *,
+        is_step: bool,
         type_: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
@@ -2995,7 +3740,6 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         source_updated_time: datetime | None = None,
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
-        is_step: bool | None = None,
         source_unit: str | None = None,
         unit: DirectRelationReference | None = None,
         assets: list[DirectRelationReference] | None = None,
@@ -3034,8 +3778,8 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
             type=type,
             deleted_time=deleted_time,
         )
-        self.type_ = type_
         self.is_step = is_step
+        self.type_ = type_
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else None
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
@@ -3045,6 +3789,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
         return CogniteTimeSeriesApply(
             self.space,
             self.external_id,
+            is_step=self.is_step,
             type_=self.type_,
             name=self.name,
             description=self.description,
@@ -3057,7 +3802,6 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
             source_updated_time=self.source_updated_time,
             source_created_user=self.source_created_user,
             source_updated_user=self.source_updated_user,
-            is_step=self.is_step,
             source_unit=self.source_unit,
             unit=self.unit,
             assets=self.assets,  # type: ignore[arg-type]
@@ -3068,7 +3812,7 @@ class CogniteTimeSeries(CogniteTimeSeriesProperties, CogniteDescribableNode, Cog
 
 
 class CogniteAssetProperties:
-    last_path_materialization_time = PropertyOptions("lastPathMaterializationTime")
+    path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
     asset_class = PropertyOptions("assetClass")
     type_ = PropertyOptions("type")
 
@@ -3085,7 +3829,6 @@ class CogniteAssetApply(
     It is used to when data is written to CDF.
 
     The asset is the bare bone representation of assets in our asset centric world
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -3104,8 +3847,7 @@ class CogniteAssetApply(
         parent (DirectRelationReference | tuple[str, str] | None): Parent of this asset
         root (DirectRelationReference | tuple[str, str] | None): Asset at the top of the hierarchy.
         path (list[DirectRelationReference | tuple[str, str]] | None): Materialized path of this asset
-        last_path_materialization_time (datetime | None): Last time the path materializer updated the path of this asset
-        equipment (DirectRelationReference | tuple[str, str] | None): Equipment associated with this asset
+        path_last_updated_time (datetime | None): Last time the path was updated for this asset
         asset_class (DirectRelationReference | tuple[str, str] | None): Class of this asset
         type_ (DirectRelationReference | tuple[str, str] | None): Type of this asset
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -3132,8 +3874,7 @@ class CogniteAssetApply(
         parent: DirectRelationReference | tuple[str, str] | None = None,
         root: DirectRelationReference | tuple[str, str] | None = None,
         path: list[DirectRelationReference | tuple[str, str]] | None = None,
-        last_path_materialization_time: datetime | None = None,
-        equipment: DirectRelationReference | tuple[str, str] | None = None,
+        path_last_updated_time: datetime | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
         type_: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
@@ -3170,8 +3911,7 @@ class CogniteAssetApply(
         self.parent = DirectRelationReference.load(parent) if parent else None
         self.root = DirectRelationReference.load(root) if root else None
         self.path = [DirectRelationReference.load(path) for path in path] if path else None
-        self.last_path_materialization_time = last_path_materialization_time
-        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.path_last_updated_time = path_last_updated_time
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.type_ = DirectRelationReference.load(type_) if type_ else None
 
@@ -3182,7 +3922,6 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
     It is used to when data is read from CDF.
 
     The asset is the bare bone representation of assets in our asset centric world
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -3204,8 +3943,7 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
         parent (DirectRelationReference | None): Parent of this asset
         root (DirectRelationReference | None): Asset at the top of the hierarchy.
         path (list[DirectRelationReference] | None): Materialized path of this asset
-        last_path_materialization_time (datetime | None): Last time the path materializer updated the path of this asset
-        equipment (DirectRelationReference | None): Equipment associated with this asset
+        path_last_updated_time (datetime | None): Last time the path was updated for this asset
         asset_class (DirectRelationReference | None): Class of this asset
         type_ (DirectRelationReference | None): Type of this asset
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -3235,8 +3973,7 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
         parent: DirectRelationReference | None = None,
         root: DirectRelationReference | None = None,
         path: list[DirectRelationReference] | None = None,
-        last_path_materialization_time: datetime | None = None,
-        equipment: DirectRelationReference | None = None,
+        path_last_updated_time: datetime | None = None,
         asset_class: DirectRelationReference | None = None,
         type_: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
@@ -3287,8 +4024,7 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
         self.parent = DirectRelationReference.load(parent) if parent else None
         self.root = DirectRelationReference.load(root) if root else None
         self.path = [DirectRelationReference.load(path) for path in path] if path else None
-        self.last_path_materialization_time = last_path_materialization_time
-        self.equipment = DirectRelationReference.load(equipment) if equipment else None
+        self.path_last_updated_time = path_last_updated_time
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.type_ = DirectRelationReference.load(type_) if type_ else None
 
@@ -3311,8 +4047,7 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
             parent=self.parent,
             root=self.root,
             path=self.path,  # type: ignore[arg-type]
-            last_path_materialization_time=self.last_path_materialization_time,
-            equipment=self.equipment,
+            path_last_updated_time=self.path_last_updated_time,
             asset_class=self.asset_class,
             type_=self.type_,
             existing_version=self.version,
@@ -3320,147 +4055,27 @@ class CogniteAsset(CogniteAssetProperties, CogniteVisualizable, CogniteDescribab
         )
 
 
-class CogniteCADRevisionProperties:
-    revision_id = PropertyOptions("revisionId")
-
+class Cognite360ImageModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCADRevision", "v1")
+        return ViewId("cdf_cdm_experimental", "Cognite360ImageModel", "v1")
 
 
-class CogniteCADRevisionApply(CogniteCADRevisionProperties, CogniteRevision3DApply):
-    """This represents the writing format of Cognite cad revision.
-
-    It is used to when data is written to CDF.
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad revision.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): .
-        revision_id (int | None): The 3D API revision identifier for this CAD model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | tuple[str, str] | None = None,
-        revision_id: int | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            status=status,
-            published=published,
-            type_=type_,
-            model_3d=model_3d,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.revision_id = revision_id
-
-
-class CogniteCADRevision(CogniteCADRevisionProperties, CogniteRevision3D):
-    """This represents the reading format of Cognite cad revision.
-
-    It is used to when data is read from CDF.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite cad revision.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): .
-        revision_id (int | None): The 3D API revision identifier for this CAD model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | None = None,
-        revision_id: int | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            status=status,
-            published=published,
-            type_=type_,
-            model_3d=model_3d,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.revision_id = revision_id
-
-    def as_write(self) -> CogniteCADRevisionApply:
-        return CogniteCADRevisionApply(
-            self.space,
-            self.external_id,
-            status=self.status,
-            published=self.published,
-            type_=self.type_,
-            model_3d=self.model_3d,
-            revision_id=self.revision_id,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteImage360CollectionProperties:
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteImage360Collection", "v1")
-
-
-class CogniteImage360CollectionApply(
-    CogniteImage360CollectionProperties, CogniteDescribableNodeApply, CogniteRevision3DApply
-):
-    """This represents the writing format of Cognite image 360 collection.
+class Cognite360ImageModelApply(Cognite360ImageModelProperties, Cognite3DModelApply):
+    """This represents the writing format of Cognite 360 image model.
 
     It is used to when data is written to CDF.
 
-    Represents a logical collection of CogniteImage360 instances
-
+    Navigational aid for traversing Cognite360ImageModel instances
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 collection.
+        external_id (str): The external id of the Cognite 360 image model.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): The model 3D field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -3474,47 +4089,34 @@ class CogniteImage360CollectionApply(
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | tuple[str, str] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        CogniteDescribableNodeApply.__init__(
-            self,
+        super().__init__(
             space,
             external_id,
             name=name,
             description=description,
             tags=tags,
             aliases=aliases,
-            existing_version=existing_version,
-            type=type,
-        )
-        CogniteRevision3DApply.__init__(
-            self,
-            space,
-            external_id,
-            status=status,
-            published=published,
             type_=type_,
-            model_3d=model_3d,
+            thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
         )
 
 
-class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDescribableNode, CogniteRevision3D):
-    """This represents the reading format of Cognite image 360 collection.
+class Cognite360ImageModel(Cognite360ImageModelProperties, Cognite3DModel):
+    """This represents the reading format of Cognite 360 image model.
 
     It is used to when data is read from CDF.
 
-    Represents a logical collection of CogniteImage360 instances
-
+    Navigational aid for traversing Cognite360ImageModel instances
     Args:
         space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 collection.
+        external_id (str): The external id of the Cognite 360 image model.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -3522,10 +4124,8 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): The model 3D field.
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -3542,15 +4142,12 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        CogniteDescribableNode.__init__(
-            self,
+        super().__init__(
             space,
             external_id,
             version,
@@ -3560,383 +4157,22 @@ class CogniteImage360Collection(CogniteImage360CollectionProperties, CogniteDesc
             description=description,
             tags=tags,
             aliases=aliases,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        CogniteRevision3D.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            status=status,
-            published=published,
             type_=type_,
-            model_3d=model_3d,
+            thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
         )
 
-    def as_write(self) -> CogniteImage360CollectionApply:
-        return CogniteImage360CollectionApply(
+    def as_write(self) -> Cognite360ImageModelApply:
+        return Cognite360ImageModelApply(
             self.space,
             self.external_id,
             name=self.name,
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            status=self.status,
-            published=self.published,
             type_=self.type_,
-            model_3d=self.model_3d,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CognitePointCloudRevisionProperties:
-    revision_id = PropertyOptions("revisionId")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CognitePointCloudRevision", "v1")
-
-
-class CognitePointCloudRevisionApply(CognitePointCloudRevisionProperties, CogniteRevision3DApply):
-    """This represents the writing format of Cognite point cloud revision.
-
-    It is used to when data is written to CDF.
-
-    Navigational aid for traversing CognitePointCloudRevision instances
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud revision.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None): .
-        revision_id (int | None): The 3D API revision identifier for this PointCloud model
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | tuple[str, str] | None = None,
-        revision_id: int | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            status=status,
-            published=published,
-            type_=type_,
-            model_3d=model_3d,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.revision_id = revision_id
-
-
-class CognitePointCloudRevision(CognitePointCloudRevisionProperties, CogniteRevision3D):
-    """This represents the reading format of Cognite point cloud revision.
-
-    It is used to when data is read from CDF.
-
-    Navigational aid for traversing CognitePointCloudRevision instances
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite point cloud revision.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
-        published (Literal["Done", "Failed", "Processing", "Queued"] | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
-        model_3d (DirectRelationReference | None): .
-        revision_id (int | None): The 3D API revision identifier for this PointCloud model
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        published: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        model_3d: DirectRelationReference | None = None,
-        revision_id: int | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            status=status,
-            published=published,
-            type_=type_,
-            model_3d=model_3d,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.revision_id = revision_id
-
-    def as_write(self) -> CognitePointCloudRevisionApply:
-        return CognitePointCloudRevisionApply(
-            self.space,
-            self.external_id,
-            status=self.status,
-            published=self.published,
-            type_=self.type_,
-            model_3d=self.model_3d,
-            revision_id=self.revision_id,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteImage360Properties:
-    collection_360 = PropertyOptions("collection360")
-    station_360 = PropertyOptions("station360")
-    taken_at = PropertyOptions("takenAt")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteImage360", "v1")
-
-
-class CogniteImage360Apply(CogniteImage360Properties, CogniteTransformation3DNodeApply, CogniteCubeMapApply):
-    """This represents the writing format of Cognite image 360.
-
-    It is used to when data is written to CDF.
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        front (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | tuple[str, str] | None): Direct relation to a file holding the bottom projection of the cube map
-        collection_360 (DirectRelationReference | tuple[str, str] | None): Direct relation to CogniteImage360Collection
-        station_360 (DirectRelationReference | tuple[str, str] | None): Direct relation to CogniteGroup3D instance that groups different CogniteImage360 instances to the same station
-        taken_at (datetime | None): The timestamp when the 6 photos were taken.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        front: DirectRelationReference | tuple[str, str] | None = None,
-        back: DirectRelationReference | tuple[str, str] | None = None,
-        left: DirectRelationReference | tuple[str, str] | None = None,
-        right: DirectRelationReference | tuple[str, str] | None = None,
-        top: DirectRelationReference | tuple[str, str] | None = None,
-        bottom: DirectRelationReference | tuple[str, str] | None = None,
-        collection_360: DirectRelationReference | tuple[str, str] | None = None,
-        station_360: DirectRelationReference | tuple[str, str] | None = None,
-        taken_at: datetime | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        CogniteTransformation3DNodeApply.__init__(
-            self,
-            space,
-            external_id,
-            translation_x=translation_x,
-            translation_y=translation_y,
-            translation_z=translation_z,
-            euler_rotation_x=euler_rotation_x,
-            euler_rotation_y=euler_rotation_y,
-            euler_rotation_z=euler_rotation_z,
-            scale_x=scale_x,
-            scale_y=scale_y,
-            scale_z=scale_z,
-            existing_version=existing_version,
-            type=type,
-        )
-        CogniteCubeMapApply.__init__(
-            self,
-            space,
-            external_id,
-            front=front,
-            back=back,
-            left=left,
-            right=right,
-            top=top,
-            bottom=bottom,
-            existing_version=existing_version,
-            type=type,
-        )
-        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
-        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
-        self.taken_at = taken_at
-
-
-class CogniteImage360(CogniteImage360Properties, CogniteTransformation3DNode, CogniteCubeMap):
-    """This represents the reading format of Cognite image 360.
-
-    It is used to when data is read from CDF.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        front (DirectRelationReference | None): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | None): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | None): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | None): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | None): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | None): Direct relation to a file holding the bottom projection of the cube map
-        collection_360 (DirectRelationReference | None): Direct relation to CogniteImage360Collection
-        station_360 (DirectRelationReference | None): Direct relation to CogniteGroup3D instance that groups different CogniteImage360 instances to the same station
-        taken_at (datetime | None): The timestamp when the 6 photos were taken.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        front: DirectRelationReference | None = None,
-        back: DirectRelationReference | None = None,
-        left: DirectRelationReference | None = None,
-        right: DirectRelationReference | None = None,
-        top: DirectRelationReference | None = None,
-        bottom: DirectRelationReference | None = None,
-        collection_360: DirectRelationReference | None = None,
-        station_360: DirectRelationReference | None = None,
-        taken_at: datetime | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        CogniteTransformation3DNode.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            translation_x=translation_x,
-            translation_y=translation_y,
-            translation_z=translation_z,
-            euler_rotation_x=euler_rotation_x,
-            euler_rotation_y=euler_rotation_y,
-            euler_rotation_z=euler_rotation_z,
-            scale_x=scale_x,
-            scale_y=scale_y,
-            scale_z=scale_z,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        CogniteCubeMap.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            front=front,
-            back=back,
-            left=left,
-            right=right,
-            top=top,
-            bottom=bottom,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        self.collection_360 = DirectRelationReference.load(collection_360) if collection_360 else None
-        self.station_360 = DirectRelationReference.load(station_360) if station_360 else None
-        self.taken_at = taken_at
-
-    def as_write(self) -> CogniteImage360Apply:
-        return CogniteImage360Apply(
-            self.space,
-            self.external_id,
-            translation_x=self.translation_x,
-            translation_y=self.translation_y,
-            translation_z=self.translation_z,
-            euler_rotation_x=self.euler_rotation_x,
-            euler_rotation_y=self.euler_rotation_y,
-            euler_rotation_z=self.euler_rotation_z,
-            scale_x=self.scale_x,
-            scale_y=self.scale_y,
-            scale_z=self.scale_z,
-            front=self.front,
-            back=self.back,
-            left=self.left,
-            right=self.right,
-            top=self.top,
-            bottom=self.bottom,
-            collection_360=self.collection_360,
-            station_360=self.station_360,
-            taken_at=self.taken_at,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -3948,13 +4184,12 @@ class CogniteCADModelProperties:
         return ViewId("cdf_cdm_experimental", "CogniteCADModel", "v1")
 
 
-class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
+class CogniteCADModelApply(CogniteCADModelProperties, Cognite3DModelApply):
     """This represents the writing format of Cognite cad model.
 
     It is used to when data is written to CDF.
 
     Navigational aid for traversing CogniteCADModel instances
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -3962,7 +4197,8 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -3977,6 +4213,7 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -3988,18 +4225,18 @@ class CogniteCADModelApply(CogniteCADModelProperties, CogniteModel3DApply):
             tags=tags,
             aliases=aliases,
             type_=type_,
+            thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
         )
 
 
-class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
+class CogniteCADModel(CogniteCADModelProperties, Cognite3DModel):
     """This represents the reading format of Cognite cad model.
 
     It is used to when data is read from CDF.
 
     Navigational aid for traversing CogniteCADModel instances
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -4010,7 +4247,8 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4028,6 +4266,7 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -4042,6 +4281,7 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
             tags=tags,
             aliases=aliases,
             type_=type_,
+            thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
         )
@@ -4055,124 +4295,7 @@ class CogniteCADModel(CogniteCADModelProperties, CogniteModel3D):
             tags=self.tags,
             aliases=self.aliases,
             type_=self.type_,
-            existing_version=self.version,
-            type=self.type,
-        )
-
-
-class CogniteImage360ModelProperties:
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteImage360Model", "v1")
-
-
-class CogniteImage360ModelApply(CogniteImage360ModelProperties, CogniteModel3DApply):
-    """This represents the writing format of Cognite image 360 model.
-
-    It is used to when data is written to CDF.
-
-    Navigational aid for traversing CogniteImage360Model instances
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 model.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            type_=type_,
-            existing_version=existing_version,
-            type=type,
-        )
-
-
-class CogniteImage360Model(CogniteImage360ModelProperties, CogniteModel3D):
-    """This represents the reading format of Cognite image 360 model.
-
-    It is used to when data is read from CDF.
-
-    Navigational aid for traversing CogniteImage360Model instances
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 model.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
-        type: DirectRelationReference | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            type_=type_,
-            type=type,
-            deleted_time=deleted_time,
-        )
-
-    def as_write(self) -> CogniteImage360ModelApply:
-        return CogniteImage360ModelApply(
-            self.space,
-            self.external_id,
-            name=self.name,
-            description=self.description,
-            tags=self.tags,
-            aliases=self.aliases,
-            type_=self.type_,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -4184,13 +4307,12 @@ class CognitePointCloudModelProperties:
         return ViewId("cdf_cdm_experimental", "CognitePointCloudModel", "v1")
 
 
-class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel3DApply):
+class CognitePointCloudModelApply(CognitePointCloudModelProperties, Cognite3DModelApply):
     """This represents the writing format of Cognite point cloud model.
 
     It is used to when data is written to CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -4198,7 +4320,8 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -4213,6 +4336,7 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -4224,18 +4348,18 @@ class CognitePointCloudModelApply(CognitePointCloudModelProperties, CogniteModel
             tags=tags,
             aliases=aliases,
             type_=type_,
+            thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
         )
 
 
-class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
+class CognitePointCloudModel(CognitePointCloudModelProperties, Cognite3DModel):
     """This represents the reading format of Cognite point cloud model.
 
     It is used to when data is read from CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -4246,7 +4370,8 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or CogniteImage360
+        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4264,6 +4389,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -4278,6 +4404,7 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
             tags=tags,
             aliases=aliases,
             type_=type_,
+            thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
         )
@@ -4291,8 +4418,158 @@ class CognitePointCloudModel(CognitePointCloudModelProperties, CogniteModel3D):
             tags=self.tags,
             aliases=self.aliases,
             type_=self.type_,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
+        )
+
+
+class Cognite3DTransformationEdgeApply(Cognite3DTransformationProperties, TypedEdgeApply):
+    """This represents the writing format of Cognite 3D transformation edge.
+
+    It is used to when data is written to CDF.
+
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D transformation edge.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
+        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
+        existing_version: int | None = None,
+    ) -> None:
+        TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
+        self.translation_x = translation_x
+        self.translation_y = translation_y
+        self.translation_z = translation_z
+        self.euler_rotation_x = euler_rotation_x
+        self.euler_rotation_y = euler_rotation_y
+        self.euler_rotation_z = euler_rotation_z
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.scale_z = scale_z
+
+
+class Cognite3DTransformationEdge(Cognite3DTransformationProperties, TypedEdge):
+    """This represents the reading format of Cognite 3D transformation edge.
+
+    It is used to when data is read from CDF.
+
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 3D transformation edge.
+        type (DirectRelationReference): The type of edge.
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        translation_x (float | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | None): The scaling factor applied to the object along the Z-axis
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference,
+        start_node: DirectRelationReference,
+        end_node: DirectRelationReference,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        translation_x: float | None = None,
+        translation_y: float | None = None,
+        translation_z: float | None = None,
+        euler_rotation_x: float | None = None,
+        euler_rotation_y: float | None = None,
+        euler_rotation_z: float | None = None,
+        scale_x: float | None = None,
+        scale_y: float | None = None,
+        scale_z: float | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        TypedEdge.__init__(
+            self,
+            space,
+            external_id,
+            version,
+            type,
+            last_updated_time,
+            created_time,
+            start_node,
+            end_node,
+            deleted_time,
+            None,
+        )
+        self.translation_x = translation_x
+        self.translation_y = translation_y
+        self.translation_z = translation_z
+        self.euler_rotation_x = euler_rotation_x
+        self.euler_rotation_y = euler_rotation_y
+        self.euler_rotation_z = euler_rotation_z
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self.scale_z = scale_z
+
+    def as_write(self) -> Cognite3DTransformationEdgeApply:
+        return Cognite3DTransformationEdgeApply(
+            self.space,
+            self.external_id,
+            self.type,
+            self.start_node,
+            self.end_node,
+            translation_x=self.translation_x,
+            translation_y=self.translation_y,
+            translation_z=self.translation_z,
+            euler_rotation_x=self.euler_rotation_x,
+            euler_rotation_y=self.euler_rotation_y,
+            euler_rotation_z=self.euler_rotation_z,
+            scale_x=self.scale_x,
+            scale_y=self.scale_y,
+            scale_z=self.scale_z,
+            existing_version=self.version,
         )
 
 
@@ -4302,7 +4579,6 @@ class CogniteDescribableEdgeApply(CogniteDescribableProperties, TypedEdgeApply):
     It is used to when data is written to CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
-
 
     Args:
         space (str): The space where the node is located.
@@ -4344,7 +4620,6 @@ class CogniteDescribableEdge(CogniteDescribableProperties, TypedEdge):
     It is used to when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
-
 
     Args:
         space (str): The space where the node is located.
@@ -4543,157 +4818,6 @@ class CogniteSourceableEdge(CogniteSourceableProperties, TypedEdge):
         )
 
 
-class CogniteTransformation3DEdgeApply(CogniteTransformation3DProperties, TypedEdgeApply):
-    """This represents the writing format of Cognite transformation 3D edge.
-
-    It is used to when data is written to CDF.
-
-    The CogniteTransformation3D object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in 3D space. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite transformation 3D edge.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference | tuple[str, str],
-        start_node: DirectRelationReference | tuple[str, str],
-        end_node: DirectRelationReference | tuple[str, str],
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        existing_version: int | None = None,
-    ) -> None:
-        TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
-        self.translation_x = translation_x
-        self.translation_y = translation_y
-        self.translation_z = translation_z
-        self.euler_rotation_x = euler_rotation_x
-        self.euler_rotation_y = euler_rotation_y
-        self.euler_rotation_z = euler_rotation_z
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_z = scale_z
-
-
-class CogniteTransformation3DEdge(CogniteTransformation3DProperties, TypedEdge):
-    """This represents the reading format of Cognite transformation 3D edge.
-
-    It is used to when data is read from CDF.
-
-    The CogniteTransformation3D object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in 3D space. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions
-
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite transformation 3D edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        translation_x (float | None): The displacement of the object along the X-axis in 3D space
-        translation_y (float | None): The displacement of the object along the Y-axis in 3D space
-        translation_z (float | None): The displacement of the object along the Z-axis in 3D space
-        euler_rotation_x (float | None): The rotation of the object around the X-axis, measured in degrees
-        euler_rotation_y (float | None): The rotation of the object around the Y-axis, measured in degrees
-        euler_rotation_z (float | None): The rotation of the object around the Z-axis, measured in degrees
-        scale_x (float | None): The scaling factor applied to the object along the X-axis
-        scale_y (float | None): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None): The scaling factor applied to the object along the Z-axis
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference,
-        start_node: DirectRelationReference,
-        end_node: DirectRelationReference,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        translation_x: float | None = None,
-        translation_y: float | None = None,
-        translation_z: float | None = None,
-        euler_rotation_x: float | None = None,
-        euler_rotation_y: float | None = None,
-        euler_rotation_z: float | None = None,
-        scale_x: float | None = None,
-        scale_y: float | None = None,
-        scale_z: float | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        TypedEdge.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            type,
-            last_updated_time,
-            created_time,
-            start_node,
-            end_node,
-            deleted_time,
-            None,
-        )
-        self.translation_x = translation_x
-        self.translation_y = translation_y
-        self.translation_z = translation_z
-        self.euler_rotation_x = euler_rotation_x
-        self.euler_rotation_y = euler_rotation_y
-        self.euler_rotation_z = euler_rotation_z
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        self.scale_z = scale_z
-
-    def as_write(self) -> CogniteTransformation3DEdgeApply:
-        return CogniteTransformation3DEdgeApply(
-            self.space,
-            self.external_id,
-            self.type,
-            self.start_node,
-            self.end_node,
-            translation_x=self.translation_x,
-            translation_y=self.translation_y,
-            translation_z=self.translation_z,
-            euler_rotation_x=self.euler_rotation_x,
-            euler_rotation_y=self.euler_rotation_y,
-            euler_rotation_z=self.euler_rotation_z,
-            scale_x=self.scale_x,
-            scale_y=self.scale_y,
-            scale_z=self.scale_z,
-            existing_version=self.version,
-        )
-
-
 class CogniteAnnotationProperties:
     @classmethod
     def get_source(cls) -> ViewId:
@@ -4706,7 +4830,6 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
     It is used to when data is written to CDF.
 
     Annotation represents contextualization results or links
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4725,7 +4848,7 @@ class CogniteAnnotationApply(CogniteAnnotationProperties, CogniteDescribableEdge
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4791,7 +4914,6 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
     It is used to when data is read from CDF.
 
     Annotation represents contextualization results or links
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4813,7 +4935,7 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
@@ -4905,6 +5027,206 @@ class CogniteAnnotation(CogniteAnnotationProperties, CogniteDescribableEdge, Cog
         )
 
 
+class Cognite360ImageAnnotationProperties:
+    format_version = PropertyOptions("formatVersion")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm_experimental", "Cognite360ImageAnnotation", "v1")
+
+
+class Cognite360ImageAnnotationApply(Cognite360ImageAnnotationProperties, CogniteAnnotationApply):
+    """This represents the writing format of Cognite 360 image annotation.
+
+    It is used to when data is written to CDF.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image annotation.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        source_id (str | None): Identifier from the source system
+        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | None): Direct relation to a source system
+        source_created_time (datetime | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence (float | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
+        polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
+        format_version (str | None): Specifies the storage representation for the polygon
+        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | tuple[str, str] | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        confidence: float | None = None,
+        status: Literal["Approved", "Rejected", "Suggested"] | None = None,
+        polygon: list[float] | None = None,
+        format_version: str | None = None,
+        existing_version: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            type,
+            start_node,
+            end_node,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            source_id=source_id,
+            source_context=source_context,
+            source=source,
+            source_created_time=source_created_time,
+            source_updated_time=source_updated_time,
+            source_created_user=source_created_user,
+            source_updated_user=source_updated_user,
+            confidence=confidence,
+            status=status,
+            existing_version=existing_version,
+        )
+        self.polygon = polygon
+        self.format_version = format_version
+
+
+class Cognite360ImageAnnotation(Cognite360ImageAnnotationProperties, CogniteAnnotation):
+    """This represents the reading format of Cognite 360 image annotation.
+
+    It is used to when data is read from CDF.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite 360 image annotation.
+        type (DirectRelationReference): The type of edge.
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        source_id (str | None): Identifier from the source system
+        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | None): Direct relation to a source system
+        source_created_time (datetime | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence (float | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
+        polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
+        format_version (str | None): Specifies the storage representation for the polygon
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference,
+        start_node: DirectRelationReference,
+        end_node: DirectRelationReference,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        confidence: float | None = None,
+        status: Literal["Approved", "Rejected", "Suggested"] | None = None,
+        polygon: list[float] | None = None,
+        format_version: str | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            type,
+            start_node,
+            end_node,
+            version,
+            last_updated_time,
+            created_time,
+            name=name,
+            description=description,
+            tags=tags,
+            aliases=aliases,
+            source_id=source_id,
+            source_context=source_context,
+            source=source,
+            source_created_time=source_created_time,
+            source_updated_time=source_updated_time,
+            source_created_user=source_created_user,
+            source_updated_user=source_updated_user,
+            confidence=confidence,
+            status=status,
+            deleted_time=deleted_time,
+        )
+        self.polygon = polygon
+        self.format_version = format_version
+
+    def as_write(self) -> Cognite360ImageAnnotationApply:
+        return Cognite360ImageAnnotationApply(
+            self.space,
+            self.external_id,
+            self.type,
+            self.start_node,
+            self.end_node,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            source_id=self.source_id,
+            source_context=self.source_context,
+            source=self.source,
+            source_created_time=self.source_created_time,
+            source_updated_time=self.source_updated_time,
+            source_created_user=self.source_created_user,
+            source_updated_user=self.source_updated_user,
+            confidence=self.confidence,
+            status=self.status,
+            polygon=self.polygon,
+            format_version=self.format_version,
+            existing_version=self.version,
+        )
+
+
 class CogniteDiagramAnnotationProperties:
     start_node_page_number = PropertyOptions("startNodePageNumber")
     end_node_page_number = PropertyOptions("endNodePageNumber")
@@ -4930,7 +5252,6 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
     It is used to when data is written to CDF.
 
     Annotation for diagrams
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -4949,7 +5270,7 @@ class CogniteDiagramAnnotationApply(CogniteDiagramAnnotationProperties, CogniteA
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
         start_node_page_number (int | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
         end_node_page_number (int | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
         start_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
@@ -5041,7 +5362,6 @@ class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnota
     It is used to when data is read from CDF.
 
     Annotation for diagrams
-
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -5063,7 +5383,7 @@ class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnota
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
+        status (Literal["Approved", "Rejected", "Suggested"] | None): The status of the annotation
         start_node_page_number (int | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
         end_node_page_number (int | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
         start_node_x_min (float | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
@@ -5186,205 +5506,5 @@ class CogniteDiagramAnnotation(CogniteDiagramAnnotationProperties, CogniteAnnota
             end_node_y_min=self.end_node_y_min,
             end_node_y_max=self.end_node_y_max,
             end_node_text=self.end_node_text,
-            existing_version=self.version,
-        )
-
-
-class CogniteImage360AnnotationProperties:
-    format_version = PropertyOptions("formatVersion")
-
-    @classmethod
-    def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteImage360Annotation", "v1")
-
-
-class CogniteImage360AnnotationApply(CogniteImage360AnnotationProperties, CogniteAnnotationApply):
-    """This represents the writing format of Cognite image 360 annotation.
-
-    It is used to when data is written to CDF.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 annotation.
-        type (DirectRelationReference | tuple[str, str]): The type of edge.
-        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
-        polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
-        format_version (str | None): Specifies the storage representation for the polygon property
-        existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference | tuple[str, str],
-        start_node: DirectRelationReference | tuple[str, str],
-        end_node: DirectRelationReference | tuple[str, str],
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | tuple[str, str] | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        confidence: float | None = None,
-        status: Literal["Approved", "Rejected", "Suggested"] | None = None,
-        polygon: list[float] | None = None,
-        format_version: str | None = None,
-        existing_version: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            type,
-            start_node,
-            end_node,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            confidence=confidence,
-            status=status,
-            existing_version=existing_version,
-        )
-        self.polygon = polygon
-        self.format_version = format_version
-
-
-class CogniteImage360Annotation(CogniteImage360AnnotationProperties, CogniteAnnotation):
-    """This represents the reading format of Cognite image 360 annotation.
-
-    It is used to when data is read from CDF.
-
-    Args:
-        space (str): The space where the node is located.
-        external_id (str): The external id of the Cognite image 360 annotation.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        version (int): DMS version.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        name (str | None): Name of the instance
-        description (str | None): Description of the instance
-        tags (list[str] | None): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None): Alternative names for the node
-        source_id (str | None): Identifier from the source system
-        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | None): Direct relation to a source system
-        source_created_time (datetime | None): When the instance was created in source system (if available)
-        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
-        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None): The confidence that the annotation is a good match
-        status (Literal["Approved", "Rejected", "Suggested"] | None): The confidence that the annotation is a good match
-        polygon (list[float] | None): List of floats representing the polygon. Format depends on formatVersion
-        format_version (str | None): Specifies the storage representation for the polygon property
-        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-    """
-
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        type: DirectRelationReference,
-        start_node: DirectRelationReference,
-        end_node: DirectRelationReference,
-        version: int,
-        last_updated_time: int,
-        created_time: int,
-        *,
-        name: str | None = None,
-        description: str | None = None,
-        tags: list[str] | None = None,
-        aliases: list[str] | None = None,
-        source_id: str | None = None,
-        source_context: str | None = None,
-        source: DirectRelationReference | None = None,
-        source_created_time: datetime | None = None,
-        source_updated_time: datetime | None = None,
-        source_created_user: str | None = None,
-        source_updated_user: str | None = None,
-        confidence: float | None = None,
-        status: Literal["Approved", "Rejected", "Suggested"] | None = None,
-        polygon: list[float] | None = None,
-        format_version: str | None = None,
-        deleted_time: int | None = None,
-    ) -> None:
-        super().__init__(
-            space,
-            external_id,
-            type,
-            start_node,
-            end_node,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            confidence=confidence,
-            status=status,
-            deleted_time=deleted_time,
-        )
-        self.polygon = polygon
-        self.format_version = format_version
-
-    def as_write(self) -> CogniteImage360AnnotationApply:
-        return CogniteImage360AnnotationApply(
-            self.space,
-            self.external_id,
-            self.type,
-            self.start_node,
-            self.end_node,
-            name=self.name,
-            description=self.description,
-            tags=self.tags,
-            aliases=self.aliases,
-            source_id=self.source_id,
-            source_context=self.source_context,
-            source=self.source,
-            source_created_time=self.source_created_time,
-            source_updated_time=self.source_updated_time,
-            source_created_user=self.source_created_user,
-            source_updated_user=self.source_updated_user,
-            confidence=self.confidence,
-            status=self.status,
-            polygon=self.polygon,
-            format_version=self.format_version,
             existing_version=self.version,
         )
