@@ -70,7 +70,7 @@ def all_acls():
         {"groupsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"currentuserscope": {}}}},
         {"hostedExtractorsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"labelsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
-        {"locationFilterAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"locationFiltersAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"modelHostingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"monitoringTasksAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"notificationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},

@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [7.54.16] - 2024-08-22
 ### Added
-- [Feature Preview]  Added LocationFilterAcl capability.
+- [Feature Preview]  Added LocationFiltersAcl capability.
 
 
 ## [7.54.15] - 2024-08-21

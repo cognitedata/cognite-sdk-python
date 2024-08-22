@@ -798,8 +798,8 @@ class LabelsAcl(Capability):
 
 
 @dataclass
-class LocationFilterAcl(Capability):
-    _capability_name = "locationFilterAcl"
+class LocationFiltersAcl(Capability):
+    _capability_name = "locationFiltersAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScope
     allow_unknown: bool = field(default=False, compare=False, repr=False)
