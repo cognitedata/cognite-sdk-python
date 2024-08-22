@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.15] - 2024-08-21
+### Fixed
+- [Feature Preview]  Updated the Core Model to latest version.
+
 ## [7.54.14] - 2024-08-19
 ### Fixed
 - [Feature Preview - alpha] fix `files.upload_content`, `files.upload_content_bytes` and 

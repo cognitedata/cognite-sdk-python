@@ -102,25 +102,25 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
         id="CogniteEquipment",
     )
     yield pytest.param(
-        cdm.CogniteModel3DApply(
+        cdm.Cognite3DModelApply(
             space=DATA_SPACE,
             external_id="test_model_3d",
             name="Test model 3D",
             description="Test model 3D for core model v1 tests with Python SDK",
             aliases=["test_model_3d_alias"],
         ),
-        cdm.CogniteModel3D,
+        cdm.Cognite3DModel,
         id="CogniteModel3D",
     )
     yield pytest.param(
-        cdm.CogniteObject3DApply(
+        cdm.Cognite3DObjectApply(
             space=DATA_SPACE,
             external_id="test_object_3d",
             name="Test object 3D",
             description="Test object 3D for core model v1 tests with Python SDK",
             aliases=["test_object_3d_alias"],
         ),
-        cdm.CogniteObject3D,
+        cdm.Cognite3DObject,
         id="CogniteObject3D",
     )
 
