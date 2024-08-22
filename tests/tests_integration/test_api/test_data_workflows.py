@@ -200,7 +200,7 @@ def workflow_execution_list(
     if executions:
         return executions
     # Creating at least one execution
-    result = cognite_client.workflows.executions.trigger(
+    result = cognite_client.workflows.executions.run(
         add_multiply_workflow.workflow_external_id,
         add_multiply_workflow.version,
         {"a": 5, "b": 6},
@@ -415,7 +415,7 @@ class TestWorkflowExecutions:
         cognite_client: CogniteClient,
         add_multiply_workflow: WorkflowVersion,
     ) -> None:
-        workflow_execution = cognite_client.workflows.executions.trigger(
+        workflow_execution = cognite_client.workflows.executions.run(
             add_multiply_workflow.workflow_external_id,
             add_multiply_workflow.version,
         )
@@ -434,7 +434,7 @@ class TestWorkflowExecutions:
     def test_trigger_cancel_retry_workflow(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
-        workflow_execution = cognite_client.workflows.executions.trigger(
+        workflow_execution = cognite_client.workflows.executions.run(
             add_multiply_workflow.workflow_external_id,
             add_multiply_workflow.version,
         )
