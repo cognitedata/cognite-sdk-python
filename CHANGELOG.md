@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.16] - 2024-08-22
+### Added
+- [Feature Preview]  Added `ExtractorExtension` model of the Core Model.
+
 ## [7.54.15] - 2024-08-21
 ### Fixed
 - [Feature Preview]  Updated the Core Model to latest version.
