@@ -25,7 +25,7 @@ class TestSourceable:
             "sources": [
                 {
                     "source": {
-                        "space": "cdf_cdm_experimental",
+                        "space": "cdf_cdm",
                         "externalId": "CogniteSourceable",
                         "version": "v1",
                         "type": "view",
@@ -63,7 +63,7 @@ class TestModel3D:
             "sources": [
                 {
                     "source": {
-                        "space": "cdf_cdm_experimental",
+                        "space": "cdf_cdm",
                         "externalId": "Cognite3DModel",
                         "version": "v1",
                         "type": "view",
