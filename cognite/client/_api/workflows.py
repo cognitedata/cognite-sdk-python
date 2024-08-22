@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
 from urllib.parse import quote
@@ -133,6 +134,34 @@ class WorkflowExecutionAPI(APIClient):
                 return None
             raise
         return WorkflowExecutionDetailed._load(response.json())
+
+    def trigger(
+        self,
+        workflow_external_id: str,
+        version: str,
+        input: dict | None = None,
+        metadata: dict | None = None,
+        client_credentials: ClientCredentials | None = None,
+    ) -> WorkflowExecution:
+        """`[DEPRECATED]Trigger a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+
+        This method is deprecated, use '.run' instead. It will be completely removed October 2024.
+
+        Args:
+            workflow_external_id (str): External id of the workflow.
+            version (str): Version of the workflow.
+            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
+            metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
+            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+        Returns:
+            WorkflowExecution: No description.
+        """
+        warnings.warn(
+            "This methods has been deprecated, use '.run' instead. It will be completely removed October 2024.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.run(workflow_external_id, version, input, metadata, client_credentials)
 
     def run(
         self,
