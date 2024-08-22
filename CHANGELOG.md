@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [7.54.16] - 2024-08-21
+## [7.54.16] - 2024-08-22
 ### Added
 - [Feature Preview]  Added LocationFilterAcl capability.
 
