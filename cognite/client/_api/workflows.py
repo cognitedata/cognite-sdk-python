@@ -83,7 +83,7 @@ class WorkflowTaskAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.trigger("my workflow", "1")
+                >>> res = client.workflows.executions.run("my workflow", "1")
                 >>> res = client.workflows.executions.retrieve_detailed(res.id)
                 >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
 
@@ -134,7 +134,7 @@ class WorkflowExecutionAPI(APIClient):
             raise
         return WorkflowExecutionDetailed._load(response.json())
 
-    def trigger(
+    def run(
         self,
         workflow_external_id: str,
         version: str,
@@ -142,7 +142,7 @@ class WorkflowExecutionAPI(APIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`Trigger a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
         Args:
             workflow_external_id (str): External id of the workflow.
@@ -171,18 +171,18 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> res = client.workflows.executions.run("foo", "1")
 
             Trigger a workflow execution with input data:
 
-                >>> res = client.workflows.executions.trigger("foo", "1", input={"a": 1, "b": 2})
+                >>> res = client.workflows.executions.run("foo", "1", input={"a": 1, "b": 2})
 
             Trigger a workflow execution using a specific set of client credentials (i.e. not your current credentials):
 
                 >>> import os
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
-                >>> res = client.workflows.executions.trigger("foo", "1", client_credentials=credentials)
+                >>> res = client.workflows.executions.run("foo", "1", client_credentials=credentials)
         """
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
@@ -275,7 +275,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
         """
         response = self._post(
@@ -304,7 +304,7 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.trigger("foo", "1")
+                >>> res = client.workflows.executions.run("foo", "1")
                 >>> client.workflows.executions.cancel(id=res.id, reason="test cancellation")
                 >>> client.workflows.executions.retry(res.id)
         """

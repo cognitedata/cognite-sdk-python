@@ -49,9 +49,9 @@ Retrieve Detailed Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
 
-Trigger Workflow Execution
+Run Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.run
 
 Cancel Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
