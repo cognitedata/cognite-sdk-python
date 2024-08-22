@@ -798,6 +798,22 @@ class LabelsAcl(Capability):
 
 
 @dataclass
+class LocationFiltersAcl(Capability):
+    _capability_name = "locationFiltersAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope
+    allow_unknown: bool = field(default=False, compare=False, repr=False)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        SpaceID = IDScope
+
+
+@dataclass
 class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
     actions: Sequence[Action]
