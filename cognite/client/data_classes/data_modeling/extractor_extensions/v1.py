@@ -3,13 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from cognite.client.data_classes.cdm.v1 import (
+from cognite.client.data_classes.data_modeling import DirectRelationReference
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteFile,
     CogniteFileApply,
     CogniteTimeSeries,
     CogniteTimeSeriesApply,
 )
-from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,

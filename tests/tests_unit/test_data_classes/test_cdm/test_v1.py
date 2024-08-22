@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from cognite.client.data_classes.cdm.v1 import Cognite3DModelApply, CogniteSourceableNodeApply
+from cognite.client.data_classes.data_modeling.cdm.v1 import Cognite3DModelApply, CogniteSourceableNodeApply
 
 
 class TestSourceable:

@@ -13,7 +13,7 @@ from tests.tests_integration.conftest import make_cognite_client
 
 THIS_REPO = Path(__file__).resolve().parent.parent
 
-OUTPUT_FILE = THIS_REPO / "cognite" / "client" / "data_classes" / "cdm" / "v1.py"
+OUTPUT_FILE = THIS_REPO / "cognite" / "client" / "data_classes" / "data_modeling" / "cdm" / "v1.py"
 
 
 def main() -> None:
