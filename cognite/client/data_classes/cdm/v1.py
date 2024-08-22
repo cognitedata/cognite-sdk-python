@@ -27,7 +27,7 @@ class _Cognite3DTransformationProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite3DTransformation", "v1")
+        return ViewId("cdf_cdm", "Cognite3DTransformation", "v1")
 
 
 class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, TypedNodeApply):
@@ -160,7 +160,7 @@ class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode)
 class _CogniteCubeMapProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCubeMap", "v1")
+        return ViewId("cdf_cdm", "CogniteCubeMap", "v1")
 
 
 class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
@@ -275,7 +275,7 @@ class _Cognite3DRevisionProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite3DRevision", "v1")
+        return ViewId("cdf_cdm", "Cognite3DRevision", "v1")
 
 
 class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
@@ -373,7 +373,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
 class _CogniteDescribableProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteDescribable", "v1")
+        return ViewId("cdf_cdm", "CogniteDescribable", "v1")
 
 
 class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply):
@@ -476,7 +476,7 @@ class _CogniteSchedulableProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteSchedulable", "v1")
+        return ViewId("cdf_cdm", "CogniteSchedulable", "v1")
 
 
 class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
@@ -579,7 +579,7 @@ class _CogniteSourceableProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteSourceable", "v1")
+        return ViewId("cdf_cdm", "CogniteSourceable", "v1")
 
 
 class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
@@ -696,7 +696,7 @@ class _CogniteVisualizableProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteVisualizable", "v1")
+        return ViewId("cdf_cdm", "CogniteVisualizable", "v1")
 
 
 class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
@@ -775,7 +775,7 @@ class _Cognite360ImageProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite360Image", "v1")
+        return ViewId("cdf_cdm", "Cognite360Image", "v1")
 
 
 class Cognite360ImageApply(_Cognite360ImageProperties, Cognite3DTransformationNodeApply, CogniteCubeMapApply):
@@ -1001,7 +1001,7 @@ class _CogniteCADRevisionProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCADRevision", "v1")
+        return ViewId("cdf_cdm", "CogniteCADRevision", "v1")
 
 
 class CogniteCADRevisionApply(_CogniteCADRevisionProperties, Cognite3DRevisionApply):
@@ -1117,7 +1117,7 @@ class _CognitePointCloudRevisionProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CognitePointCloudRevision", "v1")
+        return ViewId("cdf_cdm", "CognitePointCloudRevision", "v1")
 
 
 class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Cognite3DRevisionApply):
@@ -1233,7 +1233,7 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DR
 class _Cognite360ImageCollectionProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite360ImageCollection", "v1")
+        return ViewId("cdf_cdm", "Cognite360ImageCollection", "v1")
 
 
 class Cognite360ImageCollectionApply(
@@ -1393,7 +1393,7 @@ class _Cognite360ImageStationProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite360ImageStation", "v1")
+        return ViewId("cdf_cdm", "Cognite360ImageStation", "v1")
 
 
 class Cognite360ImageStationApply(_Cognite360ImageStationProperties, CogniteDescribableNodeApply):
@@ -1511,7 +1511,7 @@ class _Cognite3DModelProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite3DModel", "v1")
+        return ViewId("cdf_cdm", "Cognite3DModel", "v1")
 
 
 class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply):
@@ -1641,7 +1641,7 @@ class _Cognite3DObjectProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite3DObject", "v1")
+        return ViewId("cdf_cdm", "Cognite3DObject", "v1")
 
 
 class Cognite3DObjectApply(_Cognite3DObjectProperties, CogniteDescribableNodeApply):
@@ -1792,7 +1792,7 @@ class Cognite3DObject(_Cognite3DObjectProperties, CogniteDescribableNode):
 class _CogniteAssetClassProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteAssetClass", "v1")
+        return ViewId("cdf_cdm", "CogniteAssetClass", "v1")
 
 
 class CogniteAssetClassApply(_CogniteAssetClassProperties, CogniteDescribableNodeApply):
@@ -1917,7 +1917,7 @@ class _CogniteAssetTypeProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteAssetType", "v1")
+        return ViewId("cdf_cdm", "CogniteAssetType", "v1")
 
 
 class CogniteAssetTypeApply(_CogniteAssetTypeProperties, CogniteDescribableNodeApply):
@@ -1934,8 +1934,8 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, CogniteDescribableNodeA
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         code (str | None): A unique identifier for the type of asset
-        asset_class (DirectRelationReference | tuple[str, str] | None): Class of this type, direct relation to CogniteAssetClass
         standard (str | None): Textual string for which standard the code is from
+        asset_class (DirectRelationReference | tuple[str, str] | None): Class of this type, direct relation to CogniteAssetClass
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1950,8 +1950,8 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, CogniteDescribableNodeA
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         code: str | None = None,
-        asset_class: DirectRelationReference | tuple[str, str] | None = None,
         standard: str | None = None,
+        asset_class: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -1966,8 +1966,8 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, CogniteDescribableNodeA
             type=type,
         )
         self.code = code
-        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.standard = standard
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
 
 
 class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
@@ -1987,8 +1987,8 @@ class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
         code (str | None): A unique identifier for the type of asset
-        asset_class (DirectRelationReference | None): Class of this type, direct relation to CogniteAssetClass
         standard (str | None): Textual string for which standard the code is from
+        asset_class (DirectRelationReference | None): Class of this type, direct relation to CogniteAssetClass
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2006,8 +2006,8 @@ class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         code: str | None = None,
-        asset_class: DirectRelationReference | None = None,
         standard: str | None = None,
+        asset_class: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -2025,8 +2025,8 @@ class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
             deleted_time=deleted_time,
         )
         self.code = code
-        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.standard = standard
+        self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
 
     def as_write(self) -> CogniteAssetTypeApply:
         return CogniteAssetTypeApply(
@@ -2037,8 +2037,8 @@ class CogniteAssetType(_CogniteAssetTypeProperties, CogniteDescribableNode):
             tags=self.tags,
             aliases=self.aliases,
             code=self.code,
-            asset_class=self.asset_class,
             standard=self.standard,
+            asset_class=self.asset_class,
             existing_version=self.version,
             type=self.type,
         )
@@ -2053,7 +2053,7 @@ class _CogniteCADNodeProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCADNode", "v1")
+        return ViewId("cdf_cdm", "CogniteCADNode", "v1")
 
 
 class CogniteCADNodeApply(_CogniteCADNodeProperties, CogniteDescribableNodeApply):
@@ -2207,7 +2207,7 @@ class _CogniteEquipmentTypeProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteEquipmentType", "v1")
+        return ViewId("cdf_cdm", "CogniteEquipmentType", "v1")
 
 
 class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, CogniteDescribableNodeApply):
@@ -2346,7 +2346,7 @@ class _CogniteFileCategoryProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteFileCategory", "v1")
+        return ViewId("cdf_cdm", "CogniteFileCategory", "v1")
 
 
 class CogniteFileCategoryApply(_CogniteFileCategoryProperties, CogniteDescribableNodeApply):
@@ -2482,7 +2482,7 @@ class _CognitePointCloudVolumeProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CognitePointCloudVolume", "v1")
+        return ViewId("cdf_cdm", "CognitePointCloudVolume", "v1")
 
 
 class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, CogniteDescribableNodeApply):
@@ -2642,7 +2642,7 @@ class _CogniteSourceSystemProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteSourceSystem", "v1")
+        return ViewId("cdf_cdm", "CogniteSourceSystem", "v1")
 
 
 class CogniteSourceSystemApply(_CogniteSourceSystemProperties, CogniteDescribableNodeApply):
@@ -2767,7 +2767,7 @@ class _CogniteUnitProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteUnit", "v1")
+        return ViewId("cdf_cdm", "CogniteUnit", "v1")
 
 
 class CogniteUnitApply(_CogniteUnitProperties, CogniteDescribableNodeApply):
@@ -2906,7 +2906,7 @@ class _CogniteActivityProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteActivity", "v1")
+        return ViewId("cdf_cdm", "CogniteActivity", "v1")
 
 
 class CogniteActivityApply(
@@ -3158,7 +3158,7 @@ class _CogniteEquipmentProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteEquipment", "v1")
+        return ViewId("cdf_cdm", "CogniteEquipment", "v1")
 
 
 class CogniteEquipmentApply(_CogniteEquipmentProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
@@ -3374,7 +3374,7 @@ class _CogniteFileProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteFile", "v1")
+        return ViewId("cdf_cdm", "CogniteFile", "v1")
 
 
 class CogniteFileApply(_CogniteFileProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
@@ -3597,7 +3597,7 @@ class _CogniteTimeSeriesProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1")
+        return ViewId("cdf_cdm", "CogniteTimeSeries", "v1")
 
 
 class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, CogniteDescribableNodeApply, CogniteSourceableNodeApply):
@@ -3818,7 +3818,7 @@ class _CogniteAssetProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteAsset", "v1")
+        return ViewId("cdf_cdm", "CogniteAsset", "v1")
 
 
 class CogniteAssetApply(
@@ -4058,7 +4058,7 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
 class _Cognite360ImageModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite360ImageModel", "v1")
+        return ViewId("cdf_cdm", "Cognite360ImageModel", "v1")
 
 
 class Cognite360ImageModelApply(_Cognite360ImageModelProperties, Cognite3DModelApply):
@@ -4181,7 +4181,7 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
 class _CogniteCADModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteCADModel", "v1")
+        return ViewId("cdf_cdm", "CogniteCADModel", "v1")
 
 
 class CogniteCADModelApply(_CogniteCADModelProperties, Cognite3DModelApply):
@@ -4304,7 +4304,7 @@ class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
 class _CognitePointCloudModelProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CognitePointCloudModel", "v1")
+        return ViewId("cdf_cdm", "CognitePointCloudModel", "v1")
 
 
 class CognitePointCloudModelApply(_CognitePointCloudModelProperties, Cognite3DModelApply):
@@ -4821,7 +4821,7 @@ class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
 class _CogniteAnnotationProperties:
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteAnnotation", "v1")
+        return ViewId("cdf_cdm", "CogniteAnnotation", "v1")
 
 
 class CogniteAnnotationApply(_CogniteAnnotationProperties, CogniteDescribableEdgeApply, CogniteSourceableEdgeApply):
@@ -5032,7 +5032,7 @@ class _Cognite360ImageAnnotationProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "Cognite360ImageAnnotation", "v1")
+        return ViewId("cdf_cdm", "Cognite360ImageAnnotation", "v1")
 
 
 class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, CogniteAnnotationApply):
@@ -5243,7 +5243,7 @@ class _CogniteDiagramAnnotationProperties:
 
     @classmethod
     def get_source(cls) -> ViewId:
-        return ViewId("cdf_cdm_experimental", "CogniteDiagramAnnotation", "v1")
+        return ViewId("cdf_cdm", "CogniteDiagramAnnotation", "v1")
 
 
 class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, CogniteAnnotationApply):
