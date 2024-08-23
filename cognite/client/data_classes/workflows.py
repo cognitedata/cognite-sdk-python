@@ -1177,20 +1177,42 @@ class WorkflowIds(UserList):
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
 
 
-WorkflowTriggerType: TypeAlias = Literal["schedule"]
+class WorkflowTriggerRule(CogniteObject, ABC):
+    """This is the base class for all workflow trigger rules."""
+    _trigger_type: ClassVar[str]
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        trigger_type = resource["type"]
+        if trigger_type in _TRIGGER_RULE_BY_TYPE:
+            return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
+        # If more triggers are added in the future, this ensures that the SDK does not break.
+        return cast(Self, UnknownCogniteObject(resource))
+
+    @classmethod
+    @abstractmethod
+    def _load_trigger(cls, data: dict) -> Self:
+        raise NotImplementedError()
 
 
-class WorkflowScheduledTriggerRule(CogniteObject):
+class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     """
     This class represents a scheduled trigger rule.
 
     Args:
         cron_expression(str | None): The cron specification for the scheduled trigger.
     """
+    _trigger_type = "schedule"
 
     def __init__(self, cron_expression: str | None = None) -> None:
-        self.trigger_type: WorkflowTriggerType = "schedule"
         self.cron_expression = cron_expression
+
+    @classmethod
+    def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
+        return cls(cron_expression=data.get("cronExpression"))
+
+
+_TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()}
 
 
 class WorkflowTriggerCreate(CogniteResource):
