@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -258,7 +259,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
+        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
         query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
         body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
         request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
@@ -1179,11 +1180,15 @@ class WorkflowIds(UserList):
 
 class WorkflowTriggerRule(CogniteObject, ABC):
     """This is the base class for all workflow trigger rules."""
+
     _trigger_type: ClassVar[str]
+
+    def __init__(self) -> None:
+        self.trigger_type = self._trigger_type
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        trigger_type = resource["type"]
+        trigger_type = resource["triggerType"]
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
         # If more triggers are added in the future, this ensures that the SDK does not break.
@@ -1202,9 +1207,11 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     Args:
         cron_expression(str | None): The cron specification for the scheduled trigger.
     """
+
     _trigger_type = "schedule"
 
     def __init__(self, cron_expression: str | None = None) -> None:
+        super().__init__()
         self.cron_expression = cron_expression
 
     @classmethod
@@ -1212,7 +1219,9 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         return cls(cron_expression=data.get("cronExpression"))
 
 
-_TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()}
+_TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
+    subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()
+}
 
 
 class WorkflowTriggerCreate(CogniteResource):
@@ -1221,7 +1230,7 @@ class WorkflowTriggerCreate(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowScheduledTriggerRule): The trigger rule of the workflow version trigger.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
@@ -1230,7 +1239,7 @@ class WorkflowTriggerCreate(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        trigger_rule: WorkflowScheduledTriggerRule,
+        trigger_rule: WorkflowTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
         input: dict | None = None,
@@ -1271,10 +1280,10 @@ class WorkflowTrigger(CogniteResource):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        trigger_rule (WorkflowScheduledTriggerRule): The trigger rule of the workflow version trigger.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
-        input (dict | None): The input data of the workflow version trigger. Defaults to None.
+        input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
         created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
         last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
     """
@@ -1282,7 +1291,7 @@ class WorkflowTrigger(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        trigger_rule: WorkflowScheduledTriggerRule,
+        trigger_rule: WorkflowTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
         input: dict | None = None,

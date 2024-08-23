@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
 from urllib.parse import quote
@@ -144,6 +143,14 @@ class WorkflowTriggerAPI(APIClient):
 
         Returns:
             WorkflowTriggerList: The trigger list.
+
+        Examples:
+
+            Get all triggers:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.workflows.triggers.get_triggers()
         """
         return self._list(
             method="GET",
@@ -166,6 +173,14 @@ class WorkflowTriggerAPI(APIClient):
 
         Returns:
             WorkflowTriggerRunList: The requested trigger runs.
+
+        Examples:
+
+            Get all runs for a trigger with external id 'my_trigger':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
         """
         return self._list(
             method="GET",
@@ -188,7 +203,7 @@ class WorkflowTaskAPI(APIClient):
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
