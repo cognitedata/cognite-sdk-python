@@ -1,11 +1,3 @@
-import os
-import shlex
-import subprocess
-import tempfile
-from pathlib import Path
-
-import requests
-
 """
 Creates/updates the proto files in cognite/client/_proto/ using definitions from:
 https://github.com/cognitedata/protobuf-files
@@ -13,6 +5,14 @@ https://github.com/cognitedata/protobuf-files
 Requires `protoc` to be installed. On MacOS, you can install it with Homebrew:
 $ brew install protobuf
 """
+
+import os
+import shlex
+import subprocess
+import tempfile
+from pathlib import Path
+
+import requests
 
 URL_BASE = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries/"
 FILES = "data_point_list_response.proto", "data_points.proto", "data_point_insertion_request.proto"
