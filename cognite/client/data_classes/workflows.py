@@ -1221,7 +1221,8 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
 
 _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
-    subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()  # type: ignore[type-abstract]
+    subclass._trigger_type: subclass  # type: ignore
+    for subclass in WorkflowTriggerRule.__subclasses__()
 }
 
 
