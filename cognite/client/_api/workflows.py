@@ -54,7 +54,9 @@ def wrap_workflow_ids(
     return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
 
-class BetaWorkflowAPIClient(APIClient, ABC):
+class WorkflowTriggerAPI(APIClient):
+    _RESOURCE_PATH = "/workflows/triggers"
+
     def __init__(
         self,
         config: ClientConfig,
@@ -66,10 +68,6 @@ class BetaWorkflowAPIClient(APIClient, ABC):
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="beta", feature_name="Workflow Orchestration"
         )
-
-
-class WorkflowTriggerAPI(BetaWorkflowAPIClient):
-    _RESOURCE_PATH = "/workflows/triggers"
 
     def create(
         self,
