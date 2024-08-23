@@ -350,6 +350,7 @@ class DocstrFormatter:
         # Note: We can have multiple matches for generic docstrings, e.g. 'dump'. So to avoid next update failing
         #       we only replace one at the time, even though it may be "the wrong one":
         path.write_text(source_code.replace(self.original_doc, new_docstr, 1))
+        print(f"XXXXX {new_docstr}")
         return f"Fixed docstring for '{method_description}'"
 
 

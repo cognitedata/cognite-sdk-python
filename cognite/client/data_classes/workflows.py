@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
