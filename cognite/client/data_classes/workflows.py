@@ -1357,9 +1357,15 @@ class WorkflowTrigger(WorkflowTriggerCore):
             last_updated_time=resource.get("lastUpdatedTime"),
         )
 
-    def as_write(self) -> WorkflowTrigger:
+    def as_write(self) -> WorkflowTriggerCreate:
         """Returns this workflow trigger instance."""
-        return self
+        return WorkflowTriggerCreate(
+            external_id=self.external_id,
+            trigger_rule=self.trigger_rule,
+            workflow_external_id=self.workflow_external_id,
+            workflow_version=self.workflow_version,
+            input=self.input,
+        )
 
 
 class WorkflowTriggerList(CogniteResourceList[WorkflowTrigger]):
