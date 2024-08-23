@@ -1220,9 +1220,8 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         return cls(cron_expression=data.get("cronExpression"))
 
 
-# type: ignore[type-abstract]
 _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
-    subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()
+    subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()  # type: ignore[type-abstract]
 }
 
 
