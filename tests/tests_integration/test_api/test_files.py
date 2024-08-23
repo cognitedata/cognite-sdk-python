@@ -15,8 +15,8 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
-from cognite.client.data_classes.cdm.v1 import CogniteFileApply
 from cognite.client.data_classes.data_modeling import Space
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
 from cognite.client.utils._text import random_string
 
 

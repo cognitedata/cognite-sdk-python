@@ -17,9 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.54.15] - 2024-08-21
+## [7.54.18] - 2024-08-23
 ### Added
 - [Feature Preview - beta] Support for `client.workflows.triggers`.
+
+## [7.54.17] - 2024-08-22
+### Added
+- [Feature Preview]  Added `ExtractorExtension` model of the Core Model.
+
+## [7.54.16] - 2024-08-22
+### Added
+- Added new LocationFiltersAcl capability.
+
+## [7.54.15] - 2024-08-21
+### Fixed
+- [Feature Preview]  Updated the Core Model to latest version.
 
 ## [7.54.14] - 2024-08-19
 ### Fixed
