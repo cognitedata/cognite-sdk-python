@@ -1320,7 +1320,7 @@ class WorkflowTrigger(CogniteResource):
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
-            trigger_rule=WorkflowScheduledTriggerRule._load(resource["triggerRule"]),
+            trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
