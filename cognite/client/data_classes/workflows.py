@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection
@@ -1220,13 +1221,15 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
 
 _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
-    subclass._trigger_type: subclass for subclass in WorkflowTriggerRule.__subclasses__()
+    subclass._trigger_type: subclass
+    for subclass in WorkflowTriggerRule.__subclasses__()
+    if not inspect.isabstract(subclass)
 }
 
 
-class WorkflowTriggerCreate(CogniteResource):
+class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerCreate"], ABC):
     """
-    This class represents a workflow trigger for creation.
+    This class represents a base class for a workflow trigger.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -1249,6 +1252,19 @@ class WorkflowTriggerCreate(CogniteResource):
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
         self.input = input
+
+
+class WorkflowTriggerCreate(WorkflowTriggerCore):
+    """
+    This class represents a workflow trigger for creation.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input (dict | None): The input data of the workflow version trigger. Defaults to None.
+    """
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -1273,8 +1289,12 @@ class WorkflowTriggerCreate(CogniteResource):
             input=resource.get("input"),
         )
 
+    def as_write(self) -> WorkflowTriggerCreate:
+        """Returns this workflow trigger create instance."""
+        return self
 
-class WorkflowTrigger(CogniteResource):
+
+class WorkflowTrigger(WorkflowTriggerCore):
     """
     This class represents a workflow trigger.
 
@@ -1298,11 +1318,13 @@ class WorkflowTrigger(CogniteResource):
         created_time: int | None = None,
         last_updated_time: int | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.trigger_rule = trigger_rule
-        self.workflow_external_id = workflow_external_id
-        self.workflow_version = workflow_version
-        self.input = input
+        super().__init__(
+            external_id=external_id,
+            trigger_rule=trigger_rule,
+            workflow_external_id=workflow_external_id,
+            workflow_version=workflow_version,
+            input=input,
+        )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
@@ -1334,6 +1356,10 @@ class WorkflowTrigger(CogniteResource):
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
         )
+
+    def as_write(self) -> WorkflowTrigger:
+        """Returns this workflow trigger instance."""
+        return self
 
 
 class WorkflowTriggerList(CogniteResourceList[WorkflowTrigger]):
