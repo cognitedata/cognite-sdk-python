@@ -12,7 +12,7 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
-import data_points_pb2 as data__points__pb2
+import cognite.client._proto.data_points_pb2 as data__points__pb2
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\"data_point_insertion_request.proto\x12\x1f\x63om.cognite.v1.timeseries.proto\x1a\x11\x64\x61ta_points.proto\"\xc7\x02\n\x16\x44\x61taPointInsertionItem\x12\x0c\n\x02id\x18\x01 \x01(\x03H\x00\x12\x14\n\nexternalId\x18\x02 \x01(\tH\x00\x12\x41\n\ninstanceId\x18\x05 \x01(\x0b\x32+.com.cognite.v1.timeseries.proto.InstanceIdH\x00\x12O\n\x11numericDatapoints\x18\x03 \x01(\x0b\x32\x32.com.cognite.v1.timeseries.proto.NumericDatapointsH\x01\x12M\n\x10stringDatapoints\x18\x04 \x01(\x0b\x32\x31.com.cognite.v1.timeseries.proto.StringDatapointsH\x01\x42\x15\n\x13timeSeriesReferenceB\x0f\n\rdatapointType\"c\n\x19\x44\x61taPointInsertionRequest\x12\x46\n\x05items\x18\x01 \x03(\x0b\x32\x37.com.cognite.v1.timeseries.proto.DataPointInsertionItemB\x02P\x01\x62\x06proto3')

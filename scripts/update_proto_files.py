@@ -4,6 +4,11 @@ https://github.com/cognitedata/protobuf-files
 
 Requires `protoc` to be installed. On MacOS, you can install it with Homebrew:
 $ brew install protobuf
+
+Note:
+As long as we support `protobuf >= 4`, we need to use the last `protoc` version with v4 support.
+That seems to be release 25.4, which can be downloaded here:
+https://github.com/protocolbuffers/protobuf/releases
 """
 
 import os
