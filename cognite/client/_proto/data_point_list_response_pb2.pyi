@@ -1,4 +1,4 @@
-import cognite.client._proto.data_points_pb2 as _data_points_pb2
+import data_points_pb2 as _data_points_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
