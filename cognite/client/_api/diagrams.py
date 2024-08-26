@@ -15,6 +15,7 @@ from cognite.client.data_classes.contextualization import (
     FileReference,
     T_ContextualizationJob,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import to_camel_case
@@ -92,12 +93,16 @@ class DiagramsAPI(APIClient):
     def _process_file_ids(
         ids: Sequence[int] | int | None,
         external_ids: SequenceNotStr[str] | str | None,
+        instance_ids: Sequence[NodeId] | NodeId | None,
         file_references: Sequence[FileReference] | FileReference | None,
     ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = cast(
             SequenceNotStr[str],
             DiagramsAPI._list_from_instance_or_list(external_ids, str, "external_ids must be str or list of str"),
+        )
+        instance_ids = DiagramsAPI._list_from_instance_or_list(
+            instance_ids, NodeId, "instance_ids must be NodeId or list of NodeId"
         )
         file_references = DiagramsAPI._list_from_instance_or_list(
             file_references, FileReference, "file_references must be FileReference or list of FileReference"
@@ -108,8 +113,12 @@ class DiagramsAPI(APIClient):
 
         id_objs = [{"fileId": id} for id in ids]
         external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
+        instance_id_objs = [
+            {"fileInstanceId": instance_id.dump(camel_case=True, include_instance_type=False)}
+            for instance_id in instance_ids
+        ]
         file_reference_objects = [file_reference.to_api_item() for file_reference in file_references]
-        return [*id_objs, *external_id_objs, *file_reference_objects]
+        return [*id_objs, *external_id_objs, *instance_id_objs, *file_reference_objects]
 
     @overload
     def detect(
@@ -120,6 +129,7 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | SequenceNotStr[str] | None = None,
+        file_instance_ids: NodeId | Sequence[NodeId] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: dict[str, Any] | None = None,
@@ -136,6 +146,7 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | SequenceNotStr[str] | None = None,
+        file_instance_ids: NodeId | Sequence[NodeId] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: DiagramDetectConfig | dict[str, Any] | None = None,
@@ -152,6 +163,7 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | SequenceNotStr[str] | None = None,
+        file_instance_ids: NodeId | Sequence[NodeId] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool = False,
         configuration: DiagramDetectConfig | dict[str, Any] | None = None,
@@ -165,6 +177,7 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: int | Sequence[int] | None = None,
         file_external_ids: str | SequenceNotStr[str] | None = None,
+        file_instance_ids: NodeId | Sequence[NodeId] | None = None,
         file_references: list[FileReference] | FileReference | None = None,
         pattern_mode: bool | None = None,
         configuration: DiagramDetectConfig | dict[str, Any] | None = None,
@@ -184,7 +197,8 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (int | Sequence[int] | None): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (str | SequenceNotStr[str] | None): File external ids, alternative to file_ids and file_references.
-            file_references (list[FileReference] | FileReference | None): File references (id or external_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
+            file_instance_ids (NodeId | Sequence[NodeId] | None): Files to detect in, specified by instance id.
+            file_references (list[FileReference] | FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
             configuration (DiagramDetectConfig | dict[str, Any] | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
@@ -258,7 +272,7 @@ class DiagramsAPI(APIClient):
 
             Check the documentation for `DiagramDetectConfig` for more information on the available options.
         """
-        items = self._process_file_ids(file_ids, file_external_ids, file_references)
+        items = self._process_file_ids(file_ids, file_external_ids, file_instance_ids, file_references)
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]

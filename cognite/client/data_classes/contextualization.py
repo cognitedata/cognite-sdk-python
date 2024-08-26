@@ -26,6 +26,7 @@ from cognite.client.data_classes.annotation_types.images import (
 )
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -356,16 +357,18 @@ class FileReference:
         self,
         file_id: int | None = None,
         file_external_id: str | None = None,
+        file_instance_id: NodeId | None = None,
         first_page: int | None = None,
         last_page: int | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
+        self.file_instance_id = file_instance_id
         self.first_page = first_page
         self.last_page = last_page
 
-        if not exactly_one_is_not_none(file_id, file_external_id):
-            raise ValueError("Exactly one of file_id and file_external_id must be set for a file reference")
+        if not exactly_one_is_not_none(file_id, file_external_id, file_instance_id):
+            raise ValueError("File references must have xactly one of file_id, file_external_id and file_instance_id.")
         if exactly_one_is_not_none(first_page, last_page):
             raise ValueError("If the page range feature is used, both first page and last page must be set")
 
@@ -374,6 +377,8 @@ class FileReference:
             item: dict[str, str | int | dict[str, int]] = {"fileExternalId": self.file_external_id}
         if self.file_id is not None and self.file_external_id is None:
             item = {"fileId": self.file_id}
+        if self.file_instance_id is not None:
+            item = {"fileInstanceId": self.file_instance_id.dump(include_instance_type=False)}
         if self.first_page is not None and self.last_page is not None:
             item["pageRange"] = {"begin": self.first_page, "end": self.last_page}
         return item
