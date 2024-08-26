@@ -555,9 +555,7 @@ class DatapointsArray(CogniteResource):
         return {
             "id": self.id,
             "external_id": self.external_id,
-            "instance_id": self.instance_id.dump(camel_case=False, include_instance_type=False)
-            if self.instance_id
-            else None,
+            "instance_id": self.instance_id,
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
@@ -777,6 +775,8 @@ class DatapointsArray(CogniteResource):
         dumped = self._ts_info
         if self.timezone is not None:
             dumped["timezone"] = str(self.timezone)
+        if self.instance_id:
+            dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
         datapoints = [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]
 
         if self.status_code is not None or self.status_symbol is not None:
@@ -1237,6 +1237,7 @@ class Datapoints(CogniteResource):
         truncated_datapoints = Datapoints(
             id=self.id,
             external_id=self.external_id,
+            instance_id=self.instance_id,
             is_string=self.is_string,
             is_step=self.is_step,
             unit=self.unit,
