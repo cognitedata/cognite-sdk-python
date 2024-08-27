@@ -100,6 +100,7 @@ class WorkflowTriggerAPI(APIClient):
                 ...     )
                 ... )
         """
+        self._warning.warn()
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
