@@ -60,3 +60,4 @@ scripts/tmp/
 my_file.txt
 .venv/
 *.env
+.envrc

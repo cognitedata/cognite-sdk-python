@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     TimeSeries,
 )
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -245,14 +246,14 @@ class TestRelationshipscognite_client:
         asset3 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset3", name="asset3")
 
         new_relationship = Relationship(
-            external_id="test_upsert_2_relationships_one_preexisting:new",
+            external_id=f"test_upsert_2_relationships_one_preexisting:new:{random_string(5)}",
             source_external_id=asset1.external_id,
             target_external_id=asset2.external_id,
             source_type="asset",
             target_type="asset",
         )
         preexisting = Relationship(
-            external_id="test_upsert_2_relationships_one_preexisting:preexisting",
+            external_id=f"test_upsert_2_relationships_one_preexisting:preexisting:{random_string(5)}",
             source_external_id=asset2.external_id,
             target_external_id=asset3.external_id,
             source_type="asset",
