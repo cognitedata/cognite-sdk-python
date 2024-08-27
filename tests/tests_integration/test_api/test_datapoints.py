@@ -434,10 +434,6 @@ def ts_create_in_dms(cognite_client, space_for_time_series) -> NodeApplyResult:
 
 
 class TestTimeSeriesCreatedInDMS:
-    @pytest.mark.xfail(
-        reason="Greenfield support not yet added for DMS time series",
-        match="^InstanceId references are not supported in this environment$",
-    )
     def test_insert_read_delete_dps(self, cognite_client, ts_create_in_dms):
         # Ensure the DMS time series is retrievable from normal TS API:
         inst_id = ts_create_in_dms.as_id()
