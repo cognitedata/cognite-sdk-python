@@ -570,7 +570,7 @@ class SessionsAPI(APIClient):
         items: dict[str, Any]
         headers: dict[str, str] | None = None
         if client_credentials:
-            items = {"clientCredentials": client_credentials.dump(camel_case=True)}
+            items = client_credentials.dump(camel_case=True)
         elif token_exchange:
             items = {"tokenExchange": True}
         elif one_shot_token_exchange:
