@@ -20,6 +20,9 @@ Changes are grouped as follows
 ## [7.55.0] - 2024-08-23
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
+- Parameter `nonce` to the `client.functions.call()` method to allow passing the nonce to the function instead
+  of letting the SDK generate it. This is useful when the nonce is obtained in a different way than the
+  default SDK nonce generation.
 
 ## [7.54.19] - 2024-08-23
 ### Added

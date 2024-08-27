@@ -574,9 +574,7 @@ class SessionsAPI(APIClient):
         elif token_exchange:
             items = {"tokenExchange": True}
         elif one_shot_token_exchange:
-            items = {"oneShotTokenExchange": True}
-            (_, bearer) = self._config.credentials.authorization_header()
-            headers = {"Authorization": bearer}
+            items = {"oneshotTokenExchange": True}
         else:
             raise ValueError("No credentials provided")
 
