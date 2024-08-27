@@ -101,7 +101,6 @@ class DiagramsAPI(APIClient):
         | dict[str, str]
         | dict[str, int]
     ]:
-        #    ) -> list[dict[str, dict[str, int]] | dict[str, dict[str, str]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = cast(
             SequenceNotStr[str],
