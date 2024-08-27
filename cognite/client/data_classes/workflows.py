@@ -329,6 +329,32 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
 
     task_type = "subworkflow"
 
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        if subworkflow.get("tasks") is not None:
+            return SubworkflowTaskTasksListParameters._load(resource, cognite_client)
+        else:
+            return SubworkflowTaskReferenceParameters._load(resource, cognite_client)
+
+
+class SubworkflowTaskReferenceParameters(SubworkflowTaskParameters):
+    def __init__(self, workflow_external_id: str, workflow_version: str) -> None:
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        return cls(
+            workflow_external_id = subworkflow["workflowExternalId"],
+            version = subworkflow["version"],
+        )
+
+
+class SubworkflowTaskTasksListParameters(SubworkflowTaskParameters):
     def __init__(self, tasks: list[WorkflowTask]) -> None:
         self.tasks = tasks
 
@@ -339,10 +365,6 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
         return cls(
             [WorkflowTask._load(task) for task in subworkflow["tasks"]],
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
-
 
 class DynamicTaskParameters(WorkflowTaskParameters):
     """
