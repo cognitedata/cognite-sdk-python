@@ -129,6 +129,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.delete("my_trigger")
         """
+        self._warning.warn()
         self._post(
             url_path=self._RESOURCE_PATH + "/delete",
             json={"items": [{"externalId": external_id}]},
