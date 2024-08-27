@@ -186,6 +186,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
         """
+        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH + f"/{external_id}/history",
