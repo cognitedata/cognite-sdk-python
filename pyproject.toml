@@ -8,11 +8,11 @@ documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
 authors = [
     "Erlend Vollset <erlend.vollset@cognite.com>",
     "Håkon Treider <hakon.treider@cognite.com>",
-    "Anders Albert <anders.albert@cognite.com>"
+    "Anders Albert <anders.albert@cognite.com>",
 ]
 license = "Apache-2.0"
 
-packages = [{ include="cognite", from="." }]
+packages = [{ include = "cognite", from = "." }]
 
 [tool.ruff]
 line-length = 120
@@ -28,9 +28,9 @@ requests = "^2"
 requests_oauthlib = "^1"
 msal = "^1"
 protobuf = ">=4"
-pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
+pip = ">=20.0.0"                                              # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
-backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9" }
+backports-zoneinfo = { version = ">=0.2.1", python = "<3.9" }
 # Windows does not have a ANSI database and need tzdata... pyodide also needs it:
 tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows' or platform_system == 'Emscripten'" }
 numpy = [
@@ -59,7 +59,10 @@ geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
-pyodide = ["pyodide-http", "tzdata"]  # keep pyodide related dependencies outside of 'all'
+pyodide = [
+    "pyodide-http",
+    "tzdata",
+] # keep pyodide related dependencies outside of 'all'
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
@@ -84,10 +87,10 @@ types-backports = "^0"
 types-protobuf = "^4.22.0.2"
 types-PyYAML = "^6"
 packaging = ">=23"
-IPython = ">=7.0.0"  # Used in docstring examples
+IPython = ">=7.0.0"           # Used in docstring examples
 PyYAML = "^6.0"
-pytest-icdiff = "*"  # Used for better diffs in pytest
+pytest-icdiff = "*"           # Used for better diffs in pytest
 
 [build-system]
-requires = ["poetry>=1.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
