@@ -528,21 +528,61 @@ class SessionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
-    def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
+    def create(
+        self,
+        client_credentials: ClientCredentials | None = None,
+        *,
+        token_exchange: bool = False,
+        one_shot_token_exchange: bool = False,
+    ) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
         Args:
-            client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
-
+            client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None,
+                a session will be created using the credentials used to instantiate -this- CogniteClient object.
+                If that was done using a token, a session will be created using token exchange. Similarly, if the
+                credentials were client credentials, a session will be created using client credentials.
+                This method does not work when using client certificates (not supported server-side).
+            token_exchange (bool): Credentials for a session using token exchange to reuse the user's credentials.
+            one_shot_token_exchange (bool): Credentials for a session using one-shot token exchange to reuse the user's credentials.
+                One-shot sessions are short-lived sessions that are not refreshed
+                and do not require support for token exchange from the identity provider.
 
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
+        if client_credentials is None and token_exchange is False and one_shot_token_exchange is False:
+            warnings.warn(
+                "To create a session with token exchange set 'token_exchange'=False instead of passing "
+                "'client_credentials=None'. This will be required from October 2024.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            token_exchange = True
+        if sum([token_exchange, one_shot_token_exchange, client_credentials is not None]) > 1:
+            raise ValueError(
+                "Only one of 'client_credentials', 'token_exchange' or 'one_shot_token_exchange' can be set"
+            )
+
+        if token_exchange and isinstance((creds := self._config.credentials), OAuthClientCredentials):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
-        items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
-        return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+        items: dict[str, Any]
+        headers: dict[str, str] | None = None
+        if client_credentials:
+            items = {"clientCredentials": client_credentials.dump(camel_case=True)}
+        elif token_exchange:
+            items = {"tokenExchange": True}
+        elif one_shot_token_exchange:
+            items = {"oneShotTokenExchange": True}
+            (_, bearer) = self._config.credentials.authorization_header()
+            headers = {"Authorization": bearer}
+        else:
+            raise ValueError("No credentials provided")
+
+        return CreatedSession.load(
+            self._post(self._RESOURCE_PATH, {"items": [items]}, headers=headers).json()["items"][0]
+        )
 
     @overload
     def revoke(self, id: int) -> Session: ...
