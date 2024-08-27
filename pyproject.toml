@@ -22,9 +22,9 @@ packages = [{ include="cognite", from="." }]
 [tool.poetry.dependencies]
 python = "^3.10"
 
-requests = "^2.27"
-requests_oauthlib = "^1"
+httpx = "^0"
 msal = "^1.31"
+requests-oauthlib = "^2"
 protobuf = ">=4"
 packaging = ">=20"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
