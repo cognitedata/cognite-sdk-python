@@ -372,9 +372,9 @@ class FileReference:
         if exactly_one_is_not_none(first_page, last_page):
             raise ValueError("If the page range feature is used, both first page and last page must be set")
 
-    def to_api_item(self) -> dict[str, str | int | dict[str, int]]:
+    def to_api_item(self) -> dict[str, str | int | dict[str, int] | dict[str, str]]:
         if self.file_id is None and self.file_external_id is not None:
-            item: dict[str, str | int | dict[str, int]] = {"fileExternalId": self.file_external_id}
+            item: dict[str, str | int | dict[str, int] | dict[str, str]] = {"fileExternalId": self.file_external_id}
         if self.file_id is not None and self.file_external_id is None:
             item = {"fileId": self.file_id}
         if self.file_instance_id is not None:

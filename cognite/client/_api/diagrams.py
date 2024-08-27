@@ -95,7 +95,13 @@ class DiagramsAPI(APIClient):
         external_ids: SequenceNotStr[str] | str | None,
         instance_ids: Sequence[NodeId] | NodeId | None,
         file_references: Sequence[FileReference] | FileReference | None,
-    ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
+    ) -> list[
+        dict[str, int | str | dict[str, str] | dict[str, int]]
+        | dict[str, dict[str, str]]
+        | dict[str, str]
+        | dict[str, int]
+    ]:
+        #    ) -> list[dict[str, dict[str, int]] | dict[str, dict[str, str]] | dict[str, str] | dict[str, int]]:
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = cast(
             SequenceNotStr[str],
