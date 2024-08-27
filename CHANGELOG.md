@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.54.19] - 2024-08-23
+### Added
+- [Feature Preview - beta] Support for `client.workflows.triggers`.
+
 ## [7.54.18] - 2024-08-26
 ### Added
 - When retrieving datapoints, `instance_id` is now set on the objects (for time series created
