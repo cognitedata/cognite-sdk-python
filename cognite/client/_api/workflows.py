@@ -155,6 +155,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_triggers()
         """
+        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH,
