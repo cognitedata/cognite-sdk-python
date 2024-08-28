@@ -532,7 +532,7 @@ class FunctionsAPI(APIClient):
             wait (bool): Wait until the function call is finished. Defaults to True.
             nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. If not provided, a new session will be created based on the client credentials.
 
-        Note:
+        Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
