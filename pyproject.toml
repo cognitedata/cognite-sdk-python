@@ -89,5 +89,5 @@ PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
 
 [build-system]
-requires = ["poetry>=1.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
