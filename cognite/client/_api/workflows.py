@@ -342,6 +342,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...         external_id="cdf_deployed_function:my_function",
                 ...         data={"workflow_data": "${workflow.input}",}))
 
+        Tip:
+            You can create a session via the Sessions API, using the client.iam.session.create() method.
+
         Returns:
             WorkflowExecution: The created workflow execution.
 
