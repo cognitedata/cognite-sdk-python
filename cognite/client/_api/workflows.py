@@ -318,6 +318,7 @@ class WorkflowExecutionAPI(APIClient):
         input: dict | None = None,
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
+        nonce: str | None = None,
     ) -> WorkflowExecution:
         """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
@@ -327,6 +328,7 @@ class WorkflowExecutionAPI(APIClient):
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
             client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+            nonce (str | None): The nonce to use to bind the session. If not provided, a new session will be created using the current credentials.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -338,6 +340,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
                 ...         data={"workflow_data": "${workflow.input}",}))
+
+        Tip:
+            You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
             WorkflowExecution: The created workflow execution.
@@ -361,7 +366,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = client.workflows.executions.run("foo", "1", client_credentials=credentials)
         """
-        nonce = create_session_and_return_nonce(
+        nonce = nonce or create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         body = {"authentication": {"nonce": nonce}}
