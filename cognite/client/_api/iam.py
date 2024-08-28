@@ -554,9 +554,7 @@ class SessionsAPI(APIClient):
 
             * **client_credentials**: Credentials for a session using client credentials from an identity provider.
             * **token_exchange**: Credentials for a session using token exchange to reuse the user's credentials.
-            * **one_shot_token_exchange**: Credentials for a session using one-shot token exchange to reuse the user's credentials.
-                One-shot sessions are short-lived sessions that are not refreshed
-                and do not require support for token exchange from the identity provider.
+            * **one_shot_token_exchange**: Credentials for a session using one-shot token exchange to reuse the user's credentials. One-shot sessions are short-lived sessions that are not refreshed and do not require support for token exchange from the identity provider.
 
         Returns:
             CreatedSession: The object with token inspection details.
