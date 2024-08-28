@@ -37,6 +37,7 @@ from cognite.client._proto.data_points_pb2 import (
     NumericDatapoint,
     StringDatapoint,
 )
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
     Aggregate,
@@ -462,8 +463,9 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | None]:
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
+    instance_id = NodeId(res.instanceId.space, res.instanceId.externalId) if res.instanceId else None
     return {
         "id": res.id,
         "external_id": res.externalId,
@@ -471,6 +473,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "is_step": res.isStep,
         "unit": res.unit,
         "unit_external_id": res.unitExternalId,
+        "instance_id": instance_id,
     }
 
 

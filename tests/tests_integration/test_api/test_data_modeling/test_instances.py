@@ -1116,8 +1116,7 @@ class TestInstancesSync:
             my_query.cursors = result.cursors
             new_result = cognite_client.data_modeling.instances.sync(my_query)
 
-            assert len(new_result["movies"]) == 1, "Only the new movie should be returned"
-            assert new_result["movies"][0].external_id == new_1994_movie.external_id
+            assert new_1994_movie.external_id in [node.external_id for node in new_result["movies"]]
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
 

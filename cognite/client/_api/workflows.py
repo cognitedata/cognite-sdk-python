@@ -18,6 +18,11 @@ from cognite.client.data_classes.workflows import (
     WorkflowList,
     WorkflowStatus,
     WorkflowTaskExecution,
+    WorkflowTrigger,
+    WorkflowTriggerCreate,
+    WorkflowTriggerList,
+    WorkflowTriggerRun,
+    WorkflowTriggerRunList,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -25,6 +30,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -46,6 +52,148 @@ def wrap_workflow_ids(
     if workflow_version_ids is None:
         return []
     return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
+
+
+class WorkflowTriggerAPI(APIClient):
+    _RESOURCE_PATH = "/workflows/triggers"
+
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+    ) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._api_subversion = "beta"
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="beta", feature_name="Workflow Orchestration"
+        )
+
+    def create(
+        self,
+        workflow_trigger: WorkflowTriggerCreate,
+        client_credentials: ClientCredentials | dict | None = None,
+    ) -> WorkflowTrigger:
+        """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
+
+        Args:
+            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+
+        Returns:
+            WorkflowTrigger: The created workflow trigger specification.
+
+        Examples:
+
+            Create a new scheduled trigger for a workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.create(
+                ...     WorkflowTriggerCreate(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...         input={"a": 1, "b": 2},
+                ...     )
+                ... )
+        """
+        self._warning.warn()
+        nonce = create_session_and_return_nonce(
+            self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
+        )
+        dumped = workflow_trigger.dump(camel_case=True)
+        dumped["authentication"] = {"nonce": nonce}
+        response = self._post(
+            url_path=self._RESOURCE_PATH,
+            json={"items": [dumped]},
+        )
+        return WorkflowTrigger._load(response.json().get("items")[0])
+
+    def delete(
+        self,
+        external_id: str,
+    ) -> None:
+        """`Delete a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+
+        Args:
+            external_id (str): The external id of the trigger to delete.
+
+        Examples:
+
+            Delete a trigger with external id 'my_trigger':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.delete("my_trigger")
+        """
+        self._warning.warn()
+        self._post(
+            url_path=self._RESOURCE_PATH + "/delete",
+            json={"items": [{"externalId": external_id}]},
+        )
+
+    def get_triggers(
+        self,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> WorkflowTriggerList:
+        """`Retrieve the trigger list. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+
+        Args:
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            WorkflowTriggerList: The trigger list.
+
+        Examples:
+
+            Get all triggers:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.workflows.triggers.get_triggers()
+        """
+        self._warning.warn()
+        return self._list(
+            method="GET",
+            url_path=self._RESOURCE_PATH,
+            resource_cls=WorkflowTrigger,
+            list_cls=WorkflowTriggerList,
+            limit=limit,
+        )
+
+    def get_trigger_run_history(
+        self,
+        external_id: str,
+        limit: int = DEFAULT_LIMIT_READ,
+    ) -> WorkflowTriggerRunList:
+        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/listTriggerRuns>`_
+
+        Args:
+            external_id (str): The external id of the trigger to list runs for.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            WorkflowTriggerRunList: The requested trigger runs.
+
+        Examples:
+
+            Get all runs for a trigger with external id 'my_trigger':
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
+        """
+        self._warning.warn()
+        return self._list(
+            method="GET",
+            url_path=self._RESOURCE_PATH + f"/{external_id}/history",
+            resource_cls=WorkflowTriggerRun,
+            list_cls=WorkflowTriggerRunList,
+            limit=limit,
+        )
 
 
 class WorkflowTaskAPI(APIClient):
@@ -170,6 +318,7 @@ class WorkflowExecutionAPI(APIClient):
         input: dict | None = None,
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
+        nonce: str | None = None,
     ) -> WorkflowExecution:
         """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
 
@@ -179,6 +328,7 @@ class WorkflowExecutionAPI(APIClient):
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
             client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+            nonce (str | None): The nonce to use to bind the session. If not provided, a new session will be created using the current credentials.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -190,6 +340,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
                 ...         data={"workflow_data": "${workflow.input}",}))
+
+        Tip:
+            You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
             WorkflowExecution: The created workflow execution.
@@ -213,7 +366,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> credentials = ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"])
                 >>> res = client.workflows.executions.run("foo", "1", client_credentials=credentials)
         """
-        nonce = create_session_and_return_nonce(
+        nonce = nonce or create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         body = {"authentication": {"nonce": nonce}}
@@ -569,6 +722,7 @@ class WorkflowAPI(APIClient):
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
+        self.triggers = WorkflowTriggerAPI(config, api_version, cognite_client)
         self._DELETE_LIMIT = 100
 
     @overload

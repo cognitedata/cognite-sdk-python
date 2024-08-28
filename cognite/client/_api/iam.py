@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Literal, Sequence, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -34,7 +34,13 @@ from cognite.client.data_classes.capabilities import (
     SpaceIDScope,
     UnknownAcl,
 )
-from cognite.client.data_classes.iam import GroupWrite, SecurityCategoryWrite, SessionStatus, TokenInspection
+from cognite.client.data_classes.iam import (
+    GroupWrite,
+    SecurityCategoryWrite,
+    SessionStatus,
+    SessionType,
+    TokenInspection,
+)
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -528,20 +534,53 @@ class SessionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
-    def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
+    def create(
+        self,
+        client_credentials: ClientCredentials | None = None,
+        session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
+    ) -> CreatedSession:
         """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
 
         Args:
-            client_credentials (ClientCredentials | None): The client credentials to create the session. If set to None, a session will be created using the credentials used to instantiate -this- CogniteClient object. If that was done using a token, a session will be created using token exchange. Similarly, if the credentials were client credentials, a session will be created using client credentials. This method does not work when using client certificates (not supported server-side).
+            client_credentials (ClientCredentials | None): The client credentials to create the session. This is required
+                if session_type is set to 'CLIENT_CREDENTIALS'.
+            session_type (SessionType | Literal['DEFAULT']): The type of session to create. Can be
+                either 'CLIENT_CREDENTIALS', 'TOKEN_EXCHANGE', 'ONESHOT_TOKEN_EXCHANGE' or 'DEFAULT'.
+                Defaults to 'DEFAULT' which will use -this- CogniteClient object to create the session.
+                If this client was created using a token, 'TOKEN_EXCHANGE' will be used, and if
+                this client was created using client credentials, 'CLIENT_CREDENTIALS' will be used.
 
+        Session Types:
+
+            * **client_credentials**: Credentials for a session using client credentials from an identity provider.
+            * **token_exchange**: Credentials for a session using token exchange to reuse the user's credentials.
+            * **one_shot_token_exchange**: Credentials for a session using one-shot token exchange to reuse the user's credentials. One-shot sessions are short-lived sessions that are not refreshed and do not require support for token exchange from the identity provider.
 
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
+        if client_credentials is None and isinstance(creds := self._config.credentials, OAuthClientCredentials):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
-        items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
+        session_type_up = session_type.upper()
+        if session_type_up == "DEFAULT":  # For backwards compatibility after session_type was introduced
+            items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
+
+        elif session_type_up == "CLIENT_CREDENTIALS":
+            if client_credentials is None:
+                raise ValueError(
+                    "For session_type='CLIENT_CREDENTIALS', either `client_credentials` must be provided OR "
+                    "this client must be using OAuthClientCredentials"
+                )
+            items = client_credentials.dump(camel_case=True)
+
+        elif session_type_up == "TOKEN_EXCHANGE":
+            items = {"tokenExchange": True}
+
+        elif session_type_up == "ONESHOT_TOKEN_EXCHANGE":
+            items = {"oneshotTokenExchange": True}
+        else:
+            raise ValueError(f"Session type not understood: {session_type}")
         return CreatedSession.load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     @overload

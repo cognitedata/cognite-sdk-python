@@ -17,6 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.55.0] - 2024-08-23
+### Added
+- Support for creating a session using a one-shot token in the `client.iam.session.create` method.
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing 
+  a custom nonce instead of letting the SDK generate it from your current credentials.
+
+## [7.54.19] - 2024-08-23
+### Added
+- [Feature Preview - beta] Support for `client.workflows.triggers`.
+
+## [7.54.18] - 2024-08-26
+### Added
+- When retrieving datapoints, `instance_id` is now set on the objects (for time series created
+  through Data Modelling).
+
 ## [7.54.17] - 2024-08-22
 ### Added
 - [Feature Preview]  Added `ExtractorExtension` model of the Core Model.
@@ -31,15 +46,15 @@ Changes are grouped as follows
 
 ## [7.54.14] - 2024-08-19
 ### Fixed
-- [Feature Preview - alpha] fix `files.upload_content`, `files.upload_content_bytes` and 
+- [Feature Preview - alpha] fix `files.upload_content`, `files.upload_content_bytes` and
   `files.multipart_upload_content_session`
 
 ## [7.54.13] - 2024-08-13
 ### Added
 - [Feature Preview - alpha] Support for `instanceId` in the `client.files.retrieve`, `client.files.retrieve_multiple`,
   `client.files.update`, `client.files.retrieve_download_urls`, `client.files.download_bytes`, `client.files.download_to_path`,
-  `client.files.download`. 
-- [Feature Preview - alpha] Add three new methods for uploading content: `client.files.upload_content`, 
+  `client.files.download`.
+- [Feature Preview - alpha] Add three new methods for uploading content: `client.files.upload_content`,
   `client.files.upload_content_bytes`, `client.files.multipart_upload_content_session`.
 
   This is an experimental feature and may change without warning.
