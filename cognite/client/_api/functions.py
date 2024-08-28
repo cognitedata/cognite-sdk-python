@@ -521,6 +521,7 @@ class FunctionsAPI(APIClient):
         external_id: str | None = None,
         data: dict | None = None,
         wait: bool = True,
+        nonce: str | None = None,
     ) -> FunctionCall:
         """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Function-calls/operation/postFunctionsCall>`_.
 
@@ -529,6 +530,10 @@ class FunctionsAPI(APIClient):
             external_id (str | None): External ID
             data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
             wait (bool): Wait until the function call is finished. Defaults to True.
+            nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. If not provided, a new session will be created based on the client credentials.
+
+        Tip:
+            You can create a session via the Sessions API, using the client.iam.session.create() method.
 
         Returns:
             FunctionCall: A function call object.
@@ -550,7 +555,7 @@ class FunctionsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
+        nonce = nonce or create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
