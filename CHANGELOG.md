@@ -23,6 +23,9 @@ Changes are grouped as follows
 - Parameter `nonce` to the `client.functions.call()` method to allow passing the nonce to the function instead
   of letting the SDK generate it. This is useful when the nonce is obtained in a different way than the
   default SDK nonce generation.
+- Parameter `nonce` to the `client.workflow.executions.run()` method to allow passing the nonce to the workflow instead
+  of letting the SDK generate it. This is useful when the nonce is obtained in a different way than the
+  default SDK nonce generation.
 
 ## [7.54.19] - 2024-08-23
 ### Added
