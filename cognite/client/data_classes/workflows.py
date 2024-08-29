@@ -1385,18 +1385,21 @@ class WorkflowTriggerRun(CogniteResource):
         trigger_fire_time: int,
         workflow_external_id: str,
         workflow_version: str,
+        workflow_execution_id: str,
     ) -> None:
         self.trigger_external_id = trigger_external_id
         self.trigger_fire_time = trigger_fire_time
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
+        self.workflow_execution_id = workflow_execution_id
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
-            "trigger_external_id": self.trigger_external_id,
-            "trigger_fire_time": self.trigger_fire_time,
+            "external_id": self.trigger_external_id,
+            "fire_time": self.trigger_fire_time,
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
+            "workflow_execution_id": self.workflow_execution_id,
         }
         if camel_case:
             return convert_all_keys_to_camel_case(item)
@@ -1405,10 +1408,11 @@ class WorkflowTriggerRun(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
         return cls(
-            trigger_external_id=resource["triggerExternalId"],
-            trigger_fire_time=resource["triggerFireTime"],
+            trigger_external_id=resource["externalId"],
+            trigger_fire_time=resource["fireTime"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
+            workflow_execution_id=resource["workflowExecutionId"],
         )
 
 
