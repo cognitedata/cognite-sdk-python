@@ -59,7 +59,7 @@ class TestSources:
 
         finally:
             if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id)
+                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("one_event_hub_source")
     def test_list(self, cognite_client: CogniteClient) -> None:

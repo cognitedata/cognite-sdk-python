@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Sequence, overload
+from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -119,7 +119,9 @@ class SourcesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool, force: bool) -> None:
+    def delete(
+        self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
+    ) -> None:
         """`Delete one or more sources  <https://developer.cognite.com/api#tag/Sources/operation/delete_sources>`_
 
         Args:
@@ -135,11 +137,18 @@ class SourcesAPI(APIClient):
                 >>> client.hosted_extractors.sources.delete(spaces=["myMQTTSource", "MyEvenHubSource"])
         """
         self._warning.warn()
+        extra_body_fields: dict[str, Any] = {}
+        if ignore_unknown_ids:
+            extra_body_fields["ignoreUnknownIds"] = True
+        if force:
+            extra_body_fields["force"] = True
+
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
             headers={"cdf-version": "beta"},
+            extra_body_fields=extra_body_fields or None,
         )
 
     @overload

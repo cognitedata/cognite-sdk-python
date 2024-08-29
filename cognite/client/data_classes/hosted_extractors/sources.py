@@ -131,7 +131,7 @@ class EventHubSourceWrite(SourceWrite):
         consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
 
-    _type = "eventHub"
+    _type = "eventhub"
 
     def __init__(
         self,
@@ -181,7 +181,7 @@ class EventHubSource(Source):
         consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
 
-    _type = "eventHub"
+    _type = "eventhub"
 
     def __init__(
         self,
@@ -227,7 +227,7 @@ class EventHubSource(Source):
 
 
 class EventHubSourceUpdate(SourceUpdate):
-    _type = "eventHub"
+    _type = "eventhub"
 
     class _PrimitiveEventHubSourceUpdate(CognitePrimitiveUpdate):
         def set(self, value: str) -> EventHubSourceUpdate:
