@@ -20,7 +20,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._auxiliary import fast_dict_load
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -52,7 +51,7 @@ class SourceWrite(CogniteResource, ABC):
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
-        else:
+        elif type_ is None:
             raise KeyError("type")
         source_class = _SOURCE_WRITE_CLASS_BY_TYPE.get(type_)
         if source_class is None:
@@ -91,12 +90,12 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
-        else:
+        elif type_ is None:
             raise KeyError("type")
         source_class = _SOURCE_CLASS_BY_TYPE.get(type_)
         if source_class is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
-        return cast(Self, source_class._load(resource))
+        return cast(Self, source_class._load_source(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -132,6 +131,8 @@ class EventHubSourceWrite(SourceWrite):
         consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
 
+    _type = "eventHub"
+
     def __init__(
         self,
         external_id: str,
@@ -153,7 +154,14 @@ class EventHubSourceWrite(SourceWrite):
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        return fast_dict_load(cls, resource, None)
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            event_hub_name=resource["eventHubName"],
+            key_name=resource["keyName"],
+            key_value=resource["keyValue"],
+            consumer_group=resource.get("consumerGroup"),
+        )
 
 
 class EventHubSource(Source):
@@ -172,6 +180,8 @@ class EventHubSource(Source):
         last_updated_time (int): No description.
         consumer_group (str | None): The event hub consumer group to use. Microsoft recommends having a distinct consumer group for each application consuming data from event hub. If left out, this uses the default consumer group.
     """
+
+    _type = "eventHub"
 
     def __init__(
         self,
@@ -205,7 +215,15 @@ class EventHubSource(Source):
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        return fast_dict_load(cls, resource, None)
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            event_hub_name=resource["eventHubName"],
+            key_name=resource["keyName"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            consumer_group=resource.get("consumerGroup"),
+        )
 
 
 class EventHubSourceUpdate(SourceUpdate):
@@ -264,7 +282,7 @@ class MQTTAuthenticationWrite(CogniteObject, ABC):
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
-        else:
+        elif type_ is None:
             raise KeyError("type is required")
         authentication_class = _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE.get(type_)
         if authentication_class is None:
@@ -285,7 +303,10 @@ class BasicMQTTAuthenticationWrite(MQTTAuthenticationWrite):
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        return fast_dict_load(cls, resource, None)
+        return cls(
+            username=resource["username"],
+            password=resource.get("password"),
+        )
 
 
 @dataclass
@@ -335,7 +356,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         self.auth_certificate = auth_certificate
 
     @classmethod
-    def _load_source(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             host=resource["host"],
@@ -375,7 +396,7 @@ class MQTTAuthentication(CogniteObject, ABC):
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
-        else:
+        elif type_ is None:
             raise KeyError("type")
 
         authentication_class = _MQTTAUTHENTICATION_CLASS_BY_TYPE.get(type_)
