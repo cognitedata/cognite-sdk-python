@@ -316,6 +316,108 @@ class JobUpdate(CogniteUpdate):
         ]
 
 
+class JobLog(CogniteResource):
+    """Logs for a hosted extractor job.
+
+    Args:
+        job_external_id (str): The external ID of the job.
+        type (Literal["paused", "startup_error", "connection_error", "connected", "transform_error", "cdf_write_error", "ok"]): Type of log entry.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        message (str | None): Log message. Not all log entries have messages.
+
+    Statuses
+
+    * `paused`: indicates that the job has been stopped manually.
+    * `startup_error`: indicates that the job failed to start at all and requires changes to configuration.
+    * `connection_error`: indicates that the job lost connection to the source system.
+    * `connected`: indicates that the job has connected to the source but did not yet receive any data,
+    * `transform_error`: indicates that the job received data, but it failed to transform.
+    * `cdf_write_error`: indicates that ingesting the data to CDF failed.
+    * `ok`: means that data was successfully ingested to CDF.
+
+    """
+
+    def __init__(
+        self,
+        job_external_id: str,
+        type: Literal[
+            "paused", "startup_error", "connection_error", "connected", "transform_error", "cdf_write_error", "ok"
+        ],
+        created_time: int,
+        message: str | None = None,
+    ) -> None:
+        self.job_external_id = job_external_id
+        self.type = type
+        self.created_time = created_time
+        self.message = message
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> JobLog:
+        return cls(
+            job_external_id=resource["jobExternalId"],
+            type=resource["type"],
+            created_time=resource["createdTime"],
+            message=resource.get("message"),
+        )
+
+
+class JobMetric(CogniteResource):
+    """Metrics for a hosted extractor job.
+
+    Args:
+        job_external_id (str): External ID of the job this metrics batch belongs to.
+        timestamp (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Metrics are from the UTC hour this timestamp is ingest. For example, if this timestamp is at 01:43:15, the metrics batch contains metrics from 01:00:00 to 01:43:15.
+        source_messages (int): Number of messages received from the source system.
+        cdf_input_values (int): Destination resources successfully transformed and passed to CDF.
+        cdf_requests (int): Requests made to CDF containing data produced by this job.
+        transform_failures (int): Source messages that failed to transform.
+        cdf_write_failures (int): Times the destination received data from transformations, but failed to produce a valid request to CDF.
+        cdf_skipped_values (int): Values the destination received from the source, then decided to skip due to data type mismatch, invalid content, or other.
+        cdf_failed_values (int): Values the destination was unable to upload to CDF.
+        cdf_uploaded_values (int): Values the destination successfully uploaded to CDF.
+
+    """
+
+    def __init__(
+        self,
+        job_external_id: str,
+        timestamp: int,
+        source_messages: int,
+        cdf_input_values: int,
+        cdf_requests: int,
+        transform_failures: int,
+        cdf_write_failures: int,
+        cdf_skipped_values: int,
+        cdf_failed_values: int,
+        cdf_uploaded_values: int,
+    ) -> None:
+        self.job_external_id = job_external_id
+        self.timestamp = timestamp
+        self.source_messages = source_messages
+        self.cdf_input_values = cdf_input_values
+        self.cdf_requests = cdf_requests
+        self.transform_failures = transform_failures
+        self.cdf_write_failures = cdf_write_failures
+        self.cdf_skipped_values = cdf_skipped_values
+        self.cdf_failed_values = cdf_failed_values
+        self.cdf_uploaded_values = cdf_uploaded_values
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_external_id=resource["jobExternalId"],
+            timestamp=resource["timestamp"],
+            source_messages=resource["sourceMessages"],
+            cdf_input_values=resource["cdfInputValues"],
+            cdf_requests=resource["cdfRequests"],
+            transform_failures=resource["transformFailures"],
+            cdf_write_failures=resource["cdfWriteFailures"],
+            cdf_skipped_values=resource["cdfSkippedValues"],
+            cdf_failed_values=resource["cdfFailedValues"],
+            cdf_uploaded_values=resource["cdfUploadedValues"],
+        )
+
+
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in JobFormat.__subclasses__()
