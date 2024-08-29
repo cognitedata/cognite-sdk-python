@@ -66,3 +66,30 @@ class TestSources:
         res = cognite_client.hosted_extractors.sources.list(limit=1)
         assert len(res) == 1
         assert isinstance(res, SourceList)
+
+    def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
+        my_hub = EventHubSourceWrite(
+            external_id=f"toupdatate-{random_string(10)}",
+            host="myHost",
+            key_name="myKeyName",
+            key_value="myKey",
+            event_hub_name="myEventHub",
+        )
+        created: EventHubSource | None = None
+        try:
+            created = cognite_client.hosted_extractors.sources.create(my_hub)
+
+            my_new_hub = EventHubSourceWrite(
+                external_id=created.external_id,
+                host="updatedHost",
+                key_name="updatedKeyName",
+                key_value="updatedKey",
+                event_hub_name="updatedEventHub",
+            )
+
+            updated = cognite_client.hosted_extractors.sources.update(my_new_hub)
+
+            assert updated.host == my_new_hub.host
+        finally:
+            if created:
+                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)

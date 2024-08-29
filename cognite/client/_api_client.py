@@ -1038,7 +1038,12 @@ class APIClient:
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
                 patch_objects.append(
-                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(item), mode)
+                    self._convert_resource_to_patch_object(
+                        item,
+                        update_cls._get_update_properties(item),
+                        mode,
+                        update_cls._get_extra_identifying_properties(item),
+                    )
                 )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))
@@ -1218,6 +1223,7 @@ class APIClient:
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        identifying_properties: dict[str, Any] | None = None,
     ) -> dict[str, dict[str, dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
@@ -1232,6 +1238,9 @@ class APIClient:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
+
+        if identifying_properties:
+            patch_object.update(identifying_properties)
 
         update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
 

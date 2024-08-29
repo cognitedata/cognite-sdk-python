@@ -101,6 +101,7 @@ class AnnotationsAPI(APIClient):
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        identifying_properties: dict[str, Any] | None = None,
     ) -> dict[str, dict[str, dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)

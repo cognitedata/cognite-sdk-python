@@ -114,6 +114,18 @@ class SourceUpdate(CogniteUpdate, ABC):
         output["type"] = self._type
         return output
 
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        if item is None or not isinstance(item, SourceWrite):
+            return []
+        return _SOURCE_UPDATE_BY_TYPE[item._type]._get_update_properties(item)
+
+    @classmethod
+    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
+        if not isinstance(item, SourceWrite):
+            return {}
+        return {"type": item._type}
+
 
 class EventHubSourceWrite(SourceWrite):
     """A hosted extractor source represents an external source system on the internet.
@@ -602,6 +614,12 @@ _SOURCE_WRITE_CLASS_BY_TYPE: dict[str, type[SourceWrite]] = {
 _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
     subclass._type: subclass  # type: ignore[type-abstract, misc]
     for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
+    if hasattr(subclass, "_type")
+}
+
+_SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
+    subclass._type: subclass  # type: ignore[type-abstract, misc]
+    for subclass in itertools.chain(SourceUpdate.__subclasses__(), _MQTTUpdate.__subclasses__())
     if hasattr(subclass, "_type")
 }
 
