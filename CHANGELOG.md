@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.55.2] - 2024-08-29
+### Added
+- [Feature Preview - beta] Support for `client.hosted_extractors.sources`.
+
 ## [7.55.1] - 2024-08-29
 ### Fixed
 - Missing exports for workflow triggers 
