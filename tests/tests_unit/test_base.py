@@ -195,7 +195,7 @@ class TestCogniteObject:
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
-            if cls not in {Source, Destination}
+            if cls not in {Destination} and not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
