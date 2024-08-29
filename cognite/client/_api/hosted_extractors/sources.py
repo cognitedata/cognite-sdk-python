@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.hosted_extractors.sources import Source, SourceList, SourceWrite
+from cognite.client.data_classes.hosted_extractors.sources import Source, SourceList, SourceUpdate, SourceWrite
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -152,6 +152,38 @@ class SourcesAPI(APIClient):
             resource_cls=Source,  # type: ignore[type-abstract]
             items=items,  # type: ignore[arg-type]
             input_resource_cls=SourceWrite,  # type: ignore[arg-type]
+        )
+
+    @overload
+    def update(self, items: SourceWrite | SourceUpdate) -> Source: ...
+
+    @overload
+    def update(self, items: Sequence[SourceWrite | SourceUpdate]) -> SourceList: ...
+
+    def update(self, items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]) -> Source | SourceList:
+        """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
+
+        Args:
+            items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Space | Sequence[Space]): Source(s) to update.
+
+        Returns:
+            Source | SourceList: Updated source(s)
+
+        Examples:
+
+            Update source:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
+                >>> client = CogniteClient()
+                >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
+                >>> res = client.hosted_extractors.sources.update(source)
+        """
+        return self._update_multiple(
+            items=items,  # type: ignore[arg-type]
+            list_cls=SourceList,
+            resource_cls=Source,  # type: ignore[type-abstract]
+            update_cls=SourceUpdate,  # type: ignore[type-abstract]
         )
 
     def list(

@@ -1,12 +1,16 @@
 from cognite.client.data_classes.hosted_extractors.sources import (
     EventHubSource,
+    EventHubSourceUpdate,
     EventHubSourceWrite,
     MQTT3Source,
+    MQTT3SourceUpdate,
     MQTT3SourceWrite,
     MQTT5Source,
+    MQTT5SourceUpdate,
     MQTT5SourceWrite,
     Source,
     SourceList,
+    SourceUpdate,
     SourceWrite,
     SourceWriteList,
 )
@@ -22,4 +26,8 @@ __all__ = [
     "SourceList",
     "SourceWrite",
     "SourceWriteList",
+    "SourceUpdate",
+    "MQTT3SourceUpdate",
+    "MQTT5SourceUpdate",
+    "EventHubSourceUpdate",
 ]

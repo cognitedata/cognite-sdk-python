@@ -534,7 +534,7 @@ class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: None | str | int | bool) -> T_CogniteUpdate:
+    def _set(self, value: None | str | int | bool | dict) -> T_CogniteUpdate:
         if value is None:
             self._update_object._set_null(self._name)
         else:

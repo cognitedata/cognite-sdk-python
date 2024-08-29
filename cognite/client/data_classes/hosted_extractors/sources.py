@@ -9,9 +9,12 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
+    CogniteUpdate,
     ExternalIDTransformerMixin,
+    PropertySpec,
     T_WriteClass,
     UnknownCogniteObject,
     WriteableCogniteResource,
@@ -96,6 +99,18 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
         return cast(Self, source_class._load(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["type"] = self._type
+        return output
+
+
+class SourceUpdate(CogniteUpdate, ABC):
+    _type: ClassVar[str]
+
+    def __init__(self, external_id: str) -> None:
+        super().__init__(external_id=external_id)
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
         return output
@@ -191,6 +206,48 @@ class EventHubSource(Source):
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
         return fast_dict_load(cls, resource, None)
+
+
+class EventHubSourceUpdate(SourceUpdate):
+    _type = "eventHub"
+
+    class _PrimitiveEventHubSourceUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> EventHubSourceUpdate:
+            return self._set(value)
+
+    class _PrimitiveNullableEventHubSourceUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str | None) -> EventHubSourceUpdate:
+            return self._set(value)
+
+    @property
+    def host(self) -> _PrimitiveEventHubSourceUpdate:
+        return EventHubSourceUpdate._PrimitiveEventHubSourceUpdate(self, "host")
+
+    @property
+    def event_hub_name(self) -> _PrimitiveEventHubSourceUpdate:
+        return EventHubSourceUpdate._PrimitiveEventHubSourceUpdate(self, "eventHubName")
+
+    @property
+    def key_name(self) -> _PrimitiveEventHubSourceUpdate:
+        return EventHubSourceUpdate._PrimitiveEventHubSourceUpdate(self, "keyName")
+
+    @property
+    def key_value(self) -> _PrimitiveEventHubSourceUpdate:
+        return EventHubSourceUpdate._PrimitiveEventHubSourceUpdate(self, "keyValue")
+
+    @property
+    def consumer_group(self) -> _PrimitiveNullableEventHubSourceUpdate:
+        return EventHubSourceUpdate._PrimitiveNullableEventHubSourceUpdate(self, "consumerGroup")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("host", is_nullable=False),
+            PropertySpec("event_hub_name", is_nullable=False),
+            PropertySpec("key_name", is_nullable=False),
+            PropertySpec("key_value", is_nullable=False),
+            PropertySpec("consumer_group", is_nullable=True),
+        ]
 
 
 @dataclass
@@ -417,6 +474,67 @@ class _MQTTSource(Source, ABC):
         return output
 
 
+class _MQTTUpdate(SourceUpdate, ABC):
+    class _HostUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> _MQTTUpdate:
+            return self._set(value)
+
+    class _PortUpdate(CognitePrimitiveUpdate):
+        def set(self, value: int | None) -> _MQTTUpdate:
+            return self._set(value)
+
+    class _AuthenticationUpdate(CognitePrimitiveUpdate):
+        def set(self, value: MQTTAuthentication | None) -> _MQTTUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _UseTlsUpdate(CognitePrimitiveUpdate):
+        def set(self, value: bool) -> _MQTTUpdate:
+            return self._set(value)
+
+    class _CACertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: CACertificate | None) -> _MQTTUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _AuthCertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: AuthCertificate | None) -> _MQTTUpdate:
+            return self._set(value.dump() if value else None)
+
+    @property
+    def host(self) -> _HostUpdate:
+        return _MQTTUpdate._HostUpdate(self, "host")
+
+    @property
+    def port(self) -> _PortUpdate:
+        return _MQTTUpdate._PortUpdate(self, "port")
+
+    @property
+    def authentication(self) -> _AuthenticationUpdate:
+        return _MQTTUpdate._AuthenticationUpdate(self, "authentication")
+
+    @property
+    def useTls(self) -> _UseTlsUpdate:
+        return _MQTTUpdate._UseTlsUpdate(self, "useTls")
+
+    @property
+    def ca_certificate(self) -> _CACertificateUpdate:
+        return _MQTTUpdate._CACertificateUpdate(self, "caCertificate")
+
+    @property
+    def auth_certificate(self) -> _AuthCertificateUpdate:
+        return _MQTTUpdate._AuthCertificateUpdate(self, "authCertificate")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("host", is_nullable=False),
+            PropertySpec("port", is_nullable=True),
+            PropertySpec("authentication", is_nullable=True, is_container=True),
+            PropertySpec("useTls", is_nullable=False),
+            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+        ]
+
+
 class MQTT3SourceWrite(_MQTTSourceWrite):
     _type = "mqtt3"
 
@@ -430,6 +548,14 @@ class MQTT3Source(_MQTTSource):
 
 
 class MQTT5Source(_MQTTSource):
+    _type = "mqtt5"
+
+
+class MQTT3SourceUpdate(_MQTTUpdate):
+    _type = "mqtt3"
+
+
+class MQTT5SourceUpdate(_MQTTUpdate):
     _type = "mqtt5"
 
 
