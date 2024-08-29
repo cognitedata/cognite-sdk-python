@@ -297,7 +297,7 @@ class MQTTAuthenticationWrite(CogniteObject, ABC):
         elif type_ is None:
             raise KeyError("type is required")
         try:
-            return cast(Self, _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE[type_])
+            return cast(Self, _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE[type_]._load_authentication(resource))
         except KeyError:
             raise TypeError(f"Unknown authentication type: {type_}")
 
@@ -385,11 +385,11 @@ class _MQTTSourceWrite(SourceWrite, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if self.authentication:
+        if isinstance(self.authentication, MQTTAuthenticationWrite):
             output["authentication"] = self.authentication.dump(camel_case)
-        if self.ca_certificate:
+        if isinstance(self.ca_certificate, CACertificateWrite):
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if self.auth_certificate:
+        if isinstance(self.auth_certificate, AuthCertificateWrite):
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
@@ -498,11 +498,11 @@ class _MQTTSource(Source, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if self.authentication:
+        if isinstance(self.authentication, MQTTAuthentication):
             output["authentication"] = self.authentication.dump(camel_case)
-        if self.ca_certificate:
+        if isinstance(self.ca_certificate, CACertificate):
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if self.auth_certificate:
+        if isinstance(self.auth_certificate, AuthCertificate):
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 

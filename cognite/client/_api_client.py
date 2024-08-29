@@ -106,6 +106,7 @@ class APIClient:
                     "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
                     "extpipes/(list|byids|runs/list)",
                     "workflows/.*",
+                    "hostedextractors/.*",
                 )
             )
         ]
