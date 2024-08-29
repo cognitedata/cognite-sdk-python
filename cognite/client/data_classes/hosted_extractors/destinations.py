@@ -66,7 +66,7 @@ class DestinationWrite(_DestinationCore):
             target_data_set_id=resource.get("targetDataSetId"),
         )
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.credentials, SessionWrite):
             output["credentials"] = self.credentials.dump(camel_case)
@@ -125,7 +125,7 @@ class Destination(_DestinationCore):
 
 class DestinationUpdate(CogniteUpdate):
     def __init__(self, external_id: str) -> None:
-        self.external_id = external_id
+        super().__init__(external_id=external_id)
 
     class _CredentialsUpdate(CognitePrimitiveUpdate):
         def set(self, value: SessionWrite | None) -> DestinationUpdate:
@@ -145,7 +145,7 @@ class DestinationUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        return [PropertySpec("credentials", is_nullable=True), PropertySpec("targetDataSetId", is_nullable=True)]
+        return [PropertySpec("credentials", is_nullable=True), PropertySpec("target_data_set_id", is_nullable=True)]
 
 
 class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTransformerMixin):
