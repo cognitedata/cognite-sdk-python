@@ -8,8 +8,12 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
+    CogniteUpdate,
     ExternalIDTransformerMixin,
+    PropertySpec,
     UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -259,6 +263,57 @@ class JobList(WriteableCogniteResourceList[JobWrite, Job], ExternalIDTransformer
 
     def as_write(self) -> JobWriteList:
         return JobWriteList([job.as_write() for job in self.data])
+
+
+class JobUpdate(CogniteUpdate):
+    def __init__(self, external_id: str) -> None:
+        super().__init__(external_id=external_id)
+
+    class _StringUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> JobUpdate:
+            return self._set(value)
+
+    class _FormatUpdate(CognitePrimitiveUpdate):
+        def set(self, value: JobFormat) -> JobUpdate:
+            return self._set(value.dump(camel_case=True))
+
+    class ConfigUpdate(CognitePrimitiveUpdate):
+        def set(self, value: JobConfig) -> JobUpdate:
+            return self._set(value.dump(camel_case=True))
+
+    class _TargetStatusUpdate(CognitePrimitiveUpdate):
+        def set(self, value: TargetStatus) -> JobUpdate:
+            return self._set(value)
+
+    @property
+    def destination_id(self) -> JobUpdate._StringUpdate:
+        return self._StringUpdate(self, "destinationId")
+
+    @property
+    def source_id(self) -> JobUpdate._StringUpdate:
+        return self._StringUpdate(self, "sourceId")
+
+    @property
+    def format(self) -> JobUpdate._FormatUpdate:
+        return self._FormatUpdate(self, "format")
+
+    @property
+    def target_status(self) -> JobUpdate._TargetStatusUpdate:
+        return self._TargetStatusUpdate(self, "targetStatus")
+
+    @property
+    def config(self) -> JobUpdate.ConfigUpdate:
+        return self.ConfigUpdate(self, "config")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("destination_id", is_nullable=False),
+            PropertySpec("source_id", is_nullable=False),
+            PropertySpec("format", is_nullable=False),
+            PropertySpec("target_status", is_nullable=False),
+            PropertySpec("config", is_nullable=False),
+        ]
 
 
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
