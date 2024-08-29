@@ -6,15 +6,27 @@ from typing import TYPE_CHECKING, Sequence, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.hosted_extractors.sources import Source, SourceList, SourceUpdate, SourceWrite
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    pass
+    from cognite.client import ClientConfig, CogniteClient
 
 
 class SourcesAPI(APIClient):
     _RESOURCE_PATH = "/hostedextractors/sources"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="beta", feature_name="Hosted Extractors"
+        )
+        self._CREATE_LIMIT = 100
+        self._LIST_LIMIT = 100
+        self._RETRIEVE_LIMIT = 100
+        self._DELETE_LIMIT = 100
+        self._UPDATE_LIMIT = 100
 
     @overload
     def __call__(
@@ -46,12 +58,15 @@ class SourcesAPI(APIClient):
         Returns:
             Iterator[Source] | Iterator[SourceList]: yields Source one by one if chunk_size is not specified, else SourceList objects.
         """
+        self._warning.warn()
+
         return self._list_generator(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            headers={"cdf-version": "beta"},
         )
 
     def __iter__(self) -> Iterator[Source]:
@@ -95,11 +110,13 @@ class SourcesAPI(APIClient):
                 >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEvenHubSource"], ignore_unknown_ids=True)
 
         """
+        self._warning.warn()
         return self._retrieve_multiple(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
+            headers={"cdf-version": "beta"},
         )
 
     def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool, force: bool) -> None:
@@ -117,10 +134,12 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.hosted_extractors.sources.delete(spaces=["myMQTTSource", "MyEvenHubSource"])
         """
+        self._warning.warn()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
+            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -148,11 +167,13 @@ class SourcesAPI(APIClient):
                 >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
                 >>> res = client.hosted_extractors.sources.create(source)
         """
+        self._warning.warn()
         return self._create_multiple(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             items=items,  # type: ignore[arg-type]
             input_resource_cls=SourceWrite,  # type: ignore[arg-type]
+            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -180,11 +201,13 @@ class SourcesAPI(APIClient):
                 >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
                 >>> res = client.hosted_extractors.sources.update(source)
         """
+        self._warning.warn()
         return self._update_multiple(
             items=items,  # type: ignore[arg-type]
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             update_cls=SourceUpdate,  # type: ignore[type-abstract]
+            headers={"cdf-version": "beta"},
         )
 
     def list(
@@ -221,9 +244,11 @@ class SourcesAPI(APIClient):
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
                 ...     source_list # do something with the spaces
         """
+        self._warning.warn()
         return self._list(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             method="GET",
             limit=limit,
+            headers={"cdf-version": "beta"},
         )
