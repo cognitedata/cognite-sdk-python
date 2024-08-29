@@ -5,7 +5,16 @@ from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.hosted_extractors.jobs import Job, JobList, JobUpdate, JobWrite
+from cognite.client.data_classes.hosted_extractors.jobs import (
+    Job,
+    JobList,
+    JobLog,
+    JobLogList,
+    JobMetric,
+    JobMetricList,
+    JobUpdate,
+    JobWrite,
+)
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -256,6 +265,96 @@ class JobsAPI(APIClient):
         return self._list(
             list_cls=JobList,
             resource_cls=Job,  # type: ignore[type-abstract]
+            method="GET",
+            limit=limit,
+            headers={"cdf-version": "beta"},
+        )
+
+    def list_logs(
+        self,
+        job: str | None = None,
+        source: str | None = None,
+        destination: str | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> JobLogList:
+        """`List job logs. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
+
+        Args:
+            job (str | None): Require returned logs to belong to the job given by this external ID.
+            source (str | None): Require returned logs to belong to the any job with source given by this external ID.
+            destination (str | None): Require returned logs to belong to the any job with destination given by this external ID.
+            limit (int | None): Maximum number of logs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+
+
+        Returns:
+            JobLogList: List of requested job logs
+
+        Examples:
+
+            Reqests logs for a specific job::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.hosted_extractors.jobs.list_logs(job="myJob")
+        """
+        self._warning.warn()
+        filter_: dict[str, Any] = {}
+        if job:
+            filter_["job"] = job
+        if source:
+            filter_["source"] = source
+        if destination:
+            filter_["destination"] = destination
+
+        return self._list(
+            list_cls=JobLogList,
+            resource_cls=JobLog,
+            filter=filter_ or None,
+            method="GET",
+            limit=limit,
+            headers={"cdf-version": "beta"},
+        )
+
+    def list_metrics(
+        self,
+        job: str | None = None,
+        source: str | None = None,
+        destination: str | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> JobMetricList:
+        """`List job metrics. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
+
+        Args:
+            job (str | None): Require returned metrics to belong to the job given by this external ID.
+            source (str | None): Require returned metrics to belong to the any job with source given by this external ID.
+            destination (str | None): Require returned metrics to belong to the any job with destination given by this external ID.
+            limit (int | None): Maximum number of metrics to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            JobMetricList: List of requested job metrics
+
+        Examples:
+
+            Reqests metrics for a specific job::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.hosted_extractors.jobs.list_metrics(job="myJob")
+        """
+        self._warning.warn()
+        filter_: dict[str, Any] = {}
+        if job:
+            filter_["job"] = job
+        if source:
+            filter_["source"] = source
+        if destination:
+            filter_["destination"] = destination
+
+        return self._list(
+            list_cls=JobMetricList,
+            resource_cls=JobMetric,
+            filter=filter_ or None,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},
