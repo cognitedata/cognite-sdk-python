@@ -65,10 +65,10 @@ class SourcesAPI(APIClient):
         return self()
 
     @overload
-    def retrieve(self, external_ids: str) -> Source: ...
+    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str]) -> SourceList: ...
+    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
@@ -99,6 +99,7 @@ class SourcesAPI(APIClient):
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             identifiers=IdentifierSequence.load(external_ids=external_ids),
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool, force: bool) -> None:
