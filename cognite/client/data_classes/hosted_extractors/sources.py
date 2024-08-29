@@ -53,10 +53,10 @@ class SourceWrite(CogniteResource, ABC):
             type_ = cls._type
         elif type_ is None:
             raise KeyError("type")
-        source_class = _SOURCE_WRITE_CLASS_BY_TYPE.get(type_)
-        if source_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
-        return cast(Self, source_class._load_source(resource))
+        try:
+            return cast(Self, _SOURCE_WRITE_CLASS_BY_TYPE[type_]._load_source(resource))
+        except KeyError:
+            raise TypeError(f"Unknown source type: {type_}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -284,10 +284,10 @@ class MQTTAuthenticationWrite(CogniteObject, ABC):
             type_ = cls._type
         elif type_ is None:
             raise KeyError("type is required")
-        authentication_class = _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE.get(type_)
-        if authentication_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
-        return cast(Self, authentication_class._load_authentication(resource))
+        try:
+            return cast(Self, _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE[type_])
+        except KeyError:
+            raise TypeError(f"Unknown authentication type: {type_}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
