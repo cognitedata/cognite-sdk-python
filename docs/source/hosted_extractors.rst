@@ -22,3 +22,25 @@ Retrieve sources
 Update sources
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.hosted_extractors.SourcesAPI.update
+
+Destinations
+-------------
+Create new destination
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.create
+
+Delete destinations
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.delete
+
+List destinations
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.list
+
+Retrieve destinations
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.retrieve
+
+Update destinations
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.update
