@@ -418,6 +418,14 @@ class JobMetric(CogniteResource):
         )
 
 
+class JobLogList(CogniteResourceList[JobLog]):
+    _RESOURCE = JobLog
+
+
+class JobMetricList(CogniteResourceList[JobMetric]):
+    _RESOURCE = JobMetric
+
+
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in JobFormat.__subclasses__()
