@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.55.1] - 2024-08-29
+### Fixed
+- Missing exports for workflow triggers 
+
 ## [7.55.0] - 2024-08-23
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
