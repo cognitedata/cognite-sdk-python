@@ -880,7 +880,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
-            key (Literal['id', 'external_id']): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
+            key (Literal["id", "external_id"]): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
             column_names (ColumnNames): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
             concat (bool): Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
 

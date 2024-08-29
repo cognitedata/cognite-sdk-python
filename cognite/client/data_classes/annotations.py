@@ -184,11 +184,11 @@ class AnnotationWrite(AnnotationCore):
     Args:
         annotation_type (AnnotationType): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
         data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
-        status (Literal['suggested', 'approved', 'rejected']): The status of the annotation, e.g. "suggested", "approved", "rejected".
+        status (Literal["suggested", "approved", "rejected"]): The status of the annotation, e.g. "suggested", "approved", "rejected".
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
         creating_user (str | None): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-        annotated_resource_type (Literal['file', 'threedmodel']): Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_type (Literal["file", "threedmodel"]): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int): The internal ID of the annotated resource.
     """
 
