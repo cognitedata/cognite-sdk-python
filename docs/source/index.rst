@@ -50,6 +50,7 @@ Contents
    contextualization
    documents
    data_ingestion
+   hosted_extractors
    data_organization
    transformations
    functions
