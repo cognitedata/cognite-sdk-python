@@ -197,6 +197,12 @@ class _JobCore(WriteableCogniteResource["JobWrite"]):
         self.format = format
         self.config = config
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["format"] = self.format.dump(camel_case)
+        output["config"] = self.config.dump(camel_case)
+        return output
+
 
 class JobWrite(_JobCore):
     """A hosted extractor job represents the running extractor.
@@ -314,7 +320,7 @@ class JobUpdate(CogniteUpdate):
         def set(self, value: JobFormat) -> JobUpdate:
             return self._set(value.dump(camel_case=True))
 
-    class ConfigUpdate(CognitePrimitiveUpdate):
+    class _ConfigUpdate(CognitePrimitiveUpdate):
         def set(self, value: JobConfig) -> JobUpdate:
             return self._set(value.dump(camel_case=True))
 
@@ -339,8 +345,8 @@ class JobUpdate(CogniteUpdate):
         return self._TargetStatusUpdate(self, "targetStatus")
 
     @property
-    def config(self) -> JobUpdate.ConfigUpdate:
-        return self.ConfigUpdate(self, "config")
+    def config(self) -> JobUpdate._ConfigUpdate:
+        return self._ConfigUpdate(self, "config")
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
