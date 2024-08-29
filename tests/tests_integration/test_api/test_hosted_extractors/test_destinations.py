@@ -101,7 +101,7 @@ class TestDestinations:
             created = cognite_client.hosted_extractors.destinations.create(my_dest)
 
             update = DestinationWrite(
-                external_id=f"toupdate-{random_string(10)}",
+                external_id=my_dest.external_id,
                 credentials=SessionWrite(nonce=new_session.nonce),
                 target_data_set_id=a_data_set.id,
             )
