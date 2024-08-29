@@ -8,8 +8,12 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
+    CogniteUpdate,
     ExternalIDTransformerMixin,
+    PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -117,6 +121,31 @@ class Destination(_DestinationCore):
 
     def as_write(self) -> DestinationWrite:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")
+
+
+class DestinationUpdate(CogniteUpdate):
+    def __init__(self, external_id: str) -> None:
+        self.external_id = external_id
+
+    class _CredentialsUpdate(CognitePrimitiveUpdate):
+        def set(self, value: SessionWrite | None) -> DestinationUpdate:
+            return self._set(value.dump(camel_case=True) if isinstance(value, SessionWrite) else value)
+
+    class _TargetDataSetIdUpdate(CognitePrimitiveUpdate):
+        def set(self, value: int | None) -> DestinationUpdate:
+            return self._set(value)
+
+    @property
+    def credentials(self) -> DestinationUpdate._CredentialsUpdate:
+        return self._CredentialsUpdate(self, "credentials")
+
+    @property
+    def target_data_set_id(self) -> DestinationUpdate._TargetDataSetIdUpdate:
+        return self._TargetDataSetIdUpdate(self, "targetDataSetId")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [PropertySpec("credentials", is_nullable=True), PropertySpec("targetDataSetId", is_nullable=True)]
 
 
 class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTransformerMixin):
