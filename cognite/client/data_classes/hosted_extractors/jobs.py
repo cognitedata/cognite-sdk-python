@@ -152,7 +152,20 @@ class CogniteFormat(JobFormat):
 
 
 @dataclass
-class JobConfig(CogniteObject, ABC): ...
+class JobConfig(CogniteObject, ABC):
+    @classmethod
+    @abstractmethod
+    def _load_config(cls, data: dict[str, Any]) -> Self:
+        raise NotImplementedError()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "topicFilter" in resource:
+            return cast(Self, MQTTConfig._load_config(resource))
+        elif "topic" in resource:
+            return cast(Self, KafkaConfig._load_config(resource))
+        else:
+            return cast(Self, UnknownCogniteObject(resource))
 
 
 @dataclass
@@ -160,7 +173,7 @@ class MQTTConfig(JobConfig):
     topic_filter: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_config(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(topic_filter=resource["topicFilter"])
 
 
@@ -170,7 +183,7 @@ class KafkaConfig(JobConfig):
     partitions: int = 1
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_config(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(topic=resource["topic"], partitions=resource.get("partitions", 1))
 
 
@@ -204,6 +217,16 @@ class JobWrite(_JobCore):
 
     def as_write(self) -> JobWrite:
         return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> JobWrite:
+        return cls(
+            external_id=resource["externalId"],
+            destination_id=resource["destinationId"],
+            source_id=resource["sourceId"],
+            format=JobFormat._load(resource["format"]),
+            config=JobConfig._load(resource["config"]),
+        )
 
 
 class Job(_JobCore):
@@ -251,6 +274,20 @@ class Job(_JobCore):
             source_id=self.source_id,
             format=self.format,
             config=self.config,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Job:
+        return cls(
+            external_id=resource["externalId"],
+            destination_id=resource["destinationId"],
+            source_id=resource["sourceId"],
+            format=JobFormat._load(resource["format"]),
+            target_status=resource["targetStatus"],
+            status=resource["status"],
+            config=JobConfig._load(resource["config"]),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
 
 
