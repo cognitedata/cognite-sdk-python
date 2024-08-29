@@ -181,7 +181,7 @@ class SourcesAPI(APIClient):
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             items=items,  # type: ignore[arg-type]
-            input_resource_cls=SourceWrite,  # type: ignore[arg-type]
+            input_resource_cls=SourceWrite,
             headers={"cdf-version": "beta"},
         )
 
@@ -215,7 +215,7 @@ class SourcesAPI(APIClient):
             items=items,  # type: ignore[arg-type]
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
-            update_cls=SourceUpdate,  # type: ignore[type-abstract]
+            update_cls=SourceUpdate,
             headers={"cdf-version": "beta"},
         )
 

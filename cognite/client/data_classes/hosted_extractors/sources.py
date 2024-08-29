@@ -618,15 +618,19 @@ _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
 }
 
 _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
-    subclass._type: subclass  # type: ignore[misc]
+    subclass._type: subclass
     for subclass in itertools.chain(SourceUpdate.__subclasses__(), _MQTTUpdate.__subclasses__())
     if hasattr(subclass, "_type")
 }
 
 _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[MQTTAuthenticationWrite]] = {
-    subclass._type: subclass for subclass in MQTTAuthenticationWrite.__subclasses__() if hasattr(subclass, "_type")
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in MQTTAuthenticationWrite.__subclasses__()
+    if hasattr(subclass, "_type")
 }
 
 _MQTTAUTHENTICATION_CLASS_BY_TYPE: dict[str, type[MQTTAuthentication]] = {
-    subclass._type: subclass for subclass in MQTTAuthentication.__subclasses__() if hasattr(subclass, "_type")
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in MQTTAuthentication.__subclasses__()
+    if hasattr(subclass, "_type")
 }
