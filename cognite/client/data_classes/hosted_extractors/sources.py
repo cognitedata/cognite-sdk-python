@@ -794,6 +794,165 @@ class KafkaSourceUpdate(SourceUpdate):
         ]
 
 
+class RestSourceWrite(SourceWrite):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the write/request format of the rest resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        host (str): Host or IP address to connect to.
+        scheme (Literal["http", "https"]): Type of connection to establish.
+        port (int): Port on server to connect to. Uses default ports based on the scheme if omitted.
+        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "rest"
+
+    def __init__(
+        self,
+        external_id: str,
+        host: str,
+        scheme: Literal["http", "https"],
+        port: int,
+        ca_certificate: CACertificateWrite | None = None,
+        auth_certificate: AuthCertificateWrite | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.host = host
+        self.scheme = scheme
+        self.port = port
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            scheme=resource["scheme"],
+            port=resource["port"],
+            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificateWrite):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificateWrite):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class RestSource(Source):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the read/response format of the rest resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        host (str): Host or IP address to connect to.
+        scheme (Literal["http", "https"]): Type of connection to establish.
+        port (int): Port on server to connect to. Uses default ports based on the scheme if omitted.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "rest"
+
+    def __init__(
+        self,
+        external_id: str,
+        host: str,
+        scheme: Literal["http", "https"],
+        port: int,
+        created_time: int,
+        last_updated_time: int,
+        ca_certificate: CACertificate | None = None,
+        auth_certificate: AuthCertificate | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.host = host
+        self.scheme = scheme
+        self.port = port
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            scheme=resource["scheme"],
+            port=resource["port"],
+            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            auth_certificate=AuthCertificate._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def as_write(self) -> RestSourceWrite:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificate):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificate):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class RestSourceUpdate(SourceUpdate):
+    _type = "rest"
+
+    class _HostUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> RestSourceUpdate:
+            return self._set(value)
+
+    class _SchemeUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Literal["http", "https"]) -> RestSourceUpdate:
+            return self._set(value)
+
+    class _PortUpdate(CognitePrimitiveUpdate):
+        def set(self, value: int) -> RestSourceUpdate:
+            return self._set(value)
+
+    @property
+    def host(self) -> _HostUpdate:
+        return RestSourceUpdate._HostUpdate(self, "host")
+
+    @property
+    def scheme(self) -> _SchemeUpdate:
+        return RestSourceUpdate._SchemeUpdate(self, "scheme")
+
+    @property
+    def port(self) -> _PortUpdate:
+        return RestSourceUpdate._PortUpdate(self, "port")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("host", is_nullable=False),
+            PropertySpec("scheme", is_nullable=False),
+            PropertySpec("port", is_nullable=False),
+        ]
+
+
 class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMixin):
     _RESOURCE = SourceWrite
 
