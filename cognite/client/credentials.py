@@ -171,9 +171,9 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     """OAuth credential provider for the device code login flow.
 
     Args:
+        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
         client_id (str): Your application's client id that allows device code flows.
         scopes (list[str]): A list of scopes.
-        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
         oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
@@ -199,9 +199,9 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     def __init__(
         self,
+        authority_url: str | None,
         client_id: str,
         scopes: list[str] = ["IDENTITY user_impersonation profile openid"],
-        authority_url: str | None = None,
         oauth_discovery_url: str | None = None,
         token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
