@@ -18,7 +18,7 @@ from cognite.client.utils._text import random_string
 def one_mapping(cognite_client: CogniteClient) -> Mapping:
     my_mapping = MappingWrite(
         external_id=f"myNewMapping-{random_string(10)}",
-        mapping=CustomMapping("some expression"),
+        mapping=CustomMapping("2 * 3"),
         published=False,
         input="json",
     )
@@ -35,7 +35,7 @@ class TestMappings:
     def test_create_update_retrieve_delete(self, cognite_client: CogniteClient) -> None:
         my_mapping = MappingWrite(
             external_id=f"myNewMappingForTesting-{random_string(10)}",
-            mapping=CustomMapping("select * from table"),
+            mapping=CustomMapping("2 * 3"),
             published=False,
             input="xml",
         )
@@ -48,8 +48,8 @@ class TestMappings:
             assert updated.published is True
             retrieved = cognite_client.hosted_extractors.mappings.retrieve(created.external_id)
             assert retrieved is not None
-            assert retrieved.external_id == created.external_id
-            assert retrieved.published == created.published
+            assert retrieved.external_id == my_mapping.external_id
+            assert retrieved.published == updated.published
 
             cognite_client.hosted_extractors.mappings.delete(created.external_id)
 
@@ -70,10 +70,10 @@ class TestMappings:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_mapping = MappingWrite(
-            external_id=f"myNewMappingTestingForUpdate-{random_string(10)}",
-            mapping=CustomMapping("select * from table"),
+            external_id=f"myMappingForUpdate-{random_string(10)}",
+            mapping=CustomMapping("2 * 3"),
             published=False,
-            input="csv",
+            input="xml",
         )
         created: Mapping | None = None
         try:
@@ -81,7 +81,7 @@ class TestMappings:
 
             update = MappingWrite(
                 external_id=my_mapping.external_id,
-                mapping=CustomMapping("select * from table"),
+                mapping=CustomMapping("2 * 3"),
                 published=True,
                 input="json",
             )
