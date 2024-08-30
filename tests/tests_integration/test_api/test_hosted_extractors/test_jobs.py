@@ -10,6 +10,8 @@ from cognite.client.data_classes.hosted_extractors import (
     EventHubSourceWrite,
     Job,
     JobList,
+    JobLogsList,
+    JobMetricsList,
     JobUpdate,
     JobWrite,
     SessionWrite,
@@ -151,3 +153,11 @@ class TestJobs:
         finally:
             if created:
                 cognite_client.hosted_extractors.jobs.delete(created.external_id, ignore_unknown_ids=True)
+
+    def test_list_logs(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.hosted_extractors.jobs.list_logs(limit=1)
+        assert isinstance(res, JobLogsList)
+
+    def test_list_metrics(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.hosted_extractors.jobs.list_metrics(limit=1)
+        assert isinstance(res, JobMetricsList)

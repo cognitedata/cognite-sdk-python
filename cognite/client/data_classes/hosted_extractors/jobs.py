@@ -361,7 +361,7 @@ class JobUpdate(CogniteUpdate):
         ]
 
 
-class JobLog(CogniteResource):
+class JobLogs(CogniteResource):
     """Logs for a hosted extractor job.
 
     Args:
@@ -397,7 +397,7 @@ class JobLog(CogniteResource):
         self.message = message
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> JobLog:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> JobLogs:
         return cls(
             job_external_id=resource["jobExternalId"],
             type=resource["type"],
@@ -406,7 +406,7 @@ class JobLog(CogniteResource):
         )
 
 
-class JobMetric(CogniteResource):
+class JobMetrics(CogniteResource):
     """Metrics for a hosted extractor job.
 
     Args:
@@ -463,12 +463,12 @@ class JobMetric(CogniteResource):
         )
 
 
-class JobLogList(CogniteResourceList[JobLog]):
-    _RESOURCE = JobLog
+class JobLogsList(CogniteResourceList[JobLogs]):
+    _RESOURCE = JobLogs
 
 
-class JobMetricList(CogniteResourceList[JobMetric]):
-    _RESOURCE = JobMetric
+class JobMetricsList(CogniteResourceList[JobMetrics]):
+    _RESOURCE = JobMetrics
 
 
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {

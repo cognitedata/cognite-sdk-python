@@ -8,10 +8,10 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.hosted_extractors.jobs import (
     Job,
     JobList,
-    JobLog,
-    JobLogList,
-    JobMetric,
-    JobMetricList,
+    JobLogs,
+    JobLogsList,
+    JobMetrics,
+    JobMetricsList,
     JobUpdate,
     JobWrite,
 )
@@ -276,7 +276,7 @@ class JobsAPI(APIClient):
         source: str | None = None,
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> JobLogList:
+    ) -> JobLogsList:
         """`List job logs. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
 
         Args:
@@ -288,7 +288,7 @@ class JobsAPI(APIClient):
 
 
         Returns:
-            JobLogList: List of requested job logs
+            JobLogsList: List of requested job logs
 
         Examples:
 
@@ -308,8 +308,8 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
-            list_cls=JobLogList,
-            resource_cls=JobLog,
+            list_cls=JobLogsList,
+            resource_cls=JobLogs,
             filter=filter_ or None,
             method="GET",
             limit=limit,
@@ -322,7 +322,7 @@ class JobsAPI(APIClient):
         source: str | None = None,
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> JobMetricList:
+    ) -> JobMetricsList:
         """`List job metrics. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
 
         Args:
@@ -332,7 +332,7 @@ class JobsAPI(APIClient):
             limit (int | None): Maximum number of metrics to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            JobMetricList: List of requested job metrics
+            JobMetricsList: List of requested job metrics
 
         Examples:
 
@@ -352,8 +352,8 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
-            list_cls=JobMetricList,
-            resource_cls=JobMetric,
+            list_cls=JobMetricsList,
+            resource_cls=JobMetrics,
             filter=filter_ or None,
             method="GET",
             limit=limit,
