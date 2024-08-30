@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.55.2] - 2024-08-29
 ### Fixed
-- Turn workflow_orchestration into data_workflows and add trigger doc 
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
 
 ## [7.55.1] - 2024-08-29
 ### Fixed
