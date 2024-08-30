@@ -86,6 +86,13 @@ class ProtoBufInput(InputMapping):
             files=[ProtoBufFile._load(file) for file in resource["files"]],
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "type": self._type,
+            "messageName" if camel_case else "message_name": self.message_name,
+            "files": [file.dump(camel_case) for file in self.files],
+        }
+
 
 @dataclass
 class CSVInput(InputMapping):
