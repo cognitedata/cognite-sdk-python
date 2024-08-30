@@ -604,6 +604,21 @@ class KafkaBroker(CogniteObject):
 
 
 class KafkaSourceWrite(SourceWrite):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the write/request format of the kafka resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
+        authentication (AuthenticationWrite | None): Authentication information for the kafka source.
+        useTls (bool): If true, use TLS when connecting to the broker.
+        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
     _type = "kafka"
 
     def __init__(
@@ -652,6 +667,23 @@ class KafkaSourceWrite(SourceWrite):
 
 
 class KafkaSource(Source):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the read/response format of the kafka resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        authentication (MQTTAuthentication | None): Authentication information for the kafka source.
+        useTls (bool): If true, use TLS when connecting to the broker.
+        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
     _type = "kafka"
 
     def __init__(
