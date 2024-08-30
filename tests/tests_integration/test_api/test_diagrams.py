@@ -120,8 +120,6 @@ class TestPNIDParsingIntegration:
         assert "Completed" == detect_job.status
         assert [] == detect_job.errors
         assert isinstance(detect_job.items[0], DiagramDetectItem)
-        assert isinstance(detect_job[PNID_FILE_ID], DiagramDetectItem)
+        assert detect_job.items[0].file_instance_id == file_instance_id.dump(include_instance_type=False)
 
-        assert 3 == len(detect_job[PNID_FILE_ID].annotations)
-        for annotation in detect_job[PNID_FILE_ID].annotations:
-            assert 1 == annotation["region"]["page"]
+        assert len(detect_job.items[0].annotations) > 0

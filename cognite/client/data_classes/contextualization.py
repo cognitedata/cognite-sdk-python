@@ -477,6 +477,7 @@ class DiagramDetectItem(CogniteResource):
         self,
         file_id: int | None = None,
         file_external_id: str | None = None,
+        file_instance_id: dict[str, str] | None = None,
         annotations: list | None = None,
         error_message: str | None = None,
         cognite_client: CogniteClient | None = None,
@@ -485,6 +486,7 @@ class DiagramDetectItem(CogniteResource):
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
+        self.file_instance_id = file_instance_id
         self.annotations = annotations
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
