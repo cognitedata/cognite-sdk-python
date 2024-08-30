@@ -178,9 +178,9 @@ class MappingsAPI(APIClient):
             Create new mapping:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
+                >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> mapping = MappingWrite("my_mapping", CustomMapping("some expression"), True, "json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         self._warning.warn()
