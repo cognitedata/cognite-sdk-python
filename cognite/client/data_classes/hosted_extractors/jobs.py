@@ -189,7 +189,7 @@ class KafkaConfig(JobConfig):
 
 class _JobCore(WriteableCogniteResource["JobWrite"]):
     def __init__(
-        self, external_id: str, destination_id: str, source_id: str, format: JobFormat, config: JobConfig
+        self, external_id: str, destination_id: str, source_id: str, format: JobFormat, config: JobConfig | None = None
     ) -> None:
         self.external_id = external_id
         self.destination_id = destination_id
@@ -200,7 +200,8 @@ class _JobCore(WriteableCogniteResource["JobWrite"]):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["format"] = self.format.dump(camel_case)
-        output["config"] = self.config.dump(camel_case)
+        if isinstance(self.config, JobConfig):
+            output["config"] = self.config.dump(camel_case)
         return output
 
 
@@ -217,7 +218,8 @@ class JobWrite(_JobCore):
         source_id (str): ID of the source this job should read from.
         format: The format of the messages from the source. This is used to convert
             messages coming from the source system to a format that can be inserted into CDF.
-        config: Configuration for the job. This is specific to the source system.
+        config: Configuration for the job. This must match the source. For example, if the source is MQTT,
+            this must be an MQTT configuration.
 
     """
 

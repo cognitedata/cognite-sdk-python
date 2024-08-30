@@ -6,13 +6,12 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.hosted_extractors import (
     CogniteFormat,
     Destination,
-    DestinationList,
     DestinationWrite,
     EventHubSourceWrite,
     Job,
+    JobList,
     JobUpdate,
     JobWrite,
-    MQTTConfig,
     SessionWrite,
     Source,
 )
@@ -69,7 +68,6 @@ def one_job(cognite_client: CogniteClient, one_source: Source, one_destination: 
         format=CogniteFormat(
             encoding="utf16",
         ),
-        config=MQTTConfig(""),
     )
     retrieved = cognite_client.hosted_extractors.jobs.retrieve(my_job.external_id, ignore_unknown_ids=True)
     if retrieved:
@@ -91,7 +89,6 @@ class TestJobs:
             format=CogniteFormat(
                 encoding="utf16",
             ),
-            config=MQTTConfig("mytopic"),
         )
         created: Job | None = None
         try:
@@ -121,7 +118,7 @@ class TestJobs:
     def test_list(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.hosted_extractors.jobs.list(limit=1)
         assert len(res) == 1
-        assert isinstance(res, DestinationList)
+        assert isinstance(res, JobList)
 
     def test_update_using_write_object(
         self, cognite_client: CogniteClient, one_destination: Destination, one_source: Source
@@ -133,7 +130,6 @@ class TestJobs:
             format=CogniteFormat(
                 encoding="utf16",
             ),
-            config=MQTTConfig("mytopic"),
         )
         created: Job | None = None
         try:
@@ -146,7 +142,6 @@ class TestJobs:
                 format=CogniteFormat(
                     encoding="utf16le",
                 ),
-                config=MQTTConfig("mytopic"),
             )
 
             updated = cognite_client.hosted_extractors.jobs.update(update)
