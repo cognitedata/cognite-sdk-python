@@ -233,7 +233,7 @@ class JobWrite(_JobCore):
             destination_id=resource["destinationId"],
             source_id=resource["sourceId"],
             format=JobFormat._load(resource["format"]),
-            config=JobConfig._load(resource["config"]),
+            config=JobConfig._load(resource["config"]) if "config" in resource else None,
         )
 
 
@@ -251,9 +251,9 @@ class Job(_JobCore):
         format (JobFormat): The format of the messages from the source. This is used to convert messages coming from the source system to a format that can be inserted into CDF.
         target_status (TargetStatus): The target status of a job. Set this to start or stop the job.
         status (Status): Status of this job.
-        config (JobConfig): Configuration for the job. This is specific to the source system.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        config (JobConfig | None): Configuration for the job. This is specific to the source system.
 
     """
 
@@ -265,9 +265,9 @@ class Job(_JobCore):
         format: JobFormat,
         target_status: TargetStatus,
         status: Status,
-        config: JobConfig,
         created_time: int,
         last_updated_time: int,
+        config: JobConfig | None = None,
     ) -> None:
         super().__init__(external_id, destination_id, source_id, format, config)
         self.target_status = target_status
@@ -293,7 +293,7 @@ class Job(_JobCore):
             format=JobFormat._load(resource["format"]),
             target_status=resource["targetStatus"],
             status=resource["status"],
-            config=JobConfig._load(resource["config"]),
+            config=JobConfig._load(resource["config"]) if "config" in resource else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
