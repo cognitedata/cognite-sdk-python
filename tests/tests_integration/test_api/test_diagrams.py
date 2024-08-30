@@ -9,8 +9,11 @@ from cognite.client.data_classes.contextualization import (
     DiagramDetectResults,
     FileReference,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 
 PNID_FILE_ID = 3261066797848581
+DIAGRAM_SPACE = "diagram_space"
+DM_FILE_EXTERNAL_ID = "diagrams_test_pnid.pdf"
 
 ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
@@ -103,3 +106,22 @@ class TestPNIDParsingIntegration:
 
         assert len(detected_by_resource_type["file_reference"]) >= 10  # 14 seen when making the test
         assert len(detected_by_resource_type["instrument"]) >= 60  # 72 seen when making the test
+
+    def test_run_diagram_detect_with_file_instance_id(self, cognite_client):
+        entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
+
+        file_instance_id = NodeId(space=DIAGRAM_SPACE, external_id=DM_FILE_EXTERNAL_ID)
+        detect_job = cognite_client.diagrams.detect(file_instance_ids=[file_instance_id], entities=entities)
+        assert isinstance(detect_job, DiagramDetectResults)
+        assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
+            detect_job.result
+        )
+        assert {"fileId", "annotations"}.issubset(detect_job.result["items"][0])
+        assert "Completed" == detect_job.status
+        assert [] == detect_job.errors
+        assert isinstance(detect_job.items[0], DiagramDetectItem)
+        assert isinstance(detect_job[PNID_FILE_ID], DiagramDetectItem)
+
+        assert 3 == len(detect_job[PNID_FILE_ID].annotations)
+        for annotation in detect_job[PNID_FILE_ID].annotations:
+            assert 1 == annotation["region"]["page"]

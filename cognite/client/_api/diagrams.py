@@ -113,7 +113,7 @@ class DiagramsAPI(APIClient):
             file_references, FileReference, "file_references must be FileReference or list of FileReference"
         )
         # Handle empty lists
-        if not (external_ids or ids or file_references):
+        if not (external_ids or ids or instance_ids or file_references):
             raise ValueError("No ids, external ids or file references specified")
 
         id_objs = [{"fileId": id} for id in ids]
