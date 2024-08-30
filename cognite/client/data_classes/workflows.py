@@ -1381,26 +1381,33 @@ class WorkflowTriggerRun(CogniteResource):
 
     def __init__(
         self,
-        trigger_external_id: str,
-        trigger_fire_time: int,
+        external_id: str,
+        fire_time: int,
         workflow_external_id: str,
         workflow_version: str,
         workflow_execution_id: str,
+        status: Literal["success", "failed"],
+        reason_for_failure: str | None = None,
     ) -> None:
-        self.trigger_external_id = trigger_external_id
-        self.trigger_fire_time = trigger_fire_time
+        self.external_id = external_id
+        self.fire_time = fire_time
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
         self.workflow_execution_id = workflow_execution_id
+        self.status = status
+        self.reason_for_failure = reason_for_failure
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
-            "external_id": self.trigger_external_id,
-            "fire_time": self.trigger_fire_time,
+            "external_id": self.external_id,
+            "fire_time": self.fire_time,
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
             "workflow_execution_id": self.workflow_execution_id,
+            "status": self.status,
         }
+        if self.reason_for_failure:
+            item["reason_for_failure"] = self.reason_for_failure
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1408,11 +1415,13 @@ class WorkflowTriggerRun(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
         return cls(
-            trigger_external_id=resource["externalId"],
-            trigger_fire_time=resource["fireTime"],
+            external_id=resource["externalId"],
+            fire_time=resource["fireTime"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
             workflow_execution_id=resource["workflowExecutionId"],
+            status=resource["status"],
+            reason_for_failure=resource.get("reasonForFailure"),
         )
 
 
