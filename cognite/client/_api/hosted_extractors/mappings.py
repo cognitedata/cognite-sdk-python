@@ -216,7 +216,7 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
-                >>> mapping = MappingUpdate('my_dest').target_data_set_id.set(123)
+                >>> mapping = MappingUpdate('my_mapping').published(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         self._warning.warn()

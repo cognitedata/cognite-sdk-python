@@ -75,3 +75,25 @@ Retrieve destinations
 Update destinations
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.update
+
+Mappings
+-------------
+Create new mapping
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.create
+
+Delete mappings
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.delete
+
+List mappings
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.list
+
+Retrieve mappings
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.retrieve
+
+Update mappings
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.update
