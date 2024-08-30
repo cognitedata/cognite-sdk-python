@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
@@ -590,6 +591,175 @@ class MQTT3SourceUpdate(_MQTTUpdate):
 
 class MQTT5SourceUpdate(_MQTTUpdate):
     _type = "mqtt5"
+
+
+@dataclass
+class KafkaBroker(CogniteObject):
+    host: str
+    port: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(host=resource["host"], port=resource["port"])
+
+
+class KafkaSourceWrite(SourceWrite):
+    _type = "kafka"
+
+    def __init__(
+        self,
+        external_id: str,
+        bootstrap_brokers: Sequence[KafkaBroker],
+        authentication: AuthenticationWrite | None = None,
+        useTls: bool = False,
+        ca_certificate: CACertificateWrite | None = None,
+        auth_certificate: AuthCertificateWrite | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.bootstrap_brokers = bootstrap_brokers
+        self.authentication = authentication
+        self.useTls = useTls
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
+            authentication=AuthenticationWrite._load(resource["authentication"])
+            if "authentication" in resource
+            else None,
+            useTls=resource.get("useTls", False),
+            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
+            broker.dump(camel_case) for broker in self.bootstrap_brokers
+        ]
+        if isinstance(self.authentication, AuthenticationWrite):
+            output["authentication"] = self.authentication.dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificateWrite):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificateWrite):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class KafkaSource(Source):
+    _type = "kafka"
+
+    def __init__(
+        self,
+        external_id: str,
+        bootstrap_brokers: Sequence[KafkaBroker],
+        created_time: int,
+        last_updated_time: int,
+        authentication: MQTTAuthentication | None = None,
+        useTls: bool = False,
+        ca_certificate: CACertificate | None = None,
+        auth_certificate: AuthCertificate | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.bootstrap_brokers = bootstrap_brokers
+        self.authentication = authentication
+        self.useTls = useTls
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
+            authentication=MQTTAuthentication._load(resource["authentication"])
+            if "authentication" in resource
+            else None,
+            useTls=resource.get("useTls", False),
+            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificate._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+        )
+
+    def as_write(self) -> KafkaSourceWrite:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
+            broker.dump(camel_case) for broker in self.bootstrap_brokers
+        ]
+        if isinstance(self.authentication, MQTTAuthentication):
+            output["authentication"] = self.authentication.dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificate):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificate):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class KafkaSourceUpdate(SourceUpdate):
+    _type = "kafka"
+
+    class _BootstrapBrokersUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Sequence[KafkaBroker]) -> KafkaSourceUpdate:
+            return self._set([broker.dump() for broker in value])
+
+    class _AuthenticationUpdate(CognitePrimitiveUpdate):
+        def set(self, value: MQTTAuthentication | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _UseTlsUpdate(CognitePrimitiveUpdate):
+        def set(self, value: bool) -> KafkaSourceUpdate:
+            return self._set(value)
+
+    class _CACertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: CACertificate | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _AuthCertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: AuthCertificate | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    @property
+    def bootstrap_brokers(self) -> _BootstrapBrokersUpdate:
+        return KafkaSourceUpdate._BootstrapBrokersUpdate(self, "bootstrapBrokers")
+
+    @property
+    def authentication(self) -> _AuthenticationUpdate:
+        return KafkaSourceUpdate._AuthenticationUpdate(self, "authentication")
+
+    @property
+    def useTls(self) -> _UseTlsUpdate:
+        return KafkaSourceUpdate._UseTlsUpdate(self, "useTls")
+
+    @property
+    def ca_certificate(self) -> _CACertificateUpdate:
+        return KafkaSourceUpdate._CACertificateUpdate(self, "caCertificate")
+
+    @property
+    def auth_certificate(self) -> _AuthCertificateUpdate:
+        return KafkaSourceUpdate._AuthCertificateUpdate(self, "authCertificate")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("bootstrap_brokers", is_nullable=False),
+            PropertySpec("authentication", is_nullable=True, is_container=True),
+            PropertySpec("useTls", is_nullable=False),
+            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+        ]
 
 
 class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMixin):
