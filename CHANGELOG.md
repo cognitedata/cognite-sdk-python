@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.56.0] - 2024-08-30
+### Added
+- Support for referencing files by instance id when running diagrams.detect
+
 ## [7.55.1] - 2024-08-29
 ### Fixed
 - Missing exports for workflow triggers 
