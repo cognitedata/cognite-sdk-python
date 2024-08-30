@@ -171,10 +171,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     """OAuth credential provider for the device code login flow.
 
     Args:
-        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
         client_id (str): Your application's client id that allows device code flows.
         scopes (list[str]): A list of scopes.
-        oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found
+        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
+        oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
@@ -199,9 +199,9 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     def __init__(
         self,
-        authority_url: str | None,
         client_id: str,
-        scopes: list[str],
+        scopes: list[str] = ["IDENTITY user_impersonation profile openid"],
+        authority_url: str | None = None,
         oauth_discovery_url: str | None = None,
         token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
@@ -345,50 +345,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
-    def default(
-        cls,
-        oidc_discovery_url: str,
-        cdf_cluster: str,
-        client_id: str,
-        token_cache_path: Path | None = None,
-        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
-        clear_cache: bool = False,
-        mem_cache_only: bool = False,
-    ) -> OAuthDeviceCode:
-        """
-        Create an OAuthDeviceCode instance for a generic identity provider with defaults.
-
-        The default configuration uses
-
-        * Scopes: ["IDENTITY user_impersonation"]
-
-        Args:
-            oidc_discovery_url (str): No description.
-            cdf_cluster (str): The CDF cluster where the CDF project is located.
-            client_id (str): Your application's client id that is configured for device code flow.
-            token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-            clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
-            mem_cache_only (bool): If True, the token cache will only be stored in memory. Default: False
-        Returns:
-            OAuthDeviceCode: An OAuthDeviceCode instance
-        """
-        return cls(
-            authority_url=None,
-            oidc_discovery_url=oidc_discovery_url,
-            client_id=client_id,
-            scopes=["IDENTITY user_impersonation"],
-            token_cache_path=token_cache_path,
-            token_expiry_leeway_seconds=token_expiry_leeway_seconds,
-            clear_cache=clear_cache,
-            mem_cache_only=mem_cache_only,
-            audience=f"https://{cdf_cluster}.cognitedata.com",
-        )
-
-    @classmethod
     def default_for_azure_ad(
         cls,
         tenant_id: str,
+        client_id: str,
         cdf_cluster: str,
         token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
@@ -407,6 +367,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         Args:
             tenant_id (str): The Azure tenant id
+            client_id (str): An app registration that allows device code flow.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
             token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
             token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
@@ -417,10 +378,12 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
-            client_id="fb9d503b-ac25-44c7-a75d-8fbcd3a206bd",  # Default application for CDF API for device code flow
+            client_id=client_id,  # Default application for CDF API for device code flow
             scopes=[
                 f"https://{cdf_cluster}.cognitedata.com/IDENTITY",
                 f"https://{cdf_cluster}.cognitedata.com/user_impersonation",
+                "profile",
+                "openid",
             ],
             token_cache_path=token_cache_path,
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
