@@ -281,7 +281,7 @@ class EventHubSourceUpdate(SourceUpdate):
 
 
 @dataclass
-class MQTTAuthenticationWrite(CogniteObject, ABC):
+class AuthenticationWrite(CogniteObject, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -308,7 +308,7 @@ class MQTTAuthenticationWrite(CogniteObject, ABC):
 
 
 @dataclass
-class BasicMQTTAuthenticationWrite(MQTTAuthenticationWrite):
+class BasicMQTTAuthenticationWrite(AuthenticationWrite):
     _type = "basic"
     username: str
     password: str | None
@@ -354,7 +354,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         external_id: str,
         host: str,
         port: int | None = None,
-        authentication: MQTTAuthenticationWrite | None = None,
+        authentication: AuthenticationWrite | None = None,
         useTls: bool = False,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
@@ -373,7 +373,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=MQTTAuthenticationWrite._load(resource["authentication"])
+            authentication=AuthenticationWrite._load(resource["authentication"])
             if "authentication" in resource
             else None,
             useTls=resource.get("useTls", False),
@@ -385,7 +385,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.authentication, MQTTAuthenticationWrite):
+        if isinstance(self.authentication, AuthenticationWrite):
             output["authentication"] = self.authentication.dump(camel_case)
         if isinstance(self.ca_certificate, CACertificateWrite):
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
@@ -623,9 +623,9 @@ _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
     if hasattr(subclass, "_type")
 }
 
-_MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[MQTTAuthenticationWrite]] = {
+_MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in MQTTAuthenticationWrite.__subclasses__()
+    for subclass in AuthenticationWrite.__subclasses__()
     if hasattr(subclass, "_type")
 }
 
