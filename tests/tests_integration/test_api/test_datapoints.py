@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import itertools
 import math
+import platform
 import random
 import re
 import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
-from typing import Callable, Literal
+from sys import version_info
+from typing import Callable, Iterator, Literal
 from unittest.mock import patch
 
 import numpy as np
@@ -36,6 +38,8 @@ from cognite.client.data_classes import (
     TimeSeriesList,
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space, ViewId
+from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
+from cognite.client.data_classes.data_modeling.spaces import SpaceApply
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import InstanceId
@@ -405,6 +409,50 @@ def dps_queries_dst_transitions(all_test_time_series):
             timezone=ZoneInfo(oslo),
         ),
     ]
+
+
+@pytest.fixture(scope="session")
+def space_for_time_series(cognite_client) -> Iterator[Space]:
+    name = "PySDK-DMS-time-series-integration-test"
+    space = SpaceApply(name, name=name.replace("-", " "))
+    yield cognite_client.data_modeling.spaces.apply(space)
+
+
+@pytest.fixture(scope="session")
+def ts_create_in_dms(cognite_client, space_for_time_series) -> NodeApplyResult:
+    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
+
+    dms_ts = CogniteTimeSeriesApply(
+        space=space_for_time_series.space,
+        # One per test runner, per OS, to avoid conflicts:
+        external_id=f"dms-time-series-{platform.system()}-{'-'.join(map(str, version_info[:2]))}",
+        is_step=True,
+        type_="numeric",
+    )
+    (dms_ts_node,) = cognite_client.data_modeling.instances.apply(dms_ts).nodes
+    return dms_ts_node
+
+
+class TestTimeSeriesCreatedInDMS:
+    def test_insert_read_delete_dps(self, cognite_client, ts_create_in_dms):
+        # Ensure the DMS time series is retrievable from normal TS API:
+        inst_id = ts_create_in_dms.as_id()
+        ts = cognite_client.time_series.retrieve(instance_id=inst_id)
+        assert ts.instance_id == inst_id
+
+        numbers = random_cognite_ids(3)
+        datapoints = [
+            (datetime(2018, 1, 1, tzinfo=timezone.utc), numbers[0]),
+            (datetime(2018, 1, 2, tzinfo=timezone.utc), numbers[1], StatusCode.Good),
+            (datetime(2018, 1, 3, tzinfo=timezone.utc), numbers[2], StatusCode.Uncertain),
+        ]
+        cognite_client.time_series.data.insert(datapoints, instance_id=inst_id)
+
+        dps1 = cognite_client.time_series.data.retrieve(instance_id=inst_id, ignore_bad_datapoints=False)
+        assert dps1.instance_id == inst_id
+        dps2 = cognite_client.time_series.data.retrieve(id=ts.id, ignore_bad_datapoints=False)
+
+        assert dps1.value == dps2.value == numbers
 
 
 class TestRetrieveRawDatapointsAPI:

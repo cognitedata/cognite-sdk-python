@@ -5,8 +5,8 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
-from cognite.client.data_classes.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.data_modeling import Space
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
