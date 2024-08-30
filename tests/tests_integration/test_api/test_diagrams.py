@@ -116,7 +116,7 @@ class TestPNIDParsingIntegration:
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
             detect_job.result
         )
-        assert {"fileId", "annotations"}.issubset(detect_job.result["items"][0])
+        assert {"fileId", "fileInstanceId", "annotations"}.issubset(detect_job.result["items"][0])
         assert "Completed" == detect_job.status
         assert [] == detect_job.errors
         assert isinstance(detect_job.items[0], DiagramDetectItem)
