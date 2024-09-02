@@ -373,12 +373,13 @@ class FileReference:
             raise ValueError("If the page range feature is used, both first page and last page must be set")
 
     def to_api_item(self) -> dict[str, str | int | dict[str, int] | dict[str, str]]:
-        if self.file_id is None and self.file_external_id is not None:
+        if self.file_id is None and self.file_external_id is not None and self.file_instance_id is None:
             item: dict[str, str | int | dict[str, int] | dict[str, str]] = {"fileExternalId": self.file_external_id}
-        if self.file_id is not None and self.file_external_id is None:
+        if self.file_id is not None and self.file_external_id is None and self.file_instance_id is None:
             item = {"fileId": self.file_id}
-        if self.file_instance_id is not None:
+        if self.file_id is None and self.file_external_id is None and self.file_instance_id is not None:
             item = {"fileInstanceId": self.file_instance_id.dump(include_instance_type=False)}
+
         if self.first_page is not None and self.last_page is not None:
             item["pageRange"] = {"begin": self.first_page, "end": self.last_page}
         return item

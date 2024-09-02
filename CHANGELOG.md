@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.56.0] - 2024-08-30
+## [7.56.0] - 2024-09-02
 ### Added
 - Support for referencing files by instance id when running diagrams.detect
+
+## [7.55.2] - 2024-08-29
+### Fixed
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
 
 ## [7.55.1] - 2024-08-29
 ### Fixed
