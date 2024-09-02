@@ -49,7 +49,7 @@ class SourcesAPI(APIClient):
     ) -> Iterator[Source] | Iterator[SourceList]:
         """Iterate over sources
 
-        Fetches sources as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches sources as they are iterated over, so you keep a limited number of sources in memory.
 
         Args:
             chunk_size (int | None): Number of sources to return in each chunk. Defaults to yielding one source a time.
@@ -72,7 +72,7 @@ class SourcesAPI(APIClient):
     def __iter__(self) -> Iterator[Source]:
         """Iterate over sources
 
-        Fetches sources as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches sources as they are iterated over, so you keep a limited number of sources in memory.
 
         Returns:
             Iterator[Source]: yields Source one by one.
@@ -92,7 +92,7 @@ class SourcesAPI(APIClient):
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): No description.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
             Source | SourceList: Requested sources
@@ -103,11 +103,11 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
 
-            Get multiple spaces by id:
+            Get multiple sources by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEvenHubSource"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True)
 
         """
         self._warning.warn()
@@ -126,15 +126,15 @@ class SourcesAPI(APIClient):
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): No description.
-            force (bool): No description.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
+            force (bool): Delete any jobs associated with each item.
         Examples:
 
             Delete sources by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.hosted_extractors.sources.delete(spaces=["myMQTTSource", "MyEvenHubSource"])
+                >>> client.hosted_extractors.sources.delete(["myMQTTSource", "MyEventHubSource"])
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
@@ -146,7 +146,6 @@ class SourcesAPI(APIClient):
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
-            returns_items=False,
             headers={"cdf-version": "beta"},
             extra_body_fields=extra_body_fields or None,
         )
@@ -161,7 +160,7 @@ class SourcesAPI(APIClient):
         """`Create one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_
 
         Args:
-            items (SourceWrite | Sequence[SourceWrite]): Space | Sequence[Space]): Source(s) to create.
+            items (SourceWrite | Sequence[SourceWrite]): Source(s) to create.
 
         Returns:
             Source | SourceList: Created source(s)
@@ -195,7 +194,7 @@ class SourcesAPI(APIClient):
         """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
 
         Args:
-            items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Space | Sequence[Space]): Source(s) to update.
+            items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Source(s) to update.
 
         Returns:
             Source | SourceList: Updated source(s)
@@ -237,7 +236,7 @@ class SourcesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.sources.list(limit=5)
+                >>> source_list = client.hosted_extractors.sources.list(limit=5)
 
             Iterate over sources::
 
@@ -251,7 +250,7 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
-                ...     source_list # do something with the spaces
+                ...     source_list # do something with the sources
         """
         self._warning.warn()
         return self._list(
