@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.55.3] - 2024-08-29
+## [7.55.3] - 2024-09-02
 ### Fixed
 - [Feature Preview - alpha] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
  can be null or missing, as according to the API spec.
