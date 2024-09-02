@@ -67,10 +67,11 @@ def diagram_node(cognite_client: CogniteClient, pnid_file_id: int, diagram_space
         .as_id()
     )
 
+    node_file = cognite_client.files.retrieve(instance_id=diagram_node_id)
     # Create the file if not existing already
-    if cognite_client.files.retrieve(instance_id=diagram_node_id) is None:
+    if node_file is None or node_file.uploaded is False:
         cognite_client.files.upload_content_bytes(
-            content=cognite_client.files.download_bytes(file_id=file.id), instance_id=diagram_node.instance_id
+            content=cognite_client.files.download_bytes(id=file.id), instance_id=diagram_node_id
         )
     return diagram_node_id
 
