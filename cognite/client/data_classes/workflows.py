@@ -314,6 +314,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
             ("cdfRequest" if camel_case else "cdf_request"): output,
         }
 
+
 class SubworkflowTaskParameters(WorkflowTaskParameters):
     """
     The subworkflow task parameters are used to specify a subworkflow task.
@@ -324,14 +325,19 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
     - a reference to another workflow  which will be loaded in at workflow start time (defined by an external ID and version).
 
     Args:
-        tasks (list[WorkflowTask], optional): The tasks belonging to the subworkflow.
-        workflow_external_id (str, optional): The external ID of the referenced workflow.
-        version (str, optional): The version of the referenced workflow.
+        tasks (list[WorkflowTask] | None): The tasks belonging to the subworkflow.
+        workflow_external_id (str | None): The external ID of the referenced workflow.
+        version (str | None): The version of the referenced workflow.
     """
 
     task_type = "subworkflow"
 
-    def __init__(self, tasks: list[WorkflowTask] = None, workflow_external_id: str = None, version: str = None) -> None:
+    def __init__(
+        self,
+        tasks: list[WorkflowTask] | None = None,
+        workflow_external_id: str | None = None,
+        version: str | None = None,
+    ) -> None:
         if tasks:
             self.tasks = tasks
             self.workflow_external_id = None
@@ -352,10 +358,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
                 tasks=[WorkflowTask._load(task) for task in subworkflow["tasks"]],
             )
         elif "workflowExternalId" in subworkflow and "version" in subworkflow:
-            return cls(
-                workflow_external_id=subworkflow["workflowExternalId"],
-                version=subworkflow["version"]
-            )
+            return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
         else:
             raise ValueError("Invalid subworkflow parameters provided.")
 
