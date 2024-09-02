@@ -76,6 +76,13 @@ class TestFunctionsAPI:
         else:
             assert False, "Expected at least one function"
 
+    def test_call_function_with_oneshot(self, cognite_client: CogniteClient, a_function: Function) -> None:
+        session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
+
+        response = cognite_client.functions.call(id=a_function.id, wait=True, nonce=session.nonce)
+
+        assert response.status == "Completed"
+
 
 class TestFunctionSchedulesAPI:
     def test_create_retrieve_delete(self, cognite_client: CogniteClient, a_function: Function) -> None:

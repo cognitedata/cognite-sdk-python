@@ -17,6 +17,20 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.55.2] - 2024-08-29
+### Fixed
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
+
+## [7.55.1] - 2024-08-29
+### Fixed
+- Missing exports for workflow triggers 
+
+## [7.55.0] - 2024-08-23
+### Added
+- Support for creating a session using a one-shot token in the `client.iam.session.create` method.
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing 
+  a custom nonce instead of letting the SDK generate it from your current credentials.
+
 ## [7.54.19] - 2024-08-23
 ### Added
 - [Feature Preview - beta] Support for `client.workflows.triggers`.

@@ -53,7 +53,7 @@ Contents
    data_organization
    transformations
    functions
-   workflow_orchestration
+   data_workflows
    unit_catalog
    filters
    deprecated
