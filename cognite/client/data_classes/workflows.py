@@ -136,8 +136,10 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
-        elif type_ == "subworkflow":
+        elif type_ == "subworkflow" and "tasks" in parameters["subworkflow"]:
             return SubworkflowTaskParameters._load(parameters)
+        elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
+            return SubworkflowReferenceParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -319,61 +321,61 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
     """
     The subworkflow task parameters are used to specify a subworkflow task.
 
-    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience.
-    It takes either:
-    - a list of tasks that is statically defined on the workflow definition
-    - a reference to another workflow  which will be loaded in at workflow start time (defined by an external ID and version).
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience. It takes the tasks parameter which is an array of
+    function, transformation, cdf, ..., task definitions. This array needs to be statically set on the workflow definition (if it needs to be defined at runtime, use a
+    dynamic task).
 
     Args:
-        tasks (list[WorkflowTask] | None): The tasks belonging to the subworkflow.
-        workflow_external_id (str | None): The external ID of the referenced workflow.
-        version (str | None): The version of the referenced workflow.
+        tasks (list[WorkflowTask]): The tasks belonging to the subworkflow.
     """
 
     task_type = "subworkflow"
 
-    def __init__(
-        self,
-        tasks: list[WorkflowTask] | None = None,
-        workflow_external_id: str | None = None,
-        version: str | None = None,
-    ) -> None:
-        if tasks:
-            self.tasks = tasks
-            self.workflow_external_id = None
-            self.version = None
-        elif workflow_external_id and version:
-            self.workflow_external_id = workflow_external_id
-            self.version = version
-            self.tasks = None
-        else:
-            raise ValueError("Either 'tasks' or both 'workflow_external_id' and 'version' must be provided.")
+    def __init__(self, tasks: list[WorkflowTask]) -> None:
+        self.tasks = tasks
 
     @classmethod
     def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
-        if "tasks" in subworkflow:
-            return cls(
-                tasks=[WorkflowTask._load(task) for task in subworkflow["tasks"]],
-            )
-        elif "workflowExternalId" in subworkflow and "version" in subworkflow:
-            return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
-        else:
-            raise ValueError("Invalid subworkflow parameters provided.")
+        return cls(
+            [WorkflowTask._load(task) for task in subworkflow["tasks"]],
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if self.tasks is not None:
-            return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
-        elif self.workflow_external_id and self.version:
-            return {
-                self.task_type: {
-                    "workflowExternalId": self.workflow_external_id,
-                    "version": self.version,
-                }
+        return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
+
+
+class SubworkflowReferenceParameters(WorkflowTaskParameters):
+    """
+    The subworkflow task parameters are used to specify a subworkflow task.
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience.
+    The subworkflow reference is used to specifying a reference to another workflow which will be embedded into the execution at start time.
+
+    Args:
+        workflow_external_id (str): The external ID of the referenced workflow.
+        version (str): The version of the referenced workflow.
+    """
+
+    task_type = "subworkflow"
+
+    def __init__(self, workflow_external_id: str, version: str) -> None:
+        self.workflow_external_id = workflow_external_id
+        self.version = version
+
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            self.task_type: {
+                "workflowExternalId": self.workflow_external_id,
+                "version": self.version,
             }
-        else:
-            raise ValueError("Either 'tasks' or both 'workflow_external_id' and 'version' must be provided.")
+        }
 
 
 class DynamicTaskParameters(WorkflowTaskParameters):
