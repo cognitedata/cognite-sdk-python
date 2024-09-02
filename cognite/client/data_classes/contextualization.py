@@ -368,7 +368,7 @@ class FileReference:
         self.last_page = last_page
 
         if not exactly_one_is_not_none(file_id, file_external_id, file_instance_id):
-            raise ValueError("File references must have xactly one of file_id, file_external_id and file_instance_id.")
+            raise ValueError("File references must have exactly one of file_id, file_external_id and file_instance_id.")
         if exactly_one_is_not_none(first_page, last_page):
             raise ValueError("If the page range feature is used, both first page and last page must be set")
 
