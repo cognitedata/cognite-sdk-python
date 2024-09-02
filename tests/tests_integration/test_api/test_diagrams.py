@@ -12,16 +12,29 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeId, NodeOrEdgeData, Space, SpaceApply, ViewId
 
-PNID_FILE_ID = 3261066797848581
+PNID_FILE_EXTERNAL_ID = "mypnid.pdf" ""
+DIAGRAM_SPACE = "diagram_space"
 
 CDM_SPACE = "cdf_cdm"
 COGNITE_FILE = "CogniteFile"
 
-DIAGRAM_SPACE = "diagram_space"
-DM_FILE_EXTERNAL_ID = "diagrams_test_pnid.pdf"
-
 ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
+
+
+@pytest.fixture(scope="session")
+def pnid_file_id(cognite_client: CogniteClient) -> int:
+    file = cognite_client.files.retrieve(external_id=PNID_FILE_EXTERNAL_ID)
+
+    if file is None:
+        file = cognite_client.files.upload(
+            path="tests/data/mypnid.pdf",
+            external_id=PNID_FILE_EXTERNAL_ID,
+            name="mypnid.pdf",
+            mime_type="application/pdf",
+        )
+        cognite_client.files.upload()
+    return file.id
 
 
 @pytest.fixture(scope="session")
@@ -30,16 +43,15 @@ def diagram_space(cognite_client: CogniteClient) -> Space:
 
 
 @pytest.fixture(scope="session")
-def diagram_node(cognite_client: CogniteClient, diagram_space: Space) -> NodeId:
-    file = cognite_client.files.retrieve(id=PNID_FILE_ID)  # Assuming the original file exists
-
+def diagram_node(cognite_client: CogniteClient, pnid_file_id: int, diagram_space: Space) -> NodeId:
+    file = cognite_client.files.retrieve(id=pnid_file_id)
     assert file is not None
 
     diagram_node_id = (
         cognite_client.data_modeling.instances.apply(
             NodeApply(
                 space=diagram_space.space,
-                external_id=DM_FILE_EXTERNAL_ID,
+                external_id=PNID_FILE_EXTERNAL_ID,
                 sources=[
                     NodeOrEdgeData(
                         source=ViewId(space=CDM_SPACE, external_id=COGNITE_FILE, version="v1"),
@@ -65,10 +77,10 @@ def diagram_node(cognite_client: CogniteClient, diagram_space: Space) -> NodeId:
 
 class TestPNIDParsingIntegration:
     @pytest.mark.skip
-    def test_run_diagram_detect(self, cognite_client):
+    def test_run_diagram_detect(self, cognite_client: CogniteClient, pnid_file_id: int):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
-        file_id = PNID_FILE_ID
-        detect_job = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities)
+
+        detect_job = cognite_client.diagrams.detect(file_ids=[pnid_file_id], entities=entities)
         assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
             detect_job.result
@@ -77,10 +89,10 @@ class TestPNIDParsingIntegration:
         assert "Completed" == detect_job.status
         assert [] == detect_job.errors
         assert isinstance(detect_job.items[0], DiagramDetectItem)
-        assert isinstance(detect_job[PNID_FILE_ID], DiagramDetectItem)
+        assert isinstance(detect_job[pnid_file_id], DiagramDetectItem)
 
-        assert 3 == len(detect_job[PNID_FILE_ID].annotations)
-        for annotation in detect_job[PNID_FILE_ID].annotations:
+        assert 3 == len(detect_job[pnid_file_id].annotations)
+        for annotation in detect_job[pnid_file_id].annotations:
             assert 1 == annotation["region"]["page"]
 
         convert_job = detect_job.convert()
@@ -91,14 +103,14 @@ class TestPNIDParsingIntegration:
         assert {"pngUrl", "svgUrl", "page"}.issubset(convert_job.result["items"][0]["results"][0])
         assert "Completed" == convert_job.status
 
-        for res_page in convert_job[PNID_FILE_ID].pages:
+        for res_page in convert_job[pnid_file_id].pages:
             assert 1 == res_page.page
             assert ".svg" in res_page.svg_url
             assert ".png" in res_page.png_url
 
         # Enable multiple jobs
         job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-            file_ids=[file_id], entities=entities, multiple_jobs=True
+            file_ids=[pnid_file_id], entities=entities, multiple_jobs=True
         )
         assert isinstance(job_bundle, DetectJobBundle)
         succeeded, failed = job_bundle.result
