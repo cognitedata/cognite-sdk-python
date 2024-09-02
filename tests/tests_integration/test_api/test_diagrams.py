@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
     DiagramConvertResults,
@@ -9,14 +10,57 @@ from cognite.client.data_classes.contextualization import (
     DiagramDetectResults,
     FileReference,
 )
-from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.data_modeling import NodeApply, NodeId, NodeOrEdgeData, Space, SpaceApply, ViewId
 
 PNID_FILE_ID = 3261066797848581
+
+CDM_SPACE = "cdf_cdm"
+COGNITE_FILE = "CogniteFile"
+
 DIAGRAM_SPACE = "diagram_space"
 DM_FILE_EXTERNAL_ID = "diagrams_test_pnid.pdf"
 
 ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
+
+
+@pytest.fixture(scope="session")
+def diagram_space(cognite_client: CogniteClient) -> Space:
+    return cognite_client.data_modeling.spaces.apply(SpaceApply(space=DIAGRAM_SPACE))
+
+
+@pytest.fixture(scope="session")
+def diagram_node(cognite_client: CogniteClient, diagram_space: Space) -> NodeId:
+    file = cognite_client.files.retrieve(id=PNID_FILE_ID)  # Assuming the original file exists
+
+    assert file is not None
+
+    diagram_node_id = (
+        cognite_client.data_modeling.instances.apply(
+            NodeApply(
+                space=diagram_space.space,
+                external_id=DM_FILE_EXTERNAL_ID,
+                sources=[
+                    NodeOrEdgeData(
+                        source=ViewId(space=CDM_SPACE, external_id=COGNITE_FILE, version="v1"),
+                        properties={
+                            "name": file.name,
+                            "mimeType": file.mime_type,
+                        },
+                    )
+                ],
+            )
+        )
+        .nodes[0]
+        .as_id()
+    )
+
+    # Create the file if not existing already
+    if cognite_client.files.retrieve(instance_id=diagram_node_id) is None:
+        cognite_client.files.upload_content_bytes(
+            content=cognite_client.files.download_bytes(file_id=file.id), instance_id=diagram_node.instance_id
+        )
+    return diagram_node_id
 
 
 class TestPNIDParsingIntegration:
@@ -107,11 +151,10 @@ class TestPNIDParsingIntegration:
         assert len(detected_by_resource_type["file_reference"]) >= 10  # 14 seen when making the test
         assert len(detected_by_resource_type["instrument"]) >= 60  # 72 seen when making the test
 
-    def test_run_diagram_detect_with_file_instance_id(self, cognite_client):
+    def test_run_diagram_detect_with_file_instance_id(self, cognite_client, diagram_node: NodeId):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
-        file_instance_id = NodeId(space=DIAGRAM_SPACE, external_id=DM_FILE_EXTERNAL_ID)
-        detect_job = cognite_client.diagrams.detect(file_instance_ids=[file_instance_id], entities=entities)
+        detect_job = cognite_client.diagrams.detect(file_instance_ids=[diagram_node], entities=entities)
         assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
             detect_job.result
@@ -120,6 +163,6 @@ class TestPNIDParsingIntegration:
         assert "Completed" == detect_job.status
         assert [] == detect_job.errors
         assert isinstance(detect_job.items[0], DiagramDetectItem)
-        assert detect_job.items[0].file_instance_id == file_instance_id.dump(include_instance_type=False)
+        assert detect_job.items[0].file_instance_id == diagram_node.dump(include_instance_type=False)
 
         assert len(detect_job.items[0].annotations) > 0
