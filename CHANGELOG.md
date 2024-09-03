@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.55.3] - 2024-09-02
+## [7.56.1] - 2024-09-03
 ### Fixed
 - [Feature Preview - alpha] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
  can be null or missing, as according to the API spec.
+
+## [7.56.0] - 2024-09-02
+### Added
+- Support for referencing files by instance id when running diagrams.detect
 
 ## [7.55.2] - 2024-08-29
 ### Fixed
