@@ -32,8 +32,8 @@ class CredentialProvider(Protocol):
 
         Note:
             The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the
-            following strings: "token", "client_credentials", "interactive", "device_code", "client_certificate". The value of the key
-            is a dictionary containing the configuration for the credential provider.
+            following strings: ``"token"``, ``"client_credentials"``, ``"interactive"``, ``"device_code"``, ``"client_certificate"``.
+            The value of the key is a dictionary containing the configuration for the credential provider.
 
         Args:
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
