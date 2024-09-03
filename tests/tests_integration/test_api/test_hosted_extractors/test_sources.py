@@ -18,7 +18,7 @@ from cognite.client.utils._text import random_string
 @pytest.fixture(scope="session")
 def one_event_hub_source(cognite_client: CogniteClient) -> SourceList:
     my_hub = EventHubSourceWrite(
-        external_id=f"myNewHub-{random_string(10)}",
+        external_id=f"myNewHub-{platform.system()}-{platform.python_version()}",
         host="myHost",
         key_name="myKeyName",
         key_value="myKey",
@@ -70,7 +70,7 @@ class TestSources:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"to-update-{platform.system()}-{platform.python_version()}",
+            external_id=f"to-update-{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
