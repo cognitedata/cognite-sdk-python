@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.57.1] - 2024-09-03
+## [7.58.1] - 2024-09-03
 ### Fixed
 - [Feature Preview - beta] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
  can be null or missing, as according to the API spec.
+
+## [7.58.0] - 2024-09-03
+### Added
+- Data Workflows: add support for `SubworkflowReferenceParameters` subworkflow task type. Allowing embedding other workflows into a workflow.
 
 ## [7.57.0] - 2024-09-03
 ### Added
