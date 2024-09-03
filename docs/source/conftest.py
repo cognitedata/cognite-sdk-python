@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+# Files to exclude test directories or modules
 collect_ignore = ["conf.py"]
 
 

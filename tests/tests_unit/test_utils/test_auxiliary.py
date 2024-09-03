@@ -246,10 +246,7 @@ class TestLoadDictOrStr:
     def test_load_resource_to_dict(self, input, expected):
         assert expected == load_resource_to_dict(input)
 
-    @pytest.mark.parametrize(
-        "input",
-        ("foo", 100),
-    )
+    @pytest.mark.parametrize("input", ("foo", 100))
     def test_load_resource_to_dict_raises(self, input):
         with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
             load_resource_to_dict(input)

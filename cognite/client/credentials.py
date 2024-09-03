@@ -30,8 +30,13 @@ class CredentialProvider(Protocol):
     def load(cls, config: dict[str, Any] | str) -> CredentialProvider:
         """Load a credential provider object from a YAML/JSON string or dict.
 
+        Note:
+            The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the
+            following strings: "token", "client_credentials", "interactive", "device_code", "client_certificate". The value of the key
+            is a dictionary containing the configuration for the credential provider.
+
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider. Note: The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the following strings: "token", "client_credentials", "interactive", "device_code", "client_certificate". The value of the key is a dictionary containing the configuration for the credential provider.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
 
         Returns:
             CredentialProvider: Initialized credential provider of the specified type.
@@ -317,11 +322,12 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             >>> credentials = OAuthDeviceCode.load(config)
         """
         loaded = load_resource_to_dict(config)
+        token_cache_path = loaded.get("token_cache_path")
         return cls(
             authority_url=loaded["authority_url"],
             client_id=loaded["client_id"],
             scopes=loaded["scopes"],
-            token_cache_path=loaded.get("token_cache_path"),
+            token_cache_path=Path(token_cache_path) if token_cache_path else None,
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),
@@ -428,12 +434,13 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             >>> credentials = OAuthInteractive.load(config)
         """
         loaded = load_resource_to_dict(config)
+        token_cache_path = loaded.get("token_cache_path")
         return cls(
             authority_url=loaded["authority_url"],
             client_id=loaded["client_id"],
             scopes=loaded["scopes"],
             redirect_port=int(loaded.get("redirect_port", 53000)),
-            token_cache_path=Path(str(loaded.get("token_cache_path"))),
+            token_cache_path=Path(token_cache_path) if token_cache_path else None,
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),

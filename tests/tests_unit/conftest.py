@@ -7,6 +7,7 @@ import pytest
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
 
+# Files to exclude test directories or modules
 collect_ignore = ["test_api/function_test_resources"]
 
 

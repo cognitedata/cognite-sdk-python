@@ -84,17 +84,17 @@ class GlobalConfig:
         """
 
         loaded = load_resource_to_dict(settings).copy()  # doing a shallow copy to avoid mutating the user input config
-
-        if not loaded.keys() <= self.__dict__.keys():
+        current_settings = vars(self)
+        if not loaded.keys() <= current_settings.keys():
             raise ValueError(
-                f"One or more invalid keys provided for global_config, no settings applied: {set(loaded) - set(self.__dict__)}"
+                f"One or more invalid keys provided for global_config, no settings applied: {loaded.keys() - current_settings}"
             )
 
         if "default_client_config" in loaded:
             if not isinstance(loaded["default_client_config"], ClientConfig):
                 loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
 
-        vars(self).update(loaded)
+        current_settings.update(loaded)
 
 
 global_config = GlobalConfig()
