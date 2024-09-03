@@ -248,14 +248,14 @@ class TestTimestampStrToDatetime:
             ("2024-09-03T09:36:01.17+00:00", datetime(2024, 9, 3, 9, 36, 1, 170000, tzinfo=timezone.utc)),
         ],
     )
-    def test_valid_timestamp_str(self, timestamp_str: str, expected: datetime):
+    def test_valid_timestamp_str(self, timestamp_str: str, expected: datetime) -> None:
         assert expected == timestamp_str_to_datetime(timestamp_str)
 
     @pytest.mark.parametrize(
         "timestamp_str",
         ["2021-01-01T00:00:00.000", "2021-01-01T00:00:00.000+01:15:12", "2021-01-01T00:00:00.000+01:15:12:13"],
     )
-    def test_invalid_timestamp_str(self, timestamp_str):
+    def test_invalid_timestamp_str(self, timestamp_str: str) -> None:
         with pytest.raises(TypeError, match="Invalid timestamp format"):
             timestamp_str_to_datetime(timestamp_str)
 
