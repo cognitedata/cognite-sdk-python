@@ -9,7 +9,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client.utils._importing import local_import
@@ -187,19 +187,12 @@ def timestamp_str_to_datetime(timestamp: str) -> datetime:
     Returns:
         datetime: Datetime object
     """
-    return datetime.fromisoformat(timestamp)
-
-
-def date_str_to_date(date_str: str) -> date:
-    """Converts a date string in ISO 8601 format to a datetime object.
-
-    Args:
-        date_str (str): Date string in ISO 8601 format
-
-    Returns:
-        date: Datetime object
-    """
-    return datetime.fromisoformat(date_str)
+    try:
+        return datetime.fromisoformat(timestamp)
+    except ValueError:
+        # Typically hits if the timestamp is missing milliseconds
+        # For example, "2021-01-01T00:00:00.17+00:00", i.e. missing the last digit
+        return datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
 
 
 def split_granularity_into_quantity_and_normalized_unit(granularity: str) -> tuple[int, str]:
