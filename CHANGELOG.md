@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.57.0] - 2024-09-03
+### Added
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
+
 ## [7.56.0] - 2024-09-02
 ### Added
 - Support for referencing files by instance id when running diagrams.detect
@@ -27,12 +32,12 @@ Changes are grouped as follows
 
 ## [7.55.1] - 2024-08-29
 ### Fixed
-- Missing exports for workflow triggers 
+- Missing exports for workflow triggers
 
 ## [7.55.0] - 2024-08-23
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
-- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing 
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing
   a custom nonce instead of letting the SDK generate it from your current credentials.
 
 ## [7.54.19] - 2024-08-23
