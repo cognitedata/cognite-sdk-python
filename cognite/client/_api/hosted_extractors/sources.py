@@ -219,6 +219,18 @@ class SourcesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
+    @classmethod
+    def _convert_resource_to_patch_object(
+        cls,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> dict[str, dict[str, dict]]:
+        output = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
+        if hasattr(resource, "type"):
+            output["type"] = resource.type
+        return output
+
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -261,15 +273,3 @@ class SourcesAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
-
-    @classmethod
-    def _convert_resource_to_patch_object(
-        cls,
-        resource: CogniteResource,
-        update_attributes: list[PropertySpec],
-        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
-    ) -> dict[str, dict[str, dict]]:
-        output = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
-        if hasattr(resource, "type"):
-            output["type"] = resource.type
-        return output
