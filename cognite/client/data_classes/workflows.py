@@ -1420,8 +1420,8 @@ class WorkflowTriggerRun(CogniteResource):
         fire_time: int,
         workflow_external_id: str,
         workflow_version: str,
-        workflow_execution_id: str,
         status: Literal["success", "failed"],
+        workflow_execution_id: str | None = None,
         reason_for_failure: str | None = None,
     ) -> None:
         self.external_id = external_id
@@ -1438,9 +1438,10 @@ class WorkflowTriggerRun(CogniteResource):
             "fire_time": self.fire_time,
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
-            "workflow_execution_id": self.workflow_execution_id,
             "status": self.status,
         }
+        if self.workflow_execution_id:
+            item["workflow_execution_id"] = self.workflow_execution_id
         if self.reason_for_failure:
             item["reason_for_failure"] = self.reason_for_failure
         if camel_case:
@@ -1454,8 +1455,8 @@ class WorkflowTriggerRun(CogniteResource):
             fire_time=resource["fireTime"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
-            workflow_execution_id=resource["workflowExecutionId"],
             status=resource["status"],
+            workflow_execution_id=resource.get("workflowExecutionId"),
             reason_for_failure=resource.get("reasonForFailure"),
         )
 
