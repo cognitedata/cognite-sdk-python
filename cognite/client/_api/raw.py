@@ -398,7 +398,7 @@ class RawRowsAPI(APIClient):
 
         Note:
             When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
-            by halting retrival speed when the callers code can't keep up.
+            by halting retrieval speed when the callers code can't keep up.
         """
         if partitions is None or _RUNNING_IN_BROWSER:
             return self._list_generator(
