@@ -24,7 +24,7 @@ def one_event_hub_source(cognite_client: CogniteClient) -> SourceList:
         key_value="myKey",
         event_hub_name="myEventHub",
     )
-    retrieved = cognite_client.hosted_extractors.sources.retrieve(my_hub.external_id, ignore_unknown_ids=True)
+    retrieved = cognite_client.hosted_extractors.sources.retrieve([my_hub.external_id], ignore_unknown_ids=True)
     if retrieved:
         return retrieved
     return cognite_client.hosted_extractors.sources.create([my_hub])
