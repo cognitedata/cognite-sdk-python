@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import platform
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -68,7 +70,7 @@ class TestSources:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"to-update-{random_string(10)}",
+            external_id=f"to-update-{platform.system()}-{platform.python_version()}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
