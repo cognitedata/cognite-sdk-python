@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.hosted_extractors.sources import Source, SourceList, SourceUpdate, SourceWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -260,3 +261,15 @@ class SourcesAPI(APIClient):
             limit=limit,
             headers={"cdf-version": "beta"},
         )
+
+    @classmethod
+    def _convert_resource_to_patch_object(
+        cls,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> dict[str, dict[str, dict]]:
+        output = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
+        if hasattr(resource, "type"):
+            output["type"] = resource.type
+        return output
