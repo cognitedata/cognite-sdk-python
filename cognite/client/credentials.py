@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import atexit
 import inspect
+import json
 import tempfile
 import threading
 import time
 from abc import abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
@@ -166,6 +168,13 @@ class _WithMsalSerializableTokenCache:
             validate_authority=False,  # Turn off to support non-Entra authorities
         )
 
+    @staticmethod
+    def _get_cached_token(cache_path: Path) -> dict[str, Any]:
+        if not cache_path.exists():
+            return {}
+        token = json.loads(cache_path.read_text())
+        return token
+
 
 class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for the device code login flow.
@@ -269,6 +278,25 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     def scope_string(self) -> str:
         return " ".join(self.__scopes)
+
+    def _get_token(self, convert_timestamps: bool = True) -> dict[str, Any]:
+        """Return a dictionary with the current token and expiry time."""
+        if self._token_cache_path.exists():
+            token = self._get_cached_token(self._token_cache_path)
+        else:
+            if _app := getattr(self, f"_{type(self).__name__}__app", None):
+                if _app.token_cache.has_state_changed:
+                    with open(self._token_cache_path, "w+") as fh:
+                        fh.write(_app.token_cache.serialize())
+            token = self._get_cached_token(self._token_cache_path)
+
+        if convert_timestamps:
+            if "AccessToken" in token:
+                for key, value in token["AccessToken"].items():
+                    for subkey in ["expires_on", "extended_expires_on", "cached_at"]:
+                        if subkey in value:
+                            value[subkey] = datetime.fromtimestamp(int(value[subkey])).isoformat()
+        return token
 
     def _refresh_access_token(self) -> tuple[str, float]:
         # First check if a token cache exists on disk. If yes, find and use:
