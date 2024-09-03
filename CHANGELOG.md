@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.0] - 2024-09-03
+### Added
+- Data Workflows: add support for `SubworkflowReferenceParameters` subworkflow task type. Allowing embedding other workflows into a workflow.
+
 ## [7.57.0] - 2024-09-03
 ### Added
 - Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
