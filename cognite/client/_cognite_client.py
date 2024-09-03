@@ -16,6 +16,7 @@ from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI
@@ -71,6 +72,7 @@ class CogniteClient:
         self.templates = TemplatesAPI(self._config, self._API_VERSION, self)
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
+        self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
         self.transformations = TransformationsAPI(self._config, self._API_VERSION, self)
         self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
