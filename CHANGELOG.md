@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.58.4] - 2024-09-03
 ### Fixed
-- The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles missing milliseconds.
+- The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles truncated milliseconds.
 
 ## [7.58.3] - 2024-09-03
 ### Fixed
