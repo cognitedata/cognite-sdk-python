@@ -34,22 +34,22 @@ FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
 FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
 
 
-def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
-    if isinstance(filter_value, PropertyReferenceValue):
-        if isinstance(filter_value.property, EnumProperty):
-            return {"property": filter_value.property.as_reference()}
-        return {"property": filter_value.property}
+def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
+    if isinstance(value, PropertyReferenceValue):
+        if isinstance(value.property, EnumProperty):
+            return {"property": value.property.as_reference()}
+        return {"property": value.property}
 
-    elif isinstance(filter_value, ParameterValue):
-        return {"parameter": filter_value.parameter}
+    elif isinstance(value, ParameterValue):
+        return {"parameter": value.parameter}
 
-    elif hasattr(filter_value, "dump"):
-        return filter_value.dump()
+    elif hasattr(value, "dump"):
+        return value.dump()
 
-    elif isinstance(filter_value, Sequence):
-        return list(map(_dump_filter_value, filter_value))
+    elif isinstance(value, SequenceNotStr):
+        return list(map(_dump_filter_value, value))
 
-    return filter_value
+    return value
 
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
