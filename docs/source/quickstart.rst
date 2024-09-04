@@ -6,11 +6,15 @@ this quickstart we'll demonstrate the most common/recommended patterns. More det
 section: :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
 :ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`.
 
+.. warning::
+    Ensure that credentials are stored and handled securely by not hard-coding it or storing them in a text file. All the below examples
+    are using and referencing environment variables to store this sensitive information.
+
 Instantiate a new client from a configuration file
 --------------------------------------------------
 Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
 
-.. warning::
+.. note::
     How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method
     accepts both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
