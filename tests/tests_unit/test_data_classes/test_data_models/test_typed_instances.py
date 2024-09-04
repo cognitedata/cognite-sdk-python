@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from cognite.client.data_classes.data_modeling import DirectRelationReference, ViewId
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAssetApply, CogniteDescribableEdgeApply
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
@@ -262,3 +265,45 @@ class TestTypedEdge:
         assert flow.dump() == expected
         loaded = Flow.load(expected)
         assert flow.dump() == loaded.dump()
+
+
+@pytest.mark.parametrize(
+    "name, instance",
+    (
+        (
+            "CogniteAssetApply",
+            CogniteAssetApply(
+                space="foo",
+                external_id="child",
+                parent=("foo", "I-am-root"),
+            ),
+        ),
+        (
+            "CogniteDescribableEdgeApply",
+            CogniteDescribableEdgeApply(
+                space="foo",
+                external_id="indescribable",
+                type=DirectRelationReference("foo", "yo"),
+                start_node=DirectRelationReference("foo", "yo2"),
+                end_node=DirectRelationReference("foo", "yo3"),
+            ),
+        ),
+    ),
+)
+def test_typed_instances_overrides_inherited_methods_from_instance_cls(
+    name: str, instance: TypedNode | TypedEdge
+) -> None:
+    with pytest.raises(AttributeError, match=f"{name!r} object has no attribute 'get'"):
+        instance.get("space")
+
+    with pytest.raises(TypeError, match=f"{name!r} object is not subscriptable"):
+        instance["foo"]
+
+    with pytest.raises(TypeError, match=f"{name!r} object does not support item assignment"):
+        instance["foo"] = "bar"
+
+    with pytest.raises(TypeError, match=f"{name!r} object does not support item deletion"):
+        del instance["external_id"]
+
+    with pytest.raises(TypeError, match=f"argument of type {name!r} is not iterable"):
+        "foo" in instance
