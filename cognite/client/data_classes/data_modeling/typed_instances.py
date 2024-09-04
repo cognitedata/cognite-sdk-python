@@ -4,7 +4,7 @@ import inspect
 from abc import ABC
 from collections.abc import Iterable
 from datetime import date
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -134,6 +134,23 @@ class TypedNode(Node, ABC):
         }
     )
 
+    # We inherit a bit too much from Instance that we must override:
+    # (methods: get, __getitem__, __setitem__, __delitem__, __contains__)
+    def get(self, attr: str, default: Any = None) -> NoReturn:
+        raise AttributeError(f"{type(self).__qualname__} object has no attribute 'get'")
+
+    def __getitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object is not subscriptable")
+
+    def __setitem__(self, attr: str, value: Any) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object does not support item assignment")
+
+    def __delitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object does not support item deletion")
+
+    def __contains__(self, attr: str) -> NoReturn:
+        raise TypeError(f"argument of type {type(self).__qualname__} is not iterable")
+
     @classmethod
     def get_source(cls) -> ViewId:
         raise NotImplementedError
@@ -174,6 +191,23 @@ class TypedEdge(Edge, ABC):
             "properties",
         }
     )
+
+    # We inherit a bit too much from Instance that we must override:
+    # (methods: get, __getitem__, __setitem__, __delitem__, __contains__)
+    def get(self, attr: str, default: Any = None) -> NoReturn:
+        raise AttributeError(f"{type(self).__qualname__!r} object has no attribute 'get'")
+
+    def __getitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object is not subscriptable")
+
+    def __setitem__(self, attr: str, value: Any) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object does not support item assignment")
+
+    def __delitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object does not support item deletion")
+
+    def __contains__(self, attr: str) -> NoReturn:
+        raise TypeError(f"argument of type {type(self).__qualname__!r} is not iterable")
 
     @classmethod
     def get_source(cls) -> ViewId:
