@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.5] - 2024-09-04
+### Added
+- Data modeling filters now support properties that are lists.
+
 ## [7.58.4] - 2024-09-03
 ### Fixed
 - The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles truncated milliseconds.
