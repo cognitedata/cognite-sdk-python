@@ -20,6 +20,8 @@ Changes are grouped as follows
 ## [7.58.5] - 2024-09-04
 ### Added
 - Data modeling filters now support properties that are lists.
+### Fixed
+- Read-only properties on CogniteAssetApply (root, path and last_updated_time) are now removed.
 
 ## [7.58.4] - 2024-09-03
 ### Fixed
