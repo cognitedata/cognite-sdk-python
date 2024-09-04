@@ -34,15 +34,22 @@ FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
 FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
 
 
-def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
-    if isinstance(filter_value, PropertyReferenceValue):
-        if isinstance(filter_value.property, EnumProperty):
-            return {"property": filter_value.property.as_reference()}
-        return {"property": filter_value.property}
+def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
+    if isinstance(value, PropertyReferenceValue):
+        if isinstance(value.property, EnumProperty):
+            return {"property": value.property.as_reference()}
+        return {"property": value.property}
 
-    if isinstance(filter_value, ParameterValue):
-        return {"parameter": filter_value.parameter}
-    return filter_value
+    elif isinstance(value, ParameterValue):
+        return {"parameter": value.parameter}
+
+    elif hasattr(value, "dump"):
+        return value.dump()
+
+    elif isinstance(value, SequenceNotStr):
+        return list(map(_dump_filter_value, value))
+
+    return value
 
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
@@ -675,7 +682,8 @@ class Exists(FilterWithProperty):
 
 @final
 class Prefix(FilterWithPropertyAndValue):
-    """Prefix filter results based on whether the (text) property starts with the provided value.
+    """Prefix filter results based on whether the property starts with the provided value. When the property
+    is a list, the list starts with the provided values.
 
     Args:
         property (PropertyReference): The property to filter on.
@@ -692,6 +700,10 @@ class Prefix(FilterWithPropertyAndValue):
         - Composing the property reference using the ``View.as_property_ref`` method:
 
             >>> flt = Prefix(my_view.as_property_ref("some_property"), "somePrefix")
+
+        Filter that can be used to retrieve items where the property is a list of e.g. integers that starts with [1, 2, 3]:
+
+            >>> flt = Prefix(my_view.as_property_ref("some_list_property"), [1, 2, 3])
     """
 
     _filter_name = "prefix"

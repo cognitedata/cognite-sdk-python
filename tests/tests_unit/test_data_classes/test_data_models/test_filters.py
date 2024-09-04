@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Literal
+from typing import TYPE_CHECKING, Any, Iterator, Literal
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -8,6 +8,7 @@ from _pytest.mark import ParameterSet
 import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.filters import Filter
 from tests.utils import all_subclasses
 
@@ -100,6 +101,34 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     yield pytest.param(
         {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
     )
+    yield pytest.param(
+        {
+            "prefix": {
+                "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
+                "value": [
+                    {"space": "s", "externalId": "0"},
+                    {"space": "s", "externalId": "1"},
+                    {"space": "s", "externalId": "2"},
+                    {"space": "s", "externalId": "3"},
+                ],
+            }
+        },
+        id="prefix with list of dicts",
+    )
+    yield pytest.param(
+        {
+            "prefix": {
+                "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
+                "value": [
+                    {"space": "s", "externalId": "0"},
+                    {"space": "s", "externalId": "1"},
+                    {"space": "s", "externalId": "2"},
+                    {"space": "s", "externalId": "3"},
+                ],
+            }
+        },
+        id="prefix with list of objects",
+    )
 
 
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
@@ -114,7 +143,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         f.Equals(property=["person", "name"], value=["Quentin", "Tarantino"]),
         f.ContainsAny(property=["person", "name"], values=[["Quentin", "Tarantino"]]),
     )
-    expected = {
+    expected: dict[str, Any] = {
         "or": [
             {"equals": {"property": ["person", "name"], "value": ["Quentin", "Tarantino"]}},
             {"containsAny": {"property": ["person", "name"], "values": [["Quentin", "Tarantino"]]}},
@@ -180,6 +209,24 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         f.InvalidFilter([["some", "old", "prop"]], "overlaps"),
         {"invalid": {"previously_referenced_properties": [["some", "old", "prop"]], "filter_type": "overlaps"}},
     )
+
+    property_ref = ["cdf_cdm", "CogniteAsset/v1", "path"]
+    expected = {
+        "prefix": {
+            "property": property_ref,
+            "value": [{"space": "s", "externalId": "0"}, {"space": "s", "externalId": "1"}],
+        }
+    }
+    prop_list1 = f.Prefix(
+        property_ref,
+        [DirectRelationReference(space="s", external_id="0"), DirectRelationReference(space="s", external_id="1")],
+    )
+    prop_list2 = f.Prefix(
+        property_ref,
+        [{"space": "s", "externalId": "0"}, {"space": "s", "externalId": "1"}],
+    )
+    yield pytest.param(prop_list1, expected, id="Prefix filter with list property of objects")
+    yield pytest.param(prop_list2, expected, id="Prefix filter with list property of dicts")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
