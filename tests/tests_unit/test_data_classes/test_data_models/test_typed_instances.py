@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from cognite.client.data_classes.data_modeling import DirectRelationReference, ViewId
+from cognite.client.data_classes.data_modeling import DirectRelationReference, NodeList, ViewId
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAssetApply, CogniteDescribableEdgeApply
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
@@ -233,6 +233,60 @@ class TestTypedNode:
         assert person == loaded
         assert isinstance(loaded.birth_date, date)
         assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings or [])
+
+    @pytest.mark.dsl
+    def test_to_pandas(self) -> None:
+        import pandas as pd
+
+        person = PersonRead(
+            "sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com"
+        )
+
+        df = person.to_pandas()
+
+        pd.testing.assert_series_equal(
+            df,
+            pd.Series(
+                {
+                    "space": "sp_my_fixed_space",
+                    "external_id": "my_external_id",
+                    "version": 1,
+                    "last_updated_time": pd.Timestamp("1970-01-01 00:00:00"),
+                    "created_time": pd.Timestamp("1970-01-01 00:00:00"),
+                    "instance_type": "node",
+                    "name": "John Doe",
+                    "birth_date": "1990-01-01",
+                    "email": "john@doe.com",
+                }
+            ),
+        )
+
+    @pytest.mark.dsl
+    def test_to_pandas_list(self) -> None:
+        import pandas as pd
+
+        person = NodeList[PersonRead](
+            [PersonRead("sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com")]
+        )
+
+        df = person.to_pandas(expand_properties=True)
+
+        pd.testing.assert_frame_equal(
+            df,
+            pd.DataFrame(
+                {
+                    "space": ["sp_my_fixed_space"],
+                    "external_id": ["my_external_id"],
+                    "version": [1],
+                    "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                    "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                    "instance_type": ["node"],
+                    "name": ["John Doe"],
+                    "birthDate": ["1990-01-01"],
+                    "email": ["john@doe.com"],
+                }
+            ),
+        )
 
 
 class TestTypedEdge:

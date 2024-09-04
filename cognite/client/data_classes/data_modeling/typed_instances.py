@@ -19,10 +19,13 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApply,
     _serialize_property_value,
 )
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._time import convert_data_modelling_timestamp
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_data_modelling_timestamp
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import CogniteClient
 
 
@@ -174,6 +177,46 @@ class TypedNode(Node, ABC):
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
         return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
+    def to_pandas(  # type: ignore [override]
+        self,
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
+            camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
+            convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime.
+            **kwargs (Any): For backwards compatibility.
+
+        Returns:
+            pd.DataFrame: The instance as a pandas Series.
+        """
+        pd = local_import("pandas")
+        for key in ["expand_metadata", "metadata_prefix", "expand_properties", "remove_property_prefix"]:
+            kwargs.pop(key, None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+
+        dumped = super().dump(camel_case)
+        dumped.pop("properties", None)
+        properties = _dump_properties(
+            self, camel_case=camel_case, instance_properties=self._instance_properties, use_attribute_name=True
+        )
+        dumped.update(properties)
+
+        if convert_timestamps:
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+        for element in ignore or []:
+            dumped.pop(element, None)
+
+        return pd.Series(dumped)
+
 
 class TypedEdge(Edge, ABC):
     _instance_properties = frozenset(
@@ -308,9 +351,15 @@ _RESERVED_PROPERTY_NAMES = (
 )
 
 
-def _dump_properties(obj: object, camel_case: bool, instance_properties: frozenset[str]) -> dict[str, Any]:
+def _dump_properties(
+    obj: object, camel_case: bool, instance_properties: frozenset[str], use_attribute_name: bool = False
+) -> dict[str, Any]:
     properties: dict[str, str | int | float | bool | dict | list] = {}
     properties_by_name = _get_properties_by_name(type(obj))
+    if use_attribute_name:
+        attribute_by_property = {v.name: k for k, v in properties_by_name.items()}
+    else:
+        attribute_by_property = {}
     for key, value in vars(obj).items():
         if key in instance_properties or value is None:
             continue
@@ -319,6 +368,8 @@ def _dump_properties(obj: object, camel_case: bool, instance_properties: frozens
 
         if key in properties_by_name:
             key = cast(str, properties_by_name[key].name)
+        if use_attribute_name and key in attribute_by_property:
+            key = attribute_by_property[key]
 
         if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
             properties[key] = [_serialize_property_value(v, camel_case) for v in value]

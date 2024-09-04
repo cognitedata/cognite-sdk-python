@@ -1024,7 +1024,8 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
             # We only do/allow this if we have a single source:
-            view_id, *extra = set(vid for item in self for vid in item.properties)
+            typed_view_ids = {item.get_source() for item in self if hasattr(item, "get_source")}
+            view_id, *extra = set(vid for item in self for vid in item.properties) | typed_view_ids
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:
