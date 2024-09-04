@@ -809,7 +809,7 @@ _BASIC_FILTERS: frozenset[type[Filter]] = frozenset(
 # ######################################################### #
 
 
-class SpaceFilter(FilterWithPropertyAndValueList):
+class SpaceFilter(FilterWithProperty):
     """Filters instances based on the space.
 
     Args:
@@ -827,15 +827,24 @@ class SpaceFilter(FilterWithPropertyAndValueList):
             >>> flt = SpaceFilter("space3", instance_type="edge")
     """
 
-    _filter_name = In._filter_name
-
     def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
-        space_list = [space] if isinstance(space, str) else list(space)
-        super().__init__(property=[instance_type, "space"], values=space_list)
+        super().__init__(property=[instance_type, "space"])
+        space = [space] if isinstance(space, str) else list(space)
+        single = len(space) == 1
+        self._value = space[0] if single else space
+        self._value_key = "value" if single else "values"
+        self._filter_name = Equals._filter_name if single else In._filter_name
+        self._involved_filter: set[type[Filter]] = {Equals if single else In}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> NoReturn:
         raise NotImplementedError("Custom filter 'SpaceFilter' can not be loaded")
 
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return {
+            "property": self._dump_property(camel_case_property),
+            self._value_key: _dump_filter_value(self._value),
+        }
+
     def _involved_filter_types(self) -> set[type[Filter]]:
-        return {In}
+        return self._involved_filter
