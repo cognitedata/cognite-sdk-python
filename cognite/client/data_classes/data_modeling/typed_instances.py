@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from collections.abc import Iterable
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
@@ -20,7 +20,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     _serialize_property_value,
 )
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._time import timestamp_str_to_datetime
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -305,7 +304,7 @@ def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
         return value
     annotation = str(parameter.annotation)
     if "datetime" in annotation and isinstance(value, str):
-        return timestamp_str_to_datetime(value)
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z")
     elif "date" in annotation and isinstance(value, str):
         return date.fromisoformat(value)
     elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):

@@ -27,7 +27,6 @@ from cognite.client.utils._time import (
     parse_str_timezone,
     parse_str_timezone_offset,
     split_time_range,
-    timestamp_str_to_datetime,
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
@@ -229,27 +228,6 @@ class TestTimestampToMs:
     def test_negative(self, t):
         with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
             timestamp_to_ms(t)
-
-
-class TestTimestampStrToDatetime:
-    @pytest.mark.parametrize(
-        "timestamp_str, expected",
-        [
-            ("2021-01-01T00:00:00.000+00:00", datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc)),
-            ("2021-01-01T00:00:00.000+01:00", datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=1)))),
-            (
-                "2021-01-01T00:00:00.000+01:15",
-                datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=1, minutes=15))),
-            ),
-            (
-                "2021-01-01T00:00:00.000-01:15",
-                datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=-15))),
-            ),
-            ("2024-09-03T09:36:01.17+00:00", datetime(2024, 9, 3, 9, 36, 1, 170000, tzinfo=timezone.utc)),
-        ],
-    )
-    def test_valid_timestamp_str(self, timestamp_str: str, expected: datetime) -> None:
-        assert expected == timestamp_str_to_datetime(timestamp_str)
 
 
 class TestGranularityToMs:
