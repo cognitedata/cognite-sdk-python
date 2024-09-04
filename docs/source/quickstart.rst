@@ -10,7 +10,7 @@ Instantiate a new client from a configuration file
 --------------------------------------------------
 Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
 
-.. note::
+.. warning::
     How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method
     accepts both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
