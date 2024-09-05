@@ -255,25 +255,33 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
 
 class TestSpaceFilter:
     @pytest.mark.parametrize(
-        "inst_type, space, expected_spaces",
+        "inst_type, space, expected",
         (
-            ("node", "myspace", ["myspace"]),
-            ("edge", ["myspace"], ["myspace"]),
-            ("node", ["myspace", "another"], ["myspace", "another"]),
+            ("node", "myspace", {"equals": {"property": ["node", "space"], "value": "myspace"}}),
+            (None, ["myspace"], {"equals": {"property": ["node", "space"], "value": "myspace"}}),
+            ("edge", ["myspace"], {"equals": {"property": ["edge", "space"], "value": "myspace"}}),
+            ("node", ["myspace", "another"], {"in": {"property": ["node", "space"], "values": ["myspace", "another"]}}),
+            ("node", ("myspace", "another"), {"in": {"property": ["node", "space"], "values": ["myspace", "another"]}}),
         ),
     )
     def test_space_filter(
-        self, inst_type: Literal["node", "edge"], space: str | list[str], expected_spaces: list[str]
+        self, inst_type: Literal["node", "edge"], space: str | list[str], expected: dict[str, Any]
     ) -> None:
-        space_filter = f.SpaceFilter(space, inst_type)
-        expected = {"in": {"property": [inst_type, "space"], "values": expected_spaces}}
+        space_filter = f.SpaceFilter(space, inst_type) if inst_type else f.SpaceFilter(space)
         assert expected == space_filter.dump()
 
     def test_space_filter_passes_isinstance_checks(self) -> None:
         space_filter = f.SpaceFilter("myspace", "edge")
         assert isinstance(space_filter, Filter)
 
-    def test_space_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
-        space_filter = f.SpaceFilter("myspace", "edge")
+    @pytest.mark.parametrize(
+        "space_filter",
+        [
+            f.SpaceFilter("s1", "edge"),
+            f.SpaceFilter(["s1"], "edge"),
+            f.SpaceFilter(["s1", "s2"], "edge"),
+        ],
+    )
+    def test_space_filter_passes_verification(self, cognite_client: CogniteClient, space_filter: f.SpaceFilter) -> None:
         cognite_client.data_modeling.instances._validate_filter(space_filter)
         assert True

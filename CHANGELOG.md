@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.6] - 2024-09-05
+### Fixed
+- Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`
+  (when a single space is requested (requirement)). This also affects the `space` parameter to e.g.
+  `client.data_modeling.instances.list(...)`
+
 ## [7.58.5] - 2024-09-04
 ### Added
 - Data modeling filters now support properties that are lists.

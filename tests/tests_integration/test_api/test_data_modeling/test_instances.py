@@ -1083,6 +1083,18 @@ class TestInstancesAPI:
         assert len(persons) > 0
         assert all(isinstance(person, PersonRead) for person in persons)
 
+    def test_listing_global_nodes(self, cognite_client: CogniteClient) -> None:
+        from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteUnit
+
+        # Space must be explicitly specified or nothing will be returned:
+        no_nodes = cognite_client.data_modeling.instances.list(sources=CogniteUnit.get_source())
+        assert len(no_nodes) == 0
+
+        nodes = cognite_client.data_modeling.instances.list(
+            space="cdf_cdm_units", sources=CogniteUnit.get_source(), limit=5
+        )
+        assert len(nodes) == 5
+
 
 class TestInstancesSync:
     def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
