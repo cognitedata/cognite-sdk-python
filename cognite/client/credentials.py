@@ -184,7 +184,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
         client_id (str): Your application's client id that allows device code flows.
         scopes (list[str] | None): A list of scopes.
-        cdf_cluster (str | None): No description.
+        cdf_cluster (str | None): The CDF cluster where the CDF project is located. If provided, scopes will be set to
+            [f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"].
         oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
