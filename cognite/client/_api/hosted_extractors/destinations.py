@@ -265,7 +265,7 @@ class DestinationsAPI(APIClient):
         self._warning.warn()
         return self._list(
             list_cls=DestinationList,
-            resource_cls=Destination,  # type: ignore[type-abstract]
+            resource_cls=Destination,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},
