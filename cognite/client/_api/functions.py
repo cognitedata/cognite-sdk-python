@@ -789,12 +789,10 @@ def _validate_function_handle(handle_obj: Callable | ast.FunctionDef) -> None:
         accepts_args = set(signature(handle_obj).parameters)
 
     if name != "handle":
-        raise TypeError(f"Function is named '{
-                        name}' but must be named 'handle'.")
+        raise TypeError(f"Function is named '{name}' but must be named 'handle'.")
 
     if not accepts_args <= ALLOWED_HANDLE_ARGS:
-        raise TypeError(f"Arguments {accepts_args} to the function must be a subset of {
-                        ALLOWED_HANDLE_ARGS}.")
+        raise TypeError(f"Arguments {accepts_args} to the function must be a subset of {ALLOWED_HANDLE_ARGS}.")
 
 
 def _extract_requirements_from_file(file_name: str) -> list[str]:
