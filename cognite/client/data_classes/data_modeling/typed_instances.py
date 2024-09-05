@@ -3,8 +3,8 @@ from __future__ import annotations
 import inspect
 from abc import ABC
 from collections.abc import Iterable
-from datetime import date, datetime
-from typing import TYPE_CHECKING, Any, cast
+from datetime import date
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -20,6 +20,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     _serialize_property_value,
 )
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._time import convert_data_modelling_timestamp
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -133,6 +134,23 @@ class TypedNode(Node, ABC):
         }
     )
 
+    # We inherit a bit too much from Instance that we must override:
+    # (methods: get, __getitem__, __setitem__, __delitem__, __contains__)
+    def get(self, attr: str, default: Any = None) -> NoReturn:
+        raise AttributeError(f"{type(self).__qualname__} object has no attribute 'get'")
+
+    def __getitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object is not subscriptable")
+
+    def __setitem__(self, attr: str, value: Any) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object does not support item assignment")
+
+    def __delitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__} object does not support item deletion")
+
+    def __contains__(self, attr: str) -> NoReturn:
+        raise TypeError(f"argument of type {type(self).__qualname__} is not iterable")
+
     @classmethod
     def get_source(cls) -> ViewId:
         raise NotImplementedError
@@ -173,6 +191,23 @@ class TypedEdge(Edge, ABC):
             "properties",
         }
     )
+
+    # We inherit a bit too much from Instance that we must override:
+    # (methods: get, __getitem__, __setitem__, __delitem__, __contains__)
+    def get(self, attr: str, default: Any = None) -> NoReturn:
+        raise AttributeError(f"{type(self).__qualname__!r} object has no attribute 'get'")
+
+    def __getitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object is not subscriptable")
+
+    def __setitem__(self, attr: str, value: Any) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object does not support item assignment")
+
+    def __delitem__(self, attr: str) -> NoReturn:
+        raise TypeError(f"{type(self).__qualname__!r} object does not support item deletion")
+
+    def __contains__(self, attr: str) -> NoReturn:
+        raise TypeError(f"argument of type {type(self).__qualname__!r} is not iterable")
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -304,7 +339,7 @@ def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
         return value
     annotation = str(parameter.annotation)
     if "datetime" in annotation and isinstance(value, str):
-        return datetime.fromisoformat(value)
+        return convert_data_modelling_timestamp(value)
     elif "date" in annotation and isinstance(value, str):
         return date.fromisoformat(value)
     elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):

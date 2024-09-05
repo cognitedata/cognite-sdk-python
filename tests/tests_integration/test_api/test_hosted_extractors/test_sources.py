@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import platform
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -16,17 +18,16 @@ from cognite.client.utils._text import random_string
 @pytest.fixture(scope="session")
 def one_event_hub_source(cognite_client: CogniteClient) -> SourceList:
     my_hub = EventHubSourceWrite(
-        external_id=f"myNewHub-{random_string(10)}",
+        external_id=f"myNewHub-{platform.system()}-{platform.python_version()}",
         host="myHost",
         key_name="myKeyName",
         key_value="myKey",
         event_hub_name="myEventHub",
     )
-    retrieved = cognite_client.hosted_extractors.sources.retrieve(my_hub.external_id, ignore_unknown_ids=True)
+    retrieved = cognite_client.hosted_extractors.sources.retrieve([my_hub.external_id], ignore_unknown_ids=True)
     if retrieved:
         return retrieved
-    created = cognite_client.hosted_extractors.sources.create(my_hub)
-    return SourceList([created])
+    return cognite_client.hosted_extractors.sources.create([my_hub])
 
 
 class TestSources:
@@ -69,7 +70,7 @@ class TestSources:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"toupdatate-{random_string(10)}",
+            external_id=f"to-update-{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
