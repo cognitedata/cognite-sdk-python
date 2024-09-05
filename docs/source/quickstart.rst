@@ -6,6 +6,10 @@ this quickstart we'll demonstrate the most common/recommended patterns. More det
 section: :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
 :ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`.
 
+.. warning::
+    Ensure that credentials are stored and handled securely by not hard-coding it or storing them in a text file. All the below examples
+    are using and referencing environment variables to store this sensitive information.
+
 Instantiate a new client from a configuration file
 --------------------------------------------------
 Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
