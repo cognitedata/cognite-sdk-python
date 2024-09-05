@@ -481,7 +481,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return cls(
             authority_url=loaded["authority_url"],
             client_id=loaded["client_id"],
-            scopes=loaded["scopes"],
+            scopes=loaded.get("scopes"),
+            cdf_cluster=loaded.get("cdf_cluster"),
             token_cache_path=Path(token_cache_path) if token_cache_path else None,
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
