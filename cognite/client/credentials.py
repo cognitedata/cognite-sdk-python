@@ -279,8 +279,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
             ... )
 
+        Create credentials with auth0
+
             >>> from cognite.client.credentials import OAuthDeviceCode
             >>> oauth_provider = OAuthDeviceCode(
+            ...     authority_url=None,
             ...     oauth_discovery_url="https://my-tenant.auth0.com/oauth",
             ...     client_id="abcd",
             ...     scopes=["IDENTITY", "user_impersonation"],
