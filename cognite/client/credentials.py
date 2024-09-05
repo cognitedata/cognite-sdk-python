@@ -285,9 +285,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             token = self._get_cached_token(self._token_cache_path)
         else:
             if _app := getattr(self, f"_{type(self).__name__}__app", None):
-                token = json.loads(_app.token_cache.serialize())
-            else:
-                token = {}
+                if _app.token_cache.has_state_changed:
+                    with open(self._token_cache_path, "w+") as fh:
+                        fh.write(_app.token_cache.serialize())
+            token = self._get_cached_token(self._token_cache_path)
 
         if convert_timestamps:
             if "AccessToken" in token:
