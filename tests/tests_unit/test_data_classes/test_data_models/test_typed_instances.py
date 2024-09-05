@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from typing import Any
 
 import pytest
 
 from cognite.client.data_classes.data_modeling import DirectRelationReference, NodeList, ViewId
-from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAssetApply, CogniteDescribableEdgeApply
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
+    CogniteAsset, CogniteAssetApply, CogniteDescribableEdgeApply
+)
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
@@ -315,6 +318,41 @@ class TestTypedEdge:
         assert flow.dump() == expected
         loaded = Flow.load(expected)
         assert flow.dump() == loaded.dump()
+
+
+@pytest.fixture
+def cognite_asset_kwargs() -> dict[str, Any]:
+    return dict(
+        space="my-space",
+        external_id="my-xid",
+        type=DirectRelationReference("should-be", "at-root"),
+        type_=DirectRelationReference("should-be", "in-properties"),
+        source_created_time=datetime(2020, 1, 1),
+    )
+
+
+class TestCDMv1Classes:
+    @pytest.mark.parametrize("camel_case", (True, False))
+    @pytest.mark.parametrize("use_attribute_name", (True, False))
+    def test_cognite_asset_read_and_write(
+        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool, use_attribute_name: bool
+    ) -> None:
+        asset_write = CogniteAssetApply(**cognite_asset_kwargs)
+        asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
+
+        for is_write, asset in zip([True, False], [asset_write, asset_read]):
+            dumped = asset.dump(camel_case=camel_case, use_attribute_name=use_attribute_name)  # type: ignore [call-arg]
+            xid = "externalId" if camel_case else "external_id"
+            assert xid in dumped
+            # Check that type/type_ are correctly dumped:
+            assert dumped["type"] == {"space": "should-be", xid: "at-root"}
+            if is_write:
+                properties = dumped["sources"][0]["properties"]
+            else:
+                properties = dumped["properties"]["cdf_cdm"]["CogniteAsset/v1"]
+            assert properties["type"] == {"space": "should-be", xid: "in-properties"}
+            # Check that properties are cased according to use_attribute_name:
+            assert ("source_created_time" if use_attribute_name else "sourceCreatedTime") in properties
 
 
 @pytest.mark.parametrize(
