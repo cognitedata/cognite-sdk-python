@@ -16,6 +16,7 @@ from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI
@@ -31,7 +32,7 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
-from cognite.client.utils._auxiliary import get_current_sdk_version
+from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
 
 
 class CogniteClient:
@@ -71,6 +72,7 @@ class CogniteClient:
         self.templates = TemplatesAPI(self._config, self._API_VERSION, self)
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
+        self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
         self.transformations = TransformationsAPI(self._config, self._API_VERSION, self)
         self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
@@ -213,3 +215,37 @@ class CogniteClient:
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
+        """Load a cognite client object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+
+        Returns:
+            CogniteClient: A cognite client object.
+
+        Examples:
+
+            Create a cognite client object from a dictionary input:
+
+                >>> from cognite.client import CogniteClient
+                >>> import os
+                >>> config = {
+                ...     "client_name": "abcd",
+                ...     "project": "cdf-project",
+                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "credentials": {
+                ...         "client_credentials": {
+                ...             "client_id": "abcd",
+                ...             "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...             "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...             "scopes": ["https://api.cognitedata.com/.default"],
+                ...         },
+                ...     },
+                ... }
+                >>> client = CogniteClient.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+        return cls(config=ClientConfig.load(loaded))

@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -361,7 +362,7 @@ class EventUpdate(CogniteUpdate):
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),

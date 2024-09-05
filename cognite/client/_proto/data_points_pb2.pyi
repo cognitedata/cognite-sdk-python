@@ -92,3 +92,11 @@ class AggregateDatapoints(_message.Message):
     DATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     datapoints: _containers.RepeatedCompositeFieldContainer[AggregateDatapoint]
     def __init__(self, datapoints: _Optional[_Iterable[_Union[AggregateDatapoint, _Mapping]]] = ...) -> None: ...
+
+class InstanceId(_message.Message):
+    __slots__ = ("space", "externalId")
+    SPACE_FIELD_NUMBER: _ClassVar[int]
+    EXTERNALID_FIELD_NUMBER: _ClassVar[int]
+    space: str
+    externalId: str
+    def __init__(self, space: _Optional[str] = ..., externalId: _Optional[str] = ...) -> None: ...

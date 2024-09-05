@@ -29,6 +29,8 @@ from cognite.client._api.extractionpipelines import (
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.hosted_extractors import HostedExtractorsAPI
+from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
@@ -60,7 +62,13 @@ from cognite.client._api.transformations import (
 from cognite.client._api.units import UnitAPI, UnitSystemAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
-from cognite.client._api.workflows import WorkflowAPI, WorkflowExecutionAPI, WorkflowTaskAPI, WorkflowVersionAPI
+from cognite.client._api.workflows import (
+    WorkflowAPI,
+    WorkflowExecutionAPI,
+    WorkflowTaskAPI,
+    WorkflowTriggerAPI,
+    WorkflowVersionAPI,
+)
 
 
 class CogniteClientMock(MagicMock):
@@ -130,6 +138,9 @@ class CogniteClientMock(MagicMock):
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
+        self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
+        self.hosted_extractors.sources = MagicMock(spec_set=SourcesAPI)
+
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
         self.templates.instances = MagicMock(spec_set=TemplateInstancesAPI)
@@ -159,6 +170,7 @@ class CogniteClientMock(MagicMock):
         self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
         self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
         self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
+        self.workflows.triggers = MagicMock(spec_set=WorkflowTriggerAPI)
 
         self.units = MagicMock(spec=UnitAPI)
         self.units.systems = MagicMock(spec_set=UnitSystemAPI)

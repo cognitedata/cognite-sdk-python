@@ -185,7 +185,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
 
     class _FilterDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
         def set(self, value: Filter) -> DataPointSubscriptionUpdate:
-            return self._set(value.dump())  # type: ignore[arg-type]
+            return self._set(value.dump())
 
     class _ListDataPointSubscriptionUpdate(CogniteListUpdate):
         def set(self, value: list) -> DataPointSubscriptionUpdate:
@@ -214,7 +214,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_container=True),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import math
 import numbers
 import operator as op
@@ -7,31 +8,27 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from functools import cached_property
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     DefaultDict,
     Dict,
     Iterator,
     List,
     Literal,
     NoReturn,
-    Optional,
     Sequence,
     Tuple,
-    TypedDict,
     TypeVar,
     Union,
     cast,
 )
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-from typing_extensions import NotRequired, TypeAlias
+from typing_extensions import TypeAlias
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
@@ -40,19 +37,25 @@ from cognite.client._proto.data_points_pb2 import (
     NumericDatapoint,
     StringDatapoint,
 )
-from cognite.client.data_classes import DatapointsQuery
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
     Aggregate,
     Datapoints,
     DatapointsArray,
+    DatapointsQuery,
+    _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import Identifier
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
+from cognite.client.utils._identifier import InstanceId
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
+    ZoneInfo,
     align_start_and_end_for_granularity,
+    convert_timezone_to_str,
     granularity_to_ms,
+    parse_str_timezone,
+    split_granularity_into_quantity_and_normalized_unit,
     split_time_range,
     time_ago_to_ms,
     timestamp_to_ms,
@@ -86,26 +89,7 @@ DatapointsId = Union[int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, D
 DatapointsExternalId = Union[
     str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
 ]
-
-
-class DatapointsPayloadItem(TypedDict, total=False):
-    # No field required
-    start: int
-    end: int
-    aggregates: list[str] | None
-    granularity: str | None
-    targetUnit: str | None
-    targetUnitSystem: str | None
-    limit: int
-    includeOutsidePoints: bool
-    includeStatus: bool
-    ignoreBadDataPoints: bool
-    treatUncertainAsBad: bool
-
-
-class DatapointsPayload(DatapointsPayloadItem):
-    items: list[DatapointsPayloadItem]
-    ignoreUnknownIds: NotRequired[bool]
+DatapointsInstanceId = Union[InstanceId, Sequence[InstanceId]]
 
 
 @dataclass
@@ -115,12 +99,14 @@ class _FullDatapointsQuery:
     requested, previously public (before v5).
     """
 
-    start: int | str | datetime | None = None
-    end: int | str | datetime | None = None
+    start: int | str | datetime.datetime | None = None
+    end: int | str | datetime.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
+    instance_id: InstanceId | Sequence[InstanceId] | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
+    timezone: str | datetime.timezone | ZoneInfo | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     limit: int | None = None
@@ -135,9 +121,11 @@ class _FullDatapointsQuery:
         # No lists given and exactly one of id/xid was given:
         return (
             isinstance(self.id, (dict, DatapointsQuery, numbers.Integral))
-            and self.external_id is None
+            and (self.external_id is None and self.instance_id is None)
             or isinstance(self.external_id, (dict, DatapointsQuery, str))
-            and self.id is None
+            and (self.id is None and self.instance_id is None)
+            or isinstance(self.instance_id, InstanceId)
+            and (self.id is None and self.external_id is None)
         )
 
     @cached_property
@@ -148,6 +136,7 @@ class _FullDatapointsQuery:
             limit=self.limit,
             aggregates=self.aggregates,
             granularity=self.granularity,
+            timezone=self.timezone,
             target_unit=self.target_unit,
             target_unit_system=self.target_unit_system,
             include_outside_points=self.include_outside_points,
@@ -157,92 +146,53 @@ class _FullDatapointsQuery:
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
-
-class _FullDatapointsQueryValidator:
-    OPTIONAL_DICT_KEYS: ClassVar[frozenset[str]] = frozenset(
-        {
-            "start",
-            "end",
-            "aggregates",
-            "granularity",
-            "target_unit",
-            "target_unit_system",
-            "limit",
-            "include_outside_points",
-            "ignore_unknown_ids",
-            "include_status",
-            "ignore_bad_datapoints",
-            "treat_uncertain_as_bad",
-        }
-    )
-
-    def __init__(self, full_query: _FullDatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
-        self.full_query = full_query
-        self.dps_limit_raw = dps_limit_raw
-        self.dps_limit_agg = dps_limit_agg
-
-        # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
-        # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
-        # exception 'end not after start' if both are set to the same value.
-        self.__time_now = timestamp_to_ms("now")
-
-    def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
+    def parse_into_queries(self) -> list[DatapointsQuery]:
         queries = []
-        if self.full_query.id is not None:
-            queries.extend(self._validate_multiple_id(self.full_query.id))
-        if self.full_query.external_id is not None:
-            queries.extend(self._validate_multiple_xid(self.full_query.external_id))
+        if (id_ := self.id) is not None:
+            queries.extend(self._parse(id_, arg_name="id", exp_type=numbers.Integral))
+        if (xid := self.external_id) is not None:
+            queries.extend(self._parse(xid, arg_name="external_id", exp_type=str))
+        if (iid := self.instance_id) is not None:
+            queries.extend(self._parse(iid, arg_name="instance_id", exp_type=InstanceId))
         if queries:
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
-    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, default: int) -> int:
-        # Time 'now' is frozen for all queries in a single call from the user, leading to identical
-        # results e.g. "4d-ago" and "now"
-        if ts is None:
-            return default
-        elif isinstance(ts, str):
-            return self.__time_now - time_ago_to_ms(ts)
-        else:
-            return timestamp_to_ms(ts)
-
-    def _validate_multiple_id(self, id: DatapointsId) -> list[_SingleTSQueryBase]:
-        return self._validate_id_or_xid(id, "id", numbers.Integral)
-
-    def _validate_multiple_xid(self, external_id: DatapointsExternalId) -> list[_SingleTSQueryBase]:
-        return self._validate_id_or_xid(external_id, "external_id", str)
-
-    def _validate_id_or_xid(
-        self, id_or_xid: DatapointsId | DatapointsExternalId, arg_name: str, exp_type: type
-    ) -> list[_SingleTSQueryBase]:
-        id_or_xid_seq: SequenceNotStr[int | str | DatapointsQuery | dict[str, Any]]
+    def _parse(
+        self,
+        id_or_xid: DatapointsId | DatapointsExternalId | DatapointsInstanceId,
+        arg_name: Literal["id", "external_id", "instance_id"],
+        exp_type: type,
+    ) -> list[DatapointsQuery]:
+        user_queries: SequenceNotStr[int | str | DatapointsQuery | dict[str, Any]]
         if isinstance(id_or_xid, (dict, DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
-            id_or_xid_seq = [cast(Union[int, str, DatapointsQuery, Dict[str, Any]], id_or_xid)]
+            user_queries = [cast(Union[int, str, DatapointsQuery, Dict[str, Any]], id_or_xid)]
 
         elif isinstance(id_or_xid, SequenceNotStr):
             # We use Sequence because we require an ordering of elements
-            id_or_xid_seq = id_or_xid
+            user_queries = id_or_xid
         else:
             self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
 
-        queries = []
-        for ts in id_or_xid_seq:
-            if isinstance(ts, exp_type):
-                ts_dct = {arg_name: ts}
-            elif isinstance(ts, DatapointsQuery):
-                if ts.identifier.name() != arg_name:
-                    raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
-                ts_dct = ts.dump()
-            elif isinstance(ts, dict):
-                ts_dct = self._validate_user_supplied_dict_keys(ts, arg_name)
-            else:
-                self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
+        parsed_queries = []
+        for query in user_queries:
+            # We merge 'defaults' and given user query; the query takes precedence:
+            if isinstance(query, exp_type):
+                id_dct = {arg_name: query}
+                query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
+            elif isinstance(query, dict):
+                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query}, id_type=arg_name)
 
-            # We merge 'defaults' and given ts-dict; ts-dict takes precedence:
-            ts_dct = {**self.full_query.top_level_defaults, **ts_dct}
-            queries.append(self._validate_and_create_query(ts_dct))
-        return queries
+            elif isinstance(query, DatapointsQuery):
+                if query.identifier.name() != arg_name:
+                    raise ValueError(f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}")
+                query = DatapointsQuery.from_dict({**self.top_level_defaults, **query.dump()}, id_type=arg_name)
+            else:
+                self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
+
+            parsed_queries.append(query)
+        return parsed_queries
 
     @staticmethod
     def _raise_on_wrong_ts_identifier_type(
@@ -255,93 +205,94 @@ class _FullDatapointsQueryValidator:
             f"{exp_type}, {DatapointsQuery} or {dict} (deprecated), or a (mixed) list of these, but got `{id_or_xid}`."
         )
 
-    @classmethod
-    def _validate_user_supplied_dict_keys(cls, dct: dict[str, Any], arg_name: str) -> dict[str, Any]:
-        if arg_name not in dct:
-            if (arg_name_cc := to_camel_case(arg_name)) not in dct:
-                raise KeyError(f"Missing required key `{arg_name}` in dict: {dct}.")
-            # For backwards compatibility we accept identifiers in camel case: (Make copy to avoid side effects
-            # for user's input). Also means we need to return it.
-            dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
+    def validate(self, queries: list[DatapointsQuery], dps_limit_raw: int, dps_limit_agg: int) -> list[DatapointsQuery]:
+        # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
+        # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
+        # exception 'end not after start' if both are set to the same value.
+        frozen_time_now = timestamp_to_ms("now")
 
-        if bad_keys := set(dct) - cls.OPTIONAL_DICT_KEYS - {arg_name}:
-            raise KeyError(
-                f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
-                f"Required key: `{arg_name}`. Optional: {list(cls.OPTIONAL_DICT_KEYS)}."
+        # NOTE: The order of verification checks must be kept due to dependencies:
+        for query in queries:
+            query.limit = self._verify_and_convert_limit(query.limit)
+            query.is_raw_query = self._verify_options_and_categorize_query(query)
+            query.original_timezone, query.timezone = self._verify_and_convert_timezone(
+                query.timezone, query.is_raw_query
             )
-        return dct
+            query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
+            query.start, query.end = self._verify_time_range(query, frozen_time_now)
+            if query.is_raw_query:
+                query.max_query_limit = dps_limit_raw
+            else:
+                query.max_query_limit = dps_limit_agg
+                if isinstance(query.aggregates, str):
+                    query.aggregates = [query.aggregates]
+        return queries
 
-    def _validate_and_create_query(self, dct: dict[str, Any]) -> _SingleTSQueryBase:
-        limit = self._verify_limit(dct["limit"])
-
-        target_unit, target_unit_system = dct["target_unit"], dct["target_unit_system"]
+    @staticmethod
+    def _verify_options_and_categorize_query(query: DatapointsQuery) -> bool:
+        target_unit, target_unit_system = query.target_unit, query.target_unit_system
         if target_unit is not None and target_unit_system is not None:
             raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
 
-        granularity, aggregates = dct["granularity"], dct["aggregates"]
+        granularity, aggregates = query.granularity, query.aggregates
         if not (granularity is None or isinstance(granularity, str)):
             raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
-
         elif not (aggregates is None or isinstance(aggregates, (str, list))):
             raise TypeError(f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}")
-
         elif aggregates is None:
             if granularity is None:
-                # Request is for raw datapoints:
-                raw_query = self._convert_parameters(dct, limit, is_raw=True)
-                if limit is None:
-                    return _SingleTSQueryRawUnlimited(**raw_query, max_query_limit=self.dps_limit_raw)
-                return _SingleTSQueryRawLimited(**raw_query, max_query_limit=self.dps_limit_raw)
+                if query.include_outside_points and query.limit is not None:
+                    warnings.warn(
+                        "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
+                        "between the last 'inside datapoint' and the 'after/outside' datapoint. Note also that the "
+                        "up-to-two outside points come in addition to your given `limit`; asking for 5 datapoints might "
+                        "yield 5, 6 or 7. It's a feature, not a bug ;)",
+                        UserWarning,
+                    )
+                return True
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
         elif isinstance(aggregates, list) and len(aggregates) == 0:
             raise ValueError("Empty list of `aggregates` passed, expected at least one!")
-
         elif isinstance(aggregates, list) and len(aggregates) != len(set(map(to_snake_case, aggregates))):
             raise ValueError("List of `aggregates` may not contain duplicates")
-
         elif granularity is None:
             raise ValueError("When passing `aggregates`, argument `granularity` is also required.")
-
-        elif dct["include_outside_points"] is True:
+        elif query.include_outside_points is True:
             raise ValueError("'Include outside points' is not supported for aggregates.")
-
-        elif dct["include_status"] is True:
+        elif query.include_status is True:
             raise ValueError("'Include status' is not supported for aggregates.")
+        return False
 
-        # Request is for one or more aggregates:
-        agg_query = self._convert_parameters(dct, limit, is_raw=False)
-        if limit is None:
-            return _SingleTSQueryAggUnlimited(**agg_query, max_query_limit=self.dps_limit_agg)
-        return _SingleTSQueryAggLimited(**agg_query, max_query_limit=self.dps_limit_agg)
+    @staticmethod
+    def _verify_and_convert_timezone(
+        tz: str | datetime.timezone | ZoneInfo | None, is_raw_query: bool
+    ) -> tuple[datetime.timezone | ZoneInfo | None, str | None]:
+        if tz is None:
+            return None, None
+        elif isinstance(tz, str):
+            tz = parse_str_timezone(tz)  # There...
+        try:
+            api_tz = convert_timezone_to_str(tz)  # ...and back again
+        except TypeError:
+            raise ValueError(
+                f"'timezone' not understood, expected one of: [None, str, datetime.timezone, ZoneInfo], got {type(tz)}"
+            )
+        if is_raw_query:
+            # Timezone will only be used for display purposes (or when converting to pandas), so we fetch
+            # like it doesn't exist (concurrently). The API only supports using timezone with agg. queries.
+            return tz, None
+        return tz, api_tz
 
-    def _convert_parameters(self, dct: dict[str, Any], limit: int | None, is_raw: bool) -> dict[str, Any]:
-        identifier = Identifier.of_either(
-            cast(Optional[int], dct.get("id")), cast(Optional[str], dct.get("external_id"))
-        )
-        start, end = self._verify_time_range(dct["start"], dct["end"], dct["granularity"], is_raw, identifier)
-        converted = {
-            "identifier": identifier,
-            "start": start,
-            "end": end,
-            "target_unit": dct["target_unit"],
-            "target_unit_system": dct["target_unit_system"],
-            "limit": limit,
-            "ignore_unknown_ids": dct["ignore_unknown_ids"],
-            "ignore_bad_datapoints": dct["ignore_bad_datapoints"],
-            "treat_uncertain_as_bad": dct["treat_uncertain_as_bad"],
-        }
-        if is_raw:
-            converted["include_outside_points"] = dct["include_outside_points"]
-            converted["include_status"] = dct["include_status"]
-        else:
-            if isinstance(aggs := dct["aggregates"], str):
-                aggs = [aggs]
-            converted["aggregates"] = aggs
-            converted["granularity"] = dct["granularity"]
-        return converted
+    @staticmethod
+    def _verify_and_convert_granularity(granularity: str | None) -> tuple[str | None, bool]:
+        if granularity is None:
+            return None, False
+        quantity, unit = split_granularity_into_quantity_and_normalized_unit(granularity)
+        return f"{quantity}{unit}", unit == "mo"
 
-    def _verify_limit(self, limit: int | None) -> int | None:
+    @staticmethod
+    def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
         elif isinstance(limit, numbers.Integral) and limit >= 0:  # limit=0 is accepted by the API
@@ -355,205 +306,36 @@ class _FullDatapointsQueryValidator:
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
 
+    @staticmethod
     def _verify_time_range(
-        self,
-        start: int | str | datetime | None,
-        end: int | str | datetime | None,
-        granularity: str | None,
-        is_raw: bool,
-        identifier: Identifier,
+        query: DatapointsQuery,
+        frozen_time_now: int,
     ) -> tuple[int, int]:
-        start = self._ts_to_ms_frozen_now(start, default=0)  # 1970-01-01
-        end = self._ts_to_ms_frozen_now(end, default=self.__time_now)
-
+        start = _FullDatapointsQuery._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
+        end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
-                f"Invalid time range, {end=} must be later than {start=} "
-                f"(from query: {identifier.as_dict(camel_case=False)})"
+                f"Invalid time range, {end=} {f'({query.end!r}) ' if end != query.end else ''}"
+                f"must be later than {start=} {f'({query.start!r}) ' if start != query.start else ''}"
+                f"(from query: {query.identifier.as_dict(camel_case=False)})"
             )
-        if not is_raw:  # API rounds aggregate query timestamps in a very particular fashion
-            start, end = align_start_and_end_for_granularity(start, end, cast(str, granularity))
+        # We align start and end so that we can efficiently parallelize aggregate dps fetching. Queries
+        # using timezone or a calendar granularity (month) are left untouched (and thus fetch serially):
+        if not (query.is_raw_query or query.use_cursors):
+            # API rounds aggregate query timestamps in a very particular fashion:
+            start, end = align_start_and_end_for_granularity(start, end, cast(str, query.granularity))
         return start, end
 
-
-class _SingleTSQueryBase:
-    def __init__(
-        self,
-        *,
-        identifier: Identifier,
-        start: int,
-        end: int,
-        max_query_limit: int,
-        limit: int | None,
-        target_unit: str | None,
-        target_unit_system: str | None,
-        include_outside_points: bool,
-        ignore_unknown_ids: bool,
-        ignore_bad_datapoints: bool,
-        treat_uncertain_as_bad: bool,
-    ) -> None:
-        self.identifier = identifier
-        self.start = start
-        self.end = end
-        self.max_query_limit = max_query_limit
-        self.limit = limit
-        self.target_unit = target_unit
-        self.target_unit_system = target_unit_system
-        self.include_outside_points = include_outside_points
-        self.ignore_unknown_ids = ignore_unknown_ids
-        self.ignore_bad_datapoints = ignore_bad_datapoints
-        self.treat_uncertain_as_bad = treat_uncertain_as_bad
-
-        self.granularity: str | None = None
-        self._is_missing: bool | None = None
-
-        if self.include_outside_points and self.limit is not None:
-            warnings.warn(
-                "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
-                "between the last 'inside datapoint' and the 'after/outside' datapoint. Note also that the "
-                "up-to-two outside points come in addition to your given `limit`; asking for 5 datapoints might "
-                "yield 5, 6 or 7. It's a feature, not a bug ;)",
-                UserWarning,
-            )
-
-    @property
-    def capped_limit(self) -> int:
-        if self.limit is None:
-            return self.max_query_limit
-        return min(self.limit, self.max_query_limit)
-
-    def override_max_query_limit(self, new_limit: int) -> None:
-        assert isinstance(new_limit, int)
-        self.max_query_limit = new_limit
-
-    @property
-    @abstractmethod
-    def is_raw_query(self) -> bool: ...
-
-    @property
-    @abstractmethod
-    def task_orchestrator(self) -> type[BaseTaskOrchestrator]: ...
-
-    @abstractmethod
-    def to_payload_item(self) -> DatapointsPayloadItem:
-        raise NotImplementedError
-
-    @property
-    def is_missing(self) -> bool:
-        if self._is_missing is None:
-            raise RuntimeError("Before making API-calls the `is_missing` status is unknown")
-        return self._is_missing
-
-    @is_missing.setter
-    def is_missing(self, value: bool) -> None:
-        assert isinstance(value, bool)
-        self._is_missing = value
-
-
-class _SingleTSQueryRaw(_SingleTSQueryBase):
-    def __init__(self, include_status: bool, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.include_status = include_status
-        self.aggregates = self.aggs_camel_case = None
-        self.granularity = None
-
-    @property
-    def is_raw_query(self) -> Literal[True]:
-        return True
-
-    def to_payload_item(self) -> DatapointsPayloadItem:
-        payload = DatapointsPayloadItem(
-            **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-            start=self.start,
-            end=self.end,
-            limit=self.capped_limit,
-            includeOutsidePoints=self.include_outside_points,
-        )
-        if self.target_unit is not None:
-            payload["targetUnit"] = self.target_unit
-        elif self.target_unit_system is not None:
-            payload["targetUnitSystem"] = self.target_unit_system
-
-        if self.include_status is True:
-            payload["includeStatus"] = self.include_status
-        if self.ignore_bad_datapoints is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
-        if self.treat_uncertain_as_bad is False:
-            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
-        return payload
-
-
-class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
-    def __init__(self, *, limit: int, **kwargs: Any) -> None:
-        super().__init__(limit=limit, **kwargs)
-        assert isinstance(limit, int)
-
-    @property
-    def task_orchestrator(self) -> type[SerialLimitedRawTaskOrchestrator]:
-        return SerialLimitedRawTaskOrchestrator
-
-
-class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
-    def __init__(self, *, limit: None, **kwargs: Any) -> None:
-        super().__init__(limit=limit, **kwargs)
-
-    @property
-    def task_orchestrator(self) -> type[ConcurrentUnlimitedRawTaskOrchestrator]:
-        return ConcurrentUnlimitedRawTaskOrchestrator
-
-
-class _SingleTSQueryAgg(_SingleTSQueryBase):
-    def __init__(self, *, aggregates: list[str], granularity: str, **kwargs: Any) -> None:
-        super().__init__(**kwargs, include_outside_points=False)
-        self.aggregates = aggregates
-        self.granularity = granularity
-
-    @property
-    def is_raw_query(self) -> Literal[False]:
-        return False
-
-    @cached_property
-    def aggs_camel_case(self) -> list[str]:
-        return list(map(to_camel_case, self.aggregates))
-
-    def to_payload_item(self) -> DatapointsPayloadItem:
-        payload = DatapointsPayloadItem(
-            **self.identifier.as_dict(),  # type: ignore [typeddict-item]
-            start=self.start,
-            end=self.end,
-            aggregates=self.aggs_camel_case,
-            granularity=self.granularity,
-            limit=self.capped_limit,
-        )
-        if self.target_unit is not None:
-            payload["targetUnit"] = self.target_unit
-        elif self.target_unit_system is not None:
-            payload["targetUnitSystem"] = self.target_unit_system
-
-        if self.ignore_bad_datapoints is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
-        if self.treat_uncertain_as_bad is False:
-            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
-        return payload
-
-
-class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
-    def __init__(self, *, limit: int, **kwargs: Any) -> None:
-        super().__init__(limit=limit, **kwargs)
-        assert isinstance(limit, int)
-
-    @property
-    def task_orchestrator(self) -> type[SerialLimitedAggTaskOrchestrator]:
-        return SerialLimitedAggTaskOrchestrator
-
-
-class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
-    def __init__(self, *, limit: None, **kwargs: Any) -> None:
-        super().__init__(limit=limit, **kwargs)
-
-    @property
-    def task_orchestrator(self) -> type[ConcurrentUnlimitedAggTaskOrchestrator]:
-        return ConcurrentUnlimitedAggTaskOrchestrator
+    @staticmethod
+    def _ts_to_ms_frozen_now(ts: int | str | datetime.datetime | None, frozen_time_now: int, default: int) -> int:
+        # Time 'now' is frozen for all queries in a single call from the user, leading to identical
+        # results e.g. "4d-ago" and "now"
+        if ts is None:
+            return default
+        elif isinstance(ts, str):
+            return frozen_time_now - time_ago_to_ms(ts)
+        else:
+            return timestamp_to_ms(ts)
 
 
 class DpsUnpackFns:
@@ -681,8 +463,9 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool]:
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
+    instance_id = NodeId(res.instanceId.space, res.instanceId.externalId) if res.instanceId else None
     return {
         "id": res.id,
         "external_id": res.externalId,
@@ -690,6 +473,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "is_step": res.isStep,
         "unit": res.unit,
         "unit_external_id": res.unitExternalId,
+        "instance_id": instance_id,
     }
 
 
@@ -719,50 +503,36 @@ def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iter
 
 
 class BaseDpsFetchSubtask:
-    def __init__(
-        self,
-        start: int,
-        end: int,
-        identifier: Identifier,
-        parent: BaseTaskOrchestrator,
-        max_query_limit: int,
-        is_raw_query: bool,
-        target_unit: str | None = None,
-        target_unit_system: str | None = None,
-        include_status: bool = False,
-        ignore_bad_datapoints: bool = True,
-        treat_uncertain_as_bad: bool = True,
-    ) -> None:
+    def __init__(self, start: int, end: int, parent: BaseTaskOrchestrator) -> None:
         self.start = start
         self.end = end
-        self.identifier = identifier
         self.parent = parent
-        self.is_raw_query = is_raw_query
-        self.max_query_limit = max_query_limit
-        self.target_unit = target_unit
-        self.target_unit_system = target_unit_system
-        self.include_status = include_status
-        self.ignore_bad_datapoints = ignore_bad_datapoints
-        self.treat_uncertain_as_bad = treat_uncertain_as_bad
+        self.max_query_limit = (query := parent.query).max_query_limit
         self.is_done = False
         self.n_dps_fetched = 0
 
-        self.static_kwargs = identifier.as_dict()
-        if target_unit is not None:
-            self.static_kwargs["targetUnit"] = target_unit
-        elif target_unit_system is not None:
-            self.static_kwargs["targetUnitSystem"] = target_unit_system
+        self.static_kwargs = query.identifier.as_dict()
+        if not query.is_raw_query:
+            self.static_kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
 
-        if ignore_bad_datapoints is False:
-            self.static_kwargs["ignoreBadDataPoints"] = ignore_bad_datapoints
-        if treat_uncertain_as_bad is False:
-            self.static_kwargs["treatUncertainAsBad"] = treat_uncertain_as_bad
+        if query.target_unit is not None:
+            self.static_kwargs["targetUnit"] = query.target_unit
+        elif query.target_unit_system is not None:
+            self.static_kwargs["targetUnitSystem"] = query.target_unit_system
 
-        if self.is_raw_query and include_status is True:
-            self.static_kwargs["includeStatus"] = include_status
+        if query.ignore_bad_datapoints is False:
+            self.static_kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
+        if query.treat_uncertain_as_bad is False:
+            self.static_kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
+
+        if query.include_status is True:
+            self.static_kwargs["includeStatus"] = query.include_status
+
+        if query.timezone:
+            self.static_kwargs["timeZone"] = query.timezone
 
     @abstractmethod
-    def get_next_payload_item(self) -> DatapointsPayloadItem: ...
+    def get_next_payload_item(self) -> _DatapointsPayloadItem: ...
 
     @abstractmethod
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None: ...
@@ -771,11 +541,8 @@ class BaseDpsFetchSubtask:
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs, is_raw_query=True, max_query_limit=0)
-
-    def get_next_payload_item(self) -> DatapointsPayloadItem:
-        return DatapointsPayloadItem(
+    def get_next_payload_item(self) -> _DatapointsPayloadItem:
+        return _DatapointsPayloadItem(
             start=self.start,
             end=self.end,
             limit=0,  # Not a bug; it just returns the outside points
@@ -795,34 +562,25 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
 class SerialFetchSubtask(BaseDpsFetchSubtask):
     """Fetches datapoints serially until complete, nice and simple. Stores data in parent"""
 
-    def __init__(
-        self,
-        *,
-        aggregates: list[str] | None,
-        granularity: str | None,
-        subtask_idx: tuple[float, ...],
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *, subtask_idx: tuple[float, ...], first_cursor: str | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.aggregates = aggregates
-        self.granularity = granularity
         self.subtask_idx = subtask_idx
         self.next_start = self.start
+        self.next_cursor = first_cursor
+        self.uses_cursor = self.parent.query.use_cursors
 
-        if not self.is_raw_query:
-            self.static_kwargs.update(aggregates=aggregates, granularity=granularity)
-
-    def get_next_payload_item(self) -> DatapointsPayloadItem:
+    def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
-        return DatapointsPayloadItem(
+        return _DatapointsPayloadItem(
             start=self.next_start,
             end=self.end,
             limit=min(self.max_query_limit, remaining),
+            cursor=self.next_cursor,
             **self.static_kwargs,  # type: ignore [typeddict-item]
         )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
-        if self.parent.ts_info is None:
+        if not self.parent.ts_info:
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
 
@@ -832,17 +590,23 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
         n, last_ts = len(dps), dps[-1].timestamp
         self.parent._unpack_and_store(self.subtask_idx, dps)
-        self._update_state_for_next_payload(last_ts, n)
-        if self._is_task_done(n, res.nextCursor):
+        self._update_state_for_next_payload(res, last_ts, n)
+        if self._is_task_done(n):
             self.is_done = True
         return None
 
-    def _update_state_for_next_payload(self, last_ts: int, n: int) -> None:
-        self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
+    def _update_state_for_next_payload(self, res: DataPointListItem, last_ts: int, n: int) -> None:
+        self.next_cursor = res.nextCursor
+        if not self.uses_cursor:
+            self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
         self.n_dps_fetched += n  # Used to quit limited queries asap
 
-    def _is_task_done(self, n: int, next_cursor: str) -> bool:
-        return not next_cursor or n < self.max_query_limit or self.next_start == self.end
+    def _is_task_done(self, n: int) -> bool:
+        return (
+            not self.next_cursor
+            or n < self.max_query_limit
+            or not self.uses_cursor and self.next_start == self.end
+        )  # fmt: skip
 
 
 class SplittingFetchSubtask(SerialFetchSubtask):
@@ -854,22 +618,6 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         super().__init__(**kwargs)
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0  # Actual value doesn't matter (any int will do)
-
-    @property
-    def _static_params(self) -> dict[str, Any]:
-        return dict(
-            parent=self.parent,
-            identifier=self.identifier,
-            aggregates=self.aggregates,
-            granularity=self.granularity,
-            max_query_limit=self.max_query_limit,
-            is_raw_query=self.is_raw_query,
-            target_unit=self.target_unit,
-            target_unit_system=self.target_unit_system,
-            include_status=self.include_status,
-            ignore_bad_datapoints=self.ignore_bad_datapoints,
-            treat_uncertain_as_bad=self.treat_uncertain_as_bad,
-        )
 
     def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
@@ -902,17 +650,28 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.end = boundaries[1]  # We shift end of 'self' backwards
         split_idxs = self._create_subtasks_idxs(n_new_tasks)
         new_subtasks = [
-            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, **self._static_params)
+            SplittingFetchSubtask(start=start, end=end, subtask_idx=idx, parent=self.parent)
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
         self.parent.subtasks.extend(new_subtasks)
         return new_subtasks
 
 
+def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
+    if query.is_raw_query:
+        if query.limit is None:
+            return ConcurrentUnlimitedRawTaskOrchestrator
+        return SerialLimitedRawTaskOrchestrator
+    else:
+        if query.limit is not None or query.use_cursors:
+            return SerialLimitedAggTaskOrchestrator
+        return ConcurrentUnlimitedAggTaskOrchestrator
+
+
 class BaseTaskOrchestrator(ABC):
     def __init__(
         self,
-        query: Any,  # subclasses assert correct type
+        query: DatapointsQuery,
         eager_mode: bool,
         use_numpy: bool,
         first_dps_batch: DataPointListItem | None = None,
@@ -921,10 +680,9 @@ class BaseTaskOrchestrator(ABC):
         self.query = query
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
-        self.ts_info: dict | None = None
+        self.ts_info: dict[str, Any] = {}
         self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
-        self.has_limit = self.query.limit is not None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
 
@@ -932,22 +690,25 @@ class BaseTaskOrchestrator(ABC):
         self.dps_data: _DataContainer = defaultdict(list)
         self.subtasks: list[BaseDpsFetchSubtask] = []
 
-        if self.query.is_raw_query:
-            if self.query.include_status:
+        if query.is_raw_query:
+            if query.include_status:
                 self.status_code: _DataContainer = defaultdict(list)
                 self.status_symbol: _DataContainer = defaultdict(list)
-            if self.use_numpy and not self.query.ignore_bad_datapoints:
+            if use_numpy and not query.ignore_bad_datapoints:
                 self.null_timestamps: set[int] = set()
 
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points for free (if asked for) and ts info:
-        if not self.eager_mode:
+        if eager_mode:
+            self.first_cursor = None
+        else:
             assert first_dps_batch is not None and first_limit is not None
+            self.first_cursor = first_dps_batch.nextCursor
             self._extract_first_dps_batch(first_dps_batch, first_limit)
 
     @property
     def is_done(self) -> bool:
-        if self.ts_info is None:
+        if not self.ts_info:
             return False
         elif self._is_done:
             return True
@@ -960,13 +721,6 @@ class BaseTaskOrchestrator(ABC):
     @is_done.setter
     def is_done(self, value: bool) -> None:
         self._is_done = value
-
-    @property
-    def ts_info_dct(self) -> dict[str, Any]:
-        # This is mostly for mypy to avoid 'cast' x 10000, but also a nice check to make sure
-        # we have the required ts info before returning a result dps object.
-        assert self.ts_info is not None
-        return self.ts_info
 
     @property
     def start_ts_first_batch(self) -> int:
@@ -993,20 +747,28 @@ class BaseTaskOrchestrator(ABC):
         self._store_first_batch(dps, first_limit)
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
-        self.ts_info = get_ts_info_from_proto(res)
-        self.ts_info["granularity"] = self.query.granularity
+        self.ts_info.update(get_ts_info_from_proto(res))
+        self.ts_info["timezone"] = self.query.original_timezone
+        self.ts_info["granularity"] = self.query.original_granularity  # show '1quarter', not '3mo'
         if self.use_numpy:
             self.raw_dtype_numpy = decide_numpy_dtype_from_is_string(res.isString)
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
-        # Set `start` for the first subtask:
-        self.first_start = dps[-1].timestamp + self.offset_next
+        # Set `start` for the first subtask; since we have a cursor, this is only (really)
+        # needed for time domain splitting:
+        self.first_start = dps[-1].timestamp
+        if not self.query.use_cursors:
+            self.first_start += self.offset_next
         self._unpack_and_store(FIRST_IDX, dps)
 
         # Are we done after first batch?
-        if self.first_start == self.query.end or len(dps) < first_limit:
+        if len(dps) < first_limit:
             self._is_done = True
-        elif self.has_limit and len(dps) <= self.query.limit <= first_limit:
+        elif not self.first_cursor and not self.query.include_outside_points:
+            self._is_done = True  # no cursor when including outside...
+        elif not self.query.use_cursors and self.first_start == self.query.end:
+            self._is_done = True
+        elif self.query.limit is not None and len(dps) <= self.query.limit <= first_limit:  # TODO: len == limit??
             self._is_done = True
 
     def _clear_data_containers(self) -> None:
@@ -1028,13 +790,9 @@ class BaseTaskOrchestrator(ABC):
         if self.eager_mode and self.query.is_raw_query and self.query.include_outside_points:
             # In eager mode we do not get the "first dps batch" to extract outside points from:
             self.subtask_outside_points = OutsideDpsFetchSubtask(
-                start=self.query.start,
-                end=self.query.end,
-                identifier=self.query.identifier,
+                start=self.query.start_ms,
+                end=self.query.end_ms,
                 parent=self,
-                include_status=self.query.include_status,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
             )
             # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
@@ -1058,8 +816,10 @@ class BaseTaskOrchestrator(ABC):
 
 
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
-    def get_remaining_limit(self) -> int:
+    def get_remaining_limit(self) -> float:
         assert len(self.subtasks) == 1
+        if self.query.limit is None:
+            return math.inf
         return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
@@ -1067,20 +827,7 @@ class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
             SerialFetchSubtask(
-                start=start,
-                end=self.query.end,
-                identifier=self.query.identifier,
-                parent=self,
-                max_query_limit=self.query.max_query_limit,
-                is_raw_query=self.query.is_raw_query,
-                target_unit=self.query.target_unit,
-                target_unit_system=self.query.target_unit_system,
-                aggregates=self.query.aggs_camel_case,
-                granularity=self.query.granularity,
-                subtask_idx=FIRST_IDX,
-                include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
+                start=start, end=self.query.end, parent=self, subtask_idx=FIRST_IDX, first_cursor=self.first_cursor
             )
         ]
         self.subtasks.extend(subtasks)
@@ -1108,13 +855,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info_dct, timestamp=[], value=[], **status_cols)
+            return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
         return DatapointsArray._load_from_arrays(
             {
-                **self.ts_info_dct,
+                **self.ts_info,
                 "timestamp": np.array([], dtype=np.int64),
                 "value": np.array([], dtype=self.raw_dtype_numpy),
                 **status_cols,
@@ -1141,20 +888,19 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 status_columns["null_timestamps"] = self.null_timestamps
             return DatapointsArray._load_from_arrays(
                 {
-                    **self.ts_info_dct,
+                    **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
                     "value": create_array_from_dps_container(self.dps_data),
                     **status_columns,
                 }
             )
-
         if self.query.include_status:
             status_columns.update(
                 status_code=create_list_from_dps_container(self.status_code),
                 status_symbol=create_list_from_dps_container(self.status_symbol),
             )
         return Datapoints(
-            **self.ts_info_dct,
+            **self.ts_info,
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
             **status_columns,
@@ -1225,7 +971,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
     def _extract_outside_points(self, dps: DatapointsRaw) -> None:
         first, last = None, None
-        if dps[0].timestamp < self.query.start:
+        if dps[0].timestamp < self.query.start_ms:
             # We got a dp before `start`, this (and 'after') should not impact our count towards `limit`,
             # so we pop to remove it from dps:
             first = dps.pop(0)
@@ -1234,7 +980,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 self.dp_outside_start = DpsUnpackFns.ts(first), DpsUnpackFns.raw_dp(first)
 
-        if dps and dps[-1].timestamp >= self.query.end:  # >= because `end` is exclusive
+        if dps and dps[-1].timestamp >= self.query.end_ms:  # >= because `end` is exclusive
             last = dps.pop(-1)
             if not self.query.ignore_bad_datapoints:
                 self.dp_outside_end = DpsUnpackFns.ts(last), DpsUnpackFns.nullable_raw_dp(last)
@@ -1250,10 +996,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 self.dp_outside_status_symbol_end = DpsUnpackFns.status_symbol(last)
 
 
-class SerialLimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, SerialTaskOrchestratorMixin):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        assert isinstance(self.query, _SingleTSQueryRawLimited)
+class SerialLimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, SerialTaskOrchestratorMixin): ...
 
 
 class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
@@ -1274,36 +1017,17 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         return subtasks
 
     def _create_uniformly_split_subtasks(self, n_workers_per_queries: int) -> list[BaseDpsFetchSubtask]:
-        start = self.query.start if self.eager_mode else self.first_start
-        tot_ms = (end := self.query.end) - start
+        start = self.query.start_ms if self.eager_mode else self.first_start
+        tot_ms = (end := self.query.end_ms) - start
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         boundaries = split_time_range(start, end, n_periods, self.offset_next)
         return [
-            SplittingFetchSubtask(
-                start=start,
-                end=end,
-                subtask_idx=(i,),
-                parent=self,
-                identifier=self.query.identifier,
-                aggregates=self.query.aggs_camel_case,
-                granularity=self.query.granularity,
-                target_unit=self.query.target_unit,
-                target_unit_system=self.query.target_unit_system,
-                max_query_limit=self.query.max_query_limit,
-                is_raw_query=self.query.is_raw_query,
-                include_status=self.query.include_status if self.query.is_raw_query else False,
-                ignore_bad_datapoints=self.query.ignore_bad_datapoints,
-                treat_uncertain_as_bad=self.query.treat_uncertain_as_bad,
-            )
+            SplittingFetchSubtask(start=start, end=end, subtask_idx=(i,), parent=self)
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
 
 
 class ConcurrentUnlimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, ConcurrentTaskOrchestratorMixin):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        assert isinstance(self.query, _SingleTSQueryRawUnlimited)
-
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         # It makes no sense to split beyond what the max-size of a query allows (for a maximally dense
         # time series), but that is rarely useful as 100k dps is just 1 min 40 sec... we guess an
@@ -1312,13 +1036,13 @@ class ConcurrentUnlimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, Concurrent
 
 
 class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
-    def __init__(self, *, query: Any, use_numpy: bool, **kwargs: Any) -> None:
+    def __init__(self, *, query: DatapointsQuery, use_numpy: bool, **kwargs: Any) -> None:
         self._set_aggregate_vars(query.aggs_camel_case, use_numpy)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
     @cached_property
     def offset_next(self) -> int:
-        return granularity_to_ms(self.query.granularity)
+        return granularity_to_ms(cast(str, self.query.granularity))
 
     def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
@@ -1347,10 +1071,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
-        return Datapoints(timestamp=[], **self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
         if not self.ts_data or self.query.limit == 0:
@@ -1368,7 +1092,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
                     np.int64
                 )
-            return DatapointsArray._load_from_arrays({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
         if self.single_agg:
@@ -1379,7 +1103,7 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         for agg in self.int_aggs:
             # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
             lst_dct[agg] = list(map(ensure_int, lst_dct[agg]))
-        return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
+        return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
         if self.use_numpy:
@@ -1398,17 +1122,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         self.dps_data[idx].append(lst)
 
 
-class SerialLimitedAggTaskOrchestrator(BaseAggTaskOrchestrator, SerialTaskOrchestratorMixin):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        assert isinstance(self.query, _SingleTSQueryAggLimited)
+class SerialLimitedAggTaskOrchestrator(BaseAggTaskOrchestrator, SerialTaskOrchestratorMixin): ...
 
 
 class ConcurrentUnlimitedAggTaskOrchestrator(BaseAggTaskOrchestrator, ConcurrentTaskOrchestratorMixin):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        assert isinstance(self.query, _SingleTSQueryAggUnlimited)
-
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         n_max_dps = tot_ms // self.offset_next  # evenly divides
         return min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit))

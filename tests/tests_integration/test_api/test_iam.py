@@ -22,6 +22,9 @@ class TestGroupsAPI:
         loaded = GroupList.load(group_list.dump(camel_case=True))
         assert group_list.dump() == loaded.dump()
 
+    @pytest.mark.skip(
+        reason="CogniteAPIError: There can only be 1500 undeleted or deleted groups per project | code: 400"
+    )
     @pytest.mark.parametrize("source_id, members", (("abc-123", None), (None, ["user1", "user2"])))
     def test_create(self, cognite_client, source_id, members):
         metadata = {"haha": "blabla"}

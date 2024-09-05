@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api_client import APIClient
@@ -29,6 +30,43 @@ class TransformationSchedulesAPI(APIClient):
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5
         self._UPDATE_LIMIT = 5
+
+    @overload
+    def __call__(
+        self, chunk_size: None = None, include_public: bool = True, limit: int | None = None
+    ) -> Iterator[TransformationSchedule]: ...
+
+    @overload
+    def __call__(
+        self, chunk_size: int, include_public: bool = True, limit: int | None = None
+    ) -> Iterator[TransformationScheduleList]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
+    ) -> Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]:
+        """Iterate over transformation schedules
+
+        Args:
+            chunk_size (int | None): The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
+            include_public (bool):  Whether public transformations should be included in the results. (default true).
+            limit (int | None):  Limits the number of results to be returned. Defaults to yielding all schedules.
+
+        Returns:
+            Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]: Yields schedules one by one if chunk_size is None, otherwise yields lists of schedules.
+
+        """
+        return self._list_generator(
+            method="GET",
+            chunk_size=chunk_size,
+            limit=limit,
+            resource_cls=TransformationSchedule,
+            list_cls=TransformationScheduleList,
+            filter=TransformationFilter(include_public=include_public).dump(camel_case=True),
+        )
+
+    def __iter__(self) -> Iterator[TransformationSchedule]:
+        """Iterate over all transformation schedules"""
+        return self()
 
     @overload
     def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...

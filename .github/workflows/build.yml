@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
-          extras: '-E numpy'
+          extras: "-E pandas"
       - name: Linting and static code checks
         run: pre-commit run --all-files
 
@@ -46,13 +46,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.8', '3.11', '3.12']  # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
+        python-version: ["3.8", "3.11", "3.12"] # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
           python_version: ${{ matrix.python-version }}
-          extras: '-E all'
+          extras: "-E all"
 
       - name: Test full
         env:
@@ -64,9 +64,10 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        # Testpaths are defined in the pytest.ini file:
+        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8'
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.8'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

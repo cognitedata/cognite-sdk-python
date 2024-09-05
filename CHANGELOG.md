@@ -17,6 +17,308 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.6] - 2024-09-05
+### Fixed
+- Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`
+  (when a single space is requested (requirement)). This also affects the `space` parameter to e.g.
+  `client.data_modeling.instances.list(...)`
+
+## [7.58.5] - 2024-09-04
+### Added
+- Data modeling filters now support properties that are lists.
+### Fixed
+- Read-only properties on CogniteAssetApply (root, path and last_updated_time) are now removed.
+
+## [7.58.4] - 2024-09-03
+### Fixed
+- The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles truncated milliseconds.
+
+## [7.58.3] - 2024-09-03
+### Fixed
+- The parameter `query` is now optional in `client.data_modeling.instances.search(...)`.
+
+## [7.58.2] - 2024-09-03
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.sources`.
+
+## [7.58.1] - 2024-09-03
+### Fixed
+- [Feature Preview - beta] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
+ can be null or missing, as according to the API spec.
+
+## [7.58.0] - 2024-09-03
+### Added
+- Data Workflows: add support for `SubworkflowReferenceParameters` subworkflow task type. Allowing embedding other workflows into a workflow.
+
+## [7.57.0] - 2024-09-03
+### Added
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
+
+## [7.56.0] - 2024-09-02
+### Added
+- Support for referencing files by instance id when running diagrams.detect
+
+## [7.55.2] - 2024-08-29
+### Fixed
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
+
+## [7.55.1] - 2024-08-29
+### Fixed
+- Missing exports for workflow triggers
+
+## [7.55.0] - 2024-08-23
+### Added
+- Support for creating a session using a one-shot token in the `client.iam.session.create` method.
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing
+  a custom nonce instead of letting the SDK generate it from your current credentials.
+
+## [7.54.19] - 2024-08-23
+### Added
+- [Feature Preview - beta] Support for `client.workflows.triggers`.
+
+## [7.54.18] - 2024-08-26
+### Added
+- When retrieving datapoints, `instance_id` is now set on the objects (for time series created
+  through Data Modelling).
+
+## [7.54.17] - 2024-08-22
+### Added
+- [Feature Preview]  Added `ExtractorExtension` model of the Core Model.
+
+## [7.54.16] - 2024-08-22
+### Added
+- Added new LocationFiltersAcl capability.
+
+## [7.54.15] - 2024-08-21
+### Fixed
+- [Feature Preview]  Updated the Core Model to latest version.
+
+## [7.54.14] - 2024-08-19
+### Fixed
+- [Feature Preview - alpha] fix `files.upload_content`, `files.upload_content_bytes` and
+  `files.multipart_upload_content_session`
+
+## [7.54.13] - 2024-08-13
+### Added
+- [Feature Preview - alpha] Support for `instanceId` in the `client.files.retrieve`, `client.files.retrieve_multiple`,
+  `client.files.update`, `client.files.retrieve_download_urls`, `client.files.download_bytes`, `client.files.download_to_path`,
+  `client.files.download`.
+- [Feature Preview - alpha] Add three new methods for uploading content: `client.files.upload_content`,
+  `client.files.upload_content_bytes`, `client.files.multipart_upload_content_session`.
+
+  This is an experimental feature and may change without warning.
+
+## [7.54.12] - 2024-08-08
+### Fixed
+- NodeList and EdgeList (and subclasses) now expects an instance ID, `(space, external_id)` in the `.get` method.
+  Using just an `external_id` is still possible, but deprecated as it is ambiguous in the absence of the space
+  identifier, and will just return the last matching instance (as previously).
+- SpaceList.get now works and expects a space identifier in the `.get` method.
+
+## [7.54.11] - 2024-07-26
+### Fixed
+- Creating a Group with an `UnknownAcl` supported by the API no longer raises a client-side `ValueError` after
+  successfully creating the group.
+
+## [7.54.10] - 2024-07-26
+### Changed
+- Added option to add last_updated_time to the index of client.raw.rows.retrieve_dataframe.
+
+## [7.54.9] - 2024-07-22
+### Changed
+- [Feature Preview] Updated the Core Model to require keyword arguments for all classes and include
+  docstring.
+
+## [7.54.8] - 2024-07-22
+### Added
+- The method `client.functions.schedules.retrieve` now accepts the missing parameter `ignore_unknown_ids` as well
+  as retrieving multiple schedules at once.
+- The method `client.functions.schedules.create` now supports creating using a `FunctionScheduleWrite` object.
+
+### Changed
+- When creating a new function schedule without specifying `description`, the default value is now
+  correctly set to `None` instead of `""`.
+
+## [7.54.7] - 2024-07-22
+### Fixed
+- The method `client.three_d.models.update` no longer accepts `ThreeDModelWrite` as this will raise a `ValueError`.
+- The method `client.three_d.models.create` now supports creating multiple models with different metdata fields
+  in a single call.
+
+## [7.54.6] - 2024-07-19
+### Fixed
+- In the data classe, `NodeApply` and `EdgeApply` the argument `camel_case=False` is now
+  respected in `.dump()`.
+
+## [7.54.5] - 2024-07-19
+### Changed
+- [Feature Preview] Updated the Core Model to the newest version released on July 12th, 2024. The
+  introduction of the `Cognite` prefix for all classes.
+
+## [7.54.4] - 2024-07-19
+### Changed
+- Instance classes like `Node` and `NodeList` now expand properties by default in notebook-like environments.
+
+## [7.54.3] - 2024-07-18
+### Added
+- [Feature Preview] Support for `enum` as container property type in the data modeling APIs. Note that this is not
+  yet supported in the API, and is an experimental feature that may change without warning.
+
+## [7.54.2] - 2024-07-16
+### Fixed
+- A bug in the list method of the RelationshipsAPI that could cause a thread deadlock.
+
+## [7.54.1] - 2024-07-15
+### Fixed
+- Calling `client.functions.retrieve` or `client.functions.delete` with more than 10 ids no longer
+  raises a `CogniteAPIError`.
+- Iterating over functions using `client.functions` or `client.functions(...)` no longer raises a `CogniteAPIError`.
+### Added
+- Added missing filter parameter `metadata` to `client.functions.list`.
+### Changed
+- When creating a new function without specifying `description` or `owner`, the default values are now
+  correctly set to `None` instead of `""`.
+
+## [7.54.0] - 2024-07-12
+### Added
+- In the `client.data_modeling.instances` the methods `.search`, `.retrieve`,`.list`, `.query`, and `.sync` now
+  support the `include_typing` parameter. This parameter is used to include typing information in the response,
+  that can be accessed via the `.typing` attribute on the result object.
+
+## [7.53.4] - 2024-07-11
+### Added
+- `FilesAPI.upload_bytes` and `FilesAPI.upload` are updated to be compatible with Private Link projects.
+
+## [7.53.3] - 2024-07-11
+### Added
+- [Feature Preview - alpha] Support for `instanceId` in the `client.time_series` `.retrieve`, `.retrieve_multiple`,
+  and `.update` methods. This is an experimental feature and may change without warning.
+
+## [7.53.2] - 2024-07-03
+### Fixed
+- If you derived from `TypedNode` or `TypedEdge`, and then derived the `load` method would not include the parent
+  class properties. Same if you used multiple inheritance. This is now fixed.
+### Added
+- [Feature Preview - alpha] Core Model, available `cognite.client.data_classes import cdm`.
+
+## [7.53.1] - 2024-07-02
+### Fixed
+- In the new `retrieve_nodes` and `retrieve_edges` methods in the `client.data_modeling.instances` module, if you
+  give the identifier of a single node or edge, you will now get a single `TypedNode` or `TypedEdge` instance back.
+
+## [7.53.0] - 2024-07-02
+### Added
+- New classes `TypedNode` and `TypedEdge` (in addition to `TypedNodeApply` and `TypedEdgeApply`) to be used as
+  base classes for user created classes that represent nodes and edges with properties in a specific view. For example,
+  is you have a view `Person` with properties `name` and `age`, you can create a class `Person` that inherits from
+  `TypedNode` and add properties `name` and `age` to it. This class can then be used with the
+  `client.data_modeling.instances.retrieve(..)`, `.apply(...)`, `.list(...)` and `.search(...)` methods.
+
+## [7.52.3] - 2024-06-27
+### Added
+- Added `partitions` parameter to `retrieve_dataframe()` method of the `RawRowsAPI`.
+
+## [7.52.2] - 2024-06-26
+### Added
+- Alpha feature: `client.time_series.data` support for `instance_id` in `insert`, `insert_multiple`,
+  `delete`, and `retrieve` methods. This is an experimental feature and may change without warning.
+
+## [7.52.1] - 2024-06-26
+### Fixed
+- Calling `.extend` on a `NodeListWithCursor` or `EdgeListWithCursor` no longer raises a `TypeError`.
+
+## [7.52.0] - 2024-06-19
+### Added
+- Support the `immutable` flag on container/view properties
+
+## [7.51.1] - 2024-06-18
+### Added
+- Added support for serializing Node/Edge properties of type `list` of `NodeId` and `DirectRelationReference`,
+  `date`, `datetime` and list of `date` and `datetime` to `json` format.
+
+## [7.51.0] - 2024-06-16
+### Added
+- Support for iterating over `Functions`, `FunctionSchedules`, `DatapointSubscriptions`, `Transformations`,
+  `TransformationSchedules`, `TransformationNotifications`, `ExtractionPipelines`, `Workflows`, `WorkflowVersions`.
+
+## [7.50.0] - 2024-06-14
+### Changed
+- DatapointsAPI support for timezones and calendar-based aggregates reaches general availability (GA).
+### Deprecated
+- The function `DatapointsAPI.retrieve_dataframe_in_tz` is deprecated. Use the other retrieve methods instead
+  and pass in `timezone`.
+
+## [7.49.2] - 2024-06-12
+### Fixed
+- Converting rows (`RowList` and `RowListWrite`) to a pandas DataFrame no longer silently drops rows that do not have
+  any columnar data.
+
+## [7.49.1] - 2024-06-11
+### Fixed
+- Fixes resetting dataSetId to None in a ThreeDModelUpdate.
+
+## [7.49.0] - 2024-06-05
+### Added
+- `WorkfowExecutionAPI.list` now allows filtering by execution status.
+
+## [7.48.1] - 2024-06-04
+### Fixed
+- A bug introduced in `7.45.0` that would short-circuit raw datapoint queries too early when a lot of time series was
+  requested at the same time, and `include_outside_points=True` was used (empty cursor are to be expected).
+
+## [7.48.0] - 2024-06-04
+### Changed
+- Mark Data Workflows SDK implementation as Generally Available.
+
+## [7.47.0] - 2024-06-04
+### Added
+- Support for retrieving `Labels`, `client.labels.retrieve`.
+
+## [7.46.2] - 2024-06-03
+### Added
+- Added option for silencing `FeaturePreviewWarnings` in the `cognite.client.global_config`.
+
+## [7.46.1] - 2024-05-31
+### Fixed
+- Pyodide issue related to missing tzdata package.
+
+## [7.46.0] - 2024-05-31
+### Added
+- `RawRowsAPI.insert_dataframe` now has a new `dropna` setting (defaulting to True, as this would otherwise raise later).
+
+## [7.45.0] - 2024-05-31
+### Added
+- DatapointsAPI now support `timezone` and new calendar-based granularities like `month`, `quarter` and `year`.
+  These API features are in beta, and the SDK implementation in alpha, meaning breaking changes can
+  occur without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
+  consider preparing to upgrade as soon as the features reach general availability (GA).
+
+## [7.44.1] - 2024-05-24
+### Added
+- Missing parameter `timeout` to `client.transformations.preview`.
+
+## [7.44.0] - 2024-05-24
+### Added
+- New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object
+  to a string representing a timestamp in the format expected by the Cognite GraphQL API.
+
+## [7.43.6] - 2024-05-27
+### Improved
+- JSON is no longer attempted decoded when e.g. expecting protobuf, which currently leads to a small performance
+  improvement for datapoints fetching.
+
+## [7.43.5] - 2024-05-22
+### Fixed
+- Transformation schemas no longer raise when loaded into its resource type.
+
+## [7.43.4] - 2024-05-20
+### Fixed
+- The data modeling APIs (Views, Containers, Data Models and Spaces) limits for create, retrieve, delete,
+  and list were not matching the API spec, causing the SDK to wrongly split large calls into too few requests.
+  This means that the SDK will no longer raise a `CogniteAPIError` if you, for example, try to delete
+  more than 100 containers in a single method call.
+
 ## [7.43.3] - 2024-05-15
 ### Fixed
 - Identity providers that return `expires_in` as a string no longer causes `TypeError` when authenticating.

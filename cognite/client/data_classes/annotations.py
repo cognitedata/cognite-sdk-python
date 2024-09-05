@@ -9,6 +9,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
@@ -359,7 +360,7 @@ class AnnotationUpdate(CogniteUpdate):
         return AnnotationUpdate._StrUpdate(self, "annotationType")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("data", is_nullable=False),
             PropertySpec("status", is_nullable=False),

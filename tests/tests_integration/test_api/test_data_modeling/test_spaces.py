@@ -8,6 +8,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Space, SpaceApply, SpaceList
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -22,7 +23,11 @@ def cdf_spaces(cognite_client: CogniteClient, integration_test_space: Space) -> 
 class TestSpacesAPI:
     def test_list(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
-        assert actual_space_in_cdf.as_apply() == cdf_spaces.as_apply()
+        # There's a lot of CRUD ops going on in parallel, check that we have at least some overlap:
+        space_ids = set(actual_space_in_cdf.as_ids()).intersection(cdf_spaces.as_ids())
+        assert space_ids
+        for space in space_ids:
+            assert actual_space_in_cdf.get(space).as_apply() == cdf_spaces.get(space).as_apply()  # type: ignore [union-attr]
 
     def test_list_include_global(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         spaces_with_global = cognite_client.data_modeling.spaces.list(include_global=True, limit=-1)
@@ -33,7 +38,9 @@ class TestSpacesAPI:
 
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient) -> None:
         my_space = SpaceApply(
-            space="myNewSpace", name="My New Space", description="This is part of the integration testing for the SDK."
+            space=f"myNewSpace-{random_string(10)}",
+            name="My New Space",
+            description="This is part of the integration testing for the SDK.",
         )
         created_space: Space | None = None
         deleted_spaces: list[str] = []

@@ -3,14 +3,16 @@ from __future__ import annotations
 import threading
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import UserDict, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
     Collection,
     Dict,
+    Generic,
     ItemsView,
     Iterator,
     KeysView,
@@ -23,23 +25,28 @@ from typing import (
     Union,
     ValuesView,
     cast,
-    final,
     overload,
 )
 
 from typing_extensions import Self, TypeAlias
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import (
+    CogniteObject,
+    CogniteResourceList,
+    T_CogniteResource,
+    T_WriteClass,
+    WriteableCogniteResourceList,
+)
 from cognite.client.data_classes.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.core import (
-    DataModelingInstancesList,
     DataModelingResource,
     DataModelingSort,
     WritableDataModelingResource,
 )
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
+    PropertyType,
     UnitReference,
     UnitSystemReference,
 )
@@ -50,6 +57,8 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
+from cognite.client.utils._auxiliary import flatten_dict
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -69,9 +78,27 @@ PropertyValue: TypeAlias = Union[
     List[float],
     List[bool],
     List[dict],
+]
+PropertyValueWrite: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    dict,
+    List[str],
+    List[int],
+    List[float],
+    List[bool],
+    List[dict],
     NodeId,
     DirectRelationReference,
+    date,
+    datetime,
+    List[Union[NodeId, DirectRelationReference]],
+    List[date],
+    List[datetime],
 ]
+
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
 
@@ -86,7 +113,7 @@ class NodeOrEdgeData(CogniteObject):
     """
 
     source: ContainerId | ViewId
-    properties: Mapping[str, PropertyValue]
+    properties: Mapping[str, PropertyValueWrite]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -107,15 +134,13 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties: dict[str, PropertyValue] = {}
+        properties: dict[str, str | int | float | bool | dict | list] = {}
         for key, value in self.properties.items():
-            if isinstance(value, NodeId):
-                # We don't want to dump the instance_type field when serializing NodeId in this context
-                properties[key] = value.dump(camel_case, include_instance_type=False)
-            elif isinstance(value, DirectRelationReference):
-                properties[key] = value.dump(camel_case)
+            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
             else:
-                properties[key] = value
+                properties[key] = _serialize_property_value(value, camel_case)
+
         output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
@@ -125,6 +150,20 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
+
+
+def _serialize_property_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
+    if isinstance(value, NodeId):
+        # We don't want to dump the instance_type field when serializing NodeId in this context
+        return value.dump(camel_case, include_instance_type=False)
+    elif isinstance(value, DirectRelationReference):
+        return value.dump(camel_case)
+    elif isinstance(value, datetime):
+        return value.isoformat(timespec="milliseconds")
+    elif isinstance(value, date):
+        return value.isoformat()
+    else:
+        return value
 
 
 class InstanceCore(DataModelingResource, ABC):
@@ -155,7 +194,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         instance_type (Literal["node", "edge"]): No description.
-        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
@@ -171,6 +210,18 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+        }
+        if self.existing_version is not None:
+            output["existingVersion" if camel_case else "existing_version"] = self.existing_version
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
+        return output
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -358,9 +409,20 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             self.__raise_if_non_singular_source(attr)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case)
-        if "properties" in dumped:
+        dumped = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "version": self.version,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+        }
+        if self.deleted_time is not None:
+            dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
+        if self.properties:
             dumped["properties"] = self.properties.dump()
+        else:
+            dumped["properties"] = {}
         return dumped
 
     def to_pandas(  # type: ignore [override]
@@ -380,7 +442,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
             expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
             remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
-            **kwargs (Any): For backwards compatability.
+            **kwargs (Any): For backwards compatibility.
 
         Returns:
             pd.DataFrame: The dataframe.
@@ -521,18 +583,7 @@ class NodeApply(InstanceApply["NodeApply"]):
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        if isinstance(type, tuple):
-            self.type: DirectRelationReference | None = DirectRelationReference.load(type)
-        else:
-            self.type = type
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        if self.sources:
-            output["sources"] = [source.dump(camel_case) for source in self.sources]
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-        return output
+        self.type = DirectRelationReference.load(type) if type else None
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
@@ -544,15 +595,20 @@ class NodeApply(InstanceApply["NodeApply"]):
             type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        return output
+
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
-    def as_write(self) -> NodeApply:
+    def as_write(self) -> Self:
         """Returns this NodeApply instance"""
         return self
 
 
-@final
 class Node(Instance["NodeApply"]):
     """A node. This is the read version of the node.
 
@@ -564,7 +620,7 @@ class Node(Instance["NodeApply"]):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the node.
-        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -576,10 +632,10 @@ class Node(Instance["NodeApply"]):
         created_time: int,
         deleted_time: int | None,
         properties: Properties | None,
-        type: DirectRelationReference | None,
+        type: DirectRelationReference | tuple[str, str] | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
-        self.type = type
+        self.type = DirectRelationReference.load(type) if type else None
 
     def as_apply(self) -> NodeApply:
         """
@@ -733,7 +789,6 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         return self
 
 
-@final
 class Edge(Instance[EdgeApply]):
     """An Edge. This is the read version of the edge.
 
@@ -741,11 +796,11 @@ class Edge(Instance[EdgeApply]):
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         version (int): DMS version.
-        type (DirectRelationReference): The type of edge.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): No description.
     """
@@ -755,18 +810,18 @@ class Edge(Instance[EdgeApply]):
         space: str,
         external_id: str,
         version: int,
-        type: DirectRelationReference,
+        type: DirectRelationReference | tuple[str, str],
         last_updated_time: int,
         created_time: int,
-        start_node: DirectRelationReference,
-        end_node: DirectRelationReference,
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
         deleted_time: int | None,
         properties: Properties | None,
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
-        self.type = type
-        self.start_node = start_node
-        self.end_node = end_node
+        self.type = DirectRelationReference.load(type)
+        self.start_node = DirectRelationReference.load(start_node)
+        self.end_node = DirectRelationReference.load(end_node)
 
     def as_apply(self) -> EdgeApply:
         """
@@ -889,8 +944,111 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
         return [node.as_id() for node in self]
 
 
-class NodeList(DataModelingInstancesList[NodeApply, Node]):
-    _RESOURCE = Node
+T_Instance = TypeVar("T_Instance", bound=Instance)
+
+
+class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
+    def _build_id_mappings(self) -> None:
+        self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
+        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
+        self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
+
+    def get(
+        self,
+        id: InstanceId | tuple[str, str] | None = None,  # type: ignore [override]
+        external_id: str | None = None,
+    ) -> T_Instance | None:
+        """Get an instance from this list by instance ID.
+
+        Args:
+            id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
+            external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
+
+        Returns:
+            T_Instance | None: The requested instance if present, else None
+        """
+        # TODO: Remove when we ditch PY3.8
+        if external_id is not None:
+            warnings.warn(
+                "Calling .get with an external ID is deprecated due to being ambiguous in the absense of 'space', and "
+                "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
+                UserWarning,
+            )
+            return self._ext_id_to_item.get(external_id)
+
+        if isinstance(id, InstanceId):
+            id = id.as_tuple()
+        return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
+
+    def extend(self, other: Iterable[Any]) -> None:
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other_res_list.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
+
+    def to_pandas(  # type: ignore [override]
+        self,
+        camel_case: bool = False,
+        convert_timestamps: bool = True,
+        expand_properties: bool = False,
+        remove_property_prefix: bool = True,
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Convert the instance into a pandas DataFrame. Note that if the properties column is expanded and there are
+        keys in the metadata that already exist in the DataFrame, then an error will be raised by pandas during joining.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
+            convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
+            expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
+            remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
+            **kwargs (Any): For backwards compatibility.
+
+        Returns:
+            pd.DataFrame: The Cognite resource as a dataframe.
+        """
+        kwargs.pop("expand_metadata", None), kwargs.pop("metadata_prefix", None)
+        if kwargs:
+            raise TypeError(f"Unsupported keyword arguments: {kwargs}")
+        if not expand_properties:
+            warnings.warn(
+                "Keyword argument 'expand_properties' will change default from False to True in the next major version.",
+                DeprecationWarning,
+            )
+        df = super().to_pandas(camel_case=camel_case, expand_metadata=False, convert_timestamps=convert_timestamps)
+        if not expand_properties or "properties" not in df.columns:
+            return df
+
+        prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
+        if remove_property_prefix and not prop_df.empty:
+            # We only do/allow this if we have a single source:
+            view_id, *extra = set(vid for item in self for vid in item.properties)
+            if not extra:
+                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+            else:
+                warnings.warn(
+                    "Can't remove view ID prefix from expanded property columns as multiple sources exist",
+                    RuntimeWarning,
+                )
+        return df.join(prop_df)
+
+
+T_Node = TypeVar("T_Node", bound=Node)
+
+
+class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
+    _RESOURCE = Node  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        resources: Collection[Any],
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(resources, cognite_client)
+        self.typing = typing
 
     def as_ids(self) -> list[NodeId]:
         """
@@ -905,13 +1063,46 @@ class NodeList(DataModelingInstancesList[NodeApply, Node]):
         """Returns this NodeList as a NodeApplyList"""
         return NodeApplyList([node.as_write() for node in self])
 
+    @classmethod
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        resources = [
+            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            for response in responses
+            for item in response.get("items", [])
+        ]
+        return cls(resources, typing, cognite_client=cognite_client)
 
-class NodeListWithCursor(NodeList):
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "items": self.dump(camel_case),
+        }
+        if self.typing:
+            output["typing"] = self.typing.dump(camel_case)
+        return output
+
+
+class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
-        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+        self,
+        resources: Collection[Any],
+        cursor: str | None,
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources, typing, cognite_client)
         self.cursor = cursor
+
+    def extend(self, other: NodeListWithCursor) -> None:  # type: ignore[override]
+        if not isinstance(other, type(self)):
+            raise TypeError("Unable to extend as the types do not match")
+        other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self.cursor = other.cursor
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -940,8 +1131,20 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
-    _RESOURCE = Edge
+T_Edge = TypeVar("T_Edge", bound=Edge)
+
+
+class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
+    _RESOURCE = Edge  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        resources: Collection[Any],
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(resources, cognite_client)
+        self.typing = typing
 
     def as_ids(self) -> list[EdgeId]:
         """
@@ -956,13 +1159,46 @@ class EdgeList(DataModelingInstancesList[EdgeApply, Edge]):
         """Returns this EdgeList as a EdgeApplyList"""
         return EdgeApplyList([edge.as_write() for edge in self], cognite_client=self._get_cognite_client())
 
+    @classmethod
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        resources = [
+            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            for response in responses
+            for item in response.get("items", [])
+        ]
+        return cls(resources, typing, cognite_client=cognite_client)
+
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "items": self.dump(camel_case),
+        }
+        if self.typing:
+            output["typing"] = self.typing.dump(camel_case)
+        return output
+
 
 class EdgeListWithCursor(EdgeList):
     def __init__(
-        self, resources: Collection[Any], cursor: str | None, cognite_client: CogniteClient | None = None
+        self,
+        resources: Collection[Any],
+        cursor: str | None,
+        typing: TypeInformation | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(resources, cognite_client)
+        super().__init__(resources, typing, cognite_client)
         self.cursor = cursor
+
+    def extend(self, other: EdgeListWithCursor) -> None:  # type: ignore[override]
+        if not isinstance(other, type(self)):
+            raise TypeError("Unable to extend as the types do not match")
+        other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
+        if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
+            self.data.extend(other.data)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self.cursor = other.cursor
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
 
 # This is a utility class. It is not used by in the SDK codebase, but used in projects that use the SDK.
@@ -990,7 +1226,7 @@ class InstanceSort(DataModelingSort):
 
 
 @dataclass
-class InstancesResult:
+class InstancesResult(Generic[T_Node, T_Edge]):
     """This represents the read result of an instance query
 
     Args:
@@ -999,8 +1235,8 @@ class InstancesResult:
 
     """
 
-    nodes: NodeList
-    edges: EdgeList
+    nodes: NodeList[T_Node]
+    edges: EdgeList[T_Edge]
 
 
 @dataclass
@@ -1061,3 +1297,144 @@ class TargetUnit(CogniteObject):
             if "externalId" in resource["unit"]
             else UnitSystemReference.load(resource["unit"]),
         )
+
+
+@dataclass
+class TypePropertyDefinition(CogniteObject):
+    type: PropertyType
+    nullable: bool = True
+    auto_increment: bool = False
+    immutable: bool = False
+    default_value: str | int | dict | None = None
+    name: str | None = None
+    description: str | None = None
+
+    def dump(self, camel_case: bool = True, return_flat_dict: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        if return_flat_dict:
+            dumped = flatten_dict(self.type.dump(camel_case), ("type",), sep=".")
+            output.update({key: value for key, value in dumped.items()})
+        else:
+            output["type"] = self.type.dump(camel_case)
+        output.update(
+            {
+                "nullable": self.nullable,
+                "autoIncrement": self.auto_increment,
+                "defaultValue": self.default_value,
+                "name": self.name,
+                "description": self.description,
+                "immutable": self.immutable,
+            }
+        )
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypePropertyDefinition:
+        return cls(
+            type=PropertyType.load(resource["type"]),
+            nullable=resource.get("nullable"),  # type: ignore[arg-type]
+            immutable=resource.get("immutable"),  # type: ignore[arg-type]
+            auto_increment=resource.get("autoIncrement"),  # type: ignore[arg-type]
+            default_value=resource.get("defaultValue"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+        )
+
+
+class TypeInformation(UserDict, CogniteObject):
+    def __init__(self, data: dict[str, dict[str, dict[str, TypePropertyDefinition]]] | None = None) -> None:
+        super().__init__(data or {})
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        for space_name, space_data in self.items():
+            output.setdefault(space_name, {})
+            for view_or_container_id, view_data in space_data.items():
+                output[space_name].setdefault(view_or_container_id, {})
+                for type_name, type_data in view_data.items():
+                    output[space_name][view_or_container_id][type_name] = type_data.dump(camel_case)
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TypeInformation:
+        return cls(
+            {
+                space_name: {
+                    view_or_container_id: {
+                        type_name: TypePropertyDefinition.load(type_data)
+                        for type_name, type_data in view_data.items()
+                        if isinstance(type_data, dict)
+                    }
+                    for view_or_container_id, view_data in space_data.items()
+                    if isinstance(view_data, dict)
+                }
+                for space_name, space_data in resource.items()
+                if isinstance(space_data, dict)
+            }
+        )
+
+    def to_pandas(self) -> pd.DataFrame:
+        pd = local_import("pandas")
+
+        index_names = "space_name", "view_or_container"
+        if not self:
+            df = pd.DataFrame(index=pd.MultiIndex(levels=([], []), codes=([], []), names=index_names))
+        else:
+            df = pd.DataFrame.from_dict(
+                {
+                    (space_name, view_or_container_id): {
+                        "identifier": type_name,
+                        **type_data.dump(camel_case=False, return_flat_dict=True),
+                    }
+                    for space_name, space_data in self.data.items()
+                    for view_or_container_id, view_data in space_data.items()
+                    for type_name, type_data in view_data.items()
+                },
+                orient="index",
+            )
+            df.index.names = index_names
+        return df
+
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
+
+    @overload
+    def __getitem__(self, item: str) -> dict[str, dict[str, TypePropertyDefinition]]: ...
+
+    @overload
+    def __getitem__(self, item: tuple[str, str]) -> dict[str, TypePropertyDefinition]: ...
+
+    @overload
+    def __getitem__(self, item: tuple[str, str, str]) -> TypePropertyDefinition: ...
+
+    def __getitem__(
+        self, item: str | tuple[str, str] | tuple[str, str, str]
+    ) -> dict[str, dict[str, TypePropertyDefinition]] | dict[str, TypePropertyDefinition] | TypePropertyDefinition:
+        if isinstance(item, str):
+            return super().__getitem__(item)
+        elif isinstance(item, tuple) and len(item) == 2:
+            return super().__getitem__(item[0])[item[1]]
+        elif isinstance(item, tuple) and len(item) == 3:
+            return super().__getitem__(item[0])[item[1]][item[2]]
+        else:
+            raise ValueError(f"Invalid key: {item}")
+
+    def __setitem__(self, key: str | tuple[str, str] | tuple[str, str, str], value: Any) -> None:
+        if isinstance(key, str):
+            super().__setitem__(key, value)
+        elif isinstance(key, tuple) and len(key) == 2:
+            super().__setitem__(key[0], {key[1]: value})
+        elif isinstance(key, tuple) and len(key) == 3:
+            super().__setitem__(key[0], {key[1]: {key[2]: value}})
+        else:
+            raise ValueError(f"Invalid key: {key}")
+
+    def __delitem__(self, key: str | tuple[str, str] | tuple[str, str, str]) -> None:
+        if isinstance(key, str):
+            super().__delitem__(key)
+        elif isinstance(key, tuple) and len(key) == 2:
+            del self[key[0]][key[1]]
+        elif isinstance(key, tuple) and len(key) == 3:
+            del self[key[0]][key[1]][key[2]]
+        else:
+            raise ValueError(f"Invalid key: {key}")

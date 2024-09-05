@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from datetime import date, datetime, timezone
 from typing import Any, ClassVar, cast
 
 import pytest
@@ -30,8 +31,11 @@ from cognite.client.data_classes.data_modeling import (
     NodeId,
     NodeList,
     NodeOrEdgeData,
+    PropertyOptions,
     SingleHopConnectionDefinition,
     Space,
+    TypedNode,
+    TypedNodeApply,
     View,
     ViewApply,
     ViewId,
@@ -121,16 +125,294 @@ def node_with_1_1_pressure_in_bar(
     return node
 
 
+class PrimitiveNullable(TypedNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        text: str | None = None,
+        boolean: bool | None = None,
+        float32: float | None = None,
+        float64: float | None = None,
+        int32: int | None = None,
+        int64: int | None = None,
+        timestamp: datetime | None = None,
+        date: date | None = None,
+        json: dict | None = None,
+        direct: DirectRelationReference | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
+
+
+class PrimitiveNullableRead(TypedNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        text: str | None = None,
+        boolean: bool | None = None,
+        float32: float | None = None,
+        float64: float | None = None,
+        int32: int | None = None,
+        int64: int | None = None,
+        timestamp: datetime | None = None,
+        date: date | None = None,
+        json: dict | None = None,
+        direct: DirectRelationReference | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+            properties=None,
+        )
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    def as_write(self) -> PrimitiveNullable:
+        return PrimitiveNullable(
+            space=self.space,
+            external_id=self.external_id,
+            text=self.text,
+            boolean=self.boolean,
+            float32=self.float32,
+            float64=self.float64,
+            int32=self.int32,
+            int64=self.int64,
+            timestamp=self.timestamp,
+            date=self.date,
+            json=self.json,
+            direct=self.direct,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveNullable", "1")
+
+
+class PrimitiveListed(TypedNodeApply):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        text: list[str] | None = None,
+        boolean: list[bool] | None = None,
+        float32: list[float] | None = None,
+        float64: list[float] | None = None,
+        int32: list[int] | None = None,
+        int64: list[int] | None = None,
+        timestamp: list[datetime] | None = None,
+        date: list[date] | None = None,
+        json: list[dict] | None = None,
+        direct: list[DirectRelationReference] | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
+
+
+class PrimitiveListedRead(TypedNode):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        text: list[str] | None = None,
+        boolean: list[bool] | None = None,
+        float32: list[float] | None = None,
+        float64: list[float] | None = None,
+        int32: list[int] | None = None,
+        int64: list[int] | None = None,
+        timestamp: list[datetime] | None = None,
+        date: list[date] | None = None,
+        json: list[dict] | None = None,
+        direct: list[DirectRelationReference] | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+            properties=None,
+        )
+        self.text = text
+        self.boolean = boolean
+        self.float32 = float32
+        self.float64 = float64
+        self.int32 = int32
+        self.int64 = int64
+        self.timestamp = timestamp
+        self.date = date
+        self.json = json
+        self.direct = direct
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "PrimitiveListed", "1")
+
+    def as_write(self) -> PrimitiveListed:
+        return PrimitiveListed(
+            space=self.space,
+            external_id=self.external_id,
+            text=self.text,
+            boolean=self.boolean,
+            float32=self.float32,
+            float64=self.float64,
+            int32=self.int32,
+            int64=self.int64,
+            timestamp=self.timestamp,
+            date=self.date,
+            json=self.json,
+            direct=self.direct,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
+class Person(TypedNodeApply):
+    birth_year = PropertyOptions(identifier="birthYear")
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        name: str,
+        birth_year: int | None = None,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ):
+        super().__init__(space=space, external_id=external_id, existing_version=existing_version, type=type)
+        self.name = name
+        self.birth_year = birth_year
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
+
+
+class PersonRead(TypedNode):
+    birth_year = PropertyOptions(identifier="birthYear")
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        name: str,
+        birth_year: int | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ):
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            version=version,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+            type=type,
+            deleted_time=deleted_time,
+            properties=None,
+        )
+        self.name = name
+        self.birth_year = birth_year
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("IntegrationTestSpace", "Person", "37ce1494b83df2")
+
+    def as_write(self) -> Person:
+        return Person(
+            space=self.space,
+            external_id=self.external_id,
+            name=self.name,
+            birth_year=self.birth_year,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class TestInstancesAPI:
     def test_list_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
-        listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
+        is_prefix = filters.Or(
+            *[
+                filters.Prefix(["node", "externalId"], prefix)
+                for prefix in {n.external_id.split(":", maxsplit=1)[0] for n in movie_nodes}
+            ]
+        )
+
+        listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node", filter=is_prefix)
 
         movie_node_ids = set(movie_nodes.as_ids())
         assert movie_node_ids
         assert movie_node_ids <= set(listed_nodes.as_ids())
 
     def test_list_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
-        listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+        is_prefix = filters.Or(
+            *[
+                filters.Prefix(["edge", "externalId"], prefix)
+                for prefix in {e.external_id.split(":", maxsplit=1)[0] for e in movie_edges}
+            ]
+        )
+
+        listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge", filter=is_prefix)
         assert set(movie_edges.as_ids()) <= set(listed_edges.as_ids())
 
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: View) -> None:
@@ -234,7 +516,7 @@ class TestInstancesAPI:
         space = person_view.space
         person = NodeApply(
             space=space,
-            external_id="person:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -247,7 +529,7 @@ class TestInstancesAPI:
         )
         actor = NodeApply(
             space=space,
-            external_id="actor:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     actor_view.as_id(),
@@ -260,7 +542,7 @@ class TestInstancesAPI:
         )
         person_to_actor = EdgeApply(
             space=space,
-            external_id="relation:arnold_schwarzenegger:actor",
+            external_id=random_string(10),
             type=DirectRelationReference(
                 space, cast(SingleHopConnectionDefinition, person_view.properties["roles"]).type.external_id
             ),
@@ -284,12 +566,12 @@ class TestInstancesAPI:
         space = person_view.space
         person_to_actor = EdgeApply(
             space=space,
-            external_id="relation:sylvester_stallone:actor",
+            external_id=random_string(10),
             type=DirectRelationReference(
                 space, cast(SingleHopConnectionDefinition, person_view.properties["roles"]).type.external_id
             ),
-            start_node=DirectRelationReference(space, "person:sylvester_stallone"),
-            end_node=DirectRelationReference(space, "actor:sylvester_stallone"),
+            start_node=DirectRelationReference(space, random_string(10)),
+            end_node=DirectRelationReference(space, random_string(10)),
         )
         node_pair = [person_to_actor.start_node.as_tuple(), person_to_actor.end_node.as_tuple()]
         created_edges: InstancesApplyResult | None = None
@@ -303,8 +585,8 @@ class TestInstancesAPI:
             assert created_edges.edges[0].created_time
             assert created_edges.edges[0].last_updated_time
             assert len(created_nodes.nodes) == 2
-            assert created_nodes.nodes[0].external_id == "person:sylvester_stallone"
-            assert created_nodes.nodes[1].external_id == "actor:sylvester_stallone"
+            assert created_nodes.nodes[0].external_id == person_to_actor.start_node.external_id
+            assert created_nodes.nodes[1].external_id == person_to_actor.end_node.external_id
         finally:
             if created_edges is not None:
                 cognite_client.data_modeling.instances.delete(nodes=node_pair, edges=created_edges.edges.as_ids())
@@ -337,6 +619,14 @@ class TestInstancesAPI:
         )
         assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
         assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
+
+    def test_retrieve_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
+        retrieved = cognite_client.data_modeling.instances.retrieve_nodes(movie_nodes.as_ids())
+        assert set(retrieved.as_ids()) == set(movie_nodes.as_ids())
+
+    def test_retrieve_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
+        retrieved = cognite_client.data_modeling.instances.retrieve_edges(movie_edges.as_ids())
+        assert set(retrieved.as_ids()) == set(movie_edges.as_ids())
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         ids_without_missing = movie_nodes.as_ids()
@@ -386,7 +676,7 @@ class TestInstancesAPI:
         space = person_view.space
         valid_person = NodeApply(
             space=space,
-            external_id="person:arnold_schwarzenegger",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -399,7 +689,7 @@ class TestInstancesAPI:
         )
         invalid_person = NodeApply(
             space=space,
-            external_id="person:sylvester_stallone",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     person_view.as_id(),
@@ -593,20 +883,48 @@ class TestInstancesAPI:
         node = node_with_1_1_pressure_in_bar
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
 
-        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source])
+        retrieved = cognite_client.data_modeling.instances.retrieve(node.as_id(), sources=[source], include_typing=True)
         assert retrieved.nodes
-        assert math.isclose(retrieved.nodes[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, retrieved.nodes[0]["pressure"]), 1.1 * 1e5)
+
+        assert retrieved.nodes.typing
+        type_ = cast(Float64, retrieved.nodes.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_list_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
         source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
-        listed = cognite_client.data_modeling.instances.list(instance_type="node", filter=is_node, sources=[source])
+        listed = cognite_client.data_modeling.instances.list(
+            instance_type="node", filter=is_node, sources=[source], include_typing=True
+        )
 
         assert listed
         assert len(listed) == 1
-        assert math.isclose(listed[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, listed[0]["pressure"]), 1.1 * 1e5)
+
+        assert listed.typing
+        type_ = cast(Float64, listed.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
+
+    def test_iterate_in_units(
+        self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
+    ) -> None:
+        source = SourceSelector(unit_view.as_id(), target_units=[TargetUnit("pressure", UnitReference("pressure:pa"))])
+        is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
+        iterator = cognite_client.data_modeling.instances(
+            chunk_size=1, sources=[source], include_typing=True, filter=is_node
+        )
+        first_iter = next(iterator)
+        assert isinstance(first_iter, NodeList)
+        assert len(first_iter) == 1
+        assert first_iter.typing
+        type_ = cast(Float64, first_iter.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_search_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -615,12 +933,17 @@ class TestInstancesAPI:
         is_node = filters.Equals(["node", "externalId"], node_with_1_1_pressure_in_bar.external_id)
 
         searched = cognite_client.data_modeling.instances.search(
-            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units
+            view=unit_view.as_id(), query="", filter=is_node, target_units=target_units, include_typing=True
         )
 
         assert searched
         assert len(searched) == 1
-        assert math.isclose(searched[0]["pressure"], 1.1 * 1e5)
+        assert math.isclose(cast(float, searched[0]["pressure"]), 1.1 * 1e5)
+
+        assert searched.typing
+        type_ = cast(Float64, searched.typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
 
     def test_aggregate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -648,11 +971,129 @@ class TestInstancesAPI:
             with_={"nodes": NodeResultSetExpression(filter=is_node, limit=1)},
             select={"nodes": Select([SourceSelector(unit_view.as_id(), ["pressure"], target_units)])},
         )
-        queried = cognite_client.data_modeling.instances.query(query)
+        queried = cognite_client.data_modeling.instances.query(query, include_typing=True)
 
         assert queried
         assert len(queried["nodes"]) == 1
         assert math.isclose(queried["nodes"][0]["pressure"], 1.1 * 1e5)
+
+        assert queried["nodes"].typing
+        type_ = cast(Float64, queried["nodes"].typing[unit_view.as_property_ref("pressure")].type)
+        assert type_.unit is not None
+        assert type_.unit.external_id == "pressure:pa"
+
+    @pytest.mark.usefixtures("primitive_nullable_view")
+    def test_write_typed_node(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        space = integration_test_space.space
+        external_id = random_string(10)
+        primitive = PrimitiveNullable(
+            space=space,
+            external_id=external_id,
+            text="text",
+            boolean=True,
+            float32=1.1,
+            float64=1.1,
+            int32=1,
+            int64=1,
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            # as server only stores milliseconds
+            timestamp=datetime.now(timezone.utc).replace(microsecond=0),
+            date=date.today(),
+            json={"key": "value", "nested": {"key": "value"}},
+            direct=DirectRelationReference(space, external_id),
+        )
+        try:
+            created = cognite_client.data_modeling.instances.apply(primitive)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
+                primitive.as_id(), node_cls=PrimitiveNullableRead
+            )
+            assert isinstance(retrieved, PrimitiveNullableRead)
+            assert retrieved.text == "text"
+        finally:
+            cognite_client.data_modeling.instances.delete(primitive.as_id())
+
+    @pytest.mark.usefixtures("primitive_nullable_listed_view")
+    def test_write_typed_node_listed_properties(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        external_id = random_string(10)
+        primitive_listed = PrimitiveListed(
+            space=space,
+            external_id=external_id,
+            text=["text"],
+            boolean=[True],
+            float32=[1.1],
+            float64=[1.1],
+            int32=[1],
+            int64=[1],
+            # Replacing microseconds with 0 to avoid comparison issues in the asserting below
+            timestamp=[datetime.now(timezone.utc).replace(microsecond=0)],
+            date=[date.today()],
+            json=[{"key": "value", "nested": {"key": "value"}}],
+            direct=[DirectRelationReference(space, external_id)],
+        )
+        try:
+            created = cognite_client.data_modeling.instances.apply(primitive_listed)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(
+                primitive_listed.as_id(), node_cls=PrimitiveListedRead
+            )
+            assert isinstance(retrieved, PrimitiveListedRead)
+            assert retrieved.text == ["text"]
+        finally:
+            cognite_client.data_modeling.instances.delete(primitive_listed.as_id())
+
+    @pytest.mark.usefixtures("person_view")
+    def test_write_type_node_instance_property_descriptor(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        space = integration_test_space.space
+        external_id = random_string(10)
+        person = Person(space=space, external_id=external_id, name="John Doe", birth_year=1980)
+
+        try:
+            created = cognite_client.data_modeling.instances.apply(person)
+            assert len(created.nodes) == 1
+            assert created.nodes[0].external_id == external_id
+
+            retrieved = cognite_client.data_modeling.instances.retrieve_nodes(person.as_id(), node_cls=PersonRead)
+            assert isinstance(retrieved, PersonRead)
+            assert retrieved.name == "John Doe"
+            assert retrieved.birth_year == 1980
+        finally:
+            cognite_client.data_modeling.instances.delete(person.as_id())
+
+    def test_list_person_types(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.list(PersonRead, limit=10)
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
+
+    def test_search_person(self, cognite_client: CogniteClient) -> None:
+        persons = cognite_client.data_modeling.instances.search(
+            PersonRead.get_source(), query="Quentin", instance_type=PersonRead, limit=10
+        )
+
+        assert len(persons) > 0
+        assert all(isinstance(person, PersonRead) for person in persons)
+
+    def test_listing_global_nodes(self, cognite_client: CogniteClient) -> None:
+        from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteUnit
+
+        # Space must be explicitly specified or nothing will be returned:
+        no_nodes = cognite_client.data_modeling.instances.list(sources=CogniteUnit.get_source())
+        assert len(no_nodes) == 0
+
+        nodes = cognite_client.data_modeling.instances.list(
+            space="cdf_cdm_units", sources=CogniteUnit.get_source(), limit=5
+        )
+        assert len(nodes) == 5
 
 
 class TestInstancesSync:
@@ -670,7 +1111,7 @@ class TestInstancesSync:
 
         new_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,
@@ -687,8 +1128,7 @@ class TestInstancesSync:
             my_query.cursors = result.cursors
             new_result = cognite_client.data_modeling.instances.sync(my_query)
 
-            assert len(new_result["movies"]) == 1, "Only the new movie should be returned"
-            assert new_result["movies"][0].external_id == new_1994_movie.external_id
+            assert new_1994_movie.external_id in [node.external_id for node in new_result["movies"]]
         finally:
             cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())
 
@@ -710,7 +1150,7 @@ class TestInstancesSync:
 
         new_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=random_string(10),
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,
@@ -724,7 +1164,7 @@ class TestInstancesSync:
         )
         updated_1994_movie = NodeApply(
             space=movie_view.space,
-            external_id="movie:forrest_gump",
+            external_id=new_1994_movie.external_id,
             sources=[
                 NodeOrEdgeData(
                     source=movie_id,

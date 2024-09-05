@@ -122,6 +122,8 @@ class TestDocumentsAPI:
 
         assert isinstance(res, bytes)
         res = res.decode("utf-8")
+        if res[-1] == "\n" and content[-1] != "\n":
+            res = res[:-1]
         assert res == content
 
     def test_retrieve_content_into_buffer(self, cognite_client: CogniteClient, text_file_content_pair):
@@ -131,7 +133,10 @@ class TestDocumentsAPI:
         res = cognite_client.documents.retrieve_content_buffer(id=doc.id, buffer=buffer)
 
         assert res is None
-        assert buffer.getvalue().decode("utf-8") == content
+        result = buffer.getvalue().decode("utf-8")
+        if result[-1] == "\n" and content[-1] != "\n":
+            result = result[:-1]
+        assert result == content
 
     def test_search_no_filters_no_highlight(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair

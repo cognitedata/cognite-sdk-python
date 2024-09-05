@@ -29,7 +29,7 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_yaml_or_json
+from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -151,14 +151,8 @@ class CogniteObject:
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
-        if isinstance(resource, dict):
-            return cls._load(resource, cognite_client=cognite_client)
-
-        if isinstance(resource, str):
-            resource = cast(dict, load_yaml_or_json(resource))
-            return cls._load(resource, cognite_client=cognite_client)
-
-        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+        loaded = load_resource_to_dict(resource)
+        return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -261,7 +255,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     _RESOURCE: type[T_CogniteResource]
     __cognite_client: CogniteClient | None
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None) -> None:
+    def __init__(self, resources: Iterable[Any], cognite_client: CogniteClient | None = None) -> None:
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -270,14 +264,16 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
+        self._build_id_mappings()
+
+    def _build_id_mappings(self) -> None:
         self._id_to_item, self._external_id_to_item = {}, {}
-        if self.data:
-            if hasattr(self.data[0], "external_id"):
-                self._external_id_to_item = {
-                    item.external_id: item for item in self.data if item.external_id is not None
-                }
-            if hasattr(self.data[0], "id"):
-                self._id_to_item = {item.id: item for item in self.data if item.id is not None}
+        if not self.data:
+            return
+        if hasattr(self.data[0], "external_id"):
+            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
+        if hasattr(self.data[0], "id"):
+            self._id_to_item = {item.id: item for item in self.data if item.id is not None}
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
@@ -304,9 +300,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         return _json.dumps(item, indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
-    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+    def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+        if self._id_to_item.keys().isdisjoint(other_res_list._id_to_item):
             super().extend(other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
             self._id_to_item.update(other_res_list._id_to_item)
@@ -404,6 +400,23 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
     ) -> Self:
         resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
         return cls(resources, cognite_client=cognite_client)
+
+    @classmethod
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
+        # Certain classes may need more than just 'items' from the raw response. These need to provide
+        # an implementation of this method
+        raise NotImplementedError
+
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        """This method dumps the list with extra information in addition to the items.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the list.
+        """
+        return {"items": [resource.dump(camel_case) for resource in self.data]}
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
@@ -503,7 +516,7 @@ class CogniteUpdate:
 
     @classmethod
     @abstractmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         raise NotImplementedError
 
 
@@ -515,7 +528,7 @@ class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: None | str | int | bool) -> T_CogniteUpdate:
+    def _set(self, value: None | str | int | bool | dict) -> T_CogniteUpdate:
         if value is None:
             self._update_object._set_null(self._name)
         else:
@@ -747,7 +760,7 @@ class CogniteSort:
                 nulls=data[2],
             )
         elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
-            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            # Syntax "<fieldname>:asc|desc" is deprecated but handled for compatibility
             return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)

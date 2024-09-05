@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
@@ -17,10 +18,10 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     PropertyValue,
     TargetUnit,
+    TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -151,8 +152,11 @@ class Query(CogniteObject):
 
     @classmethod
     def load_yaml(cls, data: str) -> Query:
-        yaml = local_import("yaml")
-        return cls.load(yaml.safe_load(data))
+        warnings.warn(
+            "Query.load_yaml is deprecated and will be removed after Oct 2024, please use Query.load",
+            UserWarning,
+        )
+        return cls.load(data)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -395,16 +399,19 @@ class QueryResult(UserDict):
         resource: dict[str, Any],
         instance_list_type_by_result_expression_name: dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]],
         cursors: dict[str, Any],
+        typing: dict[str, Any] | None = None,
     ) -> QueryResult:
         instance = cls()
+        typing_nodes = TypeInformation._load(typing["nodes"]) if typing and "nodes" in typing else None
+        typing_edges = TypeInformation._load(typing["edges"]) if typing and "edges" in typing else None
         for key, values in resource.items():
             cursor = cursors.get(key)
             if not values:
                 instance[key] = instance_list_type_by_result_expression_name[key]([], cursor)
             elif values[0]["instanceType"] == "node":
-                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor)
+                instance[key] = NodeListWithCursor([Node._load(node) for node in values], cursor, typing_nodes)
             elif values[0]["instanceType"] == "edge":
-                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor)
+                instance[key] = EdgeListWithCursor([Edge._load(edge) for edge in values], cursor, typing_edges)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
 

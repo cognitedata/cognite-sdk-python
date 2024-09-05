@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -43,6 +44,112 @@ class TransformationsAPI(APIClient):
         self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
         self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Transformation]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[TransformationList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        include_public: bool = True,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Transformation] | Iterator[TransformationList]:
+        """Iterate over transformations
+
+        Args:
+            chunk_size (int | None): Number of transformations to return in each chunk. Defaults to yielding one transformation a time.
+            include_public (bool): Whether public transformations should be included in the results. (default true).
+            name_regex (str | None): Regex expression to match the transformation name
+            query_regex (str | None): Regex expression to match the transformation query
+            destination_type (str | None): Transformation destination resource name to filter by.
+            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str | None): Project name to filter by configured source and destination project
+            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
+            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit (int | None): Limits the number of results to be returned. Defaults to yielding all transformations.
+
+        Returns:
+            Iterator[Transformation] | Iterator[TransformationList]: Yields transformations in chunks if chunk_size is specified, otherwise one transformation at a time.
+        """
+        ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
+
+        filter_ = TransformationFilter(
+            include_public=include_public,
+            name_regex=name_regex,
+            query_regex=query_regex,
+            destination_type=destination_type,
+            conflict_mode=conflict_mode,
+            cdf_project_name=cdf_project_name,
+            has_blocked_error=has_blocked_error,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            tags=tags,
+            data_set_ids=ds_ids or None,
+        ).dump(camel_case=True)
+
+        return self._list_generator(
+            method="POST",
+            url_path=f"{self._RESOURCE_PATH}/filter",
+            limit=limit,
+            chunk_size=chunk_size,
+            filter=filter_,
+            resource_cls=Transformation,
+            list_cls=TransformationList,
+        )
+
+    def __iter__(self) -> Iterator[Transformation]:
+        """Iterate over all transformations"""
+        return self()
 
     @overload
     def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
@@ -186,8 +293,8 @@ class TransformationsAPI(APIClient):
         has_blocked_error: bool | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        data_set_ids: list[int] | None = None,
-        data_set_external_ids: list[str] | None = None,
+        data_set_ids: int | list[int] | None = None,
+        data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
@@ -203,8 +310,8 @@ class TransformationsAPI(APIClient):
             has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
             created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
             last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            data_set_ids (list[int] | None): Return only transformations in the specified data sets with these ids.
-            data_set_external_ids (list[str] | None): Return only transformations in the specified data sets with these external ids.
+            data_set_ids (int | list[int] | None): Return only transformations in the specified data sets with these id(s).
+            data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
@@ -219,13 +326,7 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> transformations_list = client.transformations.list()
         """
-        ds_ids: list[dict[str, Any]] | None = None
-        if data_set_ids and data_set_external_ids:
-            ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
-        elif data_set_ids:
-            ds_ids = [{"id": i} for i in data_set_ids]
-        elif data_set_external_ids:
-            ds_ids = [{"externalId": i} for i in data_set_external_ids]
+        ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
 
         filter = TransformationFilter(
             include_public=include_public,
@@ -238,8 +339,9 @@ class TransformationsAPI(APIClient):
             created_time=created_time,
             last_updated_time=last_updated_time,
             tags=tags,
-            data_set_ids=ds_ids,
+            data_set_ids=ds_ids or None,
         ).dump(camel_case=True)
+
         return self._list(
             list_cls=TransformationList,
             resource_cls=Transformation,
@@ -502,18 +604,20 @@ class TransformationsAPI(APIClient):
         self,
         query: str | None = None,
         convert_to_string: bool = False,
-        limit: int = 100,
+        limit: int | None = 100,
         source_limit: int | None = 100,
-        infer_schema_limit: int | None = 1000,
+        infer_schema_limit: int | None = 10_000,
+        timeout: int | None = 240,
     ) -> TransformationPreviewResult:
         """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
 
         Args:
             query (str | None): SQL query to run for preview.
             convert_to_string (bool): Stringify values in the query results, default is False.
-            limit (int): Maximum number of rows to return in the final result, default is 100.
+            limit (int | None): Maximum number of rows to return in the final result, default is 100.
             source_limit (int | None): Maximum number of items to read from the data source or None to run without limit, default is 100.
-            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 1000.
+            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 10 000.
+            timeout (int | None): Number of seconds to wait before cancelling a query. The default, and maximum, is 240.
 
         Returns:
             TransformationPreviewResult: Result of the executed query
@@ -533,6 +637,27 @@ class TransformationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>>
                 >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
+
+            Notice that the results are limited both by the `limit` and `source_limit` parameters. If you have
+            a query that converts one source row to one result row, you may need to increase the `source_limit`.
+            For example, given that you have a query that reads from a raw table with 10,903 rows
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
+                >>> print(result.results)
+                100
+
+            To get all rows, you also need to set the `source_limit` to None:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>>
+                >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
+                >>> print(result.results)
+                10903
+
         """
         request_body = {
             "query": query,
@@ -540,8 +665,8 @@ class TransformationsAPI(APIClient):
             "limit": limit,
             "sourceLimit": source_limit,
             "inferSchemaLimit": infer_schema_limit,
+            "timeout": timeout,
         }
-
         response = self._post(url_path=self._RESOURCE_PATH + "/query/run", json=request_body)
         result = TransformationPreviewResult._load(response.json(), cognite_client=self._cognite_client)
         return result

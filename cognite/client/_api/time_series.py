@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, Tuple, Union, overload
 
 from typing_extensions import TypeAlias
 
@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     filters,
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.time_series import (
     SortableTimeSeriesProperty,
@@ -24,6 +25,7 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesSort,
     TimeSeriesWrite,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -51,6 +53,56 @@ class TimeSeriesAPI(APIClient):
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[TimeSeries]: ...
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        unit: str | None = None,
+        unit_external_id: str | None = None,
+        unit_quantity: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[TimeSeriesList]: ...
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -148,14 +200,17 @@ class TimeSeriesAPI(APIClient):
         Returns:
             Iterator[TimeSeries]: yields TimeSeries one by one.
         """
-        return cast(Iterator[TimeSeries], self())
+        return self()
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TimeSeries | None:
+    def retrieve(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
             id (int | None): ID
             external_id (str | None): External ID
+            instance_id (NodeId | None): Instance ID
 
         Returns:
             TimeSeries | None: Requested time series or None if it does not exist.
@@ -174,18 +229,24 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve(external_id="1")
         """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        headers: dict | None = None
+        if instance_id is not None:
+            self._warn_alpha()
+            headers = {"cdf-version": "alpha"}
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
 
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
+            headers=headers,
         )
 
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
+        instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
@@ -193,6 +254,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (SequenceNotStr[str] | None): External IDs
+            instance_ids (Sequence[NodeId] | None): Instance IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -212,12 +274,17 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
-        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        header: dict | None = None
+        if instance_ids is not None:
+            self._warn_alpha()
+            header = {"cdf-version": "alpha"}
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
+            headers=header,
         )
 
     def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
@@ -496,6 +563,12 @@ class TimeSeriesAPI(APIClient):
             input_resource_cls=TimeSeriesWrite,
         )
 
+    @staticmethod
+    def _warn_alpha() -> None:
+        FeaturePreviewWarning(
+            api_maturity="alpha", feature_name="TimeSeries with Instance ID", sdk_maturity="alpha"
+        ).warn()
+
     def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -562,12 +635,19 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
         """
+        headers: dict | None = None
+        if (isinstance(item, Sequence) and any(ts.instance_id for ts in item)) or (
+            not isinstance(item, Sequence) and item.instance_id
+        ):
+            self._warn_alpha()
+            headers = {"cdf-version": "alpha"}
 
         return self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
             items=item,
+            headers=headers,
         )
 
     @overload

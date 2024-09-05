@@ -36,10 +36,11 @@ from cognite.client.data_classes.data_modeling import (
 )
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.hosted_extractors import Source, SourceList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
-from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
+from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses
 
 
 class MyResource(CogniteResource):
@@ -192,7 +193,9 @@ class TestCogniteObject:
         "cognite_writable_cls",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
+            if not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
@@ -210,7 +213,7 @@ class TestCogniteObject:
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             for cls in all_concrete_subclasses(WriteableCogniteResourceList)
-            if cls not in [EdgeListWithCursor, NodeListWithCursor]
+            if cls not in [EdgeListWithCursor, NodeListWithCursor, SourceList]
         ],
     )
     def test_writable_list_as_write(
@@ -417,7 +420,6 @@ class TestCogniteResource:
         dumped = instance.dump(camel_case=True)
         json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
-
         assert loaded.dump() == instance.dump()
 
     @pytest.mark.dsl
@@ -763,13 +765,20 @@ class TestCogniteUpdate:
         assert hasattr(MyUpdate, "columns") and "columns" not in props
         assert {"string", "list", "object", "labels"} == set(props)
 
-    @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
+    @pytest.mark.parametrize("cognite_update_subclass", all_concrete_subclasses(CogniteUpdate))
     def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
         expected = sorted(
             key
             for key in cognite_update_subclass.__dict__
             if not key.startswith("_") and key not in {"columns", "dump"}
         )
+        if not expected:
+            # Check parent class if there are no attributes in the subclass
+            expected = sorted(
+                key
+                for key in cognite_update_subclass.__bases__[0].__dict__
+                if not key.startswith("_") and key != "dump"
+            )
         actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
         assert expected == actual
 

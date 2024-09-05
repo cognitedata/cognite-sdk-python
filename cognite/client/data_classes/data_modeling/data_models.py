@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, Sequence, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -55,7 +55,7 @@ class DataModelApply(DataModelCore):
         version (str): DMS version.
         description (str | None): Textual description of the data model
         name (str | None): Human readable name for the data model.
-        views (list[ViewId | ViewApply] | None): List of views included in this data model.
+        views (Sequence[ViewId | ViewApply] | None): List of views included in this data model.
     """
 
     def __init__(
@@ -65,7 +65,7 @@ class DataModelApply(DataModelCore):
         version: str,
         description: str | None = None,
         name: str | None = None,
-        views: list[ViewId | ViewApply] | None = None,
+        views: Sequence[ViewId | ViewApply] | None = None,
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)

@@ -444,7 +444,7 @@ class TestFunctionsAPI:
 
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
     def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client):
-        with pytest.raises(IOError):
+        with pytest.raises(RuntimeError):
             cognite_client.functions.create(name="myfunction", file_id=123)
 
     def test_create_with_path(self, mock_functions_create_response, cognite_client):
@@ -489,7 +489,7 @@ class TestFunctionsAPI:
             )
 
     def test_create_with_cpu_and_memory(self, mock_functions_create_response, cognite_client):
-        res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1)
+        res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1.0)
 
         assert isinstance(res, Function)
         assert mock_functions_create_response.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
@@ -707,7 +707,7 @@ class TestRequirementsParser:
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
         reqs = _extract_requirements_from_file(file_name=file)
-        assert type(reqs) is list  # noqa E721
+        assert type(reqs) is list
         assert len(reqs) == 1
         assert req in reqs
 
@@ -927,7 +927,7 @@ class TestFunctionSchedulesAPI:
                 description="Hi",
             )
 
-        call_args = post_mock.call_args[1]["json"]["items"][0]
+        call_args = post_mock.call_args[0][1]["items"][0]
         assert "functionId" in call_args
         assert "functionExternalId" not in call_args
         assert isinstance(res, FunctionSchedule)
@@ -1130,7 +1130,7 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
@@ -1144,7 +1144,7 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
 )
 def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
+        assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
@@ -1188,7 +1188,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
 
@@ -1202,7 +1202,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
 )
 def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
+        assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:

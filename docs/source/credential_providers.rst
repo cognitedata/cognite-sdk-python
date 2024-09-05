@@ -1,5 +1,8 @@
 Credential Providers
 ====================
+.. autoclass:: cognite.client.credentials.CredentialProvider
+    :members:
+    :member-order: bysource
 .. autoclass:: cognite.client.credentials.Token
     :members:
     :member-order: bysource

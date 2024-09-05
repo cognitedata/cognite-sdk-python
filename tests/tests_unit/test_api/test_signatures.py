@@ -129,6 +129,7 @@ class TestFileMetadataUploadSignatures:
         del upload_from_memory_parameters["security_categories"]
         file_metadata_parameters = dict(inspect.signature(files.FileMetadata.__init__).parameters)
         del file_metadata_parameters["id"]
+        del file_metadata_parameters["instance_id"]
         del file_metadata_parameters["uploaded_time"]
         del file_metadata_parameters["created_time"]
         del file_metadata_parameters["last_updated_time"]

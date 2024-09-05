@@ -4,7 +4,7 @@ import math
 import random
 import threading
 import time
-from collections import deque
+from collections import defaultdict, deque
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -12,6 +12,7 @@ from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, Table, TableList
 from cognite.client.data_classes.raw import RowCore
 from cognite.client.utils._auxiliary import (
+    find_duplicates,
     interpolate_and_url_encode,
     is_finite,
     is_unlimited,
@@ -44,6 +45,12 @@ class RawAPI(APIClient):
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
+    @overload
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
+
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[Database] | Iterator[DatabaseList]:
@@ -68,7 +75,7 @@ class RawDatabasesAPI(APIClient):
         Returns:
             Iterator[Database]: yields Database one by one.
         """
-        return cast(Iterator[Database], self())
+        return self()
 
     @overload
     def create(self, name: str) -> Database: ...
@@ -165,6 +172,12 @@ class RawDatabasesAPI(APIClient):
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
+
+    @overload
+    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[Table]: ...
+
+    @overload
+    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[TableList]: ...
 
     def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
@@ -326,6 +339,32 @@ class RawRowsAPI(APIClient):
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
 
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: None = None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Row]: ...
+
+    @overload
+    def __call__(
+        self,
+        db_name: str,
+        table_name: str,
+        chunk_size: int,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[RowList]: ...
+
     def __call__(
         self,
         db_name: str,
@@ -359,7 +398,7 @@ class RawRowsAPI(APIClient):
 
         Note:
             When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
-            by halting retrival speed when the callers code can't keep up.
+            by halting retrieval speed when the callers code can't keep up.
         """
         if partitions is None or _RUNNING_IN_BROWSER:
             return self._list_generator(
@@ -523,7 +562,12 @@ class RawRowsAPI(APIClient):
         )
 
     def insert_dataframe(
-        self, db_name: str, table_name: str, dataframe: pd.DataFrame, ensure_parent: bool = False
+        self,
+        db_name: str,
+        table_name: str,
+        dataframe: pd.DataFrame,
+        ensure_parent: bool = False,
+        dropna: bool = True,
     ) -> None:
         """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
@@ -534,22 +578,47 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             dataframe (pd.DataFrame): The dataframe to insert. Index will be used as row keys.
             ensure_parent (bool): Create database/table if they don't already exist.
+            dropna (bool): Remove NaNs (but keep None's in dtype=object columns) before inserting. Done individually per column. Default: True
 
         Examples:
 
-            Insert new rows into a table::
+            Insert new rows into a table:
 
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
                 >>>
                 >>> client = CogniteClient()
-                >>> df = pd.DataFrame(data={"a": 1, "b": 2}, index=["r1", "r2", "r3"])
-                >>> res = client.raw.rows.insert_dataframe("db1", "table1", df)
+                >>> df = pd.DataFrame(
+                ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]},
+                ...     index=["r1", "r2", "r3"])
+                >>> res = client.raw.rows.insert_dataframe(
+                ...     "db1", "table1", df, dropna=True)
         """
         if not dataframe.index.is_unique:
             raise ValueError("Dataframe index is not unique (used for the row keys)")
-        rows = dataframe.to_dict(orient="index")
+        elif not dataframe.columns.is_unique:
+            raise ValueError(f"Dataframe columns are not unique: {sorted(find_duplicates(dataframe.columns))}")
+
+        rows = self._df_to_rows_skip_nans(dataframe) if dropna else dataframe.to_dict(orient="index")
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
+
+    @staticmethod
+    def _df_to_rows_skip_nans(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
+        np = local_import("numpy")
+        rows: defaultdict[str, dict[str, Any]] = defaultdict(dict)
+        object_cols = df.select_dtypes("object").columns
+
+        for column_id, col in df.items():
+            if column_id not in object_cols:
+                col = col.dropna()
+            else:
+                # pandas treat None as NaN, but numpy does not:
+                mask = np.logical_or(col.to_numpy() == None, col.notna())  # noqa: E711
+                col = col[mask]
+
+            for idx, val in col.items():
+                rows[idx][column_id] = val
+        return dict(rows)
 
     def _process_row_input(self, row: Sequence[Row] | Sequence[RowWrite] | Row | RowWrite | dict) -> list[list[dict]]:
         assert_type(row, "row", [Sequence, dict, RowCore])
@@ -653,6 +722,8 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
+        last_updated_time_in_index: bool = False,
     ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -665,6 +736,11 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
             columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
+                When partitions is not passed, it defaults to 1, i.e. no concurrency for a finite limit and ``global_config.max_workers`` for an unlimited query
+                (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
+                `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
+            last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
 
         Returns:
             pd.DataFrame: The requested rows in a pandas dataframe.
@@ -678,8 +754,14 @@ class RawRowsAPI(APIClient):
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
-        idx = [r.key for r in rows]
+        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
+        if last_updated_time_in_index:
+            idx = pd.MultiIndex.from_tuples(
+                [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
+                names=["key", "last_updated_time"],
+            )
+        else:
+            idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx)
 

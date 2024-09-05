@@ -1,8 +1,10 @@
+import math
 import re
 
 import pytest
 
-from cognite.client._api.raw import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client._api.raw import Database, DatabaseList, RawRowsAPI, Row, RowList, Table, TableList
+from cognite.client.data_classes import RowWrite, RowWriteList
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -56,6 +58,47 @@ def mock_retrieve_raw_row_response(rsps, cognite_client):
     rsps.add(
         rsps.GET,
         cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows/row1",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def mock_retrieve_raw_rows_response_two_rows(rsps, cognite_client):
+    response_body = {
+        "items": [
+            {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": {"c1": 2, "c2": "3"}, "lastUpdatedTime": 1},
+        ]
+    }
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def mock_retrieve_raw_rows_response_one_row(rsps, cognite_client):
+    response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}]}
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=response_body,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def mock_retrieve_raw_rows_response_no_rows(rsps, cognite_client):
+    response_body = {"items": []}
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
         status=200,
         json=response_body,
     )
@@ -291,10 +334,56 @@ class TestRawRows:
             cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")
 
 
-def test_raw_row__direct_column_access():
+@pytest.mark.dsl
+class TestRawRowsDataframe:
+    def test_retrieve_dataframe_empty(self, cognite_client, mock_retrieve_raw_rows_response_no_rows):
+        import pandas as pd
+
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
+
+        assert isinstance(res_df, pd.DataFrame)
+        assert res_df.shape == (0, 0)
+        assert res_df_last_updated_time_in_index.shape == (0, 0)
+        assert res_df.equals(res_df_last_updated_time_in_index)
+
+    def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_row):
+        import pandas as pd
+
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
+        assert isinstance(res_df, pd.DataFrame)
+        assert res_df.shape == (1, 2)
+        assert res_df_last_updated_time_in_index.shape == (1, 2)
+        assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
+
+    def test_retrieve_dataframe_two_rows(self, cognite_client, mock_retrieve_raw_rows_response_two_rows):
+        import pandas as pd
+
+        res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time_in_index = cognite_client.raw.rows.retrieve_dataframe(
+            db_name="db1", table_name="table1", last_updated_time_in_index=True
+        )
+        assert isinstance(res_df, pd.DataFrame)
+        assert res_df.shape == (2, 2)
+        assert res_df_last_updated_time_in_index.shape == (2, 2)
+        assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
+        assert res_df_last_updated_time_in_index.index.names == ["key", "last_updated_time"]
+        assert list(res_df_last_updated_time_in_index.index.levels[1]) == [
+            pd.Timestamp(0, unit="ms"),
+            pd.Timestamp(1, unit="ms"),
+        ]
+
+
+@pytest.mark.parametrize("raw_cls", (Row, RowWrite))
+def test_raw_row__direct_column_access(raw_cls):
     # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
     key = "itsamee"
-    row = Row(key="foo", columns={"bar": 42, key: "mario"})
+    row = raw_cls(key="foo", columns={"bar": 42, key: "mario"})
     assert row[key] == row.columns[key] == row.get(key) == "mario"
 
     row[key] = "luigi?"
@@ -320,6 +409,50 @@ def test_raw_row__direct_column_access():
     row.columns = None
     with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
         del row["wrong-key"]
+
+
+@pytest.mark.dsl
+def test_insert_dataframe_raises_on_duplicated_cols(cognite_client):
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": [1, 2, 3],
+            "c": [10, 20, 30],
+            "d": [10, 20, 30],
+            "e": [100, 200, 300],
+            "f": [100, 200, 300],
+        }
+    )
+    df.columns = ["a", "b", "a", "c", "a", "b"]
+    with pytest.raises(ValueError, match=r"^Dataframe columns are not unique: \['a', 'b'\]$"):
+        cognite_client.raw.rows.insert_dataframe("db", "tbl", df)
+
+
+@pytest.mark.dsl
+def test_df_to_rows_skip_nans():
+    import numpy as np
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "a": [1, None, 3],
+            "b": [1, 2, None],
+            "c": [10, 20, 30],
+            "d": [math.inf, 20, 30],
+            "e": [100, 200, np.nan],
+            "f": [None, None, None],
+        }
+    )
+    df.at[1, "f"] = math.nan  # object column, should keep None's, but this should be removed
+    res = RawRowsAPI._df_to_rows_skip_nans(df)
+    expected = {
+        0: {"a": 1.0, "b": 1.0, "c": 10, "d": math.inf, "e": 100.0, "f": None},
+        1: {"b": 2.0, "c": 20, "d": 20.0, "e": 200.0},
+        2: {"a": 3.0, "c": 30, "d": 30.0, "f": None},
+    }
+    assert res == expected
 
 
 @pytest.mark.dsl
@@ -359,3 +492,30 @@ class TestPandasIntegration:
             row_list.to_pandas().sort_index(axis=1),
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
+
+    def test_rows_to_pandas__no_rows(self):
+        import pandas as pd
+
+        row_df = RowList([]).to_pandas()
+        assert row_df.shape == (0, 0)
+        pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=[]))
+
+    @pytest.mark.parametrize("lst_cls", (RowList, RowWriteList))
+    @pytest.mark.parametrize("n_rows", (1, 5))
+    def test_rows_to_pandas__empty_or_sparse(self, lst_cls, n_rows):
+        # Before version 7.49.2, rows with no column data would be silently dropped when converting to a pandas dataframe,
+        # which was most noticable as len(rows) != len(df).
+        import pandas as pd
+
+        keys = [f"row-{i}" for i in range(n_rows)]
+        row_list = lst_cls([lst_cls._RESOURCE(k, {}) for k in keys])
+        row_df = row_list.to_pandas()
+        assert row_df.shape == (n_rows, 0)
+        pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=keys))
+
+        row_list[0]["foo"] = 123
+        row_df = row_list.to_pandas()
+        assert row_df.shape == (n_rows, 1)
+        pd.testing.assert_frame_equal(
+            row_df, pd.DataFrame({"foo": [123, *[None for _ in range(n_rows - 1)]]}, index=keys)
+        )

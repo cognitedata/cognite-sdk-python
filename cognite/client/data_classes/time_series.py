@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from datetime import datetime
 from enum import auto
 from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -13,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteSort,
     CogniteUpdate,
@@ -23,6 +25,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
@@ -38,7 +41,8 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -48,12 +52,13 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def __init__(
         self,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -67,6 +72,7 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         legacy_name: str | None = None,
     ) -> None:
         self.external_id = external_id
+        self.instance_id = instance_id
         self.name = name
         self.is_string = is_string
         self.metadata = metadata
@@ -77,7 +83,29 @@ class TimeSeriesCore(WriteableCogniteResource["TimeSeriesWrite"], ABC):
         self.description = description
         self.security_categories = security_categories
         self.data_set_id = data_set_id
+        if legacy_name is not None:
+            warnings.warn(
+                "The 'legacy_name' is not used and will be ignored. It will be completely removed October 2024.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.legacy_name = legacy_name
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the object to a dictionary"""
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.instance_id, dict):
+            instance.instance_id = NodeId.load(instance.instance_id)
+        return instance
 
 
 class TimeSeries(TimeSeriesCore):
@@ -88,7 +116,8 @@ class TimeSeries(TimeSeriesCore):
     Args:
         id (int | None): A server-generated ID for the object.
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -100,7 +129,7 @@ class TimeSeries(TimeSeriesCore):
         data_set_id (int | None): The dataSet ID for the item.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -108,6 +137,7 @@ class TimeSeries(TimeSeriesCore):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: NodeId | None = None,
         name: str | None = None,
         is_string: bool | None = None,
         metadata: dict[str, str] | None = None,
@@ -125,6 +155,7 @@ class TimeSeries(TimeSeriesCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
+            instance_id=instance_id,
             name=name,
             is_string=is_string,
             metadata=metadata,
@@ -151,6 +182,7 @@ class TimeSeries(TimeSeriesCore):
         """Returns a TimeSeriesWrite object with the same properties as this TimeSeries."""
         return TimeSeriesWrite(
             external_id=self.external_id,
+            instance_id=self.instance_id,
             name=self.name,
             is_string=self.is_string,
             metadata=self.metadata,
@@ -232,7 +264,8 @@ class TimeSeriesWrite(TimeSeriesCore):
 
     Args:
         external_id (str | None): The externally supplied ID for the time series.
-        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        instance_id (NodeId | None): The Instance ID for the time series. (Only applicable for time series created in DMS)
+        name (str | None): The display short name of the time series.
         is_string (bool | None): Whether the time series is string valued or not.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         unit (str | None): The physical unit of the time series.
@@ -242,7 +275,7 @@ class TimeSeriesWrite(TimeSeriesCore):
         description (str | None): Description of the time series.
         security_categories (Sequence[int] | None): The required security categories to access this time series.
         data_set_id (int | None): The dataSet ID for the item.
-        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        legacy_name (str | None): This field is not used by the API and will be removed October 2024.
     """
 
     def as_write(self) -> TimeSeriesWrite:
@@ -307,9 +340,24 @@ class TimeSeriesUpdate(CogniteUpdate):
     """Changes will be applied to time series.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of the instance this time series belongs to.
     """
+
+    def __init__(
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+    ) -> None:
+        super().__init__(id=id, external_id=external_id)
+        self.instance_id = instance_id
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.instance_id is not None:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(
+                camel_case=camel_case, include_instance_type=False
+            )
+        return output
 
     class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
         def set(self, value: Any) -> TimeSeriesUpdate:
@@ -383,21 +431,31 @@ class TimeSeriesUpdate(CogniteUpdate):
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
-        return [
-            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
-            PropertySpec("external_id", is_nullable=False),
-            PropertySpec("name"),
-            # TimeSeries does not support setting metadata to an empty array.
-            PropertySpec("metadata", is_container=True, is_nullable=False),
-            PropertySpec("unit"),
-            PropertySpec("unit_external_id"),
-            PropertySpec("asset_id"),
-            PropertySpec("description"),
-            PropertySpec("is_step", is_nullable=False),
-            PropertySpec("security_categories", is_container=True),
-            PropertySpec("data_set_id"),
-        ]
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        if isinstance(item, (TimeSeries, TimeSeriesWrite)) and item.instance_id:
+            return [
+                # If Instance ID is set, the time series was created in DMS. Then, it is
+                # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
+                PropertySpec("external_id", is_nullable=False),
+                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("asset_id"),
+                PropertySpec("data_set_id"),
+            ]
+        else:
+            return [
+                # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+                PropertySpec("external_id", is_nullable=False),
+                PropertySpec("name"),
+                # TimeSeries does not support setting metadata to an empty array.
+                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("unit"),
+                PropertySpec("unit_external_id"),
+                PropertySpec("asset_id"),
+                PropertySpec("description"),
+                PropertySpec("is_step", is_nullable=False),
+                PropertySpec("security_categories", is_container=True),
+                PropertySpec("data_set_id"),
+            ]
 
 
 class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransformerMixin):

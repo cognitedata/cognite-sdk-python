@@ -7,7 +7,8 @@ on:
 
 jobs:
   test_full_build_and_release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+    environment: CD
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -24,11 +25,13 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        run: pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        # Testpaths are defined in the pytest.ini file:
+        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
 
       - name: Build package
         run: poetry build
@@ -40,7 +43,7 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload --verbose dist/* || echo 'Version exists'
+        run: twine upload --skip-existing --verbose dist/*
 
       # TODO: Make this work again
       # - name: Push code snippets to service-contracts

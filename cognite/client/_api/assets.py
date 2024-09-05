@@ -87,6 +87,58 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[Asset]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: SequenceNotStr[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | SequenceNotStr[str] | None = None,
+        metadata: dict[str, str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | SequenceNotStr[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: TimestampRange | dict[str, Any] | None = None,
+        last_updated_time: TimestampRange | dict[str, Any] | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[AggregateAssetProperty] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
+    ) -> Iterator[AssetList]: ...
+
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -185,7 +237,7 @@ class AssetsAPI(APIClient):
         Returns:
             Iterator[Asset]: yields Assets one by one.
         """
-        return cast(Iterator[Asset], self())
+        return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
@@ -429,12 +481,12 @@ class AssetsAPI(APIClient):
         Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters as flt
+            >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.assets import AssetProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
             >>> client = CogniteClient()
-            >>> created_after_2020 = flt.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
@@ -443,11 +495,11 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations as aggs
-            >>> from cognite.client.data_classes import filters as flt
+            >>> from cognite.client.data_classes import aggregations
+            >>> from cognite.client.data_classes import filters
             >>> client = CogniteClient()
-            >>> not_test = aggs.Not(aggs.Prefix("test"))
-            >>> created_after_2020 = flt.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> not_test = aggregations.Not(aggregations.Prefix("test"))
+            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = client.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
@@ -532,7 +584,7 @@ class AssetsAPI(APIClient):
             Create asset with label::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset, Label
+                >>> from cognite.client.data_classes import AssetWrite, Label
                 >>> client = CogniteClient()
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = client.assets.create(asset)

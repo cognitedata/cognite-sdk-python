@@ -479,7 +479,7 @@ class SequenceColumnUpdate(CogniteUpdate):
         return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("description"),
             PropertySpec("external_id", is_nullable=False),
@@ -578,7 +578,7 @@ class SequenceUpdate(CogniteUpdate):
         return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),
@@ -628,7 +628,7 @@ class SequenceRow(CogniteResource):
         )
 
 
-ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
+ColumnNames: TypeAlias = Literal[
     "externalId",
     "id",
     "columnExternalId",
@@ -761,13 +761,13 @@ class SequenceRows(CogniteResource):
                 f"Invalid column_names value '{column_names}', should be one of {list(_VALID_COLUMN_NAMES)}"
             )
 
-        column_names = (
+        column_fmt = (
             column_names.replace("columnExternalId", "{columnExternalId}")
             .replace("externalId", "{externalId}")
             .replace("id", "{id}")
         )
         df_columns = [
-            column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
+            column_fmt.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
         index: Any

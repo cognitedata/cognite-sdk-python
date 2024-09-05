@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     IdTransformerMixin,
@@ -155,7 +156,7 @@ class TransformationScheduleUpdate(CogniteUpdate):
         return TransformationScheduleUpdate._PrimitiveTransformationScheduleUpdate(self, "isPaused")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("interval", is_nullable=False),
             PropertySpec("is_paused", is_nullable=False),

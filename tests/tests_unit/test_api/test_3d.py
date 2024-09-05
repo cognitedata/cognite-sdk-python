@@ -58,6 +58,22 @@ class Test3DModels:
         ][0]
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
+    def test_update_dataset(self, cognite_client, mock_3d_model_response):
+        update = ThreeDModelUpdate(id=1).data_set_id.set(2)
+        res = cognite_client.three_d.models.update(update)
+        assert {"id": 1, "update": {"dataSetId": {"set": 2}}} == jsgz_load(
+            mock_3d_model_response.calls[0].request.body
+        )["items"][0]
+        assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+
+    def test_reset_dataset(self, cognite_client, mock_3d_model_response):
+        update = ThreeDModelUpdate(id=1).data_set_id.set(None)
+        res = cognite_client.three_d.models.update(update)
+        assert {"id": 1, "update": {"dataSetId": {"setNull": True}}} == jsgz_load(
+            mock_3d_model_response.calls[0].request.body
+        )["items"][0]
+        assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+
     def test_update_with_resource_object(self, cognite_client, mock_3d_model_response):
         res = cognite_client.three_d.models.update(ThreeDModel(id=1, name="bla", created_time=123))
         assert {"id": 1, "update": {"name": {"set": "bla"}}} == jsgz_load(mock_3d_model_response.calls[0].request.body)[
@@ -83,7 +99,7 @@ class Test3DModels:
         assert isinstance(res, ThreeDModel)
 
         request_body = jsgz_load(mock_3d_model_response.calls[0].request.body)
-        assert request_body == {"items": [{"dataSetId": None, "metadata": None, "name": "My Model"}]}
+        assert request_body == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_response):
@@ -91,7 +107,7 @@ class Test3DModels:
         assert isinstance(res, ThreeDModelList)
 
         request_body = jsgz_load(mock_3d_model_response.calls[0].request.body)
-        assert request_body == {"items": [{"dataSetId": None, "metadata": None, "name": "My Model"}]}
+        assert request_body == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
 

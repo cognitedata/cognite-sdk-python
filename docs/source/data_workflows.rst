@@ -1,14 +1,6 @@
 Data Workflows
 ======================
 
-.. warning::
-    Data Workflows is a new feature:
-      * The API specification is in beta.
-      * The SDK implementation is in alpha.
-
-    Thus, breaking changes may occur without further notice, see :ref:`appendix-alpha-beta-features` for more information.
-
-
 Workflows
 ------------
 Upsert Workflow
@@ -57,6 +49,10 @@ Retrieve Detailed Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
 
+Run Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.run
+
 Trigger Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
@@ -75,6 +71,23 @@ Update Status of Async Task
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTaskAPI.update
 
+Workflow Triggers
+-------------------
+Create triggers for workflow executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.create
+
+Delete triggers for workflow executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.delete
+
+Get triggers for workflow executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_triggers
+
+Get trigger run history for a workflow trigger
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_trigger_run_history
 
 Data Workflows data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

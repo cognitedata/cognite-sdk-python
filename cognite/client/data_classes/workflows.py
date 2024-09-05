@@ -13,15 +13,16 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-WorkflowStatus: TypeAlias = Literal[
+TaskStatus: TypeAlias = Literal[
     "in_progress",
     "cancelled",
     "failed",
@@ -31,6 +32,8 @@ WorkflowStatus: TypeAlias = Literal[
     "timed_out",
     "skipped",
 ]
+
+WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminated", "timed_out"]
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
@@ -133,8 +136,10 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
-        elif type_ == "subworkflow":
+        elif type_ == "subworkflow" and "tasks" in parameters["subworkflow"]:
             return SubworkflowTaskParameters._load(parameters)
+        elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
+            return SubworkflowReferenceParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -316,8 +321,8 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
     """
     The subworkflow task parameters are used to specify a subworkflow task.
 
-    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for conveniece. It takes the tasks parameter which is an array of
-    function, transformation, and cdf task definitions. This array needs to be statically set on the worklow definition (if it needs to be defined at runtime, use a
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience. It takes the tasks parameter which is an array of
+    function, transformation, cdf, ..., task definitions. This array needs to be statically set on the workflow definition (if it needs to be defined at runtime, use a
     dynamic task).
 
     Args:
@@ -339,6 +344,38 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
+
+
+class SubworkflowReferenceParameters(WorkflowTaskParameters):
+    """
+    The subworkflow task parameters are used to specify a subworkflow task.
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience.
+    The subworkflow reference is used to specifying a reference to another workflow which will be embedded into the execution at start time.
+
+    Args:
+        workflow_external_id (str): The external ID of the referenced workflow.
+        version (str): The version of the referenced workflow.
+    """
+
+    task_type = "subworkflow"
+
+    def __init__(self, workflow_external_id: str, version: str) -> None:
+        self.workflow_external_id = workflow_external_id
+        self.version = version
+
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            self.task_type: {
+                "workflowExternalId": self.workflow_external_id,
+                "version": self.version,
+            }
+        }
 
 
 class DynamicTaskParameters(WorkflowTaskParameters):
@@ -394,7 +431,8 @@ class WorkflowTask(CogniteResource):
     """
     This class represents a workflow task.
 
-    Note: tasks do not distinguish between write and read versions.
+    Note:
+        Tasks do not distinguish between write and read versions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -617,7 +655,7 @@ class WorkflowTaskExecution(CogniteObject):
     Args:
         id (str): The server generated id of the task execution.
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        status (WorkflowStatus): The status of the task execution.
+        status (TaskStatus): The status of the task execution.
         input (WorkflowTaskParameters): The input parameters of the task execution.
         output (WorkflowTaskOutput): The output of the task execution.
         version (str | None): The version of the task execution. Defaults to None.
@@ -630,7 +668,7 @@ class WorkflowTaskExecution(CogniteObject):
         self,
         id: str,
         external_id: str,
-        status: WorkflowStatus,
+        status: TaskStatus,
         input: WorkflowTaskParameters,
         output: WorkflowTaskOutput,
         version: str | None = None,
@@ -657,7 +695,7 @@ class WorkflowTaskExecution(CogniteObject):
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
-            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
+            status=cast(TaskStatus, to_snake_case(resource["status"])),
             input=WorkflowTaskParameters.load_parameters(resource),
             output=WorkflowTaskOutput.load_output(resource),
             version=resource.get("version"),
@@ -940,7 +978,7 @@ class WorkflowExecution(CogniteResource):
     Args:
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
         start_time (int | None): The start time of the workflow execution. Unix timestamp in milliseconds. Defaults to None.
@@ -953,7 +991,7 @@ class WorkflowExecution(CogniteResource):
         self,
         id: str,
         workflow_external_id: str,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         created_time: int,
         version: str | None = None,
         start_time: int | None = None,
@@ -984,7 +1022,7 @@ class WorkflowExecution(CogniteResource):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],
@@ -1014,7 +1052,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id (str): The server generated id of the workflow execution.
         workflow_external_id (str): The external ID of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow.
-        status (Literal["running", "completed", "failed", "timed_out", "terminated", "paused"]): The status of the workflow execution.
+        status (WorkflowStatus): The status of the workflow execution.
         executed_tasks (list[WorkflowTaskExecution]): The executed tasks of the workflow execution.
         created_time (int): The time when the workflow execution was created. Unix timestamp in milliseconds.
         version (str | None): The version of the workflow. Defaults to None.
@@ -1030,7 +1068,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         id: str,
         workflow_external_id: str,
         workflow_definition: WorkflowDefinition,
-        status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        status: WorkflowStatus,
         executed_tasks: list[WorkflowTaskExecution],
         created_time: int,
         version: str | None = None,
@@ -1055,7 +1093,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
             status=cast(
-                Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+                WorkflowStatus,
                 to_snake_case(resource["status"]),
             ),
             created_time=resource["createdTime"],
@@ -1173,3 +1211,259 @@ class WorkflowIds(UserList):
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
+
+
+class WorkflowTriggerRule(CogniteObject, ABC):
+    """This is the base class for all workflow trigger rules."""
+
+    _trigger_type: ClassVar[str]
+
+    def __init__(self) -> None:
+        self.trigger_type = self._trigger_type
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        trigger_type = resource["triggerType"]
+        if trigger_type in _TRIGGER_RULE_BY_TYPE:
+            return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
+        # If more triggers are added in the future, this ensures that the SDK does not break.
+        return cast(Self, UnknownCogniteObject(resource))
+
+    @classmethod
+    @abstractmethod
+    def _load_trigger(cls, data: dict) -> Self:
+        raise NotImplementedError()
+
+
+class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
+    """
+    This class represents a scheduled trigger rule.
+
+    Args:
+        cron_expression(str | None): The cron specification for the scheduled trigger.
+    """
+
+    _trigger_type = "schedule"
+
+    def __init__(self, cron_expression: str | None = None) -> None:
+        super().__init__()
+        self.cron_expression = cron_expression
+
+    @classmethod
+    def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
+        return cls(cron_expression=data.get("cronExpression"))
+
+
+_TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
+    subclass._trigger_type: subclass  # type: ignore
+    for subclass in WorkflowTriggerRule.__subclasses__()
+}
+
+
+class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerCreate"], ABC):
+    """
+    This class represents a base class for a workflow trigger.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input (dict | None): The input data of the workflow version trigger. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.trigger_rule = trigger_rule
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+        self.input = input
+
+
+class WorkflowTriggerCreate(WorkflowTriggerCore):
+    """
+    This class represents a workflow trigger for creation.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input (dict | None): The input data of the workflow version trigger. Defaults to None.
+    """
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "external_id": self.external_id,
+            "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+        }
+        if self.input:
+            item["input"] = self.input
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerCreate:
+        return cls(
+            external_id=resource["externalId"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
+            input=resource.get("input"),
+        )
+
+    def as_write(self) -> WorkflowTriggerCreate:
+        """Returns this workflow trigger create instance."""
+        return self
+
+
+class WorkflowTrigger(WorkflowTriggerCore):
+    """
+    This class represents a workflow trigger.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
+        workflow_external_id (str): The external ID of the workflow.
+        workflow_version (str): The version of the workflow.
+        input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
+        created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
+        last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            trigger_rule=trigger_rule,
+            workflow_external_id=workflow_external_id,
+            workflow_version=workflow_version,
+            input=input,
+        )
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "external_id": self.external_id,
+            "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+        }
+        if self.input:
+            item["input"] = self.input
+        if self.created_time:
+            item["created_time"] = self.created_time
+        if self.last_updated_time:
+            item["last_updated_time"] = self.last_updated_time
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTrigger:
+        return cls(
+            external_id=resource["externalId"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
+            input=resource.get("input"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+        )
+
+    def as_write(self) -> WorkflowTriggerCreate:
+        """Returns this workflow trigger instance."""
+        return WorkflowTriggerCreate(
+            external_id=self.external_id,
+            trigger_rule=self.trigger_rule,
+            workflow_external_id=self.workflow_external_id,
+            workflow_version=self.workflow_version,
+            input=self.input,
+        )
+
+
+class WorkflowTriggerList(CogniteResourceList[WorkflowTrigger]):
+    """
+    This class represents a list of workflow triggers.
+    """
+
+    _RESOURCE = WorkflowTrigger
+
+
+class WorkflowTriggerRun(CogniteResource):
+    """
+    This class represents a workflow trigger run.
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        fire_time: int,
+        workflow_external_id: str,
+        workflow_version: str,
+        status: Literal["success", "failed"],
+        workflow_execution_id: str | None = None,
+        reason_for_failure: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.fire_time = fire_time
+        self.workflow_external_id = workflow_external_id
+        self.workflow_version = workflow_version
+        self.workflow_execution_id = workflow_execution_id
+        self.status = status
+        self.reason_for_failure = reason_for_failure
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item = {
+            "external_id": self.external_id,
+            "fire_time": self.fire_time,
+            "workflow_external_id": self.workflow_external_id,
+            "workflow_version": self.workflow_version,
+            "status": self.status,
+        }
+        if self.workflow_execution_id:
+            item["workflow_execution_id"] = self.workflow_execution_id
+        if self.reason_for_failure:
+            item["reason_for_failure"] = self.reason_for_failure
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
+        return cls(
+            external_id=resource["externalId"],
+            fire_time=resource["fireTime"],
+            workflow_external_id=resource["workflowExternalId"],
+            workflow_version=resource["workflowVersion"],
+            status=resource["status"],
+            workflow_execution_id=resource.get("workflowExecutionId"),
+            reason_for_failure=resource.get("reasonForFailure"),
+        )
+
+
+class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun]):
+    """
+    This class represents a list of workflow trigger runs.
+    """
+
+    _RESOURCE = WorkflowTriggerRun

@@ -15,7 +15,10 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionList,
     WorkflowList,
+    WorkflowScheduledTriggerRule,
     WorkflowTask,
+    WorkflowTrigger,
+    WorkflowTriggerCreate,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionList,
@@ -200,7 +203,7 @@ def workflow_execution_list(
     if executions:
         return executions
     # Creating at least one execution
-    result = cognite_client.workflows.executions.trigger(
+    result = cognite_client.workflows.executions.run(
         add_multiply_workflow.workflow_external_id,
         add_multiply_workflow.version,
         {"a": 5, "b": 6},
@@ -228,7 +231,36 @@ def clean_created_sessions(cognite_client: CogniteClient) -> None:
     current_sessions = cognite_client.iam.sessions.list(status="active", limit=-1)
     existing_ids = {session.id for session in existing_active_sessions}
     to_revoked = [session.id for session in current_sessions if session.id not in existing_ids]
-    cognite_client.iam.sessions.revoke(to_revoked)
+    if len(to_revoked) > 0:
+        cognite_client.iam.sessions.revoke(to_revoked)
+
+
+@pytest.fixture()
+def clean_created_workflow_triggers(cognite_client: CogniteClient) -> None:
+    existing_workflow_triggers = cognite_client.workflows.triggers.get_triggers(limit=-1)
+    yield None
+    current_workflow_triggers = cognite_client.workflows.triggers.get_triggers(limit=-1)
+    existing_external_ids = {trigger.external_id for trigger in existing_workflow_triggers}
+    to_clean = [
+        trigger.external_id for trigger in current_workflow_triggers if trigger.external_id not in existing_external_ids
+    ]
+    for external_id in to_clean:
+        cognite_client.workflows.triggers.delete(external_id)
+
+
+@pytest.fixture()
+def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
+    trigger = cognite_client.workflows.triggers.create(
+        WorkflowTriggerCreate(
+            external_id="integration_test-workflow-scheduled-trigger",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
+            workflow_external_id="integration_test-workflow-add_multiply",
+            workflow_version="1",
+            input={"a": 1, "b": 2},
+        )
+    )
+    yield trigger
+    cognite_client.workflows.triggers.delete(trigger.external_id)
 
 
 class TestWorkflows:
@@ -370,15 +402,34 @@ class TestWorkflowExecutions:
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
+    def test_list_workflow_executions_by_status(
+        self,
+        cognite_client: CogniteClient,
+        add_multiply_workflow: WorkflowVersion,
+    ) -> None:
+        listed_completed = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses="completed", limit=3
+        )
+        for execution in listed_completed:
+            assert execution.status == "completed"
+
+        listed_others = cognite_client.workflows.executions.list(
+            workflow_version_ids=add_multiply_workflow.as_id(), statuses=["running", "failed"], limit=3
+        )
+        for execution in listed_others:
+            assert execution.status in ["running", "failed"]
+
     def test_retrieve_workflow_execution_detailed(
         self,
         cognite_client: CogniteClient,
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
-        assert workflow_execution_list, "There should be at least one workflow execution to test retrieve detailed with"
-        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
-
-        assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
+        workflow_execution_completed = cognite_client.workflows.executions.list(statuses="completed", limit=1)
+        assert (
+            workflow_execution_completed
+        ), "There should be at least one workflow execution to test retrieve detailed with"
+        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_completed[0].id)
+        assert retrieved.as_execution().dump() == workflow_execution_completed[0].dump()
         assert retrieved.executed_tasks
 
     def test_retrieve_non_existing_workflow_execution(self, cognite_client: CogniteClient) -> None:
@@ -396,7 +447,7 @@ class TestWorkflowExecutions:
         cognite_client: CogniteClient,
         add_multiply_workflow: WorkflowVersion,
     ) -> None:
-        workflow_execution = cognite_client.workflows.executions.trigger(
+        workflow_execution = cognite_client.workflows.executions.run(
             add_multiply_workflow.workflow_external_id,
             add_multiply_workflow.version,
         )
@@ -415,7 +466,7 @@ class TestWorkflowExecutions:
     def test_trigger_cancel_retry_workflow(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
-        workflow_execution = cognite_client.workflows.executions.trigger(
+        workflow_execution = cognite_client.workflows.executions.run(
             add_multiply_workflow.workflow_external_id,
             add_multiply_workflow.version,
         )
@@ -428,3 +479,43 @@ class TestWorkflowExecutions:
 
         retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
         assert retried_workflow_execution.status == "running"
+
+
+class TestWorkflowTriggers:
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_create_delete(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        assert workflow_scheduled_trigger is not None
+        assert workflow_scheduled_trigger.external_id == "integration_test-workflow-scheduled-trigger"
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *")
+        assert workflow_scheduled_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
+        assert workflow_scheduled_trigger.workflow_version == "1"
+        assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
+        assert workflow_scheduled_trigger.created_time is not None
+        assert workflow_scheduled_trigger.last_updated_time is not None
+
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_trigger_list(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        triggers = cognite_client.workflows.triggers.get_triggers()
+        external_ids = {trigger.external_id for trigger in triggers}
+
+        assert workflow_scheduled_trigger.external_id in external_ids
+
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_trigger_run_history(
+        self,
+        cognite_client: CogniteClient,
+        workflow_scheduled_trigger: WorkflowTrigger,
+    ) -> None:
+        history = cognite_client.workflows.triggers.get_trigger_run_history(
+            external_id=workflow_scheduled_trigger.external_id
+        )
+        # it would take too long to wait for the trigger to run, so we just check that the history is not None
+        assert history is not None
