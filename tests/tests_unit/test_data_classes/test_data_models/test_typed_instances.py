@@ -241,25 +241,21 @@ class TestTypedNode:
         person = PersonRead(
             "sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com"
         )
-
-        df = person.to_pandas()
-
-        pd.testing.assert_series_equal(
-            df,
-            pd.Series(
-                {
-                    "space": "sp_my_fixed_space",
-                    "external_id": "my_external_id",
-                    "version": 1,
-                    "last_updated_time": pd.Timestamp("1970-01-01 00:00:00"),
-                    "created_time": pd.Timestamp("1970-01-01 00:00:00"),
-                    "instance_type": "node",
-                    "name": "John Doe",
-                    "birth_date": "1990-01-01",
-                    "email": "john@doe.com",
-                }
-            ),
-        )
+        df = person.to_pandas(expand_properties=True)
+        expected_df = pd.Series(
+            {
+                "space": "sp_my_fixed_space",
+                "external_id": "my_external_id",
+                "version": 1,
+                "last_updated_time": pd.Timestamp("1970-01-01"),
+                "created_time": pd.Timestamp("1970-01-01"),
+                "instance_type": "node",
+                "name": "John Doe",
+                "birth_date": "1990-01-01",
+                "email": "john@doe.com",
+            },
+        ).to_frame(name="value")
+        pd.testing.assert_frame_equal(df, expected_df)
 
     @pytest.mark.dsl
     def test_to_pandas_list(self) -> None:
