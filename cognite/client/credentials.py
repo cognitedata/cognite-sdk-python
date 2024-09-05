@@ -169,7 +169,7 @@ class _WithMsalSerializableTokenCache:
         )
 
     @staticmethod
-    def _get_token(cache_path: Path) -> dict[str, Any]:
+    def _get_cached_token(cache_path: Path) -> dict[str, Any]:
         if not cache_path.exists():
             return {}
         token = json.loads(cache_path.read_text())
@@ -279,14 +279,22 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     def scope_string(self) -> str:
         return " ".join(self.__scopes)
 
-    def get_token(self) -> dict[str, Any]:
+    def _get_token(self, convert_timestamps: bool = True) -> dict[str, Any]:
         """Return a dictionary with the current token and expiry time."""
-        token = self._get_token(self._token_cache_path)
-        if "AccessToken" in token:
-            for key, value in token["AccessToken"].items():
-                for subkey in ["expires_on", "extended_expires_on", "cached_at"]:
-                    if subkey in value:
-                        value[subkey] = datetime.fromtimestamp(int(value[subkey])).isoformat()
+        if self._token_cache_path.exists():
+            token = self._get_cached_token(self._token_cache_path)
+        else:
+            if _app := getattr(self, f"_{type(self).__name__}__app", None):
+                token = json.loads(_app.token_cache.serialize())
+            else:
+                token = {}
+
+        if convert_timestamps:
+            if "AccessToken" in token:
+                for key, value in token["AccessToken"].items():
+                    for subkey in ["expires_on", "extended_expires_on", "cached_at"]:
+                        if subkey in value:
+                            value[subkey] = datetime.fromtimestamp(int(value[subkey])).isoformat()
         return token
 
     def _refresh_access_token(self) -> tuple[str, float]:
