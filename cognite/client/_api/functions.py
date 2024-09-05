@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
 MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
-# Matches [requirements] and [/requirements]
+# Match [requirements] and [/requirements]:
 REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
@@ -158,7 +158,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
@@ -415,7 +415,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
             limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
@@ -1231,10 +1231,10 @@ class FunctionSchedulesAPI(APIClient):
 
         Args:
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
-            cron_expression (str | None): No description.
+            cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
-            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.            cron_expression (str | None): Cron expression.
+            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str | None): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
