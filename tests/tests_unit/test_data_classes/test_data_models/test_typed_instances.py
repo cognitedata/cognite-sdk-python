@@ -7,7 +7,9 @@ import pytest
 
 from cognite.client.data_classes.data_modeling import DirectRelationReference, NodeList, ViewId
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
-    CogniteAsset, CogniteAssetApply, CogniteDescribableEdgeApply
+    CogniteAsset,
+    CogniteAssetApply,
+    CogniteDescribableEdgeApply,
 )
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
@@ -345,6 +347,8 @@ class TestCDMv1Classes:
             xid = "externalId" if camel_case else "external_id"
             assert xid in dumped
             # Check that type/type_ are correctly dumped:
+            # - not starting with double underscore
+            # - not ending with single underscore
             assert dumped["type"] == {"space": "should-be", xid: "at-root"}
             if is_write:
                 properties = dumped["sources"][0]["properties"]
@@ -353,6 +357,41 @@ class TestCDMv1Classes:
             assert properties["type"] == {"space": "should-be", xid: "in-properties"}
             # Check that properties are cased according to use_attribute_name:
             assert ("source_created_time" if use_attribute_name else "sourceCreatedTime") in properties
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("camel_case", (True, False))
+    def test_cognite_asset_read_and_write__to_pandas(
+        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool
+    ) -> None:
+        import pandas as pd
+
+        # When calling to_pandas, `use_attribute_name = not camel_case` due to how we expect
+        # attributes to be snake cased in python (in general).
+        asset_write = CogniteAssetApply(**cognite_asset_kwargs)
+        asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
+
+        # TODO: Implement expand_properties=True for Apply classes?
+        write_df = asset_write.to_pandas(camel_case=camel_case)
+        read_df = asset_read.to_pandas(expand_properties=False, camel_case=camel_case)
+        read_expanded_df = asset_read.to_pandas(expand_properties=True, camel_case=camel_case)
+
+        xid = "externalId" if camel_case else "external_id"
+        for df in [write_df, read_df]:
+            assert df.index.is_unique
+            assert df.index[1] == xid
+            assert df.at["type", "value"] == {"space": "should-be", xid: "at-root"}
+
+        assert not read_expanded_df.index.is_unique  # because 'type' is repeated
+        expected_type_df = pd.DataFrame(
+            [
+                ({"space": "should-be", xid: "at-root"},),
+                ({"space": "should-be", xid: "in-properties"},),
+            ],
+            columns=["value"],
+            index=["type", "type"],
+        )
+        pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
+        assert ("sourceCreatedTime" if camel_case else "source_created_time") in read_expanded_df.index
 
 
 @pytest.mark.parametrize(

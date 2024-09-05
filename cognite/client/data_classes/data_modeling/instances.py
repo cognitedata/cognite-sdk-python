@@ -468,7 +468,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
 
             if isinstance(self, _TypedInstance):
-                view_id, *extra = [self.get_source()]  # type: ignore [attr-defined]
+                view_id, *extra = [self.get_source()]
             else:
                 view_id, *extra = self.properties.keys()
             # We only do/allow this if we have a single source:
