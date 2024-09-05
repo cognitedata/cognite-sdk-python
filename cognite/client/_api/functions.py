@@ -1220,10 +1220,10 @@ class FunctionSchedulesAPI(APIClient):
     def create(
         self,
         name: str | FunctionScheduleWrite,
-        client_credentials: dict | ClientCredentials,
         cron_expression: str | None = None,
         function_id: int | None = None,
         function_external_id: str | None = None,
+        client_credentials: dict | ClientCredentials | None = None,
         description: str | None = None,
         data: dict | None = None,
     ) -> FunctionSchedule:
@@ -1231,10 +1231,10 @@ class FunctionSchedulesAPI(APIClient):
 
         Args:
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
-            client_credentials (dict | ClientCredentials): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
-            cron_expression (str | None): Cron expression.
+            cron_expression (str | None): No description.
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
+            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.            cron_expression (str | None): Cron expression.
             description (str | None): Description of the schedule.
             data (dict | None): Data to be passed to the scheduled run.
 
