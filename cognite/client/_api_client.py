@@ -106,6 +106,7 @@ class APIClient:
                     "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
                     "extpipes/(list|byids|runs/list)",
                     "workflows/.*",
+                    "hostedextractors/.*",
                 )
             )
         ]
@@ -1038,7 +1039,11 @@ class APIClient:
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
                 patch_objects.append(
-                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(item), mode)
+                    self._convert_resource_to_patch_object(
+                        item,
+                        update_cls._get_update_properties(item),
+                        mode,
+                    )
                 )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))

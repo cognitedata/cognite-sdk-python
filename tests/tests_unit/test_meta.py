@@ -79,7 +79,7 @@ def apis_that_should_not_have_post_retry_rule():
 )
 def test_all_base_api_paths_have_retry_or_specifically_no_set(
     api, apis_with_post_method_retry_set, apis_that_should_not_have_post_retry_rule
-):
+) -> None:
     # So you've added a new API to the SDK, but suddenly this test is failing - what's the deal?!
     # Answer the following:
     # Does this new API have POST methods that should be retried automatically?

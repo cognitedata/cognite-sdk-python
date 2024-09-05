@@ -29,7 +29,7 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_yaml_or_json
+from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -151,14 +151,8 @@ class CogniteObject:
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
-        if isinstance(resource, dict):
-            return cls._load(resource, cognite_client=cognite_client)
-
-        if isinstance(resource, str):
-            resource = cast(dict, load_yaml_or_json(resource))
-            return cls._load(resource, cognite_client=cognite_client)
-
-        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+        loaded = load_resource_to_dict(resource)
+        return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -409,7 +403,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
-        # Certain classes may need more than just 'items' from the raw repsonse. These need to provide
+        # Certain classes may need more than just 'items' from the raw response. These need to provide
         # an implementation of this method
         raise NotImplementedError
 
@@ -534,7 +528,7 @@ class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: None | str | int | bool) -> T_CogniteUpdate:
+    def _set(self, value: None | str | int | bool | dict) -> T_CogniteUpdate:
         if value is None:
             self._update_object._set_null(self._name)
         else:
@@ -766,7 +760,7 @@ class CogniteSort:
                 nulls=data[2],
             )
         elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
-            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            # Syntax "<fieldname>:asc|desc" is deprecated but handled for compatibility
             return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)

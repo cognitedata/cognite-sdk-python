@@ -29,6 +29,8 @@ from cognite.client._api.extractionpipelines import (
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.hosted_extractors import HostedExtractorsAPI
+from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
@@ -135,6 +137,9 @@ class CogniteClientMock(MagicMock):
 
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+
+        self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
+        self.hosted_extractors.sources = MagicMock(spec_set=SourcesAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)

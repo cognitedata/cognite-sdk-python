@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.capabilities import Capability
 
 TMP_DIR = Path(__file__).resolve().parent / "tmp"
 
@@ -9,9 +10,9 @@ TMP_DIR = Path(__file__).resolve().parent / "tmp"
 def main(client: CogniteClient):
     new_capabilities = [
         {
-            "experimentAcl": {
-                "actions": ["USE"],
-                "scope": {"experimentscope": {"experiments": ["workflowOrchestrator"]}},
+            "hostedExtractorsAcl": {
+                "actions": ["READ", "WRITE"],
+                "scope": {"all": {}},
             }
         },
     ]
@@ -33,28 +34,27 @@ def main(client: CogniteClient):
     (TMP_DIR / f"{selected_group.name}.json").write_text(json.dumps(selected_group.dump(camel_case=True), indent=4))
 
     existing_capability_by_name = {
-        next(iter(capability.keys())): capability for capability in selected_group.capabilities
+        capability._capability_name: capability for capability in selected_group.capabilities
     }
     added = []
     for new_capability in new_capabilities:
         (capability_name,) = new_capability.keys()
         if capability_name not in existing_capability_by_name:
-            selected_group.capabilities.append(new_capability)
+            selected_group.capabilities.append(Capability.load(new_capability))
             added.append(capability_name)
         elif new_capability[capability_name] != existing_capability_by_name[capability_name]:
             # Capability exists, but with different scope or actions
-            selected_group.capabilities.append(new_capability)
-            added.append(capability_name)
+            raise NotImplementedError()
+            # selected_group.capabilities.append(new_capability)
+            # added.append(capability_name)
         else:
             print(f"Capability {capability_name} already exists")
     if not added:
         print("All capabilities already exists")
         return
     delete_id = selected_group.id
-    selected_group.id = None
-    selected_group.is_deleted = None
-    selected_group.deleted_time = None
-    client.iam.groups.create(selected_group)
+    selected_group_write = selected_group.as_write()
+    client.iam.groups.create(selected_group_write)
 
     client.iam.groups.delete(delete_id)
 

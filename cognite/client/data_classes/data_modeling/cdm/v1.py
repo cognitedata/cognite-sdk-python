@@ -3845,9 +3845,6 @@ class CogniteAssetApply(
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         parent (DirectRelationReference | tuple[str, str] | None): Parent of this asset
-        root (DirectRelationReference | tuple[str, str] | None): Asset at the top of the hierarchy.
-        path (list[DirectRelationReference | tuple[str, str]] | None): Materialized path of this asset
-        path_last_updated_time (datetime | None): Last time the path was updated for this asset
         asset_class (DirectRelationReference | tuple[str, str] | None): Class of this asset
         type_ (DirectRelationReference | tuple[str, str] | None): Type of this asset
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -3872,9 +3869,6 @@ class CogniteAssetApply(
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
         parent: DirectRelationReference | tuple[str, str] | None = None,
-        root: DirectRelationReference | tuple[str, str] | None = None,
-        path: list[DirectRelationReference | tuple[str, str]] | None = None,
-        path_last_updated_time: datetime | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
         type_: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
@@ -3909,9 +3903,6 @@ class CogniteAssetApply(
             type=type,
         )
         self.parent = DirectRelationReference.load(parent) if parent else None
-        self.root = DirectRelationReference.load(root) if root else None
-        self.path = [DirectRelationReference.load(path) for path in path] if path else None
-        self.path_last_updated_time = path_last_updated_time
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.type_ = DirectRelationReference.load(type_) if type_ else None
 
@@ -4045,9 +4036,6 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
             source_created_user=self.source_created_user,
             source_updated_user=self.source_updated_user,
             parent=self.parent,
-            root=self.root,
-            path=self.path,  # type: ignore[arg-type]
-            path_last_updated_time=self.path_last_updated_time,
             asset_class=self.asset_class,
             type_=self.type_,
             existing_version=self.version,

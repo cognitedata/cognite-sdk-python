@@ -185,7 +185,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
 
     class _FilterDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
         def set(self, value: Filter) -> DataPointSubscriptionUpdate:
-            return self._set(value.dump())  # type: ignore[arg-type]
+            return self._set(value.dump())
 
     class _ListDataPointSubscriptionUpdate(CogniteListUpdate):
         def set(self, value: list) -> DataPointSubscriptionUpdate:

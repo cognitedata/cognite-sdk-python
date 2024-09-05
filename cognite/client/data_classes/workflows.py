@@ -136,8 +136,10 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return CDFTaskParameters._load(parameters)
         elif type_ == "dynamic":
             return DynamicTaskParameters._load(parameters)
-        elif type_ == "subworkflow":
+        elif type_ == "subworkflow" and "tasks" in parameters["subworkflow"]:
             return SubworkflowTaskParameters._load(parameters)
+        elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
+            return SubworkflowReferenceParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -319,8 +321,8 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
     """
     The subworkflow task parameters are used to specify a subworkflow task.
 
-    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for conveniece. It takes the tasks parameter which is an array of
-    function, transformation, and cdf task definitions. This array needs to be statically set on the worklow definition (if it needs to be defined at runtime, use a
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience. It takes the tasks parameter which is an array of
+    function, transformation, cdf, ..., task definitions. This array needs to be statically set on the workflow definition (if it needs to be defined at runtime, use a
     dynamic task).
 
     Args:
@@ -342,6 +344,38 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
+
+
+class SubworkflowReferenceParameters(WorkflowTaskParameters):
+    """
+    The subworkflow task parameters are used to specify a subworkflow task.
+    When a workflow is made of stages with dependencies between them, we can use subworkflow tasks for convenience.
+    The subworkflow reference is used to specifying a reference to another workflow which will be embedded into the execution at start time.
+
+    Args:
+        workflow_external_id (str): The external ID of the referenced workflow.
+        version (str): The version of the referenced workflow.
+    """
+
+    task_type = "subworkflow"
+
+    def __init__(self, workflow_external_id: str, version: str) -> None:
+        self.workflow_external_id = workflow_external_id
+        self.version = version
+
+    @classmethod
+    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        subworkflow: dict[str, Any] = resource[cls.task_type]
+
+        return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            self.task_type: {
+                "workflowExternalId": self.workflow_external_id,
+                "version": self.version,
+            }
+        }
 
 
 class DynamicTaskParameters(WorkflowTaskParameters):
@@ -397,7 +431,8 @@ class WorkflowTask(CogniteResource):
     """
     This class represents a workflow task.
 
-    Note: tasks do not distinguish between write and read versions.
+    Note:
+        Tasks do not distinguish between write and read versions.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -1381,23 +1416,34 @@ class WorkflowTriggerRun(CogniteResource):
 
     def __init__(
         self,
-        trigger_external_id: str,
-        trigger_fire_time: int,
+        external_id: str,
+        fire_time: int,
         workflow_external_id: str,
         workflow_version: str,
+        status: Literal["success", "failed"],
+        workflow_execution_id: str | None = None,
+        reason_for_failure: str | None = None,
     ) -> None:
-        self.trigger_external_id = trigger_external_id
-        self.trigger_fire_time = trigger_fire_time
+        self.external_id = external_id
+        self.fire_time = fire_time
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
+        self.workflow_execution_id = workflow_execution_id
+        self.status = status
+        self.reason_for_failure = reason_for_failure
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
-            "trigger_external_id": self.trigger_external_id,
-            "trigger_fire_time": self.trigger_fire_time,
+            "external_id": self.external_id,
+            "fire_time": self.fire_time,
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
+            "status": self.status,
         }
+        if self.workflow_execution_id:
+            item["workflow_execution_id"] = self.workflow_execution_id
+        if self.reason_for_failure:
+            item["reason_for_failure"] = self.reason_for_failure
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1405,10 +1451,13 @@ class WorkflowTriggerRun(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
         return cls(
-            trigger_external_id=resource["triggerExternalId"],
-            trigger_fire_time=resource["triggerFireTime"],
+            external_id=resource["externalId"],
+            fire_time=resource["fireTime"],
             workflow_external_id=resource["workflowExternalId"],
             workflow_version=resource["workflowVersion"],
+            status=resource["status"],
+            workflow_execution_id=resource.get("workflowExecutionId"),
+            reason_for_failure=resource.get("reasonForFailure"),
         )
 
 

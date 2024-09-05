@@ -442,7 +442,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
             expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
             remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
-            **kwargs (Any): For backwards compatability.
+            **kwargs (Any): For backwards compatibility.
 
         Returns:
             pd.DataFrame: The dataframe.
@@ -1004,7 +1004,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
             convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
             expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
             remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
-            **kwargs (Any): For backwards compatability.
+            **kwargs (Any): For backwards compatibility.
 
         Returns:
             pd.DataFrame: The Cognite resource as a dataframe.

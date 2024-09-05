@@ -17,14 +17,60 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.6] - 2024-09-05
+### Fixed
+- Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`
+  (when a single space is requested (requirement)). This also affects the `space` parameter to e.g.
+  `client.data_modeling.instances.list(...)`
+
+## [7.58.5] - 2024-09-04
+### Added
+- Data modeling filters now support properties that are lists.
+### Fixed
+- Read-only properties on CogniteAssetApply (root, path and last_updated_time) are now removed.
+
+## [7.58.4] - 2024-09-03
+### Fixed
+- The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles truncated milliseconds.
+
+## [7.58.3] - 2024-09-03
+### Fixed
+- The parameter `query` is now optional in `client.data_modeling.instances.search(...)`.
+
+## [7.58.2] - 2024-09-03
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.sources`.
+
+## [7.58.1] - 2024-09-03
+### Fixed
+- [Feature Preview - beta] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
+ can be null or missing, as according to the API spec.
+
+## [7.58.0] - 2024-09-03
+### Added
+- Data Workflows: add support for `SubworkflowReferenceParameters` subworkflow task type. Allowing embedding other workflows into a workflow.
+
+## [7.57.0] - 2024-09-03
+### Added
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
+
+## [7.56.0] - 2024-09-02
+### Added
+- Support for referencing files by instance id when running diagrams.detect
+
+## [7.55.2] - 2024-08-29
+### Fixed
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
+
 ## [7.55.1] - 2024-08-29
 ### Fixed
-- Missing exports for workflow triggers 
+- Missing exports for workflow triggers
 
 ## [7.55.0] - 2024-08-23
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
-- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing 
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing
   a custom nonce instead of letting the SDK generate it from your current credentials.
 
 ## [7.54.19] - 2024-08-23
