@@ -16,6 +16,7 @@ from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
+from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
@@ -182,7 +183,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     Args:
         authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
         client_id (str): Your application's client id that allows device code flows.
-        scopes (list[str]): A list of scopes.
+        scopes (list[str] | None): A list of scopes.
+        cdf_cluster (str | None): No description.
         oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
@@ -210,7 +212,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self,
         authority_url: str | None,
         client_id: str,
-        scopes: list[str] = ["IDENTITY user_impersonation profile openid"],
+        scopes: list[str] | None = None,
+        cdf_cluster: str | None = None,
         oauth_discovery_url: str | None = None,
         token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
@@ -219,16 +222,18 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         **token_custom_args: Any,
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
-        if not authority_url and not oauth_discovery_url:
+        if not exactly_one_is_not_none(authority_url, oauth_discovery_url):
             raise ValueError("Either 'authority_url' or 'oauth_discovery_url' must be provided.")
+        if not at_least_one_is_not_none(scopes, cdf_cluster):
+            raise ValueError("Either 'scopes' or 'cdf_cluster' must be provided.")
         if not client_id:
             raise ValueError("'client_id' must be provided.")
-        if not scopes:
-            raise ValueError("'scopes' must be provided.")
         self.__authority_url = authority_url
         self.__oauth_discovery_url = oauth_discovery_url
         self.__client_id = client_id
-        self.__scopes = scopes
+        self.__scopes = scopes or [
+            f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"
+        ]
         self.__mem_cache_only = mem_cache_only
         self.__token_custom_args = token_custom_args
 
