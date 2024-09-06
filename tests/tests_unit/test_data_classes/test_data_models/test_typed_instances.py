@@ -328,7 +328,7 @@ def cognite_asset_kwargs() -> dict[str, Any]:
         space="my-space",
         external_id="my-xid",
         type=DirectRelationReference("should-be", "at-root"),
-        type_=DirectRelationReference("should-be", "in-properties"),
+        asset_type=DirectRelationReference("should-be", "in-properties"),
         source_created_time=datetime(2020, 1, 1),
     )
 
