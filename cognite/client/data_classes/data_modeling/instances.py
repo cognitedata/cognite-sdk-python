@@ -1454,28 +1454,38 @@ class PropertyOptions:
     def __init__(self, identifier: str | None = None) -> None:
         self.name = cast(str, identifier)  # mypy help, set_name guarantees str
 
-    def __set_name__(self, owner: type, name: str) -> None:
-        self.name = self.name or name
+    def __set_name__(self, owner: type, attribute_name: str) -> None:
+        self.name = self.name or attribute_name
         if self.name in _RESERVED_PROPERTY_NAMES:
-            self.name = f"{_RESERVED_PROPERTY_CONFLICT_PREFIX}{self.name}"
+            self.name = _RESERVED_PROPERTY_CONFLICT_PREFIX + self.name
 
-    def __get__(self, instance: Any, owner: type) -> Any:
+    def __get__(self, instance: TypedInstance, owner: type) -> Any:
         try:
             return instance.__dict__[self.name]
         except KeyError:
             raise AttributeError(f"'{owner.__name__}' object has no attribute '{self.name}'")
 
-    def __set__(self, instance: Any, value: Any) -> None:
+    def __set__(self, instance: TypedInstance, value: Any) -> None:
         try:
             instance.__dict__[self.name] = value
         except KeyError:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
 
-    def __delete__(self, instance: Any) -> None:
+    def __delete__(self, instance: TypedInstance) -> None:
         try:
             del instance.__dict__[self.name]
         except KeyError:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+    @property
+    def property_name(self) -> str:
+        return self.resolve_property(self.name)
+
+    @staticmethod
+    def resolve_property(name: str) -> str:
+        if name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+            return name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+        return name
 
 
 class TypedInstance(ABC):
@@ -1530,12 +1540,9 @@ class TypedInstance(ABC):
             if name in resource:
                 output[name] = cls._deserialize_values(resource[name], parameter)
             elif name in property_by_name:
-                property_name = property_by_name[name].name
-                if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                    property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-                if property_name in resource:
-                    output[name] = cls._deserialize_values(resource[property_name], parameter)
-
+                prop = property_by_name[name].property_name
+                if prop in resource:
+                    output[name] = cls._deserialize_values(resource[prop], parameter)
         return output
 
     @classmethod
@@ -1585,11 +1592,13 @@ class TypedInstance(ABC):
             return convert_data_modelling_timestamp(value)
         elif "date" in annotation and isinstance(value, str):
             return date.fromisoformat(value)
-        elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
-            return DirectRelationReference.load(value)
-        elif NodeId.__name__ in annotation and isinstance(value, dict):
-            return NodeId.load(value)
-
+        elif isinstance(value, dict):
+            if DirectRelationReference.__name__ in annotation:
+                return DirectRelationReference.load(value)
+            elif NodeId.__name__ in annotation:
+                return NodeId.load(value)
+            elif EdgeId.__name__ in annotation:
+                return EdgeId.load(value)
         return value
 
 
@@ -1734,8 +1743,7 @@ class _PropertyValueSerializer:
     def serialize_values(cls, props: Mapping[str, Any], camel_case: bool = True) -> dict[str, PropertyValue]:
         properties: dict[str, Any] = {}
         for key, value in props.items():
-            if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+            key = PropertyOptions.resolve_property(key)
             if isinstance(value, SequenceNotStr):
                 properties[key] = [cls._serialize_value(v, camel_case) for v in value]
             else:
