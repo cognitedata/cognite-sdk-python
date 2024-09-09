@@ -1579,6 +1579,7 @@ class TypedInstance(ABC):
     @classmethod
     def _deserialize_values(cls, value: Any, parameter: inspect.Parameter) -> Any:
         if isinstance(value, SequenceNotStr):
+            # TODO, performance: Deserialize list of values should not inspect parameter/value repeatedly
             return [cls._deserialize_value(v, parameter) for v in value]
         else:
             return cls._deserialize_value(value, parameter)
