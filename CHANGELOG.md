@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.58.8] - 2024-09-06
-### Fixed
+### Added
 - Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.
 
 ## [7.58.7] - 2024-09-06
