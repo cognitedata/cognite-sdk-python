@@ -22,21 +22,11 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def fresh_session(cognite_client: CogniteClient) -> SessionWrite:
-    new_session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
-    yield SessionWrite(nonce=new_session.nonce)
-    cognite_client.iam.sessions.revoke(new_session.id)
-
-
-@pytest.fixture
 def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> Destination:
     my_dest = DestinationWrite(
         external_id=f"myNewDestination-{random_string(10)}",
         credentials=fresh_session,
     )
-    retrieved = cognite_client.hosted_extractors.destinations.retrieve(my_dest.external_id, ignore_unknown_ids=True)
-    if retrieved:
-        yield retrieved
     created = cognite_client.hosted_extractors.destinations.create(my_dest)
     yield created
 
@@ -67,9 +57,7 @@ def one_job(cognite_client: CogniteClient, one_source: Source, one_destination: 
         external_id=f"myJobForTesting-{random_string(10)}",
         destination_id=one_destination.external_id,
         source_id=one_source.external_id,
-        format=CogniteFormat(
-            encoding="utf16",
-        ),
+        format=CogniteFormat(encoding="utf16"),
     )
     retrieved = cognite_client.hosted_extractors.jobs.retrieve(my_job.external_id, ignore_unknown_ids=True)
     if retrieved:

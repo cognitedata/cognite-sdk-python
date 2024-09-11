@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 TargetStatus: TypeAlias = Literal["running", "paused"]
-Status: TypeAlias = Literal[
+JobStatus: TypeAlias = Literal[
     "startup_error",
     "paused",
     "shutting_down",
@@ -164,6 +164,8 @@ class JobConfig(CogniteObject, ABC):
             return cast(Self, MQTTConfig._load_config(resource))
         elif "topic" in resource:
             return cast(Self, KafkaConfig._load_config(resource))
+        elif "interval" in resource and "path" in resource:
+            return cast(Self, RestConfig._load_config(resource))
         else:
             return cast(Self, UnknownCogniteObject(resource))
 
@@ -185,6 +187,45 @@ class KafkaConfig(JobConfig):
     @classmethod
     def _load_config(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(topic=resource["topic"], partitions=resource.get("partitions", 1))
+
+
+@dataclass
+class IncrementalLoad(CogniteObject, ABC):
+    _type: ClassVar[str]
+
+
+@dataclass
+class BodyLoad(IncrementalLoad):
+    value: str
+
+
+@dataclass
+class HeaderValueLoad(IncrementalLoad):
+    key: str
+    value: str
+
+
+@dataclass
+class QueryParamLoad(IncrementalLoad):
+    key: str
+    value: str
+
+
+@dataclass
+class NextUrlLoad(IncrementalLoad):
+    value: str
+
+
+@dataclass
+class RestConfig(JobConfig):
+    interval: Literal["5m", "15m", "1h", "6h", "12h", "1d"]
+    path: str
+    method: Literal["get", "post"] = "get"
+    body: str | None = None
+    query: dict[str, str] | None = None
+    headers: dict[str, str] | None = None
+    incremental_load: IncrementalLoad | None = None
+    pagination: IncrementalLoad | None = None
 
 
 class _JobCore(WriteableCogniteResource["JobWrite"]):
@@ -250,7 +291,7 @@ class Job(_JobCore):
         source_id (str): ID of the source this job should read from.
         format (JobFormat): The format of the messages from the source. This is used to convert messages coming from the source system to a format that can be inserted into CDF.
         target_status (TargetStatus): The target status of a job. Set this to start or stop the job.
-        status (Status): Status of this job.
+        status (JobStatus): Status of this job.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         config (JobConfig | None): Configuration for the job. This is specific to the source system.
@@ -264,7 +305,7 @@ class Job(_JobCore):
         source_id: str,
         format: JobFormat,
         target_status: TargetStatus,
-        status: Status,
+        status: JobStatus,
         created_time: int,
         last_updated_time: int,
         config: JobConfig | None = None,
@@ -474,5 +515,4 @@ class JobMetricsList(CogniteResourceList[JobMetrics]):
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in JobFormat.__subclasses__()
-    if hasattr(subclass, "_type")
 }
