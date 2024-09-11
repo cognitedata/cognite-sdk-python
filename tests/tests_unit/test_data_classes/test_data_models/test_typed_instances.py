@@ -271,7 +271,7 @@ class TestTypedNode:
                 "created_time": pd.Timestamp("1970-01-01"),
                 "instance_type": "node",
                 "name": "John Doe",
-                "birthDate": "1990-01-01",
+                "birth_date": "1990-01-01",
                 "email": "john@doe.com",
                 "siblings": None,
             },
@@ -405,7 +405,7 @@ class TestCDMv1Classes:
             index=["type", "type"],
         )
         pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
-        assert "sourceCreatedTime" in read_expanded_df.index
+        assert "source_created_time" in read_expanded_df.index
 
 
 @pytest.mark.parametrize(

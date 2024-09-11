@@ -8,6 +8,8 @@ from collections import UserDict, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
+from functools import lru_cache
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -486,13 +488,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
-            if isinstance(self, TypedInstance):
-                view_id, *extra = [self.get_source()]
-            else:
-                view_id, *extra = self.properties.keys()
+            view_id, *extra = self.properties.keys()
             # We only do/allow this if we have a single source:
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+                if isinstance(self, TypedInstance):
+                    prop_df.rename(columns=_get_descriptor_property_name_mapping(type(self)), inplace=True)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -504,6 +505,13 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     def as_apply(self) -> InstanceApply:
         """Convert the instance to an apply instance."""
         raise NotImplementedError
+
+
+@lru_cache(32)
+def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> MappingProxyType[str, str]:
+    return MappingProxyType(
+        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
+    )
 
 
 class InstanceApplyResult(InstanceCore, ABC):
@@ -1668,7 +1676,7 @@ class TypedEdge(Edge, TypedInstance):
 
 def _load_instance(cls: type[T_TypedInstance], resource: dict[str, Any], properties: dict[str, Any]) -> T_TypedInstance:
     kwargs: dict[str, Any] = {}
-    signature = inspect.signature(cls.__init__)  # type: ignore[misc]
+    signature = inspect.signature(cls.__init__)
     kwargs.update(_load_properties(cls, properties, signature))
     kwargs.update(_load_base_properties(resource, cls._base_properties, signature))
     return cls(**kwargs)
