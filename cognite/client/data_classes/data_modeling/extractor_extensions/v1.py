@@ -329,7 +329,7 @@ class CogniteExtractorTimeSeriesApply(
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor time series.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -356,7 +356,7 @@ class CogniteExtractorTimeSeriesApply(
         external_id: str,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -392,7 +392,7 @@ class CogniteExtractorTimeSeriesApply(
             source_created_user=source_created_user,
             source_updated_user=source_updated_user,
             is_step=is_step,
-            type_=type_,
+            time_series_type=time_series_type,
             source_unit=source_unit,
             unit=unit,
             assets=assets,
@@ -417,7 +417,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -447,7 +447,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
         created_time: int,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -486,7 +486,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
             source_created_user=source_created_user,
             source_updated_user=source_updated_user,
             is_step=is_step,
-            type_=type_,
+            time_series_type=time_series_type,
             source_unit=source_unit,
             unit=unit,
             assets=assets,
@@ -511,7 +511,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
             self.space,
             self.external_id,
             is_step=self.is_step,
-            type_=self.type_,
+            time_series_type=self.time_series_type,
             name=self.name,
             description=self.description,
             tags=self.tags,

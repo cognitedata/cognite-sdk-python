@@ -253,7 +253,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     trigger = cognite_client.workflows.triggers.create(
         WorkflowTriggerCreate(
             external_id="integration_test-workflow-scheduled-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
             workflow_external_id="integration_test-workflow-add_multiply",
             workflow_version="1",
             input={"a": 1, "b": 2},
@@ -490,7 +490,7 @@ class TestWorkflowTriggers:
     ) -> None:
         assert workflow_scheduled_trigger is not None
         assert workflow_scheduled_trigger.external_id == "integration_test-workflow-scheduled-trigger"
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 0 * * *")
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *")
         assert workflow_scheduled_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
         assert workflow_scheduled_trigger.workflow_version == "1"
         assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}

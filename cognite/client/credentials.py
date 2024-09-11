@@ -7,21 +7,79 @@ import threading
 import time
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from types import MappingProxyType
+from typing import Any, Callable, Protocol, runtime_checkable
 
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
+from cognite.client.utils._auxiliary import load_resource_to_dict
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
 
 
+@runtime_checkable
 class CredentialProvider(Protocol):
     @abstractmethod
     def authorization_header(self) -> tuple[str, str]:
         raise NotImplementedError
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> CredentialProvider:
+        """Load a credential provider object from a YAML/JSON string or dict.
+
+        Note:
+            The dictionary must contain exactly one top level key, which is the type of the credential provider and must be one of the
+            following strings: ``"token"``, ``"client_credentials"``, ``"interactive"``, ``"device_code"``, ``"client_certificate"``.
+            The value of the key is a dictionary containing the configuration for the credential provider.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing the configuration for the credential provider.
+
+        Returns:
+            CredentialProvider: Initialized credential provider of the specified type.
+
+        Examples:
+
+            Get a token credential provider:
+
+                >>> from cognite.client.credentials import CredentialProvider
+                >>> config = {"token": "my secret token"}
+                >>> credentials = CredentialProvider.load(config)
+
+            Get a client credential provider:
+
+                >>> import os
+                >>> config = {
+                ...     "client_credentials": {
+                ...         "client_id": "abcd",
+                ...         "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+                ...         "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+                ...         "scopes": ["https://api.cognitedata.com/.default"],
+                ...     }
+                ... }
+                >>> credentials = CredentialProvider.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+
+        if len(loaded) != 1:
+            raise ValueError(
+                f"Credential provider configuration must be a dictionary containing exactly one of the following "
+                f"supported types as the top level key: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
+            )
+
+        credential_type, credential_config = next(iter(loaded.items()))
+
+        if credential_type not in _SUPPORTED_CREDENTIAL_TYPES:
+            raise ValueError(
+                f"Invalid credential provider type given, the valid options are: {sorted(_SUPPORTED_CREDENTIAL_TYPES.keys())}."
+            )
+
+        if credential_type == "token" and (isinstance(credential_config, str) or callable(credential_config)):
+            credential_config = {"token": credential_config}
+        return _SUPPORTED_CREDENTIAL_TYPES[credential_type].load(credential_config)  # type: ignore [attr-defined]
 
 
 class Token(CredentialProvider):
@@ -59,6 +117,27 @@ class Token(CredentialProvider):
 
     def authorization_header(self) -> tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
+
+    @classmethod
+    def load(cls, config: dict[str, str | Callable[[], str]] | str) -> Token:
+        """Load a token credential provider object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, str | Callable[[], str]] | str): A dictionary or YAML/JSON string containing configuration values defined in the Token class.
+
+        Returns:
+            Token: Initialized token credential provider.
+
+        Note:
+            A callable token is not supported if passing in a yaml string.
+
+        Examples:
+
+            >>> from cognite.client.credentials import Token
+            >>> credentials = Token.load({"token": "my secret token"})
+        """
+        loaded = load_resource_to_dict(config)
+        return cls(token=loaded["token"])
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
@@ -222,6 +301,38 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> OAuthDeviceCode:
+        """Load a OAuth device code credential provider object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthDeviceCode class.
+
+        Returns:
+            OAuthDeviceCode: Initialized OAuthDeviceCode credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthDeviceCode
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credentials = OAuthDeviceCode.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+        token_cache_path = loaded.get("token_cache_path")
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            scopes=loaded["scopes"],
+            token_cache_path=Path(token_cache_path) if token_cache_path else None,
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
+
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for an interactive login flow.
@@ -301,6 +412,39 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> OAuthInteractive:
+        """Load a OAuth interactive credential provider object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthInteractive class.
+
+        Returns:
+            OAuthInteractive: Initialized OAuthInteractive credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthInteractive
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credentials = OAuthInteractive.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+        token_cache_path = loaded.get("token_cache_path")
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            scopes=loaded["scopes"],
+            redirect_port=int(loaded.get("redirect_port", 53000)),
+            token_cache_path=Path(token_cache_path) if token_cache_path else None,
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
 
     @classmethod
     def default_for_azure_ad(
@@ -444,6 +588,41 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ) from oauth_err
 
     @classmethod
+    def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
+        """Load a OAuth client credentials credential provider object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCredentials class.
+
+        Returns:
+            OAuthClientCredentials: Initialized OAuthClientCredentials credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCredentials
+            >>> import os
+            >>> config = {
+            ...     "token_url": "https://login.microsoftonline.com/xyz/oauth2/v2.0/token",
+            ...     "client_id": "abcd",
+            ...     "client_secret": os.environ["OAUTH_CLIENT_SECRET"],
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ...     "audience": "some-audience"
+            ... }
+            >>> credentials = OAuthClientCredentials.load(config)
+        """
+        loaded = load_resource_to_dict(config).copy()  # doing a shallow copy to avoid mutating the user input config
+        return cls(
+            token_url=loaded.pop("token_url"),
+            client_id=loaded.pop("client_id"),
+            client_secret=loaded.pop("client_secret"),
+            scopes=loaded.pop("scopes"),
+            token_expiry_leeway_seconds=int(
+                loaded.pop("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+            **loaded,
+        )
+
+    @classmethod
     def default_for_azure_ad(
         cls,
         tenant_id: str,
@@ -553,3 +732,49 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
 
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
+
+    @classmethod
+    def load(cls, config: dict[str, Any] | str) -> OAuthClientCertificate:
+        """Load a OAuth client certificate credential provider object from a YAML/JSON string or dict.
+
+        Args:
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the OAuthClientCertificate class.
+
+        Returns:
+            OAuthClientCertificate: Initialized OAuthClientCertificate credential provider.
+
+        Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCertificate
+            >>> from pathlib import Path
+            >>> config = {
+            ...     "authority_url": "https://login.microsoftonline.com/xyz",
+            ...     "client_id": "abcd",
+            ...     "cert_thumbprint": "XYZ123",
+            ...     "certificate": Path("certificate.pem").read_text(),
+            ...     "scopes": ["https://greenfield.cognitedata.com/.default"],
+            ... }
+            >>> credentials = OAuthClientCertificate.load(config)
+        """
+        loaded = load_resource_to_dict(config)
+        return cls(
+            authority_url=loaded["authority_url"],
+            client_id=loaded["client_id"],
+            cert_thumbprint=loaded["cert_thumbprint"],
+            certificate=loaded["certificate"],
+            scopes=loaded["scopes"],
+            token_expiry_leeway_seconds=int(
+                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+            ),
+        )
+
+
+_SUPPORTED_CREDENTIAL_TYPES = MappingProxyType(
+    {
+        "token": Token,
+        "client_credentials": OAuthClientCredentials,
+        "interactive": OAuthInteractive,
+        "device_code": OAuthDeviceCode,
+        "client_certificate": OAuthClientCertificate,
+    }
+)

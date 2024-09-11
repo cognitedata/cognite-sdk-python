@@ -938,10 +938,12 @@ class InstancesAPI(APIClient):
                 ...         self.name = name
                 ...         self.birth_date = birth_date
                 ...
+                ...     def get_source(self):
+                ...         return ViewId("sp_model_space", "Person", "v1")
+                ...
                 >>> client = CogniteClient()
                 >>> person = Person("sp_date_space", "my_person", "John Doe", date(1980, 1, 1))
                 >>> res = client.data_modeling.instances.apply(nodes=person)
-
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
@@ -973,7 +975,8 @@ class InstancesAPI(APIClient):
     def search(
         self,
         view: ViewId,
-        query: str,
+        query: str | None = None,
+        *,
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -988,7 +991,8 @@ class InstancesAPI(APIClient):
     def search(
         self,
         view: ViewId,
-        query: str,
+        query: str | None = None,
+        *,
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1003,7 +1007,8 @@ class InstancesAPI(APIClient):
     def search(
         self,
         view: ViewId,
-        query: str,
+        query: str | None = None,
+        *,
         instance_type: type[T_Node],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1018,7 +1023,8 @@ class InstancesAPI(APIClient):
     def search(
         self,
         view: ViewId,
-        query: str,
+        query: str | None = None,
+        *,
         instance_type: type[T_Edge],
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1032,7 +1038,7 @@ class InstancesAPI(APIClient):
     def search(
         self,
         view: ViewId,
-        query: str,
+        query: str | None = None,
         instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
         properties: list[str] | None = None,
         target_units: list[TargetUnit] | None = None,
@@ -1046,7 +1052,7 @@ class InstancesAPI(APIClient):
 
         Args:
             view (ViewId): View to search in.
-            query (str): Query string that will be parsed and used for search.
+            query (str | None): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
@@ -1103,7 +1109,9 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type_str, "limit": limit}
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type_str, "limit": limit}
+        if query:
+            body["query"] = query
         if properties:
             body["properties"] = properties
         if include_typing:

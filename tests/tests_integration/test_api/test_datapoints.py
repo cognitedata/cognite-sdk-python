@@ -427,7 +427,7 @@ def ts_create_in_dms(cognite_client, space_for_time_series) -> NodeApplyResult:
         # One per test runner, per OS, to avoid conflicts:
         external_id=f"dms-time-series-{platform.system()}-{'-'.join(map(str, version_info[:2]))}",
         is_step=True,
-        type_="numeric",
+        time_series_type="numeric",
     )
     (dms_ts_node,) = cognite_client.data_modeling.instances.apply(dms_ts).nodes
     return dms_ts_node

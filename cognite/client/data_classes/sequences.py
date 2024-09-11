@@ -628,7 +628,7 @@ class SequenceRow(CogniteResource):
         )
 
 
-ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
+ColumnNames: TypeAlias = Literal[
     "externalId",
     "id",
     "columnExternalId",

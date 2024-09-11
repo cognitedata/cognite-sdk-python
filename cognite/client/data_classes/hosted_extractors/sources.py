@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -213,17 +213,8 @@ class EventHubSource(Source):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
-    def as_write(self, key_value: str | None = None) -> EventHubSourceWrite:
-        if key_value is None:
-            raise ValueError("key_value must be provided")
-        return EventHubSourceWrite(
-            external_id=self.external_id,
-            host=self.host,
-            event_hub_name=self.event_hub_name,
-            key_name=self.key_name,
-            key_value=key_value,
-            consumer_group=self.consumer_group,
-        )
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
@@ -355,7 +346,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         host: str,
         port: int | None = None,
         authentication: MQTTAuthenticationWrite | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
     ) -> None:
@@ -363,7 +354,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         self.host = host
         self.port = port
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
 
@@ -376,7 +367,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             authentication=MQTTAuthenticationWrite._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -461,7 +452,7 @@ class _MQTTSource(Source, ABC):
         last_updated_time: int,
         port: int | None = None,
         authentication: MQTTAuthentication | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificate | None = None,
         auth_certificate: AuthCertificate | None = None,
     ) -> None:
@@ -469,7 +460,7 @@ class _MQTTSource(Source, ABC):
         self.host = host
         self.port = port
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
         self.created_time = created_time
@@ -484,7 +475,7 @@ class _MQTTSource(Source, ABC):
             authentication=MQTTAuthentication._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificate._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -493,7 +484,7 @@ class _MQTTSource(Source, ABC):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
-    def as_write(self) -> _MQTTSourceWrite:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -601,7 +592,7 @@ class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTr
 
     def as_write(
         self,
-    ) -> SourceWriteList:
+    ) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
 

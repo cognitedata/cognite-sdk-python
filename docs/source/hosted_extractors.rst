@@ -56,7 +56,7 @@ List job metrics
 
 Destinations
 -------------
-Create new destination
+Create new destinations
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.hosted_extractors.DestinationsAPI.create
 

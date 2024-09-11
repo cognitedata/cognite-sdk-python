@@ -1,8 +1,16 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from typing import Any
 
-from cognite.client.data_classes.data_modeling import DirectRelationReference, ViewId
+import pytest
+
+from cognite.client.data_classes.data_modeling import DirectRelationReference, NodeList, ViewId
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
+    CogniteAsset,
+    CogniteAssetApply,
+    CogniteDescribableEdgeApply,
+)
 from cognite.client.data_classes.data_modeling.typed_instances import (
     PropertyOptions,
     TypedEdge,
@@ -231,6 +239,56 @@ class TestTypedNode:
         assert isinstance(loaded.birth_date, date)
         assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings or [])
 
+    @pytest.mark.dsl
+    def test_to_pandas(self) -> None:
+        import pandas as pd
+
+        person = PersonRead(
+            "sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com"
+        )
+        df = person.to_pandas(expand_properties=True)
+        expected_df = pd.Series(
+            {
+                "space": "sp_my_fixed_space",
+                "external_id": "my_external_id",
+                "version": 1,
+                "last_updated_time": pd.Timestamp("1970-01-01"),
+                "created_time": pd.Timestamp("1970-01-01"),
+                "instance_type": "node",
+                "name": "John Doe",
+                "birth_date": "1990-01-01",
+                "email": "john@doe.com",
+            },
+        ).to_frame(name="value")
+        pd.testing.assert_frame_equal(df, expected_df)
+
+    @pytest.mark.dsl
+    def test_to_pandas_list(self) -> None:
+        import pandas as pd
+
+        person = NodeList[PersonRead](
+            [PersonRead("sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com")]
+        )
+
+        df = person.to_pandas(expand_properties=True)
+
+        pd.testing.assert_frame_equal(
+            df,
+            pd.DataFrame(
+                {
+                    "space": ["sp_my_fixed_space"],
+                    "external_id": ["my_external_id"],
+                    "version": [1],
+                    "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                    "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
+                    "instance_type": ["node"],
+                    "name": ["John Doe"],
+                    "birthDate": ["1990-01-01"],
+                    "email": ["john@doe.com"],
+                }
+            ),
+        )
+
 
 class TestTypedEdge:
     def test_dump_load_flow(self) -> None:
@@ -262,3 +320,117 @@ class TestTypedEdge:
         assert flow.dump() == expected
         loaded = Flow.load(expected)
         assert flow.dump() == loaded.dump()
+
+
+@pytest.fixture
+def cognite_asset_kwargs() -> dict[str, Any]:
+    return dict(
+        space="my-space",
+        external_id="my-xid",
+        type=DirectRelationReference("should-be", "at-root"),
+        asset_type=DirectRelationReference("should-be", "in-properties"),
+        source_created_time=datetime(2020, 1, 1),
+    )
+
+
+class TestCDMv1Classes:
+    @pytest.mark.parametrize("camel_case", (True, False))
+    @pytest.mark.parametrize("use_attribute_name", (True, False))
+    def test_cognite_asset_read_and_write(
+        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool, use_attribute_name: bool
+    ) -> None:
+        asset_write = CogniteAssetApply(**cognite_asset_kwargs)
+        asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
+
+        for is_write, asset in zip([True, False], [asset_write, asset_read]):
+            dumped = asset.dump(camel_case=camel_case, use_attribute_name=use_attribute_name)  # type: ignore [call-arg]
+            xid = "externalId" if camel_case else "external_id"
+            assert xid in dumped
+            # Check that type/type_ are correctly dumped:
+            # - not starting with double underscore
+            # - not ending with single underscore
+            assert dumped["type"] == {"space": "should-be", xid: "at-root"}
+            if is_write:
+                properties = dumped["sources"][0]["properties"]
+            else:
+                properties = dumped["properties"]["cdf_cdm"]["CogniteAsset/v1"]
+            assert properties["type"] == {"space": "should-be", xid: "in-properties"}
+            # Check that properties are cased according to use_attribute_name:
+            assert ("source_created_time" if use_attribute_name else "sourceCreatedTime") in properties
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("camel_case", (True, False))
+    def test_cognite_asset_read_and_write__to_pandas(
+        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool
+    ) -> None:
+        import pandas as pd
+
+        # When calling to_pandas, `use_attribute_name = not camel_case` due to how we expect
+        # attributes to be snake cased in python (in general).
+        asset_write = CogniteAssetApply(**cognite_asset_kwargs)
+        asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
+
+        # TODO: Implement expand_properties=True for Apply classes?
+        write_df = asset_write.to_pandas(camel_case=camel_case)
+        read_df = asset_read.to_pandas(expand_properties=False, camel_case=camel_case)
+        read_expanded_df = asset_read.to_pandas(expand_properties=True, camel_case=camel_case)
+
+        xid = "externalId" if camel_case else "external_id"
+        for df in [write_df, read_df]:
+            assert df.index.is_unique
+            assert df.index[1] == xid
+            assert df.at["type", "value"] == {"space": "should-be", xid: "at-root"}
+
+        assert not read_expanded_df.index.is_unique  # because 'type' is repeated
+        expected_type_df = pd.DataFrame(
+            [
+                ({"space": "should-be", xid: "at-root"},),
+                ({"space": "should-be", xid: "in-properties"},),
+            ],
+            columns=["value"],
+            index=["type", "type"],
+        )
+        pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
+        assert ("sourceCreatedTime" if camel_case else "source_created_time") in read_expanded_df.index
+
+
+@pytest.mark.parametrize(
+    "name, instance",
+    (
+        (
+            "CogniteAssetApply",
+            CogniteAssetApply(
+                space="foo",
+                external_id="child",
+                parent=("foo", "I-am-root"),
+            ),
+        ),
+        (
+            "CogniteDescribableEdgeApply",
+            CogniteDescribableEdgeApply(
+                space="foo",
+                external_id="indescribable",
+                type=DirectRelationReference("foo", "yo"),
+                start_node=DirectRelationReference("foo", "yo2"),
+                end_node=DirectRelationReference("foo", "yo3"),
+            ),
+        ),
+    ),
+)
+def test_typed_instances_overrides_inherited_methods_from_instance_cls(
+    name: str, instance: TypedNode | TypedEdge
+) -> None:
+    with pytest.raises(AttributeError, match=f"{name!r} object has no attribute 'get'"):
+        instance.get("space")
+
+    with pytest.raises(TypeError, match=f"{name!r} object is not subscriptable"):
+        instance["foo"]
+
+    with pytest.raises(TypeError, match=f"{name!r} object does not support item assignment"):
+        instance["foo"] = "bar"
+
+    with pytest.raises(TypeError, match=f"{name!r} object does not support item deletion"):
+        del instance["external_id"]
+
+    with pytest.raises(TypeError, match=f"argument of type {name!r} is not iterable"):
+        "foo" in instance

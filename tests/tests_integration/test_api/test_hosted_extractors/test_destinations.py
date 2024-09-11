@@ -24,9 +24,7 @@ def fresh_session(cognite_client: CogniteClient) -> SessionWrite:
 
 @pytest.fixture(scope="session")
 def a_data_set(cognite_client: CogniteClient) -> DataSet:
-    ds = DataSetWrite(
-        external_id=f"test-dataset-hosted-extractor-{random_string(10)}", name="test-dataset-hosted-extractor"
-    )
+    ds = DataSetWrite(external_id="test-dataset-hosted-extractor", name="test-dataset-hosted-extractor")
     retrieved = cognite_client.data_sets.retrieve(external_id=ds.external_id)
     if retrieved:
         return retrieved

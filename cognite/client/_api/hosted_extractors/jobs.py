@@ -29,7 +29,7 @@ class JobsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 100
         self._LIST_LIMIT = 100
@@ -58,7 +58,7 @@ class JobsAPI(APIClient):
     ) -> Iterator[Job] | Iterator[JobList]:
         """Iterate over jobs
 
-        Fetches jobs as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
 
         Args:
             chunk_size (int | None): Number of jobs to return in each chunk. Defaults to yielding one job a time.
@@ -81,7 +81,7 @@ class JobsAPI(APIClient):
     def __iter__(self) -> Iterator[Job]:
         """Iterate over jobs
 
-        Fetches jobs as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
 
         Returns:
             Iterator[Job]: yields Job one by one.
@@ -97,11 +97,11 @@ class JobsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Job | None | JobList:
-        """`Retrieve one or more jobs. <https://developer.cognite.com/api#tag/Jobs/operation/retrieve_jobs>`_
+        """`Retrieve one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/retrieve_jobs>`_
 
         Args:
-            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the rejob type.
-            ignore_unknown_ids (bool): No description.
+            external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the job type.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found
 
         Returns:
             Job | None | JobList: Requested jobs
@@ -112,7 +112,7 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.jobs.retrieve('myJob')
 
-            Get multiple spaces by id:
+            Get multiple jobs by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -137,14 +137,14 @@ class JobsAPI(APIClient):
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found
+            ignore_unknown_ids (bool): Ignore external IDs that are not found
         Examples:
 
-            Delete jobs by id::
+            Delete jobs by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.hosted_extractors.jobs.delete(["myMQTTJob", "MyEvenHubJob"])
+                >>> client.hosted_extractors.jobs.delete(["myMQTTJob", "MyEventHubJob"])
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
@@ -156,7 +156,7 @@ class JobsAPI(APIClient):
             wrap_ids=True,
             returns_items=False,
             headers={"cdf-version": "beta"},
-            extra_body_fields=extra_body_fields or None,
+            extra_body_fields=extra_body_fields,
         )
 
     @overload
@@ -166,10 +166,10 @@ class JobsAPI(APIClient):
     def create(self, items: Sequence[JobWrite]) -> JobList: ...
 
     def create(self, items: JobWrite | Sequence[JobWrite]) -> Job | JobList:
-        """`Create one or more jobs. <https://developer.cognite.com/api#tag/Jobs/operation/create_jobs>`_
+        """`Create one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/create_jobs>`_
 
         Args:
-            items (JobWrite | Sequence[JobWrite]): Space | Sequence[Space]): Job(s) to create.
+            items (JobWrite | Sequence[JobWrite]): Job(s) to create.
 
         Returns:
             Job | JobList: Created job(s)
@@ -181,8 +181,8 @@ class JobsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
-                >>> job = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
-                >>> res = client.hosted_extractors.jobs.create(job)
+                >>> job_write = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> job = client.hosted_extractors.jobs.create(job_write)
         """
         self._warning.warn()
         return self._create_multiple(
@@ -200,10 +200,10 @@ class JobsAPI(APIClient):
     def update(self, items: Sequence[JobWrite | JobUpdate]) -> JobList: ...
 
     def update(self, items: JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate]) -> Job | JobList:
-        """`Update one or more jobs. <https://developer.cognite.com/api#tag/Jobs/operation/update_jobs>`_
+        """`Update one or more jobs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/update_jobs>`_
 
         Args:
-            items (JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate]): Space | Sequence[Space]): Job(s) to update.
+            items (JobWrite | JobUpdate | Sequence[JobWrite | JobUpdate]): Job(s) to update.
 
         Returns:
             Job | JobList: Updated job(s)
@@ -216,7 +216,7 @@ class JobsAPI(APIClient):
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
                 >>> job = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
-                >>> res = client.hosted_extractors.jobs.update(job)
+                >>> updated_job = client.hosted_extractors.jobs.update(job)
         """
         self._warning.warn()
         return self._update_multiple(
@@ -231,7 +231,7 @@ class JobsAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobList:
-        """`List jobs <https://developer.cognite.com/api#tag/Jobs/operation/list_jobs>`_
+        """`List jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/list_jobs>`_
 
         Args:
             limit (int | None): Maximum number of jobs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -245,7 +245,7 @@ class JobsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.jobs.list(limit=5)
+                >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
             Iterate over jobs::
 
@@ -259,7 +259,7 @@ class JobsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for job_list in client.hosted_extractors.jobs(chunk_size=25):
-                ...     job_list # do something with the spaces
+                ...     job_list # do something with the jobs
         """
         self._warning.warn()
         return self._list(
@@ -277,15 +277,13 @@ class JobsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobLogsList:
-        """`List job logs. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
+        """`List job logs. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_logs>`_
 
         Args:
             job (str | None): Require returned logs to belong to the job given by this external ID.
             source (str | None): Require returned logs to belong to the any job with source given by this external ID.
             destination (str | None): Require returned logs to belong to the any job with destination given by this external ID.
             limit (int | None): Maximum number of logs to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-
 
         Returns:
             JobLogsList: List of requested job logs
@@ -323,7 +321,7 @@ class JobsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> JobMetricsList:
-        """`List job metrics. <https://developer.cognite.com/api#tag/Jobs/operation/get_job_logs>`_
+        """`List job metrics. <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/get_job_metrics>`_
 
         Args:
             job (str | None): Require returned metrics to belong to the job given by this external ID.
