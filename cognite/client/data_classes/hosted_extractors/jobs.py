@@ -193,27 +193,69 @@ class KafkaConfig(JobConfig):
 class IncrementalLoad(CogniteObject, ABC):
     _type: ClassVar[str]
 
+    @classmethod
+    @abstractmethod
+    def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
+        raise NotImplementedError()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource.get("type")
+        if type_ is None and hasattr(cls, "_type"):
+            type_ = cls._type
+        elif type_ is None:
+            raise KeyError("type")
+        incremental_load_cls = _INCREMENTALLOAD_CLASS_BY_TYPE.get(type_)
+        if incremental_load_cls is None:
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        return cast(Self, incremental_load_cls._load_incremental_load(resource))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["type"] = self._type
+        return output
+
 
 @dataclass
 class BodyLoad(IncrementalLoad):
+    _type = "body"
     value: str
+
+    @classmethod
+    def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
+        return cls(value=resource["value"])
 
 
 @dataclass
 class HeaderValueLoad(IncrementalLoad):
+    _type = "headerValue"
     key: str
     value: str
+
+    @classmethod
+    def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
+        return cls(key=resource["key"], value=resource["value"])
 
 
 @dataclass
 class QueryParamLoad(IncrementalLoad):
+    _type = "queryParam"
     key: str
     value: str
+
+    @classmethod
+    def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
+        return cls(key=resource["key"], value=resource["value"])
 
 
 @dataclass
 class NextUrlLoad(IncrementalLoad):
+    _type = "nextUrl"
     value: str
+
+    @classmethod
+    def _load_incremental_load(cls, resource: dict[str, Any]) -> Self:
+        return cls(value=resource["value"])
 
 
 @dataclass
@@ -226,6 +268,25 @@ class RestConfig(JobConfig):
     headers: dict[str, str] | None = None
     incremental_load: IncrementalLoad | None = None
     pagination: IncrementalLoad | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.incremental_load, NextUrlLoad):
+            raise ValueError("incremental_load cannot be of type NextUrlLoad")
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            interval=resource["interval"],
+            path=resource["path"],
+            method=resource.get("method", "get"),
+            body=resource.get("body"),
+            query=resource.get("query"),
+            headers=resource.get("headers"),
+            incremental_load=IncrementalLoad._load(resource["incrementalLoad"])
+            if "incrementalLoad" in resource
+            else None,
+            pagination=IncrementalLoad._load(resource["pagination"]) if "pagination" in resource else None,
+        )
 
 
 class _JobCore(WriteableCogniteResource["JobWrite"]):
@@ -515,4 +576,9 @@ class JobMetricsList(CogniteResourceList[JobMetrics]):
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in JobFormat.__subclasses__()
+}
+
+_INCREMENTALLOAD_CLASS_BY_TYPE: dict[str, type[IncrementalLoad]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in IncrementalLoad.__subclasses__()
 }
