@@ -17,10 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.58.7] - 2024-09-05
+## [7.58.7] - 2024-09-06
 ### Fixed
-- Allow zipping files older than 1980 when creating a function, this is done by
-setting the timestamp to 1980 if older than that.
+- Creating a function using files dated before 1980 no longer raises ValueError,
+  by overriding the timestamps to 1980-01-01.
 
 ## [7.58.6] - 2024-09-05
 ### Fixed
