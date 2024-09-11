@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import inspect
-from abc import ABC
-from collections.abc import Iterable
+from abc import ABC, abstractmethod
 from datetime import date
+from functools import lru_cache
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from typing_extensions import Self
@@ -11,7 +12,7 @@ from typing_extensions import Self
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
+from cognite.client.data_classes.data_modeling.ids import EdgeId, NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeApply,
@@ -21,6 +22,7 @@ from cognite.client.data_classes.data_modeling.instances import (
 )
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._time import convert_data_modelling_timestamp
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -37,7 +39,7 @@ class PropertyOptions:
     """
 
     def __init__(self, identifier: str | None = None) -> None:
-        self.name = identifier
+        self.name = cast(str, identifier)  # mypy help, set_name guarantees str
 
     def __set_name__(self, owner: type, name: str) -> None:
         self.name = self.name or name
@@ -63,23 +65,30 @@ class PropertyOptions:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
 
 
-class TypedNodeApply(NodeApply, ABC):
+class _TypedInstance(ABC):
+    _instance_properties: frozenset[str]
+
+    @classmethod
+    @abstractmethod
+    def get_source(cls) -> ViewId:
+        raise NotImplementedError
+
+
+class TypedNodeApply(NodeApply, _TypedInstance):
     _instance_properties: frozenset[str] = frozenset(
         {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
     )
 
-    @classmethod
-    def get_source(cls) -> ContainerId | ViewId:
-        raise NotImplementedError
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, use_attribute_name: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "sources" not in output:
             output["sources"] = []
         output["sources"].append(
             {
                 "source": self.get_source().dump(camel_case),
-                "properties": _dump_properties(self, camel_case, self._instance_properties),
+                "properties": _dump_properties(
+                    self, camel_case, self._instance_properties, use_attribute_name=use_attribute_name
+                ),
             }
         )
         return output
@@ -91,23 +100,21 @@ class TypedNodeApply(NodeApply, ABC):
         return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
-class TypedEdgeApply(EdgeApply, ABC):
+class TypedEdgeApply(EdgeApply, _TypedInstance):
     _instance_properties = frozenset(
         {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
     )
 
-    @classmethod
-    def get_source(cls) -> ContainerId | ViewId:
-        raise NotImplementedError
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, use_attribute_name: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "sources" not in output:
             output["sources"] = []
         output["sources"].append(
             {
                 "source": self.get_source().dump(camel_case),
-                "properties": _dump_properties(self, camel_case, self._instance_properties),
+                "properties": _dump_properties(
+                    self, camel_case, self._instance_properties, use_attribute_name=use_attribute_name
+                ),
             }
         )
         return output
@@ -119,7 +126,7 @@ class TypedEdgeApply(EdgeApply, ABC):
         return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
-class TypedNode(Node, ABC):
+class TypedNode(Node, _TypedInstance):
     _instance_properties = frozenset(
         {
             "space",
@@ -155,14 +162,16 @@ class TypedNode(Node, ABC):
     def get_source(cls) -> ViewId:
         raise NotImplementedError
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, use_attribute_name: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" not in output:
             output["properties"] = {}
         source = self.get_source()
         output["properties"] = {
             source.space: {
-                source.as_source_identifier(): _dump_properties(self, camel_case, self._instance_properties),
+                source.as_source_identifier(): _dump_properties(
+                    self, camel_case, self._instance_properties, use_attribute_name=use_attribute_name
+                ),
             }
         }
         return output
@@ -175,7 +184,7 @@ class TypedNode(Node, ABC):
         return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
 
 
-class TypedEdge(Edge, ABC):
+class TypedEdge(Edge, _TypedInstance):
     _instance_properties = frozenset(
         {
             "space",
@@ -213,14 +222,16 @@ class TypedEdge(Edge, ABC):
     def get_source(cls) -> ViewId:
         raise NotImplementedError
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True, use_attribute_name: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" not in output:
             output["properties"] = {}
         source = self.get_source()
         output["properties"] = {
             source.space: {
-                source.as_source_identifier(): _dump_properties(self, camel_case, self._instance_properties),
+                source.as_source_identifier(): _dump_properties(
+                    self, camel_case, self._instance_properties, use_attribute_name=use_attribute_name
+                ),
             }
         }
         return output
@@ -273,7 +284,7 @@ def _load_properties(
         if name in resource:
             output[name] = _deserialize_values(resource[name], parameter)
         elif name in property_by_name:
-            property_name = cast(str, property_by_name[name].name)
+            property_name = property_by_name[name].name
             if property_name.startswith("__"):
                 property_name = property_name[2:]
             if property_name in resource:
@@ -308,19 +319,32 @@ _RESERVED_PROPERTY_NAMES = (
 )
 
 
-def _dump_properties(obj: object, camel_case: bool, instance_properties: frozenset[str]) -> dict[str, Any]:
+@lru_cache(32)
+def _get_decriptor_property_name_mapping(typed_cls: type[_TypedInstance]) -> MappingProxyType[str, str]:
+    return MappingProxyType(
+        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
+    )
+
+
+def _dump_properties(
+    obj: object, camel_case: bool, instance_properties: frozenset[str], use_attribute_name: bool = False
+) -> dict[str, Any]:
     properties: dict[str, str | int | float | bool | dict | list] = {}
-    properties_by_name = _get_properties_by_name(type(obj))
+    attr_name_map = _get_decriptor_property_name_mapping(type(obj)) if use_attribute_name else {}  # type: ignore [arg-type]
+
     for key, value in vars(obj).items():
         if key in instance_properties or value is None:
             continue
         if key.startswith("__"):
             key = key[2:]
 
-        if key in properties_by_name:
-            key = cast(str, properties_by_name[key].name)
+        if use_attribute_name and key in attr_name_map:
+            # We must rstrip any underscores on the attribute name because they may have been added due
+            # to a possible namespace conflict for a property identifier. (If not, DMS will block it as
+            # an invalid identifier anyway)
+            key = attr_name_map[key].rstrip("_")
 
-        if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+        if isinstance(value, SequenceNotStr):
             properties[key] = [_serialize_property_value(v, camel_case) for v in value]
         else:
             properties[key] = _serialize_property_value(value, camel_case)

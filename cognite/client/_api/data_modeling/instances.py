@@ -938,10 +938,12 @@ class InstancesAPI(APIClient):
                 ...         self.name = name
                 ...         self.birth_date = birth_date
                 ...
+                ...     def get_source(self):
+                ...         return ViewId("sp_model_space", "Person", "v1")
+                ...
                 >>> client = CogniteClient()
                 >>> person = Person("sp_date_space", "my_person", "John Doe", date(1980, 1, 1))
                 >>> res = client.data_modeling.instances.apply(nodes=person)
-
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,

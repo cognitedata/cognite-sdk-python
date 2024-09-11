@@ -1401,12 +1401,20 @@ class WorkflowTrigger(WorkflowTriggerCore):
         )
 
 
-class WorkflowTriggerList(CogniteResourceList[WorkflowTrigger]):
+class WorkflowTriggerCreateList(CogniteResourceList[WorkflowTriggerCreate]):
+    _RESOURCE = WorkflowTriggerCreate
+
+
+class WorkflowTriggerList(WriteableCogniteResourceList[WorkflowTriggerCreate, WorkflowTrigger]):
     """
     This class represents a list of workflow triggers.
     """
 
     _RESOURCE = WorkflowTrigger
+
+    def as_write(self) -> WorkflowTriggerCreateList:
+        """Returns a WorkflowTriggerCreateList object with the same data."""
+        return WorkflowTriggerCreateList([workflow_trigger.as_write() for workflow_trigger in self.data])
 
 
 class WorkflowTriggerRun(CogniteResource):

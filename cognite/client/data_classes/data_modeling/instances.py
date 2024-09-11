@@ -465,8 +465,13 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
+            from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
+
+            if isinstance(self, _TypedInstance):
+                view_id, *extra = [self.get_source()]
+            else:
+                view_id, *extra = self.properties.keys()
             # We only do/allow this if we have a single source:
-            view_id, *extra = self.properties.keys()
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:
@@ -1023,8 +1028,11 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
 
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
+            from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
+
+            typed_view_ids = {item.get_source() for item in self if isinstance(item, _TypedInstance)}  # type: ignore [attr-defined]
+            view_id, *extra = typed_view_ids | set(vid for item in self for vid in item.properties)
             # We only do/allow this if we have a single source:
-            view_id, *extra = set(vid for item in self for vid in item.properties)
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
             else:

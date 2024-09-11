@@ -17,6 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.8] - 2024-09-10
+### Added
+- Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.
+
+## [7.58.7] - 2024-09-06
+### Changed
+- [Feature Preview - alpha] Updated the `Core Model` and added `ExtractorExtension` model handling of the reserved
+  property names `type` and `version` (`cognite.client.data_classed.data_modeling.cdm` and
+  `cognite.client.data_classed.data_modeling.extractor_extension`). Now, these properties are prefixed with
+  the original view external id instead of suffixed with underscore. For example, `CogniteAsset` now has
+  `asset_type` instead of `type_` attribute. This is to avoid confusion with the node type, which is
+  the `type` attribute.
+
 ## [7.58.6] - 2024-09-05
 ### Fixed
 - Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`

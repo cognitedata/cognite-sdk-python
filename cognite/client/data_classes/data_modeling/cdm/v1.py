@@ -270,7 +270,7 @@ class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
 
 
 class _Cognite3DRevisionProperties:
-    type_ = PropertyOptions("type")
+    revision_type = PropertyOptions("type")
     model_3d = PropertyOptions("model3D")
 
     @classmethod
@@ -290,7 +290,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         external_id (str): The external id of the Cognite 3D revision.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -303,7 +303,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -311,7 +311,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
         self.status = status
         self.published = published
-        self.type_ = type_
+        self.revision_type = revision_type
         self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
 
 
@@ -330,7 +330,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | None): The model 3d field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -346,7 +346,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -354,7 +354,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
         TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
         self.status = status
         self.published = published
-        self.type_ = type_
+        self.revision_type = revision_type
         self.model_3d = DirectRelationReference.load(model_3d) if model_3d else None
 
     def as_write(self) -> Cognite3DRevisionApply:
@@ -363,7 +363,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
             self.external_id,
             status=self.status,
             published=self.published,
-            type_=self.type_,
+            revision_type=self.revision_type,
             model_3d=self.model_3d,
             existing_version=self.version,
             type=self.type,
@@ -1014,7 +1014,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, Cognite3DRevisionAp
         external_id (str): The external id of the Cognite cad revision.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): .
         revision_id (int | None): The 3D API revision identifier for this CAD model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -1028,7 +1028,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, Cognite3DRevisionAp
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         revision_id: int | None = None,
         existing_version: int | None = None,
@@ -1039,7 +1039,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, Cognite3DRevisionAp
             external_id,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             existing_version=existing_version,
             type=type,
@@ -1060,7 +1060,7 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, Cognite3DRevision):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | None): .
         revision_id (int | None): The 3D API revision identifier for this CAD model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -1077,7 +1077,7 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, Cognite3DRevision):
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | None = None,
         revision_id: int | None = None,
         type: DirectRelationReference | None = None,
@@ -1091,7 +1091,7 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, Cognite3DRevision):
             created_time,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             type=type,
             deleted_time=deleted_time,
@@ -1104,7 +1104,7 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, Cognite3DRevision):
             self.external_id,
             status=self.status,
             published=self.published,
-            type_=self.type_,
+            revision_type=self.revision_type,
             model_3d=self.model_3d,
             revision_id=self.revision_id,
             existing_version=self.version,
@@ -1131,7 +1131,7 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Cogni
         external_id (str): The external id of the Cognite point cloud revision.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): .
         revision_id (int | None): The 3D API revision identifier for this PointCloud model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -1145,7 +1145,7 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Cogni
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         revision_id: int | None = None,
         existing_version: int | None = None,
@@ -1156,7 +1156,7 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Cogni
             external_id,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             existing_version=existing_version,
             type=type,
@@ -1178,7 +1178,7 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DR
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | None): .
         revision_id (int | None): The 3D API revision identifier for this PointCloud model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
@@ -1195,7 +1195,7 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DR
         *,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | None = None,
         revision_id: int | None = None,
         type: DirectRelationReference | None = None,
@@ -1209,7 +1209,7 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DR
             created_time,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             type=type,
             deleted_time=deleted_time,
@@ -1222,7 +1222,7 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, Cognite3DR
             self.external_id,
             status=self.status,
             published=self.published,
-            type_=self.type_,
+            revision_type=self.revision_type,
             model_3d=self.model_3d,
             revision_id=self.revision_id,
             existing_version=self.version,
@@ -1253,7 +1253,7 @@ class Cognite360ImageCollectionApply(
         aliases (list[str] | None): Alternative names for the node
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | tuple[str, str] | None): The model 3d field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -1270,7 +1270,7 @@ class Cognite360ImageCollectionApply(
         aliases: list[str] | None = None,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -1292,7 +1292,7 @@ class Cognite360ImageCollectionApply(
             external_id,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             existing_version=existing_version,
             type=type,
@@ -1317,7 +1317,7 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, CogniteDes
         aliases (list[str] | None): Alternative names for the node
         status (Literal["Done", "Failed", "Processing", "Queued"] | None): The status field.
         published (bool | None): The published field.
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): The type field.
+        revision_type (Literal["CAD", "Image360", "PointCloud"] | None): The revision type field.
         model_3d (DirectRelationReference | None): The model 3d field.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -1337,7 +1337,7 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, CogniteDes
         aliases: list[str] | None = None,
         status: Literal["Done", "Failed", "Processing", "Queued"] | None = None,
         published: bool | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -1365,7 +1365,7 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, CogniteDes
             created_time,
             status=status,
             published=published,
-            type_=type_,
+            revision_type=revision_type,
             model_3d=model_3d,
             type=type,
             deleted_time=deleted_time,
@@ -1381,7 +1381,7 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, CogniteDes
             aliases=self.aliases,
             status=self.status,
             published=self.published,
-            type_=self.type_,
+            revision_type=self.revision_type,
             model_3d=self.model_3d,
             existing_version=self.version,
             type=self.type,
@@ -1507,7 +1507,7 @@ class Cognite360ImageStation(_Cognite360ImageStationProperties, CogniteDescribab
 
 
 class _Cognite3DModelProperties:
-    type_ = PropertyOptions("type")
+    model_type = PropertyOptions("type")
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -1519,7 +1519,7 @@ class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply
 
     It is used to when data is written to CDF.
 
-    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Cognite360Image)
+    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -1527,7 +1527,7 @@ class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -1542,7 +1542,7 @@ class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -1557,7 +1557,7 @@ class Cognite3DModelApply(_Cognite3DModelProperties, CogniteDescribableNodeApply
             existing_version=existing_version,
             type=type,
         )
-        self.type_ = type_
+        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
@@ -1566,7 +1566,7 @@ class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
 
     It is used to when data is read from CDF.
 
-    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Cognite360Image)
+    Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -1577,7 +1577,7 @@ class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -1595,7 +1595,7 @@ class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -1613,7 +1613,7 @@ class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
             type=type,
             deleted_time=deleted_time,
         )
-        self.type_ = type_
+        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
     def as_write(self) -> Cognite3DModelApply:
@@ -1624,7 +1624,7 @@ class Cognite3DModel(_Cognite3DModelProperties, CogniteDescribableNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            type_=self.type_,
+            model_type=self.model_type,
             thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
@@ -2638,7 +2638,7 @@ class CognitePointCloudVolume(_CognitePointCloudVolumeProperties, CogniteDescrib
 
 
 class _CogniteSourceSystemProperties:
-    version_ = PropertyOptions("version")
+    source_system_version = PropertyOptions("version")
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -2658,7 +2658,7 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, CogniteDescribabl
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        version_ (str | None): Version identifier for the source system
+        source_system_version (str | None): Version identifier for the source system
         manufacturer (str | None): Manufacturer of the source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -2673,7 +2673,7 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, CogniteDescribabl
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        version_: str | None = None,
+        source_system_version: str | None = None,
         manufacturer: str | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -2688,7 +2688,7 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, CogniteDescribabl
             existing_version=existing_version,
             type=type,
         )
-        self.version_ = version_
+        self.source_system_version = source_system_version
         self.manufacturer = manufacturer
 
 
@@ -2708,7 +2708,7 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, CogniteDescribableNode
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        version_ (str | None): Version identifier for the source system
+        source_system_version (str | None): Version identifier for the source system
         manufacturer (str | None): Manufacturer of the source system
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -2726,7 +2726,7 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, CogniteDescribableNode
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        version_: str | None = None,
+        source_system_version: str | None = None,
         manufacturer: str | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -2744,7 +2744,7 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, CogniteDescribableNode
             type=type,
             deleted_time=deleted_time,
         )
-        self.version_ = version_
+        self.source_system_version = source_system_version
         self.manufacturer = manufacturer
 
     def as_write(self) -> CogniteSourceSystemApply:
@@ -2755,7 +2755,7 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, CogniteDescribableNode
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            version_=self.version_,
+            source_system_version=self.source_system_version,
             manufacturer=self.manufacturer,
             existing_version=self.version,
             type=self.type,
@@ -3592,7 +3592,7 @@ class CogniteFile(_CogniteFileProperties, CogniteDescribableNode, CogniteSourcea
 
 class _CogniteTimeSeriesProperties:
     is_step = PropertyOptions("isStep")
-    type_ = PropertyOptions("type")
+    time_series_type = PropertyOptions("type")
     source_unit = PropertyOptions("sourceUnit")
 
     @classmethod
@@ -3609,7 +3609,7 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, CogniteDescribableNod
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3635,7 +3635,7 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, CogniteDescribableNod
         external_id: str,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -3680,7 +3680,7 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, CogniteDescribableNod
             type=type,
         )
         self.is_step = is_step
-        self.type_ = type_
+        self.time_series_type = time_series_type
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else None
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
@@ -3699,7 +3699,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, Co
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3728,7 +3728,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, Co
         created_time: int,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -3779,7 +3779,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, Co
             deleted_time=deleted_time,
         )
         self.is_step = is_step
-        self.type_ = type_
+        self.time_series_type = time_series_type
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else None
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
@@ -3790,7 +3790,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, Co
             self.space,
             self.external_id,
             is_step=self.is_step,
-            type_=self.type_,
+            time_series_type=self.time_series_type,
             name=self.name,
             description=self.description,
             tags=self.tags,
@@ -3814,7 +3814,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, CogniteDescribableNode, Co
 class _CogniteAssetProperties:
     path_last_updated_time = PropertyOptions("pathLastUpdatedTime")
     asset_class = PropertyOptions("assetClass")
-    type_ = PropertyOptions("type")
+    asset_type = PropertyOptions("type")
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -3846,7 +3846,7 @@ class CogniteAssetApply(
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         parent (DirectRelationReference | tuple[str, str] | None): Parent of this asset
         asset_class (DirectRelationReference | tuple[str, str] | None): Class of this asset
-        type_ (DirectRelationReference | tuple[str, str] | None): Type of this asset
+        asset_type (DirectRelationReference | tuple[str, str] | None): Type of this asset
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -3870,7 +3870,7 @@ class CogniteAssetApply(
         source_updated_user: str | None = None,
         parent: DirectRelationReference | tuple[str, str] | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
-        type_: DirectRelationReference | tuple[str, str] | None = None,
+        asset_type: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -3904,7 +3904,7 @@ class CogniteAssetApply(
         )
         self.parent = DirectRelationReference.load(parent) if parent else None
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
-        self.type_ = DirectRelationReference.load(type_) if type_ else None
+        self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
 
 
 class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescribableNode, CogniteSourceableNode):
@@ -3936,7 +3936,7 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
         path (list[DirectRelationReference] | None): Materialized path of this asset
         path_last_updated_time (datetime | None): Last time the path was updated for this asset
         asset_class (DirectRelationReference | None): Class of this asset
-        type_ (DirectRelationReference | None): Type of this asset
+        asset_type (DirectRelationReference | None): Type of this asset
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -3966,7 +3966,7 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
         path: list[DirectRelationReference] | None = None,
         path_last_updated_time: datetime | None = None,
         asset_class: DirectRelationReference | None = None,
-        type_: DirectRelationReference | None = None,
+        asset_type: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -4017,7 +4017,7 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
         self.path = [DirectRelationReference.load(path) for path in path] if path else None
         self.path_last_updated_time = path_last_updated_time
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
-        self.type_ = DirectRelationReference.load(type_) if type_ else None
+        self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
 
     def as_write(self) -> CogniteAssetApply:
         return CogniteAssetApply(
@@ -4037,7 +4037,7 @@ class CogniteAsset(_CogniteAssetProperties, CogniteVisualizable, CogniteDescriba
             source_updated_user=self.source_updated_user,
             parent=self.parent,
             asset_class=self.asset_class,
-            type_=self.type_,
+            asset_type=self.asset_type,
             existing_version=self.version,
             type=self.type,
         )
@@ -4062,7 +4062,7 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, Cognite3DModelA
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -4077,7 +4077,7 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, Cognite3DModelA
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -4089,7 +4089,7 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, Cognite3DModelA
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
@@ -4112,7 +4112,7 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -4130,7 +4130,7 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -4145,7 +4145,7 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
@@ -4159,7 +4159,7 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, Cognite3DModel):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            type_=self.type_,
+            model_type=self.model_type,
             thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
@@ -4185,7 +4185,7 @@ class CogniteCADModelApply(_CogniteCADModelProperties, Cognite3DModelApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -4200,7 +4200,7 @@ class CogniteCADModelApply(_CogniteCADModelProperties, Cognite3DModelApply):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -4212,7 +4212,7 @@ class CogniteCADModelApply(_CogniteCADModelProperties, Cognite3DModelApply):
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
@@ -4235,7 +4235,7 @@ class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -4253,7 +4253,7 @@ class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -4268,7 +4268,7 @@ class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
@@ -4282,7 +4282,7 @@ class CogniteCADModel(_CogniteCADModelProperties, Cognite3DModel):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            type_=self.type_,
+            model_type=self.model_type,
             thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
@@ -4308,7 +4308,7 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, Cognite3DMo
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -4323,7 +4323,7 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, Cognite3DMo
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -4335,7 +4335,7 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, Cognite3DMo
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             existing_version=existing_version,
             type=type,
@@ -4358,7 +4358,7 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, Cognite3DModel):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        type_ (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Cognite360Image
+        model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -4376,7 +4376,7 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, Cognite3DModel):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        type_: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
@@ -4391,7 +4391,7 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, Cognite3DModel):
             description=description,
             tags=tags,
             aliases=aliases,
-            type_=type_,
+            model_type=model_type,
             thumbnail=thumbnail,
             type=type,
             deleted_time=deleted_time,
@@ -4405,7 +4405,7 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, Cognite3DModel):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            type_=self.type_,
+            model_type=self.model_type,
             thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,

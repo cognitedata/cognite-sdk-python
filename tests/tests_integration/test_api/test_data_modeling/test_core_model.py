@@ -155,7 +155,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
         cdm.CogniteTimeSeriesApply(
             space=DATA_SPACE,
             external_id="test_time_series_base",
-            type_="numeric",
+            time_series_type="numeric",
             is_step=False,
             name="Test time series base",
             description="Test time series base for core model v1 tests with Python SDK",
