@@ -1522,6 +1522,15 @@ class TypedNodeApply(NodeApply, TypedInstance):
         {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
     )
 
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, existing_version, None, type)
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
@@ -1537,6 +1546,17 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
     _base_properties = frozenset(
         {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
     )
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        existing_version: int | None = None,
+    ) -> None:
+        super().__init__(space, external_id, type, start_node, end_node, existing_version, None)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -1563,6 +1583,18 @@ class TypedNode(Node, TypedInstance):
             "properties",
         }
     )
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        deleted_time: int | None,
+        type: DirectRelationReference | tuple[str, str] | None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -1596,6 +1628,31 @@ class TypedEdge(Edge, TypedInstance):
             "properties",
         }
     )
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        type: DirectRelationReference | tuple[str, str],
+        last_updated_time: int,
+        created_time: int,
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        deleted_time: int | None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            type,
+            last_updated_time,
+            created_time,
+            start_node,
+            end_node,
+            deleted_time,
+            properties=None,
+        )
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

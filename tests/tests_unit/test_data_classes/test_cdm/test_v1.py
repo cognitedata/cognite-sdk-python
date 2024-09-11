@@ -74,6 +74,7 @@ class TestModel3D:
                         "type": "PointCloud",
                         "aliases": ["alias1", "alias2"],
                         "tags": ["tag1", "tag2"],
+                        "thumbnail": None,
                     },
                 }
             ],

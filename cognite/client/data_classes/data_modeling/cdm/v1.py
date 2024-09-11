@@ -70,7 +70,7 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.translation_x = translation_x
         self.translation_y = translation_y
         self.translation_z = translation_z
@@ -128,7 +128,7 @@ class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode)
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.translation_x = translation_x
         self.translation_y = translation_y
         self.translation_z = translation_z
@@ -197,7 +197,7 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.front = DirectRelationReference.load(front) if front else None
         self.back = DirectRelationReference.load(back) if back else None
         self.left = DirectRelationReference.load(left) if left else None
@@ -246,7 +246,7 @@ class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.front = DirectRelationReference.load(front) if front else None
         self.back = DirectRelationReference.load(back) if back else None
         self.left = DirectRelationReference.load(left) if left else None
@@ -308,7 +308,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
         self.published = published
         self.revision_type = revision_type
@@ -351,7 +351,7 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.status = status
         self.published = published
         self.revision_type = revision_type
@@ -406,7 +406,7 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
         self.description = description
         self.tags = tags
@@ -449,7 +449,7 @@ class CogniteDescribableNode(_CogniteDescribableProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.name = name
         self.description = description
         self.tags = tags
@@ -508,7 +508,7 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.start_time = start_time
         self.end_time = end_time
         self.scheduled_start_time = scheduled_start_time
@@ -550,7 +550,7 @@ class CogniteSchedulable(_CogniteSchedulableProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.start_time = start_time
         self.end_time = end_time
         self.scheduled_start_time = scheduled_start_time
@@ -616,7 +616,7 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.source_id = source_id
         self.source_context = source_context
         self.source = DirectRelationReference.load(source) if source else None
@@ -666,7 +666,7 @@ class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.source_id = source_id
         self.source_context = source_context
         self.source = DirectRelationReference.load(source) if source else None
@@ -722,7 +722,7 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else None
 
 
@@ -755,7 +755,7 @@ class CogniteVisualizable(_CogniteVisualizableProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else None
 
     def as_write(self) -> CogniteVisualizableApply:
@@ -4519,17 +4519,7 @@ class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge)
         deleted_time: int | None = None,
     ) -> None:
         TypedEdge.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            type,
-            last_updated_time,
-            created_time,
-            start_node,
-            end_node,
-            deleted_time,
-            None,
+            self, space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
         )
         self.translation_x = translation_x
         self.translation_y = translation_y
@@ -4643,17 +4633,7 @@ class CogniteDescribableEdge(_CogniteDescribableProperties, TypedEdge):
         deleted_time: int | None = None,
     ) -> None:
         TypedEdge.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            type,
-            last_updated_time,
-            created_time,
-            start_node,
-            end_node,
-            deleted_time,
-            None,
+            self, space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
         )
         self.name = name
         self.description = description
@@ -4768,17 +4748,7 @@ class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
         deleted_time: int | None = None,
     ) -> None:
         TypedEdge.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            type,
-            last_updated_time,
-            created_time,
-            start_node,
-            end_node,
-            deleted_time,
-            None,
+            self, space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
         )
         self.source_id = source_id
         self.source_context = source_context

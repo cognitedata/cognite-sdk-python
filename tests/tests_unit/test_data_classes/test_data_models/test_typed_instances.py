@@ -90,16 +90,7 @@ class Flow(TypedEdge, FlowProperties):
         deleted_time: int | None,
     ) -> None:
         super().__init__(
-            space,
-            external_id,
-            version,
-            type,
-            last_updated_time,
-            created_time,
-            start_node,
-            end_node,
-            deleted_time,
-            properties=None,
+            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
         )
         self.flow_rate = flow_rate
 
@@ -123,9 +114,7 @@ class PersonRead(TypedNode, PersonProperties):
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(
-            space, external_id, version, last_updated_time, created_time, deleted_time, type=type, properties=None
-        )
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.name = name
         self.birth_date = birth_date
         self.email = email
@@ -363,15 +352,12 @@ def cognite_asset_kwargs() -> dict[str, Any]:
 
 class TestCDMv1Classes:
     @pytest.mark.parametrize("camel_case", (True, False))
-    @pytest.mark.parametrize("use_attribute_name", (True, False))
-    def test_cognite_asset_read_and_write(
-        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool, use_attribute_name: bool
-    ) -> None:
+    def test_cognite_asset_read_and_write(self, cognite_asset_kwargs: dict[str, Any], camel_case: bool) -> None:
         asset_write = CogniteAssetApply(**cognite_asset_kwargs)
         asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
 
         for is_write, asset in zip([True, False], [asset_write, asset_read]):
-            dumped = asset.dump(camel_case=camel_case, use_attribute_name=use_attribute_name)  # type: ignore [call-arg]
+            dumped = asset.dump(camel_case=camel_case)
             xid = "externalId" if camel_case else "external_id"
             assert xid in dumped
             # Check that type/type_ are correctly dumped:
@@ -382,9 +368,9 @@ class TestCDMv1Classes:
                 properties = dumped["sources"][0]["properties"]
             else:
                 properties = dumped["properties"]["cdf_cdm"]["CogniteAsset/v1"]
-            assert properties["type"] == {"space": "should-be", xid: "in-properties"}
+            assert properties["type"] == {"space": "should-be", "externalId": "in-properties"}
             # Check that properties are cased according to use_attribute_name:
-            assert ("source_created_time" if use_attribute_name else "sourceCreatedTime") in properties
+            assert "sourceCreatedTime" in properties
 
     @pytest.mark.dsl
     @pytest.mark.parametrize("camel_case", (True, False))
@@ -413,13 +399,13 @@ class TestCDMv1Classes:
         expected_type_df = pd.DataFrame(
             [
                 ({"space": "should-be", xid: "at-root"},),
-                ({"space": "should-be", xid: "in-properties"},),
+                ({"space": "should-be", "externalId": "in-properties"},),
             ],
             columns=["value"],
             index=["type", "type"],
         )
         pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
-        assert ("sourceCreatedTime" if camel_case else "source_created_time") in read_expanded_df.index
+        assert "sourceCreatedTime" in read_expanded_df.index
 
 
 @pytest.mark.parametrize(
