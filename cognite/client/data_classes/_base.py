@@ -220,12 +220,8 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
             pandas.DataFrame: The dataframe.
         """
         pd = local_import("pandas")
-        from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
 
-        if isinstance(self, _TypedInstance):  # TODO: This is hacky, but it works for now
-            dumped = self.dump(camel_case=camel_case, use_attribute_name=not camel_case)  # type: ignore [call-arg]
-        else:
-            dumped = self.dump(camel_case=camel_case)
+        dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
             dumped.pop(element, None)

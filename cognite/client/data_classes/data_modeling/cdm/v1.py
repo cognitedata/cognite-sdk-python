@@ -5,7 +5,7 @@ from typing import Literal
 
 from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.typed_instances import (
+from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
     TypedEdge,
     TypedEdgeApply,

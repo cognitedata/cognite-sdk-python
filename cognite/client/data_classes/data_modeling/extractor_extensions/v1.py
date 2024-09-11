@@ -11,7 +11,7 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteTimeSeriesApply,
 )
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.typed_instances import (
+from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
     TypedNode,
     TypedNodeApply,

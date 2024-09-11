@@ -61,16 +61,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Edge,
     T_Node,
     TargetUnit,
+    TypedEdge,
+    TypedNode,
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
     SourceSelector,
-)
-from cognite.client.data_classes.data_modeling.typed_instances import (
-    TypedEdge,
-    TypedNode,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
