@@ -51,7 +51,7 @@ class TestModel3D:
             "my_model",
             name="The model",
             description="A model",
-            type_="PointCloud",
+            model_type="PointCloud",
             aliases=["alias1", "alias2"],
             tags=["tag1", "tag2"],
         )
