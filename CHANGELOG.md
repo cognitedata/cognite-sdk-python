@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.58.9] - 2024-09-11
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
+
 ## [7.58.8] - 2024-09-10
 ### Added
 - Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.
