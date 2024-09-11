@@ -8,7 +8,6 @@ import pytest
 from cognite.client.data_classes.data_modeling import (
     DirectRelationReference,
     NodeList,
-    NodeOrEdgeData,
     ViewId,
 )
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
@@ -17,7 +16,6 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteDescribableEdgeApply,
 )
 from cognite.client.data_classes.data_modeling.instances import (
-    Properties,
     PropertyOptions,
     TypedEdge,
     TypedEdgeApply,
@@ -44,12 +42,6 @@ class Person(TypedNodeApply, PersonProperties):
             space,
             external_id,
             type=DirectRelationReference("sp_model_space", "person"),
-            sources=[
-                NodeOrEdgeData(
-                    source=self.get_source(),
-                    properties={"birthDate": birth_date, "email": email, "name": name, "siblings": siblings or []},
-                )
-            ],
         )
         self.name = name
         self.birth_date = birth_date
@@ -74,12 +66,7 @@ class FlowWrite(TypedEdgeApply, FlowProperties):
         flow_rate: float,
     ) -> None:
         super().__init__(
-            "sp_my_fixed_space",
-            external_id,
-            DirectRelationReference("sp_model_space", "Flow"),
-            start_node,
-            end_node,
-            sources=[NodeOrEdgeData(source=self.get_source(), properties={"flowRate": flow_rate})],
+            "sp_my_fixed_space", external_id, DirectRelationReference("sp_model_space", "Flow"), start_node, end_node
         )
         self.flow_rate = flow_rate
 
@@ -112,7 +99,7 @@ class Flow(TypedEdge, FlowProperties):
             start_node,
             end_node,
             deleted_time,
-            properties=Properties({self.get_source(): {"flowRate": flow_rate}}),
+            properties=None,
         )
         self.flow_rate = flow_rate
 
@@ -137,22 +124,7 @@ class PersonRead(TypedNode, PersonProperties):
         deleted_time: int | None = None,
     ) -> None:
         super().__init__(
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            deleted_time,
-            properties=Properties.from_typed_properties(
-                self.get_source(),
-                {
-                    "name": name,
-                    "birthDate": birth_date,
-                    "email": email,
-                    "siblings": siblings,
-                },
-            ),
-            type=type,
+            space, external_id, version, last_updated_time, created_time, deleted_time, type=type, properties=None
         )
         self.name = name
         self.birth_date = birth_date
@@ -171,12 +143,7 @@ class Asset(TypedNodeApply):
     type_ = PropertyOptions(identifier="type")
 
     def __init__(self, external_id: str, name: str, type_: str) -> None:
-        super().__init__(
-            "sp_my_fixed_space",
-            external_id,
-            type=DirectRelationReference("sp_model_space", "asset"),
-            sources=[NodeOrEdgeData(source=self.get_source(), properties={"name": name, "type": type_})],
-        )
+        super().__init__("sp_my_fixed_space", external_id, type=DirectRelationReference("sp_model_space", "asset"))
         self.name = name
         self.type_ = type_
 
@@ -200,7 +167,7 @@ class TestTypedNodeApply:
                         "name": "John Doe",
                         "birthDate": "1990-01-01",
                         "email": "example@cognite.com",
-                        "siblings": [],
+                        "siblings": None,
                     },
                 }
             ],

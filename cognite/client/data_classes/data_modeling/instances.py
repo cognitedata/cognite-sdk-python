@@ -154,6 +154,8 @@ class NodeOrEdgeData(CogniteObject):
 def _serialize_property_values(props: Mapping[str, Any], camel_case: bool = True) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     for key, value in props.items():
+        if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+            key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
         if isinstance(value, SequenceNotStr):
             properties[key] = [_serialize_property_value(v, camel_case) for v in value]
         else:
@@ -220,7 +222,11 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
-        self.sources = sources
+        self.__sources = sources or []
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return self.__sources
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -250,10 +256,6 @@ _T = TypeVar("_T")
 class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
     def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]) -> None:
         self.data = properties
-
-    @classmethod
-    def from_typed_properties(cls, source: ViewId, properties: dict[str, PropertyValueWrite]) -> Properties:
-        return Properties({source: _serialize_property_values(properties)})
 
     @classmethod
     def load(
@@ -373,19 +375,23 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self.deleted_time = deleted_time
-        self.properties: Properties = properties or Properties({})
+        self.__properties: Properties = properties or Properties({})
 
         if len(self.properties) == 1:
-            (self._prop_lookup,) = self.properties.values()
+            (self.__prop_lookup,) = self.properties.values()
         else:
             # For speed, we want this to fail (to avoid LBYL pattern):
-            self._prop_lookup = None  # type: ignore [assignment]
+            self.__prop_lookup = None  # type: ignore [assignment]
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
         err_msg = "Quick property access is only possible on instances from a single source."
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
         raise RuntimeError(err_msg) from None
+
+    @property
+    def properties(self) -> Properties:
+        return self.__properties
 
     @overload
     def get(self, attr: str) -> PropertyValue | None: ...
@@ -395,31 +401,31 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
 
     def get(self, attr: str, default: Any = None) -> Any:
         try:
-            return self._prop_lookup.get(attr, default)
+            return self.__prop_lookup.get(attr, default)
         except AttributeError:
             self.__raise_if_non_singular_source(attr)
 
     def __getitem__(self, attr: str) -> PropertyValue:
         try:
-            return self._prop_lookup[attr]
+            return self.__prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __setitem__(self, attr: str, value: PropertyValue) -> None:
         try:
-            self._prop_lookup[attr] = value
+            self.__prop_lookup[attr] = value
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __delitem__(self, attr: str) -> None:
         try:
-            del self._prop_lookup[attr]
+            del self.__prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __contains__(self, attr: str) -> bool:
         try:
-            return attr in self._prop_lookup
+            return attr in self.__prop_lookup
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
@@ -1459,6 +1465,9 @@ class TypeInformation(UserDict, CogniteObject):
             raise ValueError(f"Invalid key: {key}")
 
 
+_RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
+
+
 class PropertyOptions:
     """This is a descriptor class for instance properties in a typed class.
 
@@ -1475,7 +1484,7 @@ class PropertyOptions:
     def __set_name__(self, owner: type, name: str) -> None:
         self.name = self.name or name
         if self.name in _RESERVED_PROPERTY_NAMES:
-            self.name = f"__{self.name}"
+            self.name = f"{_RESERVED_PROPERTY_CONFLICT_PREFIX}{self.name}"
 
     def __get__(self, instance: Any, owner: type) -> Any:
         try:
@@ -1497,7 +1506,7 @@ class PropertyOptions:
 
 
 class TypedInstance(ABC):
-    _instance_properties: frozenset[str]
+    _base_properties: frozenset[str]
 
     @classmethod
     @abstractmethod
@@ -1505,8 +1514,11 @@ class TypedInstance(ABC):
         raise NotImplementedError
 
 
+T_TypedInstance = TypeVar("T_TypedInstance", bound=TypedInstance)
+
+
 class TypedNodeApply(NodeApply, TypedInstance):
-    _instance_properties: frozenset[str] = frozenset(
+    _base_properties: frozenset[str] = frozenset(
         {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
     )
 
@@ -1514,11 +1526,15 @@ class TypedNodeApply(NodeApply, TypedInstance):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+        return _load_instance(cls, resource, properties)
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return [NodeOrEdgeData(source=self.get_source(), properties=_dump_properties(self))]
 
 
 class TypedEdgeApply(EdgeApply, TypedInstance):
-    _instance_properties = frozenset(
+    _base_properties = frozenset(
         {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
     )
 
@@ -1526,11 +1542,15 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+        return _load_instance(cls, resource, properties)
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return [NodeOrEdgeData(source=self.get_source(), properties=_dump_properties(self))]
 
 
 class TypedNode(Node, TypedInstance):
-    _instance_properties = frozenset(
+    _base_properties = frozenset(
         {
             "space",
             "external_id",
@@ -1553,11 +1573,15 @@ class TypedNode(Node, TypedInstance):
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+        return _load_instance(cls, resource, properties)
+
+    @property
+    def properties(self) -> Properties:
+        return Properties({self.get_source(): _dump_properties(self)})
 
 
 class TypedEdge(Edge, TypedInstance):
-    _instance_properties = frozenset(
+    _base_properties = frozenset(
         {
             "space",
             "external_id",
@@ -1578,25 +1602,26 @@ class TypedEdge(Edge, TypedInstance):
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return cast(Self, _load_instance(cls, resource, properties, cls._instance_properties))
+        return _load_instance(cls, resource, properties)
+
+    @property
+    def properties(self) -> Properties:
+        return Properties({self.get_source(): _dump_properties(self)})
 
 
-def _load_instance(
-    cls: type, resource: dict[str, Any], properties: dict[str, Any], instance_properties: frozenset[str]
-) -> dict[str, Any]:
-    args: dict[str, Any] = {}
-    resource.pop("instanceType", None)
+def _load_instance(cls: type[T_TypedInstance], resource: dict[str, Any], properties: dict[str, Any]) -> T_TypedInstance:
+    kwargs: dict[str, Any] = {}
     signature = inspect.signature(cls.__init__)  # type: ignore[misc]
-    args.update(_load_properties(cls, properties, instance_properties, signature))
-    args.update(_load_fixed_attributes(resource, instance_properties, signature))
-    return cls(**args)
+    kwargs.update(_load_properties(cls, properties, signature))
+    kwargs.update(_load_base_properties(resource, cls._base_properties, signature))
+    return cls(**kwargs)
 
 
-def _load_fixed_attributes(
-    resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+def _load_base_properties(
+    resource: dict[str, Any], base_properties: frozenset[str], signature: inspect.Signature
 ) -> dict[str, Any]:
     args: dict[str, Any] = {}
-    for key in instance_properties:
+    for key in base_properties:
         camel_key = to_camel_case(key)
         if camel_key in resource:
             if key in signature.parameters and key in signature.parameters:
@@ -1610,20 +1635,20 @@ def _load_fixed_attributes(
 
 
 def _load_properties(
-    cls: type, resource: dict[str, Any], instance_properties: frozenset[str], signature: inspect.Signature
+    cls: type[TypedInstance], resource: dict[str, Any], signature: inspect.Signature
 ) -> dict[str, Any]:
     output: dict[str, Any] = {}
     property_by_name = _get_properties_by_name(cls)
 
     for name, parameter in signature.parameters.items():
-        if name in instance_properties:
+        if name in cls._base_properties:
             continue
         if name in resource:
             output[name] = _deserialize_values(resource[name], parameter)
         elif name in property_by_name:
             property_name = property_by_name[name].name
-            if property_name.startswith("__"):
-                property_name = property_name[2:]
+            if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
             if property_name in resource:
                 output[name] = _deserialize_values(resource[property_name], parameter)
 
@@ -1649,15 +1674,24 @@ def _get_properties_by_name(cls: type) -> dict[str, PropertyOptions]:
 
 
 _RESERVED_PROPERTY_NAMES = (
-    TypedNodeApply._instance_properties
-    | TypedEdgeApply._instance_properties
-    | TypedNode._instance_properties
-    | TypedEdge._instance_properties
+    TypedNodeApply._base_properties
+    | TypedEdgeApply._base_properties
+    | TypedNode._base_properties
+    | TypedEdge._base_properties
 )
 
 
+def _dump_properties(obj: TypedInstance) -> dict[str, Any]:
+    def ignore(key: str) -> bool:
+        ignore_private_attrs_from = {"_InstanceApply__", "_Instance__"}
+        return key in obj._base_properties or any(key.startswith(prefix) for prefix in ignore_private_attrs_from)
+
+    props = {key: prop for key, prop in vars(obj).items() if not ignore(key)}
+    return _serialize_property_values(props, camel_case=True)
+
+
 def _deserialize_values(value: Any, parameter: inspect.Parameter) -> Any:
-    if isinstance(value, list):
+    if isinstance(value, SequenceNotStr):
         return [_deserialize_value(v, parameter) for v in value]
     else:
         return _deserialize_value(value, parameter)
