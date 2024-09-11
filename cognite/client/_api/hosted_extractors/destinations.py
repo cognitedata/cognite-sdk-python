@@ -25,7 +25,7 @@ class DestinationsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 100
         self._LIST_LIMIT = 100
@@ -54,7 +54,7 @@ class DestinationsAPI(APIClient):
     ) -> Iterator[Destination] | Iterator[DestinationList]:
         """Iterate over destinations
 
-        Fetches Destination as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
 
         Args:
             chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destinatio a time.
@@ -77,7 +77,7 @@ class DestinationsAPI(APIClient):
     def __iter__(self) -> Iterator[Destination]:
         """Iterate over destinations
 
-        Fetches destinations as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches destinations as they are iterated over, so you keep a limited number of destinations in memory.
 
         Returns:
             Iterator[Destination]: yields Destination one by one.
@@ -109,7 +109,7 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
 
-            Get multiple spaces by id:
+            Get multiple destinations by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -168,7 +168,7 @@ class DestinationsAPI(APIClient):
         """`Create one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/create_destinations>`_
 
         Args:
-            items (DestinationWrite | Sequence[DestinationWrite]): Space | Sequence[Space]): Destination(s) to create.
+            items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
 
         Returns:
             Destination | DestinationList: Created destination(s)
@@ -204,7 +204,7 @@ class DestinationsAPI(APIClient):
         """`Update one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/update_destinations>`_
 
         Args:
-            items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Space | Sequence[Space]): Destination(s) to update.
+            items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
 
         Returns:
             Destination | DestinationList: Updated destination(s)
@@ -246,7 +246,7 @@ class DestinationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.destinations.list(limit=5)
+                >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
             Iterate over destinations::
 
@@ -260,7 +260,7 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
-                ...     destination_list # do something with the spaces
+                ...     destination_list # do something with the destinationss
         """
         self._warning.warn()
         return self._list(
