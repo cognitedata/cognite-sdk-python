@@ -274,7 +274,7 @@ class RestConfig(JobConfig):
             raise ValueError("incremental_load cannot be of type NextUrlLoad")
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_config(cls, resource: dict[str, Any]) -> Self:
         return cls(
             interval=resource["interval"],
             path=resource["path"],
