@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.59.1] - 2024-09-12
+### Fixed
+- A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
+
 ## [7.59.0] - 2024-09-12
 ### Added
 - Added `ignore_unknown_ids` to `client.files.delete`.
