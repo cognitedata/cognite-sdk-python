@@ -568,7 +568,6 @@ class TestSequencesPandasIntegration:
     def test_retrieve_dataframe_columns_filter(
         self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero
     ):
-        import pandas as pd
         data_1 = cognite_client.sequences.data.retrieve_dataframe(external_id="foo", start=0, end=100, column_external_ids = ["ceid1"])
         data_2 = cognite_client.sequences.data.retrieve(external_id="foo", start=0, end=100, columns = ["ceid1"]).to_pandas()
         assert data_1.equals(data_2)
