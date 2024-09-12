@@ -1295,11 +1295,13 @@ class SequencesDataAPI(APIClient):
             column_names_default = "columnExternalId"
 
         if external_id is not None and id is None:
-            return self.retrieve(external_id=external_id, start=start, end=end, limit=limit, columns = column_external_ids).to_pandas(
+            return self.retrieve(
+                external_id=external_id, start=start, end=end, limit=limit, columns=column_external_ids
+            ).to_pandas(
                 column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         elif id is not None and external_id is None:
-            return self.retrieve(id=id, start=start, end=end, limit=limit, columns = column_external_ids).to_pandas(
+            return self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids).to_pandas(
                 column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         else:
