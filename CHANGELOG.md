@@ -17,8 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.59.1] - 2024-09-12
+## [7.59.2] - 2024-09-12
+### Fixed
+- A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
 
+## [7.59.1] - 2024-09-12
 ### Fixed
 - Creating a function using files dated before 1980 no longer raises ValueError,
   by overriding the timestamps to 1980-01-01.
