@@ -18,8 +18,15 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.59.1] - 2024-09-12
+<<<<<<< fix/sequences_retrieve_dataframe
 ### Fixed
 - A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
+=======
+
+### Fixed
+- Creating a function using files dated before 1980 no longer raises ValueError,
+  by overriding the timestamps to 1980-01-01.
+>>>>>>> master
 
 ## [7.59.0] - 2024-09-12
 ### Added
