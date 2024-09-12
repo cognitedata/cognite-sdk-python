@@ -56,7 +56,8 @@ class TestModel3D:
             tags=["tag1", "tag2"],
         )
 
-        assert my_model.dump() == {
+        dumped = my_model.dump()
+        assert dumped == {
             "space": "sp_data_space",
             "externalId": "my_model",
             "instanceType": "node",
@@ -79,3 +80,5 @@ class TestModel3D:
                 }
             ],
         }
+        dumped_and_loaded = Cognite3DModelApply.load(dumped)
+        assert dumped_and_loaded == my_model

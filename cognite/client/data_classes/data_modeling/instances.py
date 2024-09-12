@@ -479,18 +479,6 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         raise NotImplementedError
 
 
-@lru_cache(32)
-def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> MappingProxyType[str, str]:
-    return MappingProxyType(
-        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
-    )
-
-
-@lru_cache(16)
-def _get_constructor_params(typed_cls: type[TypedInstance]) -> set[str]:
-    return {param for param in inspect.signature(typed_cls.__init__).parameters if param != "self"}
-
-
 class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
@@ -1503,36 +1491,37 @@ class TypedInstance(ABC):
         return _PropertyValueSerializer.serialize_values(props, camel_case=True)
 
     @classmethod
-    def _load_instance(cls, resource: dict[str, Any], properties: dict[str, Any]) -> Self:
-        kwargs: dict[str, Any] = {}
-        signature = inspect.signature(cls.__init__)
-        kwargs.update(cls._load_properties(properties, signature))
-        kwargs.update(cls._load_base_properties(resource, signature))
-        return cls(**kwargs)
+    @lru_cache(32)
+    def _get_constructor_parameters(cls) -> dict[str, inspect.Parameter]:
+        return {key: param for key, param in inspect.signature(cls.__init__).parameters.items() if key != "self"}
 
     @classmethod
-    def _load_base_properties(cls, resource: dict[str, Any], signature: inspect.Signature) -> dict[str, Any]:
+    def _load_instance(cls, resource: dict[str, Any], properties: dict[str, Any]) -> Self:
+        return cls(**cls._load_base_properties(resource), **cls._load_properties(properties))
+
+    @classmethod
+    def _load_base_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
         args: dict[str, Any] = {}
+        signature_params = cls._get_constructor_parameters()
         for key in cls._base_properties():
             camel_key = to_camel_case(key)
-            if camel_key in resource:
-                if key in signature.parameters and key in signature.parameters:
-                    args[key] = cls._deserialize_values(resource[camel_key], signature.parameters[key])
-            elif key in signature.parameters:
-                if signature.parameters[key].default is inspect.Parameter.empty:
+            if key in signature_params:
+                param = signature_params[key]
+                default = param.default
+                if camel_key in resource:
+                    args[key] = cls._deserialize_values(resource[camel_key], param)
+                elif default is inspect.Parameter.empty:
                     args[key] = None
                 else:
-                    args[key] = cls._deserialize_values(
-                        signature.parameters[key].default or None, signature.parameters[key]
-                    )
+                    args[key] = cls._deserialize_values(default or None, param)
         return args
 
     @classmethod
-    def _load_properties(cls, resource: dict[str, Any], signature: inspect.Signature) -> dict[str, Any]:
+    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
         output: dict[str, Any] = {}
         property_by_name = cls._get_properties_by_name()
-
-        for name, parameter in signature.parameters.items():
+        signature_params = cls._get_constructor_parameters()
+        for name, parameter in signature_params.items():
             if name in cls._base_properties():
                 continue
             if name in resource:
@@ -1547,21 +1536,20 @@ class TypedInstance(ABC):
         return output
 
     @classmethod
+    @lru_cache(32)
+    def _get_user_defined_typed_instance_base_classes(cls) -> list[type]:
+        # We want to exclude TypedInstance and its direct subclasses and all its superclasses.
+        # So, only the base classes up to TypedNode, TypedNodeApply, etc...
+        typed_instance_classes = {TypedInstance, *TypedInstance.__subclasses__(), *TypedInstance.mro()}
+        return [base for base in cls.mro() if base not in typed_instance_classes]
+
+    @classmethod
     def _get_properties_by_name(cls) -> dict[str, PropertyOptions]:
-        to_search = [cls]
         property_by_name: dict[str, PropertyOptions] = {}
-        while to_search:
-            current_cls = to_search.pop()
-            for name, value in current_cls.__dict__.items():
+        for current_cls in cls._get_user_defined_typed_instance_base_classes():
+            for name, value in vars(current_cls).items():
                 if isinstance(value, PropertyOptions):
                     property_by_name[name] = value
-            to_search.extend(
-                [
-                    b
-                    for b in current_cls.__bases__
-                    if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
-                ]
-            )
         return property_by_name
 
     @classmethod
@@ -1601,7 +1589,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
     @staticmethod
     @lru_cache(1)
     def _base_properties() -> set[str]:
-        return _get_constructor_params(TypedEdge)
+        return set(TypedNodeApply._get_constructor_parameters().keys())
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -1629,7 +1617,7 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
     @staticmethod
     @lru_cache(1)
     def _base_properties() -> set[str]:
-        return _get_constructor_params(TypedEdge)
+        return set(TypedEdgeApply._get_constructor_parameters().keys())
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -1658,7 +1646,7 @@ class TypedNode(Node, TypedInstance):
     @staticmethod
     @lru_cache(1)
     def _base_properties() -> set[str]:
-        return _get_constructor_params(TypedEdge)
+        return set(TypedNode._get_constructor_parameters().keys())
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -1701,7 +1689,7 @@ class TypedEdge(Edge, TypedInstance):
     @staticmethod
     @lru_cache(1)
     def _base_properties() -> set[str]:
-        return _get_constructor_params(TypedEdge)
+        return set(TypedEdge._get_constructor_parameters().keys())
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -1713,6 +1701,13 @@ class TypedEdge(Edge, TypedInstance):
     @property
     def properties(self) -> Properties:
         return Properties({self.get_source(): self._dump_properties()})
+
+
+@lru_cache(32)
+def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> MappingProxyType[str, str]:
+    return MappingProxyType(
+        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
+    )
 
 
 _RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
