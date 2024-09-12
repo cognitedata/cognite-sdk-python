@@ -370,7 +370,7 @@ class InstancesAPI(APIClient):
                 ...        deleted_time: Union[int, None] = None,
                 ...    ) -> None:
                 ...        super().__init__(
-                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
                 ...        )
                 ...        self.flow_rate = flow_rate
                 ...
@@ -473,8 +473,7 @@ class InstancesAPI(APIClient):
                 ...            last_updated_time=last_updated_time,
                 ...            created_time=created_time,
                 ...            type=type,
-                ...            deleted_time=deleted_time,
-                ...            properties=None,
+                ...            deleted_time=deleted_time
                 ...        )
                 ...        self.name = name
                 ...        self.birth_year = birth_year
