@@ -16,9 +16,6 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-## [7.59.1] - 2024-09-12
-### Added
-- A bug in `client.sequences.data.retrieve_dataframe(...)`.
 
 ## [7.59.0] - 2024-09-12
 ### Added
@@ -103,8 +100,8 @@ Changes are grouped as follows
   through Data Modelling).
 
 ## [7.54.17] - 2024-08-22
-### Fixed
-- A bug in 
+### Added
+- [Feature Preview]  Added `ExtractorExtension` model of the Core Model.
 
 ## [7.54.16] - 2024-08-22
 ### Added
