@@ -333,13 +333,17 @@ class FilesAPI(APIClient):
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(
-        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): str or list of str
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -349,7 +353,11 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     @overload
     def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata: ...
