@@ -141,7 +141,7 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties = _serialize_property_values(self.properties, camel_case)
+        properties = _PropertyValueSerializer.serialize_values(self.properties, camel_case)
         output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
@@ -151,34 +151,6 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
-
-
-def _serialize_property_values(props: Mapping[str, Any], camel_case: bool = True) -> dict[str, Any]:
-    properties: dict[str, Any] = {}
-    for key, value in props.items():
-        if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-            key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-        if isinstance(value, SequenceNotStr):
-            properties[key] = [_serialize_property_value(v, camel_case) for v in value]
-        else:
-            properties[key] = _serialize_property_value(value, camel_case)
-    return properties
-
-
-def _serialize_property_value(
-    value: PropertyValueWrite, camel_case: bool
-) -> str | int | float | bool | Mapping | SequenceNotStr | Sequence | None:
-    if isinstance(value, NodeId):
-        # We don't want to dump the instance_type field when serializing NodeId in this context
-        return value.dump(camel_case, include_instance_type=False)
-    elif isinstance(value, DirectRelationReference):
-        return value.dump(camel_case)
-    elif isinstance(value, datetime):
-        return value.isoformat(timespec="milliseconds")
-    elif isinstance(value, date):
-        return value.isoformat()
-    else:
-        return value
 
 
 class InstanceCore(DataModelingResource, ABC):
@@ -512,6 +484,11 @@ def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> Map
     return MappingProxyType(
         {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
     )
+
+
+@lru_cache(16)
+def _get_constructor_params(typed_cls: type[TypedInstance]) -> set[str]:
+    return {param for param in inspect.signature(typed_cls.__init__).parameters if param != "self"}
 
 
 class InstanceApplyResult(InstanceCore, ABC):
@@ -1473,9 +1450,6 @@ class TypeInformation(UserDict, CogniteObject):
             raise ValueError(f"Invalid key: {key}")
 
 
-_RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
-
-
 class PropertyOptions:
     """This is a descriptor class for instance properties in a typed class.
 
@@ -1514,22 +1488,107 @@ class PropertyOptions:
 
 
 class TypedInstance(ABC):
-    _base_properties: frozenset[str]
-
     @classmethod
     @abstractmethod
     def get_source(cls) -> ViewId:
         raise NotImplementedError
 
+    @staticmethod
+    @abstractmethod
+    def _base_properties() -> set[str]:
+        raise NotImplementedError
 
-T_TypedInstance = TypeVar("T_TypedInstance", bound=TypedInstance)
+    def _dump_properties(self) -> dict[str, Any]:
+        props = {key: prop for key, prop in vars(self).items() if key not in _RESERVED_PROPERTY_NAMES}
+        return _PropertyValueSerializer.serialize_values(props, camel_case=True)
+
+    @classmethod
+    def _load_instance(cls, resource: dict[str, Any], properties: dict[str, Any]) -> Self:
+        kwargs: dict[str, Any] = {}
+        signature = inspect.signature(cls.__init__)
+        kwargs.update(cls._load_properties(properties, signature))
+        kwargs.update(cls._load_base_properties(resource, signature))
+        return cls(**kwargs)
+
+    @classmethod
+    def _load_base_properties(cls, resource: dict[str, Any], signature: inspect.Signature) -> dict[str, Any]:
+        args: dict[str, Any] = {}
+        for key in cls._base_properties():
+            camel_key = to_camel_case(key)
+            if camel_key in resource:
+                if key in signature.parameters and key in signature.parameters:
+                    args[key] = cls._deserialize_values(resource[camel_key], signature.parameters[key])
+            elif key in signature.parameters:
+                if signature.parameters[key].default is inspect.Parameter.empty:
+                    args[key] = None
+                else:
+                    args[key] = cls._deserialize_values(
+                        signature.parameters[key].default or None, signature.parameters[key]
+                    )
+        return args
+
+    @classmethod
+    def _load_properties(cls, resource: dict[str, Any], signature: inspect.Signature) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        property_by_name = cls._get_properties_by_name()
+
+        for name, parameter in signature.parameters.items():
+            if name in cls._base_properties():
+                continue
+            if name in resource:
+                output[name] = cls._deserialize_values(resource[name], parameter)
+            elif name in property_by_name:
+                property_name = property_by_name[name].name
+                if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                    property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+                if property_name in resource:
+                    output[name] = cls._deserialize_values(resource[property_name], parameter)
+
+        return output
+
+    @classmethod
+    def _get_properties_by_name(cls) -> dict[str, PropertyOptions]:
+        to_search = [cls]
+        property_by_name: dict[str, PropertyOptions] = {}
+        while to_search:
+            current_cls = to_search.pop()
+            for name, value in current_cls.__dict__.items():
+                if isinstance(value, PropertyOptions):
+                    property_by_name[name] = value
+            to_search.extend(
+                [
+                    b
+                    for b in current_cls.__bases__
+                    if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
+                ]
+            )
+        return property_by_name
+
+    @classmethod
+    def _deserialize_values(cls, value: Any, parameter: inspect.Parameter) -> Any:
+        if isinstance(value, SequenceNotStr):
+            return [cls._deserialize_value(v, parameter) for v in value]
+        else:
+            return cls._deserialize_value(value, parameter)
+
+    @staticmethod
+    def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
+        if parameter.annotation is inspect.Parameter.empty:
+            return value
+        annotation = str(parameter.annotation)
+        if "datetime" in annotation and isinstance(value, str):
+            return convert_data_modelling_timestamp(value)
+        elif "date" in annotation and isinstance(value, str):
+            return date.fromisoformat(value)
+        elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
+            return DirectRelationReference.load(value)
+        elif NodeId.__name__ in annotation and isinstance(value, dict):
+            return NodeId.load(value)
+
+        return value
 
 
 class TypedNodeApply(NodeApply, TypedInstance):
-    _base_properties: frozenset[str] = frozenset(
-        {"space", "external_id", "existing_version", "type", "instance_type", "sources"}
-    )
-
     def __init__(
         self,
         space: str,
@@ -1539,22 +1598,23 @@ class TypedNodeApply(NodeApply, TypedInstance):
     ) -> None:
         super().__init__(space, external_id, existing_version, None, type)
 
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return _get_constructor_params(TypedEdge)
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return _load_instance(cls, resource, properties)
+        return cls._load_instance(resource, properties)
 
     @property
     def sources(self) -> list[NodeOrEdgeData]:
-        return [NodeOrEdgeData(source=self.get_source(), properties=_dump_properties(self))]
+        return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
 
 
 class TypedEdgeApply(EdgeApply, TypedInstance):
-    _base_properties = frozenset(
-        {"space", "external_id", "existing_version", "type", "start_node", "end_node", "instance_type", "sources"}
-    )
-
     def __init__(
         self,
         space: str,
@@ -1566,32 +1626,23 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
     ) -> None:
         super().__init__(space, external_id, type, start_node, end_node, existing_version, None)
 
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return _get_constructor_params(TypedEdge)
+
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         sources = resource.pop("sources", [])
         properties = sources[0].get("properties", {}) if sources else {}
-        return _load_instance(cls, resource, properties)
+        return cls._load_instance(resource, properties)
 
     @property
     def sources(self) -> list[NodeOrEdgeData]:
-        return [NodeOrEdgeData(source=self.get_source(), properties=_dump_properties(self))]
+        return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
 
 
 class TypedNode(Node, TypedInstance):
-    _base_properties = frozenset(
-        {
-            "space",
-            "external_id",
-            "version",
-            "last_updated_time",
-            "created_time",
-            "deleted_time",
-            "type",
-            "instance_type",
-            "properties",
-        }
-    )
-
     def __init__(
         self,
         space: str,
@@ -1604,39 +1655,24 @@ class TypedNode(Node, TypedInstance):
     ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
 
-    @classmethod
-    def get_source(cls) -> ViewId:
-        raise NotImplementedError
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return _get_constructor_params(TypedEdge)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return _load_instance(cls, resource, properties)
+        return cls._load_instance(resource, properties)
 
     @property
     def properties(self) -> Properties:
-        return Properties({self.get_source(): _dump_properties(self)})
+        return Properties({self.get_source(): self._dump_properties()})
 
 
 class TypedEdge(Edge, TypedInstance):
-    _base_properties = frozenset(
-        {
-            "space",
-            "external_id",
-            "version",
-            "last_updated_time",
-            "created_time",
-            "deleted_time",
-            "type",
-            "start_node",
-            "end_node",
-            "instance_type",
-            "properties",
-        }
-    )
-
     def __init__(
         self,
         space: str,
@@ -1662,119 +1698,55 @@ class TypedEdge(Edge, TypedInstance):
             properties=None,
         )
 
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return _get_constructor_params(TypedEdge)
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         all_properties = resource.pop("properties", {})
         source = cls.get_source()
         properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
-        return _load_instance(cls, resource, properties)
+        return cls._load_instance(resource, properties)
 
     @property
     def properties(self) -> Properties:
-        return Properties({self.get_source(): _dump_properties(self)})
+        return Properties({self.get_source(): self._dump_properties()})
 
 
-def _load_instance(cls: type[T_TypedInstance], resource: dict[str, Any], properties: dict[str, Any]) -> T_TypedInstance:
-    kwargs: dict[str, Any] = {}
-    signature = inspect.signature(cls.__init__)
-    kwargs.update(_load_properties(cls, properties, signature))
-    kwargs.update(_load_base_properties(resource, cls._base_properties, signature))
-    return cls(**kwargs)
-
-
-def _load_base_properties(
-    resource: dict[str, Any], base_properties: frozenset[str], signature: inspect.Signature
-) -> dict[str, Any]:
-    args: dict[str, Any] = {}
-    for key in base_properties:
-        camel_key = to_camel_case(key)
-        if camel_key in resource:
-            if key in signature.parameters and key in signature.parameters:
-                args[key] = _deserialize_value(resource[camel_key], signature.parameters[key])
-        elif key in signature.parameters:
-            if signature.parameters[key].default is inspect.Parameter.empty:
-                args[key] = None
-            else:
-                args[key] = _deserialize_value(signature.parameters[key].default or None, signature.parameters[key])
-    return args
-
-
-def _load_properties(
-    cls: type[TypedInstance], resource: dict[str, Any], signature: inspect.Signature
-) -> dict[str, Any]:
-    output: dict[str, Any] = {}
-    property_by_name = _get_properties_by_name(cls)
-
-    for name, parameter in signature.parameters.items():
-        if name in cls._base_properties:
-            continue
-        if name in resource:
-            output[name] = _deserialize_values(resource[name], parameter)
-        elif name in property_by_name:
-            property_name = property_by_name[name].name
-            if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-            if property_name in resource:
-                output[name] = _deserialize_values(resource[property_name], parameter)
-
-    return output
-
-
-def _get_properties_by_name(cls: type) -> dict[str, PropertyOptions]:
-    to_search = [cls]
-    property_by_name: dict[str, PropertyOptions] = {}
-    while to_search:
-        current_cls = to_search.pop()
-        for name, value in current_cls.__dict__.items():
-            if isinstance(value, PropertyOptions):
-                property_by_name[name] = value
-        to_search.extend(
-            [
-                b
-                for b in current_cls.__bases__
-                if {b not in {object, TypedNode, TypedEdge, Edge, Node, TypedNodeApply, TypedEdgeApply}}
-            ]
-        )
-    return property_by_name
-
-
+_RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
 _RESERVED_PROPERTY_NAMES = (
-    TypedNodeApply._base_properties
-    | TypedEdgeApply._base_properties
-    | TypedNode._base_properties
-    | TypedEdge._base_properties
-)
+    TypedNodeApply._base_properties()
+    | TypedEdgeApply._base_properties()
+    | TypedNode._base_properties()
+    | TypedEdge._base_properties()
+) | {"instance_type", "existing_version", "_InstanceApply__sources", "_Instance__properties", "_Instance__prop_lookup"}
 
 
-def _dump_properties(obj: TypedInstance) -> dict[str, Any]:
-    def ignore(key: str) -> bool:
-        ignore_private_attrs_from = {"_InstanceApply__", "_Instance__"}
-        return key in obj._base_properties or any(key.startswith(prefix) for prefix in ignore_private_attrs_from)
+class _PropertyValueSerializer:
+    @classmethod
+    def serialize_values(cls, props: Mapping[str, Any], camel_case: bool = True) -> dict[str, PropertyValue]:
+        properties: dict[str, Any] = {}
+        for key, value in props.items():
+            if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+            if isinstance(value, SequenceNotStr):
+                properties[key] = [cls._serialize_value(v, camel_case) for v in value]
+            else:
+                properties[key] = cls._serialize_value(value, camel_case)
+        return properties
 
-    props = {key: prop for key, prop in vars(obj).items() if not ignore(key)}
-    return _serialize_property_values(props, camel_case=True)
-
-
-def _deserialize_values(value: Any, parameter: inspect.Parameter) -> Any:
-    if isinstance(value, SequenceNotStr):
-        return [_deserialize_value(v, parameter) for v in value]
-    else:
-        return _deserialize_value(value, parameter)
-
-
-def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
-    if parameter.annotation is inspect.Parameter.empty:
-        return value
-    annotation = str(parameter.annotation)
-    if "datetime" in annotation and isinstance(value, str):
-        return convert_data_modelling_timestamp(value)
-    elif "date" in annotation and isinstance(value, str):
-        return date.fromisoformat(value)
-    elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
-        return DirectRelationReference.load(value)
-    elif NodeId.__name__ in annotation and isinstance(value, dict):
-        return NodeId.load(value)
-    elif EdgeId.__name__ in annotation and isinstance(value, dict):
-        return EdgeId.load(value)
-
-    return value
+    @classmethod
+    def _serialize_value(cls, value: Any, camel_case: bool) -> PropertyValue:
+        if isinstance(value, NodeId):
+            # We don't want to dump the instance_type field when serializing NodeId in this context
+            return value.dump(camel_case, include_instance_type=False)
+        elif isinstance(value, DirectRelationReference):
+            return value.dump(camel_case)
+        elif isinstance(value, datetime):
+            return value.isoformat(timespec="milliseconds")
+        elif isinstance(value, date):
+            return value.isoformat()
+        else:
+            return value
