@@ -342,12 +342,12 @@ class TestFilesAPI:
 
     def test_delete_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_files_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls[0].request.body)
         assert res is None
 
     def test_delete_multiple(self, cognite_client, mock_files_response):
         res = cognite_client.files.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_files_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls[0].request.body)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_files_response):
