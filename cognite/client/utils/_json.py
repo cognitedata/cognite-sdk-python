@@ -6,19 +6,14 @@ from decimal import Decimal
 from types import MappingProxyType
 from typing import Any
 
-# Copied from requests.compat.py (except for type ignores):
-# json/simplejson module import resolution
-has_simplejson = False
+# Users are seeing JSONDecodeError coming from a block that intercepts JSONDecodeError
+# (i.e. shouldn't be possible). It seems Python runtimes like e.g. Databricks patches the
+# built-in json library with simplejson and thus simplejson.JSONDecodeError != json.JSONDecodeError
 try:
     import simplejson as json
-
-    has_simplejson = True
+    from simplejson import JSONDecodeError
 except ImportError:
     import json  # type: ignore [no-redef]
-
-if has_simplejson:
-    from simplejson import JSONDecodeError
-else:
     from json import JSONDecodeError  # type: ignore [assignment]
 
 __all__ = ["dumps", "loads", "JSONDecodeError", "convert_to_float", "convert_nonfinite_float_to_str"]
