@@ -1,13 +1,27 @@
 from __future__ import annotations
 
-import json
 import math
 import numbers
 from decimal import Decimal
 from types import MappingProxyType
 from typing import Any
 
-__all__ = ["dumps", "loads", "convert_to_float", "convert_nonfinite_float_to_str"]
+# Copied from requests.compat.py (except for type ignores):
+# json/simplejson module import resolution
+has_simplejson = False
+try:
+    import simplejson as json
+
+    has_simplejson = True
+except ImportError:
+    import json  # type: ignore [no-redef]
+
+if has_simplejson:
+    from simplejson import JSONDecodeError
+else:
+    from json import JSONDecodeError  # type: ignore [assignment]
+
+__all__ = ["dumps", "loads", "JSONDecodeError", "convert_to_float", "convert_nonfinite_float_to_str"]
 
 
 def _default_json_encoder(obj: Any) -> Any:

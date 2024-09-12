@@ -2665,6 +2665,17 @@ files = [
 urllib3 = ">=2"
 
 [[package]]
+name = "types-simplejson"
+version = "3.19.0.20240801"
+description = "Typing stubs for simplejson"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-simplejson-3.19.0.20240801.tar.gz", hash = "sha256:ef90cc81dd915f26c452fa2b5e0cbd3a36af81074ae63878fcf8a477e7594e4d"},
+    {file = "types_simplejson-3.19.0.20240801-py3-none-any.whl", hash = "sha256:37f1b33c8626d7f072ea87737629310674845d54d187f12387fe33d31c938288"},
+]
+
+[[package]]
 name = "types-urllib3"
 version = "1.26.25.14"
 description = "Typing stubs for urllib3"
@@ -2777,4 +2788,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9e456775447549841733cf93df8ec207a099cbffc1e752fccfaa5acdb98d2da9"
+content-hash = "f9fa579062a7458a8248db8fae842263cb3eb5a958f1313b1963d71dc40bbbcc"
