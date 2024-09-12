@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.59.3] - 2024-09-12
 ### Fixed
-- JSONDecodeError can no longer be raised in environemnts where simplejson is used instead of built-in.
+- JSONDecodeError can no longer be raised in environments where simplejson is used instead of built-in json.
 
 ## [7.59.2] - 2024-09-12
 ### Fixed
