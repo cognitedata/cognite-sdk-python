@@ -1,8 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-
-version = "7.59.2"
+version = "7.59.3"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -88,6 +87,7 @@ packaging = ">=23"
 IPython = ">=7.0.0"  # Used in docstring examples
 PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
+types-simplejson = "^3.19.0.20240801"
 
 [build-system]
 requires = ["poetry-core"]
