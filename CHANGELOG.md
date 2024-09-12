@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.59.3] - 2024-09-12
+### Fixed
+- JSONDecodeError can no longer be raised in environemnts where simplejson is used instead of built-in.
+
 ## [7.59.2] - 2024-09-12
 ### Fixed
 - A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
