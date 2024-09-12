@@ -17,10 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.58.9] - 2024-09-011
+## [7.59.1] - 2024-09-12
+
 ### Fixed
 - Creating a function using files dated before 1980 no longer raises ValueError,
   by overriding the timestamps to 1980-01-01.
+
+## [7.59.0] - 2024-09-12
+### Added
+- Added `ignore_unknown_ids` to `client.files.delete`.
 
 ## [7.58.8] - 2024-09-10
 ### Added
