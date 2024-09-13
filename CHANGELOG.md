@@ -21,15 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - LocationFiltersACl.Scope.SpaceID changed to ID
 
-
-
 ## [7.60.0] - 2024-09-12
 ### Changed
 - Some changes to the typed instances functionality in the data modeling client
   - The `TypedNode`, `TypedEdge`, etc. classes are moved from `data_classes.data_modeling.typed_instances` to `data_classes.data_modeling.instances`
   - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
   - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
-
 
 ## [7.59.3] - 2024-09-12
 ### Fixed
