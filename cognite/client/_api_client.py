@@ -1339,8 +1339,6 @@ class APIClient:
     def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
-        # We technically don't need to catch JSONDecodeError here, as any valid deserialized JSON from
-        # requests should always be dumpable again... but just in case...
         except (JSONDecodeError, RequestsJSONDecodeError):
             pass
 
