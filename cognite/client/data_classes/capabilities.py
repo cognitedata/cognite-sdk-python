@@ -813,7 +813,6 @@ class LocationFiltersAcl(Capability):
         ID = IDScope
 
 
-
 @dataclass
 class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
