@@ -16,7 +16,7 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-- 
+
 ## [7.60.1] - 2024-09-13
 ### Changed
 - The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
