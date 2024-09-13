@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## TBD
+## [7.60.1] - 2024-09-13
 ### Fixed
 - LocationFiltersACl.Scope.SpaceID changed to ID
 
