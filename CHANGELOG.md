@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## TBD
+### Fixed
+- LocationFiltersACl.Scope.SpaceID changed to ID
+
+
+
 ## [7.60.0] - 2024-09-12
 ### Changed
 - Some changes to the typed instances functionality in the data modeling client

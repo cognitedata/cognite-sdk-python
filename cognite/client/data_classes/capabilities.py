@@ -810,7 +810,8 @@ class LocationFiltersAcl(Capability):
 
     class Scope:
         All = AllScope
-        SpaceID = IDScope
+        ID = IDScope
+
 
 
 @dataclass
