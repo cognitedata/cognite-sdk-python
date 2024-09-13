@@ -30,7 +30,6 @@ Changes are grouped as follows
   - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
   - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
 
-
 ## [7.59.3] - 2024-09-12
 ### Fixed
 - JSONDecodeError can no longer be raised in environments where simplejson is used instead of built-in json.
