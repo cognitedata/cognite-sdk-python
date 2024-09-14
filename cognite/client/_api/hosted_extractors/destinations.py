@@ -57,7 +57,7 @@ class DestinationsAPI(APIClient):
         Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
 
         Args:
-            chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destinatio a time.
+            chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
             limit (int | None): Maximum number of Destination to return. Defaults to returning all items.
 
         Returns:
@@ -93,7 +93,7 @@ class DestinationsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Destination | DestinationList:
-        """`Retrieve one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/retrieve_destinations>`_
+        """`Retrieve one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -128,7 +128,7 @@ class DestinationsAPI(APIClient):
     def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destsinations  <https://developer.cognite.com/api#tag/Destinations/operation/delete_destinations>`_
+        """`Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -165,7 +165,7 @@ class DestinationsAPI(APIClient):
     def create(self, items: Sequence[DestinationWrite]) -> DestinationList: ...
 
     def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
-        """`Create one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/create_destinations>`_
+        """`Create one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_
 
         Args:
             items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
@@ -201,7 +201,7 @@ class DestinationsAPI(APIClient):
     def update(
         self, items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]
     ) -> Destination | DestinationList:
-        """`Update one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/update_destinations>`_
+        """`Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
 
         Args:
             items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
@@ -232,7 +232,7 @@ class DestinationsAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DestinationList:
-        """`List destinations <https://developer.cognite.com/api#tag/Destinations/operation/list_destinations>`_
+        """`List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_
 
         Args:
             limit (int | None): Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

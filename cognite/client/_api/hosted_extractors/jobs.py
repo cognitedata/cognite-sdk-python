@@ -133,7 +133,7 @@ class JobsAPI(APIClient):
         external_ids: str | SequenceNotStr[str],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more jobs <https://developer.cognite.com/api#tag/Jobs/operation/delete_jobs>`_
+        """`Delete one or more jobs <https://api-docs.cognite.com/20230101-beta/tag/Jobs/operation/delete_jobs>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.

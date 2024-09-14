@@ -61,16 +61,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Edge,
     T_Node,
     TargetUnit,
+    TypedEdge,
+    TypedNode,
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
     SourceSelector,
-)
-from cognite.client.data_classes.data_modeling.typed_instances import (
-    TypedEdge,
-    TypedNode,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
@@ -372,7 +370,7 @@ class InstancesAPI(APIClient):
                 ...        deleted_time: Union[int, None] = None,
                 ...    ) -> None:
                 ...        super().__init__(
-                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
                 ...        )
                 ...        self.flow_rate = flow_rate
                 ...
@@ -475,8 +473,7 @@ class InstancesAPI(APIClient):
                 ...            last_updated_time=last_updated_time,
                 ...            created_time=created_time,
                 ...            type=type,
-                ...            deleted_time=deleted_time,
-                ...            properties=None,
+                ...            deleted_time=deleted_time
                 ...        )
                 ...        self.name = name
                 ...        self.birth_year = birth_year
