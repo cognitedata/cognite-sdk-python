@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.60.3] - 2024-09-14
+### Changed
+- The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
+  now implemented as composition and no longer inherits from each other. This is to reflect the underlying API.
+
 ## [7.60.2] - 2024-09-14
 ### Added
 - [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
