@@ -5,13 +5,17 @@ from typing import Any
 
 import pytest
 
-from cognite.client.data_classes.data_modeling import DirectRelationReference, NodeList, ViewId
+from cognite.client.data_classes.data_modeling import (
+    DirectRelationReference,
+    NodeList,
+    ViewId,
+)
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteAsset,
     CogniteAssetApply,
     CogniteDescribableEdgeApply,
 )
-from cognite.client.data_classes.data_modeling.typed_instances import (
+from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
     TypedEdge,
     TypedEdgeApply,
@@ -27,13 +31,18 @@ class PersonProperties:
 class Person(TypedNodeApply, PersonProperties):
     def __init__(
         self,
+        space: str,
         external_id: str,
         name: str,
         birth_date: date,
         email: str,
         siblings: list[DirectRelationReference] | None = None,
     ) -> None:
-        super().__init__("sp_my_fixed_space", external_id, type=DirectRelationReference("sp_model_space", "person"))
+        super().__init__(
+            space,
+            external_id,
+            type=DirectRelationReference("sp_model_space", "person"),
+        )
         self.name = name
         self.birth_date = birth_date
         self.email = email
@@ -81,7 +90,7 @@ class Flow(TypedEdge, FlowProperties):
         deleted_time: int | None,
     ) -> None:
         super().__init__(
-            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
         )
         self.flow_rate = flow_rate
 
@@ -105,14 +114,14 @@ class PersonRead(TypedNode, PersonProperties):
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.name = name
         self.birth_date = birth_date
         self.email = email
         self.siblings = siblings
 
     def as_write(self) -> Person:
-        return Person(self.external_id, self.name, self.birth_date, self.email, self.siblings)
+        return Person(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -134,7 +143,7 @@ class Asset(TypedNodeApply):
 
 class TestTypedNodeApply:
     def test_dump_person(self) -> None:
-        person = Person("my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
+        person = Person("sp_my_fixed_space", "my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
@@ -143,7 +152,12 @@ class TestTypedNodeApply:
             "sources": [
                 {
                     "source": {"space": "sp_model_space", "externalId": "view_id", "version": "1", "type": "view"},
-                    "properties": {"name": "John Doe", "birthDate": "1990-01-01", "email": "example@cognite.com"},
+                    "properties": {
+                        "name": "John Doe",
+                        "birthDate": "1990-01-01",
+                        "email": "example@cognite.com",
+                        "siblings": None,
+                    },
                 }
             ],
         }
@@ -233,7 +247,8 @@ class TestTypedNode:
             },
         }
 
-        assert person.dump() == expected
+        actual = person.dump()
+        assert actual == expected
         loaded = PersonRead.load(expected)
         assert person == loaded
         assert isinstance(loaded.birth_date, date)
@@ -258,6 +273,7 @@ class TestTypedNode:
                 "name": "John Doe",
                 "birth_date": "1990-01-01",
                 "email": "john@doe.com",
+                "siblings": None,
             },
         ).to_frame(name="value")
         pd.testing.assert_frame_equal(df, expected_df)
@@ -285,6 +301,7 @@ class TestTypedNode:
                     "name": ["John Doe"],
                     "birthDate": ["1990-01-01"],
                     "email": ["john@doe.com"],
+                    "siblings": None,
                 }
             ),
         )
@@ -335,15 +352,12 @@ def cognite_asset_kwargs() -> dict[str, Any]:
 
 class TestCDMv1Classes:
     @pytest.mark.parametrize("camel_case", (True, False))
-    @pytest.mark.parametrize("use_attribute_name", (True, False))
-    def test_cognite_asset_read_and_write(
-        self, cognite_asset_kwargs: dict[str, Any], camel_case: bool, use_attribute_name: bool
-    ) -> None:
+    def test_cognite_asset_read_and_write(self, cognite_asset_kwargs: dict[str, Any], camel_case: bool) -> None:
         asset_write = CogniteAssetApply(**cognite_asset_kwargs)
         asset_read = CogniteAsset(**cognite_asset_kwargs, version=1, last_updated_time=10, created_time=5)
 
         for is_write, asset in zip([True, False], [asset_write, asset_read]):
-            dumped = asset.dump(camel_case=camel_case, use_attribute_name=use_attribute_name)  # type: ignore [call-arg]
+            dumped = asset.dump(camel_case=camel_case)
             xid = "externalId" if camel_case else "external_id"
             assert xid in dumped
             # Check that type/type_ are correctly dumped:
@@ -354,9 +368,9 @@ class TestCDMv1Classes:
                 properties = dumped["sources"][0]["properties"]
             else:
                 properties = dumped["properties"]["cdf_cdm"]["CogniteAsset/v1"]
-            assert properties["type"] == {"space": "should-be", xid: "in-properties"}
+            assert properties["type"] == {"space": "should-be", "externalId": "in-properties"}
             # Check that properties are cased according to use_attribute_name:
-            assert ("source_created_time" if use_attribute_name else "sourceCreatedTime") in properties
+            assert "sourceCreatedTime" in properties
 
     @pytest.mark.dsl
     @pytest.mark.parametrize("camel_case", (True, False))
@@ -385,13 +399,13 @@ class TestCDMv1Classes:
         expected_type_df = pd.DataFrame(
             [
                 ({"space": "should-be", xid: "at-root"},),
-                ({"space": "should-be", xid: "in-properties"},),
+                ({"space": "should-be", "externalId": "in-properties"},),
             ],
             columns=["value"],
             index=["type", "type"],
         )
         pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
-        assert ("sourceCreatedTime" if camel_case else "source_created_time") in read_expanded_df.index
+        assert "source_created_time" in read_expanded_df.index
 
 
 @pytest.mark.parametrize(

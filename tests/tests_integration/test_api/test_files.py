@@ -305,3 +305,8 @@ class TestFilesAPI:
             assert retrieved.dump() == [updated.dump()]
         finally:
             cognite_client_alpha.data_modeling.instances.delete(nodes=instance_id)
+
+    def test_create_delete_ignore_unknown_ids(self, cognite_client: CogniteClient) -> None:
+        file_metadata = FileMetadata(name="mytestfile")
+        returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
+        cognite_client.files.delete(id=[returned_file_metadata.id, 1], ignore_unknown_ids=True)

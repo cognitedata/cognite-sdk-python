@@ -1295,14 +1295,14 @@ class SequencesDataAPI(APIClient):
             column_names_default = "columnExternalId"
 
         if external_id is not None and id is None:
-            return self.retrieve(external_id=external_id, start=start, end=end, limit=limit).to_pandas(
-                # TODO(doctrino): Is this supported: `column_names=column_external_ids` ?
-                column_names=column_external_ids or column_names_default,  # type: ignore  [arg-type]
+            return self.retrieve(
+                external_id=external_id, start=start, end=end, limit=limit, columns=column_external_ids
+            ).to_pandas(
+                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         elif id is not None and external_id is None:
-            return self.retrieve(id=id, start=start, end=end, limit=limit).to_pandas(
-                # TODO(doctrino): Is this supported: `column_names=column_external_ids` ?
-                column_names=column_external_ids or column_names_default,  # type: ignore  [arg-type]
+            return self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids).to_pandas(
+                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         else:
             raise ValueError("Either external_id or id must be specified")

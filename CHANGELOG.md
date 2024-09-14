@@ -17,6 +17,38 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.60.2] - 2024-09-14
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
+
+## [7.60.1] - 2024-09-13
+### Fixed
+- LocationFiltersACl.Scope.SpaceID changed to ID
+
+## [7.60.0] - 2024-09-12
+### Changed
+- Some changes to the typed instances functionality in the data modeling client
+  - The `TypedNode`, `TypedEdge`, etc. classes are moved from `data_classes.data_modeling.typed_instances` to `data_classes.data_modeling.instances`
+  - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
+  - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
+
+## [7.59.3] - 2024-09-12
+### Fixed
+- JSONDecodeError can no longer be raised in environments where simplejson is used instead of built-in json.
+
+## [7.59.2] - 2024-09-12
+### Fixed
+- A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
+
+## [7.59.1] - 2024-09-12
+### Fixed
+- Creating a function using files dated before 1980 no longer raises ValueError,
+  by overriding the timestamps to 1980-01-01.
+
+## [7.59.0] - 2024-09-12
+### Added
+- Added `ignore_unknown_ids` to `client.files.delete`.
+
 ## [7.58.8] - 2024-09-10
 ### Added
 - Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.

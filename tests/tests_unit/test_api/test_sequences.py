@@ -565,6 +565,17 @@ class TestSequencesPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, data)
 
+    def test_retrieve_dataframe_columns_filter(
+        self, cognite_client, mock_seq_response, mock_get_sequence_data_two_col_with_zero
+    ):
+        data_1 = cognite_client.sequences.data.retrieve_dataframe(
+            external_id="foo", start=0, end=100, column_external_ids=["ceid1"]
+        )
+        data_2 = cognite_client.sequences.data.retrieve(
+            external_id="foo", start=0, end=100, columns=["ceid1"]
+        ).to_pandas()
+        assert data_1.equals(data_2)
+
     def test_retrieve_dataframe_columns_many_extid(self, cognite_client, mock_get_sequence_data_many_columns):
         data = cognite_client.sequences.data.retrieve(external_id="foo", start=1000000, end=1100000)
         assert isinstance(data, SequenceRows)

@@ -11,7 +11,7 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteTimeSeriesApply,
 )
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.typed_instances import (
+from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
     TypedNode,
     TypedNodeApply,
@@ -48,7 +48,7 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.extracted_data = extracted_data
 
 
@@ -80,7 +80,7 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.extracted_data = extracted_data
 
     def as_write(self) -> CogniteExtractorDataApply:
