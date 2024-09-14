@@ -17,10 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.60.1] - 2024-09-13
+## [7.60.3] - 2024-09-14
 ### Changed
 - The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
   now implemented as composition and no longer inherits from each other. This is to reflect the underlying API.
+
+## [7.60.2] - 2024-09-14
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
+
+## [7.60.1] - 2024-09-13
+### Fixed
+- LocationFiltersACl.Scope.SpaceID changed to ID
 
 ## [7.60.0] - 2024-09-12
 ### Changed
@@ -28,7 +36,6 @@ Changes are grouped as follows
   - The `TypedNode`, `TypedEdge`, etc. classes are moved from `data_classes.data_modeling.typed_instances` to `data_classes.data_modeling.instances`
   - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
   - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
-
 
 ## [7.59.3] - 2024-09-12
 ### Fixed
