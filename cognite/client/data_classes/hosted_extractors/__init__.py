@@ -9,8 +9,11 @@ from cognite.client.data_classes.hosted_extractors.destinations import (
     SessionWrite,
 )
 from cognite.client.data_classes.hosted_extractors.jobs import (
+    BodyLoad,
     CogniteFormat,
     CustomFormat,
+    HeaderValueLoad,
+    IncrementalLoad,
     Job,
     JobConfig,
     JobFormat,
@@ -25,7 +28,10 @@ from cognite.client.data_classes.hosted_extractors.jobs import (
     JobWriteList,
     KafkaConfig,
     MQTTConfig,
+    NextUrlLoad,
     Prefix,
+    QueryParamLoad,
+    RestConfig,
     RockwellFormat,
     TargetStatus,
     ValueFormat,
@@ -88,4 +94,10 @@ __all__ = [
     "JobMetricsList",
     "JobLogs",
     "JobLogsList",
+    "RestConfig",
+    "IncrementalLoad",
+    "BodyLoad",
+    "QueryParamLoad",
+    "NextUrlLoad",
+    "HeaderValueLoad",
 ]
