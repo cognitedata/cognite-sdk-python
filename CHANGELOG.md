@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.60.4] - 2024-09-15
+### Added
+Fix bug in column name remapping for `TypedInstance.to_pandas()`
+
 ## [7.60.3] - 2024-09-14
 ### Changed
 - The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
