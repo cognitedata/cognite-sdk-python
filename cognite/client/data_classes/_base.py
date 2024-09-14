@@ -520,12 +520,6 @@ class CogniteUpdate:
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         raise NotImplementedError
 
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        # This method is used to provide additional identifying properties for the update object.
-        # It is intended to be overridden by subclasses that need to provide additional identifying properties.
-        return {}
-
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
 
