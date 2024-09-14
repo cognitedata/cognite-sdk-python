@@ -288,6 +288,14 @@ class RestConfig(JobConfig):
             pagination=IncrementalLoad._load(resource["pagination"]) if "pagination" in resource else None,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.incremental_load:
+            output["incrementalLoad"] = self.incremental_load.dump(camel_case)
+        if self.pagination:
+            output["pagination"] = self.pagination.dump(camel_case)
+        return output
+
 
 class _JobCore(WriteableCogniteResource["JobWrite"]):
     def __init__(
