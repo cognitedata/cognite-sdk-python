@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import threading
 import warnings
 from abc import ABC, abstractmethod
@@ -7,6 +8,8 @@ from collections import UserDict, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
+from functools import lru_cache
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +24,7 @@ from typing import (
     Mapping,
     MutableMapping,
     NoReturn,
+    Sequence,
     TypeVar,
     Union,
     ValuesView,
@@ -60,7 +64,9 @@ from cognite.client.data_classes.data_modeling.ids import (
 from cognite.client.utils._auxiliary import flatten_dict
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
+from cognite.client.utils._time import convert_data_modelling_timestamp
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -85,18 +91,19 @@ PropertyValueWrite: TypeAlias = Union[
     float,
     bool,
     dict,
-    List[str],
-    List[int],
-    List[float],
-    List[bool],
-    List[dict],
+    SequenceNotStr[str],
+    Sequence[int],
+    Sequence[float],
+    Sequence[bool],
+    Sequence[dict],
     NodeId,
     DirectRelationReference,
     date,
     datetime,
-    List[Union[NodeId, DirectRelationReference]],
-    List[date],
-    List[datetime],
+    Sequence[Union[NodeId, DirectRelationReference]],
+    Sequence[date],
+    Sequence[datetime],
+    None,
 ]
 
 Space: TypeAlias = str
@@ -134,13 +141,7 @@ class NodeOrEdgeData(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict:
-        properties: dict[str, str | int | float | bool | dict | list] = {}
-        for key, value in self.properties.items():
-            if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
-                properties[key] = [_serialize_property_value(v, camel_case) for v in value]
-            else:
-                properties[key] = _serialize_property_value(value, camel_case)
-
+        properties = _PropertyValueSerializer.serialize_values(self.properties, camel_case)
         output: dict[str, Any] = {"properties": properties}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
@@ -150,20 +151,6 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
-
-
-def _serialize_property_value(value: PropertyValueWrite, camel_case: bool) -> str | int | float | bool | dict | list:
-    if isinstance(value, NodeId):
-        # We don't want to dump the instance_type field when serializing NodeId in this context
-        return value.dump(camel_case, include_instance_type=False)
-    elif isinstance(value, DirectRelationReference):
-        return value.dump(camel_case)
-    elif isinstance(value, datetime):
-        return value.isoformat(timespec="milliseconds")
-    elif isinstance(value, date):
-        return value.isoformat()
-    else:
-        return value
 
 
 class InstanceCore(DataModelingResource, ABC):
@@ -209,7 +196,11 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
-        self.sources = sources
+        self.__sources = sources or []
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return self.__sources
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -358,19 +349,23 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self.deleted_time = deleted_time
-        self.properties: Properties = properties or Properties({})
+        self.__properties: Properties = properties or Properties({})
 
         if len(self.properties) == 1:
-            (self._prop_lookup,) = self.properties.values()
+            (self.__prop_lookup,) = self.properties.values()
         else:
             # For speed, we want this to fail (to avoid LBYL pattern):
-            self._prop_lookup = None  # type: ignore [assignment]
+            self.__prop_lookup = None  # type: ignore [assignment]
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
         err_msg = "Quick property access is only possible on instances from a single source."
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
         raise RuntimeError(err_msg) from None
+
+    @property
+    def properties(self) -> Properties:
+        return self.__properties
 
     @overload
     def get(self, attr: str) -> PropertyValue | None: ...
@@ -380,31 +375,31 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
 
     def get(self, attr: str, default: Any = None) -> Any:
         try:
-            return self._prop_lookup.get(attr, default)
+            return self.__prop_lookup.get(attr, default)
         except AttributeError:
             self.__raise_if_non_singular_source(attr)
 
     def __getitem__(self, attr: str) -> PropertyValue:
         try:
-            return self._prop_lookup[attr]
+            return self.__prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __setitem__(self, attr: str, value: PropertyValue) -> None:
         try:
-            self._prop_lookup[attr] = value
+            self.__prop_lookup[attr] = value
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __delitem__(self, attr: str) -> None:
         try:
-            del self._prop_lookup[attr]
+            del self.__prop_lookup[attr]
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
     def __contains__(self, attr: str) -> bool:
         try:
-            return attr in self._prop_lookup
+            return attr in self.__prop_lookup
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
@@ -465,15 +460,12 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         col = df.squeeze()
         prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
-            from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
-
-            if isinstance(self, _TypedInstance):
-                view_id, *extra = [self.get_source()]
-            else:
-                view_id, *extra = self.properties.keys()
+            view_id, *extra = self.properties.keys()
             # We only do/allow this if we have a single source:
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+                if isinstance(self, TypedInstance):
+                    prop_df.rename(columns=_get_descriptor_property_name_mapping(type(self)), inplace=True)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -1028,9 +1020,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
 
         prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
-            from cognite.client.data_classes.data_modeling.typed_instances import _TypedInstance
-
-            typed_view_ids = {item.get_source() for item in self if isinstance(item, _TypedInstance)}  # type: ignore [attr-defined]
+            typed_view_ids = {item.get_source() for item in self if isinstance(item, TypedInstance)}  # type: ignore [attr-defined]
             view_id, *extra = typed_view_ids | set(vid for item in self for vid in item.properties)
             # We only do/allow this if we have a single source:
             if not extra:
@@ -1446,3 +1436,312 @@ class TypeInformation(UserDict, CogniteObject):
             del self[key[0]][key[1]][key[2]]
         else:
             raise ValueError(f"Invalid key: {key}")
+
+
+class PropertyOptions:
+    """This is a descriptor class for instance properties in a typed class.
+
+    It is used when you have a property that has a different name in the Data Model
+    compared to the name in the Python class.
+
+    Args:
+        identifier (str | None): The name of the property in the Data Model. Defaults to the name of the property in the Python class.
+    """
+
+    def __init__(self, identifier: str | None = None) -> None:
+        self.name = cast(str, identifier)  # mypy help, set_name guarantees str
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self.name = self.name or name
+        if self.name in _RESERVED_PROPERTY_NAMES:
+            self.name = f"{_RESERVED_PROPERTY_CONFLICT_PREFIX}{self.name}"
+
+    def __get__(self, instance: Any, owner: type) -> Any:
+        try:
+            return instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(f"'{owner.__name__}' object has no attribute '{self.name}'")
+
+    def __set__(self, instance: Any, value: Any) -> None:
+        try:
+            instance.__dict__[self.name] = value
+        except KeyError:
+            raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+    def __delete__(self, instance: Any) -> None:
+        try:
+            del instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+
+class TypedInstance(ABC):
+    @classmethod
+    @abstractmethod
+    def get_source(cls) -> ViewId:
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _base_properties() -> set[str]:
+        raise NotImplementedError
+
+    def _dump_properties(self) -> dict[str, Any]:
+        props = {key: prop for key, prop in vars(self).items() if key not in _RESERVED_PROPERTY_NAMES}
+        return _PropertyValueSerializer.serialize_values(props, camel_case=True)
+
+    @classmethod
+    @lru_cache(32)
+    def _get_constructor_parameters(cls) -> dict[str, inspect.Parameter]:
+        return {key: param for key, param in inspect.signature(cls.__init__).parameters.items() if key != "self"}
+
+    @classmethod
+    def _load_instance(cls, resource: dict[str, Any], properties: dict[str, Any]) -> Self:
+        return cls(**cls._load_base_properties(resource), **cls._load_properties(properties))
+
+    @classmethod
+    def _load_base_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
+        args: dict[str, Any] = {}
+        signature_params = cls._get_constructor_parameters()
+        for key in cls._base_properties():
+            camel_key = to_camel_case(key)
+            if key in signature_params:
+                param = signature_params[key]
+                default = param.default
+                if camel_key in resource:
+                    args[key] = cls._deserialize_values(resource[camel_key], param)
+                elif default is inspect.Parameter.empty:
+                    args[key] = None
+                else:
+                    args[key] = cls._deserialize_values(default or None, param)
+        return args
+
+    @classmethod
+    def _load_properties(cls, resource: dict[str, Any]) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        property_by_name = cls._get_properties_by_name()
+        signature_params = cls._get_constructor_parameters()
+        for name, parameter in signature_params.items():
+            if name in cls._base_properties():
+                continue
+            if name in resource:
+                output[name] = cls._deserialize_values(resource[name], parameter)
+            elif name in property_by_name:
+                property_name = property_by_name[name].name
+                if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                    property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+                if property_name in resource:
+                    output[name] = cls._deserialize_values(resource[property_name], parameter)
+
+        return output
+
+    @classmethod
+    @lru_cache(32)
+    def _get_user_defined_typed_instance_base_classes(cls) -> list[type]:
+        # We want to exclude TypedInstance and its direct subclasses and all its superclasses.
+        # So, only the base classes up to TypedNode, TypedNodeApply, etc...
+        typed_instance_classes = {TypedInstance, *TypedInstance.__subclasses__(), *TypedInstance.mro()}
+        return [base for base in cls.mro() if base not in typed_instance_classes]
+
+    @classmethod
+    def _get_properties_by_name(cls) -> dict[str, PropertyOptions]:
+        property_by_name: dict[str, PropertyOptions] = {}
+        for current_cls in cls._get_user_defined_typed_instance_base_classes():
+            for name, value in vars(current_cls).items():
+                if isinstance(value, PropertyOptions):
+                    property_by_name[name] = value
+        return property_by_name
+
+    @classmethod
+    def _deserialize_values(cls, value: Any, parameter: inspect.Parameter) -> Any:
+        if isinstance(value, SequenceNotStr):
+            return [cls._deserialize_value(v, parameter) for v in value]
+        else:
+            return cls._deserialize_value(value, parameter)
+
+    @staticmethod
+    def _deserialize_value(value: Any, parameter: inspect.Parameter) -> Any:
+        if parameter.annotation is inspect.Parameter.empty:
+            return value
+        annotation = str(parameter.annotation)
+        if "datetime" in annotation and isinstance(value, str):
+            return convert_data_modelling_timestamp(value)
+        elif "date" in annotation and isinstance(value, str):
+            return date.fromisoformat(value)
+        elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
+            return DirectRelationReference.load(value)
+        elif NodeId.__name__ in annotation and isinstance(value, dict):
+            return NodeId.load(value)
+
+        return value
+
+
+class TypedNodeApply(NodeApply, TypedInstance):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, existing_version, None, type)
+
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return set(TypedNodeApply._get_constructor_parameters().keys())
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return cls._load_instance(resource, properties)
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
+
+
+class TypedEdgeApply(EdgeApply, TypedInstance):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        existing_version: int | None = None,
+    ) -> None:
+        super().__init__(space, external_id, type, start_node, end_node, existing_version, None)
+
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return set(TypedEdgeApply._get_constructor_parameters().keys())
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        sources = resource.pop("sources", [])
+        properties = sources[0].get("properties", {}) if sources else {}
+        return cls._load_instance(resource, properties)
+
+    @property
+    def sources(self) -> list[NodeOrEdgeData]:
+        return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
+
+
+class TypedNode(Node, TypedInstance):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        deleted_time: int | None,
+        type: DirectRelationReference | tuple[str, str] | None,
+    ) -> None:
+        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return set(TypedNode._get_constructor_parameters().keys())
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
+        properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+        return cls._load_instance(resource, properties)
+
+    @property
+    def properties(self) -> Properties:
+        return Properties({self.get_source(): self._dump_properties()})
+
+
+class TypedEdge(Edge, TypedInstance):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        type: DirectRelationReference | tuple[str, str],
+        last_updated_time: int,
+        created_time: int,
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
+        deleted_time: int | None,
+    ) -> None:
+        super().__init__(
+            space,
+            external_id,
+            version,
+            type,
+            last_updated_time,
+            created_time,
+            start_node,
+            end_node,
+            deleted_time,
+            properties=None,
+        )
+
+    @staticmethod
+    @lru_cache(1)
+    def _base_properties() -> set[str]:
+        return set(TypedEdge._get_constructor_parameters().keys())
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        all_properties = resource.pop("properties", {})
+        source = cls.get_source()
+        properties = all_properties.get(source.space, {}).get(source.as_source_identifier(), {})
+        return cls._load_instance(resource, properties)
+
+    @property
+    def properties(self) -> Properties:
+        return Properties({self.get_source(): self._dump_properties()})
+
+
+@lru_cache(32)
+def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> MappingProxyType[str, str]:
+    return MappingProxyType(
+        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
+    )
+
+
+_RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
+_RESERVED_PROPERTY_NAMES = (
+    TypedNodeApply._base_properties()
+    | TypedEdgeApply._base_properties()
+    | TypedNode._base_properties()
+    | TypedEdge._base_properties()
+) | {"instance_type", "existing_version", "_InstanceApply__sources", "_Instance__properties", "_Instance__prop_lookup"}
+
+
+class _PropertyValueSerializer:
+    @classmethod
+    def serialize_values(cls, props: Mapping[str, Any], camel_case: bool = True) -> dict[str, PropertyValue]:
+        properties: dict[str, Any] = {}
+        for key, value in props.items():
+            if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+            if isinstance(value, SequenceNotStr):
+                properties[key] = [cls._serialize_value(v, camel_case) for v in value]
+            else:
+                properties[key] = cls._serialize_value(value, camel_case)
+        return properties
+
+    @classmethod
+    def _serialize_value(cls, value: Any, camel_case: bool) -> PropertyValue:
+        if isinstance(value, NodeId):
+            # We don't want to dump the instance_type field when serializing NodeId in this context
+            return value.dump(camel_case, include_instance_type=False)
+        elif isinstance(value, DirectRelationReference):
+            return value.dump(camel_case)
+        elif isinstance(value, datetime):
+            return value.isoformat(timespec="milliseconds")
+        elif isinstance(value, date):
+            return value.isoformat()
+        else:
+            return value

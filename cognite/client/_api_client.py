@@ -7,7 +7,6 @@ import logging
 import re
 import warnings
 from collections import UserList
-from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -27,6 +26,7 @@ from urllib.parse import urljoin
 
 import requests.utils
 from requests import Response
+from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
@@ -63,6 +63,7 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
+from cognite.client.utils._json import JSONDecodeError
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -1338,7 +1339,7 @@ class APIClient:
     def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
-        except JSONDecodeError:
+        except (JSONDecodeError, RequestsJSONDecodeError):
             pass
 
         try:
