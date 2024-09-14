@@ -930,13 +930,13 @@ class InstancesAPI(APIClient):
                 >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
                 >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
 
-            Create a typed node. Any property that you want to look up by a different attribute name, e.g. you want
+            Create a typed node apply. Any property that you want to look up by a different attribute name, e.g. you want
             `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
             We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import TypedNodeApply, PropertyOptions
-                >>> class Person(TypedNodeApply):
+                >>> class PersonApply(TypedNodeApply):
                 ...     birth_year = PropertyOptions(identifier="birthYear")
                 ...
                 ...     def __init__(self, space: str, external_id, name: str, birth_year: int):
@@ -946,7 +946,7 @@ class InstancesAPI(APIClient):
                 ...     def get_source(self):
                 ...         return ViewId("sp_model_space", "Person", "v1")
                 ...
-                >>> person = Person("sp_date_space", "my_person", "John Doe", 1980)
+                >>> person = PersonApply("sp_date_space", "my_person", "John Doe", 1980)
                 >>> res = client.data_modeling.instances.apply(nodes=person)
         """
         other_parameters = {
