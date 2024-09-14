@@ -26,6 +26,7 @@ from cognite.client.data_classes.data_modeling.instances import (
 
 class PersonProperties:
     birth_date = PropertyOptions(identifier="birthDate")
+    conflicting_with_reserved_property = PropertyOptions(identifier="type")
 
 
 class Person(TypedNodeApply, PersonProperties):
@@ -37,6 +38,7 @@ class Person(TypedNodeApply, PersonProperties):
         birth_date: date,
         email: str,
         siblings: list[DirectRelationReference] | None = None,
+        conflicting_with_reserved_property: str | None = None,
     ) -> None:
         super().__init__(
             space,
@@ -47,6 +49,7 @@ class Person(TypedNodeApply, PersonProperties):
         self.birth_date = birth_date
         self.email = email
         self.siblings = siblings
+        self.conflicting_with_reserved_property = conflicting_with_reserved_property
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -111,6 +114,7 @@ class PersonRead(TypedNode, PersonProperties):
         birth_date: date,
         email: str,
         siblings: list[DirectRelationReference] | None = None,
+        conflicting_with_reserved_property: str | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -119,6 +123,7 @@ class PersonRead(TypedNode, PersonProperties):
         self.birth_date = birth_date
         self.email = email
         self.siblings = siblings
+        self.conflicting_with_reserved_property = conflicting_with_reserved_property
 
     def as_write(self) -> Person:
         return Person(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
@@ -157,6 +162,7 @@ class TestTypedNodeApply:
                         "birthDate": "1990-01-01",
                         "email": "example@cognite.com",
                         "siblings": None,
+                        "type": None,
                     },
                 }
             ],
@@ -242,6 +248,7 @@ class TestTypedNode:
                             {"space": "sp_data_space", "externalId": "brother"},
                             {"space": "sp_data_space", "externalId": "sister"},
                         ],
+                        "type": None,
                     },
                 }
             },
@@ -259,7 +266,15 @@ class TestTypedNode:
         import pandas as pd
 
         person = PersonRead(
-            "sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com"
+            "sp_my_fixed_space",
+            "my_external_id",
+            1,
+            0,
+            0,
+            "John Doe",
+            date(1990, 1, 1),
+            "john@doe.com",
+            type=DirectRelationReference("sp_model_space", "person"),
         )
         df = person.to_pandas(expand_properties=True)
         expected_df = pd.Series(
@@ -270,10 +285,12 @@ class TestTypedNode:
                 "last_updated_time": pd.Timestamp("1970-01-01"),
                 "created_time": pd.Timestamp("1970-01-01"),
                 "instance_type": "node",
+                "type": {"space": "sp_model_space", "external_id": "person"},
                 "name": "John Doe",
                 "birth_date": "1990-01-01",
                 "email": "john@doe.com",
                 "siblings": None,
+                "conflicting_with_reserved_property": None,
             },
         ).to_frame(name="value")
         pd.testing.assert_frame_equal(df, expected_df)
@@ -282,11 +299,23 @@ class TestTypedNode:
     def test_to_pandas_list(self) -> None:
         import pandas as pd
 
-        person = NodeList[PersonRead](
-            [PersonRead("sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com")]
+        persons = NodeList[PersonRead](
+            [
+                PersonRead(
+                    "sp_my_fixed_space",
+                    "my_external_id",
+                    1,
+                    0,
+                    0,
+                    "John Doe",
+                    date(1990, 1, 1),
+                    "john@doe.com",
+                    type=DirectRelationReference("sp_model_space", "person"),
+                )
+            ]
         )
 
-        df = person.to_pandas(expand_properties=True)
+        df = persons.to_pandas(expand_properties=True)
 
         pd.testing.assert_frame_equal(
             df,
@@ -298,10 +327,12 @@ class TestTypedNode:
                     "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
                     "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
                     "instance_type": ["node"],
+                    "type": [{"space": "sp_model_space", "external_id": "person"}],
                     "name": ["John Doe"],
-                    "birthDate": ["1990-01-01"],
+                    "birth_date": ["1990-01-01"],
                     "email": ["john@doe.com"],
                     "siblings": None,
+                    "conflicting_with_reserved_property": None,
                 }
             ),
         )
@@ -395,16 +426,12 @@ class TestCDMv1Classes:
             assert df.index[1] == xid
             assert df.at["type", "value"] == {"space": "should-be", xid: "at-root"}
 
-        assert not read_expanded_df.index.is_unique  # because 'type' is repeated
-        expected_type_df = pd.DataFrame(
-            [
-                ({"space": "should-be", xid: "at-root"},),
-                ({"space": "should-be", "externalId": "in-properties"},),
-            ],
-            columns=["value"],
-            index=["type", "type"],
+        expected_type_series = pd.Series(
+            [{"space": "should-be", xid: "at-root"}],
+            index=["value"],
+            name="type",
         )
-        pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
+        pd.testing.assert_series_equal(read_expanded_df.loc["type"], expected_type_series)
         assert "source_created_time" in read_expanded_df.index
 
 
