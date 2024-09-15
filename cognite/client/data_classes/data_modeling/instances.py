@@ -9,7 +9,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
-from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -465,7 +464,8 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
                 if isinstance(self, TypedInstance):
-                    prop_df.rename(columns=_get_descriptor_property_name_mapping(type(self)), inplace=True)
+                    attr_name_mapping = self._get_descriptor_property_name_mapping()
+                    prop_df.rename(columns=attr_name_mapping, inplace=True)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -1025,6 +1025,9 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
             # We only do/allow this if we have a single source:
             if not extra:
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+                if len(self) > 0 and isinstance(self[0], TypedInstance):
+                    attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
+                    prop_df.rename(columns=attr_name_mapping, inplace=True)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property columns as multiple sources exist",
@@ -1537,6 +1540,20 @@ class TypedInstance(ABC):
 
     @classmethod
     @lru_cache(32)
+    def _get_descriptor_property_name_mapping(cls) -> dict[str, str]:
+        name_mapping = {}
+        for base_class in cls.__mro__[:-1]:
+            for k, v in vars(base_class).items():
+                if isinstance(v, PropertyOptions):
+                    if v.name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+                        name = v.name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+                    else:
+                        name = v.name
+                    name_mapping[name] = k
+        return name_mapping
+
+    @classmethod
+    @lru_cache(32)
     def _get_user_defined_typed_instance_base_classes(cls) -> list[type]:
         # We want to exclude TypedInstance and its direct subclasses and all its superclasses.
         # So, only the base classes up to TypedNode, TypedNodeApply, etc...
@@ -1701,13 +1718,6 @@ class TypedEdge(Edge, TypedInstance):
     @property
     def properties(self) -> Properties:
         return Properties({self.get_source(): self._dump_properties()})
-
-
-@lru_cache(32)
-def _get_descriptor_property_name_mapping(typed_cls: type[TypedInstance]) -> MappingProxyType[str, str]:
-    return MappingProxyType(
-        {v.name: k for cls in typed_cls.__mro__[:-1] for k, v in cls.__dict__.items() if isinstance(v, PropertyOptions)}
-    )
 
 
 _RESERVED_PROPERTY_CONFLICT_PREFIX = "__________"
