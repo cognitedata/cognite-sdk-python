@@ -408,8 +408,6 @@ class TestCDMv1Classes:
     def test_cognite_asset_read_and_write__to_pandas(
         self, cognite_asset_kwargs: dict[str, Any], camel_case: bool
     ) -> None:
-        import pandas as pd
-
         # When calling to_pandas, `use_attribute_name = not camel_case` due to how we expect
         # attributes to be snake cased in python (in general).
         asset_write = CogniteAssetApply(**cognite_asset_kwargs)
@@ -421,18 +419,13 @@ class TestCDMv1Classes:
         read_expanded_df = asset_read.to_pandas(expand_properties=True, camel_case=camel_case)
 
         xid = "externalId" if camel_case else "external_id"
-        for df in [write_df, read_df]:
+        for df in [write_df, read_df, read_expanded_df]:
             assert df.index.is_unique
             assert df.index[1] == xid
             assert df.at["type", "value"] == {"space": "should-be", xid: "at-root"}
 
-        expected_type_series = pd.Series(
-            [{"space": "should-be", xid: "at-root"}],
-            index=["value"],
-            name="type",
-        )
-        pd.testing.assert_series_equal(read_expanded_df.loc["type"], expected_type_series)
         assert "source_created_time" in read_expanded_df.index
+        assert "asset_type" in read_expanded_df.index
 
 
 @pytest.mark.parametrize(
