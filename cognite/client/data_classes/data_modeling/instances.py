@@ -411,13 +411,10 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
             "createdTime" if camel_case else "created_time": self.created_time,
             "instanceType" if camel_case else "instance_type": self.instance_type,
+            "properties": self.properties.dump(),
         }
         if self.deleted_time is not None:
             dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
-        if self.properties:
-            dumped["properties"] = self.properties.dump()
-        else:
-            dumped["properties"] = {}
         return dumped
 
     def to_pandas(  # type: ignore [override]
@@ -466,7 +463,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
                 if isinstance(self, TypedInstance):
                     attr_name_mapping = self._get_descriptor_property_name_mapping()
-                    prop_df.rename(columns=attr_name_mapping, inplace=True)
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -1028,7 +1025,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
                 if len(self) > 0 and isinstance(self[0], TypedInstance):
                     attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
-                    prop_df.rename(columns=attr_name_mapping, inplace=True)
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property columns as multiple sources exist",
@@ -1610,7 +1607,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, existing_version, None, type)
+        super().__init__(space, external_id, existing_version, type=type)
 
     @staticmethod
     @lru_cache(1)
@@ -1638,7 +1635,7 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
         end_node: DirectRelationReference | tuple[str, str],
         existing_version: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, type, start_node, end_node, existing_version, None)
+        super().__init__(space, external_id, type, start_node, end_node, existing_version)
 
     @staticmethod
     @lru_cache(1)
@@ -1667,7 +1664,9 @@ class TypedNode(Node, TypedInstance):
         deleted_time: int | None,
         type: DirectRelationReference | tuple[str, str] | None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        super().__init__(
+            space, external_id, version, last_updated_time, created_time, deleted_time, properties=None, type=type
+        )
 
     @staticmethod
     @lru_cache(1)
@@ -1750,8 +1749,8 @@ class _PropertyValueSerializer:
                 properties[key] = cls._serialize_value(value, camel_case)
         return properties
 
-    @classmethod
-    def _serialize_value(cls, value: Any, camel_case: bool) -> PropertyValue:
+    @staticmethod
+    def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
         if isinstance(value, NodeId):
             # We don't want to dump the instance_type field when serializing NodeId in this context
             return value.dump(camel_case, include_instance_type=False)
