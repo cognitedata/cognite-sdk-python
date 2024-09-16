@@ -13,7 +13,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteAsset,
     CogniteAssetApply,
-    CogniteDescribableEdgeApply,
+    CogniteDescribableEdge,
 )
 from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
@@ -29,7 +29,7 @@ class PersonProperties:
     conflicting_with_reserved_property = PropertyOptions(identifier="type")
 
 
-class Person(TypedNodeApply, PersonProperties):
+class PersonApply(TypedNodeApply, PersonProperties):
     def __init__(
         self,
         space: str,
@@ -125,8 +125,8 @@ class PersonRead(TypedNode, PersonProperties):
         self.siblings = siblings
         self.conflicting_with_reserved_property = conflicting_with_reserved_property
 
-    def as_write(self) -> Person:
-        return Person(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
+    def as_write(self) -> PersonApply:
+        return PersonApply(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -148,7 +148,7 @@ class Asset(TypedNodeApply):
 
 class TestTypedNodeApply:
     def test_dump_person(self) -> None:
-        person = Person("sp_my_fixed_space", "my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
+        person = PersonApply("sp_my_fixed_space", "my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
@@ -169,7 +169,7 @@ class TestTypedNodeApply:
         }
 
         assert person.dump() == expected
-        loaded = Person.load(expected)
+        loaded = PersonApply.load(expected)
         assert person.dump() == loaded.dump()
 
     def test_dump_load_asset(self) -> None:
@@ -432,39 +432,50 @@ class TestCDMv1Classes:
     "name, instance",
     (
         (
-            "CogniteAssetApply",
-            CogniteAssetApply(
+            "CogniteAsset",
+            CogniteAsset(
                 space="foo",
                 external_id="child",
-                parent=("foo", "I-am-root"),
+                parent=DirectRelationReference("foo", "I-am-root"),
+                version=1,
+                last_updated_time=10,
+                created_time=5,
+                aliases=["yo"],
             ),
         ),
         (
-            "CogniteDescribableEdgeApply",
-            CogniteDescribableEdgeApply(
+            "CogniteDescribableEdge",
+            CogniteDescribableEdge(
                 space="foo",
                 external_id="indescribable",
                 type=DirectRelationReference("foo", "yo"),
                 start_node=DirectRelationReference("foo", "yo2"),
                 end_node=DirectRelationReference("foo", "yo3"),
+                version=1,
+                last_updated_time=10,
+                created_time=5,
+                aliases=["yo"],
             ),
         ),
     ),
 )
 def test_typed_instances_overrides_inherited_methods_from_instance_cls(
-    name: str, instance: TypedNode | TypedEdge
+    name: str, instance: CogniteAsset | CogniteDescribableEdge
 ) -> None:
-    with pytest.raises(AttributeError, match=f"{name!r} object has no attribute 'get'"):
-        instance.get("space")
+    assert instance.aliases
 
-    with pytest.raises(TypeError, match=f"{name!r} object is not subscriptable"):
-        instance["foo"]
+    match_str = "^For typed instances, use direct attribute access: `instance.{}`$"
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance.get("aliases")
 
-    with pytest.raises(TypeError, match=f"{name!r} object does not support item assignment"):
-        instance["foo"] = "bar"
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance["aliases"]
 
-    with pytest.raises(TypeError, match=f"{name!r} object does not support item deletion"):
-        del instance["external_id"]
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance["aliases"] = "bar"
 
-    with pytest.raises(TypeError, match=f"argument of type {name!r} is not iterable"):
-        "foo" in instance
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        del instance["aliases"]
+
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        "aliases" in instance
