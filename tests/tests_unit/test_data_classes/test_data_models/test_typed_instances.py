@@ -215,22 +215,27 @@ class TestTypedEdgeApply:
         assert flow.dump() == loaded.dump()
 
 
+@pytest.fixture
+def person_read() -> PersonRead:
+    return PersonRead(
+        "sp_my_fixed_space",
+        "my_external_id",
+        1,
+        0,
+        0,
+        "John Doe",
+        date(1990, 1, 1),
+        "john@doe.com",
+        type=DirectRelationReference("sp_model_space", "person"),
+    )
+
+
 class TestTypedNode:
-    def test_dump_load_person(self) -> None:
-        person = PersonRead(
-            "sp_my_fixed_space",
-            "my_external_id",
-            1,
-            0,
-            0,
-            "John Doe",
-            date(1990, 1, 1),
-            "example@email.com",
-            siblings=[
-                DirectRelationReference("sp_data_space", "brother"),
-                DirectRelationReference("sp_data_space", "sister"),
-            ],
-        )
+    def test_dump_load_person(self, person_read: PersonRead) -> None:
+        person_read.siblings = [
+            DirectRelationReference("sp_data_space", "brother"),
+            DirectRelationReference("sp_data_space", "sister"),
+        ]
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
@@ -243,7 +248,7 @@ class TestTypedNode:
                     "view_id/1": {
                         "name": "John Doe",
                         "birthDate": "1990-01-01",
-                        "email": "example@email.com",
+                        "email": "john@doe.com",
                         "siblings": [
                             {"space": "sp_data_space", "externalId": "brother"},
                             {"space": "sp_data_space", "externalId": "sister"},
@@ -252,31 +257,22 @@ class TestTypedNode:
                     },
                 }
             },
+            "type": {"space": "sp_model_space", "externalId": "person"},
         }
 
-        actual = person.dump()
+        actual = person_read.dump()
         assert actual == expected
         loaded = PersonRead.load(expected)
-        assert person == loaded
+        assert person_read == loaded
         assert isinstance(loaded.birth_date, date)
-        assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings or [])
+        assert loaded.siblings is not None
+        assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings)
 
     @pytest.mark.dsl
-    def test_to_pandas(self) -> None:
+    def test_to_pandas(self, person_read: PersonRead) -> None:
         import pandas as pd
 
-        person = PersonRead(
-            "sp_my_fixed_space",
-            "my_external_id",
-            1,
-            0,
-            0,
-            "John Doe",
-            date(1990, 1, 1),
-            "john@doe.com",
-            type=DirectRelationReference("sp_model_space", "person"),
-        )
-        df = person.to_pandas(expand_properties=True)
+        df = person_read.to_pandas(expand_properties=True)
         expected_df = pd.Series(
             {
                 "space": "sp_my_fixed_space",
@@ -296,25 +292,10 @@ class TestTypedNode:
         pd.testing.assert_frame_equal(df, expected_df)
 
     @pytest.mark.dsl
-    def test_to_pandas_list(self) -> None:
+    def test_to_pandas_list(self, person_read: PersonRead) -> None:
         import pandas as pd
 
-        persons = NodeList[PersonRead](
-            [
-                PersonRead(
-                    "sp_my_fixed_space",
-                    "my_external_id",
-                    1,
-                    0,
-                    0,
-                    "John Doe",
-                    date(1990, 1, 1),
-                    "john@doe.com",
-                    type=DirectRelationReference("sp_model_space", "person"),
-                )
-            ]
-        )
-
+        persons = NodeList[PersonRead]([person_read])
         df = persons.to_pandas(expand_properties=True)
 
         pd.testing.assert_frame_equal(
