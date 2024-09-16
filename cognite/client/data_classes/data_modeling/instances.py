@@ -351,13 +351,16 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.deleted_time = deleted_time
         self.__properties: Properties = properties or Properties({})
 
-        if len(self.properties) == 1:
+        if not isinstance(self, TypedInstance) and len(self.properties) == 1:
             (self.__prop_lookup,) = self.properties.values()
         else:
             # For speed, we want this to fail (to avoid LBYL pattern):
             self.__prop_lookup = None  # type: ignore [assignment]
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        if isinstance(self, TypedInstance):
+            raise AttributeError(f"For typed instances, use direct attribute access: `instance.{attr}`")
+
         err_msg = "Quick property access is only possible on instances from a single source."
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
