@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -157,7 +158,7 @@ class InstanceCore(DataModelingResource, ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal["node", "edge"]): The type of instance.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
@@ -179,7 +180,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal["node", "edge"]): The type of instance.
         existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
@@ -324,7 +325,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        version (int): DMS version.
+        version (int): Current version of the instance.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         instance_type (Literal["node", "edge"]): The type of instance.
@@ -350,13 +351,16 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         self.deleted_time = deleted_time
         self.__properties: Properties = properties or Properties({})
 
-        if len(self.properties) == 1:
+        if not isinstance(self, TypedInstance) and len(self.properties) == 1:
             (self.__prop_lookup,) = self.properties.values()
         else:
             # For speed, we want this to fail (to avoid LBYL pattern):
             self.__prop_lookup = None  # type: ignore [assignment]
 
     def __raise_if_non_singular_source(self, attr: str) -> NoReturn:
+        if isinstance(self, TypedInstance):
+            raise AttributeError(f"For typed instances, use direct attribute access: `instance.{attr}`")
+
         err_msg = "Quick property access is only possible on instances from a single source."
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
@@ -410,13 +414,10 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
             "createdTime" if camel_case else "created_time": self.created_time,
             "instanceType" if camel_case else "instance_type": self.instance_type,
+            "properties": self.properties.dump(),
         }
         if self.deleted_time is not None:
             dumped["deletedTime" if camel_case else "deleted_time"] = self.deleted_time
-        if self.properties:
-            dumped["properties"] = self.properties.dump()
-        else:
-            dumped["properties"] = {}
         return dumped
 
     def to_pandas(  # type: ignore [override]
@@ -465,7 +466,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
                 if isinstance(self, TypedInstance):
                     attr_name_mapping = self._get_descriptor_property_name_mapping()
-                    prop_df.rename(columns=attr_name_mapping, inplace=True)
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -606,13 +607,13 @@ class NodeApply(InstanceApply["NodeApply"]):
         return self
 
 
-class Node(Instance["NodeApply"]):
+class Node(Instance[NodeApply]):
     """A node. This is the read version of the node.
 
     Args:
         space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        version (int): DMS version.
+        version (int): Current version of the node.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -688,7 +689,7 @@ class NodeApplyResult(InstanceApplyResult):
     Args:
         space (str): The workspace for the node, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        version (int): DMS version of the node.
+        version (int): Current version of the node.
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -746,13 +747,9 @@ class EdgeApply(InstanceApply["EdgeApply"]):
         sources: list[NodeOrEdgeData] | None = None,
     ) -> None:
         super().__init__(space, external_id, "edge", existing_version, sources)
-        self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
-        self.start_node = (
-            start_node if isinstance(start_node, DirectRelationReference) else DirectRelationReference.load(start_node)
-        )
-        self.end_node = (
-            end_node if isinstance(end_node, DirectRelationReference) else DirectRelationReference.load(end_node)
-        )
+        self.type = DirectRelationReference.load(type)
+        self.start_node = DirectRelationReference.load(start_node)
+        self.end_node = DirectRelationReference.load(end_node)
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
@@ -792,7 +789,7 @@ class Edge(Instance[EdgeApply]):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        version (int): DMS version.
+        version (int): Current version of the edge.
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -881,7 +878,7 @@ class EdgeApplyResult(InstanceApplyResult):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        version (int): DMS version.
+        version (int): Current version of the edge.
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -1027,7 +1024,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
                 prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
                 if len(self) > 0 and isinstance(self[0], TypedInstance):
                     attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
-                    prop_df.rename(columns=attr_name_mapping, inplace=True)
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property columns as multiple sources exist",
@@ -1454,28 +1451,38 @@ class PropertyOptions:
     def __init__(self, identifier: str | None = None) -> None:
         self.name = cast(str, identifier)  # mypy help, set_name guarantees str
 
-    def __set_name__(self, owner: type, name: str) -> None:
-        self.name = self.name or name
+    def __set_name__(self, owner: type, attribute_name: str) -> None:
+        self.name = self.name or attribute_name
         if self.name in _RESERVED_PROPERTY_NAMES:
-            self.name = f"{_RESERVED_PROPERTY_CONFLICT_PREFIX}{self.name}"
+            self.name = _RESERVED_PROPERTY_CONFLICT_PREFIX + self.name
 
-    def __get__(self, instance: Any, owner: type) -> Any:
+    def __get__(self, instance: TypedInstance, owner: type) -> Any:
         try:
             return instance.__dict__[self.name]
         except KeyError:
             raise AttributeError(f"'{owner.__name__}' object has no attribute '{self.name}'")
 
-    def __set__(self, instance: Any, value: Any) -> None:
+    def __set__(self, instance: TypedInstance, value: Any) -> None:
         try:
             instance.__dict__[self.name] = value
         except KeyError:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
 
-    def __delete__(self, instance: Any) -> None:
+    def __delete__(self, instance: TypedInstance) -> None:
         try:
             del instance.__dict__[self.name]
         except KeyError:
             raise AttributeError(f"'{instance.__class__.__name__}' object has no attribute '{self.name}'")
+
+    @property
+    def property_name(self) -> str:
+        return self.resolve_property(self.name)
+
+    @staticmethod
+    def resolve_property(name: str) -> str:
+        if name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
+            return name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+        return name
 
 
 class TypedInstance(ABC):
@@ -1530,27 +1537,22 @@ class TypedInstance(ABC):
             if name in resource:
                 output[name] = cls._deserialize_values(resource[name], parameter)
             elif name in property_by_name:
-                property_name = property_by_name[name].name
-                if property_name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                    property_name = property_name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-                if property_name in resource:
-                    output[name] = cls._deserialize_values(resource[property_name], parameter)
-
+                prop = property_by_name[name].property_name
+                if prop in resource:
+                    output[name] = cls._deserialize_values(resource[prop], parameter)
         return output
 
     @classmethod
     @lru_cache(32)
-    def _get_descriptor_property_name_mapping(cls) -> dict[str, str]:
-        name_mapping = {}
-        for base_class in cls.__mro__[:-1]:
-            for k, v in vars(base_class).items():
-                if isinstance(v, PropertyOptions):
-                    if v.name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                        name = v.name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-                    else:
-                        name = v.name
-                    name_mapping[name] = k
-        return name_mapping
+    def _get_descriptor_property_name_mapping(cls) -> MappingProxyType[str, str]:
+        return MappingProxyType(
+            {
+                v.property_name: k
+                for base_class in cls.__mro__[:-1]
+                for k, v in vars(base_class).items()
+                if isinstance(v, PropertyOptions)
+            }
+        )
 
     @classmethod
     @lru_cache(32)
@@ -1572,6 +1574,7 @@ class TypedInstance(ABC):
     @classmethod
     def _deserialize_values(cls, value: Any, parameter: inspect.Parameter) -> Any:
         if isinstance(value, SequenceNotStr):
+            # TODO, performance: Deserialize list of values should not inspect parameter/value repeatedly
             return [cls._deserialize_value(v, parameter) for v in value]
         else:
             return cls._deserialize_value(value, parameter)
@@ -1585,11 +1588,13 @@ class TypedInstance(ABC):
             return convert_data_modelling_timestamp(value)
         elif "date" in annotation and isinstance(value, str):
             return date.fromisoformat(value)
-        elif DirectRelationReference.__name__ in annotation and isinstance(value, dict):
-            return DirectRelationReference.load(value)
-        elif NodeId.__name__ in annotation and isinstance(value, dict):
-            return NodeId.load(value)
-
+        elif isinstance(value, dict):
+            if DirectRelationReference.__name__ in annotation:
+                return DirectRelationReference.load(value)
+            elif NodeId.__name__ in annotation:
+                return NodeId.load(value)
+            elif EdgeId.__name__ in annotation:
+                return EdgeId.load(value)
         return value
 
 
@@ -1601,7 +1606,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        super().__init__(space, external_id, existing_version, None, type)
+        super().__init__(space, external_id, existing_version, type=type)
 
     @staticmethod
     @lru_cache(1)
@@ -1629,7 +1634,7 @@ class TypedEdgeApply(EdgeApply, TypedInstance):
         end_node: DirectRelationReference | tuple[str, str],
         existing_version: int | None = None,
     ) -> None:
-        super().__init__(space, external_id, type, start_node, end_node, existing_version, None)
+        super().__init__(space, external_id, type, start_node, end_node, existing_version)
 
     @staticmethod
     @lru_cache(1)
@@ -1658,7 +1663,9 @@ class TypedNode(Node, TypedInstance):
         deleted_time: int | None,
         type: DirectRelationReference | tuple[str, str] | None,
     ) -> None:
-        super().__init__(space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        super().__init__(
+            space, external_id, version, last_updated_time, created_time, deleted_time, properties=None, type=type
+        )
 
     @staticmethod
     @lru_cache(1)
@@ -1734,16 +1741,15 @@ class _PropertyValueSerializer:
     def serialize_values(cls, props: Mapping[str, Any], camel_case: bool = True) -> dict[str, PropertyValue]:
         properties: dict[str, Any] = {}
         for key, value in props.items():
-            if key.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                key = key[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
+            key = PropertyOptions.resolve_property(key)
             if isinstance(value, SequenceNotStr):
                 properties[key] = [cls._serialize_value(v, camel_case) for v in value]
             else:
                 properties[key] = cls._serialize_value(value, camel_case)
         return properties
 
-    @classmethod
-    def _serialize_value(cls, value: Any, camel_case: bool) -> PropertyValue:
+    @staticmethod
+    def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:
         if isinstance(value, NodeId):
             # We don't want to dump the instance_type field when serializing NodeId in this context
             return value.dump(camel_case, include_instance_type=False)
