@@ -268,10 +268,9 @@ class ViewsAPI(APIClient):
                 ...     version="1",
                 ...     name="Movie",
                 ...     properties={
-                ...         "name": MappedPropertyApply(
-                ...             container=ContainerId("imdb", "Movie"),
-                ...             name="name",
-                ...             container_property_identifier="name",
+                ...         "title": MappedPropertyApply(
+                ...             container=ContainerId(space="imdb", external_id="Movie"),
+                ...             container_property_identifier="title",
                 ...         ),
                 ...         "actors": MultiEdgeConnectionApply(
                 ...             type=DirectRelationReference(
@@ -296,11 +295,11 @@ class ViewsAPI(APIClient):
                 ...         ),
                 ...         "movies": MultiEdgeConnectionApply(
                 ...             type=DirectRelationReference(
-                ...                 space="imdb", external_id="Movie.actors"
+                ...                 space="imdb", external_id="Role.movies"
                 ...             ),
                 ...             source=ViewId("imdb", "Movie", "1"),
                 ...             name="movies",
-                ...             direction="inwards",
+                ...             direction="outwards",
                 ...         ),
                 ...     }
                 ... )
