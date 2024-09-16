@@ -120,12 +120,6 @@ class SourceUpdate(CogniteUpdate, ABC):
             return []
         return _SOURCE_UPDATE_BY_TYPE[item._type]._get_update_properties(item)
 
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        if not isinstance(item, SourceWrite):
-            return {}
-        return {"type": item._type}
-
 
 class EventHubSourceWrite(SourceWrite):
     """A hosted extractor source represents an external source system on the internet.
