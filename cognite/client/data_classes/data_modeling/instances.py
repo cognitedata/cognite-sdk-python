@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1547,17 +1548,15 @@ class TypedInstance(ABC):
 
     @classmethod
     @lru_cache(32)
-    def _get_descriptor_property_name_mapping(cls) -> dict[str, str]:
-        name_mapping = {}
-        for base_class in cls.__mro__[:-1]:
-            for k, v in vars(base_class).items():
-                if isinstance(v, PropertyOptions):
-                    if v.name.startswith(_RESERVED_PROPERTY_CONFLICT_PREFIX):
-                        name = v.name[len(_RESERVED_PROPERTY_CONFLICT_PREFIX) :]
-                    else:
-                        name = v.name
-                    name_mapping[name] = k
-        return name_mapping
+    def _get_descriptor_property_name_mapping(cls) -> MappingProxyType[str, str]:
+        return MappingProxyType(
+            {
+                v.property_name: k
+                for base_class in cls.__mro__[:-1]
+                for k, v in vars(base_class).items()
+                if isinstance(v, PropertyOptions)
+            }
+        )
 
     @classmethod
     @lru_cache(32)
