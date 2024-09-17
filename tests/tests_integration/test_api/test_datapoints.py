@@ -2275,7 +2275,7 @@ class TestRetrieveDataFrameAPI:
             assert col == name
 
     def test_column_names_fails(self, cognite_client, one_mill_dps_ts):
-        with pytest.raises(ValueError, match=re.escape("must be one of 'id' or 'external_id'")):
+        with pytest.warns(UserWarning, match=re.escape("must be either 'instance_id', 'external_id' or 'id'")):
             cognite_client.time_series.data.retrieve_dataframe(
                 id=one_mill_dps_ts[0].id, limit=5, column_names="bogus_id"
             )
