@@ -224,7 +224,7 @@ class SourcesAPI(APIClient):
         cls,
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
-        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace",
     ) -> dict[str, dict[str, dict]]:
         output = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
         if hasattr(resource, "_type"):

@@ -1223,7 +1223,7 @@ class APIClient:
         cls,
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
-        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace",
     ) -> dict[str, dict[str, dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
