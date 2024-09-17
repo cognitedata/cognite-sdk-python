@@ -87,7 +87,6 @@ class WorkflowTriggerAPI(APIClient):
                 ...     )
                 ... )
         """
-        self._warning.warn()
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
@@ -116,7 +115,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.delete("my_trigger")
         """
-        self._warning.warn()
         self._post(
             url_path=self._RESOURCE_PATH + "/delete",
             json={"items": [{"externalId": external_id}]},
@@ -142,7 +140,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_triggers()
         """
-        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH,
@@ -173,7 +170,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
         """
-        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH + f"/{external_id}/history",
