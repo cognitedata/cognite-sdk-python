@@ -46,8 +46,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     _DatapointsPayloadItem,
 )
-from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import InstanceId
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -118,15 +117,15 @@ class _FullDatapointsQuery:
 
     @property
     def is_single_identifier(self) -> bool:
-        # No lists given and exactly one of id/xid was given:
-        return (
-            isinstance(self.id, (dict, DatapointsQuery, numbers.Integral))
-            and (self.external_id is None and self.instance_id is None)
-            or isinstance(self.external_id, (dict, DatapointsQuery, str))
-            and (self.id is None and self.instance_id is None)
-            or isinstance(self.instance_id, InstanceId)
-            and (self.id is None and self.external_id is None)
-        )
+        # Exactly one of the identifiers given...
+        if exactly_one_is_not_none(self.external_id, self.id, self.instance_id):
+            # ...and that one is not a sequence:
+            return not (
+                isinstance(self.id, Sequence)
+                or isinstance(self.external_id, SequenceNotStr)
+                or isinstance(self.instance_id, Sequence)
+            )
+        return False
 
     @cached_property
     def top_level_defaults(self) -> dict[str, Any]:
