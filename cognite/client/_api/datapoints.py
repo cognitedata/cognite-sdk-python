@@ -58,7 +58,6 @@ from cognite.client.utils._auxiliary import (
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
@@ -91,9 +90,7 @@ _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
-def select_dps_fetch_strategy(
-    dps_client: DatapointsAPI, full_query: _FullDatapointsQuery, cdf_version: str | None = None
-) -> DpsFetchStrategy:
+def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
     all_queries = full_query.parse_into_queries()
     full_query.validate(all_queries, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG)
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
@@ -101,10 +98,10 @@ def select_dps_fetch_strategy(
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= (max_workers := dps_client._config.max_workers):
         # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, cdf_version)
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
     # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
     # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers, cdf_version)
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
 def split_queries_into_raw_and_aggs(all_queries: _TSQueryList) -> tuple[_TSQueryList, _TSQueryList]:
@@ -122,7 +119,6 @@ class DpsFetchStrategy(ABC):
         agg_queries: _TSQueryList,
         raw_queries: _TSQueryList,
         max_workers: int,
-        cdf_version: str | None = None,
     ) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
@@ -130,7 +126,6 @@ class DpsFetchStrategy(ABC):
         self.raw_queries = raw_queries
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
-        self.cdf_version = cdf_version
 
     def fetch_all_datapoints(self) -> DatapointsList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
@@ -147,10 +142,6 @@ class DpsFetchStrategy(ABC):
         )
 
     def _request_datapoints(self, payload: _DatapointsPayload) -> Sequence[DataPointListItem]:
-        headers: dict | None = None
-        if self.cdf_version:
-            headers = {"cdf-version": self.cdf_version}
-
         (res := DataPointListResponse()).MergeFromString(
             self.dps_client._do_request(
                 json=payload,
@@ -158,7 +149,6 @@ class DpsFetchStrategy(ABC):
                 url_path=f"{self.dps_client._RESOURCE_PATH}/list",
                 accept="application/protobuf",
                 timeout=self.dps_client._config.timeout,
-                headers=headers,
             ).content
         )
         return res.items
@@ -767,14 +757,9 @@ class DatapointsAPI(APIClient):
             ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        cdf_version: str | None = None
-        if instance_id:
-            cdf_version = "alpha"
-            self._use_instance_api()
-
-        fetcher = select_dps_fetch_strategy(self, full_query=query, cdf_version=cdf_version)
-
+        fetcher = select_dps_fetch_strategy(self, full_query=query)
         dps_lst = fetcher.fetch_all_datapoints()
+
         if not query.is_single_identifier:
             return dps_lst
         elif not dps_lst and ignore_unknown_ids:
@@ -1412,16 +1397,7 @@ class DatapointsAPI(APIClient):
 
         post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
         post_dps_object["datapoints"] = datapoints
-        cdf_version: str | None = None
-        if instance_id is not None:
-            self._use_instance_api()
-            cdf_version = "alpha"
-        DatapointsPoster(self, cdf_version).insert([post_dps_object])
-
-    def _use_instance_api(self) -> None:
-        FeaturePreviewWarning(
-            api_maturity="alpha", feature_name="Datapoint with Instance API", sdk_maturity="alpha"
-        ).warn()
+        DatapointsPoster(self).insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
@@ -1484,12 +1460,7 @@ class DatapointsAPI(APIClient):
         """
         if not isinstance(datapoints, Sequence):
             raise ValueError("Input must be a list of dictionaries")
-        cdf_version: str | None = None
-        if any("instance_id" in d or "instanceId" in d for d in datapoints):
-            self._use_instance_api()
-            cdf_version = "alpha"
-
-        DatapointsPoster(self, cdf_version).insert(datapoints)
+        DatapointsPoster(self).insert(datapoints)
 
     def delete_range(
         self,
@@ -1522,12 +1493,8 @@ class DatapointsAPI(APIClient):
             raise ValueError(f"{end=} must be larger than {start=}")
 
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        cdf_version: str | None = None
-        if instance_id is not None:
-            cdf_version = "alpha"
-            self._use_instance_api()
         delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
-        self._delete_datapoints_ranges([delete_dps_object], cdf_version=cdf_version)
+        self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
@@ -1556,11 +1523,8 @@ class DatapointsAPI(APIClient):
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
-    def _delete_datapoints_ranges(self, delete_range_objects: list[dict], cdf_version: str | None = None) -> None:
-        headers: dict | None = None
-        if cdf_version:
-            headers = {"cdf-version": cdf_version}
-        self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects}, headers=headers)
+    def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
+        self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
         """Insert a dataframe (columns must be unique).
@@ -1640,12 +1604,11 @@ class _InsertDatapoint(NamedTuple):
 
 
 class DatapointsPoster:
-    def __init__(self, dps_client: DatapointsAPI, cdf_version: str | None = None) -> None:
+    def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
-        self.cdf_version = cdf_version
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
@@ -1739,8 +1702,6 @@ class DatapointsPoster:
         for dct in payload:
             dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
         headers: dict[str, str] | None = None
-        if self.cdf_version:
-            headers = {"cdf-version": self.cdf_version}
 
         self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload}, headers=headers)
         for dct in payload:
