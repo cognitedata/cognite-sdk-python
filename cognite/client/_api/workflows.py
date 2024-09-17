@@ -30,7 +30,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -47,15 +46,11 @@ WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
 
 
 def wrap_workflow_ids(
-    workflow_version_ids: (
-        WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None
-    ),
+    workflow_version_ids: (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None),
 ) -> list[dict[str, Any]]:
     if workflow_version_ids is None:
         return []
-    return WorkflowIds.load(workflow_version_ids).dump(
-        camel_case=True, as_external_id=True
-    )
+    return WorkflowIds.load(workflow_version_ids).dump(camel_case=True, as_external_id=True)
 
 
 class WorkflowTriggerAPI(APIClient):
@@ -314,9 +309,7 @@ class WorkflowExecutionAPI(APIClient):
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.run(
-            workflow_external_id, version, input, metadata, client_credentials
-        )
+        return self.run(workflow_external_id, version, input, metadata, client_credentials)
 
     def run(
         self,
@@ -392,11 +385,7 @@ class WorkflowExecutionAPI(APIClient):
 
     def list(
         self,
-        workflow_version_ids: (
-            WorkflowVersionIdentifier
-            | MutableSequence[WorkflowVersionIdentifier]
-            | None
-        ) = None,
+        workflow_version_ids: (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None) = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
         statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
@@ -489,9 +478,7 @@ class WorkflowExecutionAPI(APIClient):
 
         return WorkflowExecution._load(response.json())
 
-    def retry(
-        self, id: str, client_credentials: ClientCredentials | None = None
-    ) -> WorkflowExecution:
+    def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
         """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
 
         Args:
@@ -538,9 +525,7 @@ class WorkflowVersionAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        workflow_version_ids: (
-            WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None
-        ) = None,
+        workflow_version_ids: (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None) = None,
         limit: int | None = None,
     ) -> Iterator[WorkflowVersion]: ...
 
@@ -548,18 +533,14 @@ class WorkflowVersionAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        workflow_version_ids: (
-            WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None
-        ) = None,
+        workflow_version_ids: (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None) = None,
         limit: int | None = None,
     ) -> Iterator[WorkflowVersionList]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
-        workflow_version_ids: (
-            WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None
-        ) = None,
+        workflow_version_ids: (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None) = None,
         limit: int | None = None,
     ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
         """Iterate over workflow versions
@@ -585,9 +566,7 @@ class WorkflowVersionAPI(APIClient):
         """Iterate all over workflow versions"""
         return self()
 
-    def upsert(
-        self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace"
-    ) -> WorkflowVersion:
+    def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
@@ -627,9 +606,7 @@ class WorkflowVersionAPI(APIClient):
                 >>> res = client.workflows.versions.upsert(new_version)
         """
         if mode != "replace":
-            raise ValueError(
-                "Only replace mode is supported for upserting workflow versions."
-            )
+            raise ValueError("Only replace mode is supported for upserting workflow versions.")
 
         response = self._post(
             url_path=self._RESOURCE_PATH,
@@ -640,9 +617,7 @@ class WorkflowVersionAPI(APIClient):
 
     def delete(
         self,
-        workflow_version_id: (
-            WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]
-        ),
+        workflow_version_id: (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]),
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
@@ -674,9 +649,7 @@ class WorkflowVersionAPI(APIClient):
             wrap_ids=True,
         )
 
-    def retrieve(
-        self, workflow_external_id: str, version: str
-    ) -> WorkflowVersion | None:
+    def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
         """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
@@ -707,9 +680,7 @@ class WorkflowVersionAPI(APIClient):
 
     def list(
         self,
-        workflow_version_ids: (
-            WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None
-        ) = None,
+        workflow_version_ids: (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None) = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
         """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_
@@ -769,9 +740,7 @@ class WorkflowAPI(APIClient):
         self._DELETE_LIMIT = 100
 
     @overload
-    def __call__(
-        self, chunk_size: None = None, limit: None = None
-    ) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: None = None, limit: None = None) -> Iterator[Workflow]: ...
 
     @overload
     def __call__(self, chunk_size: int, limit: None) -> Iterator[Workflow]: ...
@@ -801,9 +770,7 @@ class WorkflowAPI(APIClient):
         """Iterate all over workflows"""
         return self()
 
-    def upsert(
-        self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace"
-    ) -> Workflow:
+    def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
@@ -851,18 +818,14 @@ class WorkflowAPI(APIClient):
                 >>> res = client.workflows.retrieve("my workflow")
         """
         try:
-            response = self._get(
-                url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}"
-            )
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
             raise e
         return Workflow._load(response.json())
 
-    def delete(
-        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
