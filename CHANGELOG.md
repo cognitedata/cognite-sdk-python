@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.60.5] - 2024-09-17
+### Changed
+Remove beta notice on the Data Workflows `WorkflowTriggerAPI`
+
 ## [7.60.4] - 2024-09-15
 ### Added
 Fix bug in column name remapping for `TypedInstance.to_pandas()`
