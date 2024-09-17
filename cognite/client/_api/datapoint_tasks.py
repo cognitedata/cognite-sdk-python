@@ -464,7 +464,10 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
 
 def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
-    instance_id = NodeId(res.instanceId.space, res.instanceId.externalId) if res.instanceId else None
+    if res.instanceId and res.instanceId.space:  # res.instanceId evaluates to True even when empty :eyes:
+        instance_id = NodeId(res.instanceId.space, res.instanceId.externalId)
+    else:
+        instance_id = None
     return {
         "id": res.id,
         "external_id": res.externalId,
