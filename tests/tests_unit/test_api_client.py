@@ -1434,6 +1434,7 @@ class TestHelpers:
                     "dataSetId": {"setNull": True},
                     "description": {"setNull": True},
                     "name": {"set": "bla"},
+                    "metadata": {"set": {}},
                     "securityCategories": {"set": []},
                     "unit": {"setNull": True},
                     "unitExternalId": {"setNull": True},

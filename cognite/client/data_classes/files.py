@@ -487,10 +487,10 @@ class FileMetadataUpdate(CogniteUpdate):
                 # If Instance ID is set, the file was created in DMS. Then, it is
                 # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
                 PropertySpec("external_id"),
-                PropertySpec("metadata", is_container=True),
-                PropertySpec("asset_ids", is_container=True),
+                PropertySpec("metadata", is_object=True),
+                PropertySpec("asset_ids", is_list=True),
                 PropertySpec("data_set_id"),
-                PropertySpec("labels", is_container=True),
+                PropertySpec("labels", is_list=True),
                 PropertySpec("geo_location"),
             ]
 
@@ -500,13 +500,13 @@ class FileMetadataUpdate(CogniteUpdate):
             PropertySpec("directory"),
             PropertySpec("source"),
             PropertySpec("mime_type"),
-            PropertySpec("metadata", is_container=True),
-            PropertySpec("asset_ids", is_container=True),
+            PropertySpec("metadata", is_object=True),
+            PropertySpec("asset_ids", is_list=True),
             PropertySpec("source_created_time"),
             PropertySpec("source_modified_time"),
             PropertySpec("data_set_id"),
-            PropertySpec("security_categories", is_container=True),
-            PropertySpec("labels", is_container=True),
+            PropertySpec("security_categories", is_list=True),
+            PropertySpec("labels", is_list=True),
             PropertySpec("geo_location"),
         ]
 

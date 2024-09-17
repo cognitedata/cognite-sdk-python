@@ -1246,7 +1246,7 @@ class APIClient:
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]
-            if prop.is_container and mode == "patch":
+            if (prop.is_list or prop.is_object) and mode == "patch":
                 update[key] = {"add": value}
             else:
                 update[key] = {"set": value}
@@ -1255,14 +1255,21 @@ class APIClient:
         return patch_object
 
     @staticmethod
-    def _clear_all_attributes(
-        update_attributes: list[PropertySpec],
-    ) -> dict[str, dict]:
-        return {
-            to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
-            for prop in update_attributes
-            if prop.is_nullable and not prop.is_beta
-        }
+    def _clear_all_attributes(update_attributes: list[PropertySpec]) -> dict[str, dict]:
+        cleared = {}
+        for prop in update_attributes:
+            if prop.is_beta:
+                continue
+            elif prop.is_object:
+                clear_with: dict = {"set": {}}
+            elif prop.is_list:
+                clear_with = {"set": []}
+            elif prop.is_nullable:
+                clear_with = {"setNull": True}
+            else:
+                continue
+            cleared[to_camel_case(prop.name)] = clear_with
+        return cleared
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:
