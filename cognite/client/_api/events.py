@@ -595,7 +595,7 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
-        return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
+        return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode)
 
     def search(
         self,

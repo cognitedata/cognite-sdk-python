@@ -435,7 +435,7 @@ class FilesAPI(APIClient):
             update_cls=FileMetadataUpdate,
             resource_path=self._RESOURCE_PATH,
             items=item,
-            headers=headers,
+            headers=headers, mode=mode,
         )
 
     def search(

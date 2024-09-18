@@ -672,7 +672,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.update(my_update)
         """
         return self._update_multiple(
-            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item
+            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item, mode=mode
         )
 
     @overload

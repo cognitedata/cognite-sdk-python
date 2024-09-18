@@ -286,4 +286,5 @@ class TransformationSchedulesAPI(APIClient):
             resource_cls=TransformationSchedule,
             update_cls=TransformationScheduleUpdate,
             items=item,
+            mode=mode,
         )

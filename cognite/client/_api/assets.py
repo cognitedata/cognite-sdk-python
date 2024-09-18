@@ -825,7 +825,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = client.assets.update(my_update)
         """
-        return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
+        return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item, mode=mode)
 
     @overload
     def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList: ...

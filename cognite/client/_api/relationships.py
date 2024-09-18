@@ -475,7 +475,7 @@ class RelationshipsAPI(APIClient):
                 >>> res = client.relationships.update(my_update)
         """
         return self._update_multiple(
-            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item, mode=mode
         )
 
     @overload

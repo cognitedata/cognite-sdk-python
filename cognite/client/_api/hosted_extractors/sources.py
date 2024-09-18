@@ -222,6 +222,7 @@ class SourcesAPI(APIClient):
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             update_cls=SourceUpdate,
+            mode=mode,
             headers={"cdf-version": "beta"},
         )
 

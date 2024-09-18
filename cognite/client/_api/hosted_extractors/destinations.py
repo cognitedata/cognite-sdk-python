@@ -230,7 +230,7 @@ class DestinationsAPI(APIClient):
             items=items,
             list_cls=DestinationList,
             resource_cls=Destination,
-            update_cls=DestinationUpdate,
+            update_cls=DestinationUpdate,mode=mode,
             headers={"cdf-version": "beta"},
         )
 

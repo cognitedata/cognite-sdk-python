@@ -253,7 +253,7 @@ class DataSetsAPI(APIClient):
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = client.data_sets.update(my_update)
         """
-        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)
+        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item, mode=mode)
 
     def list(
         self,

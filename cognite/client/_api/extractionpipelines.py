@@ -275,7 +275,7 @@ class ExtractionPipelinesAPI(APIClient):
             list_cls=ExtractionPipelineList,
             resource_cls=ExtractionPipeline,
             update_cls=ExtractionPipelineUpdate,
-            items=item,
+            items=item, mode=mode,
         )
 
 

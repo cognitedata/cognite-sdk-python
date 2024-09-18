@@ -114,7 +114,7 @@ class EntityMatchingAPI(APIClient):
             list_cls=EntityMatchingModelList,
             resource_cls=EntityMatchingModel,
             update_cls=EntityMatchingModelUpdate,
-            items=item,
+            items=item, mode=mode,
         )
 
     def list(

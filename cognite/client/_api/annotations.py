@@ -139,7 +139,7 @@ class AnnotationsAPI(APIClient):
         Returns:
             Annotation | AnnotationList: No description."""
         return self._update_multiple(
-            list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
+            list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item, mode=mode
         )
 
     def delete(self, id: int | Sequence[int]) -> None:

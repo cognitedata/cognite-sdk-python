@@ -494,7 +494,7 @@ class TransformationsAPI(APIClient):
             )
 
         return self._update_multiple(
-            list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
+            list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item,mode=mode,
         )
 
     def run(
