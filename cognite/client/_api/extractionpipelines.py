@@ -244,7 +244,8 @@ class ExtractionPipelinesAPI(APIClient):
         item: ExtractionPipeline
         | ExtractionPipelineWrite
         | ExtractionPipelineUpdate
-        | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        | Sequence[ExtractionPipeline | ExtractionPipelineWrite | ExtractionPipelineUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ExtractionPipeline | ExtractionPipelineList:
         """`Update one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/updateExtPipes>`_
 
@@ -275,7 +276,8 @@ class ExtractionPipelinesAPI(APIClient):
             list_cls=ExtractionPipelineList,
             resource_cls=ExtractionPipeline,
             update_cls=ExtractionPipelineUpdate,
-            items=item, mode=mode,
+            items=item,
+            mode=mode,
         )
 
 

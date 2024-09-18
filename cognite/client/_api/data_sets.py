@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload, Literal
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -213,13 +213,23 @@ class DataSetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     @overload
-    def update(self, item: DataSet | DataSetWrite | DataSetUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> DataSet: ...
+    def update(
+        self,
+        item: DataSet | DataSetWrite | DataSetUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DataSet: ...
 
     @overload
-    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> DataSetList: ...
+    def update(
+        self,
+        item: Sequence[DataSet | DataSetWrite | DataSetUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DataSetList: ...
 
     def update(
-        self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        self,
+        item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSet | DataSetList:
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
@@ -253,7 +263,9 @@ class DataSetsAPI(APIClient):
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = client.data_sets.update(my_update)
         """
-        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item, mode=mode)
+        return self._update_multiple(
+            list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item, mode=mode
+        )
 
     def list(
         self,

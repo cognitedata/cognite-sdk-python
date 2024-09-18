@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, TypeVar, Literal
+from typing import Any, Literal, Sequence, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -88,7 +88,8 @@ class EntityMatchingAPI(APIClient):
         self,
         item: EntityMatchingModel
         | EntityMatchingModelUpdate
-        | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EntityMatchingModelList | EntityMatchingModel:
         """`Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
 
@@ -114,7 +115,8 @@ class EntityMatchingAPI(APIClient):
             list_cls=EntityMatchingModelList,
             resource_cls=EntityMatchingModel,
             update_cls=EntityMatchingModelUpdate,
-            items=item, mode=mode,
+            items=item,
+            mode=mode,
         )
 
     def list(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, cast, overload, Literal
+from typing import TYPE_CHECKING, Iterator, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -192,7 +192,11 @@ class DatapointsSubscriptionAPI(APIClient):
             other_params={"externalId": external_id},
         )
 
-    def update(self, update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite,mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> DatapointSubscription:
+    def update(
+        self,
+        update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DatapointSubscription:
         """`Update a subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/updateSubscriptions>`_
 
         Update a subscription. Note that Fields that are not included in the request are not changed.

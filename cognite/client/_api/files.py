@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
+from typing import Any, BinaryIO, Iterator, Literal, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -360,10 +360,18 @@ class FilesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> FileMetadata: ...
+    def update(
+        self,
+        item: FileMetadata | FileMetadataWrite | FileMetadataUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> FileMetadata: ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> FileMetadataList: ...
+    def update(
+        self,
+        item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> FileMetadataList: ...
 
     def update(
         self,
@@ -378,12 +386,7 @@ class FilesAPI(APIClient):
 
         Args:
             item (FileMetadata | FileMetadataWrite | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]): file(s) to update.
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (FilesMetadata or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update object is given (FilesMetadata or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             FileMetadata | FileMetadataList: The updated files.
@@ -435,7 +438,8 @@ class FilesAPI(APIClient):
             update_cls=FileMetadataUpdate,
             resource_path=self._RESOURCE_PATH,
             items=item,
-            headers=headers, mode=mode,
+            headers=headers,
+            mode=mode,
         )
 
     def search(

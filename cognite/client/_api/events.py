@@ -555,13 +555,23 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventWrite | EventUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> EventList: ...
+    def update(
+        self,
+        item: Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> EventList: ...
 
     @overload
-    def update(self, item: Event | EventWrite | EventUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> Event: ...
+    def update(
+        self,
+        item: Event | EventWrite | EventUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Event: ...
 
     def update(
-        self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        self,
+        item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
@@ -595,7 +605,9 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
-        return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode)
+        return self._update_multiple(
+            list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode
+        )
 
     def search(
         self,

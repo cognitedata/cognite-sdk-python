@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Sequence, overload, Literal
+from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -193,14 +193,23 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
-    def update(self, item: ThreeDModel | ThreeDModelUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> ThreeDModel: ...
+    def update(
+        self,
+        item: ThreeDModel | ThreeDModelUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> ThreeDModel: ...
 
     @overload
-    def update(self, item: Sequence[ThreeDModel | ThreeDModelUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> ThreeDModelList: ...
+    def update(
+        self,
+        item: Sequence[ThreeDModel | ThreeDModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> ThreeDModelList: ...
 
     def update(
         self,
-        item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
@@ -238,7 +247,11 @@ class ThreeDModelsAPI(APIClient):
         # Note that we cannot use the ThreeDModelWrite to update as the write format of a 3D model
         # does not have ID or External ID, thus no identifier to know which model to update.
         return self._update_multiple(
-            list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item, mode=mode,
+            list_cls=ThreeDModelList,
+            resource_cls=ThreeDModel,
+            update_cls=ThreeDModelUpdate,
+            items=item,
+            mode=mode,
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
@@ -441,7 +454,8 @@ class ThreeDRevisionsAPI(APIClient):
             resource_cls=ThreeDModelRevision,
             update_cls=ThreeDModelRevisionUpdate,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            items=item,mode=mode,
+            items=item,
+            mode=mode,
         )
 
     def delete(self, model_id: int, id: int | Sequence[int]) -> None:

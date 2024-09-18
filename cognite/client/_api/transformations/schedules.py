@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Sequence, overload
+from typing import TYPE_CHECKING, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -234,12 +234,16 @@ class TransformationSchedulesAPI(APIClient):
 
     @overload
     def update(
-        self, item: TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate
+        self,
+        item: TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationSchedule: ...
 
     @overload
     def update(
-        self, item: Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]
+        self,
+        item: Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationScheduleList: ...
 
     def update(
@@ -247,18 +251,14 @@ class TransformationSchedulesAPI(APIClient):
         item: TransformationSchedule
         | TransformationScheduleWrite
         | TransformationScheduleUpdate
-        | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null"
+        | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationSchedule | TransformationScheduleList:
         """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 
         Args:
             item (TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]): Transformation schedule(s) to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (TransformationSchedule or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update object is given (TransformationSchedule or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             TransformationSchedule | TransformationScheduleList: Updated transformation schedule(s)

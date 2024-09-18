@@ -186,12 +186,24 @@ class SourcesAPI(APIClient):
         )
 
     @overload
-    def update(self, items: SourceWrite | SourceUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> Source: ...
+    def update(
+        self,
+        items: SourceWrite | SourceUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Source: ...
 
     @overload
-    def update(self, items: Sequence[SourceWrite | SourceUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> SourceList: ...
+    def update(
+        self,
+        items: Sequence[SourceWrite | SourceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> SourceList: ...
 
-    def update(self, items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> Source | SourceList:
+    def update(
+        self,
+        items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Source | SourceList:
         """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
 
         Args:
