@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.61.0] - 2024-09-17
+### Added
+- In all `.update` methods the user can now specify how non-update objects should be converted to update objects
+  using the new `mode` parameter.
+
 ## [7.60.6] - 2024-09-17
 ### Fixed
 - Fixed bug in `replace` upsert mode which caused objects to not be cleared.
