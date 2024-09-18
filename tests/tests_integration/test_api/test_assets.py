@@ -256,9 +256,9 @@ class TestAssetsAPI:
             cognite_client.assets.delete(id=a.id)
 
     def test_upsert_2_asset_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_asset = Asset(external_id="test_upsert_2_asset_one_preexisting:new", name="my new asset")
+        new_asset = Asset(external_id="test_upsert_2_asset_one_preexisting:new" + random_string(5), name="my new asset")
         preexisting = Asset(
-            external_id="test_upsert_2_asset_one_preexisting:preexisting",
+            external_id="test_upsert_2_asset_one_preexisting:preexisting" + random_string(5),
             name="my preexisting asset",
         )
         preexisting_update = Asset.load(preexisting.dump(camel_case=True))

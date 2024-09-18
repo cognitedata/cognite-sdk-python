@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils._text import random_string
 from tests.utils import set_request_limit
 
 
@@ -211,12 +212,12 @@ class TestSequencesAPI:
 
     def test_upsert_2_sequence_one_preexisting(self, cognite_client: CogniteClient) -> None:
         new_sequence = Sequence(
-            external_id="test_upsert_2_sequence_one_preexisting:new",
+            external_id="test_upsert_2_sequence_one_preexisting:new" + random_string(5),
             name="my new sequence",
             columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
         preexisting = Sequence(
-            external_id="test_upsert_2_sequence_one_preexisting:preexisting",
+            external_id="test_upsert_2_sequence_one_preexisting:preexisting" + random_string(5),
             name="my preexisting sequence",
             columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
         )
