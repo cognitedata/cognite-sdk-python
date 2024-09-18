@@ -619,7 +619,8 @@ class TimeSeriesAPI(APIClient):
                 you have set will be used to replace existing (default). Using 'replace' will additionally
                 clear all the fields that are not specified by you. Last option, 'patch', will update only
                 the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing.
+                values to the existing. For more details, see :ref:`appendix-update`.
+
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
 
