@@ -574,14 +574,14 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence: ...
+    def update(self, item: Sequence | SequenceWrite | SequenceUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> Sequence: ...
 
     @overload
-    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList: ...
+    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> SequenceList: ...
 
     def update(
         self,
-        item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
+        item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence | SequenceList:
         """`Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
 

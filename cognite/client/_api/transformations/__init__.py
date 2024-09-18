@@ -427,7 +427,7 @@ class TransformationsAPI(APIClient):
         item: Transformation
         | TransformationWrite
         | TransformationUpdate
-        | Sequence[Transformation | TransformationWrite | TransformationUpdate],
+        | Sequence[Transformation | TransformationWrite | TransformationUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null"
     ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 

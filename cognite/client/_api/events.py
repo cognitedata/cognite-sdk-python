@@ -555,13 +555,13 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList: ...
+    def update(self, item: Sequence[Event | EventWrite | EventUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> EventList: ...
 
     @overload
-    def update(self, item: Event | EventWrite | EventUpdate) -> Event: ...
+    def update(self, item: Event | EventWrite | EventUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> Event: ...
 
     def update(
-        self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]
+        self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 

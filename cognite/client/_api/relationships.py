@@ -421,6 +421,7 @@ class RelationshipsAPI(APIClient):
         | RelationshipWrite
         | RelationshipUpdate
         | Sequence[Relationship | RelationshipWrite | RelationshipUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.

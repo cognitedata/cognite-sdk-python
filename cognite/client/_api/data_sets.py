@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, overload, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -213,18 +213,24 @@ class DataSetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     @overload
-    def update(self, item: DataSet | DataSetWrite | DataSetUpdate) -> DataSet: ...
+    def update(self, item: DataSet | DataSetWrite | DataSetUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> DataSet: ...
 
     @overload
-    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate]) -> DataSetList: ...
+    def update(self, item: Sequence[DataSet | DataSetWrite | DataSetUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> DataSetList: ...
 
     def update(
-        self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]
+        self, item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSet | DataSetList:
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
             item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (DataSet or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             DataSet | DataSetList: Updated data set(s)

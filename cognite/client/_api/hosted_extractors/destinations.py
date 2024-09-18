@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Any, Sequence, overload, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -193,13 +193,13 @@ class DestinationsAPI(APIClient):
         )
 
     @overload
-    def update(self, items: DestinationWrite | DestinationUpdate) -> Destination: ...
+    def update(self, items: DestinationWrite | DestinationUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> Destination: ...
 
     @overload
-    def update(self, items: Sequence[DestinationWrite | DestinationUpdate]) -> DestinationList: ...
+    def update(self, items: Sequence[DestinationWrite | DestinationUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> DestinationList: ...
 
     def update(
-        self, items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]
+        self, items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination | DestinationList:
         """`Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
 

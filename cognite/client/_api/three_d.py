@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Sequence, overload
+from typing import TYPE_CHECKING, Iterator, Sequence, overload, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -193,14 +193,14 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
-    def update(self, item: ThreeDModel | ThreeDModelUpdate) -> ThreeDModel: ...
+    def update(self, item: ThreeDModel | ThreeDModelUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> ThreeDModel: ...
 
     @overload
-    def update(self, item: Sequence[ThreeDModel | ThreeDModelUpdate]) -> ThreeDModelList: ...
+    def update(self, item: Sequence[ThreeDModel | ThreeDModelUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",) -> ThreeDModelList: ...
 
     def update(
         self,
-        item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
+        item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
@@ -395,6 +395,7 @@ class ThreeDRevisionsAPI(APIClient):
         item: ThreeDModelRevision
         | ThreeDModelRevisionUpdate
         | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
 

@@ -247,7 +247,7 @@ class TransformationSchedulesAPI(APIClient):
         item: TransformationSchedule
         | TransformationScheduleWrite
         | TransformationScheduleUpdate
-        | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
+        | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null"
     ) -> TransformationSchedule | TransformationScheduleList:
         """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
 

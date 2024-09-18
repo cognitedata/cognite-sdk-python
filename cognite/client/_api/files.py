@@ -360,10 +360,10 @@ class FilesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata: ...
+    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate, mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> FileMetadata: ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList: ...
+    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate], mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null") -> FileMetadataList: ...
 
     def update(
         self,
@@ -371,6 +371,7 @@ class FilesAPI(APIClient):
         | FileMetadataWrite
         | FileMetadataUpdate
         | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.

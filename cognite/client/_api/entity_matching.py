@@ -88,7 +88,7 @@ class EntityMatchingAPI(APIClient):
         self,
         item: EntityMatchingModel
         | EntityMatchingModelUpdate
-        | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],
+        | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EntityMatchingModelList | EntityMatchingModel:
         """`Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
 
