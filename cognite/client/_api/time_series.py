@@ -614,10 +614,12 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): Whether to patch or replace in the case you use a TimeSeriesWrite object.
-                If you set 'replace_ignore_null', the call will replace all fields that are set (default).
-                If you set 'patch', the call will only update fields with non-null values.
-                Setting 'replace' will unset any fields that are not specified including null fields.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing.
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
 
