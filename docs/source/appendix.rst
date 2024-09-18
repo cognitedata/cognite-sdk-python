@@ -19,9 +19,13 @@ Update and Upsert Mode Parameter
 
 The mode parameter controls how the update is performed. If you set 'patch', the call will only update
 the fields in the Item object that are not None. This means that if the items exists from before, the
-fields that are not specified will not be changed. If you set 'replace', all the fields that are not
-specified, i.e., set to None and support being set to null, will be nulled out. Finally,
-'replace_ignore_null' will work as 'replace', but will leave all fields that are None in the Item object.
+fields that are not specified will not be changed. The 'replace_ignore_null' works similarly, to
+'patch', but instead of updating it will replace the fields with new values. There is not difference
+between 'patch' and 'replace_ignore_null' for fields that only supports set. For example, `name` and
+`description` on TimeSeries. However, for fields that supports `set` and `add/remove`, like `metadata`,
+'patch` will add to the metadata, while 'replace_ignore_null' will replace the metadata with the new
+metadata. If you set 'replace', all the fields that are not specified, i.e., set to None and
+support being set to null, will be nulled out.
 
 Example **patch**:
 
@@ -101,9 +105,10 @@ Example **replace_ignore_null**:
     >>> print(updated.dump())
     {'externalId': 'new_ts', 'name': 'New TS', 'description': 'Updated description', 'metadata': {'new': 'entry'}}
 
-**Note** that the `name` parameter was not specified in the update, and was therefore not changed.
+**Note** that the `name` parameter was not specified in the update, and was therefore not changed,
+same as in `patch`
 
-Example **replace_ignore_null**
+Example **replace_ignore_null** without `metadata`:
 
 .. code:: python
 
@@ -128,12 +133,7 @@ Example **replace_ignore_null**
     >>> print(updated.dump())
     {'externalId': 'new_ts', 'name': 'New TS', 'description': 'Updated description', 'metadata': {'key': 'value'}}
 
-
-
-
-
-
-
+**Note** Since `metadata` was not specified in the update, it was not changed.
 
 .. _appendix-alpha-beta-features:
 
