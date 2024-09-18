@@ -5,7 +5,6 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
-from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._text import random_string
@@ -277,10 +276,10 @@ class TestTimeSeriesAPI:
         }
 
     def test_create_retrieve_update_delete_with_instance_id(
-        self, cognite_client: CogniteClient, alpha_test_space: Space, alpha_test_dataset: DataSet
+        self, cognite_client: CogniteClient, instance_id_test_space: str, alpha_test_dataset: DataSet
     ) -> None:
         my_ts = CogniteTimeSeriesApply(
-            space=alpha_test_space.space,
+            space=instance_id_test_space,
             external_id="ts_python_sdk_instance_id_tests",
             time_series_type="numeric",
             is_step=False,
