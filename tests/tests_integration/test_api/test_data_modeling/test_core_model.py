@@ -201,8 +201,8 @@ def core_model_v1_edge_test_cases() -> Iterable[ParameterSet]:
 
 
 @pytest.fixture(scope="session")
-def data_space(cognite_client_alpha: CogniteClient) -> Space:
-    space = cognite_client_alpha.data_modeling.spaces.apply(
+def data_space(cognite_client: CogniteClient) -> Space:
+    space = cognite_client.data_modeling.spaces.apply(
         SpaceApply(space=DATA_SPACE, description="Test space for core model v1 tests with Python SDK", name=DATA_SPACE)
     )
     return space
@@ -212,14 +212,14 @@ class TestCoreModelv1:
     @pytest.mark.usefixtures("data_space")
     @pytest.mark.parametrize("write_instance, read_type", list(core_model_v1_node_test_cases()))
     def test_write_read_node(
-        self, write_instance: TypedNodeApply, read_type: type[TypedNode], cognite_client_alpha: CogniteClient
+        self, write_instance: TypedNodeApply, read_type: type[TypedNode], cognite_client: CogniteClient
     ) -> None:
-        created = cognite_client_alpha.data_modeling.instances.apply(write_instance)
+        created = cognite_client.data_modeling.instances.apply(write_instance)
 
         assert len(created.nodes) == 1
         assert created.nodes[0].as_id() == write_instance.as_id()
 
-        read = cognite_client_alpha.data_modeling.instances.retrieve_nodes(write_instance.as_id(), node_cls=read_type)
+        read = cognite_client.data_modeling.instances.retrieve_nodes(write_instance.as_id(), node_cls=read_type)
 
         assert isinstance(read, read_type)
         assert read.as_id() == write_instance.as_id()
@@ -239,16 +239,16 @@ class TestCoreModelv1:
     @pytest.mark.usefixtures("data_space")
     @pytest.mark.parametrize("write_instance, read_type", list(core_model_v1_edge_test_cases()))
     def test_write_read_edge(
-        self, write_instance: TypedEdgeApply, read_type: type[TypedEdge], cognite_client_alpha: CogniteClient
+        self, write_instance: TypedEdgeApply, read_type: type[TypedEdge], cognite_client: CogniteClient
     ) -> None:
-        created = cognite_client_alpha.data_modeling.instances.apply(
+        created = cognite_client.data_modeling.instances.apply(
             edges=write_instance, auto_create_start_nodes=True, auto_create_end_nodes=True
         )
 
         assert len(created.edges) == 1
         assert created.edges[0].as_id() == write_instance.as_id()
 
-        read = cognite_client_alpha.data_modeling.instances.retrieve_edges(write_instance.as_id(), edge_cls=read_type)
+        read = cognite_client.data_modeling.instances.retrieve_edges(write_instance.as_id(), edge_cls=read_type)
 
         assert isinstance(read, read_type)
         assert read.as_id() == write_instance.as_id()
