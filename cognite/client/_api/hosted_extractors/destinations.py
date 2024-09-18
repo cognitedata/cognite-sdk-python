@@ -216,7 +216,7 @@ class DestinationsAPI(APIClient):
         Args:
             items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
             mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (Destination or -Write). If you use 'replace_ignore_null', only the fields
+                object is given (DestinationWrite). If you use 'replace_ignore_null', only the fields
                 you have set will be used to replace existing (default). Using 'replace' will additionally
                 clear all the fields that are not specified by you. Last option, 'patch', will update only
                 the fields you have set and for container-like fields such as metadata or labels, add the
