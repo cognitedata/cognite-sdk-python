@@ -277,7 +277,7 @@ class TestTimeSeriesAPI:
         }
 
     def test_create_retrieve_update_delete_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, alpha_test_space: Space, alpha_test_dataset: DataSet
+        self, cognite_client: CogniteClient, alpha_test_space: Space, alpha_test_dataset: DataSet
     ) -> None:
         my_ts = CogniteTimeSeriesApply(
             space=alpha_test_space.space,
@@ -291,11 +291,11 @@ class TestTimeSeriesAPI:
         update = TimeSeriesUpdate(instance_id=my_ts.as_id()).metadata.add({"a": "b"})
 
         try:
-            created = cognite_client_alpha.data_modeling.instances.apply(my_ts)
+            created = cognite_client.data_modeling.instances.apply(my_ts)
             assert len(created.nodes) == 1
             assert created.nodes[0].as_id() == my_ts.as_id()
 
-            retrieved = cognite_client_alpha.time_series.retrieve(instance_id=my_ts.as_id())
+            retrieved = cognite_client.time_series.retrieve(instance_id=my_ts.as_id())
             assert retrieved is not None
             assert retrieved.instance_id == my_ts.as_id()
 
@@ -303,18 +303,18 @@ class TestTimeSeriesAPI:
             update_writable.metadata = {"c": "d"}
             update_writable.external_id = "ts_python_sdk_instance_id_tests"
             update_writable.data_set_id = alpha_test_dataset.id
-            updated_writable = cognite_client_alpha.time_series.update(update_writable)
+            updated_writable = cognite_client.time_series.update(update_writable)
             assert updated_writable.metadata == {"c": "d"}
             assert updated_writable.data_set_id == alpha_test_dataset.id
             assert updated_writable.external_id == "ts_python_sdk_instance_id_tests"
 
-            updated = cognite_client_alpha.time_series.update(update)
+            updated = cognite_client.time_series.update(update)
             assert updated.metadata == {"a": "b", "c": "d"}
 
-            retrieved = cognite_client_alpha.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
+            retrieved = cognite_client.time_series.retrieve_multiple(instance_ids=[my_ts.as_id()])
             assert retrieved.dump() == [updated.dump()]
         finally:
-            cognite_client_alpha.data_modeling.instances.delete(nodes=my_ts.as_id())
+            cognite_client.data_modeling.instances.delete(nodes=my_ts.as_id())
 
 
 class TestTimeSeriesHelperMethods:

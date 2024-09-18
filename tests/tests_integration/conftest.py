@@ -21,6 +21,7 @@ def cognite_client() -> CogniteClient:
 def cognite_client_alpha() -> CogniteClient:
     load_dotenv(REPO_ROOT / "alpha.env")
     if "COGNITE_ALPHA_PROJECT" not in os.environ:
+        # TODO: If we are in CI, we should fail the test instead of skipping
         pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
     return CogniteClient.default_oauth_client_credentials(
         project=os.environ["COGNITE_ALPHA_PROJECT"],
