@@ -32,7 +32,7 @@ class TestRepr:
             Datapoints(id=1),
             DatapointsArray(id=1, timestamp=[]),
             Datapoints(instance_id=NodeId("space", "xid")),
-            DatapointsArray(instance_id=NodeId("space", "xid")),
+            DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=[]),
         ),
     )
     def test_repr_html_dps_classes(self, inst):
