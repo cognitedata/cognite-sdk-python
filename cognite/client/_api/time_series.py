@@ -608,12 +608,16 @@ class TimeSeriesAPI(APIClient):
         | TimeSeriesWrite
         | TimeSeriesUpdate
         | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
-
+            mode (Literal["replace_ignore_null", "patch", "replace"]): Whether to patch or replace in the case you use a TimeSeriesWrite object.
+                If you set 'replace_ignore_null', the call will replace all fields that are set (default).
+                If you set 'patch', the call will only update fields with non-null values.
+                Setting 'replace' will unset any fields that are not specified including null fields.
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
 
@@ -648,6 +652,7 @@ class TimeSeriesAPI(APIClient):
             update_cls=TimeSeriesUpdate,
             items=item,
             headers=headers,
+            mode=mode,
         )
 
     @overload
