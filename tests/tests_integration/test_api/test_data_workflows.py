@@ -25,6 +25,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -266,7 +267,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
 class TestWorkflows:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         workflow = WorkflowUpsert(
-            external_id="integration_test-test_create_delete",
+            external_id="integration_test-test_create_delete" + random_string(5),
             description="This is ephemeral workflow for testing purposes",
         )
         cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
@@ -305,16 +306,18 @@ class TestWorkflows:
 class TestWorkflowVersions:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionUpsert(
-            workflow_external_id="integration_test-workflow_versions-test_create_delete",
+            workflow_external_id="integration_test-workflow_versions-test_create_delete" + random_string(5),
             version="1",
             workflow_definition=WorkflowDefinitionUpsert(
                 tasks=[
                     WorkflowTask(
-                        external_id="integration_test-workflow_definitions-test_create_delete-subworkflow1",
+                        external_id="integration_test-workflow_definitions-test_create_delete-subworkflow1"
+                        + random_string(5),
                         parameters=SubworkflowTaskParameters(
                             tasks=[
                                 WorkflowTask(
-                                    external_id="integration_test-workflow_definitions-test_create_delete-task1",
+                                    external_id="integration_test-workflow_definitions-test_create_delete-task1"
+                                    + random_string(5),
                                     parameters=FunctionTaskParameters(
                                         external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
                                         data={"a": 1, "b": 2},

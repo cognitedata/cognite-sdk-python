@@ -8,6 +8,7 @@ from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, T
 from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.time_series import TimeSeriesProperty
+from cognite.client.utils._text import random_string
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
@@ -176,10 +177,10 @@ class TestTimeSeriesAPI:
 
     def test_upsert_2_time_series_one_preexisting(self, cognite_client: CogniteClient) -> None:
         new_times_series = TimeSeries(
-            external_id="test_upsert_2_time_series_one_preexisting:new", name="my new time series"
+            external_id="test_upsert_2_time_series_one_preexisting:new" + random_string(5), name="my new time series"
         )
         preexisting = TimeSeries(
-            external_id="test_upsert_2_time_series_one_preexisting:preexisting",
+            external_id="test_upsert_2_time_series_one_preexisting:preexisting" + random_string(5),
             name="my preexisting time series",
         )
         preexisting_update = TimeSeries.load(preexisting.dump(camel_case=True))

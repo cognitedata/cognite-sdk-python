@@ -437,7 +437,7 @@ class TimeSeriesUpdate(CogniteUpdate):
                 # If Instance ID is set, the time series was created in DMS. Then, it is
                 # limited which properties can be updated. (Only the ones that are not in DMS + security categories)
                 PropertySpec("external_id", is_nullable=False),
-                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("metadata", is_object=True, is_nullable=False),
                 PropertySpec("asset_id"),
                 PropertySpec("data_set_id"),
             ]
@@ -447,13 +447,13 @@ class TimeSeriesUpdate(CogniteUpdate):
                 PropertySpec("external_id", is_nullable=False),
                 PropertySpec("name"),
                 # TimeSeries does not support setting metadata to an empty array.
-                PropertySpec("metadata", is_container=True, is_nullable=False),
+                PropertySpec("metadata", is_object=True, is_nullable=False),
                 PropertySpec("unit"),
                 PropertySpec("unit_external_id"),
                 PropertySpec("asset_id"),
                 PropertySpec("description"),
                 PropertySpec("is_step", is_nullable=False),
-                PropertySpec("security_categories", is_container=True),
+                PropertySpec("security_categories", is_list=True),
                 PropertySpec("data_set_id"),
             ]
 

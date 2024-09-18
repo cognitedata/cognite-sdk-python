@@ -217,7 +217,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name"),
-            PropertySpec("time_series_ids", is_container=True),
+            PropertySpec("time_series_ids", is_list=True),
             PropertySpec("filter", is_nullable=False),
             PropertySpec("data_set_id"),
         ]
