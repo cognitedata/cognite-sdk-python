@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -22,7 +22,7 @@ DATA_SPACE = "python_sdk_core_v1_test_space"
 
 def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
     today = datetime.now()
-    yesterday = today.replace(day=today.day - 1)
+    yesterday = today - timedelta(days=1)
     yield pytest.param(
         cdm.CogniteAssetApply(
             space=DATA_SPACE,
