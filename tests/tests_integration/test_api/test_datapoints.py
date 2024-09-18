@@ -184,7 +184,7 @@ def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
 
 
 @pytest.fixture(scope="session")
-def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space) -> InstanceId:
+def instance_ts_id(cognite_client: CogniteClient, alpha_test_space: Space) -> InstanceId:
     my_ts = NodeApply(
         space=alpha_test_space.space,
         external_id="ts_python_sdk_instance_id_tests",
@@ -199,7 +199,7 @@ def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space)
             )
         ],
     )
-    created_ts = cognite_client_alpha.data_modeling.instances.apply(my_ts).nodes
+    created_ts = cognite_client.data_modeling.instances.apply(my_ts).nodes
 
     return created_ts[0].as_id()
 
@@ -2764,29 +2764,27 @@ class TestInsertDatapointsAPI:
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
 
     def test_insert_retrieve_delete_datapoints_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+        self, cognite_client: CogniteClient, instance_ts_id: InstanceId
     ) -> None:
-        cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
+        cognite_client.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == [0, 1]
         assert retrieved.value == [0.0, 1.0]
 
-        cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
+        cognite_client.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == []
 
-    def test_insert_multiple_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
-    ) -> None:
-        cognite_client_alpha.time_series.data.insert_multiple(
+    def test_insert_multiple_with_instance_id(self, cognite_client: CogniteClient, instance_ts_id: InstanceId) -> None:
+        cognite_client.time_series.data.insert_multiple(
             [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
         )
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
 
         assert retrieved.timestamp == [4]
         assert retrieved.value == [42]
