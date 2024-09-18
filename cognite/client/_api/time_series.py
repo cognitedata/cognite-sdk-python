@@ -597,10 +597,18 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList: ...
+    def update(
+        self,
+        item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> TimeSeriesList: ...
 
     @overload
-    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries: ...
+    def update(
+        self,
+        item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> TimeSeries: ...
 
     def update(
         self,
