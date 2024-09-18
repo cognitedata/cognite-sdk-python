@@ -108,6 +108,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             name="Test model 3D",
             description="Test model 3D for core model v1 tests with Python SDK",
             aliases=["test_model_3d_alias"],
+            model_type="PointCloud",  # TODO: Should be nullable, returns as 400 if not set
         ),
         cdm.Cognite3DModel,
         id="CogniteModel3D",
