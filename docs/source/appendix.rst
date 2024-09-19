@@ -32,13 +32,14 @@ Example **patch**:
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
     >>> new_ts = client.time_series.create(
     ...     TimeSeriesWrite(
     ...         external_id="new_ts",
     ...         name="New TS",
-    ...         metadata={"key": "value"}
+    ...         metadata={"key": "value", "another": "one"}
     ...     )
     ... )
     >>>
@@ -46,18 +47,22 @@ Example **patch**:
     ...     TimeSeriesWrite(
     ...         external_id="new_ts",
     ...         description="Updated description",
-    ...         metadata={"new": "entry"}
+    ...         metadata={"key": "new value", "brand": "new"}
     ...     ),
     ...     mode="patch"
     ... )
-    >>> print(updated.dump())
-    {'externalId': 'new_ts', 'name': 'New TS', 'description': 'Updated description', 'metadata': {'key': 'value', 'new': 'entry'}}
+    >>> pprint(updated.dump())
+    {'externalId': 'new_ts',
+    'name': 'New TS',
+    'description': 'Updated description',
+    'metadata': {'key': 'value', 'new': 'entry'}}
 
 Example **replace**:
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
     >>> new_ts = client.time_series.create(
@@ -74,16 +79,21 @@ Example **replace**:
     ...         description="Updated description",
     ...         metadata={"new": "entry"}
     ...     ),
-    ...     mode="patch"
+    ...     mode="replace"
     ... )
-    >>> print(updated.dump())
-    {'externalId': 'new_ts', 'description': 'Updated description', 'metadata': {'new': 'entry'}}
+    >>> pprint(updated.dump())
+    {'externalId': 'new_ts',
+    'description': 'Updated description',
+    'metadata': {'new': 'entry'}}
+
+**Note** that the `name` parameter was not specified in the update, and was therefore nulled out.
 
 Example **replace_ignore_null**:
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
     >>> new_ts = client.time_series.create(
@@ -100,10 +110,13 @@ Example **replace_ignore_null**:
     ...         description="Updated description",
     ...         metadata={"new": "entry"}
     ...     ),
-    ...     mode="patch"
+    ...     mode="replace_ignore_null"
     ... )
-    >>> print(updated.dump())
-    {'externalId': 'new_ts', 'name': 'New TS', 'description': 'Updated description', 'metadata': {'new': 'entry'}}
+    >>> pprint(updated.dump())
+    {'externalId': 'new_ts',
+    'name': 'New TS',
+    'description': 'Updated description',
+    'metadata': {'new': 'entry'}}
 
 **Note** that the `name` parameter was not specified in the update, and was therefore not changed,
 same as in `patch`
@@ -113,6 +126,7 @@ Example **replace_ignore_null** without `metadata`:
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
     >>> new_ts = client.time_series.create(
@@ -128,10 +142,13 @@ Example **replace_ignore_null** without `metadata`:
     ...         external_id="new_ts",
     ...         description="Updated description",
     ...     ),
-    ...     mode="patch"
+    ...     mode="replace_ignore_null"
     ... )
-    >>> print(updated.dump())
-    {'externalId': 'new_ts', 'name': 'New TS', 'description': 'Updated description', 'metadata': {'key': 'value'}}
+    >>> pprint(updated.dump())
+    {'externalId': 'new_ts',
+    'name': 'New TS',
+    'description': 'Updated description',
+    'metadata': {'key': 'value'}}
 
 **Note** Since `metadata` was not specified in the update, it was not changed.
 

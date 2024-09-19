@@ -19,8 +19,8 @@ Changes are grouped as follows
 
 ## [7.61.0] - 2024-09-17
 ### Added
-- In all `.update` methods the user can now specify how non-update objects should be converted to update objects
-  using the new `mode` parameter.
+- All `update` methods now accept a new parameter `mode` that controls how non-update objects should be
+  interpreted. For example, should we do a partial update or a full replacement.
 
 ## [7.60.6] - 2024-09-17
 ### Fixed
