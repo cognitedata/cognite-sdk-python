@@ -59,8 +59,8 @@ Example **patch**:
     ...     mode="patch"
     ... )
     >>> pprint(updated.as_write().dump())
-    {'externalId': 'new_ts',
-     'description': 'Updated description',
+    {'description': 'Updated description',
+     'externalId': 'new_ts',
      'metadata': {'key': 'value', 'new': 'entry'},
      'name': 'New TS'}
 
@@ -96,9 +96,9 @@ Example **replace**:
     ...     mode="replace"
     ... )
     >>> pprint(updated.as_write().dump())
-    {'externalId': 'new_ts',
-    'description': 'Updated description',
-    'metadata': {'new': 'entry'}}
+    {'description': 'Updated description',
+     'externalId': 'new_ts',
+     'metadata': {'new': 'entry'}}
 
 **Note** that the `name` parameter was not specified in the update, and was therefore nulled out.
 
@@ -133,11 +133,11 @@ Example **replace_ignore_null**:
     ...     ),
     ...     mode="replace_ignore_null"
     ... )
-    >>> pprint(updated.dump())
-    {'externalId': 'new_ts',
-    'name': 'New TS',
-    'description': 'Updated description',
-    'metadata': {'new': 'entry'}}
+    >>> pprint(updated.as_write().dump())
+    {'description': 'Updated description',
+     'externalId': 'new_ts',
+     'metadata': {'new': 'entry'},
+     'name': 'New TS'}
 
 **Note** that the `name` parameter was not specified in the update, and was therefore not changed,
 same as in `patch`
@@ -172,11 +172,11 @@ Example **replace_ignore_null** without `metadata`:
     ...     ),
     ...     mode="replace_ignore_null"
     ... )
-    >>> pprint(updated.dump())
-    {'externalId': 'new_ts',
-    'name': 'New TS',
-    'description': 'Updated description',
-    'metadata': {'key': 'value'}}
+    >>> pprint(updated.as_write().dump())
+    {'description': 'Updated description',
+     'externalId': 'new_ts',
+     'metadata': {'key': 'value'},
+     'name': 'New TS'}
 
 **Note** Since `metadata` was not specified in the update, it was not changed.
 
