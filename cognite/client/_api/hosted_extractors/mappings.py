@@ -128,7 +128,7 @@ class MappingsAPI(APIClient):
     def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destsinations  <https://developer.cognite.com/api#tag/Mappings/operation/delete_mappings>`_
+        """`Delete one or more mappings  <https://developer.cognite.com/api#tag/Mappings/operation/delete_mappings>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -265,7 +265,7 @@ class MappingsAPI(APIClient):
         self._warning.warn()
         return self._list(
             list_cls=MappingList,
-            resource_cls=Mapping,  # type: ignore[type-abstract]
+            resource_cls=Mapping,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},
