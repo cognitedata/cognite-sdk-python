@@ -29,9 +29,16 @@ support being set to null, will be nulled out.
 
 Example **patch**:
 
+.. testsetup:: patch_update
+
+    >>> getfixture("appendix_update_patch")  # Fixture defined in conftest.py
+
+.. doctest:: patch_update
+
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import TimeSeriesWrite
     >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
@@ -51,17 +58,24 @@ Example **patch**:
     ...     ),
     ...     mode="patch"
     ... )
-    >>> pprint(updated.dump())
+    >>> pprint(updated.as_write().dump())
     {'externalId': 'new_ts',
-    'name': 'New TS',
-    'description': 'Updated description',
-    'metadata': {'key': 'value', 'new': 'entry'}}
+     'description': 'Updated description',
+     'metadata': {'key': 'value', 'new': 'entry'},
+     'name': 'New TS'}
 
 Example **replace**:
+
+.. testsetup:: patch_replace
+
+    >>> getfixture("appendix_update_replace")  # Fixture defined in conftest.py
+
+.. doctest:: patch_replace
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import TimeSeriesWrite
     >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
@@ -81,7 +95,7 @@ Example **replace**:
     ...     ),
     ...     mode="replace"
     ... )
-    >>> pprint(updated.dump())
+    >>> pprint(updated.as_write().dump())
     {'externalId': 'new_ts',
     'description': 'Updated description',
     'metadata': {'new': 'entry'}}
@@ -90,9 +104,16 @@ Example **replace**:
 
 Example **replace_ignore_null**:
 
+.. testsetup:: patch_replace_ignore_null
+
+    >>> getfixture("appendix_update_replace_ignore_null")  # Fixture defined in conftest.py
+
+.. doctest:: patch_replace_ignore_null
+
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import TimeSeriesWrite
     >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
@@ -123,9 +144,16 @@ same as in `patch`
 
 Example **replace_ignore_null** without `metadata`:
 
+.. testsetup:: patch_replace_ignore_null2
+
+    >>> getfixture("appendix_update_replace_ignore_null2")  # Fixture defined in conftest.py
+
+.. doctest:: patch_replace_ignore_null2
+
 .. code:: python
 
     >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes import TimeSeriesWrite
     >>> from pprint import pprint
     >>> client = CogniteClient()
     >>>
