@@ -64,7 +64,7 @@ def appendix_update_patch() -> None:
             external_id="new_ts",
             name="New TS",
             description="Updated description",
-            metadata={"key": "value", "new": "entry"},
+            metadata={"another": "one", "brand": "new", "key": "new value"},
         )
         yield None
 

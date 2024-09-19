@@ -61,7 +61,7 @@ Example **patch**:
     >>> pprint(updated.as_write().dump())
     {'description': 'Updated description',
      'externalId': 'new_ts',
-     'metadata': {'key': 'value', 'new': 'entry'},
+     'metadata': {'another': 'one', 'brand': 'new', 'key': 'new value'},
      'name': 'New TS'}
 
 Example **replace**:
