@@ -34,7 +34,7 @@ def cognite_client_alpha() -> CogniteClient:
 
 @pytest.fixture(scope="session")
 def instance_id_test_space(cognite_client: CogniteClient) -> Space:
-    return cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+    return cognite_client.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
 
 
 @pytest.fixture(scope="session")
