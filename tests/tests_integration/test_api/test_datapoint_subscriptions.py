@@ -64,7 +64,7 @@ def time_series_external_ids(all_time_series_external_ids):
 def subscription(
     cognite_client: CogniteClient, all_time_series_external_ids: list[str], os_and_py_version: str
 ) -> DatapointSubscription:
-    external_id = f"PYSDKDataPointSubscriptionTest-{os_and_py_version}"
+    external_id = f"PYSDKDataPointSubscriptionTest-{os_and_py_version.replace('.', '-')}"
     sub = cognite_client.time_series.subscriptions.retrieve(external_id)
     if sub is not None:
         return sub

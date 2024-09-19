@@ -2781,7 +2781,7 @@ class TestInsertDatapointsAPI:
         cognite_client.time_series.data.insert_multiple(
             [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": ts, "value": value}]}]
         )
-        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=ts, end=ts + 1)
 
         assert retrieved.timestamp == [ts]
         assert retrieved.value == [value]
