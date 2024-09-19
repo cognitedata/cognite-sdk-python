@@ -120,12 +120,6 @@ class SourceUpdate(CogniteUpdate, ABC):
             return []
         return _SOURCE_UPDATE_BY_TYPE[item._type]._get_update_properties(item)
 
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        if not isinstance(item, SourceWrite):
-            return {}
-        return {"type": item._type}
-
 
 class EventHubSourceWrite(SourceWrite):
     """A hosted extractor source represents an external source system on the internet.
@@ -552,10 +546,10 @@ class _MQTTUpdate(SourceUpdate, ABC):
         return [
             PropertySpec("host", is_nullable=False),
             PropertySpec("port", is_nullable=True),
-            PropertySpec("authentication", is_nullable=True, is_container=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True),
             PropertySpec("useTls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
 
 

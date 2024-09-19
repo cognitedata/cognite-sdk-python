@@ -13,6 +13,21 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
 
+@pytest.fixture(scope="session")
+def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) -> SourceList:
+    my_hub = EventHubSourceWrite(
+        external_id=f"myNewHub-{os_and_py_version}",
+        host="myHost",
+        key_name="myKeyName",
+        key_value="myKey",
+        event_hub_name="myEventHub",
+    )
+    retrieved = cognite_client.hosted_extractors.sources.retrieve([my_hub.external_id], ignore_unknown_ids=True)
+    if retrieved:
+        return retrieved
+    return cognite_client.hosted_extractors.sources.create([my_hub])
+
+
 class TestSources:
     def test_create_update_retrieve_delete(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(

@@ -434,10 +434,14 @@ class WriteableCogniteResourceList(
 @dataclass
 class PropertySpec:
     name: str
-    is_container: bool = False
+    is_list: bool = False
+    is_object: bool = False
     is_nullable: bool = True
     # Used to skip replace when the value is None
     is_beta: bool = False
+
+    def __post_init__(self) -> None:
+        assert not (self.is_list and self.is_object), "PropertySpec cannot be both list and object"
 
 
 class CogniteUpdate:
@@ -519,12 +523,6 @@ class CogniteUpdate:
     @abstractmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         raise NotImplementedError
-
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        # This method is used to provide additional identifying properties for the update object.
-        # It is intended to be overridden by subclasses that need to provide additional identifying properties.
-        return {}
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

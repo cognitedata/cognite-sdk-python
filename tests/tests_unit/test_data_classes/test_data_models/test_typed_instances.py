@@ -13,7 +13,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
     CogniteAsset,
     CogniteAssetApply,
-    CogniteDescribableEdgeApply,
+    CogniteDescribableEdge,
 )
 from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
@@ -26,9 +26,10 @@ from cognite.client.data_classes.data_modeling.instances import (
 
 class PersonProperties:
     birth_date = PropertyOptions(identifier="birthDate")
+    conflicting_with_reserved_property = PropertyOptions(identifier="type")
 
 
-class Person(TypedNodeApply, PersonProperties):
+class PersonApply(TypedNodeApply, PersonProperties):
     def __init__(
         self,
         space: str,
@@ -37,6 +38,7 @@ class Person(TypedNodeApply, PersonProperties):
         birth_date: date,
         email: str,
         siblings: list[DirectRelationReference] | None = None,
+        conflicting_with_reserved_property: str | None = None,
     ) -> None:
         super().__init__(
             space,
@@ -47,6 +49,7 @@ class Person(TypedNodeApply, PersonProperties):
         self.birth_date = birth_date
         self.email = email
         self.siblings = siblings
+        self.conflicting_with_reserved_property = conflicting_with_reserved_property
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -111,6 +114,7 @@ class PersonRead(TypedNode, PersonProperties):
         birth_date: date,
         email: str,
         siblings: list[DirectRelationReference] | None = None,
+        conflicting_with_reserved_property: str | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -119,9 +123,10 @@ class PersonRead(TypedNode, PersonProperties):
         self.birth_date = birth_date
         self.email = email
         self.siblings = siblings
+        self.conflicting_with_reserved_property = conflicting_with_reserved_property
 
-    def as_write(self) -> Person:
-        return Person(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
+    def as_write(self) -> PersonApply:
+        return PersonApply(self.space, self.external_id, self.name, self.birth_date, self.email, self.siblings)
 
     @classmethod
     def get_source(cls) -> ViewId:
@@ -143,7 +148,7 @@ class Asset(TypedNodeApply):
 
 class TestTypedNodeApply:
     def test_dump_person(self) -> None:
-        person = Person("sp_my_fixed_space", "my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
+        person = PersonApply("sp_my_fixed_space", "my_external_id", "John Doe", date(1990, 1, 1), "example@cognite.com")
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
@@ -157,13 +162,14 @@ class TestTypedNodeApply:
                         "birthDate": "1990-01-01",
                         "email": "example@cognite.com",
                         "siblings": None,
+                        "type": None,
                     },
                 }
             ],
         }
 
         assert person.dump() == expected
-        loaded = Person.load(expected)
+        loaded = PersonApply.load(expected)
         assert person.dump() == loaded.dump()
 
     def test_dump_load_asset(self) -> None:
@@ -209,22 +215,27 @@ class TestTypedEdgeApply:
         assert flow.dump() == loaded.dump()
 
 
+@pytest.fixture
+def person_read() -> PersonRead:
+    return PersonRead(
+        "sp_my_fixed_space",
+        "my_external_id",
+        1,
+        0,
+        0,
+        "John Doe",
+        date(1990, 1, 1),
+        "john@doe.com",
+        type=DirectRelationReference("sp_model_space", "person"),
+    )
+
+
 class TestTypedNode:
-    def test_dump_load_person(self) -> None:
-        person = PersonRead(
-            "sp_my_fixed_space",
-            "my_external_id",
-            1,
-            0,
-            0,
-            "John Doe",
-            date(1990, 1, 1),
-            "example@email.com",
-            siblings=[
-                DirectRelationReference("sp_data_space", "brother"),
-                DirectRelationReference("sp_data_space", "sister"),
-            ],
-        )
+    def test_dump_load_person(self, person_read: PersonRead) -> None:
+        person_read.siblings = [
+            DirectRelationReference("sp_data_space", "brother"),
+            DirectRelationReference("sp_data_space", "sister"),
+        ]
         expected = {
             "space": "sp_my_fixed_space",
             "externalId": "my_external_id",
@@ -237,31 +248,31 @@ class TestTypedNode:
                     "view_id/1": {
                         "name": "John Doe",
                         "birthDate": "1990-01-01",
-                        "email": "example@email.com",
+                        "email": "john@doe.com",
                         "siblings": [
                             {"space": "sp_data_space", "externalId": "brother"},
                             {"space": "sp_data_space", "externalId": "sister"},
                         ],
+                        "type": None,
                     },
                 }
             },
+            "type": {"space": "sp_model_space", "externalId": "person"},
         }
 
-        actual = person.dump()
+        actual = person_read.dump()
         assert actual == expected
         loaded = PersonRead.load(expected)
-        assert person == loaded
+        assert person_read == loaded
         assert isinstance(loaded.birth_date, date)
-        assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings or [])
+        assert loaded.siblings is not None
+        assert all(isinstance(sibling, DirectRelationReference) for sibling in loaded.siblings)
 
     @pytest.mark.dsl
-    def test_to_pandas(self) -> None:
+    def test_to_pandas(self, person_read: PersonRead) -> None:
         import pandas as pd
 
-        person = PersonRead(
-            "sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com"
-        )
-        df = person.to_pandas(expand_properties=True)
+        df = person_read.to_pandas(expand_properties=True)
         expected_df = pd.Series(
             {
                 "space": "sp_my_fixed_space",
@@ -270,23 +281,22 @@ class TestTypedNode:
                 "last_updated_time": pd.Timestamp("1970-01-01"),
                 "created_time": pd.Timestamp("1970-01-01"),
                 "instance_type": "node",
+                "type": {"space": "sp_model_space", "external_id": "person"},
                 "name": "John Doe",
                 "birth_date": "1990-01-01",
                 "email": "john@doe.com",
                 "siblings": None,
+                "conflicting_with_reserved_property": None,
             },
         ).to_frame(name="value")
         pd.testing.assert_frame_equal(df, expected_df)
 
     @pytest.mark.dsl
-    def test_to_pandas_list(self) -> None:
+    def test_to_pandas_list(self, person_read: PersonRead) -> None:
         import pandas as pd
 
-        person = NodeList[PersonRead](
-            [PersonRead("sp_my_fixed_space", "my_external_id", 1, 0, 0, "John Doe", date(1990, 1, 1), "john@doe.com")]
-        )
-
-        df = person.to_pandas(expand_properties=True)
+        persons = NodeList[PersonRead]([person_read])
+        df = persons.to_pandas(expand_properties=True)
 
         pd.testing.assert_frame_equal(
             df,
@@ -298,10 +308,12 @@ class TestTypedNode:
                     "last_updated_time": [pd.Timestamp("1970-01-01 00:00:00")],
                     "created_time": [pd.Timestamp("1970-01-01 00:00:00")],
                     "instance_type": ["node"],
+                    "type": [{"space": "sp_model_space", "external_id": "person"}],
                     "name": ["John Doe"],
-                    "birthDate": ["1990-01-01"],
+                    "birth_date": ["1990-01-01"],
                     "email": ["john@doe.com"],
                     "siblings": None,
+                    "conflicting_with_reserved_property": None,
                 }
             ),
         )
@@ -377,8 +389,6 @@ class TestCDMv1Classes:
     def test_cognite_asset_read_and_write__to_pandas(
         self, cognite_asset_kwargs: dict[str, Any], camel_case: bool
     ) -> None:
-        import pandas as pd
-
         # When calling to_pandas, `use_attribute_name = not camel_case` due to how we expect
         # attributes to be snake cased in python (in general).
         asset_write = CogniteAssetApply(**cognite_asset_kwargs)
@@ -390,61 +400,63 @@ class TestCDMv1Classes:
         read_expanded_df = asset_read.to_pandas(expand_properties=True, camel_case=camel_case)
 
         xid = "externalId" if camel_case else "external_id"
-        for df in [write_df, read_df]:
+        for df in [write_df, read_df, read_expanded_df]:
             assert df.index.is_unique
             assert df.index[1] == xid
             assert df.at["type", "value"] == {"space": "should-be", xid: "at-root"}
 
-        assert not read_expanded_df.index.is_unique  # because 'type' is repeated
-        expected_type_df = pd.DataFrame(
-            [
-                ({"space": "should-be", xid: "at-root"},),
-                ({"space": "should-be", "externalId": "in-properties"},),
-            ],
-            columns=["value"],
-            index=["type", "type"],
-        )
-        pd.testing.assert_frame_equal(read_expanded_df.loc["type"], expected_type_df)
         assert "source_created_time" in read_expanded_df.index
+        assert "asset_type" in read_expanded_df.index
 
 
 @pytest.mark.parametrize(
     "name, instance",
     (
         (
-            "CogniteAssetApply",
-            CogniteAssetApply(
+            "CogniteAsset",
+            CogniteAsset(
                 space="foo",
                 external_id="child",
-                parent=("foo", "I-am-root"),
+                parent=DirectRelationReference("foo", "I-am-root"),
+                version=1,
+                last_updated_time=10,
+                created_time=5,
+                aliases=["yo"],
             ),
         ),
         (
-            "CogniteDescribableEdgeApply",
-            CogniteDescribableEdgeApply(
+            "CogniteDescribableEdge",
+            CogniteDescribableEdge(
                 space="foo",
                 external_id="indescribable",
                 type=DirectRelationReference("foo", "yo"),
                 start_node=DirectRelationReference("foo", "yo2"),
                 end_node=DirectRelationReference("foo", "yo3"),
+                version=1,
+                last_updated_time=10,
+                created_time=5,
+                aliases=["yo"],
             ),
         ),
     ),
 )
 def test_typed_instances_overrides_inherited_methods_from_instance_cls(
-    name: str, instance: TypedNode | TypedEdge
+    name: str, instance: CogniteAsset | CogniteDescribableEdge
 ) -> None:
-    with pytest.raises(AttributeError, match=f"{name!r} object has no attribute 'get'"):
-        instance.get("space")
+    assert instance.aliases
 
-    with pytest.raises(TypeError, match=f"{name!r} object is not subscriptable"):
-        instance["foo"]
+    match_str = "^For typed instances, use direct attribute access: `instance.{}`$"
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance.get("aliases")
 
-    with pytest.raises(TypeError, match=f"{name!r} object does not support item assignment"):
-        instance["foo"] = "bar"
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance["aliases"]
 
-    with pytest.raises(TypeError, match=f"{name!r} object does not support item deletion"):
-        del instance["external_id"]
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        instance["aliases"] = "bar"
 
-    with pytest.raises(TypeError, match=f"argument of type {name!r} is not iterable"):
-        "foo" in instance
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        del instance["aliases"]
+
+    with pytest.raises(AttributeError, match=match_str.format("aliases")):
+        "aliases" in instance

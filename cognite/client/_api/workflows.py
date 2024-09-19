@@ -30,7 +30,6 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -56,18 +55,6 @@ def wrap_workflow_ids(
 
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
-
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="beta", feature_name="Workflow Orchestration"
-        )
 
     def create(
         self,
@@ -100,7 +87,6 @@ class WorkflowTriggerAPI(APIClient):
                 ...     )
                 ... )
         """
-        self._warning.warn()
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
@@ -129,7 +115,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.delete("my_trigger")
         """
-        self._warning.warn()
         self._post(
             url_path=self._RESOURCE_PATH + "/delete",
             json={"items": [{"externalId": external_id}]},
@@ -155,7 +140,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_triggers()
         """
-        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH,
@@ -186,7 +170,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
         """
-        self._warning.warn()
         return self._list(
             method="GET",
             url_path=self._RESOURCE_PATH + f"/{external_id}/history",
