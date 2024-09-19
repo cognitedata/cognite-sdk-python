@@ -54,7 +54,7 @@ class MappingsAPI(APIClient):
     ) -> Iterator[Mapping] | Iterator[MappingList]:
         """Iterate over mappings
 
-        Fetches Mapping as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
 
         Args:
             chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one Destinatio a time.
@@ -77,7 +77,7 @@ class MappingsAPI(APIClient):
     def __iter__(self) -> Iterator[Mapping]:
         """Iterate over mappings
 
-        Fetches mappings as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
 
         Returns:
             Iterator[Mapping]: yields Mapping one by one.
@@ -109,7 +109,7 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
 
-            Get multiple spaces by id:
+            Get multiple mapping by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -168,7 +168,7 @@ class MappingsAPI(APIClient):
         """`Create one or more mappings. <https://developer.cognite.com/api#tag/Mappings/operation/create_mappings>`_
 
         Args:
-            items (MappingWrite | Sequence[MappingWrite]): Space | Sequence[Space]): Mapping(s) to create.
+            items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
 
         Returns:
             Mapping | MappingList: Created mapping(s)
@@ -204,7 +204,7 @@ class MappingsAPI(APIClient):
         """`Update one or more mappings. <https://developer.cognite.com/api#tag/Mappings/operation/update_mappings>`_
 
         Args:
-            items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Space | Sequence[Space]): Mapping(s) to update.
+            items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.
 
         Returns:
             Mapping | MappingList: Updated mapping(s)
@@ -246,7 +246,7 @@ class MappingsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.mappings.list(limit=5)
+                >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
             Iterate over mappings::
 
@@ -260,7 +260,7 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
-                ...     mapping_list # do something with the spaces
+                ...     mapping_list # do something with the mappings
         """
         self._warning.warn()
         return self._list(
