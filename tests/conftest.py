@@ -1,3 +1,5 @@
+import platform
+
 import dotenv
 import pytest
 import responses
@@ -21,6 +23,12 @@ def disable_gzip():
     global_config.disable_gzip = True
     yield
     global_config.disable_gzip = old
+
+
+@pytest.fixture(scope="session")
+def os_and_py_version():
+    # Nice to use to create resources that is unique to each test runner
+    return f"{platform.system()}-{platform.python_version()}"
 
 
 def pytest_addoption(parser):

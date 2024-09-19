@@ -67,7 +67,7 @@ class TestDataModelsAPI:
         )
         new_data_model = DataModelApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestDataModel",
+            external_id="IntegrationTestDataModel" + random_string(5),
             version="v1",
             description="Integration test, should not persist",
             name="Create and delete data model with view",

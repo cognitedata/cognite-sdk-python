@@ -211,7 +211,7 @@ class ThreeDModelUpdate(CogniteUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name", is_nullable=False),
-            PropertySpec("metadata", is_container=True),
+            PropertySpec("metadata", is_object=True),
             PropertySpec("data_set_id", is_nullable=True),
         ]
 
@@ -471,7 +471,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
             PropertySpec("camera", is_nullable=False),
             PropertySpec("scale", is_nullable=False),
             PropertySpec("translation", is_nullable=False),
-            PropertySpec("metadata", is_container=True),
+            PropertySpec("metadata", is_object=True),
         ]
 
 

@@ -34,12 +34,9 @@ class DirectRelationReference:
     @classmethod
     def load(cls, data: dict | tuple[str, str] | DirectRelationReference) -> DirectRelationReference:
         if isinstance(data, dict):
-            return cls(
-                space=data["space"],
-                external_id=data["externalId"],
-            )
+            return cls(space=data["space"], external_id=data["externalId"])
         elif isinstance(data, tuple) and len(data) == 2:
-            return cls(data[0], data[1])
+            return cls(*data)
         elif isinstance(data, cls):
             return data
         else:

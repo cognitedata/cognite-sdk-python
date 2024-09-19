@@ -264,7 +264,7 @@ class JobsAPI(APIClient):
         self._warning.warn()
         return self._list(
             list_cls=JobList,
-            resource_cls=Job,  # type: ignore[type-abstract]
+            resource_cls=Job,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},

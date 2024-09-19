@@ -17,23 +17,6 @@ from cognite.client.data_classes.hosted_extractors import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
-# @pytest.fixture
-# def one_source(cognite_client: CogniteClient) -> Source:
-#     my_source = EventHubSourceWrite(
-#         external_id=f"myNewSource-{random_string(10)}",
-#         host="myhost",
-#         event_hub_name="myeventhub",
-#         key_name="mykeyname",
-#         key_value="secret",
-#     )
-#     retrieved = cognite_client.hosted_extractors.sources.retrieve(my_source.external_id, ignore_unknown_ids=True)
-#     if retrieved:
-#         yield retrieved
-#     created = cognite_client.hosted_extractors.sources.create(my_source)
-#     yield created
-#
-#     cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
-
 
 @pytest.fixture
 def one_job(cognite_client: CogniteClient, one_event_hub_source: Source, one_destination: Destination) -> Job:
@@ -101,9 +84,7 @@ class TestJobs:
             external_id=f"myJobForTesting-{random_string(10)}",
             destination_id=one_destination.external_id,
             source_id=one_event_hub_source.external_id,
-            format=CogniteFormat(
-                encoding="utf16",
-            ),
+            format=CogniteFormat(encoding="utf16"),
         )
         created: Job | None = None
         try:
@@ -119,9 +100,8 @@ class TestJobs:
             )
 
             updated = cognite_client.hosted_extractors.jobs.update(update)
-            format_ = updated.format
-            assert isinstance(format_, CogniteFormat)
-            assert format_.encoding == "utf16le"
+            assert isinstance(updated.format, CogniteFormat)
+            assert updated.format.encoding == "utf16le"
         finally:
             if created:
                 cognite_client.hosted_extractors.jobs.delete(created.external_id, ignore_unknown_ids=True)

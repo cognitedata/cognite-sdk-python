@@ -238,7 +238,7 @@ class DataSetUpdate(CogniteUpdate):
             PropertySpec("external_id", is_nullable=False),
             PropertySpec("name"),
             PropertySpec("description"),
-            PropertySpec("metadata", is_container=True),
+            PropertySpec("metadata", is_object=True),
             PropertySpec("write_protected", is_nullable=False),
         ]
 
