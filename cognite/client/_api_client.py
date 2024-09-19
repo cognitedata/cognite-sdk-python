@@ -1225,24 +1225,21 @@ class APIClient:
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> dict[str, dict[str, dict]]:
-        dumped_resource = resource.dump(camel_case=True)
-        has_id = "id" in dumped_resource
-        has_external_id = "externalId" in dumped_resource
-        has_instance_id = "instanceId" in dumped_resource
+        dumped = resource.dump(camel_case=True)
 
         patch_object: dict[str, dict[str, dict]] = {"update": {}}
-        if has_instance_id:
-            patch_object["instanceId"] = dumped_resource.pop("instanceId")
-            dumped_resource.pop("id", None)
-        elif has_id:
-            patch_object["id"] = dumped_resource.pop("id")
-        elif has_external_id:
-            patch_object["externalId"] = dumped_resource.pop("externalId")
+        if "instanceId" in dumped:
+            patch_object["instanceId"] = dumped.pop("instanceId")
+            dumped.pop("id", None)
+        elif "id" in dumped:
+            patch_object["id"] = dumped.pop("id")
+        elif "externalId" in dumped:
+            patch_object["externalId"] = dumped.pop("externalId")
 
         update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
 
         update_attribute_by_name = {prop.name: prop for prop in update_attributes}
-        for key, value in dumped_resource.items():
+        for key, value in dumped.items():
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]

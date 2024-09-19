@@ -25,7 +25,6 @@ from cognite.client.data_classes.time_series import (
     TimeSeriesSort,
     TimeSeriesWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -229,17 +228,11 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve(external_id="1")
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
-
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
-            headers=headers,
         )
 
     def retrieve_multiple(
@@ -274,17 +267,12 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
-        header: dict | None = None
-        if instance_ids is not None:
-            self._warn_alpha()
-            header = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
-            headers=header,
         )
 
     def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
@@ -563,12 +551,6 @@ class TimeSeriesAPI(APIClient):
             input_resource_cls=TimeSeriesWrite,
         )
 
-    @staticmethod
-    def _warn_alpha() -> None:
-        FeaturePreviewWarning(
-            api_maturity="alpha", feature_name="TimeSeries with Instance ID", sdk_maturity="alpha"
-        ).warn()
-
     def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -650,19 +632,11 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
         """
-        headers: dict | None = None
-        if (isinstance(item, Sequence) and any(ts.instance_id for ts in item)) or (
-            not isinstance(item, Sequence) and item.instance_id
-        ):
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
-
         return self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
             items=item,
-            headers=headers,
             mode=mode,
         )
 

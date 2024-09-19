@@ -6,6 +6,8 @@ from datetime import timedelta, timezone
 import pytest
 
 from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.utils._time import ZoneInfo
 
 
@@ -96,3 +98,31 @@ class TestDatapointsArray:
         assert dps1 != dps2
         assert math.isnan(dps1["datapoints"][1]["value"])
         assert dps2["datapoints"][1]["value"] is None
+
+
+@pytest.mark.dsl
+class TestToPandas:
+    @pytest.mark.parametrize("dps_lst_cls", [DatapointsList, DatapointsArrayList])
+    def test_identifier_priority(self, dps_lst_cls):
+        import numpy as np
+        import pandas as pd
+
+        ts = [1234] if dps_lst_cls is DatapointsList else np.array([1234 * 1_000_000], dtype="datetime64[ns]")
+        dps_cls = dps_lst_cls._RESOURCE
+        df = dps_lst_cls(
+            [
+                dps_cls(timestamp=ts, value=[2.0], id=123),
+                dps_cls(timestamp=ts, value=[4.0], external_id="foo"),
+                dps_cls(timestamp=ts, value=[6.0], instance_id=NodeId("s", "x")),
+            ]
+        ).to_pandas()  # Nothing supplied for column_names
+
+        exp_df = pd.DataFrame(
+            {
+                "123": 2.0,
+                "foo": 4.0,
+                "NodeId(s, x)": 6.0,
+            },
+            index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+        )
+        pd.testing.assert_frame_equal(df, exp_df)
