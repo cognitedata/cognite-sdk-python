@@ -39,6 +39,7 @@ from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply,
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
@@ -432,6 +433,11 @@ class FakeCogniteResourceGenerator:
             keyword_arguments = {"items": [{"start": 1, "count": 1}]}
         elif resource_cls is timezone:
             positional_arguments.append(timedelta(hours=self._random.randint(-3, 3)))
+        elif resource_cls is RestConfig and isinstance(keyword_arguments.get("incremental_load"), NextUrlLoad):
+            # RestConfig requires incremental_load to not be a NextUrlLoad object
+            keyword_arguments["incremental_load"] = BodyLoad(
+                value=self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
+            )
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 

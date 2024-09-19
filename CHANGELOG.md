@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.61.1] - 2024-09-19
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.jobs`.
+
 ## [7.61.0] - 2024-09-18
 ### Changed
 - TimeSeriesAPI and DatapointsAPI support for `instance_id` reaches general availability (GA).
