@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.61.2] - 2024-09-19
+## [7.62.0] - 2024-09-19
 ### Added
 - All `update` methods now accept a new parameter `mode` that controls how non-update objects should be
   interpreted. For example, should we do a partial update or a full replacement.
