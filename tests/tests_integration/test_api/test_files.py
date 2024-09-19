@@ -15,7 +15,6 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
-from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
 from cognite.client.utils._text import random_string
 
@@ -251,10 +250,10 @@ class TestFilesAPI:
         cognite_client.files.delete(session.file_metadata.id)
 
     def test_create_retrieve_update_delete_with_instance_id(
-        self, cognite_client: CogniteClient, alpha_test_space: Space
+        self, cognite_client: CogniteClient, instance_id_test_space: str
     ) -> None:
         file = CogniteFileApply(
-            space=alpha_test_space.space,
+            space=instance_id_test_space,
             external_id="file_python_sdk_instance_id_tests",
             name="file_python_sdk_instance_id_tests",
             description="This file was created by the Python SDK",
