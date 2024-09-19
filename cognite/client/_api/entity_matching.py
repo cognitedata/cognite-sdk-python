@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, TypeVar
+from typing import Any, Literal, Sequence, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -89,11 +89,18 @@ class EntityMatchingAPI(APIClient):
         item: EntityMatchingModel
         | EntityMatchingModelUpdate
         | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EntityMatchingModelList | EntityMatchingModel:
         """`Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
 
         Args:
             item (EntityMatchingModel | EntityMatchingModelUpdate | Sequence[EntityMatchingModel | EntityMatchingModelUpdate]): Model(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (EntityMatchingModel). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             EntityMatchingModelList | EntityMatchingModel: No description.
@@ -109,6 +116,7 @@ class EntityMatchingAPI(APIClient):
             resource_cls=EntityMatchingModel,
             update_cls=EntityMatchingModelUpdate,
             items=item,
+            mode=mode,
         )
 
     def list(

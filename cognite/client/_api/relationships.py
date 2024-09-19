@@ -421,12 +421,19 @@ class RelationshipsAPI(APIClient):
         | RelationshipWrite
         | RelationshipUpdate
         | Sequence[Relationship | RelationshipWrite | RelationshipUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
             item (Relationship | RelationshipWrite | RelationshipUpdate | Sequence[Relationship | RelationshipWrite | RelationshipUpdate]): Relationship(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (Relationship or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Relationship | RelationshipList: Updated relationship(s)
@@ -468,7 +475,7 @@ class RelationshipsAPI(APIClient):
                 >>> res = client.relationships.update(my_update)
         """
         return self._update_multiple(
-            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item, mode=mode
         )
 
     @overload

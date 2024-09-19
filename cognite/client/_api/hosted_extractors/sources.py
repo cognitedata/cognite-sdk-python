@@ -186,16 +186,34 @@ class SourcesAPI(APIClient):
         )
 
     @overload
-    def update(self, items: SourceWrite | SourceUpdate) -> Source: ...
+    def update(
+        self,
+        items: SourceWrite | SourceUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Source: ...
 
     @overload
-    def update(self, items: Sequence[SourceWrite | SourceUpdate]) -> SourceList: ...
+    def update(
+        self,
+        items: Sequence[SourceWrite | SourceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> SourceList: ...
 
-    def update(self, items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]) -> Source | SourceList:
+    def update(
+        self,
+        items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Source | SourceList:
         """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
 
         Args:
             items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Source(s) to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (SourceWrite). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Source | SourceList: Updated source(s)
@@ -216,6 +234,7 @@ class SourcesAPI(APIClient):
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             update_cls=SourceUpdate,
+            mode=mode,
             headers={"cdf-version": "beta"},
         )
 
