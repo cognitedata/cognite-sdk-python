@@ -25,6 +25,7 @@ from cognite.client._api import (
     workflows,
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
+from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
 from cognite.client.testing import CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
@@ -122,3 +123,9 @@ class TestDocstringExamples:
 
     def test_config(self):
         run_docstring_tests(config)
+
+    def test_hosted_extractors(self):
+        run_docstring_tests(mappings)
+        run_docstring_tests(sources)
+        run_docstring_tests(destinations)
+        run_docstring_tests(jobs)
