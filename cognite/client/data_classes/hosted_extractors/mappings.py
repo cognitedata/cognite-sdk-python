@@ -197,8 +197,8 @@ class Mapping(_MappingCore):
         mapping (CustomMapping): The custom mapping.
         published (bool): Whether this mapping is published and should be available to be used in jobs.
         input (InputMapping): The input mapping.
-        created_time (int): No description.
-        last_updated_time (int): No description.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -288,5 +288,4 @@ class MappingUpdate(CogniteUpdate):
 _INPUTMAPPING_CLASS_BY_TYPE: dict[str, type[InputMapping]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in InputMapping.__subclasses__()
-    if hasattr(subclass, "_type")
 }

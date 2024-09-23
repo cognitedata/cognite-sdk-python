@@ -78,7 +78,7 @@ Update destinations
 
 Mappings
 -------------
-Create new mapping
+Create new mappings
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.hosted_extractors.MappingsAPI.create
 
