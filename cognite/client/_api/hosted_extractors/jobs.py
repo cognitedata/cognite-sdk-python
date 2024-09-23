@@ -116,7 +116,7 @@ class JobsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"] ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"], ignore_unknown_ids=True)
 
         """
         self._warning.warn()
