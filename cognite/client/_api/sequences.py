@@ -574,19 +574,34 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence | SequenceWrite | SequenceUpdate) -> Sequence: ...
+    def update(
+        self,
+        item: Sequence | SequenceWrite | SequenceUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Sequence: ...
 
     @overload
-    def update(self, item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]) -> SequenceList: ...
+    def update(
+        self,
+        item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> SequenceList: ...
 
     def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence | SequenceList:
         """`Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
 
         Args:
             item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (Sequence or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Sequence | SequenceList: Updated sequences.
@@ -666,7 +681,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.update(my_update)
         """
         return self._update_multiple(
-            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item
+            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item, mode=mode
         )
 
     @overload
@@ -1295,14 +1310,14 @@ class SequencesDataAPI(APIClient):
             column_names_default = "columnExternalId"
 
         if external_id is not None and id is None:
-            return self.retrieve(external_id=external_id, start=start, end=end, limit=limit).to_pandas(
-                # TODO(doctrino): Is this supported: `column_names=column_external_ids` ?
-                column_names=column_external_ids or column_names_default,  # type: ignore  [arg-type]
+            return self.retrieve(
+                external_id=external_id, start=start, end=end, limit=limit, columns=column_external_ids
+            ).to_pandas(
+                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         elif id is not None and external_id is None:
-            return self.retrieve(id=id, start=start, end=end, limit=limit).to_pandas(
-                # TODO(doctrino): Is this supported: `column_names=column_external_ids` ?
-                column_names=column_external_ids or column_names_default,  # type: ignore  [arg-type]
+            return self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids).to_pandas(
+                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
         else:
             raise ValueError("Either external_id or id must be specified")

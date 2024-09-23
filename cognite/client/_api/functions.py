@@ -58,7 +58,8 @@ if TYPE_CHECKING:
 
 MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
-REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Matches [requirements] and [/requirements]
+# Match [requirements] and [/requirements]:
+REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
@@ -349,7 +350,7 @@ class FunctionsAPI(APIClient):
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
         sleep_time = 1.0  # seconds
-        for i in range(5):
+        for i in range(MAX_RETRIES):
             file = self._cognite_client.files.retrieve(id=file_id)
             if file and file.uploaded:
                 break
@@ -597,7 +598,7 @@ class FunctionsAPI(APIClient):
         try:
             with TemporaryDirectory() as tmpdir:
                 zip_path = Path(tmpdir, "function.zip")
-                with ZipFile(zip_path, "w") as zf:
+                with ZipFile(zip_path, "w", strict_timestamps=False) as zf:
                     for root, dirs, files in os.walk("."):
                         zf.write(root)
 
@@ -638,7 +639,7 @@ class FunctionsAPI(APIClient):
                         f.write(f"{req}\n")
 
             zip_path = Path(tmpdir, "function.zip")
-            with ZipFile(zip_path, "w") as zf:
+            with ZipFile(zip_path, "w", strict_timestamps=False) as zf:
                 zf.write(handle_path, arcname=HANDLER_FILE_NAME)
                 if docstr_requirements:
                     zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)

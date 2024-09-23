@@ -4,14 +4,8 @@ from datetime import datetime
 from typing import Literal
 
 from cognite.client.data_classes.data_modeling import DirectRelationReference
-from cognite.client.data_classes.data_modeling.cdm.v1 import (
-    CogniteFile,
-    CogniteFileApply,
-    CogniteTimeSeries,
-    CogniteTimeSeriesApply,
-)
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.typed_instances import (
+from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
     TypedNode,
     TypedNodeApply,
@@ -48,7 +42,7 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        TypedNodeApply.__init__(self, space, external_id, existing_version, None, type)
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.extracted_data = extracted_data
 
 
@@ -80,7 +74,7 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, None, type)
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.extracted_data = extracted_data
 
     def as_write(self) -> CogniteExtractorDataApply:
@@ -94,12 +88,23 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
 
 
 class _CogniteExtractorFileProperties:
+    source_id = PropertyOptions("sourceId")
+    source_context = PropertyOptions("sourceContext")
+    source_created_time = PropertyOptions("sourceCreatedTime")
+    source_updated_time = PropertyOptions("sourceUpdatedTime")
+    source_created_user = PropertyOptions("sourceCreatedUser")
+    source_updated_user = PropertyOptions("sourceUpdatedUser")
+    mime_type = PropertyOptions("mimeType")
+    is_uploaded = PropertyOptions("isUploaded")
+    uploaded_time = PropertyOptions("uploadedTime")
+    extracted_data = PropertyOptions("extractedData")
+
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_extraction_extensions", "CogniteExtractorFile", "v1")
 
 
-class CogniteExtractorFileApply(_CogniteExtractorFileProperties, CogniteFileApply, CogniteExtractorDataApply):
+class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply):
     """This represents the writing format of Cognite extractor file.
 
     It is used to when data is written to CDF.
@@ -155,36 +160,28 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, CogniteFileAppl
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        CogniteFileApply.__init__(
-            self,
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            assets=assets,
-            mime_type=mime_type,
-            directory=directory,
-            is_uploaded=is_uploaded,
-            uploaded_time=uploaded_time,
-            category=category,
-            existing_version=existing_version,
-            type=type,
-        )
-        CogniteExtractorDataApply.__init__(
-            self, space, external_id, extracted_data=extracted_data, existing_version=existing_version, type=type
-        )
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.is_uploaded = is_uploaded
+        self.uploaded_time = uploaded_time
+        self.category = DirectRelationReference.load(category) if category else None
+        self.extracted_data = extracted_data
 
 
-class CogniteExtractorFile(_CogniteExtractorFileProperties, CogniteFile, CogniteExtractorData):
+class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
     """This represents the reading format of Cognite extractor file.
 
     It is used to when data is read from CDF.
@@ -246,44 +243,25 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, CogniteFile, Cognite
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        CogniteFile.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            assets=assets,
-            mime_type=mime_type,
-            directory=directory,
-            is_uploaded=is_uploaded,
-            uploaded_time=uploaded_time,
-            category=category,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        CogniteExtractorData.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            extracted_data=extracted_data,
-            type=type,
-            deleted_time=deleted_time,
-        )
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.mime_type = mime_type
+        self.directory = directory
+        self.is_uploaded = is_uploaded
+        self.uploaded_time = uploaded_time
+        self.category = DirectRelationReference.load(category) if category else None
+        self.extracted_data = extracted_data
 
     def as_write(self) -> CogniteExtractorFileApply:
         return CogniteExtractorFileApply(
@@ -313,14 +291,23 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, CogniteFile, Cognite
 
 
 class _CogniteExtractorTimeSeriesProperties:
+    is_step = PropertyOptions("isStep")
+    time_series_type = PropertyOptions("type")
+    source_id = PropertyOptions("sourceId")
+    source_context = PropertyOptions("sourceContext")
+    source_created_time = PropertyOptions("sourceCreatedTime")
+    source_updated_time = PropertyOptions("sourceUpdatedTime")
+    source_created_user = PropertyOptions("sourceCreatedUser")
+    source_updated_user = PropertyOptions("sourceUpdatedUser")
+    source_unit = PropertyOptions("sourceUnit")
+    extracted_data = PropertyOptions("extractedData")
+
     @classmethod
     def get_source(cls) -> ViewId:
         return ViewId("cdf_extraction_extensions", "CogniteExtractorTimeSeries", "v1")
 
 
-class CogniteExtractorTimeSeriesApply(
-    _CogniteExtractorTimeSeriesProperties, CogniteTimeSeriesApply, CogniteExtractorDataApply
-):
+class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, TypedNodeApply):
     """This represents the writing format of Cognite extractor time series.
 
     It is used to when data is written to CDF.
@@ -329,7 +316,7 @@ class CogniteExtractorTimeSeriesApply(
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor time series.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -356,7 +343,7 @@ class CogniteExtractorTimeSeriesApply(
         external_id: str,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -376,36 +363,28 @@ class CogniteExtractorTimeSeriesApply(
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
-        CogniteTimeSeriesApply.__init__(
-            self,
-            space,
-            external_id,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            is_step=is_step,
-            type_=type_,
-            source_unit=source_unit,
-            unit=unit,
-            assets=assets,
-            equipment=equipment,
-            existing_version=existing_version,
-            type=type,
-        )
-        CogniteExtractorDataApply.__init__(
-            self, space, external_id, extracted_data=extracted_data, existing_version=existing_version, type=type
-        )
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
+        self.is_step = is_step
+        self.time_series_type = time_series_type
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+        self.source_unit = source_unit
+        self.unit = DirectRelationReference.load(unit) if unit else None
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+        self.extracted_data = extracted_data
 
 
-class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteTimeSeries, CogniteExtractorData):
+class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNode):
     """This represents the reading format of Cognite extractor time series.
 
     It is used to when data is read from CDF.
@@ -417,7 +396,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_step (bool): Defines whether the time series is a step series or not.
-        type_ (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -447,7 +426,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
         created_time: int,
         *,
         is_step: bool,
-        type_: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string"],
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -467,51 +446,32 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, CogniteT
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
-        CogniteTimeSeries.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            name=name,
-            description=description,
-            tags=tags,
-            aliases=aliases,
-            source_id=source_id,
-            source_context=source_context,
-            source=source,
-            source_created_time=source_created_time,
-            source_updated_time=source_updated_time,
-            source_created_user=source_created_user,
-            source_updated_user=source_updated_user,
-            is_step=is_step,
-            type_=type_,
-            source_unit=source_unit,
-            unit=unit,
-            assets=assets,
-            equipment=equipment,
-            type=type,
-            deleted_time=deleted_time,
-        )
-        CogniteExtractorData.__init__(
-            self,
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            extracted_data=extracted_data,
-            type=type,
-            deleted_time=deleted_time,
-        )
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
+        self.is_step = is_step
+        self.time_series_type = time_series_type
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else None
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+        self.source_unit = source_unit
+        self.unit = DirectRelationReference.load(unit) if unit else None
+        self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
+        self.equipment = [DirectRelationReference.load(equipment) for equipment in equipment] if equipment else None
+        self.extracted_data = extracted_data
 
     def as_write(self) -> CogniteExtractorTimeSeriesApply:
         return CogniteExtractorTimeSeriesApply(
             self.space,
             self.external_id,
             is_step=self.is_step,
-            type_=self.type_,
+            time_series_type=self.time_series_type,
             name=self.name,
             description=self.description,
             tags=self.tags,

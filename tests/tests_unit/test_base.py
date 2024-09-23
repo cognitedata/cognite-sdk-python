@@ -36,7 +36,7 @@ from cognite.client.data_classes.data_modeling import (
 )
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.hosted_extractors import Source, SourceList
+from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -90,9 +90,9 @@ class MyUpdate(CogniteUpdate):
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
             PropertySpec("string", is_nullable=False),
-            PropertySpec("list", is_container=True),
-            PropertySpec("object", is_container=True),
-            PropertySpec("labels", is_container=True),
+            PropertySpec("list", is_list=True),
+            PropertySpec("object", is_object=True),
+            PropertySpec("labels", is_list=True),
             # Columns are not supported
             # PropertySpec("columns", is_nullable=False),
         ]
@@ -195,7 +195,8 @@ class TestCogniteObject:
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
-            if not issubclass(cls, Source)
+            # Hosted extractors does not support the as_write method
+            if cls not in {Destination} and not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
@@ -213,7 +214,7 @@ class TestCogniteObject:
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             for cls in all_concrete_subclasses(WriteableCogniteResourceList)
-            if cls not in [EdgeListWithCursor, NodeListWithCursor, SourceList]
+            if cls not in [EdgeListWithCursor, NodeListWithCursor, SourceList, DestinationList]
         ],
     )
     def test_writable_list_as_write(

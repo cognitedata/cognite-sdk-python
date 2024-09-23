@@ -220,6 +220,7 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
             pandas.DataFrame: The dataframe.
         """
         pd = local_import("pandas")
+
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
@@ -433,10 +434,14 @@ class WriteableCogniteResourceList(
 @dataclass
 class PropertySpec:
     name: str
-    is_container: bool = False
+    is_list: bool = False
+    is_object: bool = False
     is_nullable: bool = True
     # Used to skip replace when the value is None
     is_beta: bool = False
+
+    def __post_init__(self) -> None:
+        assert not (self.is_list and self.is_object), "PropertySpec cannot be both list and object"
 
 
 class CogniteUpdate:

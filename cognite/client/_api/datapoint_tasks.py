@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import math
-import numbers
 import operator as op
 import warnings
 from abc import ABC, abstractmethod
@@ -15,7 +14,6 @@ from typing import (
     Any,
     Callable,
     DefaultDict,
-    Dict,
     Iterator,
     List,
     Literal,
@@ -46,8 +44,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     _DatapointsPayloadItem,
 )
-from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import InstanceId
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -85,11 +82,9 @@ DatapointRaw = Union[NumericDatapoint, StringDatapoint]
 DatapointsRaw = Union[NumericDatapoints, StringDatapoints]
 
 RawDatapointValue = Union[float, str]
-DatapointsId = Union[int, DatapointsQuery, Dict[str, Any], Sequence[Union[int, DatapointsQuery, Dict[str, Any]]]]
-DatapointsExternalId = Union[
-    str, DatapointsQuery, Dict[str, Any], SequenceNotStr[Union[str, DatapointsQuery, Dict[str, Any]]]
-]
-DatapointsInstanceId = Union[InstanceId, Sequence[InstanceId]]
+DatapointsId = Union[int, DatapointsQuery, Sequence[Union[int, DatapointsQuery]]]
+DatapointsExternalId = Union[str, DatapointsQuery, SequenceNotStr[Union[str, DatapointsQuery]]]
+DatapointsInstanceId = Union[NodeId, DatapointsQuery, Sequence[Union[NodeId, DatapointsQuery]]]
 
 
 @dataclass
@@ -103,7 +98,7 @@ class _FullDatapointsQuery:
     end: int | str | datetime.datetime | None = None
     id: DatapointsId | None = None
     external_id: DatapointsExternalId | None = None
-    instance_id: InstanceId | Sequence[InstanceId] | None = None
+    instance_id: DatapointsInstanceId | None = None
     aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: str | None = None
     timezone: str | datetime.timezone | ZoneInfo | None = None
@@ -118,15 +113,15 @@ class _FullDatapointsQuery:
 
     @property
     def is_single_identifier(self) -> bool:
-        # No lists given and exactly one of id/xid was given:
-        return (
-            isinstance(self.id, (dict, DatapointsQuery, numbers.Integral))
-            and (self.external_id is None and self.instance_id is None)
-            or isinstance(self.external_id, (dict, DatapointsQuery, str))
-            and (self.id is None and self.instance_id is None)
-            or isinstance(self.instance_id, InstanceId)
-            and (self.id is None and self.external_id is None)
-        )
+        # Exactly one of the identifiers given...
+        if exactly_one_is_not_none(self.external_id, self.id, self.instance_id):
+            # ...and that one is not a sequence:
+            return not (
+                isinstance(self.id, Sequence)
+                or isinstance(self.external_id, SequenceNotStr)
+                or isinstance(self.instance_id, Sequence)
+            )
+        return False
 
     @cached_property
     def top_level_defaults(self) -> dict[str, Any]:
@@ -149,35 +144,35 @@ class _FullDatapointsQuery:
     def parse_into_queries(self) -> list[DatapointsQuery]:
         queries = []
         if (id_ := self.id) is not None:
-            queries.extend(self._parse(id_, arg_name="id", exp_type=numbers.Integral))
+            queries.extend(self._parse(id_, arg_name="id", exp_type=int))
         if (xid := self.external_id) is not None:
             queries.extend(self._parse(xid, arg_name="external_id", exp_type=str))
         if (iid := self.instance_id) is not None:
-            queries.extend(self._parse(iid, arg_name="instance_id", exp_type=InstanceId))
+            queries.extend(self._parse(iid, arg_name="instance_id", exp_type=NodeId))
         if queries:
             return queries
-        raise ValueError("Pass at least one time series `id` or `external_id`!")
+        raise ValueError("Pass at least one time series `id`, `external_id` or `instance_id`!")
 
     def _parse(
         self,
-        id_or_xid: DatapointsId | DatapointsExternalId | DatapointsInstanceId,
+        identifier: DatapointsId | DatapointsExternalId | DatapointsInstanceId,
         arg_name: Literal["id", "external_id", "instance_id"],
         exp_type: type,
     ) -> list[DatapointsQuery]:
-        user_queries: SequenceNotStr[int | str | DatapointsQuery | dict[str, Any]]
-        if isinstance(id_or_xid, (dict, DatapointsQuery, exp_type)):
+        user_queries: SequenceNotStr[int | str | NodeId | DatapointsQuery]
+        if isinstance(identifier, (dict, DatapointsQuery, exp_type)):
             # Lazy - we postpone evaluation:
-            user_queries = [cast(Union[int, str, DatapointsQuery, Dict[str, Any]], id_or_xid)]
+            user_queries = [identifier]
 
-        elif isinstance(id_or_xid, SequenceNotStr):
+        elif isinstance(identifier, SequenceNotStr):
             # We use Sequence because we require an ordering of elements
-            user_queries = id_or_xid
+            user_queries = identifier
         else:
-            self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
+            self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
 
         parsed_queries = []
         for query in user_queries:
-            # We merge 'defaults' and given user query; the query takes precedence:
+            # We merge 'defaults' and the given user query; the query takes precedence:
             if isinstance(query, exp_type):
                 id_dct = {arg_name: query}
                 query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
@@ -196,13 +191,13 @@ class _FullDatapointsQuery:
 
     @staticmethod
     def _raise_on_wrong_ts_identifier_type(
-        id_or_xid: object,  # This fn is only called when gotten the wrong type
+        identifier: object,  # This fn is only called when gotten the wrong type
         arg_name: str,
         exp_type: type,
     ) -> NoReturn:
         raise TypeError(
-            f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
-            f"{exp_type}, {DatapointsQuery} or {dict} (deprecated), or a (mixed) list of these, but got `{id_or_xid}`."
+            f"Got unsupported type {type(identifier)}, as, or part of argument `{arg_name}`. Expected one of "
+            f"{exp_type}, {DatapointsQuery}, or a (mixed) list of these, but got `{identifier}`."
         )
 
     def validate(self, queries: list[DatapointsQuery], dps_limit_raw: int, dps_limit_agg: int) -> list[DatapointsQuery]:
@@ -295,7 +290,7 @@ class _FullDatapointsQuery:
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
-        elif isinstance(limit, numbers.Integral) and limit >= 0:  # limit=0 is accepted by the API
+        elif isinstance(limit, int) and limit >= 0:  # limit=0 is accepted by the API
             try:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)
@@ -465,7 +460,10 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
 
 def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
-    instance_id = NodeId(res.instanceId.space, res.instanceId.externalId) if res.instanceId else None
+    if res.instanceId and res.instanceId.space:  # res.instanceId evaluates to True even when empty :eyes:
+        instance_id = NodeId(res.instanceId.space, res.instanceId.externalId)
+    else:
+        instance_id = None
     return {
         "id": res.id,
         "external_id": res.externalId,

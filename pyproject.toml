@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.58.6"
+version = "7.62.0"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -14,9 +14,6 @@ license = "Apache-2.0"
 
 packages = [{ include="cognite", from="." }]
 
-[tool.ruff]
-line-length = 120
-
 [tool.ruff.lint.per-file-ignores]
 # let scripts use print statements
 "scripts/*" = ["T201"]
@@ -24,7 +21,7 @@ line-length = 120
 [tool.poetry.dependencies]
 python = "^3.8"
 
-requests = "^2"
+requests = "^2.27"
 requests_oauthlib = "^1"
 msal = "^1"
 protobuf = ">=4"
@@ -87,6 +84,7 @@ packaging = ">=23"
 IPython = ">=7.0.0"  # Used in docstring examples
 PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
+types-simplejson = "^3.19.0.20240801"
 
 [build-system]
 requires = ["poetry-core"]

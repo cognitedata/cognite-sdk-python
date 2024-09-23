@@ -30,6 +30,8 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
+from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
+from cognite.client._api.hosted_extractors.jobs import JobsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
@@ -140,6 +142,8 @@ class CogniteClientMock(MagicMock):
 
         self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
         self.hosted_extractors.sources = MagicMock(spec_set=SourcesAPI)
+        self.hosted_extractors.destinations = MagicMock(spec_set=DestinationsAPI)
+        self.hosted_extractors.jobs = MagicMock(spec_set=JobsAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)

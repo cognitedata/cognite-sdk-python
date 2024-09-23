@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
+
+from cognite.client.data_classes import TimeSeries
+from cognite.client.testing import monkeypatch_cognite_client
 
 # Files to exclude test directories or modules
 collect_ignore = ["conf.py"]
@@ -21,8 +27,8 @@ def set_envs(monkeypatch):
 
 
 @pytest.fixture
-def quickstart_client_config_file(monkeypatch):
-    data = {
+def client_data() -> dict[str, Any]:
+    return {
         "client": {
             "project": "my-project",
             "client_name": "my-special-client",
@@ -42,7 +48,57 @@ def quickstart_client_config_file(monkeypatch):
         },
     }
 
+
+@pytest.fixture
+def quickstart_client_config_file(monkeypatch, client_data):
     def read_text(*args, **kwargs):
-        return yaml.dump(data)
+        return yaml.dump(client_data)
 
     monkeypatch.setattr(Path, "read_text", read_text)
+
+
+@pytest.fixture()
+def appendix_update_patch() -> None:
+    with monkeypatch_cognite_client() as client:
+        client.time_series.update.return_value = TimeSeries(
+            external_id="new_ts",
+            name="New TS",
+            description="Updated description",
+            metadata={"another": "one", "brand": "new", "key": "new value"},
+        )
+        yield None
+
+
+@pytest.fixture()
+def appendix_update_replace() -> None:
+    with monkeypatch_cognite_client() as client:
+        client.time_series.update.return_value = TimeSeries(
+            external_id="new_ts",
+            description="Updated description",
+            metadata={"new": "entry"},
+        )
+        yield None
+
+
+@pytest.fixture()
+def appendix_update_replace_ignore_null() -> None:
+    with monkeypatch_cognite_client() as client:
+        client.time_series.update.return_value = TimeSeries(
+            external_id="new_ts",
+            name="New TS",
+            description="Updated description",
+            metadata={"new": "entry"},
+        )
+        yield None
+
+
+@pytest.fixture()
+def appendix_update_replace_ignore_null2() -> None:
+    with monkeypatch_cognite_client() as client:
+        client.time_series.update.return_value = TimeSeries(
+            external_id="new_ts",
+            name="New TS",
+            description="Updated description",
+            metadata={"key": "value"},
+        )
+        yield None

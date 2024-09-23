@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, cast, overload
+from typing import TYPE_CHECKING, Iterator, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -192,7 +192,11 @@ class DatapointsSubscriptionAPI(APIClient):
             other_params={"externalId": external_id},
         )
 
-    def update(self, update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite) -> DatapointSubscription:
+    def update(
+        self,
+        update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DatapointSubscription:
         """`Update a subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/updateSubscriptions>`_
 
         Update a subscription. Note that Fields that are not included in the request are not changed.
@@ -200,6 +204,12 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Args:
             update (DataPointSubscriptionUpdate | DataPointSubscriptionWrite): The subscription update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (DataPointSubscriptionWrite). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing.
 
         Returns:
             DatapointSubscription: Updated subscription.
@@ -229,6 +239,7 @@ class DatapointsSubscriptionAPI(APIClient):
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             update_cls=DataPointSubscriptionUpdate,
+            mode=mode,
         )
 
     def iterate_data(

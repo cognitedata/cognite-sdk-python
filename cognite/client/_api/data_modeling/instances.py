@@ -61,16 +61,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Edge,
     T_Node,
     TargetUnit,
+    TypedEdge,
+    TypedNode,
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
     SourceSelector,
-)
-from cognite.client.data_classes.data_modeling.typed_instances import (
-    TypedEdge,
-    TypedNode,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
@@ -351,7 +349,9 @@ class InstancesAPI(APIClient):
         Returns:
             EdgeList[T_Edge] | T_Edge | Edge | None: The requested edges.
 
-        Retrieve nodes using a custom Edge class Flow
+        Retrieve edges using a custom typed class "Flow". Any property that you want to look up by a different attribute name,
+        e.g. you want `my_edge.flow_rate` to return the data for property `flowRate`, must use the PropertyOptions as shown below.
+        We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeId, TypedEdge, PropertyOptions, DirectRelationReference, ViewId
@@ -369,10 +369,10 @@ class InstancesAPI(APIClient):
                 ...        flow_rate: float,
                 ...        start_node: DirectRelationReference,
                 ...        end_node: DirectRelationReference,
-                ...        deleted_time: Union[int, None] = None,
+                ...        deleted_time: int | None = None,
                 ...    ) -> None:
                 ...        super().__init__(
-                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time, None
+                ...            space, external_id, version, type, last_updated_time, created_time, start_node, end_node, deleted_time
                 ...        )
                 ...        self.flow_rate = flow_rate
                 ...
@@ -381,7 +381,9 @@ class InstancesAPI(APIClient):
                 ...        return ViewId("sp_model_space", "flow", "1")
                 ...
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.instances.retrieve_edges(NodeId("mySpace", "theFlow"), edge_cls=Flow)
+                >>> res = client.data_modeling.instances.retrieve_edges(
+                ...     EdgeId("mySpace", "theFlow"), edge_cls=Flow
+                ... )
                 >>> isinstance(res, Flow)
         """
         res = self._retrieve_typed(
@@ -439,7 +441,6 @@ class InstancesAPI(APIClient):
             without providing a custom node class, but in that case, the retrieved nodes will be of the
             built-in Node class.
 
-
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]]): Node id(s) to retrieve.
             node_cls (type[T_Node]): The custom node class to use, the retrieved nodes will automatically be serialized to this class.
@@ -449,7 +450,10 @@ class InstancesAPI(APIClient):
         Returns:
             NodeList[T_Node] | T_Node | Node | None: The requested edges.
 
-        Retrieve nodes using a custom Node class Person
+        Retrieve nodes using a custom typed node class "Person". Any property that you want to look up by a different attribute name,
+        e.g. you want `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
+        We strongly suggest you use snake_cased attribute names, as is done here:
+
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, TypedNode, PropertyOptions, DirectRelationReference, ViewId
@@ -464,9 +468,9 @@ class InstancesAPI(APIClient):
                 ...        last_updated_time: int,
                 ...        created_time: int,
                 ...        name: str,
-                ...        birth_year: Union[int, None] = None,
-                ...        type: Union[DirectRelationReference, None] = None,
-                ...        deleted_time: Union[int, None] = None,
+                ...        birth_year: int | None = None,
+                ...        type: DirectRelationReference | None = None,
+                ...        deleted_time: int | None = None,
                 ...    ):
                 ...        super().__init__(
                 ...            space=space,
@@ -475,8 +479,7 @@ class InstancesAPI(APIClient):
                 ...            last_updated_time=last_updated_time,
                 ...            created_time=created_time,
                 ...            type=type,
-                ...            deleted_time=deleted_time,
-                ...            properties=None,
+                ...            deleted_time=deleted_time
                 ...        )
                 ...        self.name = name
                 ...        self.birth_year = birth_year
@@ -486,7 +489,9 @@ class InstancesAPI(APIClient):
                 ...        return ViewId("myModelSpace", "Person", "1")
                 ...
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.instances.retrieve_nodes(NodeId("myDataSpace", "myPerson"), node_cls=Person)
+                >>> res = client.data_modeling.instances.retrieve_nodes(
+                ...     NodeId("myDataSpace", "myPerson"), node_cls=Person
+                ... )
                 >>> isinstance(res, Person)
         """
         res = self._retrieve_typed(
@@ -859,8 +864,8 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
                 >>> client = CogniteClient()
-                >>> nodes = [NodeApply("mySpace", "myNodeId")]
-                >>> res = client.data_modeling.instances.apply(nodes)
+                >>> node = NodeApply("mySpace", "myNodeId")
+                >>> res = client.data_modeling.instances.apply(node)
 
             Create two nodes with data with a one-to-many edge
 
@@ -925,23 +930,24 @@ class InstancesAPI(APIClient):
                 >>> my_date = datetime(2020, 3, 14, 15, 9, 26, 535000, tzinfo=timezone.utc)
                 >>> data_model_timestamp = datetime_to_ms_iso_timestamp(my_date)  # "2020-03-14T15:09:26.535+00:00"
 
-            Create a typed node:
+            Create a typed node apply. Any property that you want to look up by a different attribute name, e.g. you want
+            `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
+            We strongly suggest you use snake_cased attribute names, as is done here:
 
                 >>> from cognite.client import CogniteClient
-                >>> from datetime import date
                 >>> from cognite.client.data_classes.data_modeling import TypedNodeApply, PropertyOptions
-                >>> class Person(TypedNodeApply):
-                ...     birth_date = PropertyOptions(identifier="birthDate")
+                >>> class PersonApply(TypedNodeApply):
+                ...     birth_year = PropertyOptions(identifier="birthYear")
                 ...
-                ...     def __init__(self, space: str, external_id, name: str, birth_date: date):
+                ...     def __init__(self, space: str, external_id, name: str, birth_year: int):
                 ...         super().__init__(space, external_id, type=("sp_model_space", "Person"))
                 ...         self.name = name
-                ...         self.birth_date = birth_date
+                ...         self.birth_year = birth_year
+                ...     def get_source(self):
+                ...         return ViewId("sp_model_space", "Person", "v1")
                 ...
-                >>> client = CogniteClient()
-                >>> person = Person("sp_date_space", "my_person", "John Doe", date(1980, 1, 1))
+                >>> person = PersonApply("sp_date_space", "my_person", "John Doe", 1980)
                 >>> res = client.data_modeling.instances.apply(nodes=person)
-
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
@@ -1051,7 +1057,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to search in.
             query (str | None): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
@@ -1096,7 +1102,7 @@ class InstancesAPI(APIClient):
             list_cls: type[NodeList[T_Node]] | type[EdgeList[T_Edge]] = NodeList[Node]  # type: ignore[assignment]
             resource_cls: type[Node] | type[Edge] = Node
         elif instance_type == "edge":
-            list_cls = EdgeList  # type: ignore[assignment]
+            list_cls = EdgeList[Edge]  # type: ignore[assignment]
             resource_cls = Edge
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
             list_cls = NodeList[T_Node]
@@ -1512,7 +1518,7 @@ class InstancesAPI(APIClient):
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
@@ -1570,15 +1576,11 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
-            resource_cls, list_cls = (
-                _NodeOrEdgeResourceAdapter,
-                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
-            )
+            resource_cls = _NodeOrEdgeResourceAdapter
+            list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
-            resource_cls, list_cls = (
-                _NodeOrEdgeResourceAdapter(Node, instance_type),  # type: ignore[assignment]
-                _TypedNodeOrEdgeListAdapter(instance_type),  # type: ignore[assignment]
-            )
+            resource_cls = _NodeOrEdgeResourceAdapter(Node, instance_type)  # type: ignore[assignment]
+            list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 

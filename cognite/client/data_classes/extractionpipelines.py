@@ -356,9 +356,9 @@ class ExtractionPipelineUpdate(CogniteUpdate):
             PropertySpec("description", is_nullable=False),
             PropertySpec("data_set_id", is_nullable=False),
             PropertySpec("schedule", is_nullable=False),
-            PropertySpec("raw_tables", is_container=True),
-            PropertySpec("contacts", is_container=True),
-            PropertySpec("metadata", is_container=True),
+            PropertySpec("raw_tables", is_list=True),
+            PropertySpec("contacts", is_list=True),
+            PropertySpec("metadata", is_object=True),
             PropertySpec("source", is_nullable=False),
             PropertySpec("documentation", is_nullable=False),
             # Not supported yet

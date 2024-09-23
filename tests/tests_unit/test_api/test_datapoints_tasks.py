@@ -16,18 +16,14 @@ LIMIT_KWS = dict(dps_limit_raw=1234, dps_limit_agg=5678)
 
 
 class TestSingleTSQueryValidator:
-    @pytest.mark.parametrize(
-        "ids, xids",
-        (
-            (None, None),
-            ([], None),
-            (None, []),
-            ([], []),
-        ),
-    )
-    def test_no_identifiers_raises(self, ids, xids):
-        with pytest.raises(ValueError, match=re.escape("Pass at least one time series `id` or `external_id`!")):
-            _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()
+    @pytest.mark.parametrize("ids", (None, []))
+    @pytest.mark.parametrize("xids", (None, []))
+    @pytest.mark.parametrize("inst_id", (None, []))
+    def test_no_identifiers_raises(self, ids, xids, inst_id):
+        with pytest.raises(
+            ValueError, match=re.escape("Pass at least one time series `id`, `external_id` or `instance_id`!")
+        ):
+            _FullDatapointsQuery(id=ids, external_id=xids, instance_id=inst_id).parse_into_queries()
 
     @pytest.mark.parametrize(
         "ids, xids, exp_attr_to_fail",

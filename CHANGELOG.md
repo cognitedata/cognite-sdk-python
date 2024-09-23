@@ -17,6 +17,87 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.0] - 2024-09-19
+### Added
+- All `update` methods now accept a new parameter `mode` that controls how non-update objects should be
+  interpreted. For example, should we do a partial update or a full replacement.
+
+## [7.61.1] - 2024-09-19
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.jobs`.
+
+## [7.61.0] - 2024-09-18
+### Changed
+- TimeSeriesAPI and DatapointsAPI support for `instance_id` reaches general availability (GA).
+### Added
+- `instance_id` can now be used freely alongside `id` and `external_id`, and is now accepted by
+  retrieve/retrieve_array/retrieve_dataframe.
+- `instance_id` now works in `to_pandas` methods, with fallbacks on `external_id` and `id`.
+### Fixed
+- A bug caused all datapoints objects to load an empty instance_id.
+
+## [7.60.6] - 2024-09-17
+### Fixed
+- Fixed bug in `replace` upsert mode which caused objects to not be cleared.
+
+## [7.60.5] - 2024-09-17
+### Changed
+- Remove beta notice on the Data Workflows `WorkflowTriggerAPI`
+
+## [7.60.4] - 2024-09-15
+### Added
+- Fix bug in column name remapping for `TypedInstance.to_pandas()`
+
+## [7.60.3] - 2024-09-14
+### Changed
+- The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
+  now implemented as composition and no longer inherits from each other. This is to reflect the underlying API.
+
+## [7.60.2] - 2024-09-14
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
+
+## [7.60.1] - 2024-09-13
+### Fixed
+- LocationFiltersACl.Scope.SpaceID changed to ID
+
+## [7.60.0] - 2024-09-12
+### Changed
+- Some changes to the typed instances functionality in the data modeling client
+  - The `TypedNode`, `TypedEdge`, etc. classes are moved from `data_classes.data_modeling.typed_instances` to `data_classes.data_modeling.instances`
+  - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
+  - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
+
+## [7.59.3] - 2024-09-12
+### Fixed
+- JSONDecodeError can no longer be raised in environments where simplejson is used instead of built-in json.
+
+## [7.59.2] - 2024-09-12
+### Fixed
+- A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
+
+## [7.59.1] - 2024-09-12
+### Fixed
+- Creating a function using files dated before 1980 no longer raises ValueError,
+  by overriding the timestamps to 1980-01-01.
+
+## [7.59.0] - 2024-09-12
+### Added
+- Added `ignore_unknown_ids` to `client.files.delete`.
+
+## [7.58.8] - 2024-09-10
+### Added
+- Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.
+
+## [7.58.7] - 2024-09-06
+### Changed
+- [Feature Preview - alpha] Updated the `Core Model` and added `ExtractorExtension` model handling of the reserved
+  property names `type` and `version` (`cognite.client.data_classed.data_modeling.cdm` and
+  `cognite.client.data_classed.data_modeling.extractor_extension`). Now, these properties are prefixed with
+  the original view external id instead of suffixed with underscore. For example, `CogniteAsset` now has
+  `asset_type` instead of `type_` attribute. This is to avoid confusion with the node type, which is
+  the `type` attribute.
+
 ## [7.58.6] - 2024-09-05
 ### Fixed
 - Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`

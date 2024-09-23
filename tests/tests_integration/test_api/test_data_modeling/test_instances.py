@@ -189,7 +189,6 @@ class PrimitiveNullableRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -289,7 +288,6 @@ class PrimitiveListedRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -369,7 +367,6 @@ class PersonRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.name = name
         self.birth_year = birth_year
