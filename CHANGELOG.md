@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.61.2] - 2024-09-23
+## [7.61.3] - 2024-09-23
 ### Added
 - [Feature Preview - alpha] Support for `client.hosted_extractors.mappings`.
 
