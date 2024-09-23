@@ -243,8 +243,9 @@ class _WithMsalSerializableTokenCache:
             token_cache=serializable_token_cache,
             verify=not global_config.disable_ssl,
             oidc_authority=oauth_discovery_url,
-            instance_discovery=False,  # Turn off to support non-Entra authorities
-            validate_authority=False,  # Turn off to support non-Entra authorities
+            # These two must be set to `False` to support non-Entra authorities.
+            instance_discovery=False,
+            validate_authority=False,
         )
 
     @staticmethod
@@ -305,7 +306,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         if not exactly_one_is_not_none(authority_url, oauth_discovery_url):
-            raise ValueError("Either 'authority_url' or 'oauth_discovery_url' must be provided.")
+            raise ValueError("Either 'authority_url' or 'oauth_discovery_url' must be provided, and not both.")
         if not at_least_one_is_not_none(scopes, cdf_cluster):
             raise ValueError("Either 'scopes' or 'cdf_cluster' must be provided.")
         if not client_id:
@@ -314,7 +315,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self.__oauth_discovery_url = oauth_discovery_url
         self.__client_id = client_id
         self.__scopes = scopes or [
-            f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"
+            f"https://{cdf_cluster}.cognitedata.com/IDENTITY",
+            f"https://{cdf_cluster}.cognitedata.com/user_impersonation",
+            "openid",
+            "profile",
         ]
         self.__mem_cache_only = mem_cache_only
         self.__token_custom_args = token_custom_args
