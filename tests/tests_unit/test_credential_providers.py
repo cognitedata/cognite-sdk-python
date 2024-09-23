@@ -1,6 +1,6 @@
 from types import MappingProxyType
 from typing import ClassVar
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from oauthlib.oauth2 import InvalidClientIdError
@@ -97,7 +97,13 @@ class TestOAuthDeviceCode:
     @patch("cognite.client.credentials.PublicClientApplication")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
     def test_access_token_generated(self, mock_public_client, expires_in):
-        mock_public_client().acquire_token_silent.return_value = {
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "user_code": "ABCDEF",
+            "message": "Follow the link and enter the code",
+        }
+        mock_public_client().http_client.post.return_value = mock_response
+        mock_public_client().client.obtain_token_by_device_flow.return_value = {
             "access_token": "azure_token",
             "expires_in": expires_in,
         }
