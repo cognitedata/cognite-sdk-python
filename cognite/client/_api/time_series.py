@@ -579,10 +579,18 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]) -> TimeSeriesList: ...
+    def update(
+        self,
+        item: Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> TimeSeriesList: ...
 
     @overload
-    def update(self, item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate) -> TimeSeries: ...
+    def update(
+        self,
+        item: TimeSeries | TimeSeriesWrite | TimeSeriesUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> TimeSeries: ...
 
     def update(
         self,
@@ -590,11 +598,18 @@ class TimeSeriesAPI(APIClient):
         | TimeSeriesWrite
         | TimeSeriesUpdate
         | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
@@ -622,6 +637,7 @@ class TimeSeriesAPI(APIClient):
             resource_cls=TimeSeries,
             update_cls=TimeSeriesUpdate,
             items=item,
+            mode=mode,
         )
 
     @overload

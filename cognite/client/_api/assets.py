@@ -755,20 +755,35 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Asset | AssetWrite | AssetUpdate]) -> AssetList: ...
+    def update(
+        self,
+        item: Sequence[Asset | AssetWrite | AssetUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> AssetList: ...
 
     @overload
-    def update(self, item: Asset | AssetWrite | AssetUpdate) -> Asset: ...
+    def update(
+        self,
+        item: Asset | AssetWrite | AssetUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Asset: ...
 
     def update(
-        self, item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]
+        self,
+        item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset | AssetList:
         """`Update one or more assets <https://developer.cognite.com/api#tag/Assets/operation/updateAssets>`_
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
         Args:
             item (Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]): Asset(s) to update
-
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (Asset or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
         Returns:
             Asset | AssetList: Updated asset(s)
 
@@ -820,7 +835,9 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = client.assets.update(my_update)
         """
-        return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
+        return self._update_multiple(
+            list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item, mode=mode
+        )
 
     @overload
     def upsert(self, item: Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch") -> AssetList: ...

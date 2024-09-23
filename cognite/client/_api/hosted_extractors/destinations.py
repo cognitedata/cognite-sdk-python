@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -193,18 +193,34 @@ class DestinationsAPI(APIClient):
         )
 
     @overload
-    def update(self, items: DestinationWrite | DestinationUpdate) -> Destination: ...
+    def update(
+        self,
+        items: DestinationWrite | DestinationUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Destination: ...
 
     @overload
-    def update(self, items: Sequence[DestinationWrite | DestinationUpdate]) -> DestinationList: ...
+    def update(
+        self,
+        items: Sequence[DestinationWrite | DestinationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DestinationList: ...
 
     def update(
-        self, items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]
+        self,
+        items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination | DestinationList:
         """`Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
 
         Args:
             items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (DestinationWrite). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Destination | DestinationList: Updated destination(s)
@@ -225,6 +241,7 @@ class DestinationsAPI(APIClient):
             list_cls=DestinationList,
             resource_cls=Destination,
             update_cls=DestinationUpdate,
+            mode=mode,
             headers={"cdf-version": "beta"},
         )
 
