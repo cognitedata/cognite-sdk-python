@@ -635,7 +635,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
-            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Event | EventList: The upserted event(s).
