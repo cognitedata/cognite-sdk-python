@@ -484,7 +484,7 @@ class SequenceColumnUpdate(CogniteUpdate):
             PropertySpec("description"),
             PropertySpec("external_id", is_nullable=False),
             PropertySpec("name"),
-            PropertySpec("metadata", is_container=True),
+            PropertySpec("metadata", is_object=True),
         ]
 
 
@@ -586,7 +586,7 @@ class SequenceUpdate(CogniteUpdate):
             PropertySpec("description"),
             PropertySpec("asset_id"),
             # Sequences do not support setting metadata to an empty array.
-            PropertySpec("metadata", is_container=True, is_nullable=False),
+            PropertySpec("metadata", is_object=True, is_nullable=False),
             PropertySpec("data_set_id"),
             # PropertySpec("columns", is_list=True),
         ]
@@ -628,7 +628,7 @@ class SequenceRow(CogniteResource):
         )
 
 
-ColumnNames: TypeAlias = Literal[  # type: ignore[valid-type]
+ColumnNames: TypeAlias = Literal[
     "externalId",
     "id",
     "columnExternalId",

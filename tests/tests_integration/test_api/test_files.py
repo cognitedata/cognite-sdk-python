@@ -15,7 +15,6 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
-from cognite.client.data_classes.data_modeling import Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
 from cognite.client.utils._text import random_string
 
@@ -251,10 +250,10 @@ class TestFilesAPI:
         cognite_client.files.delete(session.file_metadata.id)
 
     def test_create_retrieve_update_delete_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, alpha_test_space: Space
+        self, cognite_client: CogniteClient, instance_id_test_space: str
     ) -> None:
         file = CogniteFileApply(
-            space=alpha_test_space.space,
+            space=instance_id_test_space,
             external_id="file_python_sdk_instance_id_tests",
             name="file_python_sdk_instance_id_tests",
             description="This file was created by the Python SDK",
@@ -264,44 +263,45 @@ class TestFilesAPI:
         )
         instance_id = file.as_id()
         try:
-            created = cognite_client_alpha.data_modeling.instances.apply(file)
+            created = cognite_client.data_modeling.instances.apply(file)
             assert len(created.nodes) == 1
             assert created.nodes[0].as_id() == instance_id
 
-            f1 = cognite_client_alpha.files.upload_content_bytes(b"f1", instance_id=instance_id)
+            f1 = cognite_client.files.upload_content_bytes(b"f1", instance_id=instance_id)
             time.sleep(0.5)
-            download_links = cognite_client_alpha.files.retrieve_download_urls(instance_id=instance_id)
+            download_links = cognite_client.files.retrieve_download_urls(instance_id=instance_id)
             assert len(download_links.values()) == 1
             assert download_links[f1.instance_id].startswith("http")
 
             content_1 = "abcde" * 1_200_000
             content_2 = "fghij"
-            with cognite_client_alpha.files.multipart_upload_content_session(
-                parts=2, instance_id=instance_id
-            ) as session:
+            with cognite_client.files.multipart_upload_content_session(parts=2, instance_id=instance_id) as session:
                 session.upload_part(0, content_1)
                 session.upload_part(1, content_2)
 
-            retrieved_content = cognite_client_alpha.files.download_bytes(instance_id=instance_id)
+            retrieved_content = cognite_client.files.download_bytes(instance_id=instance_id)
             assert len(retrieved_content) == 6000005
 
-            retrieved = cognite_client_alpha.files.retrieve(instance_id=instance_id)
+            retrieved = cognite_client.files.retrieve(instance_id=instance_id)
             assert retrieved is not None
             assert retrieved.instance_id == instance_id
 
             update_writable = retrieved.as_write()
             update_writable.metadata = {"a": "b"}
             update_writable.external_id = "file_python_sdk_instance_id_tests_updated"
-            updated_writable = cognite_client_alpha.files.update(update_writable)
+            updated_writable = cognite_client.files.update(update_writable)
             assert updated_writable.metadata == {"a": "b"}
             assert updated_writable.external_id == "file_python_sdk_instance_id_tests_updated"
 
-            updated = cognite_client_alpha.files.update(
-                FileMetadataUpdate(instance_id=instance_id).metadata.add({"c": "d"})
-            )
+            updated = cognite_client.files.update(FileMetadataUpdate(instance_id=instance_id).metadata.add({"c": "d"}))
             assert updated.metadata == {"a": "b", "c": "d"}
 
-            retrieved = cognite_client_alpha.files.retrieve_multiple(instance_ids=[instance_id])
+            retrieved = cognite_client.files.retrieve_multiple(instance_ids=[instance_id])
             assert retrieved.dump() == [updated.dump()]
         finally:
-            cognite_client_alpha.data_modeling.instances.delete(nodes=instance_id)
+            cognite_client.data_modeling.instances.delete(nodes=instance_id)
+
+    def test_create_delete_ignore_unknown_ids(self, cognite_client: CogniteClient) -> None:
+        file_metadata = FileMetadata(name="mytestfile")
+        returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
+        cognite_client.files.delete(id=[returned_file_metadata.id, 1], ignore_unknown_ids=True)

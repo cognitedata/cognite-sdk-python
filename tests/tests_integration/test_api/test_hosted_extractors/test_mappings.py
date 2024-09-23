@@ -22,9 +22,6 @@ def one_mapping(cognite_client: CogniteClient) -> Mapping:
         published=False,
         input="json",
     )
-    retrieved = cognite_client.hosted_extractors.mappings.retrieve(my_mapping.external_id, ignore_unknown_ids=True)
-    if retrieved:
-        yield retrieved
     created = cognite_client.hosted_extractors.mappings.create(my_mapping)
     yield created
 

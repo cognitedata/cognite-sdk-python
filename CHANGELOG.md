@@ -17,18 +17,149 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.55.2] - 2024-08-29
+## [7.62.2] - 2024-09-23
 ### Added
-- [Feature Preview - beta] Support for `client.hosted_extractors.sources`.
+- [Feature Preview - alpha] Support for `client.hosted_extractors.mappings`.
+
+## [7.62.1] - 2024-09-23
+### Changed
+- Support for `OAuthDeviceCode` now supports non Entra IdPs 
+
+## [7.62.0] - 2024-09-19
+### Added
+- All `update` methods now accept a new parameter `mode` that controls how non-update objects should be
+  interpreted. For example, should we do a partial update or a full replacement.
+
+## [7.61.1] - 2024-09-19
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.jobs`.
+
+## [7.61.0] - 2024-09-18
+### Changed
+- TimeSeriesAPI and DatapointsAPI support for `instance_id` reaches general availability (GA).
+### Added
+- `instance_id` can now be used freely alongside `id` and `external_id`, and is now accepted by
+  retrieve/retrieve_array/retrieve_dataframe.
+- `instance_id` now works in `to_pandas` methods, with fallbacks on `external_id` and `id`.
+### Fixed
+- A bug caused all datapoints objects to load an empty instance_id.
+
+## [7.60.6] - 2024-09-17
+### Fixed
+- Fixed bug in `replace` upsert mode which caused objects to not be cleared.
+
+## [7.60.5] - 2024-09-17
+### Changed
+- Remove beta notice on the Data Workflows `WorkflowTriggerAPI`
+
+## [7.60.4] - 2024-09-15
+### Added
+- Fix bug in column name remapping for `TypedInstance.to_pandas()`
+
+## [7.60.3] - 2024-09-14
+### Changed
+- The Core Model and Extractor Extension (`cognite.client.data_classes.data_modeling.cdm/extractor_extension`) are
+  now implemented as composition and no longer inherits from each other. This is to reflect the underlying API.
+
+## [7.60.2] - 2024-09-14
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.destinations`.
+
+## [7.60.1] - 2024-09-13
+### Fixed
+- LocationFiltersACl.Scope.SpaceID changed to ID
+
+## [7.60.0] - 2024-09-12
+### Changed
+- Some changes to the typed instances functionality in the data modeling client
+  - The `TypedNode`, `TypedEdge`, etc. classes are moved from `data_classes.data_modeling.typed_instances` to `data_classes.data_modeling.instances`
+  - The `properties` attribute on `TypedNode`/`TypedEdge` now return data
+  - The `sources` attribute on `TypedNodeApply`/`TypedEdgeApply` now returns data
+
+## [7.59.3] - 2024-09-12
+### Fixed
+- JSONDecodeError can no longer be raised in environments where simplejson is used instead of built-in json.
+
+## [7.59.2] - 2024-09-12
+### Fixed
+- A bug in `client.sequences.data.retrieve_dataframe(...)` where passing a column to `column_external_ids` caused a TypeError.
+
+## [7.59.1] - 2024-09-12
+### Fixed
+- Creating a function using files dated before 1980 no longer raises ValueError,
+  by overriding the timestamps to 1980-01-01.
+
+## [7.59.0] - 2024-09-12
+### Added
+- Added `ignore_unknown_ids` to `client.files.delete`.
+
+## [7.58.8] - 2024-09-10
+### Added
+- Added missing `WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows`.
+
+## [7.58.7] - 2024-09-06
+### Changed
+- [Feature Preview - alpha] Updated the `Core Model` and added `ExtractorExtension` model handling of the reserved
+  property names `type` and `version` (`cognite.client.data_classed.data_modeling.cdm` and
+  `cognite.client.data_classed.data_modeling.extractor_extension`). Now, these properties are prefixed with
+  the original view external id instead of suffixed with underscore. For example, `CogniteAsset` now has
+  `asset_type` instead of `type_` attribute. This is to avoid confusion with the node type, which is
+  the `type` attribute.
+
+## [7.58.6] - 2024-09-05
+### Fixed
+- Data modeling convenience filter `SpaceFilter` now allows listing of global nodes by using `equals`
+  (when a single space is requested (requirement)). This also affects the `space` parameter to e.g.
+  `client.data_modeling.instances.list(...)`
+
+## [7.58.5] - 2024-09-04
+### Added
+- Data modeling filters now support properties that are lists.
+### Fixed
+- Read-only properties on CogniteAssetApply (root, path and last_updated_time) are now removed.
+
+## [7.58.4] - 2024-09-03
+### Fixed
+- The deserialization `datetime` properties in `TypedNode`/`TypedEdge` now correctly handles truncated milliseconds.
+
+## [7.58.3] - 2024-09-03
+### Fixed
+- The parameter `query` is now optional in `client.data_modeling.instances.search(...)`.
+
+## [7.58.2] - 2024-09-03
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.sources`.
+
+## [7.58.1] - 2024-09-03
+### Fixed
+- [Feature Preview - beta] data workflows: `workflowExecutionId` in `cognite.client.data_classes.workflows.WorkflowTriggerRun`
+ can be null or missing, as according to the API spec.
+
+## [7.58.0] - 2024-09-03
+### Added
+- Data Workflows: add support for `SubworkflowReferenceParameters` subworkflow task type. Allowing embedding other workflows into a workflow.
+
+## [7.57.0] - 2024-09-03
+### Added
+- Add a `load` method to CogniteClient, ClientConfig, and CredenitalProvider (and all it's subclasses).
+- Add `apply_settings` method to `global_config` to pass in a dict of settings
+
+## [7.56.0] - 2024-09-02
+### Added
+- Support for referencing files by instance id when running diagrams.detect
+
+## [7.55.2] - 2024-08-29
+### Fixed
+- Turn workflow_orchestration into data_workflows and add trigger doc, fix attribute names in data classes
 
 ## [7.55.1] - 2024-08-29
 ### Fixed
-- Missing exports for workflow triggers 
+- Missing exports for workflow triggers
 
 ## [7.55.0] - 2024-08-23
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
-- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing 
+- Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing
   a custom nonce instead of letting the SDK generate it from your current credentials.
 
 ## [7.54.19] - 2024-08-23

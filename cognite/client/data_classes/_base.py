@@ -29,7 +29,7 @@ from typing_extensions import Self, TypeAlias
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_yaml_or_json
+from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -151,14 +151,8 @@ class CogniteObject:
     @classmethod
     def load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Self:
         """Load a resource from a YAML/JSON string or dict."""
-        if isinstance(resource, dict):
-            return cls._load(resource, cognite_client=cognite_client)
-
-        if isinstance(resource, str):
-            resource = cast(dict, load_yaml_or_json(resource))
-            return cls._load(resource, cognite_client=cognite_client)
-
-        raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
+        loaded = load_resource_to_dict(resource)
+        return cls._load(loaded, cognite_client=cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -226,6 +220,7 @@ class CogniteResource(CogniteObject, _WithClientMixin, ABC):
             pandas.DataFrame: The dataframe.
         """
         pd = local_import("pandas")
+
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore or []:
@@ -409,7 +404,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
-        # Certain classes may need more than just 'items' from the raw repsonse. These need to provide
+        # Certain classes may need more than just 'items' from the raw response. These need to provide
         # an implementation of this method
         raise NotImplementedError
 
@@ -439,10 +434,14 @@ class WriteableCogniteResourceList(
 @dataclass
 class PropertySpec:
     name: str
-    is_container: bool = False
+    is_list: bool = False
+    is_object: bool = False
     is_nullable: bool = True
     # Used to skip replace when the value is None
     is_beta: bool = False
+
+    def __post_init__(self) -> None:
+        assert not (self.is_list and self.is_object), "PropertySpec cannot be both list and object"
 
 
 class CogniteUpdate:
@@ -524,12 +523,6 @@ class CogniteUpdate:
     @abstractmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         raise NotImplementedError
-
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        # This method is used to provide additional identifying properties for the update object.
-        # It is intended to be overridden by subclasses that need to provide additional identifying properties.
-        return {}
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
@@ -772,7 +765,7 @@ class CogniteSort:
                 nulls=data[2],
             )
         elif isinstance(data, str) and (prop_order := data.split(":", 1))[-1] in ("asc", "desc"):
-            # Syntax "<fieldname>:asc|desc" is depreacted but handled for compatibility
+            # Syntax "<fieldname>:asc|desc" is deprecated but handled for compatibility
             return cls(property=prop_order[0], order=cast(Literal["asc", "desc"], prop_order[1]))
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(property=data)

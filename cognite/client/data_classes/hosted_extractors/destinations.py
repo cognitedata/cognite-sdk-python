@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from typing_extensions import Self
 
@@ -119,7 +119,7 @@ class Destination(_DestinationCore):
             target_data_set_id=resource.get("targetDataSetId"),
         )
 
-    def as_write(self) -> DestinationWrite:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")
 
 
@@ -155,5 +155,5 @@ class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTran
 class DestinationList(WriteableCogniteResourceList[DestinationWrite, Destination], ExternalIDTransformerMixin):
     _RESOURCE = Destination
 
-    def as_write(self) -> DestinationWriteList:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")

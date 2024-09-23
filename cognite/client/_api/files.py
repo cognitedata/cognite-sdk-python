@@ -6,7 +6,7 @@ import warnings
 from collections import defaultdict
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Iterator, Sequence, TextIO, cast, overload
+from typing import Any, BinaryIO, Iterator, Literal, Sequence, TextIO, cast, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -333,13 +333,17 @@ class FilesAPI(APIClient):
         return self._aggregate(filter=filter, cls=CountAggregate)
 
     def delete(
-        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): str or list of str
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -349,13 +353,25 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     @overload
-    def update(self, item: FileMetadata | FileMetadataWrite | FileMetadataUpdate) -> FileMetadata: ...
+    def update(
+        self,
+        item: FileMetadata | FileMetadataWrite | FileMetadataUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> FileMetadata: ...
 
     @overload
-    def update(self, item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]) -> FileMetadataList: ...
+    def update(
+        self,
+        item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> FileMetadataList: ...
 
     def update(
         self,
@@ -363,12 +379,14 @@ class FilesAPI(APIClient):
         | FileMetadataWrite
         | FileMetadataUpdate
         | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
             item (FileMetadata | FileMetadataWrite | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate]): file(s) to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update object is given (FilesMetadata or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             FileMetadata | FileMetadataList: The updated files.
@@ -421,6 +439,7 @@ class FilesAPI(APIClient):
             resource_path=self._RESOURCE_PATH,
             items=item,
             headers=headers,
+            mode=mode,
         )
 
     def search(

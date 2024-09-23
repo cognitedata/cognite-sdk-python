@@ -9,13 +9,11 @@ from __future__ import annotations
 
 import itertools
 import math
-import platform
 import random
 import re
 import unittest
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
-from sys import version_info
 from typing import Callable, Iterator, Literal
 from unittest.mock import patch
 
@@ -37,12 +35,13 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
 )
-from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space, ViewId
+from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
@@ -184,13 +183,13 @@ def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
 
 
 @pytest.fixture(scope="session")
-def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space) -> InstanceId:
+def instance_ts_id(cognite_client: CogniteClient, instance_id_test_space: str, os_and_py_version: str) -> NodeId:
     my_ts = NodeApply(
-        space=alpha_test_space.space,
-        external_id="ts_python_sdk_instance_id_tests",
+        space=instance_id_test_space,
+        external_id=f"ts_pysdk_instance_id_tests-{os_and_py_version}",
         sources=[
             NodeOrEdgeData(
-                source=ViewId("cdf_cdm_experimental", "CogniteTimeSeries", "v1"),
+                source=CogniteTimeSeries.get_source(),
                 properties={
                     "name": "ts_python_sdk_instance_id_tests",
                     "isStep": False,
@@ -199,9 +198,8 @@ def instance_ts_id(cognite_client_alpha: CogniteClient, alpha_test_space: Space)
             )
         ],
     )
-    created_ts = cognite_client_alpha.data_modeling.instances.apply(my_ts).nodes
-
-    return created_ts[0].as_id()
+    created_ts = cognite_client.data_modeling.instances.apply(my_ts).nodes[0]
+    return created_ts.as_id()
 
 
 def ts_to_ms(ts, tz=None):
@@ -419,15 +417,15 @@ def space_for_time_series(cognite_client) -> Iterator[Space]:
 
 
 @pytest.fixture(scope="session")
-def ts_create_in_dms(cognite_client, space_for_time_series) -> NodeApplyResult:
+def ts_create_in_dms(cognite_client, space_for_time_series, os_and_py_version) -> NodeApplyResult:
     from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 
     dms_ts = CogniteTimeSeriesApply(
         space=space_for_time_series.space,
         # One per test runner, per OS, to avoid conflicts:
-        external_id=f"dms-time-series-{platform.system()}-{'-'.join(map(str, version_info[:2]))}",
+        external_id=f"dms-time-series-{os_and_py_version}",
         is_step=True,
-        type_="numeric",
+        time_series_type="numeric",
     )
     (dms_ts_node,) = cognite_client.data_modeling.instances.apply(dms_ts).nodes
     return dms_ts_node
@@ -2275,7 +2273,7 @@ class TestRetrieveDataFrameAPI:
             assert col == name
 
     def test_column_names_fails(self, cognite_client, one_mill_dps_ts):
-        with pytest.raises(ValueError, match=re.escape("must be one of 'id' or 'external_id'")):
+        with pytest.warns(UserWarning, match=re.escape("must be either 'instance_id', 'external_id' or 'id'")):
             cognite_client.time_series.data.retrieve_dataframe(
                 id=one_mill_dps_ts[0].id, limit=5, column_names="bogus_id"
             )
@@ -2764,29 +2762,26 @@ class TestInsertDatapointsAPI:
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
 
     def test_insert_retrieve_delete_datapoints_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
+        self, cognite_client: CogniteClient, instance_ts_id: NodeId
     ) -> None:
-        cognite_client_alpha.time_series.data.insert([(0, 0.0), (1.0, 1.0)], instance_id=instance_ts_id)
-
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+        v1, v2 = random_cognite_ids(2)
+        cognite_client.time_series.data.insert([(0, v1), (1.0, v2)], instance_id=instance_ts_id)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == [0, 1]
-        assert retrieved.value == [0.0, 1.0]
+        assert retrieved.value == [v1, v2]
 
-        cognite_client_alpha.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
-
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
+        cognite_client.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
         assert retrieved.timestamp == []
 
-    def test_insert_multiple_with_instance_id(
-        self, cognite_client_alpha: CogniteClient, instance_ts_id: InstanceId
-    ) -> None:
-        cognite_client_alpha.time_series.data.insert_multiple(
-            [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": 4, "value": 42}]}]
+    def test_insert_multiple_with_instance_id(self, cognite_client: CogniteClient, instance_ts_id: NodeId) -> None:
+        ts, value = random.choices(range(MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS + 1), k=2)
+        cognite_client.time_series.data.insert_multiple(
+            [{"instance_id": instance_ts_id, "datapoints": [{"timestamp": ts, "value": value}]}]
         )
+        retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=ts, end=ts + 1)
 
-        retrieved = cognite_client_alpha.time_series.data.retrieve(instance_id=instance_ts_id, start=3, end=5)
-
-        assert retrieved.timestamp == [4]
-        assert retrieved.value == [42]
+        assert retrieved.timestamp == [ts]
+        assert retrieved.value == [value]

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import CreatedSession, DataSet, DataSetWrite
+from cognite.client.data_classes import CreatedSession, DataSet
 from cognite.client.data_classes.hosted_extractors import (
     Destination,
     DestinationList,
@@ -13,40 +13,6 @@ from cognite.client.data_classes.hosted_extractors import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
-
-
-@pytest.fixture
-def fresh_session(cognite_client: CogniteClient) -> SessionWrite:
-    new_session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
-    yield SessionWrite(nonce=new_session.nonce)
-    cognite_client.iam.sessions.revoke(new_session.id)
-
-
-@pytest.fixture(scope="session")
-def a_data_set(cognite_client: CogniteClient) -> DataSet:
-    ds = DataSetWrite(
-        external_id=f"test-dataset-hosted-extractor-{random_string(10)}", name="test-dataset-hosted-extractor"
-    )
-    retrieved = cognite_client.data_sets.retrieve(external_id=ds.external_id)
-    if retrieved:
-        return retrieved
-    created = cognite_client.data_sets.create(ds)
-    return created
-
-
-@pytest.fixture
-def one_destination(cognite_client: CogniteClient, fresh_session: SessionWrite) -> DestinationList:
-    my_dest = DestinationWrite(
-        external_id=f"myNewDestination-{random_string(10)}",
-        credentials=fresh_session,
-    )
-    retrieved = cognite_client.hosted_extractors.destinations.retrieve([my_dest.external_id], ignore_unknown_ids=True)
-    if retrieved:
-        yield retrieved
-    created = cognite_client.hosted_extractors.destinations.create(my_dest)
-    yield DestinationList([created])
-
-    cognite_client.hosted_extractors.destinations.delete(created.external_id, ignore_unknown_ids=True)
 
 
 class TestDestinations:

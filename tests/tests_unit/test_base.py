@@ -90,9 +90,9 @@ class MyUpdate(CogniteUpdate):
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
             PropertySpec("string", is_nullable=False),
-            PropertySpec("list", is_container=True),
-            PropertySpec("object", is_container=True),
-            PropertySpec("labels", is_container=True),
+            PropertySpec("list", is_list=True),
+            PropertySpec("object", is_object=True),
+            PropertySpec("labels", is_list=True),
             # Columns are not supported
             # PropertySpec("columns", is_nullable=False),
         ]
@@ -193,6 +193,7 @@ class TestCogniteObject:
         "cognite_writable_cls",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
+            # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
             if cls not in {Destination} and not issubclass(cls, Source)

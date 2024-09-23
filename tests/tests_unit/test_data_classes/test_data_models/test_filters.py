@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Literal
+from typing import TYPE_CHECKING, Any, Iterator, Literal
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -8,6 +8,7 @@ from _pytest.mark import ParameterSet
 import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.filters import Filter
 from tests.utils import all_subclasses
 
@@ -100,6 +101,34 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     yield pytest.param(
         {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
     )
+    yield pytest.param(
+        {
+            "prefix": {
+                "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
+                "value": [
+                    {"space": "s", "externalId": "0"},
+                    {"space": "s", "externalId": "1"},
+                    {"space": "s", "externalId": "2"},
+                    {"space": "s", "externalId": "3"},
+                ],
+            }
+        },
+        id="prefix with list of dicts",
+    )
+    yield pytest.param(
+        {
+            "prefix": {
+                "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
+                "value": [
+                    {"space": "s", "externalId": "0"},
+                    {"space": "s", "externalId": "1"},
+                    {"space": "s", "externalId": "2"},
+                    {"space": "s", "externalId": "3"},
+                ],
+            }
+        },
+        id="prefix with list of objects",
+    )
 
 
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
@@ -114,7 +143,7 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         f.Equals(property=["person", "name"], value=["Quentin", "Tarantino"]),
         f.ContainsAny(property=["person", "name"], values=[["Quentin", "Tarantino"]]),
     )
-    expected = {
+    expected: dict[str, Any] = {
         "or": [
             {"equals": {"property": ["person", "name"], "value": ["Quentin", "Tarantino"]}},
             {"containsAny": {"property": ["person", "name"], "values": [["Quentin", "Tarantino"]]}},
@@ -181,6 +210,24 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         {"invalid": {"previously_referenced_properties": [["some", "old", "prop"]], "filter_type": "overlaps"}},
     )
 
+    property_ref = ["cdf_cdm", "CogniteAsset/v1", "path"]
+    expected = {
+        "prefix": {
+            "property": property_ref,
+            "value": [{"space": "s", "externalId": "0"}, {"space": "s", "externalId": "1"}],
+        }
+    }
+    prop_list1 = f.Prefix(
+        property_ref,
+        [DirectRelationReference(space="s", external_id="0"), DirectRelationReference(space="s", external_id="1")],
+    )
+    prop_list2 = f.Prefix(
+        property_ref,
+        [{"space": "s", "externalId": "0"}, {"space": "s", "externalId": "1"}],
+    )
+    yield pytest.param(prop_list1, expected, id="Prefix filter with list property of objects")
+    yield pytest.param(prop_list2, expected, id="Prefix filter with list property of dicts")
+
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
 def test_dump_filter(user_filter: Filter, expected: dict) -> None:
@@ -208,25 +255,33 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
 
 class TestSpaceFilter:
     @pytest.mark.parametrize(
-        "inst_type, space, expected_spaces",
+        "inst_type, space, expected",
         (
-            ("node", "myspace", ["myspace"]),
-            ("edge", ["myspace"], ["myspace"]),
-            ("node", ["myspace", "another"], ["myspace", "another"]),
+            ("node", "myspace", {"equals": {"property": ["node", "space"], "value": "myspace"}}),
+            (None, ["myspace"], {"equals": {"property": ["node", "space"], "value": "myspace"}}),
+            ("edge", ["myspace"], {"equals": {"property": ["edge", "space"], "value": "myspace"}}),
+            ("node", ["myspace", "another"], {"in": {"property": ["node", "space"], "values": ["myspace", "another"]}}),
+            ("node", ("myspace", "another"), {"in": {"property": ["node", "space"], "values": ["myspace", "another"]}}),
         ),
     )
     def test_space_filter(
-        self, inst_type: Literal["node", "edge"], space: str | list[str], expected_spaces: list[str]
+        self, inst_type: Literal["node", "edge"], space: str | list[str], expected: dict[str, Any]
     ) -> None:
-        space_filter = f.SpaceFilter(space, inst_type)
-        expected = {"in": {"property": [inst_type, "space"], "values": expected_spaces}}
+        space_filter = f.SpaceFilter(space, inst_type) if inst_type else f.SpaceFilter(space)
         assert expected == space_filter.dump()
 
     def test_space_filter_passes_isinstance_checks(self) -> None:
         space_filter = f.SpaceFilter("myspace", "edge")
         assert isinstance(space_filter, Filter)
 
-    def test_space_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
-        space_filter = f.SpaceFilter("myspace", "edge")
+    @pytest.mark.parametrize(
+        "space_filter",
+        [
+            f.SpaceFilter("s1", "edge"),
+            f.SpaceFilter(["s1"], "edge"),
+            f.SpaceFilter(["s1", "s2"], "edge"),
+        ],
+    )
+    def test_space_filter_passes_verification(self, cognite_client: CogniteClient, space_filter: f.SpaceFilter) -> None:
         cognite_client.data_modeling.instances._validate_filter(space_filter)
         assert True

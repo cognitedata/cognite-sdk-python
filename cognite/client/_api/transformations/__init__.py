@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
@@ -415,11 +415,17 @@ class TransformationsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Transformation | TransformationWrite | TransformationUpdate) -> Transformation: ...
+    def update(
+        self,
+        item: Transformation | TransformationWrite | TransformationUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Transformation: ...
 
     @overload
     def update(
-        self, item: Sequence[Transformation | TransformationWrite | TransformationUpdate]
+        self,
+        item: Sequence[Transformation | TransformationWrite | TransformationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationList: ...
 
     def update(
@@ -428,11 +434,13 @@ class TransformationsAPI(APIClient):
         | TransformationWrite
         | TransformationUpdate
         | Sequence[Transformation | TransformationWrite | TransformationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
             item (Transformation | TransformationWrite | TransformationUpdate | Sequence[Transformation | TransformationWrite | TransformationUpdate]): Transformation(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update object is given (Transformation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Transformation | TransformationList: Updated transformation(s)
@@ -488,7 +496,11 @@ class TransformationsAPI(APIClient):
             )
 
         return self._update_multiple(
-            list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            update_cls=TransformationUpdate,
+            items=item,
+            mode=mode,
         )
 
     def run(

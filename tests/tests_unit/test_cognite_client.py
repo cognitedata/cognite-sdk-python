@@ -102,6 +102,31 @@ class TestCogniteClient:
         assert client._api_client._http_client_with_retry.session.verify is True
         assert client._api_client._http_client.session.verify is True
 
+    def test_client_load(self):
+        config = {
+            "project": "test-project",
+            "client_name": "cognite-sdk-python",
+            "debug": True,
+            "credentials": {
+                "client_credentials": {
+                    "client_id": "test-client-id",
+                    "client_secret": "test-client-secret",
+                    "token_url": TOKEN_URL,
+                    "scopes": ["https://test.com/.default", "https://test.com/.admin"],
+                }
+            },
+        }
+        client = CogniteClient.load(config)
+        assert client.config.project == "test-project"
+        assert client.config.credentials.client_id == "test-client-id"
+        assert client.config.credentials.client_secret == "test-client-secret"
+        assert client.config.credentials.token_url == TOKEN_URL
+        assert client.config.credentials.scopes == ["https://test.com/.default", "https://test.com/.admin"]
+        assert client.config.debug is True
+        log = logging.getLogger("cognite.client")
+        log.handlers = []
+        log.propagate = False
+
 
 class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -25,7 +25,7 @@ class DestinationsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 100
         self._LIST_LIMIT = 100
@@ -54,10 +54,10 @@ class DestinationsAPI(APIClient):
     ) -> Iterator[Destination] | Iterator[DestinationList]:
         """Iterate over destinations
 
-        Fetches Destination as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches Destination as they are iterated over, so you keep a limited number of destinations in memory.
 
         Args:
-            chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destinatio a time.
+            chunk_size (int | None): Number of Destinations to return in each chunk. Defaults to yielding one Destination a time.
             limit (int | None): Maximum number of Destination to return. Defaults to returning all items.
 
         Returns:
@@ -77,7 +77,7 @@ class DestinationsAPI(APIClient):
     def __iter__(self) -> Iterator[Destination]:
         """Iterate over destinations
 
-        Fetches destinations as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches destinations as they are iterated over, so you keep a limited number of destinations in memory.
 
         Returns:
             Iterator[Destination]: yields Destination one by one.
@@ -93,7 +93,7 @@ class DestinationsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Destination | DestinationList:
-        """`Retrieve one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/retrieve_destinations>`_
+        """`Retrieve one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -109,7 +109,7 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.destinations.retrieve('myDestination')
 
-            Get multiple spaces by id:
+            Get multiple destinations by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -128,7 +128,7 @@ class DestinationsAPI(APIClient):
     def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destsinations  <https://developer.cognite.com/api#tag/Destinations/operation/delete_destinations>`_
+        """`Delete one or more destsinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -137,11 +137,11 @@ class DestinationsAPI(APIClient):
 
         Examples:
 
-            Delete dests by id::
+            Delete destinations by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.hosted_extractors.dests.delete(["myDest", "MyDest2"])
+                >>> client.hosted_extractors.destinations.delete(["myDest", "MyDest2"])
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
@@ -165,10 +165,10 @@ class DestinationsAPI(APIClient):
     def create(self, items: Sequence[DestinationWrite]) -> DestinationList: ...
 
     def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
-        """`Create one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/create_destinations>`_
+        """`Create one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_
 
         Args:
-            items (DestinationWrite | Sequence[DestinationWrite]): Space | Sequence[Space]): Destination(s) to create.
+            items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
 
         Returns:
             Destination | DestinationList: Created destination(s)
@@ -178,9 +178,9 @@ class DestinationsAPI(APIClient):
             Create new destination:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
+                >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
         self._warning.warn()
@@ -193,18 +193,34 @@ class DestinationsAPI(APIClient):
         )
 
     @overload
-    def update(self, items: DestinationWrite | DestinationUpdate) -> Destination: ...
+    def update(
+        self,
+        items: DestinationWrite | DestinationUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Destination: ...
 
     @overload
-    def update(self, items: Sequence[DestinationWrite | DestinationUpdate]) -> DestinationList: ...
+    def update(
+        self,
+        items: Sequence[DestinationWrite | DestinationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> DestinationList: ...
 
     def update(
-        self, items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]
+        self,
+        items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination | DestinationList:
-        """`Update one or more destinations. <https://developer.cognite.com/api#tag/Destinations/operation/update_destinations>`_
+        """`Update one or more destinations. <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_
 
         Args:
-            items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Space | Sequence[Space]): Destination(s) to update.
+            items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (DestinationWrite). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Destination | DestinationList: Updated destination(s)
@@ -225,6 +241,7 @@ class DestinationsAPI(APIClient):
             list_cls=DestinationList,
             resource_cls=Destination,
             update_cls=DestinationUpdate,
+            mode=mode,
             headers={"cdf-version": "beta"},
         )
 
@@ -232,7 +249,7 @@ class DestinationsAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DestinationList:
-        """`List destinations <https://developer.cognite.com/api#tag/Destinations/operation/list_destinations>`_
+        """`List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_
 
         Args:
             limit (int | None): Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -246,7 +263,7 @@ class DestinationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.destinations.list(limit=5)
+                >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
             Iterate over destinations::
 
@@ -260,12 +277,12 @@ class DestinationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
-                ...     destination_list # do something with the spaces
+                ...     destination_list # do something with the destinationss
         """
         self._warning.warn()
         return self._list(
             list_cls=DestinationList,
-            resource_cls=Destination,  # type: ignore[type-abstract]
+            resource_cls=Destination,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},

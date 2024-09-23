@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.hosted_extractors.mappings import (
+from cognite.client.data_classes.hosted_extractors import (
     Mapping,
     MappingList,
     MappingUpdate,
@@ -54,11 +54,11 @@ class MappingsAPI(APIClient):
     ) -> Iterator[Mapping] | Iterator[MappingList]:
         """Iterate over mappings
 
-        Fetches Mapping as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches Mapping as they are iterated over, so you keep a limited number of mappings in memory.
 
         Args:
-            chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one Destinatio a time.
-            limit (int | None): Maximum number of Mapping to return. Defaults to returning all items.
+            chunk_size (int | None): Number of Mappings to return in each chunk. Defaults to yielding one mapping at a time.
+            limit (int | None): Maximum number of mappings to return. Defaults to returning all items.
 
         Returns:
             Iterator[Mapping] | Iterator[MappingList]: yields Mapping one by one if chunk_size is not specified, else MappingList objects.
@@ -77,7 +77,7 @@ class MappingsAPI(APIClient):
     def __iter__(self) -> Iterator[Mapping]:
         """Iterate over mappings
 
-        Fetches mappings as they are iterated over, so you keep a limited number of spaces in memory.
+        Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
 
         Returns:
             Iterator[Mapping]: yields Mapping one by one.
@@ -93,7 +93,7 @@ class MappingsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
-        """`Retrieve one or more mappings. <https://developer.cognite.com/api#tag/Mappings/operation/retrieve_mappings>`_
+        """`Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -109,10 +109,8 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.mappings.retrieve('myMapping')
 
-            Get multiple spaces by id:
+            Get multiple mappings by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.mappings.retrieve(["myMapping", "myMapping2"], ignore_unknown_ids=True)
 
         """
@@ -128,7 +126,7 @@ class MappingsAPI(APIClient):
     def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destsinations  <https://developer.cognite.com/api#tag/Mappings/operation/delete_mappings>`_
+        """`Delete one or more mappings  <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -137,11 +135,11 @@ class MappingsAPI(APIClient):
 
         Examples:
 
-            Delete dests by id::
+            Delete mappings by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.hosted_extractors.dests.delete(["myDest", "MyDest2"])
+                >>> client.hosted_extractors.mappings.delete(["myMapping", "MyMapping2"])
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
@@ -155,7 +153,7 @@ class MappingsAPI(APIClient):
             wrap_ids=True,
             returns_items=False,
             headers={"cdf-version": "beta"},
-            extra_body_fields=extra_body_fields or None,
+            extra_body_fields=extra_body_fields,
         )
 
     @overload
@@ -165,10 +163,10 @@ class MappingsAPI(APIClient):
     def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
 
     def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
-        """`Create one or more mappings. <https://developer.cognite.com/api#tag/Mappings/operation/create_mappings>`_
+        """`Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
 
         Args:
-            items (MappingWrite | Sequence[MappingWrite]): Space | Sequence[Space]): Mapping(s) to create.
+            items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
 
         Returns:
             Mapping | MappingList: Created mapping(s)
@@ -180,7 +178,7 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingWrite, CustomMapping
                 >>> client = CogniteClient()
-                >>> mapping = MappingWrite("my_mapping", CustomMapping("some expression"), True, "json")
+                >>> mapping = MappingWrite(external_id="my_mapping", mapping=CustomMapping("some expression"), published=True, input="json")
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         self._warning.warn()
@@ -201,10 +199,10 @@ class MappingsAPI(APIClient):
     def update(
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
-        """`Update one or more mappings. <https://developer.cognite.com/api#tag/Mappings/operation/update_mappings>`_
+        """`Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
 
         Args:
-            items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Space | Sequence[Space]): Mapping(s) to update.
+            items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.
 
         Returns:
             Mapping | MappingList: Updated mapping(s)
@@ -216,7 +214,7 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import MappingUpdate
                 >>> client = CogniteClient()
-                >>> mapping = MappingUpdate('my_mapping').published(False)
+                >>> mapping = MappingUpdate('my_mapping').published.set(False)
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         self._warning.warn()
@@ -232,7 +230,7 @@ class MappingsAPI(APIClient):
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> MappingList:
-        """`List mappings <https://developer.cognite.com/api#tag/Mappings/operation/list_mappings>`_
+        """`List mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/list_mappings>`_
 
         Args:
             limit (int | None): Maximum number of mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -246,7 +244,7 @@ class MappingsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> space_list = client.hosted_extractors.mappings.list(limit=5)
+                >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
             Iterate over mappings::
 
@@ -260,12 +258,12 @@ class MappingsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
-                ...     mapping_list # do something with the spaces
+                ...     mapping_list # do something with the mappings
         """
         self._warning.warn()
         return self._list(
             list_cls=MappingList,
-            resource_cls=Mapping,  # type: ignore[type-abstract]
+            resource_cls=Mapping,
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},

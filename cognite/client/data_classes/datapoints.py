@@ -35,6 +35,7 @@ from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
+    resolve_ts_identifier_as_df_column_name,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -803,7 +804,7 @@ class DatapointsArray(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id"] = "external_id",
+        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
@@ -811,7 +812,7 @@ class DatapointsArray(CogniteResource):
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id", "instance_id"]): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
@@ -820,32 +821,11 @@ class DatapointsArray(CogniteResource):
             pandas.DataFrame: The datapoints as a pandas DataFrame.
         """
         pd = local_import("pandas")
-        if column_names == "id":
-            if self.id is None:
-                raise ValueError("Unable to use `id` as column name(s), not set on object")
-            identifier = str(self.id)
-
-        elif column_names == "external_id":
-            if self.external_id is not None:
-                identifier = self.external_id
-            elif self.id is not None:
-                # Time series are not required to have an external_id unfortunately...
-                identifier = str(self.id)
-                warnings.warn(
-                    f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
-                    'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
-                    "to silence this warning.",
-                    UserWarning,
-                )
-            else:
-                raise ValueError("Object missing both `id` and `external_id` attributes")
-        else:
-            raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
-
         idx, tz = self.timestamp, self.timezone
         if tz is not None:
             idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
 
+        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
         if self.value is not None:
             raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
             if include_status:
@@ -857,7 +837,7 @@ class DatapointsArray(CogniteResource):
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
         aggregate_columns = [
-            str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
+            identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
@@ -1045,7 +1025,7 @@ class Datapoints(CogniteResource):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: str = "external_id",
+        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
@@ -1054,7 +1034,7 @@ class Datapoints(CogniteResource):
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id", "instance_id"]): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
@@ -1064,12 +1044,9 @@ class Datapoints(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         pd = local_import("pandas")
-        if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
-            identifier = self.external_id if self.external_id is not None else self.id
-        elif column_names == "id":
-            identifier = self.id
-        else:
-            raise ValueError("column_names must be 'external_id' or 'id'")
+        if column_names == "externalId":
+            column_names = "external_id"  # Camel case for backwards compatibility
+        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
 
         if include_errors and self.error is None:
             raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
@@ -1082,7 +1059,7 @@ class Datapoints(CogniteResource):
         for attr, data in data_fields:
             if attr == "timestamp":
                 continue
-            id_col_name = str(identifier)
+            id_col_name = identifier
             if attr == "value":
                 field_names.append(id_col_name)
                 data_lists.append(data)
@@ -1324,7 +1301,8 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     ) -> DatapointsArray | list[DatapointsArray] | None:
         """Get a specific DatapointsArray from this list by id or external_id.
 
-        Note: For duplicated time series, returns a list of DatapointsArray.
+        Note:
+            For duplicated time series, returns a list of DatapointsArray.
 
         Args:
             id (int | None): The id of the item(s) to get.
@@ -1341,7 +1319,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id"] = "external_id",
+        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
@@ -1349,7 +1327,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id", "instance_id"]): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.
@@ -1406,7 +1384,8 @@ class DatapointsList(CogniteResourceList[Datapoints]):
     ) -> Datapoints | list[Datapoints] | None:
         """Get a specific Datapoints from this list by id or external_id.
 
-        Note: For duplicated time series, returns a list of Datapoints.
+        Note:
+            For duplicated time series, returns a list of Datapoints.
 
         Args:
             id (int | None): The id of the item(s) to get.
@@ -1427,7 +1406,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
 
     def to_pandas(  # type: ignore [override]
         self,
-        column_names: Literal["id", "external_id"] = "external_id",
+        column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_status: bool = True,
@@ -1435,7 +1414,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id", "instance_id"]): Which field to use for the columns. Defaults to "instance_id", if it exists, then uses "external_id" if available, and "id" as fallback.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_status (bool): Include status code and status symbol as separate columns, if available.

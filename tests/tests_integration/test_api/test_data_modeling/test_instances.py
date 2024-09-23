@@ -189,7 +189,6 @@ class PrimitiveNullableRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -289,7 +288,6 @@ class PrimitiveListedRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.text = text
         self.boolean = boolean
@@ -369,7 +367,6 @@ class PersonRead(TypedNode):
             created_time=created_time,
             type=type,
             deleted_time=deleted_time,
-            properties=None,
         )
         self.name = name
         self.birth_year = birth_year
@@ -1082,6 +1079,18 @@ class TestInstancesAPI:
 
         assert len(persons) > 0
         assert all(isinstance(person, PersonRead) for person in persons)
+
+    def test_listing_global_nodes(self, cognite_client: CogniteClient) -> None:
+        from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteUnit
+
+        # Space must be explicitly specified or nothing will be returned:
+        no_nodes = cognite_client.data_modeling.instances.list(sources=CogniteUnit.get_source())
+        assert len(no_nodes) == 0
+
+        nodes = cognite_client.data_modeling.instances.list(
+            space="cdf_cdm_units", sources=CogniteUnit.get_source(), limit=5
+        )
+        assert len(nodes) == 5
 
 
 class TestInstancesSync:

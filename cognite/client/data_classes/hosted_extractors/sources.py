@@ -4,7 +4,7 @@ import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -121,12 +121,6 @@ class SourceUpdate(CogniteUpdate, ABC):
             return []
         return _SOURCE_UPDATE_BY_TYPE[item._type]._get_update_properties(item)
 
-    @classmethod
-    def _get_extra_identifying_properties(cls, item: CogniteResource | None = None) -> dict[str, Any]:
-        if not isinstance(item, SourceWrite):
-            return {}
-        return {"type": item._type}
-
 
 class EventHubSourceWrite(SourceWrite):
     """A hosted extractor source represents an external source system on the internet.
@@ -214,17 +208,8 @@ class EventHubSource(Source):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
-    def as_write(self, key_value: str | None = None) -> EventHubSourceWrite:
-        if key_value is None:
-            raise ValueError("key_value must be provided")
-        return EventHubSourceWrite(
-            external_id=self.external_id,
-            host=self.host,
-            event_hub_name=self.event_hub_name,
-            key_name=self.key_name,
-            key_value=key_value,
-            consumer_group=self.consumer_group,
-        )
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
@@ -356,7 +341,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         host: str,
         port: int | None = None,
         authentication: AuthenticationWrite | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
     ) -> None:
@@ -364,7 +349,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
         self.host = host
         self.port = port
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
 
@@ -377,7 +362,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             authentication=AuthenticationWrite._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -462,7 +447,7 @@ class _MQTTSource(Source, ABC):
         last_updated_time: int,
         port: int | None = None,
         authentication: MQTTAuthentication | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificate | None = None,
         auth_certificate: AuthCertificate | None = None,
     ) -> None:
@@ -470,7 +455,7 @@ class _MQTTSource(Source, ABC):
         self.host = host
         self.port = port
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
         self.created_time = created_time
@@ -485,7 +470,7 @@ class _MQTTSource(Source, ABC):
             authentication=MQTTAuthentication._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificate._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -494,7 +479,7 @@ class _MQTTSource(Source, ABC):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
-    def as_write(self) -> _MQTTSourceWrite:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -562,10 +547,10 @@ class _MQTTUpdate(SourceUpdate, ABC):
         return [
             PropertySpec("host", is_nullable=False),
             PropertySpec("port", is_nullable=True),
-            PropertySpec("authentication", is_nullable=True, is_container=True),
-            PropertySpec("useTls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True),
+            PropertySpec("use_tls", is_nullable=False),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
 
 
@@ -614,7 +599,7 @@ class KafkaSourceWrite(SourceWrite):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
         authentication (AuthenticationWrite | None): Authentication information for the kafka source.
-        useTls (bool): If true, use TLS when connecting to the broker.
+        use_tls (bool): If true, use TLS when connecting to the broker.
         ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
     """
@@ -626,14 +611,14 @@ class KafkaSourceWrite(SourceWrite):
         external_id: str,
         bootstrap_brokers: Sequence[KafkaBroker],
         authentication: AuthenticationWrite | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
     ) -> None:
         super().__init__(external_id)
         self.bootstrap_brokers = bootstrap_brokers
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
 
@@ -645,7 +630,7 @@ class KafkaSourceWrite(SourceWrite):
             authentication=AuthenticationWrite._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -787,10 +772,10 @@ class KafkaSourceUpdate(SourceUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("bootstrap_brokers", is_nullable=False),
-            PropertySpec("authentication", is_nullable=True, is_container=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True),
             PropertySpec("useTls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
 
 
@@ -962,7 +947,7 @@ class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTr
 
     def as_write(
         self,
-    ) -> SourceWriteList:
+    ) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
 

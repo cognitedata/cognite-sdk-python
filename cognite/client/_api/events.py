@@ -299,7 +299,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
-            >>> result = client.events.aggregate_unique_values(EventProperty.type)
+            >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project:
@@ -555,18 +555,34 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Event | EventWrite | EventUpdate]) -> EventList: ...
+    def update(
+        self,
+        item: Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> EventList: ...
 
     @overload
-    def update(self, item: Event | EventWrite | EventUpdate) -> Event: ...
+    def update(
+        self,
+        item: Event | EventWrite | EventUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Event: ...
 
     def update(
-        self, item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]
+        self,
+        item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (Event or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Event | EventList: Updated event(s)
@@ -589,7 +605,9 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
-        return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
+        return self._update_multiple(
+            list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode
+        )
 
     def search(
         self,

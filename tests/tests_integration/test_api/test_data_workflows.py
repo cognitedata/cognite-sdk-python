@@ -25,6 +25,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -253,7 +254,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     trigger = cognite_client.workflows.triggers.create(
         WorkflowTriggerCreate(
             external_id="integration_test-workflow-scheduled-trigger",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
             workflow_external_id="integration_test-workflow-add_multiply",
             workflow_version="1",
             input={"a": 1, "b": 2},
@@ -266,7 +267,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
 class TestWorkflows:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         workflow = WorkflowUpsert(
-            external_id="integration_test-test_create_delete",
+            external_id="integration_test-test_create_delete" + random_string(5),
             description="This is ephemeral workflow for testing purposes",
         )
         cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
@@ -305,16 +306,18 @@ class TestWorkflows:
 class TestWorkflowVersions:
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionUpsert(
-            workflow_external_id="integration_test-workflow_versions-test_create_delete",
+            workflow_external_id="integration_test-workflow_versions-test_create_delete" + random_string(5),
             version="1",
             workflow_definition=WorkflowDefinitionUpsert(
                 tasks=[
                     WorkflowTask(
-                        external_id="integration_test-workflow_definitions-test_create_delete-subworkflow1",
+                        external_id="integration_test-workflow_definitions-test_create_delete-subworkflow1"
+                        + random_string(5),
                         parameters=SubworkflowTaskParameters(
                             tasks=[
                                 WorkflowTask(
-                                    external_id="integration_test-workflow_definitions-test_create_delete-task1",
+                                    external_id="integration_test-workflow_definitions-test_create_delete-task1"
+                                    + random_string(5),
                                     parameters=FunctionTaskParameters(
                                         external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
                                         data={"a": 1, "b": 2},
@@ -490,7 +493,7 @@ class TestWorkflowTriggers:
     ) -> None:
         assert workflow_scheduled_trigger is not None
         assert workflow_scheduled_trigger.external_id == "integration_test-workflow-scheduled-trigger"
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 0 * * *")
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *")
         assert workflow_scheduled_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
         assert workflow_scheduled_trigger.workflow_version == "1"
         assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
