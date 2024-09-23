@@ -299,7 +299,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
-            >>> result = client.events.aggregate_unique_values(EventProperty.type)
+            >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project:
@@ -635,7 +635,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Event | EventList: The upserted event(s).
