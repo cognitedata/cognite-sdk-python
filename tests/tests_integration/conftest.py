@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
 from cognite.client.data_classes import DataSet, DataSetWrite
-from cognite.client.data_classes.data_modeling import Space, SpaceApply
+from cognite.client.data_classes.data_modeling import SpaceApply
 from tests.utils import REPO_ROOT
 
 
@@ -21,6 +21,7 @@ def cognite_client() -> CogniteClient:
 def cognite_client_alpha() -> CogniteClient:
     load_dotenv(REPO_ROOT / "alpha.env")
     if "COGNITE_ALPHA_PROJECT" not in os.environ:
+        # TODO: If we are in CI, we should fail the test instead of skipping
         pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
     return CogniteClient.default_oauth_client_credentials(
         project=os.environ["COGNITE_ALPHA_PROJECT"],
@@ -32,8 +33,8 @@ def cognite_client_alpha() -> CogniteClient:
 
 
 @pytest.fixture(scope="session")
-def alpha_test_space(cognite_client_alpha: CogniteClient) -> Space:
-    return cognite_client_alpha.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests"))
+def instance_id_test_space(cognite_client: CogniteClient) -> str:
+    return cognite_client.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests")).space
 
 
 @pytest.fixture(scope="session")

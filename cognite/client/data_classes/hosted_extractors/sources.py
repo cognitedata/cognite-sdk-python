@@ -546,10 +546,10 @@ class _MQTTUpdate(SourceUpdate, ABC):
         return [
             PropertySpec("host", is_nullable=False),
             PropertySpec("port", is_nullable=True),
-            PropertySpec("authentication", is_nullable=True, is_container=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True),
             PropertySpec("useTls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_container=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_container=True),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
 
 

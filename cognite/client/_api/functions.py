@@ -350,7 +350,7 @@ class FunctionsAPI(APIClient):
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
         sleep_time = 1.0  # seconds
-        for i in range(5):
+        for i in range(MAX_RETRIES):
             file = self._cognite_client.files.retrieve(id=file_id)
             if file and file.uploaded:
                 break

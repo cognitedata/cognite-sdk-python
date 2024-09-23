@@ -113,10 +113,18 @@ class AnnotationsAPI(APIClient):
         return annotation_update.dump()
 
     @overload
-    def update(self, item: Annotation | AnnotationWrite | AnnotationUpdate) -> Annotation: ...
+    def update(
+        self,
+        item: Annotation | AnnotationWrite | AnnotationUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Annotation: ...
 
     @overload
-    def update(self, item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate]) -> AnnotationList: ...
+    def update(
+        self,
+        item: Sequence[Annotation | AnnotationWrite | AnnotationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> AnnotationList: ...
 
     def update(
         self,
@@ -124,16 +132,23 @@ class AnnotationsAPI(APIClient):
         | AnnotationWrite
         | AnnotationUpdate
         | Sequence[Annotation | AnnotationWrite | AnnotationUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Annotation | AnnotationList:
         """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
             item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (Annotation or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Annotation | AnnotationList: No description."""
         return self._update_multiple(
-            list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
+            list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item, mode=mode
         )
 
     def delete(self, id: int | Sequence[int]) -> None:

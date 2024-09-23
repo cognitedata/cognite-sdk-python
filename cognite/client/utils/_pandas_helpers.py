@@ -16,7 +16,7 @@ from cognite.client.utils._time import TIME_ATTRIBUTES, ZoneInfo
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cognite.client.data_classes import DatapointsArrayList, DatapointsList
+    from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
@@ -58,7 +58,7 @@ def convert_tz_for_pandas(tz: str | timezone | ZoneInfo | None) -> str | timezon
 
 def concat_dps_dataframe_list(
     dps_lst: DatapointsList | DatapointsArrayList,
-    column_names: Literal["id", "external_id"],
+    column_names: Literal["id", "external_id", "instance_id"],
     include_aggregate_name: bool,
     include_granularity_name: bool,
     include_status: bool,
@@ -130,8 +130,10 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if not int_cols:
         return df
 
-    if pandas_major_version() < 2:
-        # As of pandas>=1.5.0, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
+    if pandas_major_version() >= 2:
+        df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
+    else:
+        # As of pandas >=1.5.0, <2, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
         # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
         # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
         with warnings.catch_warnings():
@@ -143,6 +145,41 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
                 category=FutureWarning,
             )
             df.iloc[:, int_cols] = df.iloc[:, int_cols].astype("Int64")
-    else:
-        df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))  # They actually fixed it :D
     return df
+
+
+def resolve_ts_identifier_as_df_column_name(
+    dps: Datapoints | DatapointsArray, column_names: Literal["id", "external_id", "instance_id"]
+) -> str:
+    # Note: Although pandas columns can support numbers and objects like tuples, we may need to pad with
+    #       e.g. aggregate info, so we always ensure the column names are strings.
+    if column_names not in {"id", "external_id", "instance_id"}:
+        # Don't raise here, the user may have waited a long time for datapoints fetching
+        warnings.warn(
+            "Parameter `column_names` must be either 'instance_id', 'external_id' or 'id'. "
+            "Falling back to instance_id -> external_id -> id (using first one defined).",
+            UserWarning,
+        )
+        column_names = "instance_id"
+
+    original = column_names
+    if column_names == "instance_id":
+        if dps.instance_id:
+            # Keep column name as short as possible, default repr adds "space=..." and "external_id=..."
+            return "NodeId({}, {})".format(*dps.instance_id.as_tuple())
+        column_names = "external_id"  # Fallback to external_id
+
+    if column_names == "external_id":
+        if dps.external_id is not None:  # "" is legal xid
+            return dps.external_id
+        column_names = "id"  # Fallback to id
+
+    if column_names == "id":
+        if dps.id:
+            return str(dps.id)
+
+    fallbacks = {"instance_id": ["external_id", "id"], "external_id": ["id"], "id": []}
+    raise ValueError(
+        f"Unable to resolve column name for time series using columns_names={original!r}. "
+        f"Neither the attribute or its fallbacks ({fallbacks[original]}) are set on the object."
+    )

@@ -17,13 +17,36 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.0] - 2024-09-19
+### Added
+- All `update` methods now accept a new parameter `mode` that controls how non-update objects should be
+  interpreted. For example, should we do a partial update or a full replacement.
+
+## [7.61.1] - 2024-09-19
+### Added
+- [Feature Preview - alpha] Support for `client.hosted_extractors.jobs`.
+
+## [7.61.0] - 2024-09-18
+### Changed
+- TimeSeriesAPI and DatapointsAPI support for `instance_id` reaches general availability (GA).
+### Added
+- `instance_id` can now be used freely alongside `id` and `external_id`, and is now accepted by
+  retrieve/retrieve_array/retrieve_dataframe.
+- `instance_id` now works in `to_pandas` methods, with fallbacks on `external_id` and `id`.
+### Fixed
+- A bug caused all datapoints objects to load an empty instance_id.
+
+## [7.60.6] - 2024-09-17
+### Fixed
+- Fixed bug in `replace` upsert mode which caused objects to not be cleared.
+
 ## [7.60.5] - 2024-09-17
 ### Changed
-Remove beta notice on the Data Workflows `WorkflowTriggerAPI`
+- Remove beta notice on the Data Workflows `WorkflowTriggerAPI`
 
 ## [7.60.4] - 2024-09-15
 ### Added
-Fix bug in column name remapping for `TypedInstance.to_pandas()`
+- Fix bug in column name remapping for `TypedInstance.to_pandas()`
 
 ## [7.60.3] - 2024-09-14
 ### Changed

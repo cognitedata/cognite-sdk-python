@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Sequence, overload
+from typing import TYPE_CHECKING, Iterator, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -193,19 +193,34 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
-    def update(self, item: ThreeDModel | ThreeDModelUpdate) -> ThreeDModel: ...
+    def update(
+        self,
+        item: ThreeDModel | ThreeDModelUpdate,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> ThreeDModel: ...
 
     @overload
-    def update(self, item: Sequence[ThreeDModel | ThreeDModelUpdate]) -> ThreeDModelList: ...
+    def update(
+        self,
+        item: Sequence[ThreeDModel | ThreeDModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> ThreeDModelList: ...
 
     def update(
         self,
         item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
             item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (ThreeDModel or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
@@ -232,7 +247,11 @@ class ThreeDModelsAPI(APIClient):
         # Note that we cannot use the ThreeDModelWrite to update as the write format of a 3D model
         # does not have ID or External ID, thus no identifier to know which model to update.
         return self._update_multiple(
-            list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
+            list_cls=ThreeDModelList,
+            resource_cls=ThreeDModel,
+            update_cls=ThreeDModelUpdate,
+            items=item,
+            mode=mode,
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
@@ -395,12 +414,19 @@ class ThreeDRevisionsAPI(APIClient):
         item: ThreeDModelRevision
         | ThreeDModelRevisionUpdate
         | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
 
         Args:
             model_id (int): Update the revision under the model with this id.
             item (ThreeDModelRevision | ThreeDModelRevisionUpdate | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate]): ThreeDModelRevision(s) to update
+            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
+                object is given (ThreeDModelRevision or -Write). If you use 'replace_ignore_null', only the fields
+                you have set will be used to replace existing (default). Using 'replace' will additionally
+                clear all the fields that are not specified by you. Last option, 'patch', will update only
+                the fields you have set and for container-like fields such as metadata or labels, add the
+                values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             ThreeDModelRevision | ThreeDModelRevisionList: Updated ThreeDModelRevision(s)
@@ -429,6 +455,7 @@ class ThreeDRevisionsAPI(APIClient):
             update_cls=ThreeDModelRevisionUpdate,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             items=item,
+            mode=mode,
         )
 
     def delete(self, model_id: int, id: int | Sequence[int]) -> None:

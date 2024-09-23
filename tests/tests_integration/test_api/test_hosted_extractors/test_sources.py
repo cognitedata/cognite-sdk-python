@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import platform
-
 import pytest
 
 from cognite.client import CogniteClient
@@ -16,9 +14,9 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
-def one_event_hub_source(cognite_client: CogniteClient) -> SourceList:
+def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) -> SourceList:
     my_hub = EventHubSourceWrite(
-        external_id=f"myNewHub-{platform.system()}-{platform.python_version()}",
+        external_id=f"myNewHub-{os_and_py_version}",
         host="myHost",
         key_name="myKeyName",
         key_value="myKey",

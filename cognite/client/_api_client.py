@@ -1225,28 +1225,25 @@ class APIClient:
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> dict[str, dict[str, dict]]:
-        dumped_resource = resource.dump(camel_case=True)
-        has_id = "id" in dumped_resource
-        has_external_id = "externalId" in dumped_resource
-        has_instance_id = "instanceId" in dumped_resource
+        dumped = resource.dump(camel_case=True)
 
         patch_object: dict[str, dict[str, dict]] = {"update": {}}
-        if has_instance_id:
-            patch_object["instanceId"] = dumped_resource.pop("instanceId")
-            dumped_resource.pop("id", None)
-        elif has_id:
-            patch_object["id"] = dumped_resource.pop("id")
-        elif has_external_id:
-            patch_object["externalId"] = dumped_resource.pop("externalId")
+        if "instanceId" in dumped:
+            patch_object["instanceId"] = dumped.pop("instanceId")
+            dumped.pop("id", None)
+        elif "id" in dumped:
+            patch_object["id"] = dumped.pop("id")
+        elif "externalId" in dumped:
+            patch_object["externalId"] = dumped.pop("externalId")
 
         update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
 
         update_attribute_by_name = {prop.name: prop for prop in update_attributes}
-        for key, value in dumped_resource.items():
+        for key, value in dumped.items():
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]
-            if prop.is_container and mode == "patch":
+            if (prop.is_list or prop.is_object) and mode == "patch":
                 update[key] = {"add": value}
             else:
                 update[key] = {"set": value}
@@ -1255,14 +1252,21 @@ class APIClient:
         return patch_object
 
     @staticmethod
-    def _clear_all_attributes(
-        update_attributes: list[PropertySpec],
-    ) -> dict[str, dict]:
-        return {
-            to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
-            for prop in update_attributes
-            if prop.is_nullable and not prop.is_beta
-        }
+    def _clear_all_attributes(update_attributes: list[PropertySpec]) -> dict[str, dict]:
+        cleared = {}
+        for prop in update_attributes:
+            if prop.is_beta:
+                continue
+            elif prop.is_object:
+                clear_with: dict = {"set": {}}
+            elif prop.is_list:
+                clear_with = {"set": []}
+            elif prop.is_nullable:
+                clear_with = {"setNull": True}
+            else:
+                continue
+            cleared[to_camel_case(prop.name)] = clear_with
+        return cleared
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:

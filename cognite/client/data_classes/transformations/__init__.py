@@ -657,7 +657,7 @@ class TransformationUpdate(CogniteUpdate):
             PropertySpec("is_public", is_nullable=False),
             PropertySpec("ignore_null_fields", is_nullable=False),
             PropertySpec("data_set_id"),
-            PropertySpec("tags", is_container=True),
+            PropertySpec("tags", is_list=True),
         ]
 
 

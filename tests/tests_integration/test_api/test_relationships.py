@@ -241,9 +241,9 @@ class TestRelationshipscognite_client:
         assert {a.external_id for a in res_generator} == {a.external_id for a in res_list}
 
     def test_upsert_2_relationships_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        asset1 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset1", name="asset1")
-        asset2 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset2", name="asset2")
-        asset3 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset3", name="asset3")
+        asset1 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset1" + random_string(5), name="asset1")
+        asset2 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset2" + random_string(5), name="asset2")
+        asset3 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset3" + random_string(5), name="asset3")
 
         new_relationship = Relationship(
             external_id=f"test_upsert_2_relationships_one_preexisting:new:{random_string(5)}",
