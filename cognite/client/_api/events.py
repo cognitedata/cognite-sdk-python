@@ -299,7 +299,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> client = CogniteClient()
-            >>> result = client.events.aggregate_unique_values(EventProperty.type)
+            >>> result = client.events.aggregate_unique_values(property=EventProperty.type)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project:
