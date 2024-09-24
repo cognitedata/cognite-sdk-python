@@ -367,8 +367,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -382,8 +382,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -392,8 +392,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
 class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
@@ -412,8 +412,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -430,8 +430,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -440,8 +440,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
     def as_write(self) -> Cognite360ImageModelApply:
         return Cognite360ImageModelApply(
@@ -451,8 +451,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            thumbnail=self.thumbnail,
             model_type=self.model_type,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -584,8 +584,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -599,8 +599,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -609,8 +609,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
 class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
@@ -629,8 +629,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -647,8 +647,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -657,8 +657,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
     def as_write(self) -> Cognite3DModelApply:
         return Cognite3DModelApply(
@@ -668,8 +668,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            thumbnail=self.thumbnail,
             model_type=self.model_type,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -942,7 +942,7 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
 
     It is used to when data is written to CDF.
 
-    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
         space (str): The space where the node is located.
@@ -994,7 +994,7 @@ class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode)
 
     It is used to when data is read from CDF.
 
-    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
         space (str): The space where the node is located.
@@ -1087,7 +1087,7 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    Represent an activity
+    Represents activities. Activities typically happen over a period and have a start and end time.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1106,9 +1106,9 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
         end_time (datetime | None): The actual end time of an activity (or similar that extends this)
         scheduled_start_time (datetime | None): The planned start time of an activity (or similar that extends this)
         scheduled_end_time (datetime | None): The planned end time of an activity (or similar that extends this)
-        assets (list[DirectRelationReference | tuple[str, str]] | None): List of assets this activity relates to
-        equipment (list[DirectRelationReference | tuple[str, str]] | None): The list of equipment this activity relates to
-        time_series (list[DirectRelationReference | tuple[str, str]] | None): The list of time series this activity relates to
+        assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets the activity is related to.
+        equipment (list[DirectRelationReference | tuple[str, str]] | None): A list of equipment the activity is related to.
+        time_series (list[DirectRelationReference | tuple[str, str]] | None): A list of time series the activity is related to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1167,7 +1167,7 @@ class CogniteActivity(_CogniteActivityProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    Represent an activity
+    Represents activities. Activities typically happen over a period and have a start and end time.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1189,9 +1189,9 @@ class CogniteActivity(_CogniteActivityProperties, TypedNode):
         end_time (datetime | None): The actual end time of an activity (or similar that extends this)
         scheduled_start_time (datetime | None): The planned start time of an activity (or similar that extends this)
         scheduled_end_time (datetime | None): The planned end time of an activity (or similar that extends this)
-        assets (list[DirectRelationReference] | None): List of assets this activity relates to
-        equipment (list[DirectRelationReference] | None): The list of equipment this activity relates to
-        time_series (list[DirectRelationReference] | None): The list of time series this activity relates to
+        assets (list[DirectRelationReference] | None): A list of assets the activity is related to.
+        equipment (list[DirectRelationReference] | None): A list of equipment the activity is related to.
+        time_series (list[DirectRelationReference] | None): A list of time series the activity is related to.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1296,7 +1296,7 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    The asset is the bare bone representation of assets in our asset centric world
+    Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1312,9 +1312,9 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        parent (DirectRelationReference | tuple[str, str] | None): Parent of this asset
-        asset_class (DirectRelationReference | tuple[str, str] | None): Class of this asset
-        asset_type (DirectRelationReference | tuple[str, str] | None): Type of this asset
+        parent (DirectRelationReference | tuple[str, str] | None): The parent of the asset.
+        asset_class (DirectRelationReference | tuple[str, str] | None): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
+        asset_type (DirectRelationReference | tuple[str, str] | None): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1365,7 +1365,7 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    The asset is the bare bone representation of assets in our asset centric world
+    Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1384,12 +1384,12 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        parent (DirectRelationReference | None): Parent of this asset
-        root (DirectRelationReference | None): Asset at the top of the hierarchy.
-        path (list[DirectRelationReference] | None): Materialized path of this asset
-        path_last_updated_time (datetime | None): Last time the path was updated for this asset
-        asset_class (DirectRelationReference | None): Class of this asset
-        asset_type (DirectRelationReference | None): Type of this asset
+        parent (DirectRelationReference | None): The parent of the asset.
+        root (DirectRelationReference | None): An automatically updated reference to the top-level asset of the hierarchy.
+        path (list[DirectRelationReference] | None): An automatically updated ordered list of this asset's ancestors, starting with the root asset. Enables subtree filtering to find all assets under a parent.
+        path_last_updated_time (datetime | None): The last time the path was updated for this asset.
+        asset_class (DirectRelationReference | None): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
+        asset_type (DirectRelationReference | None): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1478,7 +1478,7 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    This identifies the class of an asset
+    Represents the class of an asset.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1486,8 +1486,8 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the class of asset
-        standard (str | None): Textual string for which standard the code is from
+        code (str | None): A unique identifier for the class of asset.
+        standard (str | None): A text string to specify which standard the class is from.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1520,7 +1520,7 @@ class CogniteAssetClass(_CogniteAssetClassProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    This identifies the class of an asset
+    Represents the class of an asset.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1531,8 +1531,8 @@ class CogniteAssetClass(_CogniteAssetClassProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the class of asset
-        standard (str | None): Textual string for which standard the code is from
+        code (str | None): A unique identifier for the class of asset.
+        standard (str | None): A text string to specify which standard the class is from.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1590,7 +1590,7 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    This identifies the type of an asset
+    Represents the type of an asset.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1598,9 +1598,9 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of asset
-        standard (str | None): Textual string for which standard the code is from
-        asset_class (DirectRelationReference | tuple[str, str] | None): Class of this type, direct relation to CogniteAssetClass
+        code (str | None): A unique identifier for the type of asset.
+        standard (str | None): A text string to specify which standard the type is from.
+        asset_class (DirectRelationReference | tuple[str, str] | None): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1635,7 +1635,7 @@ class CogniteAssetType(_CogniteAssetTypeProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    This identifies the type of an asset
+    Represents the type of an asset.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1646,9 +1646,9 @@ class CogniteAssetType(_CogniteAssetTypeProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of asset
-        standard (str | None): Textual string for which standard the code is from
-        asset_class (DirectRelationReference | None): Class of this type, direct relation to CogniteAssetClass
+        code (str | None): A unique identifier for the type of asset.
+        standard (str | None): A text string to specify which standard the type is from.
+        asset_class (DirectRelationReference | None): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1717,8 +1717,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1732,8 +1732,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -1742,8 +1742,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
 class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
@@ -1762,8 +1762,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1780,8 +1780,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -1790,8 +1790,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
     def as_write(self) -> CogniteCADModelApply:
         return CogniteCADModelApply(
@@ -1801,8 +1801,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            thumbnail=self.thumbnail,
             model_type=self.model_type,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -2287,7 +2287,7 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    Represent a physical piece of equipment
+    Equipment represents physical supplies or devices.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2302,11 +2302,11 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        asset (DirectRelationReference | tuple[str, str] | None): Asset associated with this equipment
-        serial_number (str | None): Serial number of the equipment
-        manufacturer (str | None): Manufacturer of the equipment
-        equipment_type (DirectRelationReference | tuple[str, str] | None): Type of this equipment, direct relation to CogniteEquipmentType
-        files (list[DirectRelationReference | tuple[str, str]] | None): List of files this equipment relates to
+        asset (DirectRelationReference | tuple[str, str] | None): The asset the equipment is related to.
+        serial_number (str | None): The serial number of the equipment.
+        manufacturer (str | None): The manufacturer of the equipment.
+        equipment_type (DirectRelationReference | tuple[str, str] | None): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
+        files (list[DirectRelationReference | tuple[str, str]] | None): A list of files the equipment relates to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2359,7 +2359,7 @@ class CogniteEquipment(_CogniteEquipmentProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    Represent a physical piece of equipment
+    Equipment represents physical supplies or devices.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2377,11 +2377,11 @@ class CogniteEquipment(_CogniteEquipmentProperties, TypedNode):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        asset (DirectRelationReference | None): Asset associated with this equipment
-        serial_number (str | None): Serial number of the equipment
-        manufacturer (str | None): Manufacturer of the equipment
-        equipment_type (DirectRelationReference | None): Type of this equipment, direct relation to CogniteEquipmentType
-        files (list[DirectRelationReference] | None): List of files this equipment relates to
+        asset (DirectRelationReference | None): The asset the equipment is related to.
+        serial_number (str | None): The serial number of the equipment.
+        manufacturer (str | None): The manufacturer of the equipment.
+        equipment_type (DirectRelationReference | None): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
+        files (list[DirectRelationReference] | None): A list of files the equipment relates to.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2470,7 +2470,7 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
 
     It is used to when data is written to CDF.
 
-    This identifies the type of an equipment
+    Represents the type of equipment.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2478,10 +2478,10 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of equipment
-        equipment_class (str | None): Class of equipment
-        standard (str | None): Identifier for which standard this equipment type is sourced from, such as ISO14224 or similar
-        standard_reference (str | None): Reference to the source of the equipment specification
+        code (str | None): A unique identifier for the type of equipment.
+        equipment_class (str | None): Represents the class of equipment.
+        standard (str | None): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
+        standard_reference (str | None): A reference to the source of the equipment standard.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2518,7 +2518,7 @@ class CogniteEquipmentType(_CogniteEquipmentTypeProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    This identifies the type of an equipment
+    Represents the type of equipment.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2529,10 +2529,10 @@ class CogniteEquipmentType(_CogniteEquipmentTypeProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        code (str | None): A unique identifier for the type of equipment
-        equipment_class (str | None): Class of equipment
-        standard (str | None): Identifier for which standard this equipment type is sourced from, such as ISO14224 or similar
-        standard_reference (str | None): Reference to the source of the equipment specification
+        code (str | None): A unique identifier for the type of equipment.
+        equipment_class (str | None): Represents the class of equipment.
+        standard (str | None): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
+        standard_reference (str | None): A reference to the source of the equipment standard.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2604,7 +2604,7 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    This concept models the underlying file
+    Represents files.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2619,12 +2619,10 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None): List of assets this file relates to
-        mime_type (str | None): MIME type of the file
-        directory (str | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None): Point in time when the file upload was completed and the file was made available
-        category (DirectRelationReference | tuple[str, str] | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets this file is related to.
+        mime_type (str | None): The MIME type of the file.
+        directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        category (DirectRelationReference | tuple[str, str] | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2648,8 +2646,6 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         assets: list[DirectRelationReference | tuple[str, str]] | None = None,
         mime_type: str | None = None,
         directory: str | None = None,
-        is_uploaded: bool | None = None,
-        uploaded_time: datetime | None = None,
         category: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -2669,8 +2665,6 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
         self.mime_type = mime_type
         self.directory = directory
-        self.is_uploaded = is_uploaded
-        self.uploaded_time = uploaded_time
         self.category = DirectRelationReference.load(category) if category else None
 
 
@@ -2679,7 +2673,7 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    This concept models the underlying file
+    Represents files.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2697,12 +2691,12 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference] | None): List of assets this file relates to
-        mime_type (str | None): MIME type of the file
-        directory (str | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None): Point in time when the file upload was completed and the file was made available
-        category (DirectRelationReference | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        assets (list[DirectRelationReference] | None): A list of assets this file is related to.
+        mime_type (str | None): The MIME type of the file.
+        directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        is_uploaded (bool | None): Specifies if the file content has been uploaded to Cognite Data Fusion or not.
+        uploaded_time (datetime | None): The time the file upload completed.
+        category (DirectRelationReference | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2772,8 +2766,6 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
             assets=self.assets,  # type: ignore[arg-type]
             mime_type=self.mime_type,
             directory=self.directory,
-            is_uploaded=self.is_uploaded,
-            uploaded_time=self.uploaded_time,
             category=self.category,
             existing_version=self.version,
             type=self.type,
@@ -2793,17 +2785,17 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    This identifies the category of file as found through contextualization/categorization
+    Represents the categories of files as determined by contextualization or categorization.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
-        code (str): Identified category code, such as 'AA' for Accounting (from Norsok)
+        code (str): An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        standard (str | None): Name of the standard the category originates from, such as 'Norsok'
-        standard_reference (str | None): Reference to the source of the category standard
+        standard (str | None): The name of the standard the category originates from, for example, 'Norsok'.
+        standard_reference (str | None): A reference to the source of the category standard.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2838,20 +2830,20 @@ class CogniteFileCategory(_CogniteFileCategoryProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    This identifies the category of file as found through contextualization/categorization
+    Represents the categories of files as determined by contextualization or categorization.
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        code (str): Identified category code, such as 'AA' for Accounting (from Norsok)
+        code (str): An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        standard (str | None): Name of the standard the category originates from, such as 'Norsok'
-        standard_reference (str | None): Reference to the source of the category standard
+        standard (str | None): The name of the standard the category originates from, for example, 'Norsok'.
+        standard_reference (str | None): A reference to the source of the category standard.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2920,8 +2912,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2935,8 +2927,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -2945,8 +2937,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
 
 class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
@@ -2965,8 +2957,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         model_type (Literal["CAD", "Image360", "PointCloud"] | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2983,8 +2975,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        thumbnail: DirectRelationReference | None = None,
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
+        thumbnail: DirectRelationReference | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -2993,8 +2985,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
         self.model_type = model_type
+        self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
 
     def as_write(self) -> CognitePointCloudModelApply:
         return CognitePointCloudModelApply(
@@ -3004,8 +2996,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            thumbnail=self.thumbnail,
             model_type=self.model_type,
+            thumbnail=self.thumbnail,
             existing_version=self.version,
             type=self.type,
         )
@@ -3625,11 +3617,12 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
+    Represents a series of data points in time order."
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
+        is_step (bool): Specifies whether the time series is a step time series or not.
+        time_series_type (Literal["numeric", "string"]): Specifies the data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3641,10 +3634,10 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | tuple[str, str] | None): direct relation to the unit of the time series
-        assets (list[DirectRelationReference | tuple[str, str]] | None): The asset field.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None): The equipment field.
+        source_unit (str | None): The unit specified in the source system.
+        unit (DirectRelationReference | tuple[str, str] | None): The unit of the time series.
+        assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets the time series is related to.
+        equipment (list[DirectRelationReference | tuple[str, str]] | None): A list of equipment the time series is related to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -3699,14 +3692,15 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
+    Represents a series of data points in time order."
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
+        is_step (bool): Specifies whether the time series is a step time series or not.
+        time_series_type (Literal["numeric", "string"]): Specifies the data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3718,10 +3712,10 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | None): direct relation to the unit of the time series
-        assets (list[DirectRelationReference] | None): The asset field.
-        equipment (list[DirectRelationReference] | None): The equipment field.
+        source_unit (str | None): The unit specified in the source system.
+        unit (DirectRelationReference | None): The unit of the time series.
+        assets (list[DirectRelationReference] | None): A list of assets the time series is related to.
+        equipment (list[DirectRelationReference] | None): A list of equipment the time series is related to.
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -4198,7 +4192,7 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
 
     It is used to when data is written to CDF.
 
-    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
         space (str): The space where the node is located.
@@ -4254,7 +4248,7 @@ class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge)
 
     It is used to when data is read from CDF.
 
-    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's  transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+    The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
     Args:
         space (str): The space where the node is located.
