@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.62.2] - 2024-09-23
+## [7.62.3] - 2024-09-24
+### Added
+- [Feature Preview - alpha] Support for `Kafka` and `Rest` sources in `client.hosted_extractors.sources`.
+
+## [7.62.2] - 2024-09-24
 ### Added
 - [Feature Preview - alpha] Support for `client.hosted_extractors.mappings`.
 
