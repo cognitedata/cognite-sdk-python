@@ -538,7 +538,7 @@ class _MQTTUpdate(SourceUpdate, ABC):
 
     @property
     def use_tls(self) -> _UseTlsUpdate:
-        return _MQTTUpdate._UseTlsUpdate(self, "use_tls")
+        return _MQTTUpdate._UseTlsUpdate(self, "useTls")
 
     @property
     def ca_certificate(self) -> _CACertificateUpdate:
