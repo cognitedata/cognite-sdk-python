@@ -37,7 +37,7 @@ class TasksSummary:
         self.not_found_error: Exception | None = None
         self.duplicated_error: Exception | None = None
         self.unknown_error: Exception | None = None
-        self.missing, self.duplicated = self._inspect_exceptions(exceptions)
+        self.missing, self.duplicated, self.cluster = self._inspect_exceptions(exceptions)
 
     def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
@@ -81,13 +81,14 @@ class TasksSummary:
         if self.duplicated_error:
             self._raise_duplicated_error(str_format_element_fn, **task_lists)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list]:
-        missing, duplicated = [], []
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None]:
+        cluster, missing, duplicated = None, [], []
         for exc in exceptions:
             if not isinstance(exc, CogniteAPIError):
                 self.unknown_error = exc
                 continue
 
+            cluster = cluster or exc.cluster
             if exc.code in (400, 422) and exc.missing is not None:
                 missing.extend(exc.missing)
                 self.not_found_error = exc
@@ -97,7 +98,7 @@ class TasksSummary:
                 self.duplicated_error = exc
             else:
                 self.unknown_error = exc
-        return missing, duplicated
+        return missing, duplicated, cluster
 
     def _raise_basic_api_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
         if isinstance(self.unknown_error, CogniteAPIError) and (task_lists["failed"] or task_lists["unknown"]):
@@ -109,6 +110,7 @@ class TasksSummary:
                 duplicated=self.duplicated,
                 extra=self.unknown_error.extra,
                 unwrap_fn=unwrap_fn,
+                cluster=self.cluster,
                 **task_lists,
             )
         raise self.unknown_error  # type: ignore [misc]

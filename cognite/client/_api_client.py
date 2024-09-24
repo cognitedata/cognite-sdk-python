@@ -48,6 +48,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
+    get_cdf_cluster,
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
@@ -1147,7 +1148,12 @@ class APIClient:
                     # The created call failed
                     failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)  # type: ignore [attr-defined]
                 raise CogniteAPIError(
-                    api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
+                    api_error.message,
+                    code=api_error.code,
+                    successful=successful,
+                    failed=failed,
+                    unknown=unknown,
+                    cluster=get_cdf_cluster(self._config),
                 )
             # Need to retrieve the successful updated items from the first call.
             successful_resources: T_CogniteResourceList | None = None
@@ -1272,8 +1278,7 @@ class APIClient:
     def _status_ok(status_code: int) -> bool:
         return status_code in {200, 201, 202, 204}
 
-    @classmethod
-    def _raise_api_error(cls, res: Response, payload: dict) -> NoReturn:
+    def _raise_api_error(self, res: Response, payload: dict) -> NoReturn:
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None
@@ -1303,8 +1308,8 @@ class APIClient:
         if duplicated:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
-        cls._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = shorten(cls._get_response_content_safe(res), 500)
+        self._sanitize_headers(error_details["headers"])
+        error_details["response_payload"] = shorten(self._get_response_content_safe(res), 500)
         error_details["response_headers"] = res.headers
 
         if res.history:
@@ -1313,7 +1318,15 @@ class APIClient:
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
         logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
-        raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
+        raise CogniteAPIError(
+            msg,
+            code,
+            x_request_id,
+            missing=missing,
+            duplicated=duplicated,
+            extra=extra,
+            cluster=get_cdf_cluster(self._config),
+        )
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:
         method = res.request.method

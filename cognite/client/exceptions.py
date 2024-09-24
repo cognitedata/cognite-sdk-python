@@ -136,6 +136,7 @@ class CogniteAPIError(CogniteMultiException):
         unknown (list | None): List of items which may or may not have been successfully processed.
         skipped (list | None): List of items that were skipped due to "fail fast" mode.
         unwrap_fn (Callable): Function to extract identifier from the Cognite resource.
+        cluster (str | None): Which Cognite cluster the user's project is on.
         extra (dict | None): A dict of any additional information.
 
     Examples:
@@ -170,6 +171,7 @@ class CogniteAPIError(CogniteMultiException):
         unknown: list | None = None,
         skipped: list | None = None,
         unwrap_fn: Callable = no_op,
+        cluster: str | None = None,
         extra: dict | None = None,
     ) -> None:
         self.message = message
@@ -177,11 +179,14 @@ class CogniteAPIError(CogniteMultiException):
         self.x_request_id = x_request_id
         self.missing = missing
         self.duplicated = duplicated
+        self.cluster = cluster
         self.extra = extra
         super().__init__(successful, failed, unknown, skipped, unwrap_fn)
 
     def __str__(self) -> str:
         msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
+        if self.cluster:
+            msg += f" | cluster: {self.cluster}"
         if self.missing:
             msg += f"\nMissing: {self._truncate_elements(self.missing)}"
         if self.duplicated:
