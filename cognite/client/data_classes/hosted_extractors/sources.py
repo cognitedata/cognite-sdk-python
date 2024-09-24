@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast
 
@@ -266,7 +267,7 @@ class EventHubSourceUpdate(SourceUpdate):
 
 
 @dataclass
-class MQTTAuthenticationWrite(CogniteObject, ABC):
+class AuthenticationWrite(CogniteObject, ABC):
     _type: ClassVar[str]
 
     @classmethod
@@ -293,7 +294,7 @@ class MQTTAuthenticationWrite(CogniteObject, ABC):
 
 
 @dataclass
-class BasicMQTTAuthenticationWrite(MQTTAuthenticationWrite):
+class BasicMQTTAuthenticationWrite(AuthenticationWrite):
     _type = "basic"
     username: str
     password: str | None
@@ -334,12 +335,14 @@ class AuthCertificateWrite(CogniteObject):
 
 
 class _MQTTSourceWrite(SourceWrite, ABC):
+    _type = "mqtt"
+
     def __init__(
         self,
         external_id: str,
         host: str,
         port: int | None = None,
-        authentication: MQTTAuthenticationWrite | None = None,
+        authentication: AuthenticationWrite | None = None,
         use_tls: bool = False,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
@@ -358,7 +361,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=MQTTAuthenticationWrite._load(resource["authentication"])
+            authentication=AuthenticationWrite._load(resource["authentication"])
             if "authentication" in resource
             else None,
             use_tls=resource.get("useTls", False),
@@ -370,7 +373,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.authentication, MQTTAuthenticationWrite):
+        if isinstance(self.authentication, AuthenticationWrite):
             output["authentication"] = self.authentication.dump(camel_case)
         if isinstance(self.ca_certificate, CACertificateWrite):
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
@@ -438,6 +441,8 @@ class AuthCertificate(CogniteObject):
 
 
 class _MQTTSource(Source, ABC):
+    _type = "mqtt"
+
     def __init__(
         self,
         external_id: str,
@@ -493,6 +498,8 @@ class _MQTTSource(Source, ABC):
 
 
 class _MQTTUpdate(SourceUpdate, ABC):
+    _type = "mqtt"
+
     class _HostUpdate(CognitePrimitiveUpdate):
         def set(self, value: str) -> _MQTTUpdate:
             return self._set(value)
@@ -530,7 +537,7 @@ class _MQTTUpdate(SourceUpdate, ABC):
         return _MQTTUpdate._AuthenticationUpdate(self, "authentication")
 
     @property
-    def useTls(self) -> _UseTlsUpdate:
+    def use_tls(self) -> _UseTlsUpdate:
         return _MQTTUpdate._UseTlsUpdate(self, "useTls")
 
     @property
@@ -547,7 +554,7 @@ class _MQTTUpdate(SourceUpdate, ABC):
             PropertySpec("host", is_nullable=False),
             PropertySpec("port", is_nullable=True),
             PropertySpec("authentication", is_nullable=True, is_object=True),
-            PropertySpec("useTls", is_nullable=False),
+            PropertySpec("use_tls", is_nullable=False),
             PropertySpec("ca_certificate", is_nullable=True, is_object=True),
             PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
@@ -577,6 +584,366 @@ class MQTT5SourceUpdate(_MQTTUpdate):
     _type = "mqtt5"
 
 
+@dataclass
+class KafkaBroker(CogniteObject):
+    host: str
+    port: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(host=resource["host"], port=resource["port"])
+
+
+class KafkaSourceWrite(SourceWrite):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the write/request format of the kafka resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
+        authentication (AuthenticationWrite | None): Authentication information for the kafka source.
+        use_tls (bool): If true, use TLS when connecting to the broker.
+        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "kafka"
+
+    def __init__(
+        self,
+        external_id: str,
+        bootstrap_brokers: Sequence[KafkaBroker],
+        authentication: AuthenticationWrite | None = None,
+        use_tls: bool = False,
+        ca_certificate: CACertificateWrite | None = None,
+        auth_certificate: AuthCertificateWrite | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.bootstrap_brokers = bootstrap_brokers
+        self.authentication = authentication
+        self.use_tls = use_tls
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
+            authentication=AuthenticationWrite._load(resource["authentication"])
+            if "authentication" in resource
+            else None,
+            use_tls=resource.get("useTls", False),
+            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
+            broker.dump(camel_case) for broker in self.bootstrap_brokers
+        ]
+        if isinstance(self.authentication, AuthenticationWrite):
+            output["authentication"] = self.authentication.dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificateWrite):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificateWrite):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class KafkaSource(Source):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the read/response format of the kafka resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        bootstrap_brokers (Sequence[KafkaBroker]): List of redundant kafka brokers to connect to.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        authentication (MQTTAuthentication | None): Authentication information for the kafka source.
+        use_tls (bool): If true, use TLS when connecting to the broker.
+        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "kafka"
+
+    def __init__(
+        self,
+        external_id: str,
+        bootstrap_brokers: Sequence[KafkaBroker],
+        created_time: int,
+        last_updated_time: int,
+        authentication: MQTTAuthentication | None = None,
+        use_tls: bool = False,
+        ca_certificate: CACertificate | None = None,
+        auth_certificate: AuthCertificate | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.bootstrap_brokers = bootstrap_brokers
+        self.authentication = authentication
+        self.use_tls = use_tls
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
+            authentication=MQTTAuthentication._load(resource["authentication"])
+            if "authentication" in resource
+            else None,
+            use_tls=resource.get("useTls", False),
+            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificate._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+        )
+
+    def as_write(self) -> KafkaSourceWrite:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
+            broker.dump(camel_case) for broker in self.bootstrap_brokers
+        ]
+        if isinstance(self.authentication, MQTTAuthentication):
+            output["authentication"] = self.authentication.dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificate):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificate):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class KafkaSourceUpdate(SourceUpdate):
+    _type = "kafka"
+
+    class _BootstrapBrokersUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Sequence[KafkaBroker]) -> KafkaSourceUpdate:
+            return self._set([broker.dump() for broker in value])
+
+    class _AuthenticationUpdate(CognitePrimitiveUpdate):
+        def set(self, value: MQTTAuthentication | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _UseTlsUpdate(CognitePrimitiveUpdate):
+        def set(self, value: bool) -> KafkaSourceUpdate:
+            return self._set(value)
+
+    class _CACertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: CACertificate | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _AuthCertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: AuthCertificate | None) -> KafkaSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    @property
+    def bootstrap_brokers(self) -> _BootstrapBrokersUpdate:
+        return KafkaSourceUpdate._BootstrapBrokersUpdate(self, "bootstrapBrokers")
+
+    @property
+    def authentication(self) -> _AuthenticationUpdate:
+        return KafkaSourceUpdate._AuthenticationUpdate(self, "authentication")
+
+    @property
+    def use_tls(self) -> _UseTlsUpdate:
+        return KafkaSourceUpdate._UseTlsUpdate(self, "useTls")
+
+    @property
+    def ca_certificate(self) -> _CACertificateUpdate:
+        return KafkaSourceUpdate._CACertificateUpdate(self, "caCertificate")
+
+    @property
+    def auth_certificate(self) -> _AuthCertificateUpdate:
+        return KafkaSourceUpdate._AuthCertificateUpdate(self, "authCertificate")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("bootstrap_brokers", is_nullable=False),
+            PropertySpec("authentication", is_nullable=True, is_object=True),
+            PropertySpec("use_tls", is_nullable=False),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
+        ]
+
+
+class RestSourceWrite(SourceWrite):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the write/request format of the rest resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        host (str): Host or IP address to connect to.
+        scheme (Literal["http", "https"]): Type of connection to establish.
+        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
+        ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "rest"
+
+    def __init__(
+        self,
+        external_id: str,
+        host: str,
+        scheme: Literal["http", "https"],
+        port: int | None = None,
+        ca_certificate: CACertificateWrite | None = None,
+        auth_certificate: AuthCertificateWrite | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.host = host
+        self.scheme = scheme
+        self.port = port
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            scheme=resource["scheme"],
+            port=resource.get("port"),
+            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificateWrite):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificateWrite):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class RestSource(Source):
+    """A hosted extractor source represents an external source system on the internet.
+    The source resource in CDF contains all the information the extractor needs to
+    connect to the external source system.
+
+    This is the read/response format of the rest resource.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        host (str): Host or IP address to connect to.
+        scheme (Literal["http", "https"]): Type of connection to establish.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
+        ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
+        auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
+    """
+
+    _type = "rest"
+
+    def __init__(
+        self,
+        external_id: str,
+        host: str,
+        scheme: Literal["http", "https"],
+        created_time: int,
+        last_updated_time: int,
+        port: int | None = None,
+        ca_certificate: CACertificate | None = None,
+        auth_certificate: AuthCertificate | None = None,
+    ) -> None:
+        super().__init__(external_id)
+        self.host = host
+        self.scheme = scheme
+        self.port = port
+        self.ca_certificate = ca_certificate
+        self.auth_certificate = auth_certificate
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load_source(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            host=resource["host"],
+            scheme=resource["scheme"],
+            port=resource.get("port"),
+            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            auth_certificate=AuthCertificate._load(resource["authCertificate"])
+            if "authCertificate" in resource
+            else None,
+        )
+
+    def as_write(self) -> RestSourceWrite:
+        raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if isinstance(self.ca_certificate, CACertificate):
+            output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
+        if isinstance(self.auth_certificate, AuthCertificate):
+            output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
+        return output
+
+
+class RestSourceUpdate(SourceUpdate):
+    _type = "rest"
+
+    class _HostUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> RestSourceUpdate:
+            return self._set(value)
+
+    class _SchemeUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Literal["http", "https"]) -> RestSourceUpdate:
+            return self._set(value)
+
+    class _PortUpdate(CognitePrimitiveUpdate):
+        def set(self, value: int) -> RestSourceUpdate:
+            return self._set(value)
+
+    @property
+    def host(self) -> _HostUpdate:
+        return RestSourceUpdate._HostUpdate(self, "host")
+
+    @property
+    def scheme(self) -> _SchemeUpdate:
+        return RestSourceUpdate._SchemeUpdate(self, "scheme")
+
+    @property
+    def port(self) -> _PortUpdate:
+        return RestSourceUpdate._PortUpdate(self, "port")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("host", is_nullable=False),
+            PropertySpec("scheme", is_nullable=False),
+            PropertySpec("port", is_nullable=False),
+        ]
+
+
 class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMixin):
     _RESOURCE = SourceWrite
 
@@ -591,31 +958,26 @@ class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTr
 
 
 _SOURCE_WRITE_CLASS_BY_TYPE: dict[str, type[SourceWrite]] = {
-    subclass._type: subclass  # type: ignore[misc]
+    subclass._type: subclass  # type: ignore[misc, attr-defined]
     for subclass in itertools.chain(SourceWrite.__subclasses__(), _MQTTSourceWrite.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
 _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
-    subclass._type: subclass  # type: ignore[misc]
+    subclass._type: subclass  # type: ignore[misc, attr-defined]
     for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
 _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
     subclass._type: subclass
     for subclass in itertools.chain(SourceUpdate.__subclasses__(), _MQTTUpdate.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
-_MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[MQTTAuthenticationWrite]] = {
+_MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in MQTTAuthenticationWrite.__subclasses__()
-    if hasattr(subclass, "_type")
+    for subclass in AuthenticationWrite.__subclasses__()
 }
 
 _MQTTAUTHENTICATION_CLASS_BY_TYPE: dict[str, type[MQTTAuthentication]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in MQTTAuthentication.__subclasses__()
-    if hasattr(subclass, "_type")
 }
