@@ -973,11 +973,11 @@ _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
 }
 
 _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
-    subclass._type: subclass  # type: ignore[type-abstract, attr-defined]
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in AuthenticationWrite.__subclasses__()
 }
 
 _MQTTAUTHENTICATION_CLASS_BY_TYPE: dict[str, type[MQTTAuthentication]] = {
-    subclass._type: subclass  # type: ignore[type-abstract, attr-defined]
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in MQTTAuthentication.__subclasses__()
 }
