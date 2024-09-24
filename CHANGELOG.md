@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## TBD
+### Fixed
+- In the CoreModel, `client.data_classes.data_modeling.cdm` the fields `isUploaded` and `uploadedTime` in
+  `CogniteFile` are  now considered read-only 
+
 ## [7.62.3] - 2024-09-24
 ### Added
 - [Feature Preview - alpha] Support for `Kafka` and `Rest` sources in `client.hosted_extractors.sources`.
