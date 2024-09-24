@@ -335,6 +335,8 @@ class AuthCertificateWrite(CogniteObject):
 
 
 class _MQTTSourceWrite(SourceWrite, ABC):
+    _type = "mqtt"
+
     def __init__(
         self,
         external_id: str,
@@ -439,6 +441,8 @@ class AuthCertificate(CogniteObject):
 
 
 class _MQTTSource(Source, ABC):
+    _type = "mqtt"
+
     def __init__(
         self,
         external_id: str,
@@ -494,6 +498,8 @@ class _MQTTSource(Source, ABC):
 
 
 class _MQTTUpdate(SourceUpdate, ABC):
+    _type = "mqtt"
+
     class _HostUpdate(CognitePrimitiveUpdate):
         def set(self, value: str) -> _MQTTUpdate:
             return self._set(value)
@@ -664,7 +670,7 @@ class KafkaSource(Source):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         authentication (MQTTAuthentication | None): Authentication information for the kafka source.
-        useTls (bool): If true, use TLS when connecting to the broker.
+        use_tls (bool): If true, use TLS when connecting to the broker.
         ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
     """
@@ -678,14 +684,14 @@ class KafkaSource(Source):
         created_time: int,
         last_updated_time: int,
         authentication: MQTTAuthentication | None = None,
-        useTls: bool = False,
+        use_tls: bool = False,
         ca_certificate: CACertificate | None = None,
         auth_certificate: AuthCertificate | None = None,
     ) -> None:
         super().__init__(external_id)
         self.bootstrap_brokers = bootstrap_brokers
         self.authentication = authentication
-        self.useTls = useTls
+        self.use_tls = use_tls
         self.ca_certificate = ca_certificate
         self.auth_certificate = auth_certificate
         self.created_time = created_time
@@ -699,7 +705,7 @@ class KafkaSource(Source):
             authentication=MQTTAuthentication._load(resource["authentication"])
             if "authentication" in resource
             else None,
-            useTls=resource.get("useTls", False),
+            use_tls=resource.get("useTls", False),
             ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificate._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -757,7 +763,7 @@ class KafkaSourceUpdate(SourceUpdate):
         return KafkaSourceUpdate._AuthenticationUpdate(self, "authentication")
 
     @property
-    def useTls(self) -> _UseTlsUpdate:
+    def use_tls(self) -> _UseTlsUpdate:
         return KafkaSourceUpdate._UseTlsUpdate(self, "useTls")
 
     @property
@@ -773,7 +779,7 @@ class KafkaSourceUpdate(SourceUpdate):
         return [
             PropertySpec("bootstrap_brokers", is_nullable=False),
             PropertySpec("authentication", is_nullable=True, is_object=True),
-            PropertySpec("useTls", is_nullable=False),
+            PropertySpec("use_tls", is_nullable=False),
             PropertySpec("ca_certificate", is_nullable=True, is_object=True),
             PropertySpec("auth_certificate", is_nullable=True, is_object=True),
         ]
@@ -790,7 +796,7 @@ class RestSourceWrite(SourceWrite):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
         scheme (Literal["http", "https"]): Type of connection to establish.
-        port (int): Port on server to connect to. Uses default ports based on the scheme if omitted.
+        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
         ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
     """
@@ -802,7 +808,7 @@ class RestSourceWrite(SourceWrite):
         external_id: str,
         host: str,
         scheme: Literal["http", "https"],
-        port: int,
+        port: int | None = None,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
     ) -> None:
@@ -819,7 +825,7 @@ class RestSourceWrite(SourceWrite):
             external_id=resource["externalId"],
             host=resource["host"],
             scheme=resource["scheme"],
-            port=resource["port"],
+            port=resource.get("port"),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
@@ -846,9 +852,9 @@ class RestSource(Source):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
         scheme (Literal["http", "https"]): Type of connection to establish.
-        port (int): Port on server to connect to. Uses default ports based on the scheme if omitted.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
         ca_certificate (CACertificate | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificate | None): Authentication certificate (if configured) used to authenticate to source.
     """
@@ -860,9 +866,9 @@ class RestSource(Source):
         external_id: str,
         host: str,
         scheme: Literal["http", "https"],
-        port: int,
         created_time: int,
         last_updated_time: int,
+        port: int | None = None,
         ca_certificate: CACertificate | None = None,
         auth_certificate: AuthCertificate | None = None,
     ) -> None:
@@ -881,7 +887,7 @@ class RestSource(Source):
             external_id=resource["externalId"],
             host=resource["host"],
             scheme=resource["scheme"],
-            port=resource["port"],
+            port=resource.get("port"),
             ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
@@ -952,31 +958,26 @@ class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTr
 
 
 _SOURCE_WRITE_CLASS_BY_TYPE: dict[str, type[SourceWrite]] = {
-    subclass._type: subclass  # type: ignore[misc]
+    subclass._type: subclass  # type: ignore[misc, attr-defined]
     for subclass in itertools.chain(SourceWrite.__subclasses__(), _MQTTSourceWrite.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
 _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
-    subclass._type: subclass  # type: ignore[misc]
+    subclass._type: subclass  # type: ignore[misc, attr-defined]
     for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
 _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
     subclass._type: subclass
     for subclass in itertools.chain(SourceUpdate.__subclasses__(), _MQTTUpdate.__subclasses__())
-    if hasattr(subclass, "_type")
 }
 
 _MQTTAUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass  # type: ignore[type-abstract, attr-defined]
     for subclass in AuthenticationWrite.__subclasses__()
-    if hasattr(subclass, "_type")
 }
 
 _MQTTAUTHENTICATION_CLASS_BY_TYPE: dict[str, type[MQTTAuthentication]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass  # type: ignore[type-abstract, attr-defined]
     for subclass in MQTTAuthentication.__subclasses__()
-    if hasattr(subclass, "_type")
 }
