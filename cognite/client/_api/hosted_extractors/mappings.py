@@ -142,11 +142,10 @@ class MappingsAPI(APIClient):
                 >>> client.hosted_extractors.mappings.delete(["myMapping", "MyMapping2"])
         """
         self._warning.warn()
-        extra_body_fields: dict[str, Any] = {}
-        if ignore_unknown_ids:
-            extra_body_fields["ignoreUnknownIds"] = True
-        if force:
-            extra_body_fields["force"] = True
+        extra_body_fields: dict[str, Any] = {
+            "ignoreUnknownIds": ignore_unknown_ids,
+            "force": force,
+        }
 
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
