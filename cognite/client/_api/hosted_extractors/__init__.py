@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
 from cognite.client._api.hosted_extractors.jobs import JobsAPI
+from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api_client import APIClient
 
@@ -18,3 +19,4 @@ class HostedExtractorsAPI(APIClient):
         self.sources = SourcesAPI(config, api_version, cognite_client)
         self.destinations = DestinationsAPI(config, api_version, cognite_client)
         self.jobs = JobsAPI(config, api_version, cognite_client)
+        self.mappings = MappingsAPI(config, api_version, cognite_client)

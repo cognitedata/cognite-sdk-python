@@ -36,6 +36,19 @@ from cognite.client.data_classes.hosted_extractors.jobs import (
     TargetStatus,
     ValueFormat,
 )
+from cognite.client.data_classes.hosted_extractors.mappings import (
+    CSVInput,
+    CustomMapping,
+    InputMapping,
+    JSONInput,
+    Mapping,
+    MappingList,
+    MappingUpdate,
+    MappingWrite,
+    MappingWriteList,
+    ProtoBufInput,
+    XMLInput,
+)
 from cognite.client.data_classes.hosted_extractors.sources import (
     EventHubSource,
     EventHubSourceUpdate,
@@ -100,4 +113,15 @@ __all__ = [
     "QueryParamLoad",
     "NextUrlLoad",
     "HeaderValueLoad",
+    "Mapping",
+    "MappingList",
+    "MappingWrite",
+    "MappingWriteList",
+    "MappingUpdate",
+    "CustomMapping",
+    "InputMapping",
+    "CSVInput",
+    "ProtoBufInput",
+    "JSONInput",
+    "XMLInput",
 ]

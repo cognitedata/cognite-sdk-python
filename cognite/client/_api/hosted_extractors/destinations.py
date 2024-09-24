@@ -137,11 +137,11 @@ class DestinationsAPI(APIClient):
 
         Examples:
 
-            Delete dests by id::
+            Delete destinations by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.hosted_extractors.dests.delete(["myDest", "MyDest2"])
+                >>> client.hosted_extractors.destinations.delete(["myDest", "MyDest2"])
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
@@ -178,9 +178,9 @@ class DestinationsAPI(APIClient):
             Create new destination:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
+                >>> from cognite.client.data_classes.hosted_extractors import DestinationWrite, SessionWrite
                 >>> client = CogniteClient()
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> destination = DestinationWrite(external_id='my_dest', credentials=SessionWrite("my_nonce"), target_data_set_id=123)
                 >>> res = client.hosted_extractors.destinations.create(destination)
         """
         self._warning.warn()
