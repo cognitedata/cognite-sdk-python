@@ -736,7 +736,7 @@ class WorkflowAPI(APIClient):
         return self()
 
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
-        """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+        """`Create or update a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
 
@@ -745,11 +745,11 @@ class WorkflowAPI(APIClient):
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
-            Workflow: The created workflow.
+            Workflow: The created or updatedworkflow.
 
         Examples:
 
-            Create workflow my workflow:
+            Create or update a workflow my workflow:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
