@@ -77,7 +77,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
                 >>> client = CogniteClient()
-                >>> client.workflows.triggers.create(
+                >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
                 ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
