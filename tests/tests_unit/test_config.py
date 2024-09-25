@@ -68,15 +68,20 @@ class TestGlobalConfig:
         assert global_config.max_workers != 0
 
 
-class TestClientConfig:
-    def test_default(self):
-        config = {
+@pytest.fixture
+def client_config():
+    return ClientConfig.default(
+        **{
             "project": "test-project",
             "cdf_cluster": "test-cluster",
             "credentials": Token("abc"),
             "client_name": "test-client",
         }
-        client_config = ClientConfig.default(**config)
+    )
+
+
+class TestClientConfig:
+    def test_default(self, client_config):
         assert client_config.project == "test-project"
         assert client_config.base_url == "https://test-cluster.cognitedata.com"
         assert isinstance(client_config.credentials, Token)
@@ -100,3 +105,17 @@ class TestClientConfig:
             assert isinstance(client_config.credentials, Token)
             assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
             assert client_config.client_name == "test-client"
+
+    @pytest.mark.parametrize("protocol", ("http", "https"))
+    @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
+    def test_extract_cdf_cluster(self, client_config, protocol, end):
+        for valid in ("3D", "my_clus-ter", "jazz-testing-asia-northeast1-1", "trial-00ed82e12d9cbadfe28e4"):
+            client_config.base_url = f"{protocol}://{valid}.cognitedata.com{end}"
+            assert client_config.cdf_cluster == valid
+
+        for invalid in ("", ".", "..", "huh.my_cluster."):
+            client_config.base_url = f"{protocol}://{valid}cognitedata.com{end}"
+            assert client_config.cdf_cluster is None
+
+        client_config.base_url = "invalid"
+        assert client_config.cdf_cluster is None

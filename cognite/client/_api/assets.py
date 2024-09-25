@@ -53,7 +53,7 @@ from cognite.client.data_classes.assets import (
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import get_cdf_cluster, split_into_chunks, split_into_n_parts
+from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import import_as_completed
@@ -1483,7 +1483,7 @@ class _AssetHierarchyCreator:
             unknown=AssetList(self.unknown),
             failed=AssetList(self.failed),
             unwrap_fn=op.attrgetter("external_id"),
-            cluster=get_cdf_cluster(self.assets_api._config),
+            cluster=self.assets_api._config.cdf_cluster,
         )
         err_message = "One or more errors happened during asset creation. Latest error:"
         if isinstance(latest_exception, CogniteAPIError):

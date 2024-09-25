@@ -48,7 +48,6 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
-    get_cdf_cluster,
     get_current_sdk_version,
     get_user_agent,
     interpolate_and_url_encode,
@@ -1153,7 +1152,7 @@ class APIClient:
                     successful=successful,
                     failed=failed,
                     unknown=unknown,
-                    cluster=get_cdf_cluster(self._config),
+                    cluster=self._config.cdf_cluster,
                 )
             # Need to retrieve the successful updated items from the first call.
             successful_resources: T_CogniteResourceList | None = None
@@ -1325,7 +1324,7 @@ class APIClient:
             missing=missing,
             duplicated=duplicated,
             extra=extra,
-            cluster=get_cdf_cluster(self._config),
+            cluster=self._config.cdf_cluster,
         )
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:

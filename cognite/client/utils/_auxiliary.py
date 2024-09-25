@@ -4,7 +4,6 @@ import functools
 import math
 import platform
 import warnings
-from contextlib import suppress
 from threading import Thread
 from typing import (
     TYPE_CHECKING,
@@ -32,7 +31,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.config import ClientConfig
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
@@ -143,13 +141,6 @@ def get_current_sdk_version() -> str:
     from cognite.client import __version__
 
     return __version__
-
-
-def get_cdf_cluster(config: ClientConfig) -> str | None:
-    # A best effort attempt to extract the cluster from the base url
-    with suppress(Exception):
-        return config.base_url.split("//")[1].split(".cognitedata")[0]
-    return None
 
 
 @functools.lru_cache(maxsize=1)
