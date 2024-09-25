@@ -99,6 +99,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
+    # TODO: remove method and associated data classes in next release
     def create(
         self,
         workflow_trigger: WorkflowTriggerCreate,
