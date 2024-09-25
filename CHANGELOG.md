@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.5] - 2024-09-25
+### Added
+- Add new `client.workflows.triggers.upsert`, this allows upserts of triggers.
+### Deprecated
+- Deprecate `client.workflows.triggers.create`, as its functionality is covered by the new `client.workflows.triggers.upsert`
+
 ## [7.62.4] - 2024-09-25
 ### Fixed
 - In the CoreModel, `client.data_classes.data_modeling.cdm` the fields `isUploaded` and `uploadedTime` in

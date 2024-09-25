@@ -23,6 +23,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
+    WorkflowTriggerUpsert,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -56,29 +57,29 @@ def wrap_workflow_ids(
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
-    def create(
+    def upsert(
         self,
-        workflow_trigger: WorkflowTriggerCreate,
+        workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
+        """`Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specitification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created workflow trigger specification.
+            WorkflowTrigger: The created  or updated workflow trigger specification.
 
         Examples:
 
-            Create a new scheduled trigger for a workflow:
+            Create or update a scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
+                >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
                 >>> client = CogniteClient()
-                >>> client.workflows.triggers.create(
-                ...     WorkflowTriggerCreate(
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
                 ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
                 ...         workflow_external_id="my_workflow",
@@ -97,6 +98,46 @@ class WorkflowTriggerAPI(APIClient):
             json={"items": [dumped]},
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
+
+    def create(
+        self,
+        workflow_trigger: WorkflowTriggerCreate,
+        client_credentials: ClientCredentials | dict | None = None,
+    ) -> WorkflowTrigger:
+        """`[DEPRECATED] Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+
+        This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.
+
+        Args:
+            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
+
+        Returns:
+            WorkflowTrigger: The created or updated workflow trigger specification.
+
+        Examples:
+
+            Create or update a scheduled trigger for a workflow:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
+                >>> client = CogniteClient()
+                >>> client.workflows.triggers.create(
+                ...     WorkflowTriggerCreate(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...         input={"a": 1, "b": 2},
+                ...     )
+                ... )
+        """
+        warnings.warn(
+            "This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.upsert(workflow_trigger, client_credentials)
 
     def delete(
         self,
