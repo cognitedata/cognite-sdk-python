@@ -1483,6 +1483,7 @@ class _AssetHierarchyCreator:
             unknown=AssetList(self.unknown),
             failed=AssetList(self.failed),
             unwrap_fn=op.attrgetter("external_id"),
+            cluster=self.assets_api._config.cdf_cluster,
         )
         err_message = "One or more errors happened during asset creation. Latest error:"
         if isinstance(latest_exception, CogniteAPIError):

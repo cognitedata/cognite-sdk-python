@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import getpass
 import pprint
+import re
 import warnings
 from contextlib import suppress
 from typing import Any
@@ -184,6 +185,8 @@ class ClientConfig:
             raise ValueError(f"Invalid value for ClientConfig.project: <{self.project}>")
         if not self.base_url:
             raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
+        elif self.cdf_cluster is None:
+            warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
 
     def __str__(self) -> str:
         return pprint.pformat({"max_workers": self.max_workers, **self.__dict__}, indent=4)
@@ -211,7 +214,7 @@ class ClientConfig:
             client_name=client_name or getpass.getuser(),
             project=project,
             credentials=credentials,
-            base_url=f"https://{cdf_cluster}.cognitedata.com/",
+            base_url=f"https://{cdf_cluster}.cognitedata.com",
         )
 
     @classmethod
@@ -233,7 +236,7 @@ class ClientConfig:
                 >>> config = {
                 ...     "client_name": "abcd",
                 ...     "project": "cdf-project",
-                ...     "base_url": "https://api.cognitedata.com/",
+                ...     "base_url": "https://api.cognitedata.com",
                 ...     "credentials": {
                 ...         "client_credentials": {
                 ...             "client_id": "abcd",
@@ -264,3 +267,10 @@ class ClientConfig:
             file_transfer_timeout=loaded.get("file_transfer_timeout"),
             debug=loaded.get("debug", False),
         )
+
+    @property
+    def cdf_cluster(self) -> str | None:
+        # A best effort attempt to extract the cluster from the base url
+        if match := re.match(r"https?://([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url):
+            return match.group(1)
+        return None
