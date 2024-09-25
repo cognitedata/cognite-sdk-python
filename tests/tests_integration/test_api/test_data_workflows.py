@@ -18,7 +18,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTrigger,
-    WorkflowTriggerCreate,
+    WorkflowTriggerUpsert,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionList,
@@ -252,7 +252,7 @@ def clean_created_workflow_triggers(cognite_client: CogniteClient) -> None:
 @pytest.fixture()
 def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
     trigger = cognite_client.workflows.triggers.create(
-        WorkflowTriggerCreate(
+        WorkflowTriggerUpsert(
             external_id="integration_test-workflow-scheduled-trigger",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
             workflow_external_id="integration_test-workflow-add_multiply",
@@ -486,7 +486,7 @@ class TestWorkflowExecutions:
 
 class TestWorkflowTriggers:
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
-    def test_create_delete(
+    def test_create_update_delete(
         self,
         cognite_client: CogniteClient,
         workflow_scheduled_trigger: WorkflowTrigger,
@@ -499,6 +499,23 @@ class TestWorkflowTriggers:
         assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
         assert workflow_scheduled_trigger.created_time is not None
         assert workflow_scheduled_trigger.last_updated_time is not None
+
+        updated_trigger = cognite_client.workflows.triggers.upsert(
+            WorkflowTriggerUpsert(
+                external_id=workflow_scheduled_trigger.external_id,
+                trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *"),
+                workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
+                workflow_version=workflow_scheduled_trigger.workflow_version,
+            )
+        )
+        assert updated_trigger is not None
+        assert updated_trigger.external_id == workflow_scheduled_trigger.external_id
+        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
+        assert updated_trigger.workflow_external_id == workflow_scheduled_trigger.workflow_external_id
+        assert updated_trigger.workflow_version == workflow_scheduled_trigger.workflow_version
+        assert updated_trigger.input == workflow_scheduled_trigger.input
+        assert updated_trigger.created_time == workflow_scheduled_trigger.created_time
+        assert updated_trigger.last_updated_time > workflow_scheduled_trigger.last_updated_time
 
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_trigger_list(

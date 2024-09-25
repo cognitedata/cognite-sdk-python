@@ -1260,7 +1260,7 @@ _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
 }
 
 
-class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerCreate"], ABC):
+class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC):
     """
     This class represents a base class for a workflow trigger.
 
@@ -1287,9 +1287,9 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerCreate"], ABC
         self.input = input
 
 
-class WorkflowTriggerCreate(WorkflowTriggerCore):
+class WorkflowTriggerUpsert(WorkflowTriggerCore):
     """
-    This class represents a workflow trigger for creation.
+    This class represents a workflow trigger for creation or update.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -1313,7 +1313,7 @@ class WorkflowTriggerCreate(WorkflowTriggerCore):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerCreate:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerUpsert:
         return cls(
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1322,7 +1322,7 @@ class WorkflowTriggerCreate(WorkflowTriggerCore):
             input=resource.get("input"),
         )
 
-    def as_write(self) -> WorkflowTriggerCreate:
+    def as_write(self) -> WorkflowTriggerUpsert:
         """Returns this workflow trigger create instance."""
         return self
 
@@ -1390,9 +1390,9 @@ class WorkflowTrigger(WorkflowTriggerCore):
             last_updated_time=resource.get("lastUpdatedTime"),
         )
 
-    def as_write(self) -> WorkflowTriggerCreate:
+    def as_write(self) -> WorkflowTriggerUpsert:
         """Returns this workflow trigger instance."""
-        return WorkflowTriggerCreate(
+        return WorkflowTriggerUpsert(
             external_id=self.external_id,
             trigger_rule=self.trigger_rule,
             workflow_external_id=self.workflow_external_id,
@@ -1401,20 +1401,20 @@ class WorkflowTrigger(WorkflowTriggerCore):
         )
 
 
-class WorkflowTriggerCreateList(CogniteResourceList[WorkflowTriggerCreate]):
-    _RESOURCE = WorkflowTriggerCreate
+class WorkflowTriggerUpsertList(CogniteResourceList[WorkflowTriggerUpsert]):
+    _RESOURCE = WorkflowTriggerUpsert
 
 
-class WorkflowTriggerList(WriteableCogniteResourceList[WorkflowTriggerCreate, WorkflowTrigger]):
+class WorkflowTriggerList(WriteableCogniteResourceList[WorkflowTriggerUpsert, WorkflowTrigger]):
     """
     This class represents a list of workflow triggers.
     """
 
     _RESOURCE = WorkflowTrigger
 
-    def as_write(self) -> WorkflowTriggerCreateList:
-        """Returns a WorkflowTriggerCreateList object with the same data."""
-        return WorkflowTriggerCreateList([workflow_trigger.as_write() for workflow_trigger in self.data])
+    def as_write(self) -> WorkflowTriggerUpsertList:
+        """Returns a WorkflowTriggerUpsertList object with the same data."""
+        return WorkflowTriggerUpsertList([workflow_trigger.as_write() for workflow_trigger in self.data])
 
 
 class WorkflowTriggerRun(CogniteResource):

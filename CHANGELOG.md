@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.5] - 2024-09-25
+### Changed
+- Change `client.workflows.triggers.create` to `client.workflows.triggers.upsert`, now allowing upserts instead of only creations.
+  - Rename `cognite.client.data_classes.workflows.WorkflowTriggerCreate` to `cognite.client.data_classes.workflows.WorkflowTriggerUpsert`
+  - Rename `cognite.client.data_classes.workflows.WorkflowTriggerCreateList` to `cognite.client.data_classes.workflows.WorkflowTriggerUpsertList`
+
 ## [7.62.4] - 2024-09-25
 ### Fixed
 - In the CoreModel, `client.data_classes.data_modeling.cdm` the fields `isUploaded` and `uploadedTime` in

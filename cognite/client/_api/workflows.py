@@ -19,10 +19,10 @@ from cognite.client.data_classes.workflows import (
     WorkflowStatus,
     WorkflowTaskExecution,
     WorkflowTrigger,
-    WorkflowTriggerCreate,
     WorkflowTriggerList,
     WorkflowTriggerRun,
     WorkflowTriggerRunList,
+    WorkflowTriggerUpsert,
     WorkflowUpsert,
     WorkflowVersion,
     WorkflowVersionId,
@@ -56,29 +56,29 @@ def wrap_workflow_ids(
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
-    def create(
+    def upsert(
         self,
-        workflow_trigger: WorkflowTriggerCreate,
+        workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`Create a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/createTriggers>`_
+        """`Create a or update a new trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specitification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created workflow trigger specification.
+            WorkflowTrigger: The created or updated workflow trigger specification.
 
         Examples:
 
-            Create a new scheduled trigger for a workflow:
+            Create or update a scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
+                >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.create(
-                ...     WorkflowTriggerCreate(
+                ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
                 ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
                 ...         workflow_external_id="my_workflow",
