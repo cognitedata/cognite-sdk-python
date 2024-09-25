@@ -251,7 +251,7 @@ def clean_created_workflow_triggers(cognite_client: CogniteClient) -> None:
 
 @pytest.fixture()
 def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
-    trigger = cognite_client.workflows.triggers.create(
+    trigger = cognite_client.workflows.triggers.upsert(
         WorkflowTriggerUpsert(
             external_id="integration_test-workflow-scheduled-trigger",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
