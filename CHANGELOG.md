@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## TBD
+## [7.62.3] - 2024-09-25
 ### Fixed
 - In the CoreModel, `client.data_classes.data_modeling.cdm` the fields `isUploaded` and `uploadedTime` in
   `CogniteFile` are  now considered read-only 
