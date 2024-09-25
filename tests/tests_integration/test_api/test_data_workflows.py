@@ -506,6 +506,7 @@ class TestWorkflowTriggers:
                 trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *"),
                 workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
                 workflow_version=workflow_scheduled_trigger.workflow_version,
+                input=workflow_scheduled_trigger.input,
             )
         )
         assert updated_trigger is not None
