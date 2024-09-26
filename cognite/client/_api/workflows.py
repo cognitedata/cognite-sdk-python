@@ -134,9 +134,8 @@ class WorkflowTriggerAPI(APIClient):
                 ... )
         """
         warnings.warn(
-            "This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.",
-            DeprecationWarning,
-            stacklevel=2,
+            "This method is deprecated, use '.upsert' instead. It will be removed in the next major release.",
+            UserWarning,
         )
         return self.upsert(workflow_trigger, client_credentials)
 
@@ -330,9 +329,8 @@ class WorkflowExecutionAPI(APIClient):
             WorkflowExecution: No description.
         """
         warnings.warn(
-            "This methods has been deprecated, use '.run' instead. It will be completely removed October 2024.",
-            DeprecationWarning,
-            stacklevel=2,
+            "This methods has been deprecated, use '.run' instead. It will completely removed in the next major release.",
+            UserWarning,
         )
         return self.run(workflow_external_id, version, input, metadata, client_credentials)
 
