@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.62.5] - 2024-09-25
+## [7.62.5] - 2024-09-26
 ### Added
 - Add new `client.workflows.triggers.upsert`, this allows upserts of triggers.
 ### Deprecated
