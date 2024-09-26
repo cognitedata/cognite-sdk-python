@@ -482,7 +482,7 @@ class TestInstancesToPandas:
         assert "properties" not in expanded_with_empty_properties.columns
 
     def test_node_with_single_property_to_pandas_with_expand_props(self) -> None:
-        # Bug prior to 7.62.5 made to_pandas(expand_properties=True) fail on nodes with a single property
+        # Bug prior to 7.62.6 made to_pandas(expand_properties=True) fail on nodes with a single property
         # due to how squeeze works in pandas, even a DataFrame will be forced into a scalar (to be fair,
         # the documentation is very clear on this).
         node = Node.load(
@@ -500,7 +500,7 @@ class TestInstancesToPandas:
         node_df1 = node.to_pandas(expand_properties=False)
         assert node_df1.at["properties", "value"] == {"DEMO_AppData": {"APM_User/15": {"name": "Foo Bar"}}}
 
-        # This failed prior to 7.62.5:
+        # This failed prior to 7.62.6:
         node_df2 = node.to_pandas(expand_properties=True)
         assert "properties" not in node_df2.index
         assert node_df2.at["name", "value"] == "Foo Bar"

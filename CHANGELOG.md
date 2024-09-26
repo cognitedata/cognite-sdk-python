@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.6] - 2024-09-27
+### Fixed
+- Instances with a single property no longer fail `to_pandas()` with `TypeError`, when using expand_properties=True.
+
 ## [7.62.5] - 2024-09-26
 ### Added
 - Add new `client.workflows.triggers.upsert`, this allows upserts of triggers.
@@ -26,7 +30,7 @@ Changes are grouped as follows
 ## [7.62.4] - 2024-09-25
 ### Fixed
 - In the CoreModel, `client.data_classes.data_modeling.cdm` the fields `isUploaded` and `uploadedTime` in
-  `CogniteFile` are  now considered read-only 
+  `CogniteFile` are  now considered read-only
 
 ## [7.62.3] - 2024-09-24
 ### Added
@@ -38,7 +42,7 @@ Changes are grouped as follows
 
 ## [7.62.1] - 2024-09-23
 ### Changed
-- Support for `OAuthDeviceCode` now supports non Entra IdPs 
+- Support for `OAuthDeviceCode` now supports non Entra IdPs
 
 ## [7.62.0] - 2024-09-19
 ### Added
