@@ -73,6 +73,10 @@ Update Status of Async Task
 
 Workflow Triggers
 -------------------
+Create or update triggers for workflow executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.upsert
+
 Create triggers for workflow executions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.create
