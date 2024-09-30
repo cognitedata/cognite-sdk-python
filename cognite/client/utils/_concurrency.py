@@ -126,7 +126,7 @@ T_Result = TypeVar("T_Result", covariant=True)
 
 
 class TaskExecutor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
+    def submit(self, fn: Callable[..., T_Result], /, *args: Any, **kwargs: Any) -> TaskFuture[T_Result]: ...
 
 
 class TaskFuture(Protocol[T_Result]):
@@ -160,7 +160,7 @@ class MainThreadExecutor(TaskExecutor):
 
         self._work_queue = AlwaysEmpty()
 
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
+    def submit(self, fn: Callable[..., T_Result], /, *args: Any, **kwargs: Any) -> SyncFuture:
         return SyncFuture(fn, *args, **kwargs)
 
 
@@ -219,16 +219,16 @@ class ConcurrencySettings:
         )
 
     @classmethod
-    def get_data_modeling_executor(cls) -> ThreadPoolExecutor:
+    def get_data_modeling_executor(cls) -> TaskExecutor:
         """
         The data modeling backend has different concurrency limits compared with the rest of CDF.
         Thus, we use a dedicated executor for these endpoints to match the backend requirements.
 
         Returns:
-            ThreadPoolExecutor: The data modeling executor.
+            TaskExecutor: The data modeling executor.
         """
         if cls.uses_mainthread():
-            return cls.get_mainthread_executor()  # type: ignore [return-value]
+            return cls.get_mainthread_executor()
 
         global _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON
         try:
@@ -276,7 +276,7 @@ def execute_tasks(
     tasks: Sequence[tuple | dict],
     max_workers: int,
     fail_fast: bool = False,
-    executor: ThreadPoolExecutor | None = None,
+    executor: TaskExecutor | None = None,
 ) -> TasksSummary:
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
@@ -286,6 +286,10 @@ def execute_tasks(
     """
     if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
+    elif isinstance(executor, ThreadPoolExecutor):
+        pass
+    else:
+        raise TypeError("executor must be a ThreadPoolExecutor or MainThreadExecutor")
 
     executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
     task_order = [id(task) for task in tasks]
