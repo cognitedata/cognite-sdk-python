@@ -75,7 +75,7 @@ _GRANULARITY_CONVERSION = {
 
 @functools.lru_cache(1)
 def get_zoneinfo_utc() -> ZoneInfo:
-    return ZoneInfo("UTC")  # type: ignore [abstract]
+    return ZoneInfo("UTC")
 
 
 def parse_str_timezone_offset(tz: str) -> timezone:
@@ -96,7 +96,7 @@ def parse_str_timezone_offset(tz: str) -> timezone:
 
 def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
     try:
-        return ZoneInfo(tz)  # type: ignore [abstract]
+        return ZoneInfo(tz)
     except ZoneInfoNotFoundError:
         try:
             return parse_str_timezone_offset(tz)
@@ -697,7 +697,7 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
         return True
     with suppress(ValueError, ZoneInfoNotFoundError):
         # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
-        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):  # type: ignore [abstract]
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
             return True
     return False
 
@@ -717,7 +717,7 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
 
     pd = local_import("pandas")
     if isinstance(start, pd.Timestamp):
-        return ZoneInfo(str(start_tz))  # type: ignore [abstract]
+        return ZoneInfo(str(start_tz))
 
     raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
