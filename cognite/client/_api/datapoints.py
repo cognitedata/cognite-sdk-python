@@ -588,7 +588,7 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
                 >>> # You can also use instance_id:
-                >>> from cognite.client.data_classes.data_modeling.ids import NodeId
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> dps = client.time_series.data.retrieve(instance_id=NodeId("ts-space", "foo"))
 
             Although raw datapoints are returned by default, you can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
