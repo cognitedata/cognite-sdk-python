@@ -481,6 +481,30 @@ class TestInstancesToPandas:
 
         assert "properties" not in expanded_with_empty_properties.columns
 
+    def test_node_with_single_property_to_pandas_with_expand_props(self) -> None:
+        # Bug prior to 7.62.6 made to_pandas(expand_properties=True) fail on nodes with a single property
+        # due to how squeeze works in pandas, even a DataFrame will be forced into a scalar (to be fair,
+        # the documentation is very clear on this).
+        node = Node.load(
+            {
+                "space": "DEMO_AppData",
+                "externalId": "15777214-1234-4321-1234-02f7b4cd349d",
+                "version": 888,
+                "lastUpdatedTime": 1694611301244,
+                "createdTime": 1685430260401,
+                "instanceType": "node",
+                "properties": {"DEMO_AppData": {"APM_User/15": {"name": "Foo Bar"}}},
+            }
+        )
+        # This has always worked, and should continue to work after the fix
+        node_df1 = node.to_pandas(expand_properties=False)
+        assert node_df1.at["properties", "value"] == {"DEMO_AppData": {"APM_User/15": {"name": "Foo Bar"}}}
+
+        # This failed prior to 7.62.6:
+        node_df2 = node.to_pandas(expand_properties=True)
+        assert "properties" not in node_df2.index
+        assert node_df2.at["name", "value"] == "Foo Bar"
+
 
 class TestTypeInformation:
     @pytest.mark.dsl
