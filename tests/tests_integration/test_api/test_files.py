@@ -252,9 +252,10 @@ class TestFilesAPI:
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str
     ) -> None:
+        exernal_id = "file_python_sdk_instance_id_tests" + random_string(10)
         file = CogniteFileApply(
             space=instance_id_test_space,
-            external_id="file_python_sdk_instance_id_tests",
+            external_id=exernal_id,
             name="file_python_sdk_instance_id_tests",
             description="This file was created by the Python SDK",
             source_id="source:id",
@@ -288,10 +289,10 @@ class TestFilesAPI:
 
             update_writable = retrieved.as_write()
             update_writable.metadata = {"a": "b"}
-            update_writable.external_id = "file_python_sdk_instance_id_tests_updated"
+            update_writable.external_id = exernal_id + "updated"
             updated_writable = cognite_client.files.update(update_writable)
             assert updated_writable.metadata == {"a": "b"}
-            assert updated_writable.external_id == "file_python_sdk_instance_id_tests_updated"
+            assert updated_writable.external_id == exernal_id + "updated"
 
             updated = cognite_client.files.update(FileMetadataUpdate(instance_id=instance_id).metadata.add({"c": "d"}))
             assert updated.metadata == {"a": "b", "c": "d"}
