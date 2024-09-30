@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.10", "3.11", "3.12"] # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
+        python-version: ["3.10", "3.11", "3.12"] # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -68,6 +68,6 @@ jobs:
         run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
       - uses: codecov/codecov-action@v4
-        if: matrix.os == 'windows-latest' && matrix.python-version == '3.8'
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
