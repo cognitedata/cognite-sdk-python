@@ -472,7 +472,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
                     RuntimeWarning,
                 )
-        return pd.concat((col, prop_df.T.squeeze())).to_frame(name="value")
+        return pd.concat((col, prop_df.T.squeeze(axis=1))).to_frame(name="value")
 
     @abstractmethod
     def as_apply(self) -> InstanceApply:
