@@ -278,9 +278,10 @@ class TestTimeSeriesAPI:
     def test_create_retrieve_update_delete_with_instance_id(
         self, cognite_client: CogniteClient, instance_id_test_space: str, alpha_test_dataset: DataSet
     ) -> None:
+        external_id = "ts_python_sdk_instance_id_tests" + random_string(10)
         my_ts = CogniteTimeSeriesApply(
             space=instance_id_test_space,
-            external_id="ts_python_sdk_instance_id_tests",
+            external_id=external_id,
             time_series_type="numeric",
             is_step=False,
             source_unit="pressure:psi",
@@ -300,12 +301,12 @@ class TestTimeSeriesAPI:
 
             update_writable = retrieved.as_write()
             update_writable.metadata = {"c": "d"}
-            update_writable.external_id = "ts_python_sdk_instance_id_tests"
+            update_writable.external_id = external_id
             update_writable.data_set_id = alpha_test_dataset.id
             updated_writable = cognite_client.time_series.update(update_writable)
             assert updated_writable.metadata == {"c": "d"}
             assert updated_writable.data_set_id == alpha_test_dataset.id
-            assert updated_writable.external_id == "ts_python_sdk_instance_id_tests"
+            assert updated_writable.external_id == external_id
 
             updated = cognite_client.time_series.update(update)
             assert updated.metadata == {"a": "b", "c": "d"}
