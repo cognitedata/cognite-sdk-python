@@ -890,7 +890,7 @@ class AssetHierarchy:
         counts.sort(key=lambda args: -args[-1])
         # The count for the fictitious "root of roots" is just len(assets), so we remove it:
         (count_dct := dict(counts)).pop(None, None)
-        return count_dct
+        return cast(dict[str, int], count_dct)
 
     def _on_error(self, on_error: Literal["ignore", "warn", "raise"], message: str) -> None:
         if on_error == "warn":
