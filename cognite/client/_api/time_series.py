@@ -631,6 +631,20 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
+
+            Perform a partial update on a time series by instance id::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeriesUpdate
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+
+                >>> client = CogniteClient()
+                >>> my_update = (
+                ...     TimeSeriesUpdate(instance_id=NodeId("test", "hello"))
+                ...     .external_id.set("test:hello")
+                ...     .metadata.add({"test": "hello"})
+                ... )
+                >>> client.time_series.update(my_update)
         """
         return self._update_multiple(
             list_cls=TimeSeriesList,
