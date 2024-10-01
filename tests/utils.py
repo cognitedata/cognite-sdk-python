@@ -447,55 +447,62 @@ class FakeCogniteResourceGenerator:
         if isinstance(type_, typing.ForwardRef):
             type_ = type_._evaluate(globals(), self._type_checking())
 
-        if var_name == "external_id" and type_ is str:
-            return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
-        elif var_name == "id" and type_ is int:
-            return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
-        if type_ is str or type_ is Any:
-            return self._random_string()
-        elif type_ is int:
-            return self._random.randint(1, 100000)
-        elif type_ is float:
-            return self._random.random()
-        elif type_ is bool:
-            return self._random.choice([True, False])
-        elif type_ is dict:
-            return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
-        elif type_ is CogniteClient:
-            return self._cognite_client
-        elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
-            implementations = all_concrete_subclasses(type_)
-            if type_ is Filter:
-                # Remove filters not supported by dps subscriptions
-                implementations.remove(filters.Overlaps)
+        try:
+            if var_name == "external_id" and type_ is str:
+                return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
+            elif var_name == "id" and type_ is int:
+                return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
+            if type_ is str or type_ is Any:
+                return self._random_string()
+            elif type_ is int:
+                return self._random.randint(1, 100000)
+            elif type_ is float:
+                return self._random.random()
+            elif type_ is bool:
+                return self._random.choice([True, False])
+            elif type_ is dict:
+                return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
+            elif type_ is CogniteClient:
+                return self._cognite_client
+            elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
+                implementations = all_concrete_subclasses(type_)
+                if type_ is Filter:
+                    # Remove filters not supported by dps subscriptions
+                    implementations.remove(filters.Overlaps)
 
-                # Remove filters which are only used by data modeling classes
-                implementations.remove(filters.HasData)
-                implementations.remove(filters.InvalidFilter)
-                implementations.remove(filters.Nested)
-                implementations.remove(filters.GeoJSONWithin)
-                implementations.remove(filters.GeoJSONDisjoint)
-                implementations.remove(filters.GeoJSONIntersects)
-            elif type_ is Capability:
-                implementations.remove(UnknownAcl)
-                if LegacyCapability in implementations:
-                    implementations.remove(LegacyCapability)
-            if type_ is WorkflowTaskOutput:
-                # For Workflow Output has to match the input type
-                selected = FunctionTaskOutput
-            elif type_ is WorkflowTaskParameters:
-                selected = FunctionTaskParameters
-            else:
-                selected = self._random.choice(implementations)
-            return self.create_instance(selected)
-        elif isinstance(type_, enum.EnumMeta):
-            return self._random.choice(list(type_))
-        elif isinstance(type_, TypeVar):
-            return self.create_value(type_.__bound__)
-        elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
-            return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
-        elif inspect.isclass(type_):
-            return self.create_instance(type_)
+                    # Remove filters which are only used by data modeling classes
+                    implementations.remove(filters.HasData)
+                    implementations.remove(filters.InvalidFilter)
+                    implementations.remove(filters.Nested)
+                    implementations.remove(filters.GeoJSONWithin)
+                    implementations.remove(filters.GeoJSONDisjoint)
+                    implementations.remove(filters.GeoJSONIntersects)
+                elif type_ is Capability:
+                    implementations.remove(UnknownAcl)
+                    if LegacyCapability in implementations:
+                        implementations.remove(LegacyCapability)
+                if type_ is WorkflowTaskOutput:
+                    # For Workflow Output has to match the input type
+                    selected = FunctionTaskOutput
+                elif type_ is WorkflowTaskParameters:
+                    selected = FunctionTaskParameters
+                else:
+                    selected = self._random.choice(implementations)
+                return self.create_instance(selected)
+            elif isinstance(type_, enum.EnumMeta):
+                return self._random.choice(list(type_))
+            elif isinstance(type_, TypeVar):
+                return self.create_value(type_.__bound__)
+            elif isinstance(type_, TypeVar):
+                return self.create_value(type_.__bound__)
+            elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
+                return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
+            elif inspect.isclass(type_):
+                return self.create_instance(type_)
+        except TypeError:
+            # Python 3.10 will raise TypeError for example `list` as it is a inspect.isclass but raise
+            # on issubclass. This is a workaround for that.
+            ...
 
         container_type = get_origin(type_)
         is_container = container_type is not None
