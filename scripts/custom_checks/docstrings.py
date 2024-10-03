@@ -333,7 +333,7 @@ class DocstrFormatter:
         return "\n".join(final_doc_lines)
 
     def update_py_file(self, cls_or_fn, method_description) -> str:
-        source_code = (path := Path(inspect.getsourcefile(cls_or_fn))).read_text()
+        source_code = (path := Path(inspect.getsourcefile(cls_or_fn))).read_text().replace("\\n", "\n")
 
         if source_code.count(self.original_doc) == 0:
             return f"Couldn't fix docstring for '{method_description}', as the old doc was not found in the file"
