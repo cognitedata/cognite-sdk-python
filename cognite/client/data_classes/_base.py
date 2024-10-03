@@ -2,30 +2,26 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import UserList
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable, Iterator, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Generic,
-    Iterator,
-    List,
     Literal,
     Protocol,
-    Sequence,
     SupportsIndex,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     final,
     overload,
     runtime_checkable,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
@@ -645,7 +641,7 @@ class Geometry(CogniteObject):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']): The geometry type.
         coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
         geometries (Collection[Geometry] | None): No description.
 
@@ -718,7 +714,7 @@ class Geometry(CogniteObject):
         return dumped
 
 
-SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
+SortableProperty: TypeAlias = str | list[str] | EnumProperty
 
 
 class CogniteSort:

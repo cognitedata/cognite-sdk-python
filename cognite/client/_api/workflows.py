@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
+from collections.abc import Iterator, MutableSequence
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 from urllib.parse import quote
-
-from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -42,8 +40,8 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
     from cognite.client.data_classes import ClientCredentials
 
-WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
-WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
+WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
+WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
 
 
 def wrap_workflow_ids(
@@ -232,7 +230,7 @@ class WorkflowTaskAPI(APIClient):
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:

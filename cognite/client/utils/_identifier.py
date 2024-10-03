@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numbers
 from abc import ABC
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -10,7 +11,6 @@ from typing import (
     Literal,
     NoReturn,
     Protocol,
-    Sequence,
     TypeVar,
     cast,
     overload,

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite

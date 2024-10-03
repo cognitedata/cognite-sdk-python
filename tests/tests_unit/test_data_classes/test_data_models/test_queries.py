@@ -1,4 +1,5 @@
-from typing import Any, Dict, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -98,7 +99,7 @@ class TestResultSetExpressions:
 
 
 def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
-    raw: Dict[str, Any] = {}
+    raw: dict[str, Any] = {}
     loaded = q.Select()
     yield pytest.param(raw, loaded, id="Empty")
 

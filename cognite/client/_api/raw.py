@@ -5,7 +5,8 @@ import random
 import threading
 import time
 from collections import defaultdict, deque
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ

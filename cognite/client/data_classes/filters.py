@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
@@ -15,9 +14,9 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference: TypeAlias = Union[str, Tuple[str, ...], List[str], EnumProperty]
+PropertyReference: TypeAlias = str | tuple[str, ...] | list[str] | EnumProperty
 
-RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
+RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label
 
 
 @dataclass
@@ -30,8 +29,8 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
-FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
+FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
+FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
@@ -834,7 +833,7 @@ class SpaceFilter(FilterWithProperty):
 
     Args:
         space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
-        instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
+        instance_type (Literal['node', 'edge']): Type of instance to filter on. Defaults to "node".
 
     Example:
         Filter than can be used to retrieve nodes from space "space1" or "space2":
