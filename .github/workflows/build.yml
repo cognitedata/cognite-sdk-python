@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.11", "3.12"] # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
+        python-version: ["3.8", "3.10", "3.11", "3.12"] # TODO: 3.9, 3.10 (requires a lot of work for FakeCogResGen for tests)
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup

@@ -447,6 +447,52 @@ class FakeCogniteResourceGenerator:
         if isinstance(type_, typing.ForwardRef):
             type_ = type_._evaluate(globals(), self._type_checking())
 
+        container_type = get_origin(type_)
+        is_container = container_type is not None
+        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
+            # Handle numpy types
+            from numpy.typing import NDArray
+
+            if type_ == NDArray[np.float64]:
+                return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
+            elif type_ == NDArray[np.uint32]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
+            elif type_ == NDArray[np.int64]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
+            elif type_ == NDArray[np.datetime64]:
+                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ns]")
+            elif type_ == NDArray[np.object_]:
+                return np.array([self._random_string(10) for _ in range(3)], dtype=np.object_)
+
+        # Handle containers
+        args = get_args(type_)
+        first_not_none = next((arg for arg in args if arg is not None), None)
+        if container_type in UNION_TYPES:
+            return self.create_value(first_not_none)
+        elif container_type is typing.Literal:
+            return self._random.choice(args)
+        elif container_type in [
+            typing.List,
+            list,
+            typing.Sequence,
+            collections.abc.Sequence,
+            collections.abc.Collection,
+        ]:
+            return [self.create_value(first_not_none) for _ in range(3)]
+        elif container_type in [typing.Dict, dict, collections.abc.MutableMapping, collections.abc.Mapping]:
+            if first_not_none is None:
+                return self.create_value(dict)
+            key_type, value_type = args
+            return {
+                self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
+            }
+        elif container_type in [typing.Set, set]:
+            return set(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
+        elif container_type in [typing.Tuple, tuple]:
+            if any(arg is ... for arg in args):
+                return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
+            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
+
         if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif var_name == "id" and type_ is int:
@@ -496,54 +542,6 @@ class FakeCogniteResourceGenerator:
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):
             return self.create_instance(type_)
-
-        container_type = get_origin(type_)
-        is_container = container_type is not None
-        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
-            # Handle numpy types
-            from numpy.typing import NDArray
-
-            if type_ == NDArray[np.float64]:
-                return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
-            elif type_ == NDArray[np.uint32]:
-                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
-            elif type_ == NDArray[np.int64]:
-                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
-            elif type_ == NDArray[np.datetime64]:
-                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ns]")
-            elif type_ == NDArray[np.object_]:
-                return np.array([self._random_string(10) for _ in range(3)], dtype=np.object_)
-            else:
-                raise ValueError(f"Unknown type {type_} {type(type_)}, {var_name=}. {self._error_msg}")
-
-        # Handle containers
-        args = get_args(type_)
-        first_not_none = next((arg for arg in args if arg is not None), None)
-        if container_type in UNION_TYPES:
-            return self.create_value(first_not_none)
-        elif container_type is typing.Literal:
-            return self._random.choice(args)
-        elif container_type in [
-            typing.List,
-            list,
-            typing.Sequence,
-            collections.abc.Sequence,
-            collections.abc.Collection,
-        ]:
-            return [self.create_value(first_not_none) for _ in range(3)]
-        elif container_type in [typing.Dict, dict, collections.abc.MutableMapping, collections.abc.Mapping]:
-            if first_not_none is None:
-                return self.create_value(dict)
-            key_type, value_type = args
-            return {
-                self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
-            }
-        elif container_type in [typing.Set, set]:
-            return set(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-        elif container_type in [typing.Tuple, tuple]:
-            if any(arg is ... for arg in args):
-                return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
 
         raise NotImplementedError(f"Unsupported container type {container_type}. {self._error_msg}")
 
