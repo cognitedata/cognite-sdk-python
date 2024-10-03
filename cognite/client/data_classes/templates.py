@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
     CogniteObjectUpdate,
@@ -268,7 +266,7 @@ class ViewResolver(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-FieldResolvers: TypeAlias = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str, ViewResolver]
+FieldResolvers: TypeAlias = ConstantResolver | RawResolver | SyntheticTimeSeriesResolver | str | ViewResolver
 
 
 class TemplateInstanceCore(WriteableCogniteResource["TemplateInstanceWrite"], ABC):

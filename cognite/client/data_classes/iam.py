@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Iterable, Literal, cast
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResource,

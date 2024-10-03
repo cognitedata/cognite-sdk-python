@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 import typing
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest

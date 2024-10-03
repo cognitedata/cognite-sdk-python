@@ -7,10 +7,11 @@ import tempfile
 import threading
 import time
 from abc import abstractmethod
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterator, Literal, Sequence, Tuple, Union, overload
-
-from typing_extensions import TypeAlias
+from collections.abc import Iterator, Sequence
+from typing import Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -24,13 +23,13 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import prepare_filter_sort, process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
-SortSpec: TypeAlias = Union[
-    EventSort,
-    str,
-    SortableEventProperty,
-    Tuple[str, Literal["asc", "desc"]],
-    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
-]
+SortSpec: TypeAlias = (
+    EventSort
+    | str
+    | SortableEventProperty
+    | tuple[str, Literal["asc", "desc"]]
+    | tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]]
+)
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
@@ -577,12 +576,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (Event or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Event | EventList: Updated event(s)
@@ -653,7 +647,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Event | EventList: The upserted event(s).

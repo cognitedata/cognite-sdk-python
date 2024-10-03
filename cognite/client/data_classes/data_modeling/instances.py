@@ -5,7 +5,17 @@ import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict, defaultdict
-from collections.abc import Iterable
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    ValuesView,
+)
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
@@ -13,26 +23,16 @@ from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
-    Dict,
     Generic,
-    ItemsView,
-    Iterator,
-    KeysView,
-    List,
     Literal,
-    Mapping,
-    MutableMapping,
     NoReturn,
-    Sequence,
+    TypeAlias,
     TypeVar,
-    Union,
-    ValuesView,
     cast,
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
@@ -73,38 +73,29 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-PropertyValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    dict,
-    List[str],
-    List[int],
-    List[float],
-    List[bool],
-    List[dict],
-]
-PropertyValueWrite: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    dict,
-    SequenceNotStr[str],
-    Sequence[int],
-    Sequence[float],
-    Sequence[bool],
-    Sequence[dict],
-    NodeId,
-    DirectRelationReference,
-    date,
-    datetime,
-    Sequence[Union[NodeId, DirectRelationReference]],
-    Sequence[date],
-    Sequence[datetime],
-    None,
-]
+PropertyValue: TypeAlias = (
+    str | int | float | bool | dict | list[str] | list[int] | list[float] | list[bool] | list[dict]
+)
+PropertyValueWrite: TypeAlias = (
+    str
+    | int
+    | float
+    | bool
+    | dict
+    | SequenceNotStr[str]
+    | Sequence[int]
+    | Sequence[float]
+    | Sequence[bool]
+    | Sequence[dict]
+    | NodeId
+    | DirectRelationReference
+    | date
+    | datetime
+    | Sequence[NodeId | DirectRelationReference]
+    | Sequence[date]
+    | Sequence[datetime]
+    | None
+)
 
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
@@ -158,7 +149,7 @@ class InstanceCore(DataModelingResource, ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
@@ -180,7 +171,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
@@ -254,7 +245,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
-            props[view_id.space][view_id_str] = cast(Dict[PropertyIdentifier, PropertyValue], properties)
+            props[view_id.space][view_id_str] = cast(dict[PropertyIdentifier, PropertyValue], properties)
         # Defaultdict is not yaml serializable
         return dict(props)
 
@@ -328,7 +319,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         version (int): Current version of the instance.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the instance.
     """
@@ -484,7 +475,7 @@ class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (int): DMS version of the instance.
@@ -537,7 +528,7 @@ class InstanceAggregationResult(DataModelingResource):
         """
         return cls(
             aggregates=[AggregatedNumberedValue.load(agg) for agg in resource["aggregates"]],
-            group=cast(Dict[str, Union[str, int, float, bool]], resource.get("group")),
+            group=cast(dict[str, str | int | float | bool], resource.get("group")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

@@ -7,18 +7,14 @@ import logging
 import re
 import warnings
 from collections import UserList
+from collections.abc import Iterator, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Dict,
-    Iterator,
     Literal,
-    MutableMapping,
     NoReturn,
-    Sequence,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -906,9 +902,9 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], [items])
         else:
-            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], items)
 
         items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
@@ -1032,9 +1028,9 @@ class APIClient:
         patch_objects = []
         single_item = not isinstance(items, (Sequence, UserList))
         if single_item:
-            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], [items])
         else:
-            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], items)
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], items)
 
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
