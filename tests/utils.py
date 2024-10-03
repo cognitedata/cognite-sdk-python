@@ -538,8 +538,6 @@ class FakeCogniteResourceGenerator:
             return self._random.choice(list(type_))
         elif isinstance(type_, TypeVar):
             return self.create_value(type_.__bound__)
-        elif isinstance(type_, TypeVar):
-            return self.create_value(type_.__bound__)
         elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):
