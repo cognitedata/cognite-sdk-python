@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeVar, cast
 
 from typing_extensions import Self
 
@@ -178,15 +179,15 @@ class VersionedIdLike(IdLike, Protocol):
     def version(self) -> str | None: ...
 
 
-ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
-ConstraintIdentifier = Tuple[ContainerId, str]
-IndexIdentifier = Tuple[ContainerId, str]
-ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
-DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
-NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
-EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
+ContainerIdentifier = ContainerId | tuple[str, str]
+ConstraintIdentifier = tuple[ContainerId, str]
+IndexIdentifier = tuple[ContainerId, str]
+ViewIdentifier = ViewId | tuple[str, str] | tuple[str, str, str]
+DataModelIdentifier = DataModelId | tuple[str, str] | tuple[str, str, str]
+NodeIdentifier = NodeId | tuple[str, str, str]
+EdgeIdentifier = EdgeId | tuple[str, str, str]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
+Id = tuple[str, str] | tuple[str, str, str] | IdLike | VersionedIdLike
 
 
 def _load_space_identifier(ids: str | SequenceNotStr[str]) -> DataModelingIdentifierSequence:

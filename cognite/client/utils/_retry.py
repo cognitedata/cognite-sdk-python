@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from random import uniform
-from typing import Iterator
 
 
 class Backoff(Iterator[float]):

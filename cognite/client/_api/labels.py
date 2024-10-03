@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, overload
+from collections.abc import Iterator, Sequence
+from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ

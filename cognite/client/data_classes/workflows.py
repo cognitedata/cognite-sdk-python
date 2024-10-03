@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import UserList
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
@@ -261,7 +261,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
+        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
         query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
         body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
         request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.

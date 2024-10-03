@@ -2,24 +2,21 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import UserList
-from collections.abc import Collection
+from collections.abc import Collection, Iterator, MutableSequence, Sequence
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Iterator,
-    MutableSequence,
-    Sequence,
     SupportsIndex,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     final,
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
 from cognite.client.data_classes.labels import Label
@@ -267,7 +264,7 @@ class HistogramValue(AggregatedValue):
         return output
 
 
-FilterValue: TypeAlias = Union[str, float, bool, Label]
+FilterValue: TypeAlias = str | float | bool | Label
 
 
 class AggregationFilter(ABC):

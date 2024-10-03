@@ -4,25 +4,18 @@ import inspect
 import logging
 import random
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from datetime import datetime, timezone
 from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
-    Iterator,
-    List,
     Literal,
-    Sequence,
-    Tuple,
-    Union,
+    TypeAlias,
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -89,7 +82,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 logger = logging.getLogger(__name__)
 
 
-Source: TypeAlias = Union[SourceSelector, View, ViewId, Tuple[str, str], Tuple[str, str, str]]
+Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
 
 
 class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
@@ -233,7 +226,7 @@ class InstancesAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
-            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to query for nodes or edges.
             limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
@@ -259,7 +252,7 @@ class InstancesAPI(APIClient):
             raise ValueError(f"Invalid instance type: {instance_type}")
         if not include_typing:
             return cast(
-                Union[Iterator[Edge], Iterator[EdgeList], Iterator[Node], Iterator[NodeList]],
+                Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList],
                 self._list_generator(
                     list_cls=list_cls,
                     resource_cls=resource_cls,
@@ -700,7 +693,7 @@ class InstancesAPI(APIClient):
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
-            List,
+            list,
             self._delete_multiple(
                 identifiers,
                 wrap_ids=True,
@@ -1057,7 +1050,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to search in.
             query (str | None): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
+            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to search for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
@@ -1201,7 +1194,7 @@ class InstancesAPI(APIClient):
             view (ViewId): View to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]): The properties to aggregate over.
             group_by (str | SequenceNotStr[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
-            instance_type (Literal["node", "edge"]): The type of instance.
+            instance_type (Literal['node', 'edge']): The type of instance.
             query (str | None): Optional query string. The API will parse the query string, and use it to match the text properties on elements to use for the aggregate(s).
             properties (str | SequenceNotStr[str] | None): Optional list of properties you want to apply the query to. If you do not list any properties, you search through text fields by default.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
@@ -1303,7 +1296,7 @@ class InstancesAPI(APIClient):
         Args:
             view (ViewId): View to to aggregate over.
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            instance_type (Literal['node', 'edge']): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (SequenceNotStr[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
@@ -1518,7 +1511,7 @@ class InstancesAPI(APIClient):
         """`List instances <https://developer.cognite.com/api#tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type (Literal["node", "edge"] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
+            instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (Source | Sequence[Source] | None): Views to retrieve properties from.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
@@ -1585,7 +1578,7 @@ class InstancesAPI(APIClient):
             raise ValueError(f"Invalid instance type: {instance_type}")
 
         return cast(
-            Union[NodeList[T_Node], EdgeList[T_Edge]],
+            NodeList[T_Node] | EdgeList[T_Edge],
             self._list(
                 list_cls=list_cls,
                 resource_cls=resource_cls,

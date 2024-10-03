@@ -3,9 +3,9 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -162,7 +162,7 @@ class View(ViewCore):
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
-        used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
+        used_for (Literal['node', 'edge', 'all']): Does this view apply to nodes, edges or both.
         is_global (bool): Whether this is a global view.
     """
 

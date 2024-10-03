@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import functools
 from collections import UserList
+from collections.abc import Callable, Sequence
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
 from typing import (
     Any,
-    Callable,
     Literal,
     NoReturn,
     Protocol,
-    Sequence,
     TypeVar,
 )
 
@@ -286,7 +285,7 @@ def execute_tasks(
     """
     if ConcurrencySettings.uses_mainthread() or isinstance(executor, MainThreadExecutor):
         return execute_tasks_serially(func, tasks, fail_fast)
-    elif isinstance(executor, ThreadPoolExecutor):
+    elif isinstance(executor, ThreadPoolExecutor) or executor is None:
         pass
     else:
         raise TypeError("executor must be a ThreadPoolExecutor or MainThreadExecutor")

@@ -8,25 +8,20 @@ import threading
 import warnings
 from abc import ABC
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from enum import auto
 from functools import lru_cache
+from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Literal,
-    Optional,
-    Sequence,
     TextIO,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
-
-from graphlib import TopologicalSorter
-from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -943,10 +938,10 @@ class AssetHierarchy:
     def _locate_cycles(self) -> tuple[int, list[list[str]]]:
         has_cycles = set()
         no_cycles = {None, *(a.external_id for a in self._roots or [])}
-        edges = cast(Dict[str, Optional[str]], {a.external_id: a.parent_external_id for a in self._assets})
+        edges = cast(dict[str, str | None], {a.external_id: a.parent_external_id for a in self._assets})
 
         if self._ignore_orphans:
-            no_cycles |= {a.parent_external_id for a in cast(List[Asset], self._orphans)}
+            no_cycles |= {a.parent_external_id for a in cast(list[Asset], self._orphans)}
 
         for xid, parent in edges.items():
             if parent in no_cycles:
@@ -1086,7 +1081,7 @@ class AssetProperty(EnumProperty):
         return ["metadata", key]
 
 
-AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
+AssetPropertyLike: TypeAlias = AssetProperty | str | list[str]
 
 
 class SortableAssetProperty(EnumProperty):
@@ -1104,7 +1099,7 @@ class SortableAssetProperty(EnumProperty):
         return ["metadata", key]
 
 
-SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]
+SortableAssetPropertyLike: TypeAlias = SortableAssetProperty | str | list[str]
 
 
 class AssetSort(CogniteSort):

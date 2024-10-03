@@ -12,9 +12,10 @@ import math
 import random
 import re
 import unittest
+from collections.abc import Callable, Iterator
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
-from typing import Callable, Iterator, Literal
+from typing import Literal
 from unittest.mock import patch
 
 import numpy as np

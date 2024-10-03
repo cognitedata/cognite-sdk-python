@@ -7,10 +7,11 @@ import itertools
 import logging
 import warnings
 from abc import ABC
+from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Literal, NamedTuple, NoReturn, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, NoReturn, cast
 
 from typing_extensions import Self
 
