@@ -177,7 +177,7 @@ class Filter(ABC):
         elif (filter_body := filter_.get(InAssetSubtree._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
-                value=_load_filter_value(filter_body["value"]),
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
         elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
@@ -790,7 +790,7 @@ class GeoJSONWithin(GeoJSON):
 
 
 @final
-class InAssetSubtree(FilterWithPropertyAndValue):
+class InAssetSubtree(FilterWithPropertyAndValueList):
     _filter_name = "inAssetSubtree"
 
 
