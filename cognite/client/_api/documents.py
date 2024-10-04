@@ -268,11 +268,11 @@ class DocumentsAPI(APIClient):
             the specified IDs, e.g. 'Plant_1' and 'Plant_2':
 
                 >>> client.documents.aggregate_count(
-                >>>     filter=filters.InAssetSubtree(
-                >>>         property=DocumentProperty.asset_external_ids,
-                >>>         values=['Plant_1', 'Plant_2'],
-                >>>     )
-                >>> )
+                ...     filter=filters.InAssetSubtree(
+                ...         property=DocumentProperty.asset_external_ids,
+                ...         values=['Plant_1', 'Plant_2'],
+                ...     )
+                ... )
         """
         self._validate_filter(filter)
         return self._advanced_aggregate(
