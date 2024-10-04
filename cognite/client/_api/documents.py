@@ -259,12 +259,20 @@ class DocumentsAPI(APIClient):
 
             Count the number of PDF documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_count = client.documents.aggregate_count(filter=is_pdf)
+
+            Count the number of documents with a related asset in a subtree rooted at any of
+            the specified IDs, e.g. 'Plant_1' and 'Plant_2':
+
+                >>> client.documents.aggregate_count(
+                >>>     filter=filters.InAssetSubtree(
+                >>>         property=DocumentProperty.asset_external_ids,
+                >>>         values=['Plant_1', 'Plant_2'],
+                >>>     )
+                >>> )
         """
         self._validate_filter(filter)
         return self._advanced_aggregate(
