@@ -9,7 +9,7 @@ import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
 
 if TYPE_CHECKING:
@@ -295,6 +295,19 @@ class TestSpaceFilter:
     def test_space_filter_passes_isinstance_checks(self) -> None:
         space_filter = f.SpaceFilter("myspace", "edge")
         assert isinstance(space_filter, Filter)
+
+    @pytest.mark.parametrize(
+        "body",
+        (
+            {"property": ["edge", "space"], "value": "myspace"},
+            {"property": ["node", "space"], "values": ["myspace", "another"]},
+        ),
+    )
+    def test_space_filter_loads_as_unknown(self, body: dict[str, str | list[str]]) -> None:
+        # Space Filter is an SDK concept, so it should load as an UnknownFilter:
+        dumped = {f.SpaceFilter._filter_name: body}
+        loaded_flt = Filter.load(dumped)
+        assert isinstance(loaded_flt, UnknownFilter)
 
     @pytest.mark.parametrize(
         "space_filter",
