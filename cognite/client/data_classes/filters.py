@@ -791,6 +791,26 @@ class GeoJSONWithin(GeoJSON):
 
 @final
 class InAssetSubtree(FilterWithPropertyAndValueList):
+    """Filters results based on whether item/resource is connected to an asset with an ID (or external ID)
+    that is in the subtree rooted at any of the provided IDs.
+
+    Args:
+        property (PropertyReference): The property to filter on, e.g. 'assetId' or 'assetExternalId'.
+        values (FilterValueList): The value(s) to filter on.
+
+    Example:
+
+        Count the number of documents with a related asset in a subtree rooted at any of
+        the specified external IDs, e.g. 'Plant_1' and 'Plant_2':
+
+            >>> client.documents.aggregate_count(
+            ...     filter=filters.InAssetSubtree(
+            ...         property=DocumentProperty.asset_external_ids,
+            ...         values=['Plant_1', 'Plant_2'],
+            ...     )
+            ... )
+    """
+
     _filter_name = "inAssetSubtree"
 
 
