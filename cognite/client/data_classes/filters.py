@@ -174,7 +174,7 @@ class Filter(ABC):
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
+        elif (filter_body := filter_.get(InAssetSubtree._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
                 value=_load_filter_value(filter_body["value"]),
