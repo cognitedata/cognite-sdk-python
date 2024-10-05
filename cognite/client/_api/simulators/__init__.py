@@ -1,0 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from cognite.client._api.simulators.models import SimulatorModel
+from cognite.client._api_client import APIClient
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
+
+class SimulatorsAPI(APIClient):
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.models = SimulatorModel(config, api_version, cognite_client)
