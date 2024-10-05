@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, cast, overload
+from typing import TYPE_CHECKING, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -24,22 +24,16 @@ class ModelsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Models")
 
-    @overload
-    def create(self, item: SimulatorModelWrite) -> SimulatorModel: ...
-
-    @overload
-    def create(self, item: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
-
-    def create(self, item: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
+    def create(self, item: SimulatorModelWrite) -> SimulatorModel:
         """`Create Simulator Model <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Create a single simulation model
 
         Args:
-            item (SimulatorModelWrite | Sequence[SimulatorModelWrite]): Simulation model(s) to create
+            item (SimulatorModelWrite): Simulation model(s) to create
 
         Returns:
-            SimulatorModel | SimulatorModelList: Created simulation model(s)
+            SimulatorModel: Created simulation model(s)
 
         Examples:
 
