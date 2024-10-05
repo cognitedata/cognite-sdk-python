@@ -37,15 +37,16 @@ repos:
         language: system
         pass_filenames: false
 
-  - repo: local
-    hooks:
-      - id: custom-checks
-        name: custom repo checks
-        entry: poetry run python scripts/run_checks.py
-        files: ^cognite/.*.(py|pyi)$
-        language: system
-        pass_filenames: true
-        require_serial: true  # avoid possible race conditions
+# Temporary out as it causes a lot of unrelated changes Literal["value"] -> Literal['value']
+#  - repo: local
+#    hooks:
+#      - id: custom-checks
+#        name: custom repo checks
+#        entry: poetry run python scripts/run_checks.py
+#        files: ^cognite/.*.(py|pyi)$
+#        language: system
+#        pass_filenames: true
+#        require_serial: true  # avoid possible race conditions
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
     rev: 0.5.9
