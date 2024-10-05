@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Sequence
+
+from cognite_gen.client.data_classes.simulators.models import (
+    SimulatorModel,
+    SimulatorModelList,
+    SimulatorModelUpdate,
+    SimulatorModelWrite,
+)
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite_gen.client.data_classes.simulators.models import SimulatorModel, SimulatorModelList, SimulatorModelUpdate, SimulatorModelWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -16,20 +19,21 @@ if TYPE_CHECKING:
 
 class ModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
+
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Models"
-        )
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Models")
 
-    def create(self, simulator_model_create_command: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel:
+    def create(
+        self, simulator_model_create_command: SimulatorModelWrite | Sequence[SimulatorModelWrite]
+    ) -> SimulatorModel:
         """`Create Simulator Model <MISSING>`_
 
         Create a single simulation model
 
-        Args: 
+        Args:
             simulator_model_create_command (SimulatorModelWrite | Sequence[SimulatorModelWrite]): None
-        
+
         Returns:
             SimulatorModel: None
 
@@ -58,9 +62,9 @@ class ModelsAPI(APIClient):
 
         Get a simulator model by id/externalId
 
-        Args: 
+        Args:
             unknown (Unknown): None
-        
+
         Returns:
             SimulatorModel: None
 
@@ -88,14 +92,16 @@ class ModelsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def update(self, simulator_model_update_command: SimulatorModelUpdate | Sequence[SimulatorModelUpdate]) -> SimulatorModel:
+    def update(
+        self, simulator_model_update_command: SimulatorModelUpdate | Sequence[SimulatorModelUpdate]
+    ) -> SimulatorModel:
         """`Update Simulator Model <MISSING>`_
 
         Update a simulator model.
 
-        Args: 
+        Args:
             simulator_model_update_command (SimulatorModelUpdate | Sequence[SimulatorModelUpdate]): None
-        
+
         Returns:
             SimulatorModel: None
 
@@ -124,9 +130,9 @@ class ModelsAPI(APIClient):
 
         Delete simulator model
 
-        Args: 
+        Args:
             unknown (Unknown): None
-        
+
         Returns:
             EmptyResponse | None: None
 
@@ -148,17 +154,23 @@ class ModelsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def filter(self, limit: int, filter: ListSimulatorModelsFilters | None = None, cursor: str | None = None, sort: SortByCreatedTime | Sequence[SortByCreatedTime] | None = None) -> SimulatorModel:
+    def filter(
+        self,
+        limit: int,
+        filter: ListSimulatorModelsFilters | None = None,
+        cursor: str | None = None,
+        sort: SortByCreatedTime | Sequence[SortByCreatedTime] | None = None,
+    ) -> SimulatorModel:
         """`Filter Simulator Models <MISSING>`_
 
         List all simulation models
 
-        Args: 
+        Args:
             limit (int): None
             filter (ListSimulatorModelsFilters | None): None
             cursor (str | None): Cursor for pagination
             sort (SortByCreatedTime | Sequence[SortByCreatedTime] | None): Only supports sorting by one property at a time
-        
+
         Returns:
             SimulatorModel: None
 

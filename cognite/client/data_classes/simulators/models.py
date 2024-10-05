@@ -1,18 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
-    ExternalIDTransformerMixin,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -22,39 +19,32 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-@dataclass
-class ExternalIdRef(CogniteObject):
-    external_id: str
-    
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            external_id=resource["externalId"],
-        )
-    
-
-
 class _SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
-    def __init__(self, external_id: str, simulator_external_id: str, name: str, data_set_id: int, type: str, description: str | None = None, labels: ExternalIdRef | Sequence[ExternalIdRef] | None = None) -> None:
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        name: str,
+        data_set_id: int,
+        type: str,
+        description: str | None = None,
+    ) -> None:
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.name = name
         self.data_set_id = data_set_id
         self.type = type
         self.description = description
-        self.labels = labels
 
 
 class SimulatorModelWrite(_SimulatorModelCore):
-    """
-
-The simulator model resource represents an asset modeled in a simulator.
+    """The simulator model resource represents an asset modeled in a simulator.
 
     This asset could range from a pump or well to a complete processing facility or refinery. The simulator model is the
     root of its associated revisions, routines, runs, and results. The dataset assigned to a model is inherited by its
     children. Deleting a model also deletes all its children, thereby maintaining the integrity and hierarchy of the
     simulation data.  Simulator model revisions track changes and updates to a simulator model over time. Each revision
-    ensures that modifications to models are traceable and allows users to understand the evolution of a given model. 
+    ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
     #### Limitations:  - A project can have a maximum of 1000 simulator models  - Each simulator model can have a
     maximum of 200 revisions
 
@@ -66,12 +56,19 @@ The simulator model resource represents an asset modeled in a simulator.
         name (str): Name of the simulation model
         description (str | None): Description of the simulation model
         data_set_id (int): Data set id of the simulation model
-        labels (ExternalIdRef | Sequence[ExternalIdRef] | None): Labels of the simulation model
         type (str): Model type of the simulation model. List of available types is available in the simulator resource.
 
     """
 
-    def __init__(self, external_id: str, simulator_external_id: str, name: str, data_set_id: int, type: str, description: str | None = None, labels: ExternalIdRef | Sequence[ExternalIdRef] | None = None) -> None:
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        name: str,
+        data_set_id: int,
+        type: str,
+        description: str | None = None,
+    ) -> None:
         super().__init__(
             external_id=external_id,
             simulator_external_id=simulator_external_id,
@@ -79,9 +76,8 @@ The simulator model resource represents an asset modeled in a simulator.
             data_set_id=data_set_id,
             type=type,
             description=description,
-            labels=labels,
         )
-    
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
@@ -91,50 +87,52 @@ The simulator model resource represents an asset modeled in a simulator.
             data_set_id=resource["dataSetId"],
             type=resource["type"],
             description=resource.get("description"),
-            labels=ExternalIdRef._load(resource["labels"], cognite_client) if "labels" in resource else None,
         )
-    
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if isinstance(self.labels, ExternalIdRef):
-            output["labels"] = self.labels.dump(camel_case=camel_case)
-        
-        return output
+
     def as_write(self) -> SimulatorModelWrite:
         return self
-
 
 
 class SimulatorModel(_SimulatorModelCore):
     """
 
-The simulator model resource represents an asset modeled in a simulator.
+    The simulator model resource represents an asset modeled in a simulator.
 
-    This asset could range from a pump or well to a complete processing facility or refinery. The simulator model is the
-    root of its associated revisions, routines, runs, and results. The dataset assigned to a model is inherited by its
-    children. Deleting a model also deletes all its children, thereby maintaining the integrity and hierarchy of the
-    simulation data.  Simulator model revisions track changes and updates to a simulator model over time. Each revision
-    ensures that modifications to models are traceable and allows users to understand the evolution of a given model. 
-    #### Limitations:  - A project can have a maximum of 1000 simulator models  - Each simulator model can have a
-    maximum of 200 revisions
+        This asset could range from a pump or well to a complete processing facility or refinery. The simulator model is the
+        root of its associated revisions, routines, runs, and results. The dataset assigned to a model is inherited by its
+        children. Deleting a model also deletes all its children, thereby maintaining the integrity and hierarchy of the
+        simulation data.  Simulator model revisions track changes and updates to a simulator model over time. Each revision
+        ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+        #### Limitations:  - A project can have a maximum of 1000 simulator models  - Each simulator model can have a
+        maximum of 200 revisions
 
-    This is the read/response format of the simulator model.
+        This is the read/response format of the simulator model.
 
-    Args:
-        id (int): A unique id of a simulation model
-        external_id (str): External id of the simulation model
-        simulator_external_id (str): External id of the simulator
-        name (str): Name of the simulation model
-        description (str | None): Description of the simulation model
-        data_set_id (int): Data set id of the simulation model
-        labels (ExternalIdRef | Sequence[ExternalIdRef] | None): Labels of the simulation model
-        type (str | None): Model type of the simulation model. List of available types is available in the simulator resource.
-        created_time (int): None
-        last_updated_time (int): None
+        Args:
+            id (int): A unique id of a simulation model
+            external_id (str): External id of the simulation model
+            simulator_external_id (str): External id of the simulator
+            name (str): Name of the simulation model
+            description (str | None): Description of the simulation model
+            data_set_id (int): Data set id of the simulation model
+            type (str | None): Model type of the simulation model. List of available types is available in the simulator resource.
+            created_time (int): None
+            last_updated_time (int): None
 
     """
 
-    def __init__(self, id: int, external_id: str, simulator_external_id: str, name: str, data_set_id: int, created_time: int, last_updated_time: int, description: str | None = None, labels: ExternalIdRef | Sequence[ExternalIdRef] | None = None, type: str | None = None) -> None:
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        name: str,
+        data_set_id: int,
+        created_time: int,
+        last_updated_time: int,
+        description: str | None = None,
+        type: str | None = None,
+    ) -> None:
         super().__init__(
             external_id=external_id,
             simulator_external_id=simulator_external_id,
@@ -142,7 +140,6 @@ The simulator model resource represents an asset modeled in a simulator.
             data_set_id=data_set_id,
             type=type,
             description=description,
-            labels=labels,
         )
         self.id = id
         self.created_time = created_time
@@ -159,24 +156,14 @@ The simulator model resource represents an asset modeled in a simulator.
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             description=resource.get("description"),
-            labels=ExternalIdRef._load(resource["labels"], cognite_client) if "labels" in resource else None,
             type=resource.get("type"),
-        ) 
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if isinstance(self.labels, ExternalIdRef):
-            output["labels"] = self.labels.dump(camel_case=camel_case)
-        
-        return output
-
+        )
 
     def as_write(self) -> SimulatorModelWrite:
         return SimulatorModelWrite(
             type=self.type,
             name=self.name,
             data_set_id=self.data_set_id,
-            labels=self.labels,
             simulator_external_id=self.simulator_external_id,
             description=self.description,
             external_id=self.external_id,
@@ -185,45 +172,26 @@ The simulator model resource represents an asset modeled in a simulator.
 
 class SimulatorModelUpdate(CogniteUpdate):
     def __init__(self, id: int) -> None:
-        super().__init__(
-            id = id,
-        )
+        super().__init__(id=id)
 
-    class _UpdateSetAnnotatedStringConstraintsUpdate(CognitePrimitiveUpdate):
-        def set(self, value: UpdateSetAnnotatedStringConstraints | None) -> SimulatorModelUpdate:
-            return self._set(value.dump() if isinstance(value, UpdateSetAnnotatedStringConstraints) else value)
-
-    class _UpdateSetAnnotatedStringConstraintsUpdate(CognitePrimitiveUpdate):
-        def set(self, value: UpdateSetAnnotatedStringConstraints | None) -> SimulatorModelUpdate:
-            return self._set(value.dump() if isinstance(value, UpdateSetAnnotatedStringConstraints) else value)
-
-    class _UpdateAddRemoveListExternalIdRefUpdate(CognitePrimitiveUpdate):
-        def set(self, value: UpdateAddRemoveListExternalIdRef | None) -> SimulatorModelUpdate:
-            return self._set(value.dump() if isinstance(value, UpdateAddRemoveListExternalIdRef) else value)
-
+    class _UpdateStr(CognitePrimitiveUpdate):
+        def set(self, value: str | None) -> SimulatorModelUpdate:
+            return self._set(value)
 
     @property
-    def name(self) -> SimulatorModelUpdate._UpdateSetAnnotatedStringConstraintsUpdate:
-        return self._UpdateSetAnnotatedStringConstraintsUpdate(self, "name")
+    def name(self) -> SimulatorModelUpdate._UpdateStr:
+        return self._UpdateStr(self, "name")
 
     @property
-    def description(self) -> SimulatorModelUpdate._UpdateSetAnnotatedStringConstraintsUpdate:
-        return self._UpdateSetAnnotatedStringConstraintsUpdate(self, "description")
-
-    @property
-    def labels(self) -> SimulatorModelUpdate._UpdateAddRemoveListExternalIdRefUpdate:
-        return self._UpdateAddRemoveListExternalIdRefUpdate(self, "labels")
-
+    def description(self) -> SimulatorModelUpdate._UpdateStr:
+        return self._UpdateStr(self, "description")
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name", is_nullable=True),
             PropertySpec("description", is_nullable=True),
-            PropertySpec("labels", is_nullable=True),
-    ]
-
-
+        ]
 
 
 class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite]):
@@ -235,4 +203,3 @@ class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, Simul
 
     def as_write(self) -> SimulatorModelWriteList:
         return SimulatorModelWriteList([item.as_write() for item in self.data])
-
