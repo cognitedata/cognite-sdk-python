@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast, overload
 
-from cognite_gen.client.data_classes.simulators.models import (
+from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.simulators.models import (
     SimulatorModel,
     SimulatorModelList,
     SimulatorModelUpdate,
     SimulatorModelWrite,
 )
-
-from cognite.client._api_client import APIClient
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -24,18 +24,22 @@ class ModelsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Models")
 
-    def create(
-        self, simulator_model_create_command: SimulatorModelWrite | Sequence[SimulatorModelWrite]
-    ) -> SimulatorModel:
-        """`Create Simulator Model <MISSING>`_
+    @overload
+    def create(self, item: SimulatorModelWrite) -> SimulatorModel: ...
+
+    @overload
+    def create(self, item: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
+
+    def create(self, item: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
+        """`Create Simulator Model <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Create a single simulation model
 
         Args:
-            simulator_model_create_command (SimulatorModelWrite | Sequence[SimulatorModelWrite]): None
+            item (SimulatorModelWrite | Sequence[SimulatorModelWrite]): Simulation model(s) to create
 
         Returns:
-            SimulatorModel: None
+            SimulatorModel | SimulatorModelList: Created simulation model(s)
 
         Examples:
 
@@ -49,24 +53,26 @@ class ModelsAPI(APIClient):
 
         """
         self._warning.warn()
+
         return self._create_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
-            items=simulator_model_create_command,
+            items=item,
             input_resource_cls=SimulatorModelWrite,
             headers={"cdf-version": "beta"},
         )
 
-    def retrieve(self, unknown: Unknown) -> SimulatorModel:
-        """`Retrieve Simulator Model <MISSING>`_
+    def retrieve(self, id: int, external_id: str) -> SimulatorModel:
+        """`Retrieve Simulator Model <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
 
         Get a simulator model by id/externalId
 
         Args:
-            unknown (Unknown): None
+            id (int): Id of the simulator model
+            external_id (str): External Id of the simulator model
 
         Returns:
-            SimulatorModel: None
+            SimulatorModel: The requested simulator model
 
         Examples:
 
@@ -76,31 +82,25 @@ class ModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.retrieve('mySimulator')
 
-            Get multiple simulator models by id:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.simulators.models.retrieve(["mySimulator", "mySimulator2"])
-
-
         """
         self._warning.warn()
-        return self._retrieve_multiple(
-            list_cls=SimulatorModelList,
-            resource_cls=SimulatorModel,
-            identifiers=IdentifierSequence.load(unknowns=unknown),
-            headers={"cdf-version": "beta"},
+        return cast(
+            SimulatorModel,
+            self._retrieve_multiple(
+                list_cls=SimulatorModelList,
+                resource_cls=SimulatorModel,
+                identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+                headers={"cdf-version": "beta"},
+            ),
         )
 
-    def update(
-        self, simulator_model_update_command: SimulatorModelUpdate | Sequence[SimulatorModelUpdate]
-    ) -> SimulatorModel:
-        """`Update Simulator Model <MISSING>`_
+    def update(self, item: SimulatorModelUpdate | SimulatorModelWrite) -> SimulatorModel:
+        """`Update Simulator Model <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
 
         Update a simulator model.
 
         Args:
-            simulator_model_update_command (SimulatorModelUpdate | Sequence[SimulatorModelUpdate]): None
+            item (SimulatorModelUpdate | SimulatorModelWrite): Simulator model to update
 
         Returns:
             SimulatorModel: None
@@ -112,29 +112,27 @@ class ModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelUpdate
                 >>> client = CogniteClient()
-                >>> update = SimulatorModelUpdate('mySimulatorModel').<MISSING>
+                >>> update = SimulatorModelUpdate('mySimulatorModel').name.set('newName')
                 >>> res = client.simulators.models.update(update)
 
         """
         self._warning.warn()
         return self._update_multiple(
-            items=simulator_model_update_command,
+            items=item,
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             update_cls=SimulatorModelUpdate,
             headers={"cdf-version": "beta"},
         )
 
-    def delete(self, unknown: Unknown) -> EmptyResponse | None:
-        """`Delete Simulator Model <MISSING>`_
+    def delete(self, id: int, external_id: str) -> None:
+        """`Delete Simulator Model <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Delete simulator model
 
         Args:
-            unknown (Unknown): None
-
-        Returns:
-            EmptyResponse | None: None
+            id (int): Id of the simulator model to delete
+            external_id (str): External Id of the simulator model to delete
 
         Examples:
 
@@ -147,36 +145,35 @@ class ModelsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._delete_multiple(
-            identifiers=IdentifierSequence.load(unknowns=unknown),
-            wrap_ids=False,
+
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
             returns_items=False,
             headers={"cdf-version": "beta"},
         )
 
-    def filter(
-        self,
-        limit: int,
-        filter: ListSimulatorModelsFilters | None = None,
-        cursor: str | None = None,
-        sort: SortByCreatedTime | Sequence[SortByCreatedTime] | None = None,
-    ) -> SimulatorModel:
-        """`Filter Simulator Models <MISSING>`_
+    def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorModelList:
+        """`Filter Simulator Models <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
         List all simulation models
 
         Args:
-            limit (int): None
-            filter (ListSimulatorModelsFilters | None): None
-            cursor (str | None): Cursor for pagination
-            sort (SortByCreatedTime | Sequence[SortByCreatedTime] | None): Only supports sorting by one property at a time
+            limit (int): Max number of models to return. Defaults to 25.
 
         Returns:
-            SimulatorModel: None
+            SimulatorModelList: None
 
         Examples:
 
             <MISSING>
 
         """
-        "<MISSING>"
+        self._warning.warn()
+        return self._list(
+            method="POST",
+            resource_cls=SimulatorModel,
+            list_cls=SimulatorModelList,
+            limit=limit,
+            headers={"cdf-version": "beta"},
+        )

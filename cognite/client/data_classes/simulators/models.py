@@ -54,9 +54,9 @@ class SimulatorModelWrite(_SimulatorModelCore):
         external_id (str): External id of the simulation model
         simulator_external_id (str): External id of the simulator
         name (str): Name of the simulation model
-        description (str | None): Description of the simulation model
         data_set_id (int): Data set id of the simulation model
         type (str): Model type of the simulation model. List of available types is available in the simulator resource.
+        description (str | None): Description of the simulation model
 
     """
 
@@ -113,11 +113,11 @@ class SimulatorModel(_SimulatorModelCore):
             external_id (str): External id of the simulation model
             simulator_external_id (str): External id of the simulator
             name (str): Name of the simulation model
-            description (str | None): Description of the simulation model
             data_set_id (int): Data set id of the simulation model
-            type (str | None): Model type of the simulation model. List of available types is available in the simulator resource.
             created_time (int): None
             last_updated_time (int): None
+            type (str): Model type of the simulation model. List of available types is available in the simulator resource.
+            description (str | None): Description of the simulation model
 
     """
 
@@ -130,8 +130,8 @@ class SimulatorModel(_SimulatorModelCore):
         data_set_id: int,
         created_time: int,
         last_updated_time: int,
+        type: str,
         description: str | None = None,
-        type: str | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -156,7 +156,7 @@ class SimulatorModel(_SimulatorModelCore):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             description=resource.get("description"),
-            type=resource.get("type"),
+            type=resource["type"],
         )
 
     def as_write(self) -> SimulatorModelWrite:
