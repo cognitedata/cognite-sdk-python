@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cognite.client._api.simulators.models import SimulatorModel
+from cognite.client._api.simulators.models import ModelsAPI
 from cognite.client._api_client import APIClient
 
 if TYPE_CHECKING:
@@ -13,4 +13,4 @@ if TYPE_CHECKING:
 class SimulatorsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.models = SimulatorModel(config, api_version, cognite_client)
+        self.models = ModelsAPI(config, api_version, cognite_client)
