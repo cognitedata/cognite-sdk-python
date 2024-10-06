@@ -41,7 +41,7 @@ class UserWrite(_UserCore):
     The created postgres user only has access to use foreign tables and cannot directly create tables users. To create
     foreign tables use the Postgres Gateway Tables APIs
 
-    This is the write/request format of the fdw user.
+    This is the write/request format of the user.
 
     Args:
         credentials (SessionCredentials | None): Credentials for authenticating towards CDF using a CDF session.
@@ -73,7 +73,7 @@ class UserWrite(_UserCore):
 class User(_UserCore):
     """A user.
 
-    This is the read/response format of the fdw user.
+    This is the read/response format of the user.
 
     Args:
         username (str): Username to authenticate the user on the DB.
@@ -102,18 +102,18 @@ class User(_UserCore):
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
 
 
-class FdwUserUpdate(CogniteUpdate):
+class UserUpdate(CogniteUpdate):
     def __init__(
         self,
     ) -> None:
         super().__init__()
 
     class _UpdateItemSessionCredentialsUpdate(CognitePrimitiveUpdate):
-        def set(self, value: SessionCredentials | None) -> FdwUserUpdate:
+        def set(self, value: SessionCredentials | None) -> UserUpdate:
             return self._set(value.dump() if isinstance(value, SessionCredentials) else value)
 
     @property
-    def credentials(self) -> FdwUserUpdate._UpdateItemSessionCredentialsUpdate:
+    def credentials(self) -> UserUpdate._UpdateItemSessionCredentialsUpdate:
         return self._UpdateItemSessionCredentialsUpdate(self, "credentials")
 
     @classmethod
@@ -123,11 +123,11 @@ class FdwUserUpdate(CogniteUpdate):
         ]
 
 
-class FdwUserWriteList(CogniteResourceList[UserWrite]):
+class UserWriteList(CogniteResourceList[UserWrite]):
     _RESOURCE = UserWrite
 
 
-class FdwUserList(WriteableCogniteResourceList[UserWrite, User]):
+class UserList(WriteableCogniteResourceList[UserWrite, User]):
     _RESOURCE = User
 
     def as_write(self) -> NoReturn:

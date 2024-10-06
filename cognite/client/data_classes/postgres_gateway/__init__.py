@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from cognite.client.data_classes.postgres_gateway.users import (
-    FdwUserList,
-    FdwUserUpdate,
     SessionCredentials,
     User,
+    UserList,
+    UserUpdate,
     UserWrite,
 )
 
-__all__ = ["User", "FdwUserList", "FdwUserUpdate", "UserWrite", "SessionCredentials"]
+__all__ = ["User", "UserList", "UserUpdate", "UserWrite", "SessionCredentials"]
