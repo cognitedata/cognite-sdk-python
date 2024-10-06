@@ -158,7 +158,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
@@ -415,7 +415,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
             limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 

@@ -577,12 +577,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (Event or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Event | EventList: Updated event(s)
@@ -653,7 +648,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | EventWrite | Sequence[Event | EventWrite]): Event or list of events to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Event | EventList: The upserted event(s).

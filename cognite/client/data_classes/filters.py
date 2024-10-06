@@ -814,7 +814,7 @@ class SpaceFilter(FilterWithProperty):
 
     Args:
         space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
-        instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
+        instance_type (Literal['node', 'edge']): Type of instance to filter on. Defaults to "node".
 
     Example:
         Filter than can be used to retrieve nodes from space "space1" or "space2":

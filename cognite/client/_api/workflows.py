@@ -232,7 +232,7 @@ class WorkflowTaskAPI(APIClient):
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:

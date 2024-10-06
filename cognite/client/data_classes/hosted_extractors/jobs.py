@@ -476,7 +476,7 @@ class JobLogs(CogniteResource):
 
     Args:
         job_external_id (str): The external ID of the job.
-        type (Literal["paused", "startup_error", "connection_error", "connected", "transform_error", "cdf_write_error", "ok"]): Type of log entry.
+        type (Literal['paused', 'startup_error', 'connection_error', 'connected', 'transform_error', 'cdf_write_error', 'ok']): Type of log entry.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         message (str | None): Log message. Not all log entries have messages.
 

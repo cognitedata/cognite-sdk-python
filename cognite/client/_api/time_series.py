@@ -604,12 +604,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (TimeSeries or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             TimeSeries | TimeSeriesList: Updated time series.
@@ -675,7 +670,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).

@@ -225,7 +225,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
 
     Args:
         external_id (str): The external ID of the transformation to be called.
-        concurrency_policy (Literal["fail", "restartAfterCurrent", "waitForCurrent"]): Determines the behavior of the task if the Transformation is already running.\n
+        concurrency_policy (Literal['fail', 'restartAfterCurrent', 'waitForCurrent']): Determines the behavior of the task if the Transformation is already running.\n
             * *fail*: The task fails if another instance of the Transformation is currently running.\n
             * *waitForCurrent*: The task will pause and wait for the already running Transformation to complete. Once completed, the task is completed. This mode is useful for preventing redundant Transformation runs.\n
             * *restartAfterCurrent*: The task waits for the ongoing Transformation to finish. After completion, the task restarts the Transformation. This mode ensures that the most recent data can be used by following tasks.
@@ -261,7 +261,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
 
     Args:
         resource_path (str): The resource path of the request. Note the path of the request which is prefixed by '{cluster}.cognitedata.com/api/v1/project/{project}' based on the cluster and project of the request.
-        method (Literal["GET", "POST", "PUT", "DELETE"] | str): The HTTP method of the request.
+        method (Literal['GET', 'POST', 'PUT', 'DELETE'] | str): The HTTP method of the request.
         query_parameters (dict | str | None): The query parameters of the request. Defaults to None.
         body (dict | str | None): The body of the request. Defaults to None. Limited to 1024KiB in size
         request_timeout_in_millis (int | str): The timeout of the request in milliseconds. Defaults to 10000.
@@ -441,7 +441,7 @@ class WorkflowTask(CogniteResource):
         description (str | None): The description of the task. Defaults to None.
         retries (int): The number of retries for the task. Defaults to 3.
         timeout (int): The timeout of the task in seconds. Defaults to 3600.
-        on_failure (Literal["abortWorkflow", "skipTask"]): The policy to handle failures and timeouts. Defaults to *abortWorkflow*.\n
+        on_failure (Literal['abortWorkflow', 'skipTask']): The policy to handle failures and timeouts. Defaults to *abortWorkflow*.\n
             * *skipTask*: For both failures and timeouts, the task will retry until the retries are exhausted. After that, the Task is marked as COMPLETED_WITH_ERRORS and the subsequent tasks are executed.\n
             * *abortWorkflow*: In case of failures, retries will be performed until exhausted. After which the task is marked as FAILED and the Workflow is marked the same. In the event of a timeout, no retries are undertaken; the task is marked as TIMED_OUT and the Workflow is marked as FAILED.
         depends_on (list[str] | None): The external ids of the tasks that this task depends on. Defaults to None.
