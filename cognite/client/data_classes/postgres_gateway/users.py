@@ -2,18 +2,16 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from typing_extensions import Self
 
-from cognite.client.utils.useful_types import SequenceNotStr
 from cognite.client.data_classes._base import (
     CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
-    ExternalIDTransformerMixin,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -26,16 +24,15 @@ if TYPE_CHECKING:
 @dataclass
 class SessionCredentials(CogniteObject):
     nonce: str
-    
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             nonce=resource["nonce"],
         )
-    
 
 
-class _FdwUserCore(WriteableCogniteResource["FdwUserWrite"], ABC):...
+class _FdwUserCore(WriteableCogniteResource["FdwUserWrite"], ABC): ...
 
 
 class FdwUserWrite(_FdwUserCore):
@@ -53,28 +50,28 @@ class FdwUserWrite(_FdwUserCore):
 
     def __init__(self, credentials: SessionCredentials | None = None) -> None:
         self.credentials = credentials
-    
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            credentials=SessionCredentials._load(resource["credentials"], cognite_client) if "credentials" in resource else None,
+            credentials=SessionCredentials._load(resource["credentials"], cognite_client)
+            if "credentials" in resource
+            else None,
         )
-    
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if isinstance(self.credentials, SessionCredentials):
             output["credentials"] = self.credentials.dump(camel_case=camel_case)
-        
+
         return output
+
     def as_write(self) -> FdwUserWrite:
         return self
 
 
-
 class FdwUser(_FdwUserCore):
     """A user.
-
-    
 
     This is the read/response format of the fdw user.
 
@@ -99,35 +96,31 @@ class FdwUser(_FdwUserCore):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             session_id=resource["sessionId"],
-        ) 
-
+        )
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
 
 
 class FdwUserUpdate(CogniteUpdate):
-    def __init__(self, ) -> None:
-        super().__init__(
-        )
+    def __init__(
+        self,
+    ) -> None:
+        super().__init__()
 
     class _UpdateItemSessionCredentialsUpdate(CognitePrimitiveUpdate):
-        def set(self, value: UpdateItemSessionCredentials | None) -> FdwUserUpdate:
-            return self._set(value.dump() if isinstance(value, UpdateItemSessionCredentials) else value)
-
+        def set(self, value: SessionCredentials | None) -> FdwUserUpdate:
+            return self._set(value.dump() if isinstance(value, SessionCredentials) else value)
 
     @property
     def credentials(self) -> FdwUserUpdate._UpdateItemSessionCredentialsUpdate:
         return self._UpdateItemSessionCredentialsUpdate(self, "credentials")
 
-
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("credentials", is_nullable=True),
-    ]
-
-
+        ]
 
 
 class FdwUserWriteList(CogniteResourceList[FdwUserWrite]):
@@ -139,4 +132,3 @@ class FdwUserList(WriteableCogniteResourceList[FdwUserWrite, FdwUser]):
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
-

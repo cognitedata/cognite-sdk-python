@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite_gen.client.data_classes.postgres_gateway.users import FdwUser, FdwUserList, FdwUserUpdate, FdwUserWrite
+from cognite.client.data_classes.postgres_gateway.users import FdwUser, FdwUserList, FdwUserUpdate, FdwUserWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -16,11 +16,11 @@ if TYPE_CHECKING:
 
 class UsersAPI(APIClient):
     _RESOURCE_PATH = "/postgresgateway/users"
+
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Users"
-        )
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Users")
+
     @overload
     def __call__(
         self,
@@ -46,6 +46,7 @@ class UsersAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of fdw users to return in each chunk. Defaults to yielding one fdw user a time.
+            limit (int | None): No description.
 
         Returns:
             Iterator[FdwUser] | Iterator[FdwUserList]: yields FdwUser one by one if chunk_size is not specified, else FdwUserList objects.
@@ -72,16 +73,16 @@ class UsersAPI(APIClient):
         """
         return self()
 
-    def create(self, create_user: FdwUserWrite | Sequence[FdwUserWrite]) -> UserCreated:
+    def create(self, create_user: FdwUserWrite | Sequence[FdwUserWrite]) -> FdwUser | FdwUserList:
         """`Create Users <MISSING>`_
 
         Create postgres users.
 
-        Args: 
+        Args:
             create_user (FdwUserWrite | Sequence[FdwUserWrite]): None
-        
+
         Returns:
-            UserCreated: A user
+            FdwUser | FdwUserList: A user
 
         Examples:
 
@@ -103,16 +104,16 @@ class UsersAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def update(self, unknown: FdwUserUpdate) -> FdwUser | FdwUserList[FdwUser]:
+    def update(self, unknown: FdwUserUpdate) -> FdwUser | FdwUserList:
         """`Update users <MISSING>`_
 
         Update postgres users
 
-        Args: 
+        Args:
             unknown (FdwUserUpdate): None
-        
+
         Returns:
-            FdwUser | Sequence[FdwUser]: A user
+            FdwUser | FdwUserList[FdwUser]: A user
 
         Examples:
 
@@ -139,10 +140,10 @@ class UsersAPI(APIClient):
 
         Delete postgres users
 
-        Args: 
+        Args:
             username (str | SequenceNotStr[str]): Username to authenticate the user on the DB.
             ignore_unknown_ids (bool): Ignore usernames that are not found
-        
+
 
         Examples:
 
@@ -156,7 +157,7 @@ class UsersAPI(APIClient):
         """
         self._warning.warn()
         extra_body_fields: dict[str, Any] = {}
-        extra_body_fields['ignore_unknown_ids'] = ignore_unknown_ids
+        extra_body_fields["ignore_unknown_ids"] = ignore_unknown_ids
 
         return self._delete_multiple(
             identifiers=IdentifierSequence.load(usernames=username),
@@ -166,18 +167,17 @@ class UsersAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def filter(self, limit: int, cursor: str) -> FdwUser | FdwUserList[FdwUser]:
+    def filter(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUser | FdwUserList[FdwUser]:
         """`List postgres users <MISSING>`_
 
         List all postgres users for a given project. If more than `limit` users exist, a cursor for pagination will be
         returned with the response.
 
-        Args: 
+        Args:
             limit (int): None
-            cursor (str): Cursor for pagination
-        
+
         Returns:
-            FdwUser | Sequence[FdwUser]: A user
+            FdwUser | FdwUserList[FdwUser]: A user
 
         Examples:
 
@@ -191,10 +191,10 @@ class UsersAPI(APIClient):
 
         Retreive a list of postgres users by their usernames, optionally ignoring unknown usernames
 
-        Args: 
+        Args:
             username (str | SequenceNotStr[str]): Username to authenticate the user on the DB.
             ignore_unknown_ids (bool): Ignore usernames that are not found
-        
+
         Returns:
             FdwUser: A user
 
@@ -205,17 +205,17 @@ class UsersAPI(APIClient):
         """
         "<MISSING>"
 
-    def list(self, limit: int | None = 100) -> FdwUser | FdwUserList[FdwUser]:
+    def list(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUser | FdwUserList[FdwUser]:
         """`Fetch scoped users <MISSING>`_
 
         List all users in a given project. If more than `limit` users exist, a cursor for pagination will be returned
         with the response.
 
-        Args: 
-            limit (int | None): Limits the number of results to be returned. The maximum results returned by the server is 100 even if you specify a higher limit.
-        
+        Args:
+            limit (int): Limits the number of results to be returned. The maximum results returned by the server is 100 even if you specify a higher limit.
+
         Returns:
-            FdwUser | Sequence[FdwUser]: A user
+            FdwUser | FdwUserList[FdwUser]: A user
 
         Examples:
 
