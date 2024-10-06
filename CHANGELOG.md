@@ -17,9 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.7] - 2024-10-07
+### Fixed
+- Several bugfixes for the filter `InAssetSubtree`:
+  - No longer causes `CogniteAPIError` when used, by accepting a list of values rather than a single value.
+  - Loading via `Filter.load` now works as expected (a regression introduced in 7.38.3).
+
 ## [7.62.6] - 2024-09-27
 ### Fixed
-- Instances with a single property no longer fail `to_pandas()` with `TypeError`, when using expand_properties=True.
+- Instances with a single property no longer fail `to_pandas()` with `TypeError`, when using `expand_properties=True`.
 
 ## [7.62.5] - 2024-09-26
 ### Added

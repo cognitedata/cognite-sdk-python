@@ -9,7 +9,7 @@ import cognite.client.data_classes.filters as f
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
 
 if TYPE_CHECKING:
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     yield pytest.param(
+        f.And,
         {
             "and": [
                 {"in": {"property": ["tag"], "values": ["1001_1", "1001_1"]}},
@@ -28,6 +29,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Or,
         {
             "or": [
                 {"equals": {"property": ["name"], "value": "Quentin Tarantino"}},
@@ -43,16 +45,19 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Not,
         {"not": {"equals": {"property": ["scenario"], "value": "scenario7"}}},
         id="Not equals",
     )
 
     yield pytest.param(
+        f.Range,
         {"range": {"property": ["weight"], "lte": 100, "gt": 0}},
         id="Range, lte and gt",
     )
 
     yield pytest.param(
+        f.And,
         {
             "and": [
                 {
@@ -70,6 +75,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Or,
         {
             "or": [
                 {
@@ -85,6 +91,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         id="Or overlaps or containsAny",
     )
     yield pytest.param(
+        f.Nested,
         {
             "nested": {
                 "scope": ("space", "container", "prop"),
@@ -95,13 +102,16 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
-        {"range": {"property": ["weight"], "gte": {"property": ["capacity"]}}}, id="Range with gte another property"
+        f.Range,
+        {"range": {"property": ["weight"], "gte": {"property": ["capacity"]}}},
+        id="Range with gte another property",
     )
 
     yield pytest.param(
-        {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
+        f.Prefix, {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
     )
     yield pytest.param(
+        f.Prefix,
         {
             "prefix": {
                 "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
@@ -116,6 +126,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         id="prefix with list of dicts",
     )
     yield pytest.param(
+        f.Prefix,
         {
             "prefix": {
                 "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
@@ -129,11 +140,22 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         },
         id="prefix with list of objects",
     )
+    yield pytest.param(
+        f.InAssetSubtree,
+        {
+            "inAssetSubtree": {
+                "property": ["assetIds"],
+                "values": [11, 22],
+            }
+        },
+        id="InAssetSubtree with list of asset ids",
+    )
 
 
-@pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
-def test_load_and_dump_equals(raw_data: dict) -> None:
+@pytest.mark.parametrize("expected_filter_cls, raw_data", list(load_and_dump_equals_data()))
+def test_load_and_dump_equals(expected_filter_cls: type[Filter], raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
+    assert isinstance(parsed, expected_filter_cls)
     dumped = parsed.dump(camel_case_property=False)
     assert dumped == raw_data
 
@@ -273,6 +295,19 @@ class TestSpaceFilter:
     def test_space_filter_passes_isinstance_checks(self) -> None:
         space_filter = f.SpaceFilter("myspace", "edge")
         assert isinstance(space_filter, Filter)
+
+    @pytest.mark.parametrize(
+        "body",
+        (
+            {"property": ["edge", "space"], "value": "myspace"},
+            {"property": ["node", "space"], "values": ["myspace", "another"]},
+        ),
+    )
+    def test_space_filter_loads_as_unknown(self, body: dict[str, str | list[str]]) -> None:
+        # Space Filter is an SDK concept, so it should load as an UnknownFilter:
+        dumped = {f.SpaceFilter._filter_name: body}
+        loaded_flt = Filter.load(dumped)
+        assert isinstance(loaded_flt, UnknownFilter)
 
     @pytest.mark.parametrize(
         "space_filter",

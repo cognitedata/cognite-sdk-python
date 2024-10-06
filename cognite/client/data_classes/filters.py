@@ -174,10 +174,10 @@ class Filter(ABC):
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
+        elif (filter_body := filter_.get(InAssetSubtree._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
-                value=_load_filter_value(filter_body["value"]),
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
         elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
@@ -254,7 +254,7 @@ def _validate_filter(
 
 
 class CompoundFilter(Filter, ABC):
-    _filter_name = "compound"
+    _filter_name: str
 
     def __init__(self, *filters: Filter) -> None:
         if not_flt := [flt for flt in filters if not isinstance(flt, Filter)]:
@@ -266,7 +266,7 @@ class CompoundFilter(Filter, ABC):
 
 
 class FilterWithProperty(Filter, ABC):
-    _filter_name = "propertyFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference) -> None:
         self._property = property
@@ -279,7 +279,7 @@ class FilterWithProperty(Filter, ABC):
 
 
 class FilterWithPropertyAndValue(FilterWithProperty, ABC):
-    _filter_name = "propertyAndValueFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference, value: FilterValue) -> None:
         super().__init__(property)
@@ -290,7 +290,7 @@ class FilterWithPropertyAndValue(FilterWithProperty, ABC):
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
-    _filter_name = "propertyAndValueListFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
         super().__init__(property)
@@ -790,7 +790,27 @@ class GeoJSONWithin(GeoJSON):
 
 
 @final
-class InAssetSubtree(FilterWithPropertyAndValue):
+class InAssetSubtree(FilterWithPropertyAndValueList):
+    """Filters results based on whether item/resource is connected to an asset with an ID (or external ID)
+    that is in the subtree rooted at any of the provided IDs.
+
+    Args:
+        property (PropertyReference): The property to filter on, e.g. 'assetId' or 'assetExternalId'.
+        values (FilterValueList): The value(s) to filter on.
+
+    Example:
+
+        Count the number of documents with a related asset in a subtree rooted at any of
+        the specified external IDs, e.g. 'Plant_1' and 'Plant_2':
+
+            >>> client.documents.aggregate_count(
+            ...     filter=filters.InAssetSubtree(
+            ...         property=DocumentProperty.asset_external_ids,
+            ...         values=['Plant_1', 'Plant_2'],
+            ...     )
+            ... )
+    """
+
     _filter_name = "inAssetSubtree"
 
 
@@ -826,6 +846,8 @@ class SpaceFilter(FilterWithProperty):
 
             >>> flt = SpaceFilter("space3", instance_type="edge")
     """
+
+    _filter_name = "__space"
 
     def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
         super().__init__(property=[instance_type, "space"])
