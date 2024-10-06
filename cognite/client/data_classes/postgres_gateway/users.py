@@ -32,10 +32,10 @@ class SessionCredentials(CogniteObject):
         )
 
 
-class _FdwUserCore(WriteableCogniteResource["FdwUserWrite"], ABC): ...
+class _UserCore(WriteableCogniteResource["UserWrite"], ABC): ...
 
 
-class FdwUserWrite(_FdwUserCore):
+class UserWrite(_UserCore):
     """A postgres gateway **user** (also a typical postgres user) owns the foreign tables (built in or custom).
 
     The created postgres user only has access to use foreign tables and cannot directly create tables users. To create
@@ -66,11 +66,11 @@ class FdwUserWrite(_FdwUserCore):
 
         return output
 
-    def as_write(self) -> FdwUserWrite:
+    def as_write(self) -> UserWrite:
         return self
 
 
-class FdwUser(_FdwUserCore):
+class User(_UserCore):
     """A user.
 
     This is the read/response format of the fdw user.
@@ -123,12 +123,12 @@ class FdwUserUpdate(CogniteUpdate):
         ]
 
 
-class FdwUserWriteList(CogniteResourceList[FdwUserWrite]):
-    _RESOURCE = FdwUserWrite
+class FdwUserWriteList(CogniteResourceList[UserWrite]):
+    _RESOURCE = UserWrite
 
 
-class FdwUserList(WriteableCogniteResourceList[FdwUserWrite, FdwUser]):
-    _RESOURCE = FdwUser
+class FdwUserList(WriteableCogniteResourceList[UserWrite, User]):
+    _RESOURCE = User
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
