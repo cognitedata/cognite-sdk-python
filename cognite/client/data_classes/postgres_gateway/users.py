@@ -105,8 +105,10 @@ class User(_UserCore):
 class UserUpdate(CogniteUpdate):
     def __init__(
         self,
+        username: str,
     ) -> None:
         super().__init__()
+        self.username = username
 
     class _UpdateItemSessionCredentialsUpdate(CognitePrimitiveUpdate):
         def set(self, value: SessionCredentials | None) -> UserUpdate:
