@@ -7,7 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.postgres_gateway.users import FdwUser, FdwUserList, FdwUserUpdate, FdwUserWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import UsernameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -73,8 +73,14 @@ class UsersAPI(APIClient):
         """
         return self()
 
+    @overload
+    def create(self, create_user: FdwUserWrite) -> FdwUser: ...
+
+    @overload
+    def create(self, create_user: Sequence[FdwUserWrite]) -> FdwUserList: ...
+
     def create(self, create_user: FdwUserWrite | Sequence[FdwUserWrite]) -> FdwUser | FdwUserList:
-        """`Create Users <MISSING>`_
+        """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
 
         Create postgres users.
 
@@ -89,10 +95,10 @@ class UsersAPI(APIClient):
             Create fdw user:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgresgateway import FdwUserWrite
+                >>> from cognite.client.data_classes.postgres_gateway import FdwUserWrite
                 >>> client = CogniteClient()
                 >>> fdw_user = FdwUserWrite(<MISSING>)
-                >>> res = client.hosted_extractors.destinations.create(fdw_user)
+                >>> res = client.postgres_gateways.users.create(fdw_user)
 
         """
         self._warning.warn()
@@ -104,31 +110,39 @@ class UsersAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def update(self, unknown: FdwUserUpdate) -> FdwUser | FdwUserList:
-        """`Update users <MISSING>`_
+    @overload
+    def update(self, items: FdwUserUpdate) -> FdwUser: ...
+
+    @overload
+    def update(self, items: FdwUserWrite) -> FdwUser: ...
+
+    def update(
+        self, items: FdwUserUpdate | FdwUserWrite | Sequence[FdwUserUpdate | FdwUserWrite]
+    ) -> FdwUser | FdwUserList:
+        """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
 
         Update postgres users
 
         Args:
-            unknown (FdwUserUpdate): None
+            items (FdwUserUpdate | FdwUserWrite | Sequence[FdwUserUpdate | FdwUserWrite]): No description.
 
         Returns:
-            FdwUser | FdwUserList[FdwUser]: A user
+            FdwUser | FdwUserList: The updated user(s)
 
         Examples:
 
             Update fdw user:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgresgateway import FdwUserUpdate
+                >>> from cognite.client.data_classes.postgres_gateway import FdwUserUpdate
                 >>> client = CogniteClient()
                 >>> update = FdwUserUpdate('myFdwUser').<MISSING>
-                >>> res = client.postgresgateway.users.update.update(update)
+                >>> res = client.postgres_gateways.users.update.update(update)
 
         """
         self._warning.warn()
         return self._update_multiple(
-            items=unknown,
+            items=items,
             list_cls=FdwUserList,
             resource_cls=FdwUser,
             update_cls=FdwUserUpdate,
@@ -136,7 +150,7 @@ class UsersAPI(APIClient):
         )
 
     def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> None:
-        """`Delete postgres user(s) <MISSING>`_
+        """`Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_
 
         Delete postgres users
 
@@ -151,7 +165,7 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.postgresgateway.users.delete.delete(["myFdw", "myFdw2"])
+                >>> client.postgres_gateways.users.delete.delete(["myFdw", "myFdw2"])
 
 
         """
@@ -159,54 +173,53 @@ class UsersAPI(APIClient):
         extra_body_fields: dict[str, Any] = {}
         extra_body_fields["ignore_unknown_ids"] = ignore_unknown_ids
 
-        return self._delete_multiple(
-            identifiers=IdentifierSequence.load(usernames=username),
+        self._delete_multiple(
+            identifiers=UsernameSequence.load(usernames=username),
             wrap_ids=True,
             returns_items=False,
             extra_body_fields=extra_body_fields or None,
             headers={"cdf-version": "beta"},
         )
 
-    def filter(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUser | FdwUserList[FdwUser]:
-        """`List postgres users <MISSING>`_
+    @overload
+    def retrieve(self, username: str, ignore_unknown_ids: bool) -> FdwUser: ...
 
-        List all postgres users for a given project. If more than `limit` users exist, a cursor for pagination will be
-        returned with the response.
+    @overload
+    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool) -> FdwUserList: ...
 
-        Args:
-            limit (int): None
+    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> FdwUser | FdwUserList:
+        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
 
-        Returns:
-            FdwUser | FdwUserList[FdwUser]: A user
-
-        Examples:
-
-            <MISSING>
-
-        """
-        "<MISSING>"
-
-    def retreive(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> FdwUser:
-        """`Retrieve a list of users by their usernames <MISSING>`_
-
-        Retreive a list of postgres users by their usernames, optionally ignoring unknown usernames
+        Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
         Args:
             username (str | SequenceNotStr[str]): Username to authenticate the user on the DB.
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
         Returns:
-            FdwUser: A user
+            FdwUser | FdwUserList: A user
 
         Examples:
 
-            <MISSING>
+            Retrieve fdw user:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.postgres_gateways.users.retrieve("myFdw", ignore_unknown_ids=True)
 
         """
-        "<MISSING>"
+        self._warning.warn()
 
-    def list(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUser | FdwUserList[FdwUser]:
-        """`Fetch scoped users <MISSING>`_
+        return self._retrieve_multiple(
+            list_cls=FdwUserList,
+            resource_cls=FdwUser,
+            identifiers=UsernameSequence.load(usernames=username),
+            ignore_unknown_ids=ignore_unknown_ids,
+            headers={"cdf-version": "beta"},
+        )
+
+    def list(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUserList:
+        """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
 
         List all users in a given project. If more than `limit` users exist, a cursor for pagination will be returned
         with the response.
@@ -215,7 +228,7 @@ class UsersAPI(APIClient):
             limit (int): Limits the number of results to be returned. The maximum results returned by the server is 100 even if you specify a higher limit.
 
         Returns:
-            FdwUser | FdwUserList[FdwUser]: A user
+            FdwUserList: A list of users
 
         Examples:
 
@@ -223,20 +236,20 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> fdw_user_list = client.postgresgateway.users.list(limit=5)
+                >>> fdw_user_list = client.postgres_gateways.users.list(limit=5)
 
             Iterate over fdw users::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for fdw_user in client.postgresgateway.users:
+                >>> for fdw_user in client.postgres_gateways.users:
                 ...     fdw_user # do something with the fdw user
 
             Iterate over chunks of fdw users to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for fdw_user_list in client.postgresgateway.users(chunk_size=25):
+                >>> for fdw_user_list in client.postgres_gateways.users(chunk_size=25):
                 ...     fdw_user_list # do something with the fdw users
 
         """
@@ -244,7 +257,7 @@ class UsersAPI(APIClient):
         return self._list(
             list_cls=FdwUserList,
             resource_cls=FdwUser,
-            method="GET",
+            method="POST",
             limit=limit,
             headers={"cdf-version": "beta"},
         )

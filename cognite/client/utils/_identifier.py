@@ -156,6 +156,20 @@ class UserIdentifier:
         return self.__value
 
 
+class Username:
+    def __init__(self, value: str) -> None:
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "username"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
         self.__version: str = version
@@ -353,6 +367,22 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one user identifier (string) must be specified")
+
+
+class UsernameSequence(IdentifierSequenceCore[Username]):
+    @classmethod
+    def load(cls, usernames: str | SequenceNotStr[str]) -> UsernameSequence:
+        if isinstance(usernames, str):
+            return cls([Username(usernames)], is_singleton=True)
+
+        elif isinstance(usernames, Sequence):
+            return cls(list(map(Username, map(str, usernames))), is_singleton=False)
+
+        raise TypeError(f"usernames must be of type str or SequenceNotStr[str]. Found {type(usernames)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one usernames (string) must be specified")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
