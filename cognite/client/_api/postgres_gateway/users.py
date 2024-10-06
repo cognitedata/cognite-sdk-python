@@ -74,18 +74,18 @@ class UsersAPI(APIClient):
         return self()
 
     @overload
-    def create(self, create_user: UserWrite) -> User: ...
+    def create(self, user: UserWrite) -> User: ...
 
     @overload
-    def create(self, create_user: Sequence[UserWrite]) -> UserList: ...
+    def create(self, user: Sequence[UserWrite]) -> UserList: ...
 
-    def create(self, create_user: UserWrite | Sequence[UserWrite]) -> User | UserList:
+    def create(self, user: UserWrite | Sequence[UserWrite]) -> User | UserList:
         """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
 
         Create postgres users.
 
         Args:
-            create_user (UserWrite | Sequence[UserWrite]): None
+            user (UserWrite | Sequence[UserWrite]): None
 
         Returns:
             User | UserList: A user
@@ -105,7 +105,7 @@ class UsersAPI(APIClient):
         return self._create_multiple(
             list_cls=UserList,
             resource_cls=User,
-            items=create_user,
+            items=user,
             input_resource_cls=UserWrite,
             headers={"cdf-version": "beta"},
         )
