@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.postgres_gateway.users import FdwUserList, FdwUserUpdate, User, UserWrite
+from cognite.client.data_classes.postgres_gateway.users import User, UserList, UserUpdate, UserWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import UsernameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -39,22 +39,22 @@ class UsersAPI(APIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[User] | Iterator[FdwUserList]:
-        """Iterate over fdw users
+    ) -> Iterator[User] | Iterator[UserList]:
+        """Iterate over users
 
-        Fetches fdw user as they are iterated over, so you keep a limited number of fdw users in memory.
+        Fetches user as they are iterated over, so you keep a limited number of users in memory.
 
         Args:
-            chunk_size (int | None): Number of fdw users to return in each chunk. Defaults to yielding one fdw user a time.
+            chunk_size (int | None): Number of users to return in each chunk. Defaults to yielding one user a time.
             limit (int | None): No description.
 
         Returns:
-            Iterator[User] | Iterator[FdwUserList]: yields FdwUser one by one if chunk_size is not specified, else FdwUserList objects.
+            Iterator[User] | Iterator[UserList]: yields FdwUser one by one if chunk_size is not specified, else FdwUserList objects.
         """
         self._warning.warn()
 
         return self._list_generator(
-            list_cls=FdwUserList,
+            list_cls=UserList,
             resource_cls=User,
             method="GET",
             chunk_size=chunk_size,
@@ -63,13 +63,13 @@ class UsersAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[User]:
-        """Iterate over fdw users
+        """Iterate over users
 
-        Fetches fdw users as they are iterated over, so you keep a
-        limited number of fdw users  in memory.
+        Fetches users as they are iterated over, so you keep a
+        limited number of users  in memory.
 
         Returns:
-            Iterator[User]: yields fdw user one by one.
+            Iterator[User]: yields user one by one.
         """
         return self()
 
@@ -77,9 +77,9 @@ class UsersAPI(APIClient):
     def create(self, create_user: UserWrite) -> User: ...
 
     @overload
-    def create(self, create_user: Sequence[UserWrite]) -> FdwUserList: ...
+    def create(self, create_user: Sequence[UserWrite]) -> UserList: ...
 
-    def create(self, create_user: UserWrite | Sequence[UserWrite]) -> User | FdwUserList:
+    def create(self, create_user: UserWrite | Sequence[UserWrite]) -> User | UserList:
         """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
 
         Create postgres users.
@@ -88,11 +88,11 @@ class UsersAPI(APIClient):
             create_user (UserWrite | Sequence[UserWrite]): None
 
         Returns:
-            User | FdwUserList: A user
+            User | UserList: A user
 
         Examples:
 
-            Create fdw user:
+            Create user:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.postgres_gateway import UserWrite
@@ -103,7 +103,7 @@ class UsersAPI(APIClient):
         """
         self._warning.warn()
         return self._create_multiple(
-            list_cls=FdwUserList,
+            list_cls=UserList,
             resource_cls=User,
             items=create_user,
             input_resource_cls=UserWrite,
@@ -111,39 +111,39 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    def update(self, items: FdwUserUpdate) -> User: ...
+    def update(self, items: UserUpdate) -> User: ...
 
     @overload
     def update(self, items: UserWrite) -> User: ...
 
-    def update(self, items: FdwUserUpdate | UserWrite | Sequence[FdwUserUpdate | UserWrite]) -> User | FdwUserList:
+    def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
         """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
 
         Update postgres users
 
         Args:
-            items (FdwUserUpdate | UserWrite | Sequence[FdwUserUpdate | UserWrite]): No description.
+            items (UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]): No description.
 
         Returns:
-            User | FdwUserList: The updated user(s)
+            User | UserList: The updated user(s)
 
         Examples:
 
-            Update fdw user:
+            Update user:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import FdwUserUpdate
+                >>> from cognite.client.data_classes.postgres_gateway import UserUpdate
                 >>> client = CogniteClient()
-                >>> update = FdwUserUpdate('myFdwUser').<MISSING>
+                >>> update = UserUpdate('myFdwUser').<MISSING>
                 >>> res = client.postgres_gateways.users.update.update(update)
 
         """
         self._warning.warn()
         return self._update_multiple(
             items=items,
-            list_cls=FdwUserList,
+            list_cls=UserList,
             resource_cls=User,
-            update_cls=FdwUserUpdate,
+            update_cls=UserUpdate,
             headers={"cdf-version": "beta"},
         )
 
@@ -159,7 +159,7 @@ class UsersAPI(APIClient):
 
         Examples:
 
-            Delete fdw user:
+            Delete user:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -183,9 +183,9 @@ class UsersAPI(APIClient):
     def retrieve(self, username: str, ignore_unknown_ids: bool) -> User: ...
 
     @overload
-    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool) -> FdwUserList: ...
+    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool) -> UserList: ...
 
-    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> User | FdwUserList:
+    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> User | UserList:
         """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
@@ -195,11 +195,11 @@ class UsersAPI(APIClient):
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
         Returns:
-            User | FdwUserList: A user
+            User | UserList: A user
 
         Examples:
 
-            Retrieve fdw user:
+            Retrieve user:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
@@ -209,14 +209,14 @@ class UsersAPI(APIClient):
         self._warning.warn()
 
         return self._retrieve_multiple(
-            list_cls=FdwUserList,
+            list_cls=UserList,
             resource_cls=User,
             identifiers=UsernameSequence.load(usernames=username),
             ignore_unknown_ids=ignore_unknown_ids,
             headers={"cdf-version": "beta"},
         )
 
-    def list(self, limit: int = DEFAULT_LIMIT_READ) -> FdwUserList:
+    def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
         """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
 
         List all users in a given project. If more than `limit` users exist, a cursor for pagination will be returned
@@ -226,34 +226,34 @@ class UsersAPI(APIClient):
             limit (int): Limits the number of results to be returned. The maximum results returned by the server is 100 even if you specify a higher limit.
 
         Returns:
-            FdwUserList: A list of users
+            UserList: A list of users
 
         Examples:
 
-            List fdw users:
+            List users:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> fdw_user_list = client.postgres_gateways.users.list(limit=5)
 
-            Iterate over fdw users::
+            Iterate over users::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for fdw_user in client.postgres_gateways.users:
-                ...     fdw_user # do something with the fdw user
+                ...     fdw_user # do something with the user
 
-            Iterate over chunks of fdw users to reduce memory load::
+            Iterate over chunks of users to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for fdw_user_list in client.postgres_gateways.users(chunk_size=25):
-                ...     fdw_user_list # do something with the fdw users
+                ...     fdw_user_list # do something with the users
 
         """
         self._warning.warn()
         return self._list(
-            list_cls=FdwUserList,
+            list_cls=UserList,
             resource_cls=User,
             method="POST",
             limit=limit,
