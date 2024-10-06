@@ -49,7 +49,7 @@ class UsersAPI(APIClient):
             limit (int | None): No description.
 
         Returns:
-            Iterator[User] | Iterator[UserList]: yields FdwUser one by one if chunk_size is not specified, else FdwUserList objects.
+            Iterator[User] | Iterator[UserList]: yields User one by one if chunk_size is not specified, else UserList objects.
         """
         self._warning.warn()
 
@@ -97,8 +97,8 @@ class UsersAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.postgres_gateway import UserWrite
                 >>> client = CogniteClient()
-                >>> fdw_user = UserWrite(<MISSING>)
-                >>> res = client.postgres_gateways.users.create(fdw_user)
+                >>> user = UserWrite(<MISSING>)
+                >>> res = client.postgres_gateways.users.create(user)
 
         """
         self._warning.warn()
@@ -134,7 +134,7 @@ class UsersAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.postgres_gateway import UserUpdate
                 >>> client = CogniteClient()
-                >>> update = UserUpdate('myFdwUser').<MISSING>
+                >>> update = UserUpdate('myUser').<MISSING>
                 >>> res = client.postgres_gateways.users.update.update(update)
 
         """
@@ -163,7 +163,7 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.postgres_gateways.users.delete.delete(["myFdw", "myFdw2"])
+                >>> client.postgres_gateways.users.delete.delete(["myUser", "myUser2"])
 
 
         """
@@ -203,7 +203,7 @@ class UsersAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.postgres_gateways.users.retrieve("myFdw", ignore_unknown_ids=True)
+                    >>> res = client.postgres_gateways.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
         self._warning.warn()
@@ -234,21 +234,21 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> fdw_user_list = client.postgres_gateways.users.list(limit=5)
+                >>> ser_list = client.postgres_gateways.users.list(limit=5)
 
             Iterate over users::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for fdw_user in client.postgres_gateways.users:
-                ...     fdw_user # do something with the user
+                >>> for user in client.postgres_gateways.users:
+                ...     user # do something with the user
 
             Iterate over chunks of users to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for fdw_user_list in client.postgres_gateways.users(chunk_size=25):
-                ...     fdw_user_list # do something with the users
+                >>> for user_list in client.postgres_gateways.users(chunk_size=25):
+                ...     user_list # do something with the users
 
         """
         self._warning.warn()
@@ -257,5 +257,6 @@ class UsersAPI(APIClient):
             resource_cls=User,
             method="POST",
             limit=limit,
+            resource_path=self._RESOURCE_PATH + "/list",
             headers={"cdf-version": "beta"},
         )
