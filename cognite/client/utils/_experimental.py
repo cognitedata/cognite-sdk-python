@@ -6,7 +6,10 @@ from typing import Literal
 
 class FeaturePreviewWarning(FutureWarning):
     def __init__(
-        self, api_maturity: Literal["alpha", "beta"], sdk_maturity: Literal["alpha", "beta"], feature_name: str
+        self,
+        api_maturity: Literal["alpha", "beta", "General Availability"],
+        sdk_maturity: Literal["alpha", "beta"],
+        feature_name: str,
     ):
         self.api_version = api_maturity
         self.sdk_version = sdk_maturity
@@ -15,7 +18,8 @@ class FeaturePreviewWarning(FutureWarning):
     def __str__(self) -> str:
         if self.api_version == "alpha" or self.sdk_version == "alpha":
             return (
-                f"{self.feature_name} is in alpha and is subject to breaking changes without notice. API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
+                f"{self.feature_name} is in alpha and is subject to breaking changes without prior notice. "
+                f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
                 "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
             )
         else:
