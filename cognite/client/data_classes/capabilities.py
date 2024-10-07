@@ -8,7 +8,7 @@ import logging
 import warnings
 from abc import ABC
 from collections.abc import Iterable, Sequence
-from dataclasses import asdict, dataclass, field
+from dataclasses import InitVar, asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, NoReturn, cast
@@ -53,15 +53,13 @@ class Capability(ABC):
     _capability_name: ClassVar[str]
     actions: Sequence[Action]
     scope: Scope
-    # TODO: Python 3.10: Remove 'allow_unknown' for all subclasses by using:
-    #       InitVar = field(default=False, kw_only=True, ...)
-    allow_unknown: bool
+    allow_unknown: InitVar[bool] = field(default=False, kw_only=True)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, allow_unknown: bool) -> None:
         try:
             # There are so many things that may fail validation; non-enum passed, not iterable etc.
             # We always want to show the example usage to the user.
-            if not self.allow_unknown:
+            if not allow_unknown:
                 self._validate()
         except Exception as err:
             acl_name = "ACL" if (cls := type(self)) is UnknownAcl else cls.__name__
@@ -532,7 +530,6 @@ class UnknownAcl(Capability):
 
     capability_name: str = "unknownAcl"
     raw_data: dict[str, Any] = field(default_factory=dict)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     @classmethod
     def show_example_usage(cls) -> Literal[""]:
@@ -544,7 +541,6 @@ class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -560,7 +556,6 @@ class AnnotationsAcl(Capability):
     _capability_name = "annotationsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -577,7 +572,6 @@ class AssetsAcl(Capability):
     _capability_name = "assetsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -593,7 +587,6 @@ class DataSetsAcl(Capability):
     _capability_name = "datasetsAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -610,7 +603,6 @@ class DigitalTwinAcl(Capability):
     _capability_name = "digitalTwinAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -625,7 +617,6 @@ class EntityMatchingAcl(Capability):
     _capability_name = "entitymatchingAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -640,7 +631,6 @@ class EventsAcl(Capability):
     _capability_name = "eventsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -656,7 +646,6 @@ class ExtractionPipelinesAcl(Capability):
     _capability_name = "extractionPipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -673,7 +662,6 @@ class ExtractionsRunAcl(Capability):
     _capability_name = "extractionRunsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -690,7 +678,6 @@ class ExtractionConfigsAcl(Capability):
     _capability_name = "extractionConfigsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -707,7 +694,6 @@ class FilesAcl(Capability):
     _capability_name = "filesAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -723,7 +709,6 @@ class FunctionsAcl(Capability):
     _capability_name = "functionsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -738,7 +723,6 @@ class GeospatialAcl(Capability):
     _capability_name = "geospatialAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -753,7 +737,6 @@ class GeospatialCrsAcl(Capability):
     _capability_name = "geospatialCrsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -768,7 +751,6 @@ class GroupsAcl(Capability):
     _capability_name = "groupsAcl"
     actions: Sequence[Action]
     scope: AllScope | CurrentUserScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Create = "CREATE"
@@ -787,7 +769,6 @@ class LabelsAcl(Capability):
     _capability_name = "labelsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -803,7 +784,6 @@ class LocationFiltersAcl(Capability):
     _capability_name = "locationFiltersAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -819,7 +799,6 @@ class ProjectsAcl(Capability):
     _capability_name = "projectsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -837,7 +816,6 @@ class RawAcl(Capability):
     _capability_name = "rawAcl"
     actions: Sequence[Action]
     scope: AllScope | TableScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -854,7 +832,6 @@ class RelationshipsAcl(Capability):
     _capability_name = "relationshipsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -870,7 +847,6 @@ class RoboticsAcl(Capability):
     _capability_name = "roboticsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -888,7 +864,6 @@ class SecurityCategoriesAcl(Capability):
     _capability_name = "securityCategoriesAcl"
     actions: Sequence[Action]
     scope: AllScope | IDScopeLowerCase
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         MemberOf = "MEMBEROF"
@@ -907,7 +882,6 @@ class SeismicAcl(Capability):
     _capability_name = "seismicAcl"
     actions: Sequence[Action]
     scope: AllScope | PartitionScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -923,7 +897,6 @@ class SequencesAcl(Capability):
     _capability_name = "sequencesAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -939,7 +912,6 @@ class SessionsAcl(Capability):
     _capability_name = "sessionsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         List = "LIST"
@@ -955,7 +927,6 @@ class ThreeDAcl(Capability):
     _capability_name = "threedAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -973,7 +944,6 @@ class TimeSeriesAcl(Capability):
     _capability_name = "timeSeriesAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | IDScopeLowerCase | AssetRootIDScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -991,7 +961,6 @@ class TimeSeriesSubscriptionsAcl(Capability):
     _capability_name = "timeSeriesSubscriptionsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1007,7 +976,6 @@ class TransformationsAcl(Capability):
     _capability_name = "transformationsAcl"
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1023,7 +991,6 @@ class TypesAcl(Capability):
     _capability_name = "typesAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1038,7 +1005,6 @@ class WellsAcl(Capability):
     _capability_name = "wellsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1053,7 +1019,6 @@ class ExperimentsAcl(Capability):
     _capability_name = "experimentAcl"
     actions: Sequence[Action]
     scope: ExperimentsScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Use = "USE"
@@ -1074,7 +1039,6 @@ class TemplateGroupsAcl(Capability):
     _capability_name = "templateGroupsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1090,7 +1054,6 @@ class TemplateInstancesAcl(Capability):
     _capability_name = "templateInstancesAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1106,7 +1069,6 @@ class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1124,7 +1086,6 @@ class DataModelsAcl(Capability):
     _capability_name = "dataModelsAcl"
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1141,7 +1102,6 @@ class PipelinesAcl(Capability):
     _capability_name = "pipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1156,7 +1116,6 @@ class DocumentPipelinesAcl(Capability):
     _capability_name = "documentPipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1171,7 +1130,6 @@ class FilePipelinesAcl(Capability):
     _capability_name = "filePipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1186,7 +1144,6 @@ class NotificationsAcl(Capability):
     _capability_name = "notificationsAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1201,7 +1158,6 @@ class ScheduledCalculationsAcl(Capability):
     _capability_name = "scheduledCalculationsAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1216,7 +1172,6 @@ class MonitoringTasksAcl(Capability):
     _capability_name = "monitoringTasksAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1231,7 +1186,6 @@ class HostedExtractorsAcl(Capability):
     _capability_name = "hostedExtractorsAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1246,7 +1200,6 @@ class VisionModelAcl(Capability):
     _capability_name = "visionModelAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1261,7 +1214,6 @@ class DocumentFeedbackAcl(Capability):
     _capability_name = "documentFeedbackAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Create = "CREATE"
@@ -1277,7 +1229,6 @@ class WorkflowOrchestrationAcl(Capability):
     _capability_name = "workflowOrchestrationAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1307,7 +1258,6 @@ class UserProfilesAcl(Capability):
     _capability_name = "userProfilesAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1321,7 +1271,6 @@ class AuditlogAcl(Capability):
     _capability_name = "auditlogAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1335,7 +1284,6 @@ class LegacyModelHostingAcl(LegacyCapability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1350,7 +1298,6 @@ class LegacyGenericsAcl(LegacyCapability):
     _capability_name = "genericsAcl"
     actions: Sequence[Action]
     scope: AllScope
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
