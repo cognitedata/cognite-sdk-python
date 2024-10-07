@@ -257,7 +257,7 @@ def query_with_non_yaml_native_data_classes() -> q.Query:
 class TestQuery:
     @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
-        actual = q.Query.load_yaml(raw_data)
+        actual = q.Query.load(raw_data)
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)
 
     def test_dump_yaml_no_tags(self, query_with_non_yaml_native_data_classes: q.Query) -> None:
