@@ -23,7 +23,7 @@ List Users
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.list
 
 
-Documents classes
+User classes
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.postgres_gateway
     :members:

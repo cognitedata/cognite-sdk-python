@@ -33,7 +33,7 @@ class UsersAPI(APIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-    ) -> Iterator[User]: ...
+    ) -> Iterator[UserList]: ...
 
     def __call__(
         self,
@@ -120,7 +120,7 @@ class UsersAPI(APIClient):
     def update(self, items: UserUpdate) -> User: ...
 
     @overload
-    def update(self, items: UserWrite) -> User: ...
+    def update(self, items: Sequence[UserUpdate | UserWrite]) -> UserList: ...
 
     def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
         """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
