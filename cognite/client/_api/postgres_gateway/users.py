@@ -94,10 +94,16 @@ class UsersAPI(APIClient):
 
             Create user:
 
+                >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserWrite
+                >>> from cognite.client.data_classes.postgres_gateway import UserWrite, SessionCredentials
+                >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
-                >>> user = UserWrite(<MISSING>)
+                >>> session = client.iam.sessions.create(
+                ...     ClientCredentials(os.environ.get("IDP_CLIENT_ID"), os.environ.get("IDP_CLIENT_SECRET")),
+                ...     session_type="CLIENT_CREDENTIALS"
+                ... )
+                >>> user = UserWrite(credentials=SessionCredentials(nonce=session.nonce))
                 >>> res = client.postgres_gateways.users.create(user)
 
         """
@@ -131,10 +137,17 @@ class UsersAPI(APIClient):
 
             Update user:
 
+                >>> import os
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import UserUpdate
+                >>> from cognite.client.data_classes.postgres_gateway import UserUpdate, SessionCredentials
+                >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
-                >>> update = UserUpdate('myUser').<MISSING>
+                >>> session = client.iam.sessions.create(
+                ...     ClientCredentials(os.environ.get("IDP_CLIENT_ID"), os.environ.get("IDP_CLIENT_SECRET")),
+                ...     session_type="CLIENT_CREDENTIALS"
+                ... )
+                >>> client = CogniteClient()
+                >>> update = UserUpdate('myUser').credentials.set(SessionCredentials(nonce=session.nonce))
                 >>> res = client.postgres_gateways.users.update.update(update)
 
         """
