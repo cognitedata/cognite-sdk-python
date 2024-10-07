@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class UsersAPI(APIClient):
-    _RESOURCE_PATH = "/postgresgateway/users"
+    _RESOURCE_PATH = "/postgresgateway"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -255,8 +255,7 @@ class UsersAPI(APIClient):
         return self._list(
             list_cls=UserList,
             resource_cls=User,
-            method="POST",
+            method="GET",
             limit=limit,
-            resource_path=f"{self._RESOURCE_PATH}/list",
             headers={"cdf-version": "beta"},
         )
