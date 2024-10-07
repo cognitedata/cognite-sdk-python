@@ -147,7 +147,7 @@ class UsersAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> None:
+    def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_
 
         Delete postgres users
@@ -180,12 +180,12 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, username: str, ignore_unknown_ids: bool) -> User: ...
+    def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User: ...
 
     @overload
-    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool) -> UserList: ...
+    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
-    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool) -> User | UserList:
+    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
         """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames

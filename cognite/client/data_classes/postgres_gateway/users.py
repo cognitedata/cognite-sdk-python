@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 from typing_extensions import Self
 
@@ -123,6 +123,18 @@ class UserUpdate(CogniteUpdate):
         return [
             PropertySpec("credentials", is_nullable=True),
         ]
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (Literal[True]): No description.
+        Returns:
+            dict[str, Any]: A dictionary representation of the instance.
+        """
+        dumped: dict[str, Any] = {"update": self._update_object}
+        dumped["username"] = self.username
+        return dumped
 
 
 class UserWriteList(CogniteResourceList[UserWrite]):
