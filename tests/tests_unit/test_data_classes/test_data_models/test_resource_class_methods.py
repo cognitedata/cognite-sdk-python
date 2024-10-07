@@ -68,10 +68,6 @@ def test_get_instance_lists(node_lst: NodeList, edge_lst: EdgeList, space: str, 
     inst = inst_lst.get((space, "constant"))  # pass by tuple
     assert inst.space == space  # type: ignore [union-attr]
 
-    # Since ext.id is ambiguous, we always get the last (deprecated):
-    inst = inst_lst.get(external_id="constant")
-    assert inst.space == "foo2"  # type: ignore [union-attr]
-
 
 @pytest.mark.parametrize("space", ["foo0", "foo1", "foo2"])
 def test_get_space_list(space_lst: SpaceList, space: str) -> None:

@@ -935,32 +935,19 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
     def _build_id_mappings(self) -> None:
         self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
-        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
-        self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
 
-    def get(
+    def get(  # type: ignore [override]
         self,
-        id: InstanceId | tuple[str, str] | None = None,  # type: ignore [override]
-        external_id: str | None = None,
+        id: InstanceId | tuple[str, str] | None = None,
     ) -> T_Instance | None:
         """Get an instance from this list by instance ID.
 
         Args:
             id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
-            external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
         """
-        # TODO: Remove when we ditch PY3.8
-        if external_id is not None:
-            warnings.warn(
-                "Calling .get with an external ID is deprecated due to being ambiguous in the absense of 'space', and "
-                "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
-                UserWarning,
-            )
-            return self._ext_id_to_item.get(external_id)
-
         if isinstance(id, InstanceId):
             id = id.as_tuple()
         return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
