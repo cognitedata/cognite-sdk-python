@@ -257,6 +257,6 @@ class UsersAPI(APIClient):
             resource_cls=User,
             method="POST",
             limit=limit,
-            resource_path=self._RESOURCE_PATH + "/list",
+            resource_path=f"{self._RESOURCE_PATH}/list",
             headers={"cdf-version": "beta"},
         )
