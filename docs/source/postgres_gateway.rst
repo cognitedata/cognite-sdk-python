@@ -4,23 +4,23 @@ Users API
 ---------------
 Create Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateways.UsersAPI.create
+.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.create
 
 Update Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateways.UsersAPI.update
+.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.update
 
 Delete Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateways.UsersAPI.delete
+.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.delete
 
 Retrieve Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateways.UsersAPI.retrieve
+.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.retrieve
 
 List Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateways.UsersAPI.list
+.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.list
 
 
 Documents classes

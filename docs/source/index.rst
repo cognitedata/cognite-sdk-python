@@ -51,6 +51,7 @@ Contents
    documents
    data_ingestion
    hosted_extractors
+   postgres_gateway
    data_organization
    transformations
    functions
