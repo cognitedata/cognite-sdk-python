@@ -104,7 +104,7 @@ class UsersAPI(APIClient):
                 ...     session_type="CLIENT_CREDENTIALS"
                 ... )
                 >>> user = UserWrite(credentials=SessionCredentials(nonce=session.nonce))
-                >>> res = client.postgres_gateways.users.create(user)
+                >>> res = client.postgres_gateway.users.create(user)
 
         """
         self._warning.warn()
@@ -148,7 +148,7 @@ class UsersAPI(APIClient):
                 ... )
                 >>> client = CogniteClient()
                 >>> update = UserUpdate('myUser').credentials.set(SessionCredentials(nonce=session.nonce))
-                >>> res = client.postgres_gateways.users.update.update(update)
+                >>> res = client.postgres_gateway.users.update.update(update)
 
         """
         self._warning.warn()
@@ -176,7 +176,7 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.postgres_gateways.users.delete.delete(["myUser", "myUser2"])
+                >>> client.postgres_gateway.users.delete.delete(["myUser", "myUser2"])
 
 
         """
@@ -216,7 +216,7 @@ class UsersAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.postgres_gateways.users.retrieve("myUser", ignore_unknown_ids=True)
+                    >>> res = client.postgres_gateway.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
         self._warning.warn()
@@ -247,20 +247,20 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> ser_list = client.postgres_gateways.users.list(limit=5)
+                >>> ser_list = client.postgres_gateway.users.list(limit=5)
 
             Iterate over users::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for user in client.postgres_gateways.users:
+                >>> for user in client.postgres_gateway.users:
                 ...     user # do something with the user
 
             Iterate over chunks of users to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> for user_list in client.postgres_gateways.users(chunk_size=25):
+                >>> for user_list in client.postgres_gateway.users(chunk_size=25):
                 ...     user_list # do something with the users
 
         """

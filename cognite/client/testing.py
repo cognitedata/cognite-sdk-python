@@ -149,8 +149,8 @@ class CogniteClientMock(MagicMock):
         self.hosted_extractors.jobs = MagicMock(spec_set=JobsAPI)
         self.hosted_extractors.mappings = MagicMock(spec_set=MappingsAPI)
 
-        self.postgres_gateways = MagicMock(spec=PostgresGatewaysAPI)
-        self.postgres_gateways.users = MagicMock(spec_set=PostgresUsersAPI)
+        self.postgres_gateway = MagicMock(spec=PostgresGatewaysAPI)
+        self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)

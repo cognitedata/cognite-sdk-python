@@ -74,7 +74,7 @@ class CogniteClient:
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
         self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
-        self.postgres_gateways = PostgresGatewaysAPI(self._config, self._API_VERSION, self)
+        self.postgres_gateway = PostgresGatewaysAPI(self._config, self._API_VERSION, self)
         self.transformations = TransformationsAPI(self._config, self._API_VERSION, self)
         self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
