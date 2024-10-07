@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.8] - 2024-10-07
+### Added
+- [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.
+
 ## [7.62.7] - 2024-10-07
 ### Fixed
 - Several bugfixes for the filter `InAssetSubtree`:
