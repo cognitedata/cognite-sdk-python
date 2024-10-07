@@ -271,7 +271,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
             return identifier["space"]
         if "instanceId" in identifier:
             return InstanceId.load(identifier["instanceId"])
-        raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
+        raise ValueError(f"{identifier} does not contain 'id' or 'externalId', 'space', or 'username'")
 
     @staticmethod
     def extract_identifiers(dct: dict[str, Any]) -> dict[str, str | int]:
