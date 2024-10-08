@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import itertools
 import logging
 import random
 import time
@@ -716,15 +717,19 @@ class InstancesAPI(APIClient):
         return_all_container_versions: bool = False,
     ) -> InstanceInspectResultList:
         identifiers = self._load_node_and_edge_ids(nodes, edges)
-        payload = {
+        options = {
             "inspectionOperations": {
                 "involvedViews": {"allVersions": return_all_view_versions},
                 "involvedContainers": {"allVersions": return_all_container_versions},
-            },
-            "items": identifiers.as_dicts(),
+            }
         }
-        resp = self._post(self._RESOURCE_PATH + "/inspect", json=payload)
-        return InstanceInspectResultList._load(resp.json()["items"], cognite_client=self._cognite_client)
+        # TODO: API claims limit is 1k, but only returns 200 max (<=100 for edges and similar for nodes). Thus
+        #       for now we chunk to just 100 elements:
+        items = itertools.chain.from_iterable(
+            self._post(self._RESOURCE_PATH + "/inspect", json={"items": chunk.as_dicts(), **options}).json()["items"]
+            for chunk in identifiers.chunked(100)
+        )
+        return InstanceInspectResultList._load(list(items), cognite_client=self._cognite_client)
 
     def subscribe(
         self,
