@@ -1243,7 +1243,6 @@ class PostgresGatewayAcl(Capability):
     _capability_name = "postgresGatewayAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
-    allow_unknown: bool = field(default=False, compare=False, repr=False)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
