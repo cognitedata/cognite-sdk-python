@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import collections.abc
+import dataclasses
 import enum
 import gzip
 import importlib
@@ -537,8 +538,10 @@ class FakeCogniteResourceGenerator:
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):
             return self.create_instance(type_)
+        elif type(type_) is dataclasses.InitVar:
+            return self.create_value(type_.type)
 
-        raise NotImplementedError(f"Unsupported container type {container_type}. {self._error_msg}")
+        raise NotImplementedError(f"Unsupported {type_=} or {container_type=}. {self._error_msg}")
 
     def _random_string(
         self,
