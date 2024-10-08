@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -7,6 +9,8 @@ from cognite.client.utils._identifier import (
     InstanceId,
     UserIdentifier,
     UserIdentifierSequence,
+    Username,
+    UsernameSequence,
 )
 
 
@@ -138,3 +142,31 @@ class TestUserIdentifierSequence:
     def test_load_wrong_type(self):
         with pytest.raises(TypeError):
             UserIdentifierSequence.load(123)
+
+
+class TestUsername:
+    def test_methods(self) -> None:
+        user_id = Username("foo")
+        assert user_id.as_primitive() == "foo"
+        assert user_id.as_dict(camel_case=True) == {"username": "foo"}
+        assert user_id.as_dict(camel_case=False) == {"username": "foo"}
+
+
+class TestUsernameSequence:
+    @pytest.mark.parametrize(
+        "usernames, exp_dcts, exp_primitives",
+        (
+            ("foo", [{"username": "foo"}], ["foo"]),
+            (["foo", "bar"], [{"username": "foo"}, {"username": "bar"}], ["foo", "bar"]),
+        ),
+    )
+    def test_load_and_dump(
+        self, usernames: str | list[str], exp_dcts: dict[str, str], exp_primitives: list[str]
+    ) -> None:
+        user_id_seq = UsernameSequence.load(usernames)
+        assert user_id_seq.as_primitives() == exp_primitives
+        assert user_id_seq.as_dicts() == exp_dcts
+
+    def test_load_wrong_type(self) -> None:
+        with pytest.raises(TypeError):
+            UsernameSequence.load(123)
