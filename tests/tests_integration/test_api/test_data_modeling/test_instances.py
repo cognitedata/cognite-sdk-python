@@ -45,7 +45,11 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.instances import TargetUnit
+from cognite.client.data_classes.data_modeling.instances import (
+    InstanceInspectResult,
+    InstanceInspectResultList,
+    TargetUnit,
+)
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -1098,6 +1102,27 @@ class TestInstancesAPI:
             space="cdf_cdm_units", sources=CogniteUnit.get_source(), limit=5
         )
         assert len(nodes) == 5
+
+    def test_inspecting_instances(
+        self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
+    ) -> None:
+        all_inspection_results = cognite_client.data_modeling.instances.inspect(
+            nodes=movie_nodes[:5].as_ids(), edges=movie_edges[0].as_id()
+        )
+        assert isinstance(all_inspection_results, InstanceInspectResultList)
+        assert len(all_inspection_results) == 6
+        *node_results, edge_result = all_inspection_results
+        assert isinstance(edge_result, InstanceInspectResult)
+
+        for node_res in node_results:
+            res = node_res.inspection_results
+            assert res.involved_views and res.involved_views[0].space == "IntegrationTestSpace"
+            assert res.involved_views and res.involved_views[0].external_id == "Movie"
+            assert res.involved_containers and res.involved_containers[0].space == "IntegrationTestSpace"
+            assert res.involved_containers and res.involved_containers[0].external_id == "Movie"
+
+        assert edge_result.inspection_results.involved_views == []
+        assert edge_result.inspection_results.involved_containers == []
 
 
 class TestInstancesSync:
