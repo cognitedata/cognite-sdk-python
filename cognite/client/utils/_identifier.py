@@ -271,7 +271,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
             return identifier["space"]
         if "instanceId" in identifier:
             return InstanceId.load(identifier["instanceId"])
-        raise ValueError(f"{identifier} does not contain 'id' or 'externalId', 'space', or 'username'")
+        raise ValueError(f"{identifier} does not contain 'id' or 'externalId', or 'space'")
 
     @staticmethod
     def extract_identifiers(dct: dict[str, Any]) -> dict[str, str | int]:
@@ -376,13 +376,13 @@ class UsernameSequence(IdentifierSequenceCore[Username]):
             return cls([Username(usernames)], is_singleton=True)
 
         elif isinstance(usernames, Sequence):
-            return cls(list(map(Username, map(str, usernames))), is_singleton=False)
+            return cls([Username(username) for username in usernames], is_singleton=False)
 
         raise TypeError(f"usernames must be of type str or SequenceNotStr[str]. Found {type(usernames)}")
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
-            raise ValueError("Exactly one usernames (string) must be specified")
+            raise ValueError("Exactly one username (string) must be specified")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):

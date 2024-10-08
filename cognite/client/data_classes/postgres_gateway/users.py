@@ -132,9 +132,7 @@ class UserUpdate(CogniteUpdate):
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """
-        dumped: dict[str, Any] = {"update": self._update_object}
-        dumped["username"] = self.username
-        return dumped
+        return {"update": self._update_object, "username": self.username}
 
 
 class UserWriteList(CogniteResourceList[UserWrite]):

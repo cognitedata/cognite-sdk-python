@@ -28,9 +28,7 @@ class TestUsers:
         fresh_credentials: SessionCredentials,
         another_fresh_credentials: SessionCredentials,
     ) -> None:
-        my_user = UserWrite(
-            credentials=fresh_credentials,
-        )
+        my_user = UserWrite(credentials=fresh_credentials)
         created: User | None = None
         try:
             created = cognite_client.postgres_gateway.users.create(my_user)

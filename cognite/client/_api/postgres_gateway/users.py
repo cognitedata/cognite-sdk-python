@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload
+from typing import TYPE_CHECKING, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -45,8 +45,9 @@ class UsersAPI(APIClient):
         Fetches user as they are iterated over, so you keep a limited number of users in memory.
 
         Args:
-            chunk_size (int | None): Number of users to return in each chunk. Defaults to yielding one user a time.
-            limit (int | None): No description.
+            chunk_size (int | None): Number of users to return in each chunk. Defaults to yielding one user at a time.
+            limit (int | None): Maximum number of users to return. Defaults to return all.
+
 
         Returns:
             Iterator[User] | Iterator[UserList]: yields User one by one if chunk_size is not specified, else UserList objects.
@@ -66,7 +67,7 @@ class UsersAPI(APIClient):
         """Iterate over users
 
         Fetches users as they are iterated over, so you keep a
-        limited number of users  in memory.
+        limited number of users in memory.
 
         Returns:
             Iterator[User]: yields user one by one.
@@ -85,10 +86,10 @@ class UsersAPI(APIClient):
         Create postgres users.
 
         Args:
-            user (UserWrite | Sequence[UserWrite]): None
+            user (UserWrite | Sequence[UserWrite]): The user(s) to create.
 
         Returns:
-            User | UserList: A user
+            User | UserList: The created user(s)
 
         Examples:
 
@@ -100,7 +101,7 @@ class UsersAPI(APIClient):
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> session = client.iam.sessions.create(
-                ...     ClientCredentials(os.environ.get("IDP_CLIENT_ID"), os.environ.get("IDP_CLIENT_SECRET")),
+                ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
                 ... )
                 >>> user = UserWrite(credentials=SessionCredentials(nonce=session.nonce))
@@ -128,7 +129,7 @@ class UsersAPI(APIClient):
         Update postgres users
 
         Args:
-            items (UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]): No description.
+            items (UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]): The user(s) to update.
 
         Returns:
             User | UserList: The updated user(s)
@@ -143,12 +144,11 @@ class UsersAPI(APIClient):
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> client = CogniteClient()
                 >>> session = client.iam.sessions.create(
-                ...     ClientCredentials(os.environ.get("IDP_CLIENT_ID"), os.environ.get("IDP_CLIENT_SECRET")),
+                ...     ClientCredentials(os.environ["IDP_CLIENT_ID"], os.environ["IDP_CLIENT_SECRET"]),
                 ...     session_type="CLIENT_CREDENTIALS"
                 ... )
-                >>> client = CogniteClient()
                 >>> update = UserUpdate('myUser').credentials.set(SessionCredentials(nonce=session.nonce))
-                >>> res = client.postgres_gateway.users.update.update(update)
+                >>> res = client.postgres_gateway.users.update(update)
 
         """
         self._warning.warn()
@@ -166,29 +166,28 @@ class UsersAPI(APIClient):
         Delete postgres users
 
         Args:
-            username (str | SequenceNotStr[str]): Username to authenticate the user on the DB.
+            username (str | SequenceNotStr[str]): Usernames of the users to delete.
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
 
         Examples:
 
-            Delete user:
+            Delete users:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.postgres_gateway.users.delete.delete(["myUser", "myUser2"])
+                >>> client.postgres_gateway.users.delete(["myUser", "myUser2"])
 
 
         """
         self._warning.warn()
-        extra_body_fields: dict[str, Any] = {}
-        extra_body_fields["ignore_unknown_ids"] = ignore_unknown_ids
+        extra_body_fields = {"ignore_unknown_ids": ignore_unknown_ids}
 
         self._delete_multiple(
             identifiers=UsernameSequence.load(usernames=username),
             wrap_ids=True,
             returns_items=False,
-            extra_body_fields=extra_body_fields or None,
+            extra_body_fields=extra_body_fields,
             headers={"cdf-version": "beta"},
         )
 
@@ -204,11 +203,11 @@ class UsersAPI(APIClient):
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
         Args:
-            username (str | SequenceNotStr[str]): Username to authenticate the user on the DB.
+            username (str | SequenceNotStr[str]): Usernames of the users to retrieve.
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
         Returns:
-            User | UserList: A user
+            User | UserList: The retrieved user(s).
 
         Examples:
 
@@ -232,11 +231,10 @@ class UsersAPI(APIClient):
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
         """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
 
-        List all users in a given project. If more than `limit` users exist, a cursor for pagination will be returned
-        with the response.
+        List all users in a given project.
 
         Args:
-            limit (int): Limits the number of results to be returned. The maximum results returned by the server is 100 even if you specify a higher limit.
+            limit (int): Limits the number of results to be returned.
 
         Returns:
             UserList: A list of users
@@ -247,7 +245,7 @@ class UsersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> ser_list = client.postgres_gateway.users.list(limit=5)
+                >>> user_list = client.postgres_gateway.users.list(limit=5)
 
             Iterate over users::
 
