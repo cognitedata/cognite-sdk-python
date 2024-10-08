@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.0] - 2024-10-09
+### Added
+- New instance inspection endpoint `client.data_modeling.instances.inspect` enabling easy reverse
+  lookup to find which views and containers they have data in.
+
+## [7.62.8] - 2024-10-08
 ## [7.63.11] - 2024-10-26
 ### Fixed
 - The `/context/diagram/` endpoints are now retried on 5xx and 429 errors.
