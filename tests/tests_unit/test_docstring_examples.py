@@ -26,6 +26,7 @@ from cognite.client._api import (
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
+from cognite.client._api.postgres_gateway import users as postgres_gateway_users
 from cognite.client.testing import CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
@@ -129,3 +130,6 @@ class TestDocstringExamples:
         run_docstring_tests(sources)
         run_docstring_tests(destinations)
         run_docstring_tests(jobs)
+
+    def test_postgres_gateway(self):
+        run_docstring_tests(postgres_gateway_users)
