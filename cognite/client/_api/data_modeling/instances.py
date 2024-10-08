@@ -716,6 +716,31 @@ class InstancesAPI(APIClient):
         return_all_view_versions: bool = False,
         return_all_container_versions: bool = False,
     ) -> InstanceInspectResultList:
+        """`Reverse lookup for instances. <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_
+
+        This method will return the involved views and containers for the given nodes and edges.
+
+        Args:
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node IDs.
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge IDs.
+            return_all_view_versions (bool): Include all view versions in inspection results.
+            return_all_container_versions (bool): Include all container versions in inspection results.
+
+        Returns:
+            InstanceInspectResultList: List of instance inspection results.
+
+        Examples:
+
+            Look up the involved views and containers for a given node and edge:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.inspect(
+                ...     nodes=NodeId("my-space", "foo1"),
+                ...     edges=EdgeId("my-space", "bar2"),
+                ... )
+        """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         options = {
             "inspectionOperations": {
