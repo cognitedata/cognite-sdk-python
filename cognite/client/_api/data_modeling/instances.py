@@ -41,6 +41,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResultList,
     EdgeList,
     InstanceAggregationResultList,
+    InstanceInspectResultList,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
@@ -705,6 +706,25 @@ class InstancesAPI(APIClient):
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
+
+    def inspect(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        *,
+        return_all_view_versions: bool = False,
+        return_all_container_versions: bool = False,
+    ) -> InstanceInspectResultList:
+        identifiers = self._load_node_and_edge_ids(nodes, edges)
+        payload = {
+            "inspectionOperations": {
+                "involvedViews": {"allVersions": return_all_view_versions},
+                "involvedContainers": {"allVersions": return_all_container_versions},
+            },
+            "items": identifiers.as_dicts(),
+        }
+        resp = self._post(self._RESOURCE_PATH + "/inspect", json=payload)
+        return InstanceInspectResultList._load(resp.json()["items"], cognite_client=self._cognite_client)
 
     def subscribe(
         self,

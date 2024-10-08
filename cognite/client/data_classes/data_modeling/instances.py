@@ -516,15 +516,14 @@ class InstanceAggregationResult(DataModelingResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         """
-        Loads an instance from a json string or dictionary.
+        Loads an instance aggregation result from a json string or dictionary.
 
         Args:
             resource (dict): No description.
             cognite_client (CogniteClient | None): No description.
 
         Returns:
-            Self: An instance.
-
+            Self: An instance aggregation result.
         """
         return cls(
             aggregates=[AggregatedNumberedValue.load(agg) for agg in resource["aggregates"]],
@@ -550,6 +549,64 @@ class InstanceAggregationResult(DataModelingResource):
 
 class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResult]):
     _RESOURCE = InstanceAggregationResult
+
+
+class InspectionResults(DataModelingResource):
+    def __init__(self, involved_views: list[ViewId], involved_containers: list[ContainerId]) -> None:
+        self.involved_views = involved_views
+        self.involved_containers = involved_containers
+
+    @classmethod
+    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            involved_views=[ViewId.load(vid) for vid in resource["involvedViews"]],
+            involved_containers=[ContainerId.load(cid) for cid in resource["involvedViews"]],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "involvedViews" if camel_case else "involved_views": [
+                vid.dump(camel_case, include_type=True) for vid in self.involved_views
+            ],
+            "involvedContainers" if camel_case else "involved_containers": [
+                cid.dump(camel_case, include_type=True) for cid in self.involved_containers
+            ],
+        }
+
+
+class InstanceInspectResult(DataModelingResource):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        instance_type: Literal["node", "edge"],
+        inspection_results: InspectionResults,
+    ) -> None:
+        self.space = space
+        self.external_id = external_id
+        self.instance_type = instance_type
+        self.inspection_results = inspection_results
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            instance_type=resource["instanceType"],
+            inspection_results=InspectionResults.load(resource["inspectionResults"]),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+            "inspectionResults" if camel_case else "inspection_results": self.inspection_results.dump(camel_case),
+        }
+
+
+class InstanceInspectResultList(CogniteResourceList[InstanceInspectResult]):
+    _RESOURCE = InstanceInspectResult
 
 
 class NodeApply(InstanceApply["NodeApply"]):
