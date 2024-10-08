@@ -557,20 +557,18 @@ class InspectionResults(DataModelingResource):
         self.involved_containers = involved_containers
 
     @classmethod
-    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             involved_views=[ViewId.load(vid) for vid in resource["involvedViews"]],
-            involved_containers=[ContainerId.load(cid) for cid in resource["involvedViews"]],
+            involved_containers=[ContainerId.load(cid) for cid in resource["involvedContainers"]],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        views = [vid.dump(camel_case, include_type=True) for vid in self.involved_views]
+        containers = [cid.dump(camel_case, include_type=True) for cid in self.involved_containers]
         return {
-            "involvedViews" if camel_case else "involved_views": [
-                vid.dump(camel_case, include_type=True) for vid in self.involved_views
-            ],
-            "involvedContainers" if camel_case else "involved_containers": [
-                cid.dump(camel_case, include_type=True) for cid in self.involved_containers
-            ],
+            "involvedViews" if camel_case else "involved_views": views,
+            "involvedContainers" if camel_case else "involved_containers": containers,
         }
 
 
