@@ -75,6 +75,7 @@ def all_acls():
         {"monitoringTasksAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"notificationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"pipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"postgresGatewayAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"projectsAcl": {"actions": ["UPDATE", "LIST", "READ", "CREATE", "DELETE"], "scope": {"all": {}}}},
         {"rawAcl": {"actions": ["READ", "WRITE", "LIST"], "scope": {"all": {}}}},
         {

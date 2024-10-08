@@ -10,7 +10,7 @@ TMP_DIR = Path(__file__).resolve().parent / "tmp"
 def main(client: CogniteClient):
     new_capabilities = [
         {
-            "hostedExtractorsAcl": {
+            "postgresGatewayAcl": {
                 "actions": ["READ", "WRITE"],
                 "scope": {"all": {}},
             }

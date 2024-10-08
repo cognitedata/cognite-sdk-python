@@ -108,6 +108,7 @@ class APIClient:
                     "extpipes/(list|byids|runs/list)",
                     "workflows/.*",
                     "hostedextractors/.*",
+                    "postgresgateway/.*",
                 )
             )
         ]
