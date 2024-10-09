@@ -17,7 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.62.8] - 2024-10-07
+## [7.63.0] - 2024-10-09
+### Added
+- New instance inspection endpoint `client.data_modeling.instances.inspect` enabling easy reverse
+  lookup to find which views and containers they have data in.
+
+## [7.62.8] - 2024-10-08
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.
 
