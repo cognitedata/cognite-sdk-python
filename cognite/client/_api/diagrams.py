@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import urllib.request
 from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar, cast, overload
 
@@ -393,3 +394,86 @@ class DiagramsAPI(APIClient):
             items=self._process_detect_job(detect_job),
             job_cls=DiagramConvertResults,
         )
+
+    def ocr(
+        self,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+        file_instance_id: NodeId | None = None,
+        start_page: int = 1,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Get ocr text from a file that has been through diagram/detect before.
+            Exactly one of file_id, file_external_id or file_instance_id must be specified.
+        Args:
+            file_id (int | None): file id
+            file_external_id (str | None): file external id
+            file_instance_id (NodeId | None): file instance id
+            start_page (int): First page to get ocr from.
+            limit (int): The maximum number of pages to get ocr from.
+        Returns:
+            list[dict[str, Any]]: List of ocr results per page.
+        """
+        file_reference = FileReference(
+            file_id=file_id, file_external_id=file_external_id, file_instance_id=file_instance_id
+        ).to_api_item()
+
+        response = self._camel_post(
+            "/ocr",
+            json={**file_reference, "start_page": start_page, "limit": limit},
+        )
+        items = response.json()["items"]
+        assert isinstance(items, list)
+        return items
+
+    def create_ocr_svg(self, file_id: int, output_path: str) -> None:
+        """
+        Get ocr text for a single page pdf and create an SVG that overlays it as rectangles on top of a raster image
+        Args:
+            file_id (int): The file id of the file to create an ocr svg for.
+            output_path (str): File path where the output svg is stored.
+        Returns None
+
+        """
+
+        # Verify one page, and also make sure ocr exists.
+        detect_job = self.detect(
+            [{"name": "dummy"}], file_references=FileReference(file_id=file_id, first_page=1, last_page=1)
+        )
+        detect_result = detect_job.result
+
+        file_result = detect_result["items"][0]
+        if file_result["pageCount"] != 1:
+            raise Exception("The file must have one page")
+
+        ocr_result = self.ocr(file_id, start_page=1, limit=1)[0]["annotations"]
+
+        input_items = [
+            {
+                "fileId": file_id,
+                "annotations": [self.ocr_annotation_to_detect_annotation(a) for a in ocr_result][
+                    :1000
+                ],  # For now a limit of the API
+            }
+        ]
+
+        job = self._run_job(
+            job_path="/convert",
+            status_path="/convert/",
+            items=input_items,
+            job_cls=DiagramConvertResults,
+        )
+
+        res = job.result
+
+        svg_link = res["items"][0]["results"][0]["svgUrl"]
+        urllib.request.urlretrieve(svg_link, output_path)
+
+    def ocr_annotation_to_detect_annotation(self, ocr_annotation: dict[str, Any]) -> dict[str, Any]:
+        bounding_box = ocr_annotation["boundingBox"]
+        vertices = [
+            {"x": x, "y": y}
+            for x in [bounding_box["xMin"], bounding_box["xMax"]]
+            for y in [bounding_box["yMin"], bounding_box["yMax"]]
+        ]
+        return {"text": ocr_annotation["text"], "region": {"shape": "rectangle", "page": 1, "vertices": vertices}}
