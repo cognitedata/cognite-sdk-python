@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.9] - 2024-10-09
+### Fixed
+- NodeList and EdgeList (and subclasses) now support using `.get` with an `external_id` as a shortcut over
+  using `instance_id`. When the `external_id` is ambiguous (non-unique, multiple spaces), a ValueError
+  is raised. Thus, using `external_id` is no longer deprecated.
+
 ## [7.62.8] - 2024-10-07
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.

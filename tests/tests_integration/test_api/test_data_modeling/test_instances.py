@@ -813,8 +813,8 @@ class TestInstancesAPI:
         assert "One or more views do not exist: " in error.value.message
         assert view_id.as_source_identifier() in error.value.message
 
-    def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
-        node = movie_nodes.get(external_id="movie:pulp_fiction")
+    def test_dump_json_serialize_load_node(self, movie_nodes: NodeList, integration_test_space: Space) -> None:
+        node = movie_nodes.get((integration_test_space.space, "movie:pulp_fiction"))
         assert node is not None, "Pulp fiction movie not found, please recreate it"
 
         node_dumped = node.dump(camel_case=True)
@@ -823,8 +823,8 @@ class TestInstancesAPI:
 
         assert node == node_loaded
 
-    def test_dump_json_serialize_load_edge(self, movie_edges: EdgeList) -> None:
-        edge = movie_edges.get(external_id="person:quentin_tarantino:director:quentin_tarantino")
+    def test_dump_json_serialize_load_edge(self, movie_edges: EdgeList, integration_test_space: Space) -> None:
+        edge = movie_edges.get((integration_test_space.space, "person:quentin_tarantino:director:quentin_tarantino"))
         assert edge is not None, "Relation between Quentin Tarantino person and director not found, please recreate it"
 
         edge_dumped = edge.dump(camel_case=True)

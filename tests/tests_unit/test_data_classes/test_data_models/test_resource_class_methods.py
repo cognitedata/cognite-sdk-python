@@ -5,6 +5,7 @@ data modelling, like `NodeList.get`, `SpaceList.extend` etc.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Any
 
 import pytest
@@ -68,9 +69,22 @@ def test_get_instance_lists(node_lst: NodeList, edge_lst: EdgeList, space: str, 
     inst = inst_lst.get((space, "constant"))  # pass by tuple
     assert inst.space == space  # type: ignore [union-attr]
 
-    # Since ext.id is ambiguous, we always get the last (deprecated):
-    inst = inst_lst.get(external_id="constant")
-    assert inst.space == "foo2"  # type: ignore [union-attr]
+    # Since ext.id is ambiguous, lookup should raise:
+    with pytest.raises(ValueError, match=r"^external_id='constant' is ambiguous.*Pass 'instance_id' instead\.$"):
+        inst = inst_lst.get(external_id="constant")
+
+    lst1 = node_lst[:1]
+    lst2, lst3 = deepcopy(lst1), deepcopy(lst1)
+    lst2[0].external_id = "different"
+    lst3[0].space = "different"
+    assert lst1.get(external_id="constant") is not None
+
+    lst1.extend(lst2)
+    assert lst1.get(external_id="constant") is not None
+
+    lst1.extend(lst3)  # there are now nodes in two spaces with the same external_id:
+    with pytest.raises(ValueError, match=r"^external_id='constant' is ambiguous.*Pass 'instance_id' instead\.$"):
+        lst1.get(external_id="constant")
 
 
 @pytest.mark.parametrize("space", ["foo0", "foo1", "foo2"])
