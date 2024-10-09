@@ -959,8 +959,8 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
 
         Args:
             instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
-            external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
-            id (InstanceId | tuple[str, str] | None): Backwards-compatible alias for instance_id. Will be removed in the next major version.
+            external_id (str | None): The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
+            id (InstanceId | tuple[str, str] | None): (DEPRECATED) Backwards-compatible alias for instance_id. Will be removed in the next major version.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
