@@ -61,7 +61,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
-from cognite.client.utils._auxiliary import flatten_dict
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, find_duplicates, flatten_dict
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
@@ -944,41 +944,55 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
     def _build_id_mappings(self) -> None:
         self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
-        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
+        # We allow fast lookup via external ID when not ambiguous:
+        self._ambiguous_xids = find_duplicates(inst.external_id for inst in self.data)
         self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
 
-    def get(
+    def get(  # type: ignore [override]
         self,
-        id: InstanceId | tuple[str, str] | None = None,  # type: ignore [override]
+        instance_id: InstanceId | tuple[str, str] | None = None,
         external_id: str | None = None,
+        *,
+        id: InstanceId | tuple[str, str] | None = None,
     ) -> T_Instance | None:
         """Get an instance from this list by instance ID.
 
         Args:
-            id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
+            instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
             external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
+            id (InstanceId | tuple[str, str] | None): Backwards-compatible alias for instance_id. Will be removed in the next major version.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
         """
-        # TODO: Remove when we ditch PY3.8
-        if external_id is not None:
+        if not exactly_one_is_not_none(instance_id, external_id, id):
+            raise ValueError(
+                "Pass exactly one of 'instance_id' or 'external_id' ('id' is a deprecated alias for 'instance_id'). "
+                "Using an external ID requires all instances to be from the same space."
+            )
+        if id is not None:
+            instance_id = id
             warnings.warn(
-                "Calling .get with an external ID is deprecated due to being ambiguous in the absense of 'space', and "
-                "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
+                "Calling .get using `id` is deprecated and will be removed in the next major version. "
+                "Use 'instance_id' instead",
                 UserWarning,
             )
+        elif external_id is not None:
+            if external_id in self._ambiguous_xids:
+                raise ValueError(
+                    f"{external_id=} is ambiguous (multiple spaces are present). Pass 'instance_id' instead."
+                )
             return self._ext_id_to_item.get(external_id)
 
-        if isinstance(id, InstanceId):
-            id = id.as_tuple()
-        return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
+        if isinstance(instance_id, InstanceId):
+            instance_id = instance_id.as_tuple()
+        return self._instance_id_to_item.get(instance_id)  # type: ignore [arg-type]
 
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other_res_list.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
@@ -1097,7 +1111,7 @@ class NodeListWithCursor(NodeList[T_Node]):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
@@ -1193,7 +1207,7 @@ class EdgeListWithCursor(EdgeList):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
