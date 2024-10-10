@@ -310,7 +310,7 @@ class _JobCore(WriteableCogniteResource["JobWrite"]):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["format"] = self.format.dump(camel_case)
-        if isinstance(self.config, JobConfig):
+        if self.config is not None:
             output["config"] = self.config.dump(camel_case)
         return output
 
