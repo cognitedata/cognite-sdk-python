@@ -1339,7 +1339,7 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         source_updated_user: str | None = None,
         parent: DirectRelationReference | tuple[str, str] | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
-        asset_type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
+        asset_type: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
@@ -2331,7 +2331,7 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
         asset: DirectRelationReference | tuple[str, str] | None = None,
         serial_number: str | None = None,
         manufacturer: str | None = None,
-        equipment_type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
+        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
         files: list[DirectRelationReference | tuple[str, str]] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]

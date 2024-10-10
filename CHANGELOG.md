@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.62.9] - 2024-10-10
 ### Fixed
-- Resetting an instance type to null now works as expected.
+- Resetting the type of a node to null, now works as expected when `type=None` is passed.
 
 ## [7.62.8] - 2024-10-07
 ### Added
