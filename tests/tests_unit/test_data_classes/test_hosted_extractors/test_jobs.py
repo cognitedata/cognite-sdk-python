@@ -1,3 +1,5 @@
+import yaml
+
 from cognite.client.data_classes.hosted_extractors.jobs import Job
 
 
@@ -18,4 +20,4 @@ config:
   some: new_config
   that: has not been seen before"""
 
-        assert Job.load(raw_yaml).dump_yaml() == raw_yaml
+        assert Job.load(raw_yaml).dump() == yaml.safe_load(raw_yaml)
