@@ -6,6 +6,7 @@ from typing import Literal
 from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
+    NOT_SET,
     PropertyOptions,
     TypedEdge,
     TypedEdgeApply,
@@ -87,7 +88,7 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
         station_360: DirectRelationReference | tuple[str, str] | None = None,
         taken_at: datetime | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.translation_x = translation_x
@@ -263,7 +264,7 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
         revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -385,7 +386,7 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -495,7 +496,7 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
         aliases: list[str] | None = None,
         group_type: Literal["Station360"] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -602,7 +603,7 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -727,7 +728,7 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
         z_min: float | None = None,
         z_max: float | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -857,7 +858,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         revision_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -975,7 +976,7 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
         scale_y: float | None = None,
         scale_z: float | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.translation_x = translation_x
@@ -1137,7 +1138,7 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
         equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
         time_series: list[DirectRelationReference | tuple[str, str]] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1338,9 +1339,9 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         source_updated_user: str | None = None,
         parent: DirectRelationReference | tuple[str, str] | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
-        asset_type: DirectRelationReference | tuple[str, str] | None = None,
+        asset_type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else None
@@ -1504,7 +1505,7 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
         code: str | None = None,
         standard: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1618,7 +1619,7 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
         standard: str | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1735,7 +1736,7 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1859,7 +1860,7 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
         tree_indexes: list[int] | None = None,
         sub_tree_sizes: list[int] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1990,7 +1991,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         revision_id: int | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -2095,7 +2096,7 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
         top: DirectRelationReference | tuple[str, str] | None = None,
         bottom: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.front = DirectRelationReference.load(front) if front else None
@@ -2203,7 +2204,7 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2330,10 +2331,10 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
         asset: DirectRelationReference | tuple[str, str] | None = None,
         serial_number: str | None = None,
         manufacturer: str | None = None,
-        equipment_type: DirectRelationReference | tuple[str, str] | None = None,
+        equipment_type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
         files: list[DirectRelationReference | tuple[str, str]] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2500,7 +2501,7 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
         standard: str | None = None,
         standard_reference: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2648,7 +2649,7 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         directory: str | None = None,
         category: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2813,7 +2814,7 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
         standard: str | None = None,
         standard_reference: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.code = code
@@ -2930,7 +2931,7 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3042,7 +3043,7 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
         model_3d: DirectRelationReference | tuple[str, str] | None = None,
         revision_id: int | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -3163,7 +3164,7 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
         volume: list[float] | None = None,
         format_version: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3299,7 +3300,7 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
         scheduled_start_time: datetime | None = None,
         scheduled_end_time: datetime | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.start_time = start_time
@@ -3401,7 +3402,7 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
         source_system_version: str | None = None,
         manufacturer: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3519,7 +3520,7 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.source_id = source_id
@@ -3665,7 +3666,7 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         assets: list[DirectRelationReference | tuple[str, str]] | None = None,
         equipment: list[DirectRelationReference | tuple[str, str]] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.is_step = is_step
@@ -3836,7 +3837,7 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
         source: str | None = None,
         source_reference: str | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3948,7 +3949,7 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
         *,
         object_3d: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else None

@@ -655,21 +655,16 @@ class Node(Instance[NodeApply]):
         """
         This is a convenience function for converting the read to a write node.
 
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
-
         Returns:
             NodeApply: A write node, NodeApply
 
         """
+        sources = [NodeOrEdgeData(source=view_id, properties=props) for view_id, props in self.properties.items()]
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
             existing_version=self.version,
-            sources=[
-                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
-            ]
-            or None,
+            sources=sources or None,
             type=self.type,
         )
 
@@ -1620,7 +1615,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         space: str,
         external_id: str,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         super().__init__(space, external_id, existing_version, type=type)
 
@@ -1749,7 +1744,15 @@ _RESERVED_PROPERTY_NAMES = (
     | TypedEdgeApply._base_properties()
     | TypedNode._base_properties()
     | TypedEdge._base_properties()
-) | {"instance_type", "existing_version", "_InstanceApply__sources", "_Instance__properties", "_Instance__prop_lookup"}
+) | {
+    "instance_type",
+    "existing_version",
+    "_InstanceApply__sources",
+    "_Instance__properties",
+    "_Instance__prop_lookup",
+    "_NodeApply__type",
+    "_NodeApply__type_was_set",
+}
 
 
 class _PropertyValueSerializer:
