@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import time
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from requests.utils import CaseInsensitiveDict
 from typing_extensions import Self
@@ -552,7 +553,7 @@ class DiagramDetectResults(ContextualizationJob):
 
 
 # Vision dataclasses
-FeatureClass = Union[Type[TextRegion], Type[AssetLink], Type[ObjectDetection]]
+FeatureClass = type[TextRegion] | type[AssetLink] | type[ObjectDetection]
 
 
 class VisionFeature(str, Enum):

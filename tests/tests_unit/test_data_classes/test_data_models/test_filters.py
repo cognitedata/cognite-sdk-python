@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Literal
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from _pytest.mark import ParameterSet

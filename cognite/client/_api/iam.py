@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Iterable, Sequence
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Literal, Sequence, Union, overload
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -47,16 +46,16 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-ComparableCapability: TypeAlias = Union[
-    Capability,
-    Sequence[Capability],
-    Dict[str, Any],
-    Sequence[Dict[str, Any]],
-    Group,
-    GroupList,
-    ProjectCapability,
-    ProjectCapabilityList,
-]
+ComparableCapability: TypeAlias = (
+    Capability
+    | Sequence[Capability]
+    | dict[str, Any]
+    | Sequence[dict[str, Any]]
+    | Group
+    | GroupList
+    | ProjectCapability
+    | ProjectCapabilityList
+)
 
 
 def _convert_capability_to_tuples(

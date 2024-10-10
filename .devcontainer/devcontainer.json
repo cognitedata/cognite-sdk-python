@@ -3,7 +3,7 @@
   "name": "Dev Container for Cognite Python SDK",
 
   // Python base image reference: https://github.com/devcontainers/images/tree/main/src/python
-  "image": "mcr.microsoft.com/devcontainers/python:3.8-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/python:3.10-bullseye",
 
   // Features to add to the dev container. More info: https://containers.dev/features
   "features": {
@@ -23,8 +23,7 @@
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
-        // This is the path to the Poetry enabled Python environment, seen in the "Executable" setting by running "poetry env info"
-        "python.defaultInterpreterPath": "~/.cache/pypoetry/virtualenvs/cognite-sdk-gQQjLrWz-py3.8/bin/python"
+        "python.defaultInterpreterPath": "~/.cache/pypoetry/virtualenvs/cognite-sdk-*-py3.10/bin/python"
       }
     }
   }

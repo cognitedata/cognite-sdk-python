@@ -1,9 +1,7 @@
-from typing import Optional
-
 from cognite.client.data_classes.data_modeling import View
 
 
-def make_test_view(space: str, external_id: str, version: Optional[str], created_time: int = 1):
+def make_test_view(space: str, external_id: str, version: str | None, created_time: int = 1):
     return View(
         space,
         external_id,

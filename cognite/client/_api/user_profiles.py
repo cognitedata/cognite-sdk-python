@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, cast, overload
+from typing import cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -85,7 +85,7 @@ class UserProfilesAPI(APIClient):
             return profiles
         # TODO: The API does not guarantee any ordering (against style guidelines, no timeline for fix)
         #       so we sort manually for now:
-        return UserProfileList(cast(List[UserProfile], [profiles.get(user) for user in user_identifier]))
+        return UserProfileList(cast(list[UserProfile], [profiles.get(user) for user in user_identifier]))
 
     def search(self, name: str, limit: int = DEFAULT_LIMIT_READ) -> UserProfileList:
         """`Search for user profiles <https://developer.cognite.com/api#tag/User-profiles/operation/userProfilesSearch>`_

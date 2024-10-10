@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Literal, Mapping, Sequence, Tuple, Union
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, Literal, TypeAlias
 
 from cognite.client.data_classes._base import T_CogniteSort
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
-SortSpec: TypeAlias = Union[
-    T_CogniteSort,
-    str,
-    Tuple[str, Literal["asc", "desc"]],
-    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
-]
+SortSpec: TypeAlias = (
+    T_CogniteSort
+    | str
+    | tuple[str, Literal["asc", "desc"]]
+    | tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]]
+)
 
 
 def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = False) -> None:

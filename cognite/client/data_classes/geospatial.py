@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from typing_extensions import Self
 
@@ -701,7 +701,7 @@ class GeospatialComputedResponse(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeospatialComputedResponse:
         item_list = GeospatialComputedItemList._load(
-            cast(List[Any], resource.get("items")), cognite_client=cognite_client
+            cast(list[Any], resource.get("items")), cognite_client=cognite_client
         )
         return cls(item_list, cognite_client=cognite_client)
 

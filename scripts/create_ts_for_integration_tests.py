@@ -1,6 +1,5 @@
 import random
 import time
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -108,7 +107,7 @@ def create_edge_case_if_not_exists(ts_api):
     create_if_not_exists(ts_api, ts_lst, [ts_dps.to_pandas(column_names="external_id", include_aggregate_name=False)])
 
 
-def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
+def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
     ts_add = (ts_lst := []).append
     df_add = (df_lst := []).append
     ts_add(TimeSeries(name=NAMES[0], external_id=NAMES[0], is_string=False, metadata={"offset": 1, "delta": 10}))
@@ -326,7 +325,7 @@ def create_status_code_ts(client: CogniteClient) -> None:
     )
 
 
-def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_lst: List[pd.DataFrame]) -> None:
+def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: list[TimeSeries], df_lst: list[pd.DataFrame]) -> None:
     existing = {
         t.external_id
         for t in ts_api.retrieve_multiple(external_ids=[t.external_id for t in ts_list], ignore_unknown_ids=True)
@@ -352,7 +351,7 @@ def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_ls
     print(f"Inserted {inserted} series of datapoints")
 
 
-def create_time_series(ts_api, ts_lst: List[TimeSeries], df_lst: List[pd.DataFrame]):
+def create_time_series(ts_api, ts_lst: list[TimeSeries], df_lst: list[pd.DataFrame]):
     ts_api.create(ts_lst)
     print(f"Created {len(ts_lst)} ts")
     time.sleep(5)

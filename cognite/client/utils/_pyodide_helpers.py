@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, MutableMapping
+from collections.abc import Callable, MutableMapping
+from typing import TYPE_CHECKING, Any
 
 import cognite.client as cc  # Do not import individual entities
 from cognite.client._http_client import _RetryTracker
