@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.9] - 2024-10-10
+### Fixed
+- [Feature Preview - alpha] Dumping `HostedExtractor` `Job` and `Source` data classes creates valid JSON/YAML
+  even when unknown fields are present.
+
 ## [7.62.8] - 2024-10-07
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.
