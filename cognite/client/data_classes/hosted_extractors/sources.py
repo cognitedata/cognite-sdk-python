@@ -795,7 +795,7 @@ class RestSourceWrite(SourceWrite):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
-        scheme (Literal["http", "https"]): Type of connection to establish.
+        scheme (Literal['http', 'https']): Type of connection to establish.
         port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
         ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
@@ -851,7 +851,7 @@ class RestSource(Source):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
-        scheme (Literal["http", "https"]): Type of connection to establish.
+        scheme (Literal['http', 'https']): Type of connection to establish.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.

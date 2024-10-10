@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
+from collections.abc import Sequence
 from datetime import datetime
 from enum import auto
-from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -507,7 +508,7 @@ class SortableTimeSeriesProperty(EnumProperty):
         return ["metadata", key]
 
 
-SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]
+SortableTimeSeriesPropertyLike: TypeAlias = SortableTimeSeriesProperty | str | list[str]
 
 
 class TimeSeriesSort(CogniteSort):

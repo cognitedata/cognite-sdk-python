@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 import warnings
+from collections.abc import Sequence
 from datetime import timezone
 from inspect import signature
 from itertools import chain
 from numbers import Integral
-from typing import TYPE_CHECKING, Any, Literal, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import

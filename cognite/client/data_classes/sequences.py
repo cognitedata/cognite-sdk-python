@@ -3,10 +3,11 @@ from __future__ import annotations
 import typing
 import warnings
 from abc import ABC
+from collections.abc import Iterator
 from enum import auto
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, NoReturn, Union, cast, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, get_args, overload
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -531,18 +532,18 @@ class SequenceUpdate(CogniteUpdate):
         def add(self, value: dict | list[dict]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
-                value_list = cast(List[str], [value])
+                value_list = cast(list[str], [value])
             else:
-                value_list = cast(List[str], value)
+                value_list = cast(list[str], value)
 
             return self._add(value_list)
 
         def remove(self, value: str | list[str]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
-                value_list = cast(List[str], [value])
+                value_list = cast(list[str], [value])
             else:
-                value_list = cast(List[str], value)
+                value_list = cast(list[str], value)
 
             return self._remove([{"externalId": id} for id in value_list])
 
@@ -604,7 +605,7 @@ class SequenceList(WriteableCogniteResourceList[SequenceWrite, Sequence], IdTran
         return SequenceWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
-RowValues: TypeAlias = Union[int, str, float, None]
+RowValues: TypeAlias = int | str | float | None
 
 
 class SequenceRow(CogniteResource):
@@ -880,7 +881,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
-            key (Literal["id", "external_id"]): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
+            key (Literal['id', 'external_id']): If concat = False, this decides which field to use as key in the dictionary. Defaults to "external_id".
             column_names (ColumnNames): Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
             concat (bool): Whether to concatenate the sequences into a single DataFrame or return a dictionary of DataFrames. Defaults to False.
 
@@ -941,7 +942,7 @@ class SortableSequenceProperty(EnumProperty):
         return ["metadata", key]
 
 
-SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]
+SortableSequencePropertyLike: TypeAlias = SortableSequenceProperty | str | list[str]
 
 
 class SequenceSort(CogniteSort):

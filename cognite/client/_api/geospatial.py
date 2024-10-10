@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import numbers
 import urllib.parse
-from typing import Any, Iterator, Sequence, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import Any, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
 

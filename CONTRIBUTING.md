@@ -9,7 +9,7 @@ git clone https://github.com/cognitedata/cognite-sdk-python.git
 cd cognite-sdk-python
 ```
 
-We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management. Make sure you use python 3.8.
+We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management. Make sure you use python 3.10.
 
 Install dependencies and initialize a shell within the virtual environment, with these commands:
 
