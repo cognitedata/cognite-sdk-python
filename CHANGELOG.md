@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.62.9] - 2024-10-10
+### Fixed
+- Resetting an instance type to null now works as expected.
+
 ## [7.62.8] - 2024-10-07
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.
