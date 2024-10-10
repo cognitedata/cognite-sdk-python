@@ -34,6 +34,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
+from cognite.client._constants import NOT_SET
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResourceList,
@@ -578,25 +579,47 @@ class NodeApply(InstanceApply["NodeApply"]):
         external_id: str,
         existing_version: int | None = None,
         sources: list[NodeOrEdgeData] | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        self.type = DirectRelationReference.load(type) if type else None
+        self.type = type  # type: ignore [assignment]
+
+    @property
+    def type(self) -> DirectRelationReference | None:
+        return self.__type
+
+    @type.setter
+    def type(self, value: DirectRelationReference | None) -> None:
+        if value is NOT_SET:
+            self.__type = None
+            self.__type_was_set = False
+        else:
+            self.__type = DirectRelationReference.load(value) if value else None
+            self.__type_was_set = True
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
+        # To distinguish between 'no given type' and 'type is None', we only pass it when
+        # explicitly present in the resource dictionary:
+        if "type" in resource:
+            tp = resource["type"]
+            type_kw = {"type": DirectRelationReference.load(tp) if tp else tp}
+        else:
+            type_kw = {}
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
             sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            **type_kw,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)
+        elif self.__type_was_set:
+            output["type"] = self.type.dump(camel_case) if self.type else self.type
         return output
 
     def as_id(self) -> NodeId:
@@ -639,21 +662,16 @@ class Node(Instance[NodeApply]):
         """
         This is a convenience function for converting the read to a write node.
 
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
-
         Returns:
             NodeApply: A write node, NodeApply
 
         """
+        sources = [NodeOrEdgeData(source=view_id, properties=props) for view_id, props in self.properties.items()]
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
             existing_version=self.version,
-            sources=[
-                NodeOrEdgeData(source=view_id, properties=properties) for view_id, properties in self.properties.items()
-            ]
-            or None,
+            sources=sources or None,
             type=self.type,
         )
 
@@ -1604,7 +1622,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         space: str,
         external_id: str,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         super().__init__(space, external_id, existing_version, type=type)
 
@@ -1733,7 +1751,15 @@ _RESERVED_PROPERTY_NAMES = (
     | TypedEdgeApply._base_properties()
     | TypedNode._base_properties()
     | TypedEdge._base_properties()
-) | {"instance_type", "existing_version", "_InstanceApply__sources", "_Instance__properties", "_Instance__prop_lookup"}
+) | {
+    "instance_type",
+    "existing_version",
+    "_InstanceApply__sources",
+    "_Instance__properties",
+    "_Instance__prop_lookup",
+    "_NodeApply__type",
+    "_NodeApply__type_was_set",
+}
 
 
 class _PropertyValueSerializer:

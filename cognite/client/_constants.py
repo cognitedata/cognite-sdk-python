@@ -10,6 +10,9 @@ DEFAULT_LIMIT_READ = 25
 # Max JavaScript-safe integer 2^53 - 1
 MAX_VALID_INTERNAL_ID = 9007199254740991
 DATA_MODELING_DEFAULT_LIMIT_READ = 10
+# Some objects need to differentiate between a default value, typically None and 'parameter no given'
+# for which we use this NOT_SET object:
+NOT_SET = object()
 
 try:
     import numpy as np  # noqa F401

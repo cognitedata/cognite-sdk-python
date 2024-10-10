@@ -24,7 +24,7 @@ from typing import (
 
 from typing_extensions import NotRequired, Self
 
-from cognite.client._constants import NUMPY_IS_AVAILABLE
+from cognite.client._constants import NOT_SET, NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils import _json
@@ -141,9 +141,6 @@ class _DatapointsPayload(_DatapointsPayloadItem):
     ignoreUnknownIds: NotRequired[bool]
 
 
-_NOT_SET = object()
-
-
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -168,19 +165,19 @@ class DatapointsQuery:
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
     instance_id: InitVar[NodeId | None] = None
-    start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
-    end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
-    aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
-    granularity: str | None = _NOT_SET  # type: ignore [assignment]
-    timezone: str | datetime.timezone | ZoneInfo | None = _NOT_SET  # type: ignore [assignment]
-    target_unit: str | None = _NOT_SET  # type: ignore [assignment]
-    target_unit_system: str | None = _NOT_SET  # type: ignore [assignment]
-    limit: int | None = _NOT_SET  # type: ignore [assignment]
-    include_outside_points: bool = _NOT_SET  # type: ignore [assignment]
-    ignore_unknown_ids: bool = _NOT_SET  # type: ignore [assignment]
-    include_status: bool = _NOT_SET  # type: ignore [assignment]
-    ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
-    treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
+    start: int | str | datetime.datetime = NOT_SET  # type: ignore [assignment]
+    end: int | str | datetime.datetime = NOT_SET  # type: ignore [assignment]
+    aggregates: Aggregate | list[Aggregate] | None = NOT_SET  # type: ignore [assignment]
+    granularity: str | None = NOT_SET  # type: ignore [assignment]
+    timezone: str | datetime.timezone | ZoneInfo | None = NOT_SET  # type: ignore [assignment]
+    target_unit: str | None = NOT_SET  # type: ignore [assignment]
+    target_unit_system: str | None = NOT_SET  # type: ignore [assignment]
+    limit: int | None = NOT_SET  # type: ignore [assignment]
+    include_outside_points: bool = NOT_SET  # type: ignore [assignment]
+    ignore_unknown_ids: bool = NOT_SET  # type: ignore [assignment]
+    include_status: bool = NOT_SET  # type: ignore [assignment]
+    ignore_bad_datapoints: bool = NOT_SET  # type: ignore [assignment]
+    treat_uncertain_as_bad: bool = NOT_SET  # type: ignore [assignment]
 
     def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
         # Ensure user have just specified one of id/xid:
@@ -297,7 +294,7 @@ class DatapointsQuery:
         # We need to dump only those fields specifically passed by the user:
         return {
             **self.identifier.as_dict(camel_case=False),
-            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
+            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not NOT_SET),
         }
 
     @property
