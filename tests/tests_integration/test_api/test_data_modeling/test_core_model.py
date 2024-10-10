@@ -111,7 +111,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             model_type="PointCloud",  # TODO: Should be nullable, returns as 400 if not set
         ),
         cdm.Cognite3DModel,
-        id="CogniteModel3D",
+        id="Cognite3DModel",
     )
     yield pytest.param(
         cdm.Cognite3DObjectApply(
@@ -122,7 +122,7 @@ def core_model_v1_node_test_cases() -> Iterable[ParameterSet]:
             aliases=["test_object_3d_alias"],
         ),
         cdm.Cognite3DObject,
-        id="CogniteObject3D",
+        id="Cognite3DObject",
     )
 
     yield pytest.param(
@@ -231,6 +231,9 @@ class TestCoreModelv1:
         # so we need to remove it from the comparison
         read_dumped.pop("existingVersion", None)
         write_instance_dumped.pop("existingVersion", None)
+        # The read version we assume is created by the SDK (from the API response), and so if that says type is None
+        # the '.as_write()' will interpret this as an explicitly set null value (instead of 'not given->ignore'):
+        read_dumped.pop("type", None)
         for key, value in read_dumped["sources"][0]["properties"].items():
             if isinstance(value, str) and value.endswith("+00:00"):
                 # Server sets timezone to UTC, but expects the client to send it without
