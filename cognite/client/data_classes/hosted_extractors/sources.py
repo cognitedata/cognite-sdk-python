@@ -488,11 +488,11 @@ class _MQTTSource(Source, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.authentication, MQTTAuthentication):
+        if self.authentication is not None:
             output["authentication"] = self.authentication.dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
@@ -722,11 +722,11 @@ class KafkaSource(Source):
         output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
             broker.dump(camel_case) for broker in self.bootstrap_brokers
         ]
-        if isinstance(self.authentication, MQTTAuthentication):
+        if self.authentication is not None:
             output["authentication"] = self.authentication.dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
@@ -901,9 +901,9 @@ class RestSource(Source):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
