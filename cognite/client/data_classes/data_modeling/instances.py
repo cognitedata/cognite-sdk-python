@@ -108,6 +108,7 @@ PropertyValueWrite: TypeAlias = Union[
 
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
+NOT_SET = object()
 
 
 @dataclass
@@ -578,10 +579,23 @@ class NodeApply(InstanceApply["NodeApply"]):
         external_id: str,
         existing_version: int | None = None,
         sources: list[NodeOrEdgeData] | None = None,
-        type: DirectRelationReference | tuple[str, str] | None = None,
+        type: DirectRelationReference | tuple[str, str] | None = NOT_SET,  # type: ignore [assignment]
     ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
-        self.type = DirectRelationReference.load(type) if type else None
+        self.type = type  # type: ignore [assignment]
+
+    @property
+    def type(self) -> DirectRelationReference | None:
+        return self.__type
+
+    @type.setter
+    def type(self, value: DirectRelationReference | None) -> None:
+        if value is NOT_SET:
+            self.__type = None
+            self.__type_was_set = False
+        else:
+            self.__type = DirectRelationReference.load(value) if value else None
+            self.__type_was_set = True
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
@@ -597,6 +611,8 @@ class NodeApply(InstanceApply["NodeApply"]):
         output = super().dump(camel_case)
         if self.type:
             output["type"] = self.type.dump(camel_case)
+        elif self.__type_was_set:
+            output["type"] = self.type.dump(camel_case) if self.type else self.type
         return output
 
     def as_id(self) -> NodeId:
