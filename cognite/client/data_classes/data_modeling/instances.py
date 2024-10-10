@@ -34,6 +34,7 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias
 
+from cognite.client._constants import NOT_SET
 from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResourceList,
@@ -108,7 +109,6 @@ PropertyValueWrite: TypeAlias = Union[
 
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
-NOT_SET = object()
 
 
 @dataclass
@@ -599,12 +599,19 @@ class NodeApply(InstanceApply["NodeApply"]):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> NodeApply:
+        # To distinguish between 'no given type' and 'type is None', we only pass it when
+        # explicitly present in the resource dictionary:
+        if "type" in resource:
+            tp = resource["type"]
+            type_kw = {"type": DirectRelationReference.load(tp) if tp else tp}
+        else:
+            type_kw = {}
         return cls(
             space=resource["space"],
             external_id=resource["externalId"],
             existing_version=resource.get("existingVersion"),
             sources=[NodeOrEdgeData.load(source) for source in resource.get("sources", [])] or None,
-            type=DirectRelationReference.load(resource["type"]) if "type" in resource else None,
+            **type_kw,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

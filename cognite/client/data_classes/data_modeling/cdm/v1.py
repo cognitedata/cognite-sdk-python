@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
+from cognite.client._constants import NOT_SET
 from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
-    NOT_SET,
     PropertyOptions,
     TypedEdge,
     TypedEdgeApply,
