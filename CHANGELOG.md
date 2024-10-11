@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.2] - 2024-10-11
+### Fixed
+- Setting up interactive `OAuthInteractive` sessions no longer raises `TypeError` as the lower bound for the `msal`
+  dependency has been increased to `1.31`.
+
 ## [7.63.1] - 2024-10-10
 ### Fixed
 - [Feature Preview - alpha] Dumping `HostedExtractor` `Job` and `Source` data classes creates valid JSON/YAML
