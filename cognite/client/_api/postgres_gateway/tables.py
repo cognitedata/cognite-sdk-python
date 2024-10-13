@@ -102,7 +102,7 @@ class TablesAPI(APIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite, ViewTableOptions
                 >>> client = CogniteClient()
                 >>> table = ViewTableWrite(tablename="myCustom", options=ViewTableOptions(space="mySpace", external_id="myExternalId", version="v1"))
-                >>> res = client.postgres_gateway.tables.(table, "myUserName")
+                >>> res = client.postgres_gateway.tables.create(table, "myUserName")
 
         """
         self._warning.warn()
