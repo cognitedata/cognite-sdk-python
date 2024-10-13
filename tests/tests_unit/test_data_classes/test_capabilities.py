@@ -591,11 +591,12 @@ def test_idscopes_camel_case():
 
 @pytest.mark.parametrize("capability", Capability.__subclasses__())
 def test_show_example_usage(capability):
+    # This test ensures that the example usage given in error messages etc. works by executing it.
     if capability is UnknownAcl:
         assert not capability.show_example_usage()
     elif capability is capabilities_module.LegacyCapability:
         pytest.skip("LegacyCapability is abstract")
     else:
-        cmd = capability.show_example_usage()[15:]  # TODO PY39: .removeprefix
-        exec(f"{capability.__name__} = capabilities_module.{capability.__name__}")
+        cmd = capability.show_example_usage().removeprefix("Example usage: ")
+        exec(f"{capability.__name__} = capabilities_module.{capability.__name__}", globals=globals())
         exec(cmd)
