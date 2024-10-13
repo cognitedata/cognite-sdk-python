@@ -119,7 +119,9 @@ class TestTables:
             assert result is None
         finally:
             if created:
-                cognite_client.postgres_gateway.tables.delete(tablename, username, ignore_unknown_ids=True)
+                with suppress(CogniteAPIError):
+                    # Bug in API, ignore_unknown_ids=True returns 500
+                    cognite_client.postgres_gateway.tables.delete(tablename, username)
 
     @pytest.mark.usefixtures("one_table")
     def test_list(self, cognite_client: CogniteClient, one_user: User) -> None:
