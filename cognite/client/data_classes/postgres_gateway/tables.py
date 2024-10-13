@@ -42,7 +42,7 @@ ColumnType: TypeAlias = Literal[
 class RawTableOptions(CogniteObject):
     database: str
     table: str
-    primary_key: str | None
+    primary_key: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -57,7 +57,7 @@ class RawTableOptions(CogniteObject):
 class ViewTableOptions(CogniteObject):
     space: str
     external_id: str
-    version: str | None
+    version: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -210,7 +210,7 @@ class Table(_TableCore, ABC):
 
     """
 
-    def __init__(self, tablename: str, created_time: int) -> None:
+    def __init__(self, tablename: str, created_time: int | None = None) -> None:
         super().__init__(tablename=tablename)
         self.created_time = created_time
 
@@ -241,13 +241,15 @@ class RawTable(Table):
         tablename (str): Name of the foreign table.
         options (RawTableOptions): Table options
         columns (list[Column]): Foreign table columns.
-        created_time (int): Time when the table was created.
+        created_time (int | None): Time when the table was created.
 
     """
 
     _type = "raw_rows"
 
-    def __init__(self, tablename: str, options: RawTableOptions, columns: list[Column], created_time: int) -> None:
+    def __init__(
+        self, tablename: str, options: RawTableOptions, columns: list[Column], created_time: int | None = None
+    ) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
         self.columns = columns
@@ -258,7 +260,7 @@ class RawTable(Table):
             tablename=data["tablename"],
             options=RawTableOptions._load(data["options"]),
             columns=Column._load_columns(data["columns"]),
-            created_time=data["created_time"],
+            created_time=data.get("createdTime"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -283,12 +285,12 @@ class ViewTable(Table):
     Args:
         tablename (str): Name of the foreign table.
         options (ViewTableOptions): Table options
-        created_time (int): Time when the table was created.
+        created_time (int | None): Time when the table was created.
     """
 
     _type = "view"
 
-    def __init__(self, tablename: str, options: ViewTableOptions, created_time: int) -> None:
+    def __init__(self, tablename: str, options: ViewTableOptions, created_time: int | None = None) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
 
@@ -297,7 +299,7 @@ class ViewTable(Table):
         return cls(
             tablename=data["tablename"],
             options=ViewTableOptions._load(data["options"]),
-            created_time=data["created_time"],
+            created_time=data.get("created_time"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
