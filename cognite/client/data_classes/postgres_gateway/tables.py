@@ -109,7 +109,6 @@ class TableWrite(_TableCore, ABC):
         return self
 
 
-
 class Table(_TableCore):
     """Foreign tables.
 
@@ -152,8 +151,6 @@ class Table(_TableCore):
         return TableWrite(
 
         )
-
-
 
 
 class TableWriteList(CogniteResourceList[TableWrite]):
