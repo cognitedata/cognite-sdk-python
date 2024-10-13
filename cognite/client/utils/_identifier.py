@@ -170,6 +170,20 @@ class Username:
         return self.__value
 
 
+class Tablename:
+    def __init__(self, value: str) -> None:
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "tablename"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
         self.__version: str = version
@@ -383,6 +397,22 @@ class UsernameSequence(IdentifierSequenceCore[Username]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one username (string) must be specified")
+
+
+class TablenameSequence(IdentifierSequenceCore[Tablename]):
+    @classmethod
+    def load(cls, tablenames: str | SequenceNotStr[str]) -> TablenameSequence:
+        if isinstance(tablenames, str):
+            return cls([Tablename(tablenames)], is_singleton=True)
+
+        elif isinstance(tablenames, Sequence):
+            return cls([Tablename(tablename) for tablename in tablenames], is_singleton=False)
+
+        raise TypeError(f"tablenames must be of type str or SequenceNotStr[str]. Found {type(tablenames)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one tablename (string) must be specified")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
