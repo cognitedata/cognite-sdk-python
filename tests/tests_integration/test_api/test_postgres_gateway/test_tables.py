@@ -25,12 +25,13 @@ from cognite.client.data_classes.postgres_gateway import (
     ViewTableWrite,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
 def one_space(cognite_client: CogniteClient) -> Space:
     my_space = SpaceApply(
-        space="my_space",
+        space=f"my_space-{random_string(10)}",
     )
     created = cognite_client.data_modeling.spaces.apply(my_space)
     yield created
@@ -62,12 +63,10 @@ def one_view(cognite_client: CogniteClient, one_space: Space, one_container: Con
 
 @pytest.fixture
 def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
-    db_table_pair = "my_database_postgres_gateway", "my_table_postgres_gateway"
+    db_table_pair = f"my_database-{random_string(10)}", "my_table_postgres_gateway"
 
-    with suppress(CogniteAPIError):
-        # Suppress if the database or table already exists
-        cognite_client.raw.databases.create(db_table_pair[0])
-        cognite_client.raw.tables.create(*db_table_pair)
+    cognite_client.raw.databases.create(db_table_pair[0])
+    cognite_client.raw.tables.create(*db_table_pair)
 
     yield db_table_pair
     with suppress(CogniteAPIError):
@@ -78,7 +77,7 @@ def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
 @pytest.fixture
 def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tuple[str, str]) -> Table:
     my_table = RawTableWrite(
-        tablename="my_table",
+        tablename=f"my_table-{random_string(10)}",
         options=RawTableOptions(
             database=one_raw_table[0],
             table=one_raw_table[1],
