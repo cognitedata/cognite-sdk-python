@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Sequence, overload, Literal
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Literal, overload
 from urllib.parse import quote
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.postgres_gateway.tables import Table, TableList, TableWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import TablenameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -20,9 +20,7 @@ class TablesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Tables"
-        )
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Tables")
         self._CREATE_LIMIT = 10
         self._DELETE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -62,7 +60,7 @@ class TablesAPI(APIClient):
 
         return self._list_generator(
             list_cls=TableList,
-            resource_cls=Table,
+            resource_cls=Table,  # type: ignore[type-abstract]
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
@@ -81,7 +79,7 @@ class TablesAPI(APIClient):
         return self()
 
     @overload
-    def create(self, items: TableWrite) -> Table: ...
+    def create(self, items: TableWrite, username: str) -> Table: ...
 
     @overload
     def create(self, items: Sequence[TableWrite], username: str) -> TableList: ...
@@ -90,9 +88,9 @@ class TablesAPI(APIClient):
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
-            items (TableWrite | Sequence[CustomTableWrite]): The table(s) to create
+            items (TableWrite | Sequence[TableWrite]): The table(s) to create
             username (str): The name of the username (a.k.a. database) to be managed from the API
-        
+
         Returns:
             Table | TableList: Created tables
 
@@ -110,14 +108,16 @@ class TablesAPI(APIClient):
         self._warning.warn()
         return self._create_multiple(
             list_cls=TableList,
-            resource_cls=Table,
+            resource_cls=Table,  # type: ignore[type-abstract]
             resource_path=self._RESOURCE_PATH.format(username=quote(username)),
-            items=items,
+            items=items,  # type: ignore[arg-type]
             input_resource_cls=TableWrite,
             headers={"cdf-version": "beta"},
         )
 
-    def retrieve(self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False) -> Table | TableList:
+    def retrieve(
+        self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
+    ) -> Table | TableList:
         """`Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
 
         Retreive a list of postgres tables for a user by their table names, optionally ignoring unknown table names
@@ -150,18 +150,18 @@ class TablesAPI(APIClient):
 
         return self._retrieve_multiple(
             list_cls=TableList,
-            resource_cls=Table,
+            resource_cls=Table,  # type: ignore[type-abstract]
             resource_path=self._RESOURCE_PATH.format(username=quote(username)),
             other_params={"ignoreUnknownIds": ignore_unknown_ids},
-            identifiers=IdentifierSequence.load(usernames=tablename),
+            identifiers=TablenameSequence.load(tablenames=tablename),
             headers={"cdf-version": "beta"},
         )
 
-    def delete(self, table: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False) -> None:
+    def delete(self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False) -> None:
         """`Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
 
         Args:
-            table (str | SequenceNotStr[str]): The name of the table(s) to be deleted
+            tablename (str | SequenceNotStr[str]): The name of the table(s) to be deleted
             username (str): The name of the username (a.k.a. database) to be managed from the API
             ignore_unknown_ids (bool): Ignore table names that are not found
 
@@ -178,8 +178,8 @@ class TablesAPI(APIClient):
         self._warning.warn()
         extra_body_fields = {"ignore_unknown_ids": ignore_unknown_ids}
 
-        return self._delete_multiple(
-            identifiers=IdentifierSequence.load(usernames=table),
+        self._delete_multiple(
+            identifiers=TablenameSequence.load(tablenames=tablename),
             wrap_ids=False,
             returns_items=False,
             resource_path=self._RESOURCE_PATH.format(username=quote(username)),
@@ -187,14 +187,19 @@ class TablesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list(self, username: str,  include_built_ins: Literal["yes", "no"] | None = "no", limit: int | None = DEFAULT_LIMIT_READ) -> TableList:
+    def list(
+        self,
+        username: str,
+        include_built_ins: Literal["yes", "no"] | None = "no",
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> TableList:
         """`List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_
 
         List all tables in a given project.
 
-        Args: 
+        Args:
             username (str): The name of the username (a.k.a. database) to be managed from the API
-            include_built_ins (Literal["yes", "no"] | None): Determines if API should return built-in tables or not
+            include_built_ins (Literal['yes', 'no'] | None): Determines if API should return built-in tables or not
             limit (int | None): Limits the number of results to be returned.
 
         Returns:
@@ -228,7 +233,7 @@ class TablesAPI(APIClient):
 
         return self._list(
             list_cls=TableList,
-            resource_cls=Table,
+            resource_cls=Table,  # type: ignore[type-abstract]
             resource_path=self._RESOURCE_PATH.format(username=quote(username)),
             filter=filter_,
             method="GET",

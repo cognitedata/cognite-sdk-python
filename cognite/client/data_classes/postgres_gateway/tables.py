@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -86,7 +88,7 @@ class Column(CogniteObject):
 
     @classmethod
     def _load_columns(cls, data: dict[str, Any]) -> list[Self]:
-        return [cls._load(column) for column in data]
+        raise NotImplementedError()
 
     @classmethod
     def _dump_columns(cls, camel_case: bool, columns: Sequence[Self]) -> dict[str, Any]:
@@ -139,6 +141,8 @@ class RawTableWrite(TableWrite):
 
     """
 
+    _type = "raw_rows"
+
     def __init__(self, tablename: str, options: RawTableOptions, columns: Sequence[Column]) -> None:
         super().__init__(tablename=tablename)
         self.options = options
@@ -169,6 +173,8 @@ class ViewTableWrite(TableWrite):
         tablename (str): Name of the foreign table.
         options (ViewTableOptions): Table options
     """
+
+    _type = "view"
 
     def __init__(self, tablename: str, options: ViewTableOptions) -> None:
         super().__init__(tablename=tablename)
@@ -230,6 +236,8 @@ class TableRaw(Table):
 
     """
 
+    _type = "raw_rows"
+
     def __init__(self, tablename: str, options: RawTableOptions, columns: list[Column], created_time: int) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
@@ -241,7 +249,7 @@ class TableRaw(Table):
             tablename=data["tablename"],
             options=RawTableOptions._load(data["options"]),
             columns=Column._load_columns(data["columns"]),
-            created_time=data.get("created_time"),
+            created_time=data["created_time"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -270,6 +278,8 @@ class TableView(Table):
         created_time (int): Time when the table was created.
     """
 
+    _type = "view"
+
     def __init__(self, tablename: str, options: ViewTableOptions, created_time: int) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
@@ -279,7 +289,7 @@ class TableView(Table):
         return cls(
             tablename=data["tablename"],
             options=ViewTableOptions._load(data["options"]),
-            created_time=data.get("created_time"),
+            created_time=data["created_time"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -307,11 +317,11 @@ class TableList(WriteableCogniteResourceList[TableWrite, Table]):
 
 
 _TABLE_WRITE_CLASS_BY_TYPE: dict[str, type[TableWrite]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
+    subclass._type: subclass  # type: ignore[misc, attr-defined, type-abstract]
     for subclass in TableWrite.__subclasses__()
 }
 
 _TABLE_CLASS_BY_TYPE: dict[str, type[Table]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
+    subclass._type: subclass  # type: ignore[misc, attr-defined, type-abstract]
     for subclass in Table.__subclasses__()
 }
