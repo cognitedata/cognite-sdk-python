@@ -22,6 +22,24 @@ List Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.list
 
+Tables API
+---------------
+Create Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.create
+
+Delete Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.delete
+
+Retrieve Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.retrieve
+
+List Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.list
+
 
 User classes
 ^^^^^^^^^^^^^^^^^^

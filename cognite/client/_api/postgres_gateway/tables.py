@@ -99,9 +99,9 @@ class TablesAPI(APIClient):
             Create custom table:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import TableWrite
+                >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite, ViewTableOptions
                 >>> client = CogniteClient()
-                >>> table = TableWrite()
+                >>> table = ViewTableWrite(tablename="myCustom", options=ViewTableOptions(space="mySpace", external_id="myExternalId", version="v1"))
                 >>> res = client.postgres_gateway.tables.(table, "myUserName")
 
         """
