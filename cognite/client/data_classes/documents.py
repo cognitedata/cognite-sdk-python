@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any, Collection, List, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
@@ -26,7 +27,7 @@ class DocumentsGeoJsonGeometry(CogniteObject):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon", "GeometryCollection"]): The geometry type.
+        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon', 'GeometryCollection']): The geometry type.
         coordinates (list | None): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
         geometries (Collection[Geometry] | None): No description.
 
@@ -436,7 +437,7 @@ class DocumentProperty(EnumProperty):
     content = auto()
 
 
-SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
+SortableProperty: TypeAlias = SortableSourceFileProperty | SortableDocumentProperty | str | list[str]
 
 
 class DocumentSort(CogniteSort):

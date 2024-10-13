@@ -4,20 +4,16 @@ import functools
 import math
 import platform
 import warnings
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
-    Hashable,
-    Iterable,
-    Iterator,
-    Sequence,
+    TypeGuard,
     TypeVar,
     overload,
 )
 from urllib.parse import quote
-
-from typing_extensions import TypeGuard
 
 from cognite.client.utils import _json
 from cognite.client.utils._text import (

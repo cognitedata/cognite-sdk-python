@@ -1,4 +1,3 @@
-import socket
 from unittest.mock import MagicMock
 
 import pytest
@@ -93,7 +92,7 @@ class TestHTTPClient:
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(socket.timeout())
+                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(TimeoutError())
                 )
             ),
         )

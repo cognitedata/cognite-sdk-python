@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, Protocol, Sequence, SupportsIndex, TypeVar, overload, runtime_checkable
+from collections.abc import Iterator, Sequence
+from typing import Any, Protocol, SupportsIndex, TypeVar, overload, runtime_checkable
 
 _T_co = TypeVar("_T_co", covariant=True)
 

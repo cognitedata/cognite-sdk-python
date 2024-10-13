@@ -7,27 +7,19 @@ import math
 import operator as op
 import threading
 import warnings
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     Literal,
     NamedTuple,
     NoReturn,
-    Sequence,
-    Tuple,
-    Union,
+    TypeAlias,
     cast,
     overload,
 )
-
-from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -73,13 +65,13 @@ as_completed = import_as_completed()
 
 AggregateAssetProperty: TypeAlias = Literal["child_count", "path", "depth"]
 
-SortSpec: TypeAlias = Union[
-    AssetSort,
-    str,
-    SortableAssetProperty,
-    Tuple[str, Literal["asc", "desc"]],
-    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
-]
+SortSpec: TypeAlias = (
+    AssetSort
+    | str
+    | SortableAssetProperty
+    | tuple[str, Literal["asc", "desc"]]
+    | tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]]
+)
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
@@ -610,7 +602,7 @@ class AssetsAPI(APIClient):
         Args:
             assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
-            upsert_mode (Literal["patch", "replace"]): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+            upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
         Returns:
             AssetList: Created (and possibly updated) asset hierarchy
@@ -778,12 +770,7 @@ class AssetsAPI(APIClient):
 
         Args:
             item (Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate]): Asset(s) to update
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (Asset or -Write). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Asset or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
         Returns:
             Asset | AssetList: Updated asset(s)
 
@@ -856,7 +843,7 @@ class AssetsAPI(APIClient):
 
         Args:
             item (Asset | AssetWrite | Sequence[Asset | AssetWrite]): Asset or list of assets to upsert.
-            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+            mode (Literal['patch', 'replace']): Whether to patch or replace in the case the assets are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Asset | AssetList: The upserted asset(s).
@@ -1324,7 +1311,7 @@ class _AssetHierarchyCreator:
                 return _TaskResult(successful, failed, unknown)
 
             # Split assets based on their is-duplicated status:
-            non_dupes, dupe_assets = self._split_out_duplicated(cast(List[Dict], err.duplicated), assets)
+            non_dupes, dupe_assets = self._split_out_duplicated(cast(list[dict], err.duplicated), assets)
             # We should try to create the non-duplicated assets before running update (as these might be dependent):
             if non_dupes:
                 result = self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)

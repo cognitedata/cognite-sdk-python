@@ -3,8 +3,9 @@ from __future__ import annotations
 import random
 import re
 import string
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Any, Iterator
+from typing import Any
 
 from cognite.client.utils.useful_types import SequenceNotStr
 

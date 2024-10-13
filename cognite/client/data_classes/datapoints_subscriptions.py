@@ -3,9 +3,9 @@ from __future__ import annotations
 from abc import ABC
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes import Datapoints
 from cognite.client.data_classes._base import (

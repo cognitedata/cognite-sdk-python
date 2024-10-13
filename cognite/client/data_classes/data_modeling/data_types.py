@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId

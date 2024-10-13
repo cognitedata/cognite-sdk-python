@@ -132,12 +132,6 @@ class DocstrFormatter:
         return "".join(letters)
 
     def _extract_annotations(self, method):
-        def fix_literal(string):
-            # Example: Union[Literal[('aaa', 'bbb')]] -> Union[Literal["aaa", "bbb"]]
-            if match := re.search(r"Literal\[(\((.*)\))\]", string):
-                return string.replace(match.group(1), match.group(2).replace("'", '"'))
-            return string
-
         annots = {}
         if isinstance(method, property):
             method_signature = inspect.signature(lambda: ...)  # just 'self' anyways
@@ -160,7 +154,7 @@ class DocstrFormatter:
                 var_name = "*" + var_name
             elif param.kind is param.VAR_KEYWORD:
                 var_name = "**" + var_name
-            annots[var_name] = fix_literal(str(param.annotation))
+            annots[var_name] = str(param.annotation)
 
         return annots, return_annot
 

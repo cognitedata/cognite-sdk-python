@@ -6,27 +6,21 @@ import operator as op
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from itertools import chain
+from itertools import chain, pairwise
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    DefaultDict,
-    Iterator,
-    List,
     Literal,
     NoReturn,
-    Sequence,
-    Tuple,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-from typing_extensions import TypeAlias
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
@@ -75,16 +69,16 @@ AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
 NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
 StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
 
-DatapointAny = Union[AggregateDatapoint, NumericDatapoint, StringDatapoint]
-DatapointsAny = Union[AggregateDatapoints, NumericDatapoints, StringDatapoints]
+DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint
+DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints
 
-DatapointRaw = Union[NumericDatapoint, StringDatapoint]
-DatapointsRaw = Union[NumericDatapoints, StringDatapoints]
+DatapointRaw = NumericDatapoint | StringDatapoint
+DatapointsRaw = NumericDatapoints | StringDatapoints
 
-RawDatapointValue = Union[float, str]
-DatapointsId = Union[int, DatapointsQuery, Sequence[Union[int, DatapointsQuery]]]
-DatapointsExternalId = Union[str, DatapointsQuery, SequenceNotStr[Union[str, DatapointsQuery]]]
-DatapointsInstanceId = Union[NodeId, DatapointsQuery, Sequence[Union[NodeId, DatapointsQuery]]]
+RawDatapointValue = float | str
+DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
+DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]
+DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
 
 
 @dataclass
@@ -475,7 +469,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
     }
 
 
-_DataContainer: TypeAlias = DefaultDict[Tuple[float, ...], List]
+_DataContainer: TypeAlias = defaultdict[tuple[float, ...], list]
 
 
 def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
@@ -1021,7 +1015,7 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
         boundaries = split_time_range(start, end, n_periods, self.offset_next)
         return [
             SplittingFetchSubtask(start=start, end=end, subtask_idx=(i,), parent=self)
-            for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
+            for i, (start, end) in enumerate(pairwise(boundaries), 1)
         ]
 
 

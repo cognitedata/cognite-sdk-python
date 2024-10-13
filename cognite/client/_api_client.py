@@ -7,18 +7,14 @@ import logging
 import re
 import warnings
 from collections import UserList
+from collections.abc import Iterator, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Dict,
-    Iterator,
     Literal,
-    MutableMapping,
     NoReturn,
-    Sequence,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -55,7 +51,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import TaskExecutor, execute_tasks
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierCore,
@@ -69,8 +65,6 @@ from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from concurrent.futures import ThreadPoolExecutor
-
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -328,7 +322,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResource | None: ...
@@ -344,7 +338,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResourceList: ...
@@ -359,7 +353,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         other_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
         settings_forcing_raw_response_loading: list[str] | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource | None:
@@ -866,7 +860,7 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList: ...
 
@@ -882,7 +876,7 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_WritableCogniteResource: ...
 
@@ -900,7 +894,7 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         limit: int | None = None,
         input_resource_cls: type[CogniteResource] | None = None,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
         api_subversion: str | None = None,
     ) -> T_CogniteResourceList | T_WritableCogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
@@ -908,9 +902,9 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], [items])
         else:
-            items = cast(Union[Sequence[T_WritableCogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], items)
 
         items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
 
@@ -965,7 +959,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
-        executor: ThreadPoolExecutor | None = None,
+        executor: TaskExecutor | None = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -1034,9 +1028,9 @@ class APIClient:
         patch_objects = []
         single_item = not isinstance(items, (Sequence, UserList))
         if single_item:
-            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], [items])
         else:
-            item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], items)
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], items)
 
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):

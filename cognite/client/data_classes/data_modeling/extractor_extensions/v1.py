@@ -316,7 +316,7 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor time series.
         is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -396,7 +396,7 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNod
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal["numeric", "string"]): Defines data type of the data points.
+        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000

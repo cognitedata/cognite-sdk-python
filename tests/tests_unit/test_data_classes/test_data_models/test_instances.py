@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, List, Union, cast
+from typing import Any, cast
 
 import pytest
 
@@ -115,7 +115,7 @@ class TestNodeApply:
                         start_time=datetime.fromisoformat("2021-01-01T00:00:00"),
                         end_time=datetime.fromisoformat("2021-01-01T00:00:00"),
                         other_nodes=cast(
-                            List[Union[NodeId, DirectRelationReference]],
+                            list[NodeId | DirectRelationReference],
                             [
                                 DirectRelationReference("space", "external_id"),
                                 NodeId("space", "external_id2"),

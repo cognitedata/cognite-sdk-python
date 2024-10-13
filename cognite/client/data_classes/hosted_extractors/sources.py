@@ -488,11 +488,11 @@ class _MQTTSource(Source, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.authentication, MQTTAuthentication):
+        if self.authentication is not None:
             output["authentication"] = self.authentication.dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
@@ -722,11 +722,11 @@ class KafkaSource(Source):
         output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
             broker.dump(camel_case) for broker in self.bootstrap_brokers
         ]
-        if isinstance(self.authentication, MQTTAuthentication):
+        if self.authentication is not None:
             output["authentication"] = self.authentication.dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 
@@ -795,7 +795,7 @@ class RestSourceWrite(SourceWrite):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
-        scheme (Literal["http", "https"]): Type of connection to establish.
+        scheme (Literal['http', 'https']): Type of connection to establish.
         port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
         ca_certificate (CACertificateWrite | None): Custom certificate authority certificate to let the source use a self signed certificate.
         auth_certificate (AuthCertificateWrite | None): Authentication certificate (if configured) used to authenticate to source.
@@ -851,7 +851,7 @@ class RestSource(Source):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         host (str): Host or IP address to connect to.
-        scheme (Literal["http", "https"]): Type of connection to establish.
+        scheme (Literal['http', 'https']): Type of connection to establish.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         port (int | None): Port on server to connect to. Uses default ports based on the scheme if omitted.
@@ -901,9 +901,9 @@ class RestSource(Source):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        if isinstance(self.ca_certificate, CACertificate):
+        if self.ca_certificate is not None:
             output["caCertificate" if camel_case else "ca_certificate"] = self.ca_certificate.dump(camel_case)
-        if isinstance(self.auth_certificate, AuthCertificate):
+        if self.auth_certificate is not None:
             output["authCertificate" if camel_case else "auth_certificate"] = self.auth_certificate.dump(camel_case)
         return output
 

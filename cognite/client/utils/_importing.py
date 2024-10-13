@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Callable, Iterable, Iterator
 from types import ModuleType
-from typing import TYPE_CHECKING, Callable, Iterable, Iterator, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
