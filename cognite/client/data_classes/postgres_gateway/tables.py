@@ -70,29 +70,37 @@ class ViewTableOptions(CogniteObject):
 
 @dataclass
 class Column(CogniteObject):
-    property_name: str
+    name: str
     type: ColumnType
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            property_name=resource["propertyName"],
+            name=resource["propertyName"],
             type=resource["type"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "propertyName": self.property_name,
+            "propertyName": self.name,
             "type": self.type,
         }
 
     @classmethod
-    def _load_columns(cls, data: dict[str, Any]) -> list[Self]:
-        raise NotImplementedError()
+    def _load_columns(cls, data: dict[str, Any]) -> list[Column]:
+        columns: list[Column] = []
+        for name, column_data in data.items():
+            columns.append(
+                Column(
+                    name=name,
+                    type=column_data["type"],
+                )
+            )
+        return columns
 
     @classmethod
-    def _dump_columns(cls, camel_case: bool, columns: Sequence[Self]) -> dict[str, Any]:
-        raise NotImplementedError()
+    def _dump_columns(cls, columns: Sequence[Column]) -> dict[str, Any]:
+        return {column.name: {"type": column.type} for column in columns}
 
 
 class _TableCore(WriteableCogniteResource["TableWrite"], ABC):
@@ -160,7 +168,7 @@ class RawTableWrite(TableWrite):
         return {
             "tablename": self.tablename,
             "options": self.options.dump(camel_case=camel_case),
-            "columns": Column._dump_columns(camel_case, self.columns),
+            "columns": Column._dump_columns(self.columns),
         }
 
 
@@ -256,7 +264,7 @@ class TableRaw(Table):
         return {
             "tablename": self.tablename,
             "options": self.options.dump(camel_case=camel_case),
-            "columns": Column._dump_columns(camel_case, self.columns),
+            "columns": Column._dump_columns(self.columns),
         }
 
     def as_write(self) -> RawTableWrite:
