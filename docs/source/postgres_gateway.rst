@@ -2,47 +2,47 @@ Postgres Gateway
 =================
 Users API
 ---------------
-Create Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create Postgres Gateway Users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.create
 
-Update Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Update Postgres Gateway Users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.update
 
-Delete Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete Postgres Gateway Users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.delete
 
-Retrieve Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve Postgres Gateway Users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.retrieve
 
-List Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+List Postgres Gateway Users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.list
 
-Tables API
----------------
-Create Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Postgres Gateway Tables API
+-----------------------------
+Create Postgres Gateway Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.TablesAPI.create
 
-Delete Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Delete Postgres Gateway Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.TablesAPI.delete
 
-Retrieve Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve Postgres Gateway Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.TablesAPI.retrieve
 
-List Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+List Postgres Gateway Tables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.TablesAPI.list
 
 
-User classes
-^^^^^^^^^^^^^^^^^^
+Postgres Gateway classes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.postgres_gateway
     :members:
     :show-inheritance:
