@@ -9,4 +9,11 @@ from cognite.client.data_classes.postgres_gateway.users import (
     UserWriteList,
 )
 
-__all__ = ["User", "UserList", "UserUpdate", "UserWrite", "UserWriteList", "SessionCredentials"]
+from cognite.client.data_classes.postgres_gateway.tables import (
+    Table,
+    TableList,
+    TableWrite,
+    TableWriteList,
+)
+
+__all__ = ["User", "UserList", "UserUpdate", "UserWrite", "UserWriteList", "SessionCredentials", "Table", "TableList", "TableWrite", "TableWriteList"]
