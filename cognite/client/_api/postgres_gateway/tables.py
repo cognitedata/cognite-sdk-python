@@ -115,6 +115,14 @@ class TablesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
+    @overload
+    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: bool = False) -> Table: ...
+
+    @overload
+    def retrieve(
+        self, tablename: SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
+    ) -> TableList: ...
+
     def retrieve(
         self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
     ) -> Table | TableList:
@@ -180,7 +188,7 @@ class TablesAPI(APIClient):
 
         self._delete_multiple(
             identifiers=TablenameSequence.load(tablenames=tablename),
-            wrap_ids=False,
+            wrap_ids=True,
             returns_items=False,
             resource_path=self._RESOURCE_PATH.format(username=quote(username)),
             extra_body_fields=extra_body_fields,
