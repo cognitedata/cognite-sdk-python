@@ -491,10 +491,13 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             client_id=loaded["client_id"],
             scopes=loaded.get("scopes"),
             cdf_cluster=loaded.get("cdf_cluster"),
+            oauth_discovery_url=loaded.get("oauth_discovery_url"),
             token_cache_path=Path(token_cache_path) if token_cache_path else None,
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),
+            clear_cache=loaded.get("clear_cache", False),
+            mem_cache_only=loaded.get("mem_cache_only", False),
         )
 
     @classmethod
