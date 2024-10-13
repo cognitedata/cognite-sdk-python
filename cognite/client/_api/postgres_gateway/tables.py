@@ -116,7 +116,10 @@ class TablesAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: bool = False) -> Table: ...
+    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[False] = False) -> Table: ...
+
+    @overload
+    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[True]) -> Table | None: ...
 
     @overload
     def retrieve(
@@ -125,7 +128,7 @@ class TablesAPI(APIClient):
 
     def retrieve(
         self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
-    ) -> Table | TableList:
+    ) -> Table | TableList | None:
         """`Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
 
         Retreive a list of postgres tables for a user by their table names, optionally ignoring unknown table names
@@ -136,7 +139,7 @@ class TablesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore table names not found
 
         Returns:
-            Table | TableList: Foreign tables
+            Table | TableList | None: Foreign tables
 
         Examples:
 
@@ -184,7 +187,7 @@ class TablesAPI(APIClient):
 
         """
         self._warning.warn()
-        extra_body_fields = {"ignore_unknown_ids": ignore_unknown_ids}
+        extra_body_fields = {"ignoreUnknownIds": ignore_unknown_ids}
 
         self._delete_multiple(
             identifiers=TablenameSequence.load(tablenames=tablename),

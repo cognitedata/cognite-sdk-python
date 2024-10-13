@@ -1,4 +1,5 @@
 import pytest
+from jaraco.context import suppress
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes._base import UnknownCogniteObject
@@ -60,13 +61,27 @@ def one_view(cognite_client: CogniteClient, one_space: Space, one_container: Con
 
 
 @pytest.fixture
-def one_table(cognite_client: CogniteClient, one_user: User) -> Table:
+def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
+    db_table_pair = "my_database_postgres_gateway", "my_table_postgres_gateway"
+
+    with suppress(CogniteAPIError):
+        # Suppress if the database or table already exists
+        cognite_client.raw.databases.create(db_table_pair[0])
+        cognite_client.raw.tables.create(*db_table_pair)
+
+    yield db_table_pair
+    with suppress(CogniteAPIError):
+        cognite_client.raw.tables.delete(*db_table_pair)
+        cognite_client.raw.databases.delete(db_table_pair[0])
+
+
+@pytest.fixture
+def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tuple[str, str]) -> Table:
     my_table = RawTableWrite(
         tablename="my_table",
         options=RawTableOptions(
-            database="my_database",
-            table="my_table",
-            primary_key="id",
+            database=one_raw_table[0],
+            table=one_raw_table[1],
         ),
         columns=[
             Column(name="id", type="BIGINT"),
@@ -99,8 +114,9 @@ class TestTables:
             with pytest.raises(CogniteAPIError):
                 cognite_client.postgres_gateway.tables.retrieve(tablename, username)
 
-            cognite_client.postgres_gateway.tables.retrieve(tablename, username, ignore_unknown_ids=True)
+            result = cognite_client.postgres_gateway.tables.retrieve(tablename, username, ignore_unknown_ids=True)
 
+            assert result is None
         finally:
             if created:
                 cognite_client.postgres_gateway.tables.delete(tablename, username, ignore_unknown_ids=True)
