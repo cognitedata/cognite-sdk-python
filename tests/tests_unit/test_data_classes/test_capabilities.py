@@ -598,5 +598,5 @@ def test_show_example_usage(capability):
         pytest.skip("LegacyCapability is abstract")
     else:
         cmd = capability.show_example_usage().removeprefix("Example usage: ")
-        exec(f"{capability.__name__} = capabilities_module.{capability.__name__}", globals=globals())
+        exec(f"{capability.__name__} = capabilities_module.{capability.__name__}", globals())
         exec(cmd)
