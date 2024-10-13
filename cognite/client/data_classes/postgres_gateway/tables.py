@@ -231,7 +231,7 @@ class Table(_TableCore, ABC):
         raise NotImplementedError()
 
 
-class TableRaw(Table):
+class RawTable(Table):
     """Foreign tables.
 
     This is the read/response format of the raw table.
@@ -275,7 +275,7 @@ class TableRaw(Table):
         )
 
 
-class TableView(Table):
+class ViewTable(Table):
     """Foreign tables.
 
     This is the read/response format of the custom table.
