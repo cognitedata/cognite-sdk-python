@@ -326,11 +326,11 @@ class TableList(WriteableCogniteResourceList[TableWrite, Table]):
 
 
 _TABLE_WRITE_CLASS_BY_TYPE: dict[str, type[TableWrite]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined, type-abstract]
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in TableWrite.__subclasses__()
 }
 
 _TABLE_CLASS_BY_TYPE: dict[str, type[Table]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined, type-abstract]
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in Table.__subclasses__()
 }
