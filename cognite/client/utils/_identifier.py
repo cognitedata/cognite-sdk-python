@@ -398,6 +398,14 @@ class UsernameSequence(IdentifierSequenceCore[Username]):
         if not self.is_singleton():
             raise ValueError("Exactly one username (string) must be specified")
 
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
+        if isinstance(identifier, (str, int)):
+            return identifier
+        if "username" in identifier:
+            return identifier["username"]
+        raise ValueError(f"{identifier} does not contain 'username'.")
+
 
 class TablenameSequence(IdentifierSequenceCore[Tablename]):
     @classmethod
@@ -413,6 +421,14 @@ class TablenameSequence(IdentifierSequenceCore[Tablename]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one tablename (string) must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
+        if isinstance(identifier, (str, int)):
+            return identifier
+        if "tablename" in identifier:
+            return identifier["tablename"]
+        raise ValueError(f"{identifier} does not contain 'tablename'.")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
