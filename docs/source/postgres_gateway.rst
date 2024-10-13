@@ -1,7 +1,7 @@
 Postgres Gateway
 =================
-Users API
----------------
+Postgres Gateway Users API
+---------------------------
 Create Postgres Gateway Users
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.postgres_gateway.UsersAPI.create
