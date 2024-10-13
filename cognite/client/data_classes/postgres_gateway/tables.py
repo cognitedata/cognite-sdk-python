@@ -109,6 +109,9 @@ class _TableCore(WriteableCogniteResource["TableWrite"], ABC):
     def __init__(self, tablename: str):
         self.tablename = tablename
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"tablename": self.tablename, "type": self._type}
+
 
 class TableWrite(_TableCore, ABC):
     """View and create foreign **tables** for a given **user**.
@@ -165,11 +168,10 @@ class RawTableWrite(TableWrite):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "tablename": self.tablename,
-            "options": self.options.dump(camel_case=camel_case),
-            "columns": Column._dump_columns(self.columns),
-        }
+        output = super().dump(camel_case=camel_case)
+        output["options"] = self.options.dump(camel_case=camel_case)
+        output["columns"] = Column._dump_columns(self.columns)
+        return output
 
 
 class ViewTableWrite(TableWrite):
@@ -196,10 +198,9 @@ class ViewTableWrite(TableWrite):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "tablename": self.tablename,
-            "options": self.options.dump(camel_case=camel_case),
-        }
+        output = super().dump(camel_case=camel_case)
+        output["options"] = self.options.dump(camel_case=camel_case)
+        return output
 
 
 class Table(_TableCore, ABC):
@@ -261,11 +262,10 @@ class RawTable(Table):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "tablename": self.tablename,
-            "options": self.options.dump(camel_case=camel_case),
-            "columns": Column._dump_columns(self.columns),
-        }
+        output = super().dump(camel_case=camel_case)
+        output["options"] = self.options.dump(camel_case=camel_case)
+        output["columns"] = Column._dump_columns(self.columns)
+        return output
 
     def as_write(self) -> RawTableWrite:
         return RawTableWrite(
@@ -301,10 +301,9 @@ class ViewTable(Table):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "tablename": self.tablename,
-            "options": self.options.dump(camel_case=camel_case),
-        }
+        output = super().dump(camel_case=camel_case)
+        output["options"] = self.options.dump(camel_case=camel_case)
+        return output
 
     def as_write(self) -> ViewTableWrite:
         return ViewTableWrite(
