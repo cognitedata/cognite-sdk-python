@@ -1,5 +1,19 @@
 from __future__ import annotations
 
+from cognite.client.data_classes.postgres_gateway.tables import (
+    Column,
+    ColumnType,
+    RawTable,
+    RawTableOptions,
+    RawTableWrite,
+    Table,
+    TableList,
+    TableWrite,
+    TableWriteList,
+    ViewTable,
+    ViewTableOptions,
+    ViewTableWrite,
+)
 from cognite.client.data_classes.postgres_gateway.users import (
     SessionCredentials,
     User,
@@ -9,11 +23,23 @@ from cognite.client.data_classes.postgres_gateway.users import (
     UserWriteList,
 )
 
-from cognite.client.data_classes.postgres_gateway.tables import (
-    Table,
-    TableList,
-    TableWrite,
-    TableWriteList,
-)
-
-__all__ = ["User", "UserList", "UserUpdate", "UserWrite", "UserWriteList", "SessionCredentials", "Table", "TableList", "TableWrite", "TableWriteList"]
+__all__ = [
+    "User",
+    "UserList",
+    "UserUpdate",
+    "UserWrite",
+    "UserWriteList",
+    "SessionCredentials",
+    "Table",
+    "TableList",
+    "TableWrite",
+    "TableWriteList",
+    "RawTableOptions",
+    "ViewTableOptions",
+    "Column",
+    "RawTableWrite",
+    "ViewTableWrite",
+    "RawTable",
+    "ViewTable",
+    "ColumnType",
+]
