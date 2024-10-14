@@ -498,6 +498,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ),
             clear_cache=loaded.get("clear_cache", False),
             mem_cache_only=loaded.get("mem_cache_only", False),
+            **loaded.get("token_custom_args", {}),
         )
 
     @classmethod
