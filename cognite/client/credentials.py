@@ -485,20 +485,20 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             >>> credentials = OAuthDeviceCode.load(config)
         """
         loaded = load_resource_to_dict(config)
-        token_cache_path = loaded.get("token_cache_path")
+        token_cache_path = loaded.pop("token_cache_path", None)
         return cls(
-            authority_url=loaded["authority_url"],
-            client_id=loaded["client_id"],
-            scopes=loaded.get("scopes"),
-            cdf_cluster=loaded.get("cdf_cluster"),
-            oauth_discovery_url=loaded.get("oauth_discovery_url"),
-            token_cache_path=Path(token_cache_path) if token_cache_path else None,
+            authority_url=loaded.pop("authority_url"),
+            client_id=loaded.pop("client_id"),
+            scopes=loaded.pop("scopes", None),
+            cdf_cluster=loaded.pop("cdf_cluster", None),
+            oauth_discovery_url=loaded.pop("oauth_discovery_url", None),
+            token_cache_path=Path(token_cache_path) if token_cache_path is not None else None,
             token_expiry_leeway_seconds=int(
-                loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
+                loaded.pop("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),
-            clear_cache=loaded.get("clear_cache", False),
-            mem_cache_only=loaded.get("mem_cache_only", False),
-            **loaded.get("token_custom_args", {}),
+            clear_cache=loaded.pop("clear_cache", False),
+            mem_cache_only=loaded.pop("mem_cache_only", False),
+            **loaded,
         )
 
     @classmethod
