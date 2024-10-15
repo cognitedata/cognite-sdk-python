@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import platform
 import random
 import time
 from contextlib import contextmanager
@@ -20,7 +21,9 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._text import random_string
 
-TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
+TIMESERIES_EXTERNAL_IDS = [
+    f"PYSDK DataPoint Subscription {platform.system()} {platform.python_version()} Test {no}" for no in range(20)
+]
 
 
 @contextmanager
