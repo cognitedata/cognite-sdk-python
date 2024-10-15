@@ -261,10 +261,7 @@ class TestDatapointSubscriptions:
             assert batch.subscription_changes.added[0].external_id == time_series_external_ids[0]
 
             existing_data = cognite_client.time_series.data.retrieve_dataframe(external_id=time_series_external_ids[0])
-            if existing_data.empty:
-                start = pd.Timestamp("now")
-            else:
-                start = existing_data.index[-1] + pd.Timedelta("1d")
+            start = pd.Timestamp("now") if existing_data.empty else existing_data.index[-1] + pd.Timedelta("1d")
             new_values = [42, 43]
             new_data = pd.DataFrame(
                 {time_series_external_ids[0]: new_values},
