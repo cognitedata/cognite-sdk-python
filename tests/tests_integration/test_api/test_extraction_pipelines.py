@@ -9,7 +9,11 @@ from cognite.client.data_classes import (
     ExtractionPipelineUpdate,
     ExtractionPipelineWrite,
 )
-from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact, ExtractionPipelineRunList
+from cognite.client.data_classes.extractionpipelines import (
+    ExtractionPipelineContact,
+    ExtractionPipelineNotificationConfiguration,
+    ExtractionPipelineRunList,
+)
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
@@ -31,6 +35,7 @@ def new_extpipe(cognite_client: CogniteClient) -> ExtractionPipeline:
                     name="John Doe", email="john.doe@cognite.com", role="owner", send_notification=False
                 )
             ],
+            notification_config=ExtractionPipelineNotificationConfiguration(allowed_not_seen_range_in_minutes=10),
             schedule="Continuous",
         )
     )
