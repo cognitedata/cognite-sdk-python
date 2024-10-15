@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
@@ -51,6 +52,11 @@ class ExtractionPipelineContact(CogniteObject):
         )
 
 
+@dataclass
+class ExtractionPipelineNotificationConfiguration(CogniteObject):
+    allowed_not_seen_range_in_minutes: int | None = None
+
+
 class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"], ABC):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
@@ -65,6 +71,7 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.
         documentation (str | None): Documentation text value for extraction pipeline.
+        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
         created_by (str | None): Extraction pipeline creator, usually an email.
 
     """
@@ -81,6 +88,7 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
         metadata: dict[str, str] | None = None,
         source: str | None = None,
         documentation: str | None = None,
+        notification_config: ExtractionPipelineNotificationConfiguration | None = None,
         created_by: str | None = None,
     ) -> None:
         self.external_id = external_id
@@ -93,12 +101,15 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
         self.metadata = metadata
         self.source = source
         self.documentation = documentation
+        self.notification_config = notification_config
         self.created_by = created_by
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.contacts:
             result["contacts"] = [contact.dump(camel_case) for contact in self.contacts]
+        if self.notification_config:
+            result["notificationConfig"] = self.notification_config.dump(camel_case)
         return result
 
 
@@ -122,6 +133,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.
         documentation (str | None): Documentation text value for extraction pipeline.
+        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_by (str | None): Extraction pipeline creator, usually an email.
@@ -145,6 +157,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
         metadata: dict[str, str] | None = None,
         source: str | None = None,
         documentation: str | None = None,
+        notification_config: ExtractionPipelineNotificationConfiguration | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         created_by: str | None = None,
@@ -161,6 +174,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
             metadata=metadata,
             source=source,
             documentation=documentation,
+            notification_config=notification_config,
             created_by=created_by,
         )
         # id/created_time/last_updated_time are required when using the class to read,
@@ -192,6 +206,7 @@ class ExtractionPipeline(ExtractionPipelineCore):
             metadata=self.metadata,
             source=self.source,
             documentation=self.documentation,
+            notification_config=self.notification_config,
             created_by=self.created_by,
         )
 
@@ -203,6 +218,10 @@ class ExtractionPipeline(ExtractionPipelineCore):
                 ExtractionPipelineContact._load(contact) if isinstance(contact, dict) else contact
                 for contact in instance.contacts
             ]
+        if instance.notification_config and isinstance(instance.notification_config, dict):
+            instance.notification_config = ExtractionPipelineNotificationConfiguration._load(
+                instance.notification_config
+            )
         return instance
 
     def __hash__(self) -> int:
@@ -224,6 +243,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): Source text value for extraction pipeline.
         documentation (str | None): Documentation text value for extraction pipeline.
+        notification_config (ExtractionPipelineNotificationConfiguration | None): Notification configuration for the extraction pipeline.
         created_by (str | None): Extraction pipeline creator, usually an email.
     """
 
@@ -239,6 +259,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
         metadata: dict[str, str] | None = None,
         source: str | None = None,
         documentation: str | None = None,
+        notification_config: ExtractionPipelineNotificationConfiguration | None = None,
         created_by: str | None = None,
     ) -> None:
         super().__init__(
@@ -252,6 +273,7 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             metadata=metadata,
             source=source,
             documentation=documentation,
+            notification_config=notification_config,
             created_by=created_by,
         )
 
@@ -264,10 +286,13 @@ class ExtractionPipelineWrite(ExtractionPipelineCore):
             data_set_id=resource["dataSetId"],
             raw_tables=resource.get("rawTables"),
             schedule=resource.get("schedule"),
-            contacts=[ExtractionPipelineContact.load(contact) for contact in resource.get("contacts") or []] or None,
+            contacts=[ExtractionPipelineContact._load(contact) for contact in resource.get("contacts") or []] or None,
             metadata=resource.get("metadata"),
             source=resource.get("source"),
             documentation=resource.get("documentation"),
+            notification_config=ExtractionPipelineNotificationConfiguration._load(resource["notificationConfig"])
+            if "notificationConfig" in resource
+            else None,
             created_by=resource.get("createdBy"),
         )
 
@@ -341,6 +366,10 @@ class ExtractionPipelineUpdate(CogniteUpdate):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "documentation")
 
     @property
+    def notification_config(self) -> _PrimitiveExtractionPipelineUpdate:
+        return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "notificationConfig")
+
+    @property
     def schedule(self) -> _PrimitiveExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "schedule")
 
@@ -361,8 +390,7 @@ class ExtractionPipelineUpdate(CogniteUpdate):
             PropertySpec("metadata", is_object=True),
             PropertySpec("source", is_nullable=False),
             PropertySpec("documentation", is_nullable=False),
-            # Not supported yet
-            # PropertySpec("notification_config", is_nullable=False),
+            PropertySpec("notification_config", is_nullable=False),
         ]
 
 
