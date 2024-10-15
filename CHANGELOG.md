@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.4] - 2024-10-14
+### Fixed
+- Using `OAuthDeviceCode.load` now includes the missing parameters `oauth_discovery_url`, `clear_cache`, and `mem_cache_only`.
+- All unknown parameters to `OAuthDeviceCode.load` are now passed on as `token_custom_args`.
+
 ## [7.63.3] - 2024-10-13
 ### Fixed
 - NodeList and EdgeList (and subclasses) now support using `.get` with an `external_id` as a shortcut over
