@@ -60,6 +60,7 @@ class ExtractionPipelineNotificationConfiguration(CogniteObject):
         allowed_not_seen_range_in_minutes (int | None): Time in minutes to pass without any Run. Null if extraction pipeline is not checked.
 
     """
+
     allowed_not_seen_range_in_minutes: int | None = None
 
 
