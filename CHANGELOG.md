@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.5] - 2024-10-15
+### Fixed
+- Added missing parameter `notification_config` to `ExtractionPipeline`.
+
 ## [7.63.4] - 2024-10-14
 ### Fixed
 - Using `OAuthDeviceCode.load` now includes the missing parameters `oauth_discovery_url`, `clear_cache`, and `mem_cache_only`.
