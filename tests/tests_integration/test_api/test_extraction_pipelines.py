@@ -3,8 +3,17 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
-from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact, ExtractionPipelineRunList
+from cognite.client.data_classes import (
+    ExtractionPipeline,
+    ExtractionPipelineRun,
+    ExtractionPipelineUpdate,
+    ExtractionPipelineWrite,
+)
+from cognite.client.data_classes.extractionpipelines import (
+    ExtractionPipelineContact,
+    ExtractionPipelineNotificationConfiguration,
+    ExtractionPipelineRunList,
+)
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
@@ -12,11 +21,11 @@ from cognite.client.utils._time import DayAligner
 
 
 @pytest.fixture(scope="function")
-def new_extpipe(cognite_client: CogniteClient):
+def new_extpipe(cognite_client: CogniteClient) -> ExtractionPipeline:
     testid = random_string(50)
     dataset = cognite_client.data_sets.list()[0]
     extpipe = cognite_client.extraction_pipelines.create(
-        ExtractionPipeline(
+        ExtractionPipelineWrite(
             external_id=f"testid-{testid}",
             name=f"Test extpipe {testid}",
             data_set_id=dataset.id,
@@ -26,6 +35,7 @@ def new_extpipe(cognite_client: CogniteClient):
                     name="John Doe", email="john.doe@cognite.com", role="owner", send_notification=False
                 )
             ],
+            notification_config=ExtractionPipelineNotificationConfiguration(allowed_not_seen_range_in_minutes=10),
             schedule="Continuous",
         )
     )
