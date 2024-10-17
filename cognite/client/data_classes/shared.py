@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -144,11 +144,14 @@ class GeoLocation(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
-        return cls(
-            type=resource["type"],
-            geometry=Geometry._load(resource["geometry"], cognite_client),
-            properties=resource.get("properties"),
-        )
+        if "type" in resource:
+            return cls(
+                type=resource["type"],
+                geometry=Geometry._load(resource["geometry"], cognite_client),
+                properties=resource.get("properties"),
+            )
+        # Years ago, the API didn't enforce the current restriction on the type field:
+        return UnknownCogniteObject(resource)  # type: ignore[return-value]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
