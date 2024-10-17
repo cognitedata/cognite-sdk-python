@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.6] - 2024-10-17
+### Fixed
+- Files, or other resources with geo.location data, created long ago before the current API restriction(s) were in-place
+  now load as UnknownCogniteObject, rather than throwing an exception (typically `KeyError`).
+
 ## [7.63.5] - 2024-10-15
 ### Fixed
 - Added missing parameter `notification_config` to `ExtractionPipeline`.
@@ -31,7 +36,7 @@ Changes are grouped as follows
 - NodeList and EdgeList (and subclasses) now support using `.get` with an `external_id` as a shortcut over
   using `instance_id`. When the `external_id` is ambiguous (non-unique, multiple spaces), a ValueError
   is raised. Thus, using `external_id` is no longer deprecated.
-  
+
 ## [7.63.2] - 2024-10-11
 ### Fixed
 - Setting up interactive `OAuthInteractive` sessions no longer raises `TypeError` as the lower bound for the `msal`
