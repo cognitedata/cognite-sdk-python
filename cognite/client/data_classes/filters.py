@@ -340,7 +340,6 @@ class And(CompoundFilter):
 
         Using the "&" operator:
 
-            >>> from cognite.client.data_classes.filters import And
             >>> flt = Equals("age", 42) & Equals("name", "Alice")
     """
 
@@ -372,7 +371,6 @@ class Or(CompoundFilter):
 
         Using the "|" operator:
 
-            >>> from cognite.client.data_classes.filters import And
             >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
     """
 
