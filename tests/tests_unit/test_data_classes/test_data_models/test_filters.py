@@ -250,12 +250,20 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     )
     yield pytest.param(prop_list1, expected, id="Prefix filter with list property of objects")
     yield pytest.param(prop_list2, expected, id="Prefix filter with list property of dicts")
-    overloaded_filter = f.Equals(property="name", value="bob") & f.HasData(containers=[("space", "container")]) | ~ f.Range(property="size", gt=0)
-    expected = {'or': [{'and': [{'equals': {'property': ['name'], 'value': 'bob'}},
-    {'hasData': [{'type': 'container',
-       'space': 'space',
-       'externalId': 'container'}]}]},
-  {'not': {'range': {'property': ['size'], 'gt': 0}}}]}
+    overloaded_filter = f.Equals(property="name", value="bob") & f.HasData(
+        containers=[("space", "container")]
+    ) | ~f.Range(property="size", gt=0)
+    expected = {
+        "or": [
+            {
+                "and": [
+                    {"equals": {"property": ["name"], "value": "bob"}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
+                ]
+            },
+            {"not": {"range": {"property": ["size"], "gt": 0}}},
+        ]
+    }
     yield pytest.param(overloaded_filter, expected, id="Compound filter with overloaded")
 
 
