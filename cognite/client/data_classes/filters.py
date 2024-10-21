@@ -204,10 +204,10 @@ class Filter(ABC):
 
     def __and__(self, other: Filter) -> And:
         return And(self, other)
-    
+
     def __or__(self, other: Filter) -> Or:
         return Or(self, other)
-    
+
     def __invert__(self) -> Not:
         return Not(self)
 
@@ -331,6 +331,11 @@ class And(CompoundFilter):
             >>> flt = And(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Usint the "&" operator:
+
+            >>> from cognite.client.data_classes.filters import And
+            >>> flt = Equals("age", 42) & Equals("name", "Alice")
     """
 
     _filter_name = "and"
@@ -358,6 +363,11 @@ class Or(CompoundFilter):
             >>> flt = Or(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Usint the "|" operator:
+
+            >>> from cognite.client.data_classes.filters import And
+            >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
     """
 
     _filter_name = "or"
@@ -383,6 +393,11 @@ class Not(CompoundFilter):
 
             >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
             >>> flt = Not(is_42)
+
+        Usint the "~" operator:
+
+            >>> from cognite.client.data_classes.filters import And
+            >>> flt = ~Equals("name", "Bob")
     """
 
     _filter_name = "not"
