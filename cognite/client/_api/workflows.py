@@ -396,7 +396,9 @@ class WorkflowExecutionAPI(APIClient):
         if metadata is not None:
             body["metadata"] = metadata
 
-        response = self._post(url_path=f"/workflows/{workflow_external_id}/versions/{version}/run", json=body)
+        response = self._post(
+            url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}/run", json=body
+        )
         return WorkflowExecution._load(response.json())
 
     def list(
