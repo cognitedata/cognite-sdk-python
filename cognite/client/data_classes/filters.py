@@ -202,6 +202,15 @@ class Filter(ABC):
                 output.update(filter_._involved_filter_types())
         return output
 
+    def __and__(self, other: Filter) -> And:
+        return And(self, other)
+    
+    def __or__(self, other: Filter) -> Or:
+        return Or(self, other)
+    
+    def __invert__(self) -> Not:
+        return Not(self)
+
 
 class UnknownFilter(Filter):
     def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
