@@ -402,7 +402,6 @@ class Not(CompoundFilter):
 
         Using the "~" operator:
 
-            >>> from cognite.client.data_classes.filters import And
             >>> flt = ~Equals("name", "Bob")
     """
 
