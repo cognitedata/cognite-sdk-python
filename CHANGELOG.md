@@ -19,7 +19,8 @@ Changes are grouped as follows
 
 ## [7.63.8] - 2024-10-21
 ### Added
-- The filters `And`, `Or` and `Not` can now be applied by using the operators `&`, `|` and `~` .
+- Filters can now be combined using `And` and `Or` by using the operators `&` and `|`.
+- Filters can now be negated by using the `~` operator (instead of using the `Not` filter)
 
 ## [7.63.7] - 2024-10-18
 ### Fixed
