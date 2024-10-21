@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.7] - 2024-10-18
+### Fixed
+- Calling `cognite_client.data_modeling.instances(..., chunk_size=False, include_typing=False)` no longer raises a
+  `TypeError`.
+
 ## [7.63.6] - 2024-10-17
 ### Fixed
 - Files, or other resources with geo.location data, created long ago before the current API restriction(s) were in-place
