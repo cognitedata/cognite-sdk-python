@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.8] - 2024-10-22
+### Fixed
+- Data Workflows: can now use a workflowExternal and/or version containing a `/` when calling `workflows.executions.run`
+
 ## [7.63.7] - 2024-10-18
 ### Fixed
 - Calling `cognite_client.data_modeling.instances(..., chunk_size=False, include_typing=False)` no longer raises a
