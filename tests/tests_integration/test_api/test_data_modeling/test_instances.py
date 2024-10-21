@@ -907,6 +907,13 @@ class TestInstancesAPI:
         assert type_.unit is not None
         assert type_.unit.external_id == "pressure:pa"
 
+    @pytest.mark.usefixtures("node_with_1_1_pressure_in_bar")
+    def test_iterate_one_by_one(self, cognite_client: CogniteClient, unit_view: View) -> None:
+        is_source = filters.HasData(views=[unit_view.as_id()])
+        iterator = cognite_client.data_modeling.instances(filter=is_source, instance_type="node")
+        first_iter = next(iterator)
+        assert isinstance(first_iter, Node)
+
     def test_iterate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
     ) -> None:
