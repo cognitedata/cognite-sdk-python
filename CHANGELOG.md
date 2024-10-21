@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.63.8] - 2024-10-21
 ### Fixed
-- Data Workflows: can now use a workflowExternal and/or version containing a `/` when calling `workflows.executions.run`
+- Data Workflows: workflow external ID and version are now URL encoded to allow characters like `/`  when calling `workflows.executions.run`
 
 ## [7.63.7] - 2024-10-18
 ### Fixed
