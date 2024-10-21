@@ -244,10 +244,10 @@ class InstancesAPI(APIClient):
         )
 
         if instance_type == "node":
-            resource_cls: type = _NodeOrEdgeResourceAdapter
+            resource_cls: type = _NodeOrEdgeResourceAdapter(Node, Edge)  # type: ignore[assignment]
             list_cls: type = NodeList
         elif instance_type == "edge":
-            resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
+            resource_cls, list_cls = _NodeOrEdgeResourceAdapter(Node, Edge), EdgeList  # type: ignore[assignment]
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
         if not include_typing:
