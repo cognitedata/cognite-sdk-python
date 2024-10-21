@@ -202,6 +202,21 @@ class Filter(ABC):
                 output.update(filter_._involved_filter_types())
         return output
 
+    def __list_filters_without_nesting(self, right_flt: Filter, operator: type[CompoundFilter]) -> list[Filter]:
+        filters: list[Filter] = []
+        filters.extend(self._filters) if isinstance(self, operator) else filters.append(self)
+        filters.extend(right_flt._filters) if isinstance(right_flt, operator) else filters.append(right_flt)
+        return filters
+
+    def __and__(self, other: Filter) -> And:
+        return And(*self.__list_filters_without_nesting(other, And))
+
+    def __or__(self, other: Filter) -> Or:
+        return Or(*self.__list_filters_without_nesting(other, Or))
+
+    def __invert__(self) -> Not:
+        return Not(self)
+
 
 class UnknownFilter(Filter):
     def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
@@ -322,6 +337,10 @@ class And(CompoundFilter):
             >>> flt = And(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "&" operator:
+
+            >>> flt = Equals("age", 42) & Equals("name", "Alice")
     """
 
     _filter_name = "and"
@@ -349,6 +368,10 @@ class Or(CompoundFilter):
             >>> flt = Or(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "|" operator:
+
+            >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
     """
 
     _filter_name = "or"
@@ -374,6 +397,10 @@ class Not(CompoundFilter):
 
             >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
             >>> flt = Not(is_42)
+
+        Using the "~" operator:
+
+            >>> flt = ~Equals("name", "Bob")
     """
 
     _filter_name = "not"

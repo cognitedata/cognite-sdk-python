@@ -250,6 +250,31 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     )
     yield pytest.param(prop_list1, expected, id="Prefix filter with list property of objects")
     yield pytest.param(prop_list2, expected, id="Prefix filter with list property of dicts")
+    overloaded_filter = f.Equals(property="name", value="bob") & f.HasData(
+        containers=[("space", "container")]
+    ) | ~f.Range(property="size", gt=0)
+    expected = {
+        "or": [
+            {
+                "and": [
+                    {"equals": {"property": ["name"], "value": "bob"}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
+                ]
+            },
+            {"not": {"range": {"property": ["size"], "gt": 0}}},
+        ]
+    }
+    yield pytest.param(overloaded_filter, expected, id="Compound filter with overloaded operators")
+    nested_overloaded_filter = (f.Equals("a", "b") & f.Equals("c", "d")) & (f.Equals("e", "f") & f.Equals("g", "h"))
+    expected = {
+        "and": [
+            {"equals": {"property": ["a"], "value": "b"}},
+            {"equals": {"property": ["c"], "value": "d"}},
+            {"equals": {"property": ["e"], "value": "f"}},
+            {"equals": {"property": ["g"], "value": "h"}},
+        ]
+    }
+    yield pytest.param(nested_overloaded_filter, expected, id="Compound filter with nested overloaded and")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
