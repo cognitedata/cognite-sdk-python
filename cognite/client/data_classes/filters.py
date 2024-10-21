@@ -202,11 +202,17 @@ class Filter(ABC):
                 output.update(filter_._involved_filter_types())
         return output
 
+    def __list_filters_without_nesting(self, right_flt: Filter, operator: type[CompoundFilter]) -> list[Filter]:
+        filters: list[Filter] = []
+        filters.extend(self._filters) if isinstance(self, operator) else filters.append(self)
+        filters.extend(right_flt._filters) if isinstance(right_flt, operator) else filters.append(right_flt)
+        return filters
+
     def __and__(self, other: Filter) -> And:
-        return And(self, other)
+        return And(*self.__list_filters_without_nesting(other, And))
 
     def __or__(self, other: Filter) -> Or:
-        return Or(self, other)
+        return Or(*self.__list_filters_without_nesting(other, Or))
 
     def __invert__(self) -> Not:
         return Not(self)

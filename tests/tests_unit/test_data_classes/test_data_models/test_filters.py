@@ -264,7 +264,17 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
             {"not": {"range": {"property": ["size"], "gt": 0}}},
         ]
     }
-    yield pytest.param(overloaded_filter, expected, id="Compound filter with overloaded")
+    yield pytest.param(overloaded_filter, expected, id="Compound filter with overloaded operators")
+    nested_overloaded_filter = (f.Equals("a", "b") & f.Equals("c", "d")) & (f.Equals("e", "f") & f.Equals("g", "h"))
+    expected = {
+        "and": [
+            {"equals": {"property": ["a"], "value": "b"}},
+            {"equals": {"property": ["c"], "value": "d"}},
+            {"equals": {"property": ["e"], "value": "f"}},
+            {"equals": {"property": ["g"], "value": "h"}},
+        ]
+    }
+    yield pytest.param(nested_overloaded_filter, expected, id="Compound filter with nested overloaded and")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
