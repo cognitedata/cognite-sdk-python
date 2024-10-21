@@ -309,6 +309,17 @@ def test_not_filter_only_accepts_a_single_filter() -> None:
         f.Not(f.Exists("foo"), f.Exists("bar"))  # type: ignore [call-arg]
 
 
+@pytest.mark.parametrize("compound_flt", [f.And, f.Or, f.Not])
+def test_compound_filters_require_at_least_one_filter(compound_flt: type[f.CompoundFilter]) -> None:
+    # Bug prior to 7.63.10: CompoundFilters (and/or/not) would accept no filters given:
+    if compound_flt is f.Not:
+        err_msg = re.escape("Not.__init__() missing 1 required positional argument: 'filter'")
+    else:
+        err_msg = "^At least one filter must be provided$"
+    with pytest.raises(TypeError, match=err_msg):
+        compound_flt()
+
+
 class TestSpaceFilter:
     @pytest.mark.parametrize(
         "inst_type, space, expected",
