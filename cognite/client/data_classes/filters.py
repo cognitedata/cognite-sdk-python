@@ -332,7 +332,7 @@ class And(CompoundFilter):
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
 
-        Usint the "&" operator:
+        Using the "&" operator:
 
             >>> from cognite.client.data_classes.filters import And
             >>> flt = Equals("age", 42) & Equals("name", "Alice")
@@ -364,7 +364,7 @@ class Or(CompoundFilter):
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
 
-        Usint the "|" operator:
+        Using the "|" operator:
 
             >>> from cognite.client.data_classes.filters import And
             >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
@@ -394,7 +394,7 @@ class Not(CompoundFilter):
             >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
             >>> flt = Not(is_42)
 
-        Usint the "~" operator:
+        Using the "~" operator:
 
             >>> from cognite.client.data_classes.filters import And
             >>> flt = ~Equals("name", "Bob")
