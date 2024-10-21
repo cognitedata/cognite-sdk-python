@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.63.8] - 2024-10-21
+## [7.63.9] - 2024-10-21
 ### Added
 - Filters can now be combined using `And` and `Or` by using the operators `&` and `|`.
 - Filters can now be negated by using the `~` operator (instead of using the `Not` filter)
+
+## [7.63.8] - 2024-10-21
+### Fixed
+- Data Workflows: workflow external ID and version are now URL encoded to allow characters like `/`  when calling `workflows.executions.run`
 
 ## [7.63.7] - 2024-10-18
 ### Fixed
