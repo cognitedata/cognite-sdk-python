@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -299,6 +300,13 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
     assert dumped["value"] == "value_foo Bar_baz"
+
+
+def test_not_filter_only_accepts_a_single_filter() -> None:
+    # Bug prior to 7.63.10: Not-filter would accept and ignore all-but-the-first filter given:
+    err_msg = re.escape("Not.__init__() takes 2 positional arguments but 3 were given")
+    with pytest.raises(TypeError, match=f"^{err_msg}$"):
+        f.Not(f.Exists("foo"), f.Exists("bar"))  # type: ignore [call-arg]
 
 
 class TestSpaceFilter:
