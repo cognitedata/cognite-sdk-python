@@ -1567,7 +1567,7 @@ class InstancesAPI(APIClient):
             resource_cls: type = Node
             list_cls: type = NodeList
         elif instance_type == "edge":
-            resource_cls, list_cls = Edge, EdgeList  # type: ignore[assignment]
+            resource_cls, list_cls = Edge, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
             resource_cls = _NodeOrEdgeResourceAdapter(instance_type, Edge)  # type: ignore[assignment]
             list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
