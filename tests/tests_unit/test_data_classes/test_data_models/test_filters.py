@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -300,6 +301,24 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
     assert dumped["value"] == "value_foo Bar_baz"
+
+
+def test_not_filter_only_accepts_a_single_filter() -> None:
+    # Bug prior to 7.63.10: Not-filter would accept and ignore all-but-the-first filter given:
+    err_msg = re.escape("Not.__init__() takes 2 positional arguments but 3 were given")
+    with pytest.raises(TypeError, match=f"^{err_msg}$"):
+        f.Not(f.Exists("foo"), f.Exists("bar"))  # type: ignore [call-arg]
+
+
+@pytest.mark.parametrize("compound_flt", [f.And, f.Or, f.Not])
+def test_compound_filters_require_at_least_one_filter(compound_flt: type[f.CompoundFilter]) -> None:
+    # Bug prior to 7.63.10: CompoundFilters (and/or/not) would accept no filters given:
+    if compound_flt is f.Not:
+        err_msg = re.escape("Not.__init__() missing 1 required positional argument: 'filter'")
+    else:
+        err_msg = "^At least one filter must be provided$"
+    with pytest.raises(TypeError, match=err_msg):
+        compound_flt()
 
 
 @pytest.mark.parametrize("space", (None, "s1", ["s1", "s2"]))
