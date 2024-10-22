@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -30,7 +31,7 @@ class ParameterValue:
 
 
 FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
-FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
+FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue | Sequence[InstanceId]
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
@@ -41,6 +42,9 @@ def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
 
     elif isinstance(value, ParameterValue):
         return {"parameter": value.parameter}
+
+    elif isinstance(value, InstanceId):
+        return value.dump(include_instance_type=False)
 
     elif hasattr(value, "dump"):
         return value.dump()
