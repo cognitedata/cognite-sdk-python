@@ -103,6 +103,7 @@ class APIClient:
                     "workflows/.*",
                     "hostedextractors/.*",
                     "postgresgateway/.*",
+                    "context/diagram/*",
                 )
             )
         ]
