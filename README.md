@@ -68,7 +68,7 @@ pip install cognite-sdk
 ```
 
 ## Changelog
-Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
+Wondering about previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
 
 ## Migration Guide
 To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md).
