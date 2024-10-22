@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.10] - 2024-10-22
+### Added
+- Data modeling: When using the `In` filter to filter on direct relations, `NodeId`s can now be used directly as values.
+
 ## [7.63.9] - 2024-10-21
 ### Added
 - Filters can now be combined using `And` and `Or` by using the operators `&` and `|`.
