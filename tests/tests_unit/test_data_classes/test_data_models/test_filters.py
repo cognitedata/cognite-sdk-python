@@ -7,6 +7,7 @@ import pytest
 from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
+from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
@@ -299,6 +300,33 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
     # property may contain more (static) values, so we just verify the end:
     assert dumped["property"][-2:] == ["metadata", "key_foo_Bar_baz"]
     assert dumped["value"] == "value_foo Bar_baz"
+
+
+@pytest.mark.parametrize("space", (None, "s1", ["s1", "s2"]))
+@pytest.mark.parametrize("user_filter", (None, f.Exists("x1"), f.And(f.Exists("x1"), f.Exists("x2"))))
+@pytest.mark.parametrize("pass_as_dict", (True, False))
+def test_merge_space_into_filter(
+    space: str | list[str] | None, user_filter: f.Filter | None, pass_as_dict: bool
+) -> None:
+    flt_used = user_filter.dump() if pass_as_dict and user_filter else user_filter
+    res = InstancesAPI._merge_space_into_filter(
+        instance_type="node",
+        space=space,
+        filter=flt_used,
+    )
+    if space is user_filter is None:
+        assert res is None
+    elif space is None:
+        assert res == flt_used
+    elif user_filter is None:
+        assert isinstance(res, f.SpaceFilter)
+    else:
+        assert isinstance(res, f.And)
+        f1, *fs = res._filters
+        assert isinstance(f1, f.SpaceFilter)
+        # Ensure that the user filter if passed as an And-filter, is merged, rather than nested:
+        for flt in fs:
+            assert isinstance(flt, f.Exists)
 
 
 class TestSpaceFilter:
