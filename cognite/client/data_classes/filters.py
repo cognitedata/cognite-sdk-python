@@ -31,7 +31,7 @@ class ParameterValue:
 
 
 FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
-FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue | Sequence[InstanceId]
+FilterValueList: TypeAlias = Sequence[RawValue | InstanceId] | PropertyReferenceValue | ParameterValue
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
