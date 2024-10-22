@@ -1605,7 +1605,9 @@ class InstancesAPI(APIClient):
         space_filter = filters.SpaceFilter(space, instance_type)
         if filter is None:
             return space_filter
-        return filters.And(space_filter, Filter.load(filter) if isinstance(filter, dict) else filter)
+        filter = Filter.load(filter) if isinstance(filter, dict) else filter
+        # 'And' the space filter with the user filter (will merge if user filter is 'And')
+        return space_filter & filter
 
     @staticmethod
     def _to_instance_type_str(
