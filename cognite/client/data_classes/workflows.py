@@ -612,9 +612,9 @@ class SimulatorTaskOutput(WorkflowTaskOutput):
 
     Args:
         run_id (int | None): The run id of the simulation execution in the SimInt API.
-        logs (list[logs] | None): Logs from the simulation execution.
+        logs (list[dict[str, Any]] | None): Logs from the simulation execution.
         status_message (str | None): Status of the current simulation execution.
-        outputs (list[dict] | None): Outputs results from the simulation execution
+        outputs (list[dict[str, Any]] | None): Outputs results from the simulation execution
     """
 
     task_type: ClassVar[str] = "simulator"
