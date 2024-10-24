@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.63.11] - 2024-10-24
+### Added
+- Added support for simulation tasks in data workflows.
+
 ## [7.63.10] - 2024-10-22
 ### Fixed
 - The Not() filter now only accepts a single filter (and no longer silently ignores the rest).
