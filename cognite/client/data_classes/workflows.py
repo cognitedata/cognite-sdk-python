@@ -257,7 +257,7 @@ class SimulatorTaskParameters(WorkflowTaskParameters):
         simulation = {
             "routineExternalId" if camel_case else "routine_external_id": self.routine_external_id,
             "runTime" if camel_case else "run_time": self.run_time,
-            "inputs" if camel_case else "inputs": self.inputs,
+            "inputs": self.inputs,
         }
 
         return {"simulator": simulation}
