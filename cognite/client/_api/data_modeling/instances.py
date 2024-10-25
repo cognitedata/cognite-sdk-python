@@ -55,6 +55,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
     TypedEdge,
+    TypedInstance,
     TypedNode,
     TypeInformation,
 )
@@ -98,7 +99,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 
 
 class _TypedNodeOrEdgeListAdapter:
-    def __init__(self, instance_cls: type) -> None:
+    def __init__(self, instance_cls: type[TypedInstance]) -> None:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
@@ -1569,10 +1570,10 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = Edge, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
-            resource_cls = _NodeOrEdgeResourceAdapter(instance_type, Edge)  # type: ignore[assignment]
+            resource_cls = instance_type
             list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
-            resource_cls = _NodeOrEdgeResourceAdapter(Node, instance_type)  # type: ignore[assignment]
+            resource_cls = instance_type
             list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
