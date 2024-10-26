@@ -273,6 +273,8 @@ class CompoundFilter(Filter, ABC):
     def __init__(self, *filters: Filter) -> None:
         if not_flt := [flt for flt in filters if not isinstance(flt, Filter)]:
             raise TypeError(f"One or more invalid filters, expected Filter, got: {not_flt}")
+        if not filters:
+            raise TypeError("At least one filter must be provided")
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -404,6 +406,9 @@ class Not(CompoundFilter):
     """
 
     _filter_name = "not"
+
+    def __init__(self, filter: Filter) -> None:
+        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)

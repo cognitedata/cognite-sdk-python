@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.63.10] - 2024-10-22
+## [7.63.11] - 2024-10-26
 ### Fixed
 - The `/context/diagram/` endpoints are now retried on 5xx and 429 errors.
+
+## [7.63.10] - 2024-10-22
+### Fixed
+- The Not() filter now only accepts a single filter (and no longer silently ignores the rest).
+- The And(), Or() and Not() filter now requires at least one argument.
 
 ## [7.63.9] - 2024-10-21
 ### Added
