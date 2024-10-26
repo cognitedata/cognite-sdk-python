@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.63.10] - 2024-10-22
 ### Added
-- Data modeling: When using the `In` filter to filter on direct relations, `NodeId`s can now be used directly as values.
+- Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
 
 ## [7.63.9] - 2024-10-21
 ### Added
