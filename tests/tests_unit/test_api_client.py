@@ -1361,6 +1361,11 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
+                # Engineering diagrams
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/convert", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
             ]
         ),
     )
