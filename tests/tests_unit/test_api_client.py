@@ -1364,8 +1364,8 @@ class TestRetryableEndpoints:
                 # Engineering diagrams
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/convert", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
-                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
-                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect", True),
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect/123", True),
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect/456", True),
             ]
         ),
     )
