@@ -202,6 +202,21 @@ class Filter(ABC):
                 output.update(filter_._involved_filter_types())
         return output
 
+    def _list_filters_without_nesting(self, other: Filter, operator: type[CompoundFilter]) -> list[Filter]:
+        filters: list[Filter] = []
+        filters.extend(self._filters) if isinstance(self, operator) else filters.append(self)
+        filters.extend(other._filters) if isinstance(other, operator) else filters.append(other)
+        return filters
+
+    def __and__(self, other: Filter) -> And:
+        return And(*self._list_filters_without_nesting(other, And))
+
+    def __or__(self, other: Filter) -> Or:
+        return Or(*self._list_filters_without_nesting(other, Or))
+
+    def __invert__(self) -> Not:
+        return Not(self)
+
 
 class UnknownFilter(Filter):
     def __init__(self, filter_name: str, filter_body: dict[str, Any]) -> None:
@@ -258,6 +273,8 @@ class CompoundFilter(Filter, ABC):
     def __init__(self, *filters: Filter) -> None:
         if not_flt := [flt for flt in filters if not isinstance(flt, Filter)]:
             raise TypeError(f"One or more invalid filters, expected Filter, got: {not_flt}")
+        if not filters:
+            raise TypeError("At least one filter must be provided")
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -322,6 +339,10 @@ class And(CompoundFilter):
             >>> flt = And(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "&" operator:
+
+            >>> flt = Equals("age", 42) & Equals("name", "Alice")
     """
 
     _filter_name = "and"
@@ -349,6 +370,10 @@ class Or(CompoundFilter):
             >>> flt = Or(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "|" operator:
+
+            >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
     """
 
     _filter_name = "or"
@@ -374,9 +399,16 @@ class Not(CompoundFilter):
 
             >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
             >>> flt = Not(is_42)
+
+        Using the "~" operator:
+
+            >>> flt = ~Equals("name", "Bob")
     """
 
     _filter_name = "not"
+
+    def __init__(self, filter: Filter) -> None:
+        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
