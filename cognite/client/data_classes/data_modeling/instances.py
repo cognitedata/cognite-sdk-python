@@ -36,6 +36,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CogniteResource,
     CogniteResourceList,
     T_CogniteResource,
     T_WriteClass,
@@ -551,28 +552,53 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
-class InspectionResults(DataModelingResource):
-    def __init__(self, involved_views: list[ViewId], involved_containers: list[ContainerId]) -> None:
+class InspectionResults(CogniteResource):
+    def __init__(self, involved_views: list[ViewId] | None, involved_containers: list[ContainerId] | None) -> None:
         self.involved_views = involved_views
         self.involved_containers = involved_containers
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        involved_views = (
+            [ViewId.load(vid) for vid in resource["involvedViews"]] if "involvedViews" in resource else None
+        )
+        involved_containers = (
+            [ContainerId.load(cid) for cid in resource["involvedContainers"]]
+            if "involvedContainers" in resource
+            else None
+        )
         return cls(
-            involved_views=[ViewId.load(vid) for vid in resource["involvedViews"]],
-            involved_containers=[ContainerId.load(cid) for cid in resource["involvedContainers"]],
+            involved_views=involved_views,
+            involved_containers=involved_containers,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        views = [vid.dump(camel_case, include_type=True) for vid in self.involved_views]
-        containers = [cid.dump(camel_case, include_type=True) for cid in self.involved_containers]
-        return {
-            "involvedViews" if camel_case else "involved_views": views,
-            "involvedContainers" if camel_case else "involved_containers": containers,
-        }
+        results = {}
+        if self.involved_views:
+            results["involvedViews" if camel_case else "involved_views"] = [
+                vid.dump(camel_case, include_type=True) for vid in self.involved_views
+            ]
+        if self.involved_containers:
+            results["involvedContainers" if camel_case else "involved_containers"] = [
+                cid.dump(camel_case, include_type=True) for cid in self.involved_containers
+            ]
+        return results
 
 
-class InstanceInspectResult(DataModelingResource):
+@dataclass
+class InspectOperation(ABC): ...
+
+
+@dataclass
+class InvolvedContainers(InspectOperation): ...
+
+
+@dataclass
+class InvolvedViews(InspectOperation):
+    all_versions: bool = False
+
+
+class InstanceInspectResult(CogniteResource):
     def __init__(
         self,
         space: str,
@@ -605,6 +631,12 @@ class InstanceInspectResult(DataModelingResource):
 
 class InstanceInspectResultList(CogniteResourceList[InstanceInspectResult]):
     _RESOURCE = InstanceInspectResult
+
+
+@dataclass
+class InstanceInspectResults:
+    nodes: InstanceInspectResultList
+    edges: InstanceInspectResultList
 
 
 class NodeApply(InstanceApply["NodeApply"]):

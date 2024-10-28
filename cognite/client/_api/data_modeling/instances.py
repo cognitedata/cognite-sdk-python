@@ -43,10 +43,13 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeList,
     InstanceAggregationResultList,
     InstanceInspectResultList,
+    InstanceInspectResults,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
+    InvolvedContainers,
+    InvolvedViews,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -713,9 +716,9 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         *,
-        return_all_view_versions: bool = False,
-        return_all_container_versions: bool = False,
-    ) -> InstanceInspectResultList:
+        involved_views: InvolvedViews | None = None,
+        involved_containers: InvolvedContainers | None = None,
+    ) -> InstanceInspectResults:
         """`Reverse lookup for instances. <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_
 
         This method will return the involved views and containers for the given nodes and edges.
@@ -723,11 +726,11 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node IDs.
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge IDs.
-            return_all_view_versions (bool): Include all view versions in inspection results.
-            return_all_container_versions (bool): Include all container versions in inspection results.
+            involved_views (InvolvedViews | None): Whether to include involved views.
+            involved_containers (InvolvedContainers | None): Whether to include involved containers.
 
         Returns:
-            InstanceInspectResultList: List of instance inspection results.
+            InstanceInspectResults: List of instance inspection results.
 
         Examples:
 
@@ -742,19 +745,32 @@ class InstancesAPI(APIClient):
                 ... )
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
-        options = {
-            "inspectionOperations": {
-                "involvedViews": {"allVersions": return_all_view_versions},
-                "involvedContainers": {"allVersions": return_all_container_versions},
-            }
-        }
-        # TODO: API claims limit is 1k, but only returns 200 max (<=100 for edges and similar for nodes). Thus
-        #       for now we chunk to just 100 elements:
-        items = itertools.chain.from_iterable(
-            self._post(self._RESOURCE_PATH + "/inspect", json={"items": chunk.as_dicts(), **options}).json()["items"]
-            for chunk in identifiers.chunked(100)
+        inspect_operations = {}
+        # Only add the inspect operation to the dict if the value is provided. This is important
+        # since if it's omitted, the API will not execute the operation, making it cheaper.
+        if involved_views:
+            inspect_operations["involvedViews"] = {"allVersions": involved_views.all_versions}
+        if involved_containers:
+            inspect_operations["involvedContainers"] = {}
+        options = {"inspectionOperations": inspect_operations}
+        items = list(
+            itertools.chain.from_iterable(
+                self._post(self._RESOURCE_PATH + "/inspect", json={"items": chunk.as_dicts(), **options}).json()[
+                    "items"
+                ]
+                for chunk in identifiers.chunked(1000)
+            )
         )
-        return InstanceInspectResultList._load(list(items), cognite_client=self._cognite_client)
+        node_res = InstanceInspectResultList._load(
+            [node for node in items if node["instanceType"] == "node"], cognite_client=self._cognite_client
+        )
+        edge_res = InstanceInspectResultList._load(
+            [node for node in items if node["instanceType"] == "edge"], cognite_client=self._cognite_client
+        )
+        return InstanceInspectResults(
+            nodes=node_res,
+            edges=edge_res,
+        )
 
     def subscribe(
         self,
