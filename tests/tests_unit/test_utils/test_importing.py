@@ -1,4 +1,5 @@
 import pytest
+import yaml as normal_yaml
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import import_yaml_with_converters, local_import
@@ -34,8 +35,7 @@ class TestLocalImport:
                 local_import(dep)
 
     def test_import_yaml_with_converters(self):
-        yaml = local_import("yaml")
-        assert yaml.dump(("foo", "bar")) == "!!python/tuple\n- foo\n- bar\n"
+        assert normal_yaml.dump(("foo", "bar")) == "!!python/tuple\n- foo\n- bar\n"
 
         better_yaml = import_yaml_with_converters()
         assert better_yaml.dump(("foo", "bar")) == "- foo\n- bar\n"

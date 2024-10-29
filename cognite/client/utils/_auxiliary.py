@@ -16,6 +16,7 @@ from typing import (
 from urllib.parse import quote
 
 from cognite.client.utils import _json
+from cognite.client.utils._importing import import_yaml_with_converters
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -83,7 +84,7 @@ def fast_dict_load(
 
 def load_yaml_or_json(resource: str) -> Any:
     try:
-        import yaml
+        yaml = import_yaml_with_converters()
 
         return yaml.safe_load(resource)
     except ImportError:
