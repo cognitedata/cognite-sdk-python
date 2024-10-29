@@ -59,13 +59,3 @@ def import_as_completed() -> Callable[[Iterable[Future[_T]]], Iterator[Future[_T
             return iter(copy(fs))
 
     return as_completed
-
-
-def import_yaml_with_converters() -> ModuleType:
-    yaml = local_import("yaml")
-    # We don't want yaml tags to be used for e.g. a simple tuple like a node reference ('my-space', 'my-xid'):
-    # >>> yaml.dump(('my-space', 'my-xid'))
-    # '!!python/tuple\n- my-space\n- my-xid\n'
-    # ...so we add a representer to avoid it:
-    yaml.add_representer(tuple, lambda dumper, data: dumper.represent_list(list(data)))
-    return yaml

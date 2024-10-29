@@ -27,7 +27,7 @@ from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._importing import import_yaml_with_converters, local_import
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     convert_nullable_int_cols,
     convert_timestamp_columns_to_datetime,
@@ -140,7 +140,7 @@ class CogniteObject:
         Returns:
             str: A YAML formatted string representing the instance.
         """
-        yaml = import_yaml_with_converters()
+        yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
     @final
@@ -323,7 +323,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         Returns:
             str: A YAML formatted string representing the instances.
         """
-        yaml = import_yaml_with_converters()
+        yaml = local_import("yaml")
         return yaml.dump(self.dump(camel_case=True), sort_keys=False)
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
