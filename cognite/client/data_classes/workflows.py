@@ -112,7 +112,7 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulator"]
+ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
 
 
 class WorkflowTaskParameters(CogniteObject, ABC):
@@ -140,8 +140,8 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return SubworkflowTaskParameters._load(parameters)
         elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
             return SubworkflowReferenceParameters._load(parameters)
-        elif type_ == "simulator":
-            return SimulatorTaskParameters._load(parameters)
+        elif type_ == "simulation":
+            return SimulationTaskParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -221,7 +221,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return output
 
 
-class SimulatorTaskParameters(WorkflowTaskParameters):
+class SimulationTaskParameters(WorkflowTaskParameters):
     """
     The simulation parameters are used to specify the simulation routine to be executed.
 
@@ -231,7 +231,7 @@ class SimulatorTaskParameters(WorkflowTaskParameters):
         inputs (list[dict[str, Any]] | None): List of input overrides
     """
 
-    task_type = "simulator"
+    task_type = "simulation"
 
     def __init__(
         self,
@@ -244,8 +244,8 @@ class SimulatorTaskParameters(WorkflowTaskParameters):
         self.inputs = inputs
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorTaskParameters:
-        simulation: dict[str, Any] = resource["simulator"]
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationTaskParameters:
+        simulation: dict[str, Any] = resource["simulation"]
 
         return cls(
             routine_external_id=simulation["routineExternalId"],
@@ -260,7 +260,7 @@ class SimulatorTaskParameters(WorkflowTaskParameters):
             "inputs": self.inputs,
         }
 
-        return {"simulator": simulation}
+        return {"simulation": simulation}
 
 
 class TransformationTaskParameters(WorkflowTaskParameters):
@@ -565,8 +565,8 @@ class WorkflowTaskOutput(ABC):
             return DynamicTaskOutput.load(data)
         elif task_type == "subworkflow":
             return SubworkflowTaskOutput.load(data)
-        elif task_type == "simulator":
-            return SimulatorTaskOutput.load(data)
+        elif task_type == "simulation":
+            return SimulationTaskOutput.load(data)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
 
@@ -606,7 +606,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         }
 
 
-class SimulatorTaskOutput(WorkflowTaskOutput):
+class SimulationTaskOutput(WorkflowTaskOutput):
     """
     The class represent the output of Simulation execution.
 
@@ -617,7 +617,7 @@ class SimulatorTaskOutput(WorkflowTaskOutput):
         outputs (list[dict[str, Any]] | None): Outputs results from the simulation execution
     """
 
-    task_type: ClassVar[str] = "simulator"
+    task_type: ClassVar[str] = "simulation"
 
     def __init__(
         self,
@@ -632,7 +632,7 @@ class SimulatorTaskOutput(WorkflowTaskOutput):
         self.outputs = outputs
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SimulatorTaskOutput:
+    def load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
