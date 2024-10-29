@@ -52,7 +52,7 @@ def client_data() -> dict[str, Any]:
 @pytest.fixture
 def quickstart_client_config_file(monkeypatch, client_data):
     def read_text(*args, **kwargs):
-        return yaml.dump(client_data)
+        return yaml.safe_dump(client_data)
 
     monkeypatch.setattr(Path, "read_text", read_text)
 

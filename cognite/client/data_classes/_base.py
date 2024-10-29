@@ -141,7 +141,7 @@ class CogniteObject:
             str: A YAML formatted string representing the instance.
         """
         yaml = local_import("yaml")
-        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
+        return yaml.safe_dump(self.dump(camel_case=True), sort_keys=False)
 
     @final
     @classmethod
@@ -324,7 +324,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             str: A YAML formatted string representing the instances.
         """
         yaml = local_import("yaml")
-        return yaml.dump(self.dump(camel_case=True), sort_keys=False)
+        return yaml.safe_dump(self.dump(camel_case=True), sort_keys=False)
 
     def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
         """Get an item from this list by id or external_id.
