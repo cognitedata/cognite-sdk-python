@@ -309,6 +309,54 @@ class BasicMQTTAuthenticationWrite(AuthenticationWrite):
 
 
 @dataclass
+class RESTHeaderAuthenticationWrite(AuthenticationWrite):
+    _type = "header"
+    key: str
+    value: str
+
+    @classmethod
+    def _load_authentication(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            key=resource["key"],
+            value=resource["value"],
+        )
+
+
+@dataclass
+class RESTQueryAuthenticationWrite(AuthenticationWrite):
+    _type = "query"
+    key: str
+    value: str
+
+    @classmethod
+    def _load_authentication(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            key=resource["key"],
+            value=resource["value"],
+        )
+
+
+@dataclass
+class RESTClientCredentialsAuthenticationWrite(AuthenticationWrite):
+    _type = "clientCredentials"
+    client_id: str
+    client_secret: str
+    token_url: str
+    scopes: str
+    default_expires_in: str | None
+
+    @classmethod
+    def _load_authentication(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            client_id=resource["clientId"],
+            client_secret=resource["clientSecret"],
+            token_url=resource["tokenUrl"],
+            scopes=resource["scopes"],
+            default_expires_in=resource.get("defaultExpiresIn"),
+        )
+
+
+@dataclass
 class CACertificateWrite(CogniteObject):
     type: Literal["der", "pem"]
     certificate: str
