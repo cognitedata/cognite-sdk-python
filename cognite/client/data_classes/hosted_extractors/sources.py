@@ -55,9 +55,10 @@ class SourceWrite(CogniteResource, ABC):
         elif type_ is None:
             raise KeyError("type")
         try:
-            return cast(Self, _SOURCE_WRITE_CLASS_BY_TYPE[type_]._load_source(resource))
+            source_cls = _SOURCE_WRITE_CLASS_BY_TYPE[type_]
         except KeyError:
             raise TypeError(f"Unknown source type: {type_}")
+        return cast(Self, source_cls._load_source(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
