@@ -9,6 +9,7 @@ from cognite.client.data_classes import Function
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
+    SimulationTaskParameters,
     SubworkflowTaskParameters,
     TransformationTaskParameters,
     Workflow,
@@ -26,6 +27,62 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from tests.data.simulators.seed import (
+    simulator,
+    simulator_integration,
+    simulator_model,
+    simulator_model_revision,
+    simulator_routine,
+    simulator_routine_revision,
+)
+
+
+@pytest.fixture
+def add_simulator_resoures(cognite_client: CogniteClient) -> None:
+    simulator_external_id = "integration_tests_workflow"
+    simulator_model_file_external_id = "ShowerMixer_simulator_model_file"
+
+    file = cognite_client.files.upload(
+        path="tests/data/simulators/ShowerMixer.dwxmz",
+        external_id=simulator_model_file_external_id,
+        name="ShowerMixer.dwxmz",
+        data_set_id=97552494921583,
+    )
+
+    resources = [
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators", "seed": simulator},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
+            "seed": simulator_integration,
+        },
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models", "seed": simulator_model},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
+            "seed": {**simulator_model_revision, "fileId": file.id},
+        },
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines", "seed": simulator_routine},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
+            "seed": simulator_routine_revision,
+        },
+    ]
+
+    for resource in resources:
+        cognite_client.post(
+            resource["url"],
+            json={"items": [resource["seed"]]},
+            headers={"cdf-version": "alpha"},
+        )
+
+    yield None
+
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+        json={"items": [{"externalId": simulator_external_id}]},
+        headers={"cdf-version": "alpha"},
+    )
+
+    cognite_client.files.delete(external_id=simulator_model_file_external_id)
 
 
 @pytest.fixture
@@ -540,3 +597,34 @@ class TestWorkflowTriggers:
         )
         # it would take too long to wait for the trigger to run, so we just check that the history is not None
         assert history is not None
+
+
+class TestSimIntInWorkflows:
+    @pytest.mark.usefixtures("add_simulator_resoures")
+    def test_create_and_run_simint_workflow(
+        self,
+        cognite_client: CogniteClient,
+    ):
+        workflow_id = "integration_test-workflow_for_simulator_integration"
+
+        version = WorkflowVersionUpsert(
+            workflow_external_id=workflow_id,
+            version="1",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id=f"{workflow_id}-1-task1",
+                        parameters=SimulationTaskParameters(
+                            routine_external_id="integration_tests_workflow",
+                        ),
+                    )
+                ],
+                description=None,
+            ),
+        )
+
+        res = cognite_client.workflows.versions.upsert(version)
+        assert res.workflow_external_id == workflow_id
+        assert res.workflow_definition.tasks[0].type == "simulator"
+        assert len(res.workflow_definition.tasks) > 0
+        cognite_client.workflows.versions.delete(workflow_version_id=(workflow_id, "1"))
