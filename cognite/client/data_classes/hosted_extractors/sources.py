@@ -55,9 +55,10 @@ class SourceWrite(CogniteResource, ABC):
         elif type_ is None:
             raise KeyError("type")
         try:
-            return cast(Self, _SOURCE_WRITE_CLASS_BY_TYPE[type_]._load_source(resource))
+            source_cls = _SOURCE_WRITE_CLASS_BY_TYPE[type_]
         except KeyError:
             raise TypeError(f"Unknown source type: {type_}")
+        return cast(Self, source_cls._load_source(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -807,7 +808,7 @@ class RestSourceWrite(SourceWrite):
         self,
         external_id: str,
         host: str,
-        scheme: Literal["http", "https"],
+        scheme: Literal["http", "https"] = "https",
         port: int | None = None,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
@@ -821,16 +822,20 @@ class RestSourceWrite(SourceWrite):
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        return cls(
+        # Using args to avoid repeating the default value for 'scheme'
+        args = dict(
             external_id=resource["externalId"],
             host=resource["host"],
-            scheme=resource["scheme"],
             port=resource.get("port"),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
             else None,
         )
+        if "scheme" in resource:
+            args["scheme"] = resource["scheme"]
+
+        return cls(**args)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

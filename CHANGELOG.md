@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.64.0] - 2024-10-09
+## [7.64.1] - 2024-10-30
+### Fixed
+- Loading `HostedExtractor` class `RestSourceWrite` no longer requires the optional `scheme` parameter.
+
+## [7.64.0] - 2024-10-28
 ### Added
 - New instance inspection endpoint `client.data_modeling.instances.inspect` enabling easy reverse
   lookup to find which views and containers they have data in.
