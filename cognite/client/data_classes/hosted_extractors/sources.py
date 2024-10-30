@@ -807,7 +807,7 @@ class RestSourceWrite(SourceWrite):
         self,
         external_id: str,
         host: str,
-        scheme: Literal["http", "https"],
+        scheme: Literal["http", "https"] = "https",
         port: int | None = None,
         ca_certificate: CACertificateWrite | None = None,
         auth_certificate: AuthCertificateWrite | None = None,
@@ -821,16 +821,20 @@ class RestSourceWrite(SourceWrite):
 
     @classmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        return cls(
+        # Using args to avoid repeating the default value for 'scheme'
+        args = dict(
             external_id=resource["externalId"],
             host=resource["host"],
-            scheme=resource["scheme"],
             port=resource.get("port"),
             ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
             auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
             if "authCertificate" in resource
             else None,
         )
+        if "schema" in resource:
+            args["scheme"] = resource["scheme"]
+
+        return cls(**args)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
