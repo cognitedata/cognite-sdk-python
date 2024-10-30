@@ -832,7 +832,7 @@ class RestSourceWrite(SourceWrite):
             if "authCertificate" in resource
             else None,
         )
-        if "schema" in resource:
+        if "scheme" in resource:
             args["scheme"] = resource["scheme"]
 
         return cls(**args)
