@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import itertools
 import logging
 import random
 import time
@@ -41,10 +42,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResultList,
     EdgeList,
     InstanceAggregationResultList,
+    InstanceInspectResultList,
+    InstanceInspectResults,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
+    InvolvedContainers,
+    InvolvedViews,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -55,6 +60,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
     TypedEdge,
+    TypedInstance,
     TypedNode,
     TypeInformation,
 )
@@ -98,7 +104,7 @@ class _NodeOrEdgeResourceAdapter(Generic[T_Node, T_Edge]):
 
 
 class _TypedNodeOrEdgeListAdapter:
-    def __init__(self, instance_cls: type) -> None:
+    def __init__(self, instance_cls: type[TypedInstance]) -> None:
         self._instance_cls = instance_cls
         self._list_cls = NodeList if issubclass(instance_cls, TypedNode) else EdgeList
 
@@ -704,6 +710,67 @@ class InstancesAPI(APIClient):
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
+
+    def inspect(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        *,
+        involved_views: InvolvedViews | None = None,
+        involved_containers: InvolvedContainers | None = None,
+    ) -> InstanceInspectResults:
+        """`Reverse lookup for instances. <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_
+
+        This method will return the involved views and containers for the given nodes and edges.
+
+        Args:
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node IDs.
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge IDs.
+            involved_views (InvolvedViews | None): Whether to include involved views.
+            involved_containers (InvolvedContainers | None): Whether to include involved containers.
+
+        Returns:
+            InstanceInspectResults: List of instance inspection results.
+
+        Examples:
+
+            Look up the involved views and containers for a given node and edge:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.instances.inspect(
+                ...     nodes=NodeId("my-space", "foo1"),
+                ...     edges=EdgeId("my-space", "bar2"),
+                ... )
+        """
+        identifiers = self._load_node_and_edge_ids(nodes, edges)
+        inspect_operations = {}
+        # Only add the inspect operation to the dict if the value is provided. This is important
+        # since if it's omitted, the API will not execute the operation, making it cheaper.
+        if involved_views:
+            inspect_operations["involvedViews"] = {"allVersions": involved_views.all_versions}
+        if involved_containers:
+            inspect_operations["involvedContainers"] = {}
+        options = {"inspectionOperations": inspect_operations}
+        items = list(
+            itertools.chain.from_iterable(
+                self._post(self._RESOURCE_PATH + "/inspect", json={"items": chunk.as_dicts(), **options}).json()[
+                    "items"
+                ]
+                for chunk in identifiers.chunked(1000)
+            )
+        )
+        node_res = InstanceInspectResultList._load(
+            [node for node in items if node["instanceType"] == "node"], cognite_client=self._cognite_client
+        )
+        edge_res = InstanceInspectResultList._load(
+            [node for node in items if node["instanceType"] == "edge"], cognite_client=self._cognite_client
+        )
+        return InstanceInspectResults(
+            nodes=node_res,
+            edges=edge_res,
+        )
 
     def subscribe(
         self,
@@ -1569,10 +1636,10 @@ class InstancesAPI(APIClient):
         elif instance_type == "edge":
             resource_cls, list_cls = Edge, EdgeList
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedNode):
-            resource_cls = _NodeOrEdgeResourceAdapter(instance_type, Edge)  # type: ignore[assignment]
+            resource_cls = instance_type
             list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         elif inspect.isclass(instance_type) and issubclass(instance_type, TypedEdge):
-            resource_cls = _NodeOrEdgeResourceAdapter(Node, instance_type)  # type: ignore[assignment]
+            resource_cls = instance_type
             list_cls = _TypedNodeOrEdgeListAdapter(instance_type)  # type: ignore[assignment]
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
