@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
-from urllib.parse import quote
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.postgres_gateway.tables import Table, TableList, TableWrite
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import TablenameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class TablesAPI(APIClient):
-    _RESOURCE_PATH = "/postgresgateway/tables/{username}"
+    _RESOURCE_PATH = "/postgresgateway/tables/{}"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -109,7 +109,7 @@ class TablesAPI(APIClient):
         return self._create_multiple(
             list_cls=TableList,
             resource_cls=Table,  # type: ignore[type-abstract]
-            resource_path=self._RESOURCE_PATH.format(username=quote(username)),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             items=items,  # type: ignore[arg-type]
             input_resource_cls=TableWrite,
             headers={"cdf-version": "beta"},
@@ -162,7 +162,7 @@ class TablesAPI(APIClient):
         return self._retrieve_multiple(
             list_cls=TableList,
             resource_cls=Table,  # type: ignore[type-abstract]
-            resource_path=self._RESOURCE_PATH.format(username=quote(username)),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             other_params={"ignoreUnknownIds": ignore_unknown_ids},
             identifiers=TablenameSequence.load(tablenames=tablename),
             headers={"cdf-version": "beta"},
@@ -193,7 +193,7 @@ class TablesAPI(APIClient):
             identifiers=TablenameSequence.load(tablenames=tablename),
             wrap_ids=True,
             returns_items=False,
-            resource_path=self._RESOURCE_PATH.format(username=quote(username)),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             extra_body_fields=extra_body_fields,
             headers={"cdf-version": "beta"},
         )
@@ -245,7 +245,7 @@ class TablesAPI(APIClient):
         return self._list(
             list_cls=TableList,
             resource_cls=Table,  # type: ignore[type-abstract]
-            resource_path=self._RESOURCE_PATH.format(username=quote(username)),
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             filter=filter_,
             method="GET",
             limit=limit,

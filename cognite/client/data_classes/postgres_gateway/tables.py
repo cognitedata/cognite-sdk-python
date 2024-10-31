@@ -171,7 +171,7 @@ class ViewTableWrite(TableWrite):
 
     Args:
         tablename (str): Name of the foreign table.
-        options (ViewTableOptions): Table options
+        options (ViewId): Table options
     """
 
     _type = "view"
@@ -189,7 +189,7 @@ class ViewTableWrite(TableWrite):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["options"] = self.options.dump(camel_case=camel_case)
+        output["options"] = self.options.dump(camel_case=camel_case, include_type=False)
         return output
 
 
@@ -249,7 +249,7 @@ class RawTable(Table):
         return cls(
             tablename=data["tablename"],
             options=RawTableOptions._load(data["options"]),
-            columns=ColumnList._load(data["columns"]),
+            columns=ColumnList._load_columns(data["columns"]),
             created_time=data.get("createdTime"),
         )
 
@@ -274,7 +274,7 @@ class ViewTable(Table):
 
     Args:
         tablename (str): Name of the foreign table.
-        options (ViewTableOptions): Table options
+        options (ViewId): Table options
         created_time (int | None): Time when the table was created.
     """
 
