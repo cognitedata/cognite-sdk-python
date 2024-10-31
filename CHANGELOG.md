@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.2] - 2024-10-31
+### Added
+- Added support for simulation tasks in data workflows.
+
 ## [7.64.1] - 2024-10-30
 ### Fixed
 - Loading `HostedExtractor` class `RestSourceWrite` no longer requires the optional `scheme` parameter.
