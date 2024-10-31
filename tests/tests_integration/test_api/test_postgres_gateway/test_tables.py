@@ -21,7 +21,6 @@ from cognite.client.data_classes.postgres_gateway import (
     Table,
     TableList,
     User,
-    ViewTableOptions,
     ViewTableWrite,
 )
 from cognite.client.exceptions import CogniteAPIError
@@ -96,7 +95,7 @@ class TestTables:
     def test_create_retrieve_delete(self, cognite_client: CogniteClient, one_user: User, one_view: View) -> None:
         my_table = ViewTableWrite(
             tablename="my_table",
-            options=ViewTableOptions(space=one_view.space, external_id=one_view.external_id, version=one_view.version),
+            options=one_view.as_id(),
         )
         username = one_user.username
         tablename = my_table.tablename

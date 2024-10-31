@@ -9,11 +9,13 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CogniteResource,
     CogniteResourceList,
     UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.ids import ViewId
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -54,22 +56,7 @@ class RawTableOptions(CogniteObject):
 
 
 @dataclass
-class ViewTableOptions(CogniteObject):
-    space: str
-    external_id: str
-    version: str | None = None
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            space=resource["space"],
-            external_id=resource["externalId"],
-            version=resource.get("version"),
-        )
-
-
-@dataclass
-class Column(CogniteObject):
+class Column(CogniteResource):
     name: str
     type: ColumnType
 
@@ -86,9 +73,13 @@ class Column(CogniteObject):
             "type": self.type,
         }
 
+
+class ColumnList(CogniteResourceList[Column]):
+    _RESOURCE = Column
+
     @classmethod
-    def _load_columns(cls, data: dict[str, Any]) -> list[Column]:
-        columns: list[Column] = []
+    def _load_columns(cls, data: dict[str, Any]) -> ColumnList:
+        columns = cls([], None)
         for name, column_data in data.items():
             columns.append(
                 Column(
@@ -98,9 +89,8 @@ class Column(CogniteObject):
             )
         return columns
 
-    @classmethod
-    def _dump_columns(cls, columns: Sequence[Column]) -> dict[str, Any]:
-        return {column.name: {"type": column.type} for column in columns}
+    def _dump_columns(self) -> dict[str, Any]:
+        return {column.name: {"type": column.type} for column in self.data}
 
 
 class _TableCore(WriteableCogniteResource["TableWrite"], ABC):
@@ -148,29 +138,29 @@ class RawTableWrite(TableWrite):
     Args:
         tablename (str): Name of the foreign table.
         options (RawTableOptions): Table options
-        columns (Sequence[Column]): Foreign table columns.
+        columns (Sequence[Column] | ColumnList): Foreign table columns.
 
     """
 
     _type = "raw_rows"
 
-    def __init__(self, tablename: str, options: RawTableOptions, columns: Sequence[Column]) -> None:
+    def __init__(self, tablename: str, options: RawTableOptions, columns: Sequence[Column] | ColumnList) -> None:
         super().__init__(tablename=tablename)
         self.options = options
-        self.columns = columns
+        self.columns: ColumnList = ColumnList(columns)
 
     @classmethod
     def _load_table(cls, data: dict[str, Any]) -> Self:
         return cls(
             tablename=data["tablename"],
             options=RawTableOptions._load(data["options"]),
-            columns=Column._load_columns(data["columns"]),
+            columns=ColumnList._load_columns(data["columns"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case)
-        output["columns"] = Column._dump_columns(self.columns)
+        output["columns"] = self.columns._dump_columns()
         return output
 
 
@@ -186,7 +176,7 @@ class ViewTableWrite(TableWrite):
 
     _type = "view"
 
-    def __init__(self, tablename: str, options: ViewTableOptions) -> None:
+    def __init__(self, tablename: str, options: ViewId) -> None:
         super().__init__(tablename=tablename)
         self.options = options
 
@@ -194,7 +184,7 @@ class ViewTableWrite(TableWrite):
     def _load_table(cls, data: dict[str, Any]) -> Self:
         return cls(
             tablename=data["tablename"],
-            options=ViewTableOptions._load(data["options"]),
+            options=ViewId.load(data["options"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -240,7 +230,7 @@ class RawTable(Table):
     Args:
         tablename (str): Name of the foreign table.
         options (RawTableOptions): Table options
-        columns (list[Column]): Foreign table columns.
+        columns (ColumnList): Foreign table columns.
         created_time (int | None): Time when the table was created.
 
     """
@@ -248,7 +238,7 @@ class RawTable(Table):
     _type = "raw_rows"
 
     def __init__(
-        self, tablename: str, options: RawTableOptions, columns: list[Column], created_time: int | None = None
+        self, tablename: str, options: RawTableOptions, columns: ColumnList, created_time: int | None = None
     ) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
@@ -259,14 +249,14 @@ class RawTable(Table):
         return cls(
             tablename=data["tablename"],
             options=RawTableOptions._load(data["options"]),
-            columns=Column._load_columns(data["columns"]),
+            columns=ColumnList._load(data["columns"]),
             created_time=data.get("createdTime"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case)
-        output["columns"] = Column._dump_columns(self.columns)
+        output["columns"] = self.columns.dump(camel_case=camel_case)
         return output
 
     def as_write(self) -> RawTableWrite:
@@ -290,7 +280,7 @@ class ViewTable(Table):
 
     _type = "view"
 
-    def __init__(self, tablename: str, options: ViewTableOptions, created_time: int | None = None) -> None:
+    def __init__(self, tablename: str, options: ViewId, created_time: int | None = None) -> None:
         super().__init__(tablename=tablename, created_time=created_time)
         self.options = options
 
@@ -298,7 +288,7 @@ class ViewTable(Table):
     def _load_table(cls, data: dict[str, Any]) -> Self:
         return cls(
             tablename=data["tablename"],
-            options=ViewTableOptions._load(data["options"]),
+            options=ViewId.load(data["options"]),
             created_time=data.get("created_time"),
         )
 

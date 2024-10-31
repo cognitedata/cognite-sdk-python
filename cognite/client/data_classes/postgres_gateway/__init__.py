@@ -11,7 +11,6 @@ from cognite.client.data_classes.postgres_gateway.tables import (
     TableWrite,
     TableWriteList,
     ViewTable,
-    ViewTableOptions,
     ViewTableWrite,
 )
 from cognite.client.data_classes.postgres_gateway.users import (
@@ -35,7 +34,6 @@ __all__ = [
     "TableWrite",
     "TableWriteList",
     "RawTableOptions",
-    "ViewTableOptions",
     "Column",
     "RawTableWrite",
     "ViewTableWrite",
