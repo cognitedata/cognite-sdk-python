@@ -11,6 +11,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
+    Container,
     ContainerApply,
     ContainerProperty,
     DataModel,
@@ -44,7 +45,7 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
-from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.data_types import DirectRelation, Int64, UnitReference
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
     InstanceInspectResults,
@@ -390,6 +391,38 @@ class PersonRead(TypedNode):
             existing_version=self.version,
             type=self.type,
         )
+
+
+@pytest.fixture(scope="session")
+def container_with_all_the_types(cognite_client: CogniteClient, integration_test_space: Space) -> Container:
+    container = ContainerApply(
+        space=integration_test_space.space,
+        external_id="test_container_all_the_types",
+        properties={
+            "int_array": ContainerProperty(type=Int64(is_list=True)),
+            "direct_relation_array": ContainerProperty(type=DirectRelation(is_list=True)),
+        },
+        used_for="all",
+    )
+
+    return cognite_client.data_modeling.containers.apply(container)
+
+
+@pytest.fixture(scope="session")
+def view_with_all_the_types(
+    cognite_client: CogniteClient, integration_test_space: Space, container_with_all_the_types: Container
+) -> View:
+    container_id = container_with_all_the_types.as_id()
+    view = ViewApply(
+        space=integration_test_space.space,
+        external_id="test_view_all_the_types",
+        version="v1",
+        properties={
+            "int_array": MappedPropertyApply(container_id, "int_array"),
+            "direct_relation_array": MappedPropertyApply(container_id, "direct_relation_array"),
+        },
+    )
+    return cognite_client.data_modeling.views.apply(view)
 
 
 class TestInstancesAPI:
@@ -1128,6 +1161,55 @@ class TestInstancesAPI:
 
         assert inspect_result.edges[0].inspection_results.involved_views == []
         assert inspect_result.edges[0].inspection_results.involved_containers == []
+
+    def test_exists_filter_on_lists(
+        self,
+        cognite_client: CogniteClient,
+        integration_test_space: Space,
+        container_with_all_the_types: Container,
+        view_with_all_the_types: View,
+    ) -> None:
+        container_id = container_with_all_the_types.as_id()
+        random_prefix = random_string(10)
+        nodes = [
+            NodeApply(
+                space=integration_test_space.space,
+                external_id=random_prefix + "testnode_null",
+                sources=[NodeOrEdgeData(container_id, {"direct_relation_array": None})],
+            ),
+            NodeApply(
+                space=integration_test_space.space,
+                external_id=random_prefix + "testnode_empty",
+                sources=[NodeOrEdgeData(container_id, {"direct_relation_array": []})],
+            ),
+            NodeApply(
+                space=integration_test_space.space,
+                external_id=random_prefix + "testnode_non_empty",
+                sources=[
+                    NodeOrEdgeData(
+                        container_id,
+                        {
+                            "direct_relation_array": [
+                                {"space": integration_test_space.space, "externalId": "testnode_empty"}
+                            ]
+                        },
+                    )
+                ],
+            ),
+        ]
+        try:
+            cognite_client.data_modeling.instances.apply(nodes)
+            res = cognite_client.data_modeling.instances.list(
+                filter=filters.SpaceFilter(integration_test_space.space)
+                & filters.Exists(container_id.as_property_ref("direct_relation_array"))
+                & filters.Prefix(["node", "externalId"], random_prefix),
+                instance_type="node",
+                sources=view_with_all_the_types.as_id(),
+            )
+            expected = set(node.external_id.removeprefix(random_prefix) for node in res.as_ids())
+            assert expected == {"testnode_empty", "testnode_non_empty"}
+        finally:
+            cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
 
 
 class TestInstancesSync:

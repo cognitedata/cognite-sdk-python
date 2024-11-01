@@ -877,9 +877,10 @@ class InstancesAPI(APIClient):
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
             other_params["sources"] = [source.dump() for source in SourceSelector._load_list(sources)]
-            if with_properties := [s["viewId"] for s in other_params["sources"] if "properties" in s]:
+            if with_properties := [s["source"] for s in other_params["sources"] if "properties" in s]:
                 raise ValueError(
-                    f"Properties are not supported in this context. Got in source argument for view IDs {with_properties}"
+                    f"Selecting properties is not supported in this context. "
+                    f"Received in `sources` argument for views: {with_properties}."
                 )
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
