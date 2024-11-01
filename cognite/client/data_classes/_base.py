@@ -175,6 +175,32 @@ class CogniteObject:
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
+    @classmethod
+    def _load_list_or_dict(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> Self | list[Self]:
+        """
+        This is the internal load method that is called by the public load method.
+        It has a default implementation that can be overridden by subclasses.
+
+        The typical use case for overriding this method is to handle nested resources,
+        or to handle resources that have required fields as the default implementation assumes
+        all fields are optional.
+
+        Note that the base class takes care of loading from YAML/JSON strings and error handling.
+
+        Args:
+            resource (dict[str, Any] | list[dict[str, Any]]): The resource to load.
+            cognite_client (CogniteClient | None): Cognite client to associate with the resource.
+
+        Returns:
+            Self | list[Self]: The loaded resource.
+        """
+        if isinstance(resource, list):
+            return [fast_dict_load(cls, res, cognite_client=cognite_client) for res in resource]
+
+        return fast_dict_load(cls, resource, cognite_client=cognite_client)
+
 
 class UnknownCogniteObject(CogniteObject):
     def __init__(self, data: dict[str, Any]) -> None:

@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import (
-    Simulator,
-    SimulatorList,
+    SimulatorModel,
+    SimulatorModelList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
@@ -14,14 +14,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class SimulatorsResourceAPI(APIClient):
-    _RESOURCE_PATH = "/simulators"
+class SimulatorModelsAPI(APIClient):
+    _RESOURCE_PATH = "/simulators/models"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorList:
+    def list_models(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorModelList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
@@ -30,7 +30,7 @@ class SimulatorsResourceAPI(APIClient):
             limit (int): The maximum number of simulators to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
-            SimulatorList: List of simulators
+            SimulatorModelList: List of simulator models
 
         Examples:
 
@@ -38,10 +38,15 @@ class SimulatorsResourceAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list()
+                    >>> res = client.simulators.list_models()
 
         """
         self._warning.warn()
         return self._list(
-            method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList, headers={"cdf-version": "beta"}
+            method="POST",
+            limit=limit,
+            url_path="/simulators/models/list",
+            resource_cls=SimulatorModel,
+            list_cls=SimulatorModelList,
+            headers={"cdf-version": "beta"},
         )

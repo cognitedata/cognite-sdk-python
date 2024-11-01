@@ -48,11 +48,20 @@ class SimulatorModelType(CogniteObject):
     key: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorModelType:
         return cls(
             name=resource["name"],
             key=resource["key"],
         )
+
+    @classmethod
+    def _load_list_or_dict(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> SimulatorModelType | list[SimulatorModelType]:
+        if isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource]
+
+        return cls._load(resource, cognite_client)
 
 
 @dataclass
@@ -68,6 +77,15 @@ class SimulatorQuantity(CogniteObject):
             label=resource["label"],
             units=[SimulatorUnitEntry._load(unit_, cognite_client) for unit_ in resource["units"]],
         )
+
+    @classmethod
+    def _load_list_or_dict(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> SimulatorQuantity | list[SimulatorQuantity]:
+        if isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource]
+
+        return cls._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -113,6 +131,15 @@ class SimulatorStep(CogniteObject):
             step_type=resource["stepType"],
             fields=[SimulatorStepField._load(field_, cognite_client) for field_ in resource["fields"]],
         )
+
+    @classmethod
+    def _load_list_or_dict(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> SimulatorStep | list[SimulatorStep]:
+        if isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource]
+
+        return cls._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -176,13 +203,13 @@ class Simulator(CogniteResource):
             file_extension_types=resource["fileExtensionTypes"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            model_types=SimulatorModelType._load(resource["modelTypes"], cognite_client)
+            model_types=SimulatorModelType._load_list_or_dict(resource["modelTypes"], cognite_client)
             if "modelTypes" in resource
             else None,
-            step_fields=SimulatorStep._load(resource["stepFields"], cognite_client)
+            step_fields=SimulatorStep._load_list_or_dict(resource["stepFields"], cognite_client)
             if "stepFields" in resource
             else None,
-            unit_quantities=SimulatorQuantity._load(resource["unitQuantities"], cognite_client)
+            unit_quantities=SimulatorQuantity._load_list_or_dict(resource["unitQuantities"], cognite_client)
             if "unitQuantities" in resource
             else None,
         )
@@ -201,5 +228,114 @@ class Simulator(CogniteResource):
         return output
 
 
+class SimulatorIntegration(CogniteResource):
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        heartbeat: int,
+        active: bool,
+        data_set_id: int,
+        connector_version: str,
+        log_id: int,
+        created_time: int,
+        last_updated_time: int,
+        license_status: str | None = None,
+        simulator_version: str | None = None,
+        license_last_checked_time: int | None = None,
+        connector_status: str | None = None,
+        connector_status_updated_time: int | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.heartbeat = heartbeat
+        self.active = active
+        self.data_set_id = data_set_id
+        self.connector_version = connector_version
+        self.log_id = log_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.license_status = license_status
+        self.simulator_version = simulator_version
+        self.license_last_checked_time = license_last_checked_time
+        self.connector_status = connector_status
+        self.connector_status_updated_time = connector_status_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            heartbeat=resource["heartbeat"],
+            active=resource["active"],
+            data_set_id=resource["dataSetId"],
+            connector_version=resource["connectorVersion"],
+            log_id=resource["logId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            license_status=resource.get("licenseStatus"),
+            simulator_version=resource.get("simulatorVersion"),
+            license_last_checked_time=resource.get("licenseLastCheckedTime"),
+            connector_status=resource.get("connectorStatus"),
+            connector_status_updated_time=resource.get("connectorStatusUpdatedTime"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+class SimulatorModel(CogniteResource):
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        name: str,
+        data_set_id: int,
+        created_time: int,
+        last_updated_time: int,
+        type_key: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.data_set_id = data_set_id
+        self.data_set_id = data_set_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.name = name
+        self.type_key = type_key
+        self.description = description
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            name=resource["name"],
+            data_set_id=resource["dataSetId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            type_key=resource.get("typeKey"),
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
 class SimulatorList(CogniteResourceList[Simulator]):
     _RESOURCE = Simulator
+
+
+class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration]):
+    _RESOURCE = SimulatorIntegration
+
+
+class SimulatorModelList(CogniteResourceList[SimulatorModel]):
+    _RESOURCE = SimulatorModel
