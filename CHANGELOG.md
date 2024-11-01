@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.64.4] - 2024-11-01
+## [7.64.5] - 2024-11-01
 ### Fixed
 - The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
 
