@@ -21,7 +21,6 @@ def one_user(cognite_client: CogniteClient, fresh_credentials: SessionCredential
     cognite_client.postgres_gateway.users.delete(created.username, ignore_unknown_ids=True)
 
 
-@pytest.mark.skip("Service is failing on Greenfield, should be added back when service is fixed")
 class TestUsers:
     def test_create_update_retrieve_delete(
         self,
