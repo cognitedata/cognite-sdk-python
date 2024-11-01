@@ -49,7 +49,7 @@ class WorkflowUpsert(WorkflowCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         description (str | None): Description of the workflow. Note that when updating a workflow, the description will
-                            always be overwritten also if it is set to None. Meaning if the wokflow already has a description,
+                            always be overwritten also if it is set to None. Meaning if the workflow already has a description,
                             and you want to keep it, you need to provide the description when updating the workflow.
     """
 
@@ -723,7 +723,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
         tasks (list[WorkflowTask]): The tasks of the workflow definition.
         description (str | None): The description of the workflow definition. Note that when updating a workflow definition
                             description, it will always be overwritten also if it is set to None. Meaning if the
-                            wokflow definition already has a description, and you want to keep it, you need to provide
+                            workflow definition already has a description, and you want to keep it, you need to provide
                             the description when updating it.
     """
 
@@ -751,7 +751,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
 
 class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
     """
-    This class represents a workflow definition. This represents the write/update version of a workflow definiton.
+    This class represents a workflow definition. This represents the write/update version of a workflow definition.
 
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
@@ -759,7 +759,7 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
         tasks (list[WorkflowTask]): The tasks of the workflow definition.
         description (str | None): The description of the workflow definition. Note that when updating a workflow definition
                             description, it will always be overwritten also if it is set to None. Meaning if the
-                            wokflow definition already has a description, and you want to keep it, you need to provide
+                            workflow definition already has a description, and you want to keep it, you need to provide
                             the description when updating it.
     """
 
@@ -790,7 +790,7 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
 
 class WorkflowDefinition(WorkflowDefinitionCore):
     """
-    This class represents a workflow definition. This represents the read version of a workflow definiton.
+    This class represents a workflow definition. This represents the read version of a workflow definition.
 
     A workflow definition defines the tasks and order/dependencies of these tasks.
 
@@ -1265,6 +1265,7 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
+        metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
     def __init__(
@@ -1274,12 +1275,14 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
         workflow_external_id: str,
         workflow_version: str,
         input: dict | None = None,
+        metadata: dict | None = None,
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
         self.input = input
+        self.metadata = metadata
 
 
 class WorkflowTriggerUpsert(WorkflowTriggerCore):
@@ -1335,6 +1338,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
+        metadata (dict | None): Application specific metadata. Defaults to None.
         created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
         last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
     """
@@ -1346,6 +1350,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id: str,
         workflow_version: str,
         input: dict | None = None,
+        metadata: dict | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
     ) -> None:
@@ -1355,6 +1360,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
             workflow_external_id=workflow_external_id,
             workflow_version=workflow_version,
             input=input,
+            metadata=metadata,
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -1368,6 +1374,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
         }
         if self.input:
             item["input"] = self.input
+        if self.metadata:
+            item["metadata"] = self.metadata
         if self.created_time:
             item["created_time"] = self.created_time
         if self.last_updated_time:
@@ -1384,6 +1392,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
             workflow_version=resource["workflowVersion"],
             trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
+            metadata=resource.get("metadata"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
         )
@@ -1396,6 +1405,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
             workflow_external_id=self.workflow_external_id,
             workflow_version=self.workflow_version,
             input=self.input,
+            metadata=self.metadata,
         )
 
 
