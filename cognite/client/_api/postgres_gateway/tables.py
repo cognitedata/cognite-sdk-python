@@ -54,7 +54,7 @@ class TablesAPI(APIClient):
             limit (int | None): Maximum number of custom tables to return. Defaults to return all.
 
         Returns:
-            Iterator[Table] | Iterator[TableList]: yields CustomTable one by one if chunk_size is not specified, else CustomTableList objects.
+            Iterator[Table] | Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.TableList`]: yields CustomTable one by one if chunk_size is not specified, else CustomTableList objects.
         """
         self._warning.warn()
 
@@ -88,20 +88,21 @@ class TablesAPI(APIClient):
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
-            items (TableWrite | Sequence[TableWrite]): The table(s) to create
+            items (:py:class:`cognite.client.data_classes.postgres_gateway.TableWrite` | Sequence[:py:class:`cognite.client.data_classes.postgres_gateway.TableWrite`]): The table(s) to create
             username (str): The name of the username (a.k.a. database) to be managed from the API
 
         Returns:
-            Table | TableList: Created tables
+            Table | :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Created tables
 
         Examples:
 
             Create custom table:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite, ViewTableOptions
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
-                >>> table = ViewTableWrite(tablename="myCustom", options=ViewTableOptions(space="mySpace", external_id="myExternalId", version="v1"))
+                >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
                 >>> res = client.postgres_gateway.tables.create(table, "myUserName")
 
         """
@@ -139,7 +140,7 @@ class TablesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore table names not found
 
         Returns:
-            Table | TableList | None: Foreign tables
+            Table | :py:class:`cognite.client.data_classes.postgres_gateway.TableList` | None: Foreign tables
 
         Examples:
 
@@ -214,7 +215,7 @@ class TablesAPI(APIClient):
             limit (int | None): Limits the number of results to be returned.
 
         Returns:
-            TableList: Foreign tables
+            :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Foreign tables
 
         Examples:
 

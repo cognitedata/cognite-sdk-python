@@ -193,7 +193,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Returns:
-            Iterator[Table] | Iterator[TableList]: No description.
+            Iterator[Table] | Iterator[:py:class:`cognite.client.data_classes.raw.TableList`]: No description.
         """
         table_iterator = self._list_generator(
             list_cls=TableList,
@@ -219,7 +219,7 @@ class RawTablesAPI(APIClient):
             name (str | list[str]): A table name or list of table names to create.
 
         Returns:
-            Table | TableList: Table or list of tables that has been created.
+            Table | :py:class:`cognite.client.data_classes.raw.TableList`: Table or list of tables that has been created.
 
         Examples:
 
@@ -298,7 +298,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            TableList: List of requested tables.
+            :py:class:`cognite.client.data_classes.raw.TableList`: List of requested tables.
 
         Examples:
 

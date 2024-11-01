@@ -198,6 +198,10 @@ class Table(_TableCore, ABC):
 
     This is the read/response format of the custom table.
 
+    Args:
+        tablename (str): Name of the foreign table.
+        created_time (int | None): Time when the table was created
+
     """
 
     def __init__(self, tablename: str, created_time: int | None = None) -> None:
