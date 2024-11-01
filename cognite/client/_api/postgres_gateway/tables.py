@@ -54,7 +54,7 @@ class TablesAPI(APIClient):
             limit (int | None): Maximum number of custom tables to return. Defaults to return all.
 
         Returns:
-            Iterator[Table] | Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.TableList`]: yields CustomTable one by one if chunk_size is not specified, else CustomTableList objects.
+            Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.Table`] | Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.TableList`]: yields CustomTable one by one if chunk_size is not specified, else CustomTableList objects.
         """
         self._warning.warn()
 
@@ -74,7 +74,7 @@ class TablesAPI(APIClient):
         limited number of custom tables in memory.
 
         Returns:
-            Iterator[Table]: yields custom table one by one.
+            Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.Table`]: yields custom table one by one.
         """
         return self()
 
@@ -92,7 +92,7 @@ class TablesAPI(APIClient):
             username (str): The name of the username (a.k.a. database) to be managed from the API
 
         Returns:
-            Table | :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Created tables
+            :py:class:`cognite.client.data_classes.postgres_gateway.Table` | :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Created tables
 
         Examples:
 
@@ -140,7 +140,7 @@ class TablesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore table names not found
 
         Returns:
-            Table | :py:class:`cognite.client.data_classes.postgres_gateway.TableList` | None: Foreign tables
+            :py:class:`cognite.client.data_classes.postgres_gateway.Table` | :py:class:`cognite.client.data_classes.postgres_gateway.TableList` | None: Foreign tables
 
         Examples:
 
