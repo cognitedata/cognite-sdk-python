@@ -859,6 +859,17 @@ class AuthenticationWrite(CogniteObject, ABC):
 
 
 @dataclass
+class BasicAuthenticationWrite(AuthenticationWrite):
+    _type = "basic"
+    username: str
+    password: str
+
+    @classmethod
+    def _load_authentication(cls, resource: dict[str, Any]) -> Self:
+        return cls(username=resource["username"], password=resource["password"])
+
+
+@dataclass
 class RESTHeaderAuthenticationWrite(AuthenticationWrite):
     _type = "header"
     key: str
@@ -1000,7 +1011,7 @@ class RESTClientCredentialsAuthentication(Authentication):
     client_secret: str
     tokenUrl: str
     scopes: str
-    defaultExpiresIn: str
+    defaultExpiresIn: str | None
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -1009,7 +1020,7 @@ class RESTClientCredentialsAuthentication(Authentication):
             client_secret=resource["clientSecret"],
             tokenUrl=resource["tokenUrl"],
             scopes=resource["scopes"],
-            defaultExpiresIn=resource["defaultExpiresIn"],
+            defaultExpiresIn=resource.get("defaultExpiresIn"),
         )
 
 
