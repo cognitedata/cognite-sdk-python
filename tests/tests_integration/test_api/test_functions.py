@@ -92,12 +92,14 @@ class TestFunctionSchedulesAPI:
             function_external_id=a_function.external_id,
             data={"key": "value"},
         )
+        original_schedule = FunctionScheduleWrite._load(my_schedule.dump())
 
         created: FunctionSchedule | None = None
         try:
             created = cognite_client.functions.schedules.create(my_schedule)
 
             assert created.as_write().dump() == my_schedule.dump()
+            assert my_schedule.dump() == original_schedule.dump()
 
             retrieved = cognite_client.functions.schedules.retrieve(id=created.id)
             assert isinstance(retrieved, FunctionSchedule)
