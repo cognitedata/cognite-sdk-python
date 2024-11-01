@@ -1284,7 +1284,7 @@ class FunctionSchedulesAPI(APIClient):
                 raise ValueError("cron_expression must be specified when creating a new schedule.")
             item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
         else:
-            # We serialize the object as the _get_function_internal_id mutates the object.
+            # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
             item = FunctionScheduleWrite._load(name.dump())
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_id is None:
