@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorIntegration,
+    SimulatorIntegrationFilter,
     SimulatorIntegrationList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -21,13 +22,18 @@ class SimulatorIntegrationsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list_integrations(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorIntegrationList:
+    def list_integrations(
+        self,
+        limit: int = DEFAULT_LIMIT_READ,
+        filter: SimulatorIntegrationFilter | dict[str, Any] | None = None,
+    ) -> SimulatorIntegrationList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
 
         Args:
             limit (int): The maximum number of simulators to return. Defaults to 25. Set to -1, float("inf") or None
+            filter (SimulatorIntegrationFilter | dict[str, Any] | None): The filter to narrow down assets integrations.
 
         Returns:
             SimulatorIntegrationList: List of simulators
@@ -41,6 +47,7 @@ class SimulatorIntegrationsAPI(APIClient):
                     >>> res = client.simulators.list_integrations()
 
         """
+
         self._warning.warn()
         return self._list(
             method="POST",
@@ -49,4 +56,9 @@ class SimulatorIntegrationsAPI(APIClient):
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
             headers={"cdf-version": "beta"},
+            filter=filter.dump()
+            if isinstance(filter, SimulatorIntegrationFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,  # fix this
         )

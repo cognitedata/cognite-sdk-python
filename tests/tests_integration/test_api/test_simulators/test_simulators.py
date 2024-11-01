@@ -1,4 +1,5 @@
 from cognite.client import CogniteClient
+from cognite.client.data_classes.simulators.simulators import SimulatorIntegrationFilter
 
 
 class TestSimulators:
@@ -13,6 +14,20 @@ class TestSimulatorIntegrations:
         integrations = cognite_client.simulators.list_integrations(limit=5)
 
         assert len(integrations) > 0
+
+    def test_filter_integrations(self, cognite_client: CogniteClient) -> None:
+        all_integrations = cognite_client.simulators.list_integrations()
+        active_integrations = cognite_client.simulators.list_integrations(
+            filter=SimulatorIntegrationFilter(active=True)
+        )
+        dwsim_integrations = cognite_client.simulators.list_integrations(
+            filter=SimulatorIntegrationFilter(simulator_external_ids=["DWSIM"])
+        )
+
+        assert len(active_integrations) > 0
+        assert len(all_integrations) != len(active_integrations)
+        assert len(dwsim_integrations) > 0
+        assert len(all_integrations) != len(dwsim_integrations)
 
 
 class TestSimulatorModels:
