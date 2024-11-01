@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
@@ -78,7 +78,9 @@ class ColumnList(CogniteResourceList[Column]):
     _RESOURCE = Column
 
     @classmethod
-    def _load_columns(cls, data: dict[str, Any]) -> ColumnList:
+    def _load_columns(cls, data: dict[str, Any] | Iterable[dict[str, Any]]) -> ColumnList:
+        if not isinstance(data, dict):
+            return cls._load(data, None)
         columns = cls([], None)
         for name, column_data in data.items():
             columns.append(
