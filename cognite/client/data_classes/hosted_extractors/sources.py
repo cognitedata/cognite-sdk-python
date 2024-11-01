@@ -986,29 +986,26 @@ class BasicAuthentication(Authentication):
 class RESTHeaderAuthentication(Authentication):
     _type = "header"
     key: str
-    value: str
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        return cls(key=resource["key"], value=resource["value"])
+        return cls(key=resource["key"])
 
 
 @dataclass
 class RESTQueryAuthentication(Authentication):
     _type = "query"
     key: str
-    value: str
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        return cls(key=resource["key"], value=resource["value"])
+        return cls(key=resource["key"])
 
 
 @dataclass
 class RESTClientCredentialsAuthentication(Authentication):
     _type = "clientCredentials"
     client_id: str
-    client_secret: str
     tokenUrl: str
     scopes: str
     defaultExpiresIn: str | None
@@ -1017,7 +1014,6 @@ class RESTClientCredentialsAuthentication(Authentication):
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
         return cls(
             client_id=resource["clientId"],
-            client_secret=resource["clientSecret"],
             tokenUrl=resource["tokenUrl"],
             scopes=resource["scopes"],
             defaultExpiresIn=resource.get("defaultExpiresIn"),
