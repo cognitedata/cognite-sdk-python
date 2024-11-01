@@ -98,7 +98,13 @@ class TestFunctionSchedulesAPI:
         try:
             created = cognite_client.functions.schedules.create(my_schedule)
 
-            assert created.as_write().dump() == my_schedule.dump()
+            created_dump = created.as_write().dump()
+            created_dump.pop("functionId")
+            my_dump = my_schedule.dump()
+            my_dump.pop("functionExternalId")
+
+            assert created_dump == my_dump
+            # This check is to ensure that the original schedule is not modified
             assert my_schedule.dump() == original_schedule.dump()
 
             retrieved = cognite_client.functions.schedules.retrieve(id=created.id)
