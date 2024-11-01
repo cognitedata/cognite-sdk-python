@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.3] - 2024-11-01
+### Fixed
+- Removed superfluous properties from authentication subclass read objects
+
+
 ## [7.64.2] - 2024-10-31
 ### Fixed
 - `HostedExtractor` REST source `authentication` property updated to follow API change.
