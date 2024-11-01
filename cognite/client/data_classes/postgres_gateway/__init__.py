@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from cognite.client.data_classes.postgres_gateway.tables import (
     Column,
+    ColumnList,
     ColumnType,
     RawTable,
     RawTableOptions,
@@ -40,4 +41,5 @@ __all__ = [
     "RawTable",
     "ViewTable",
     "ColumnType",
+    "ColumnList",
 ]
