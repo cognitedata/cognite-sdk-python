@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
 
+## [7.64.4] - 2024-11-01
+### Fixed
+- Data Workflows: apply more robust path parameter encoding.
+
 ## [7.64.3] - 2024-11-01
 ### Fixed
 - Removed superfluous properties from authentication subclass read objects
