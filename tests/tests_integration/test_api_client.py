@@ -1,16 +1,19 @@
 """
-This file contains integration tests for the logic in the generic API client. However, since we cannot instansiate a
+This file contains integration tests for the logic in the generic API client. However, since we cannot instantiate a
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
+
+import random
 from unittest.mock import patch
 
 import pytest
 from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset, Event, EventFilter, EventList, aggregations, filters
+from cognite.client.data_classes import Asset, AssetWrite, Event, EventFilter, EventList, aggregations, filters
 from cognite.client.data_classes.events import EventProperty
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -22,132 +25,108 @@ def post_spy_event(cognite_client):
 
 class TestAPIClientUpsert:
     def test_upsert_2_items_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert2_one_preexisting:new",
+            external_id="test_upsert2_one_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         preexisting = Event(
-            external_id="test_upsert2_one_preexisting:preexisting",
+            external_id="test_upsert2_one_preexisting:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
-
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
 
-            # Act
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
-
-            # Assert
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
             assert new_event.subtype == res[0].subtype
             assert preexisting_update.subtype == res[1].subtype
         finally:
-            cognite_client.events.delete(
-                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
-            )
+            cognite_client.events.delete(external_id=[new_event.external_id, preexisting.external_id])
 
     def test_upsert_with_all_preexisting(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert_all_preexisting:new",
+            external_id="test_upsert_all_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-
         try:
             _ = cognite_client.events.create(new_event)
 
-            # Act
             res = cognite_client.events.upsert(new_event, mode="replace")
-
-            # Assert
             assert isinstance(res, Event)
             assert new_event.external_id == res.external_id
         finally:
-            cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
+            cognite_client.events.delete(external_id=new_event.external_id)
 
     def test_upsert_without_external_id(self, cognite_client: CogniteClient) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert_without_external_id:new",
+            external_id="test_upsert_without_external_id:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         existing = Event(
-            external_id="test_upsert_without_external_id:existing",
+            external_id="test_upsert_without_external_id:existing" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        existing_update = Event._load(existing.dump(camel_case=True))
+        existing_update = Event.load(existing.dump(camel_case=True))
         existing_update.subtype = "mySubType1"
-
         try:
             created = cognite_client.events.create(existing)
             existing_update.external_id = None
             existing_update.id = created.id
 
-            # Act
             res = cognite_client.events.upsert([new_event, existing_update], mode="replace")
-
-            # Assert
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert existing.external_id == res[1].external_id
             assert new_event.subtype == res[0].subtype
             assert existing_update.subtype == res[1].subtype
         finally:
-            cognite_client.events.delete(
-                external_id=[new_event.external_id, existing.external_id], ignore_unknown_ids=True
-            )
+            cognite_client.events.delete(external_id=[new_event.external_id, existing.external_id])
 
     def test_upsert_split_into_multiple_tasks(
         self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event
     ) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert_split_into_multiple_tasks:new",
+            external_id="test_upsert_split_into_multiple_tasks:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         preexisting = Event(
-            external_id="test_upsert_split_into_multiple_tasks:preexisting",
+            external_id="test_upsert_split_into_multiple_tasks:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
-
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
             monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
 
-            # Act
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
-
-            # Assert
             assert cognite_client.events._post.call_count >= 2
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
@@ -155,87 +134,72 @@ class TestAPIClientUpsert:
             assert new_event.subtype == res[0].subtype
             assert preexisting_update.subtype == res[1].subtype
         finally:
-            cognite_client.events.delete(
-                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
-            )
+            cognite_client.events.delete(external_id=[new_event.external_id, preexisting.external_id])
 
     def test_upsert_invalid_update(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert_invalid_update:new",
+            external_id="test_upsert_invalid_update:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
         preexisting = Event(
-            external_id="test_upsert_invalid_update:preexisting",
+            external_id="test_upsert_invalid_update:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.type = "invalid_length" * 64
-
         try:
             created = cognite_client.events.create(preexisting)
             assert created
             monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
 
-            # Act
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
-            # Assert
             assert e.value.code == 400
             # The first update call should fail.
             assert len(e.value.failed) == 2
             assert "size must be between 0 and 64" in e.value.message
         finally:
-            cognite_client.events.delete(
-                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
-            )
+            cognite_client.events.delete(external_id=[preexisting.external_id])
 
     def test_upsert_invalid_create(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
-        # Arrange
         new_event = Event(
-            external_id="test_upsert_invalid_create:new",
+            external_id="test_upsert_invalid_create:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="InvalidLength" * 100,
         )
         preexisting = Event(
-            external_id="test_upsert_invalid_create:preexisting",
+            external_id="test_upsert_invalid_create:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.type = "mySubType42"
-
         try:
             created = cognite_client.events.create(preexisting)
             assert created
             monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
 
-            # Act
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
-            # Assert
             assert e.value.code == 400
             assert len(e.value.successful) == 1
             assert "size must be between 0 and 64" in e.value.message
         finally:
-            cognite_client.events.delete(
-                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
-            )
+            cognite_client.events.delete(external_id=[preexisting.external_id])
 
     def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient):
-        # Arrange
         new_event = Event(
             external_id="test_upsert_with_invalid_mode:new",
             type="test__py__sdk",
@@ -243,69 +207,33 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType1",
         )
-
-        # Act
         try:
             with pytest.raises(ValueError) as e:
                 cognite_client.events.upsert(new_event, mode="invalid_mode")
 
-            # Assert
             assert "invalid_mode" in e.value.args[0]
-        finally:
-            # Just in case the even gets created
+        finally:  # Just in case the event gets created
             cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
 
     def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient):
-        # Arrange
         new_event = Event(
-            # external_id="test_upsert_with_invalid_mode:new",
             id=666,
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-
-        # Act
         try:
             with pytest.raises(CogniteNotFoundError) as e:
                 cognite_client.events.upsert(new_event, mode="replace")
 
-            # Assert
             assert [{"id": 666}] == e.value.not_found
-        finally:
-            # Just in case the even gets created
+        finally:  # Just in case the event gets created
             cognite_client.events.delete(id=new_event.id, ignore_unknown_ids=True)
 
-    def test_upsert_with_empty_external_id(self, cognite_client: CogniteClient):
-        new_asset = Asset(
-            external_id="test_upsert_with_empty_external_id:new_asset",
-            name="test_upsert_with_empty_external_id",
-        )
-        existing_asset = Asset(
-            external_id="",
-            name="test_upsert_with_empty_external_id",
-        )
-        update_asset = Asset._load(existing_asset.dump(camel_case=True))
-        update_asset.name = "test_upsert_with_empty_external_id_updated"
-
-        try:
-            created = cognite_client.assets.create(existing_asset)
-            assert created.id is not None
-
-            # Act
-            updated = cognite_client.assets.upsert([new_asset, update_asset], mode="replace")
-
-            # Assert
-            assert updated[1].id == created.id
-            assert updated[1].name == update_asset.name
-        finally:
-            cognite_client.assets.delete(external_id=existing_asset.external_id, ignore_unknown_ids=True)
-
     def test_upsert_with_patch_option(self, cognite_client: CogniteClient):
-        # Arrange
         existing_event = Event(
-            external_id="test_upsert_with_patch_option:existing",
+            external_id="test_upsert_with_patch_option:existing" + random_string(5),
             type="mypType1",
             start_time=0,
             end_time=1,
@@ -315,15 +243,11 @@ class TestAPIClientUpsert:
             external_id=existing_event.external_id,
             subtype="mySubType2",
         )
-
         try:
             created = cognite_client.events.create(existing_event)
             assert created.id is not None
 
-            # Act
             updated = cognite_client.events.upsert(updated_event, mode="patch")
-
-            # Assert
             assert updated.id == created.id
             assert updated.subtype == updated_event.subtype
             assert updated.type == existing_event.type
@@ -331,6 +255,17 @@ class TestAPIClientUpsert:
             assert updated.end_time == existing_event.end_time
         finally:
             cognite_client.events.delete(external_id=existing_event.external_id, ignore_unknown_ids=True)
+
+    def test_upsert_write_class_not_existing(self, cognite_client: CogniteClient) -> None:
+        new_asset = AssetWrite(
+            external_id=f"test_upsert_write_class_not_existing:new_asset_{random_string(5)}",
+            name="test_upsert_write_class_not_existing",
+        )
+        try:
+            updated = cognite_client.assets.upsert(new_asset, mode="replace")
+            assert updated.name == new_asset.name
+        finally:
+            cognite_client.assets.delete(external_id=new_asset.external_id, ignore_unknown_ids=True)
 
 
 @pytest.fixture(scope="session")
@@ -390,7 +325,6 @@ class TestAPIClientAdvancedAggregate:
         count = cognite_client.events.aggregate_cardinality_values(
             property=EventProperty.subtype, filter=filter_, advanced_filter=advanced_filter, aggregate_filter=agg_filter
         )
-
         assert count == sum(
             1
             for event in event_list
@@ -407,7 +341,6 @@ class TestAPIClientAdvancedAggregate:
         count = cognite_client.events.aggregate_cardinality_properties(
             path=EventProperty.metadata, filter=filter_, advanced_filter=advanced_filter, aggregate_filter=agg_filter
         )
-
         assert count == sum(
             1
             for event in event_list
@@ -415,3 +348,59 @@ class TestAPIClientAdvancedAggregate:
             for key in event.metadata
             if key.startswith("shop")
         )
+
+
+class TestAPIClientRetrieveMultiple:
+    def test_retrieve_multiple_empty(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.events.retrieve_multiple(external_ids=[])
+        assert isinstance(res, EventList)
+        assert len(res) == 0
+
+    def test_retrieve_multiple__ordering_matches_input(
+        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
+        # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
+        # was requested (meaning multiple requests were used):
+        event_ids = cognite_client.events.list(limit=2000, sort="createdTime:asc").as_ids()
+        random.shuffle(event_ids)
+        monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
+        res = cognite_client.events.retrieve_multiple(ids=event_ids)
+        assert res.as_ids() == event_ids
+
+
+class TestAPIClientDelete:
+    def test_delete_empty(self, cognite_client: CogniteClient) -> None:
+        res = cognite_client.events.delete(external_id=[])
+        assert res is None
+
+
+@pytest.fixture()
+def new_asset(cognite_client: CogniteClient) -> Asset:
+    new_asset = AssetWrite(
+        external_id=f"test_api_client:new_asset:fixture_{random_string(5)}",
+        name="test_asset",
+        description="test_asset",
+        metadata={"test": "test"},
+        source="test",
+    )
+    created = cognite_client.assets.create(new_asset)
+    yield created
+    cognite_client.assets.delete(external_id=new_asset.external_id, ignore_unknown_ids=True)
+
+
+class TestAPIClientUpdate:
+    def test_update_write_class(self, new_asset: Asset, cognite_client: CogniteClient) -> None:
+        changed = new_asset.as_write()
+        changed.description = "changed"
+
+        res = cognite_client.assets.update(changed)
+        assert isinstance(res, Asset)
+        assert res.description == "changed"
+
+    def test_update_read_class(self, new_asset: Asset, cognite_client: CogniteClient) -> None:
+        changed = new_asset
+        changed.description = "changed"
+
+        res = cognite_client.assets.update(changed)
+        assert isinstance(res, Asset)
+        assert res.description == "changed"

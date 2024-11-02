@@ -9,7 +9,7 @@ git clone https://github.com/cognitedata/cognite-sdk-python.git
 cd cognite-sdk-python
 ```
 
-We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management.
+We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management. Make sure you use python 3.10.
 
 Install dependencies and initialize a shell within the virtual environment, with these commands:
 
@@ -93,6 +93,16 @@ To speed up test runs pass the following arguments (this will parallelize across
 
 ```
 pytest -n4 --dist loadscope tests
+```
+
+#### Unit Tests for Examples in Documentation
+
+For code examples defined in *docstrings* the doctest library is used and docstring tests are defined in `tests/tests_unit/test_docstring_examples.py`. Some docstring code examples may require patching which should be done here.
+
+For any code examples written directly in `docs/source` we are using the [sphinx doctest extension](https://www.sphinx-doc.org/en/master/usage/extensions/doctest.html) with pytest. See the `docs/source/quickstart.rst` for an example of a unit test that is setup to use some fixtures defined through pytest (`docs/source/conftest.py`). To run all the tests defined in docs run:
+
+```
+pytest docs
 ```
 
 ### Documentation

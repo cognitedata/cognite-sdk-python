@@ -1,9 +1,11 @@
 import doctest
+from collections import defaultdict
 from unittest import TextTestRunner
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
+from cognite.client import _cognite_client, config, credentials
 from cognite.client._api import (
     assets,
     data_sets,
@@ -19,8 +21,12 @@ from cognite.client._api import (
     sequences,
     three_d,
     time_series,
+    units,
+    workflows,
 )
 from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
+from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
+from cognite.client._api.postgres_gateway import users as postgres_gateway_users
 from cognite.client.testing import CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
@@ -36,7 +42,26 @@ def run_docstring_tests(module):
     assert 0 == len(s.failures)
 
 
+@patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
+def test_cognite_client():
+    run_docstring_tests(_cognite_client)
+
+
+@patch("cognite.client.credentials.ConfidentialClientApplication")
+@patch("cognite.client.credentials.PublicClientApplication")
+@patch("pathlib.Path.read_text", Mock(return_value="certificatecontents123"))
+@patch("os.environ", defaultdict(lambda: "value"))  # ensure env.var. lookups does not fail in doctests
+def test_credential_providers(mock_msal_app, mock_public_client):
+    mock_msal_app().acquire_token_for_client.return_value = {
+        "access_token": "azure_token",
+        "expires_in": 1000,
+    }
+    mock_public_client().acquire_token_silent.return_value = {"access_token": "azure_token", "expires_in": 1000}
+    run_docstring_tests(credentials)
+
+
 @patch("cognite.client.CogniteClient", CogniteClientMock)
+@patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
@@ -70,6 +95,7 @@ class TestDocstringExamples:
     def test_iam(self):
         run_docstring_tests(iam)
 
+    @pytest.mark.dsl
     def test_sequences(self):
         run_docstring_tests(sequences)
 
@@ -89,3 +115,21 @@ class TestDocstringExamples:
 
     def test_datapoint_subscriptions(self):
         run_docstring_tests(datapoints_subscriptions)
+
+    def test_workflows(self):
+        run_docstring_tests(workflows)
+
+    def test_units(self):
+        run_docstring_tests(units)
+
+    def test_config(self):
+        run_docstring_tests(config)
+
+    def test_hosted_extractors(self):
+        run_docstring_tests(mappings)
+        run_docstring_tests(sources)
+        run_docstring_tests(destinations)
+        run_docstring_tests(jobs)
+
+    def test_postgres_gateway(self):
+        run_docstring_tests(postgres_gateway_users)

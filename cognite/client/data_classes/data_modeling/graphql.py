@@ -1,20 +1,30 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
+from typing_extensions import Self
+
+from cognite.client.data_classes._base import CogniteObject
 from cognite.client.data_classes.data_modeling.ids import DataModelId
+from cognite.client.utils import _json
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass
-class DMLApplyResult:
+class DMLApplyResult(CogniteObject):
     space: str
     external_id: str
     version: str
-    name: Optional[str]
-    description: Optional[str]
-    created_time: int
-    last_updated_time: int
+    name: str | None
+    description: str | None
+    created_time: str
+    last_updated_time: str
+
+    def __str__(self) -> str:
+        return _json.dumps(self.dump(camel_case=False), indent=4)
 
     def as_id(self) -> DataModelId:
         return DataModelId(
@@ -24,13 +34,22 @@ class DMLApplyResult:
         )
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DMLApplyResult:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            space=data["space"],
-            external_id=data["externalId"],
-            version=data["version"],
-            name=data["name"],
-            description=data["description"],
-            created_time=data["createdTime"],
-            last_updated_time=data["lastUpdatedTime"],
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            name=resource["name"],
+            description=resource["description"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
+
+
+@dataclass
+class GraphQlQueryResult(CogniteObject):
+    items: list[dict[str, Any]]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(resource["items"])

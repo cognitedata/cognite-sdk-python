@@ -1,60 +1,60 @@
 ---
 repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
     hooks:
-      -   id: ruff
-          args:
-            - --fix
-            - --exit-non-zero-on-fix
-            - --line-length=120
-            - --ignore=E731,E501,W605
-            # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
-            - --select=E,W,F,I,T,RUF,TID,UP
-            - --fixable=E,W,F,I,T,RUF,TID,UP
-            - --target-version=py38
-            - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
-    rev: v0.0.261
-
-  - hooks:
-      - id: black
-        exclude: ^cognite/client/_proto.*$
+      - id: ruff
         args:
-          - --line-length
-          - '120'
-          - --target-version
-          - py38
-          - --include
-          - \.py$
-    repo: https://github.com/psf/black
-    rev: 22.12.0
+          - --fix
+          - --exit-non-zero-on-fix
+          - --line-length=120
+          - --ignore=E731,E501,W605,UP038
+            # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
+          - --select=E,W,F,I,T,RUF,TID,UP
+          - --fixable=E,W,F,I,T,RUF,TID,UP
+          - --target-version=py310
+          - --exclude=cognite/client/_proto
+      - id: ruff-format
+        args:
+          - --line-length=120
+          - --exclude=cognite/client/_proto*
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: debug-statements
       - id: check-docstring-first
 
-  - hooks:
-    - id: mypy
-      name: mypy
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
       # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling tests.
-      entry: poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling tests/tests_unit/test_data_classes/test_data_models
-      files: ^.*.(py|pyi)$
-      language: system
-      pass_filenames: false
-    repo: local
+        entry: |
+          poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
+          tests/tests_unit/test_data_classes/test_data_models
+        files: ^.*.(py|pyi)$
+        language: system
+        pass_filenames: false
 
-  - hooks:
+  - repo: local
+    hooks:
       - id: custom-checks
         name: custom repo checks
         entry: poetry run python scripts/run_checks.py
+        files: ^cognite/.*.(py|pyi)$
         language: system
-        pass_filenames: false
-    repo: local
+        pass_filenames: true
+        require_serial: true  # avoid possible race conditions
 
-  - repo: https://github.com/python-poetry/poetry
-    rev: 1.5.1
+  - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
+    rev: 0.5.9
     hooks:
-      - id: poetry-lock
-      - id: poetry-export
-        args: ["--with", "docs", "-f", "requirements.txt", "-o", "./docs/requirements.txt"]
+      - id: pydoclint
+        require_serial: true  # Spammy in run-all scenarios (more than fast enough already)
+        args:
+          - --style=google
+          - --exclude=tests/|scripts/
+          - --quiet  # otherwise prints all checked files that are ok...
+          - --skip-checking-raises=true
+          - --check-class-attributes=false

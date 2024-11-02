@@ -1,9 +1,18 @@
 Identity and access management
 ==============================
-Tokens
-^^^^^^
+Compare access rights (capabilities)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. currentmodule:: cognite.client
 
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.iam
+
+Tokens
+^^^^^^
 .. autosummary::
    :methods:
    :toctree: generated/
@@ -29,7 +38,6 @@ Security categories
 
    CogniteClient.iam.security_categories
 
-
 Sessions
 ^^^^^^^^^^^^^^^^^^^
 .. autosummary::
@@ -39,6 +47,14 @@ Sessions
 
    CogniteClient.iam.sessions
 
+User Profiles
+^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.iam.user_profiles
 
 Data classes
 ^^^^^^^^^^^^

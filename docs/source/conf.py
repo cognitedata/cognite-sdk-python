@@ -17,7 +17,6 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import datetime
 import os
 import pathlib
 import re
@@ -45,6 +44,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx_copybutton",
     "autosummary",
+    "sphinx.ext.doctest",
 ]
 
 autosectionlabel_prefix_document = True
@@ -56,14 +56,14 @@ templates_path = ["_templates", sphinx_autosummary_accessors.templates_path]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = str(datetime.datetime.now().year) + ", Cognite AS"
+copyright = "%Y, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -108,7 +108,7 @@ html_theme_options = {
         "image_dark": "_static/cognite_logo_white.png",
         "text": "cognite-sdk",
     },
-    "article_header_start": [
+    "navbar_start": [
         "toggle-primary-sidebar.html",
         "cognite_developer_documentation.html",
         "cognite_hub.html",
@@ -128,15 +128,15 @@ html_theme_options = {
             "type": "url",
         },
     ],
-    "pygment_light_style": "default",
-    "pygment_dark_style": "monokai",
+    "pygments_light_style": "default",
+    "pygments_dark_style": "monokai",
 }
 
 
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -205,10 +205,10 @@ texinfo_documents = [
 pyproject = pathlib.Path.cwd().parent.parent / "pyproject.toml"
 required_python_version = toml.load(pyproject)["tool"]["poetry"]["dependencies"]["python"]
 
-rst_epilog = """
-.. |PythonVersion| replace:: {versionnum}
-""".format(
-    versionnum=required_python_version,
-)
+rst_epilog = f"""
+.. |PythonVersion| replace:: {required_python_version}
+"""
 
 python_display_short_literal_types = True
+
+maximum_signature_line_length = 120

@@ -67,13 +67,13 @@ class TestEntityMatchingIntegration:
         # Update model
         model.name = "new_name"
         updated_model = cognite_client.entity_matching.update(model)
-        assert type(updated_model) == EntityMatchingModel
+        assert type(updated_model) is EntityMatchingModel
         assert updated_model.name == "new_name"
 
         updated_model2 = cognite_client.entity_matching.update(
             EntityMatchingModelUpdate(id=model.id).description.set("new description")
         )
-        assert type(updated_model2) == EntityMatchingModel
+        assert type(updated_model2) is EntityMatchingModel
         assert updated_model2.description == "new description"
 
     def test_refit(self, cognite_client, fitted_model):
@@ -123,17 +123,18 @@ class TestEntityMatchingIntegration:
     def test_list(self, cognite_client):
         models_list = cognite_client.entity_matching.list()
         assert len(models_list) > 0
-        assert type(models_list) == EntityMatchingModelList
-        assert all([type(x) == EntityMatchingModel for x in models_list])
+        assert type(models_list) is EntityMatchingModelList
+        assert all([type(x) is EntityMatchingModel for x in models_list])
         # Add filter
         models_list = cognite_client.entity_matching.list(feature_type="bigram")
         assert {model.feature_type for model in models_list} == {"bigram"}
 
+    @pytest.mark.skip("extremely slow due to lack of paging")
     def test_list_jobs(self, cognite_client):
         jobs_list = cognite_client.entity_matching.list_jobs()
         assert len(jobs_list) > 0
-        assert type(jobs_list) == ContextualizationJobList
-        assert all([type(x) == ContextualizationJob for x in jobs_list])
+        assert type(jobs_list) is ContextualizationJobList
+        assert all([type(x) is ContextualizationJob for x in jobs_list])
 
     def test_direct_predict(self, cognite_client, fitted_model):
         job = cognite_client.entity_matching.predict(external_id=fitted_model.external_id)

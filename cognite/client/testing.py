@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
@@ -29,8 +30,15 @@ from cognite.client._api.extractionpipelines import (
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
+from cognite.client._api.hosted_extractors import HostedExtractorsAPI
+from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
+from cognite.client._api.hosted_extractors.jobs import JobsAPI
+from cognite.client._api.hosted_extractors.mappings import MappingsAPI
+from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
+from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -57,7 +65,16 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.units import UnitAPI, UnitSystemAPI
+from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
+from cognite.client._api.workflows import (
+    WorkflowAPI,
+    WorkflowExecutionAPI,
+    WorkflowTaskAPI,
+    WorkflowTriggerAPI,
+    WorkflowVersionAPI,
+)
 
 
 class CogniteClientMock(MagicMock):
@@ -112,6 +129,7 @@ class CogniteClientMock(MagicMock):
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
@@ -125,6 +143,15 @@ class CogniteClientMock(MagicMock):
 
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+
+        self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
+        self.hosted_extractors.sources = MagicMock(spec_set=SourcesAPI)
+        self.hosted_extractors.destinations = MagicMock(spec_set=DestinationsAPI)
+        self.hosted_extractors.jobs = MagicMock(spec_set=JobsAPI)
+        self.hosted_extractors.mappings = MagicMock(spec_set=MappingsAPI)
+
+        self.postgres_gateway = MagicMock(spec=PostgresGatewaysAPI)
+        self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
@@ -151,6 +178,15 @@ class CogniteClientMock(MagicMock):
 
         self.vision = MagicMock(spec_set=VisionAPI)
 
+        self.workflows = MagicMock(spec=WorkflowAPI)
+        self.workflows.versions = MagicMock(spec_set=WorkflowVersionAPI)
+        self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
+        self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
+        self.workflows.triggers = MagicMock(spec_set=WorkflowTriggerAPI)
+
+        self.units = MagicMock(spec=UnitAPI)
+        self.units.systems = MagicMock(spec_set=UnitSystemAPI)
+
 
 @contextmanager
 def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
@@ -170,8 +206,8 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
-            >>>     c = CogniteClient()
-            >>>     c.time_series.create(TimeSeries(external_id="blabla"))
+            >>>     client = CogniteClient()
+            >>>     client.time_series.create(TimeSeries(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
 
@@ -183,8 +219,8 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
             >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
-            >>>     c = CogniteClient()
-            >>>     res = c.iam.token.inspect()
+            >>>     client = CogniteClient()
+            >>>     res = client.iam.token.inspect()
             >>>     assert "subject" == res.subject
 
         Here you can see how to have a given method raise an exception::
@@ -195,14 +231,14 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
             >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
-            >>>     c = CogniteClient()
+            >>>     client = CogniteClient()
             >>>     try:
-            >>>         res = c.iam.token.inspect()
+            >>>         res = client.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message
     """
     cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[method-assign]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[method-assign]

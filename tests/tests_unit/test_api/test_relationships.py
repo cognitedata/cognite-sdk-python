@@ -66,7 +66,7 @@ class TestRelationships:
         res = cognite_client.relationships.retrieve_multiple(external_ids=["a"])
         assert isinstance(res, RelationshipList)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "a"}], "fetchResources": False} == jsgz_load(
+        assert {"items": [{"externalId": "a"}], "fetchResources": False, "ignoreUnknownIds": False} == jsgz_load(
             mock_rel_response.calls[0].request.body
         )
 
@@ -254,7 +254,7 @@ class TestRelationships:
         )
         assert {
             "filter": {"sourceTypes": ["asset"], "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -276,7 +276,7 @@ class TestRelationships:
                 "targetExternalIds": ["foo"],
                 "labels": {"containsAny": [{"externalId": "belongs_to"}]},
             },
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -312,7 +312,7 @@ class TestRelationships:
                 "targetExternalIds": target_external_ids,
                 "dataSetIds": data_sets,
             },
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)

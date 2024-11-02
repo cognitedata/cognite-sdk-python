@@ -2,20 +2,33 @@ import re
 
 import pytest
 
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._validation import (
+    assert_type,
     process_asset_subtree_ids,
     process_data_set_ids,
     validate_user_input_dict_with_identifier,
 )
 
 
+class TestAssertions:
+    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
+    def test_assert_type_ok(self, var, var_name, types):
+        assert_type(var, var_name, types=types)
+
+    @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
+    def test_assert_type_fail(self, var, var_name, types):
+        with pytest.raises(TypeError, match=str(types)):
+            assert_type(var, var_name, types)
+
+
 class TestValidateUserInputDictWithIdentifier:
     @pytest.mark.parametrize(
         "dct, keys, expected",
         (
-            ({"id": 123, "a": None, "b": 0}, {"a", "b"}, {"id": 123}),
-            ({"external_id": "foo", "c": None}, {"c"}, {"externalId": "foo"}),
-            ({"externalId": "foo"}, set(), {"externalId": "foo"}),
+            ({"id": 123, "a": None, "b": 0}, {"a", "b"}, Identifier(123)),
+            ({"external_id": "foo", "c": None}, {"c"}, Identifier("foo")),
+            ({"externalId": "foo"}, set(), Identifier("foo")),
         ),
     )
     def test_validate_normal_input(self, dct, keys, expected):
@@ -26,8 +39,8 @@ class TestValidateUserInputDictWithIdentifier:
         (
             (["id", 123], set(), TypeError, "Expected dict-like object, got <class 'list'>"),
             ({}, set(), ValueError, "must be specified, got neither"),
-            ({"id": 123, "external_id": "foo"}, set(), ValueError, "must be specified, got both"),
-            ({"id": 123, "externalId": "foo"}, set(), ValueError, "must be specified, got both"),
+            ({"id": 123, "external_id": "foo"}, set(), ValueError, "must be specified, got multiple"),
+            ({"id": 123, "externalId": "foo"}, set(), ValueError, "must be specified, got multiple"),
             ({"id": 123}, {"a"}, ValueError, re.escape("Invalid key(s): [], required key(s) missing: ['a'].")),
             (
                 {"id": 123, "a": 0},
@@ -60,7 +73,7 @@ class TestProcessIdentifiers:
         with pytest.raises(TypeError, match=exp_match):
             fn("97", "a")
 
-        exp_match = rf"^{name}_external_ids must be of type str or Sequence\[str\]\. Found <class 'int'>$"
+        exp_match = rf"^{name}_external_ids must be of type str or SequenceNotStr\[str\]\. Found <class 'int'>$"
         with pytest.raises(TypeError, match=exp_match):
             fn(97, ord("a"))
 

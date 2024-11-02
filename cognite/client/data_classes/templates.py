@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-import json
+from abc import ABC
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
-    EXCLUDE_VALUE,
     CogniteObjectUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class TemplateGroup(CogniteResource):
+class TemplateGroupCore(WriteableCogniteResource["TemplateGroupWrite"], ABC):
     """A template group is a high level concept encapsulating a schema and a set of template instances. It also has query capability support.
 
     Template groups are versioned, so there can be multiple template groups with the same external ID.
@@ -27,33 +28,105 @@ class TemplateGroup(CogniteResource):
     GraphQL schema definition language is used as the language to describe the structure of the templates and data types.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        description (str): The description of the template groups.
-        owners (List[str]): The list of owners for the template groups.
-        data_set_id (int): The dataSet which this Template Group belongs to
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): The description of the template groups.
+        owners (list[str] | None): The list of owners for the template groups.
+        data_set_id (int | None): The dataSet which this Template Group belongs to
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        description: Optional[str] = None,
-        owners: Optional[List[str]] = None,
-        data_set_id: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        external_id: str | None = None,
+        description: str | None = None,
+        owners: list[str] | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
         self.external_id = external_id
         self.description = description
         self.owners = owners
         self.data_set_id = data_set_id
+
+
+class TemplateGroup(TemplateGroupCore):
+    """A template group is a high level concept encapsulating a schema and a set of template instances. It also has query capability support.
+
+    Template groups are versioned, so there can be multiple template groups with the same external ID.
+    The versioning is happening automatically whenever a template groups is changed.
+
+    GraphQL schema definition language is used as the language to describe the structure of the templates and data types.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): The description of the template groups.
+        owners (list[str] | None): The list of owners for the template groups.
+        data_set_id (int | None): The dataSet which this Template Group belongs to
+        created_time (int | None): No description.
+        last_updated_time (int | None): No description.
+        cognite_client (CogniteClient | None): No description.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        description: str | None = None,
+        owners: list[str] | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(external_id, description, owners, data_set_id)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def as_write(self) -> TemplateGroupWrite:
+        return TemplateGroupWrite(
+            external_id=self.external_id,
+            description=self.description,
+            owners=self.owners,
+            data_set_id=self.data_set_id,
+        )
 
-class TemplateGroupList(CogniteResourceList[TemplateGroup]):
+
+class TemplateGroupWrite(TemplateGroupCore):
+    """A template group is a high level concept encapsulating a schema and a set of template instances. It also has query capability support.
+    This is the write format of a template group.
+
+    Template groups are versioned, so there can be multiple template groups with the same external ID.
+    The versioning is happening automatically whenever a template groups is changed.
+
+    GraphQL schema definition language is used as the language to describe the structure of the templates and data types.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): The description of the template groups.
+        owners (list[str] | None): The list of owners for the template groups.
+        data_set_id (int | None): The dataSet which this Template Group belongs to
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        description: str | None = None,
+        owners: list[str] | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        super().__init__(external_id, description, owners, data_set_id)
+
+    def as_write(self) -> TemplateGroupWrite:
+        return self
+
+
+class TemplateGroupWriteList(CogniteResourceList[TemplateGroupWrite]):
+    _RESOURCE = TemplateGroupWrite
+
+
+class TemplateGroupList(WriteableCogniteResourceList[TemplateGroupWrite, TemplateGroup]):
     _RESOURCE = TemplateGroup
+
+    def as_write(self) -> TemplateGroupWriteList:
+        return TemplateGroupWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
 class TemplateGroupVersion(CogniteResource):
@@ -66,20 +139,23 @@ class TemplateGroupVersion(CogniteResource):
     The default mode is "patch".
 
     Args:
-        schema (str): The GraphQL schema.
-        version (int): Incremented by the server whenever the schema of a template groups changes.
-        conflict_mode (str): Can be set to 'Patch', 'Update' or 'Force'.
+        schema (str | None): The GraphQL schema.
+        version (int | None): Incremented by the server whenever the schema of a template groups changes.
+        conflict_mode (str | None): Can be set to 'Patch', 'Update' or 'Force'.
+        created_time (int | None): No description.
+        last_updated_time (int | None): No description.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        schema: Optional[str] = None,
-        version: Optional[int] = None,
-        conflict_mode: Optional[str] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        schema: str | None = None,
+        version: int | None = None,
+        conflict_mode: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.schema = schema
         self.version = version
         self.conflict_mode = conflict_mode
@@ -96,10 +172,11 @@ class ConstantResolver(CogniteResource):
     """Resolves a field to a constant value. The value can be of any supported JSON type.
 
     Args:
-        value (any): The value of the field.
+        value (Any | None): The value of the field.
+        cognite_client (CogniteClient | None): No description.
     """
 
-    def __init__(self, value: Optional[Any] = None, cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, value: Any | None = None, cognite_client: CogniteClient | None = None) -> None:
         self.type = "constant"
         self.value = value
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -109,20 +186,21 @@ class RawResolver(CogniteResource):
     """Resolves a field to a RAW column.
 
     Args:
-        db_name (str): The database name.
-        table_name (str): The table name.
-        row_key (str): The row key.
-        column_name (str): The column to fetch the value from.
+        db_name (str | None): The database name.
+        table_name (str | None): The table name.
+        row_key (str | None): The row key.
+        column_name (str | None): The column to fetch the value from.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        db_name: Optional[str] = None,
-        table_name: Optional[str] = None,
-        row_key: Optional[str] = None,
-        column_name: Optional[str] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        db_name: str | None = None,
+        table_name: str | None = None,
+        row_key: str | None = None,
+        column_name: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.type = "raw"
         self.db_name = db_name
         self.table_name = table_name
@@ -135,26 +213,27 @@ class SyntheticTimeSeriesResolver(CogniteResource):
     """Resolves a field of type 'SyntheticTimeSeries' to a Synthetic Time Series.
 
     Args:
-        expression (str): The synthetic time series expression. See this for syntax https://docs.cognite.com/api/v1/#tag/Synthetic-Time-Series.
-        name (Optional[str]): The name of the Time Series.
-        description (Optional[str]): The description for the Time Series.
-        metadata (Optional[Dict[str, str]]): Specifies metadata for the Time Series.
-        is_step (Optional[bool]): Specifies if the synthetic time series is step based.
-        is_string (Optional[bool]): Specifies if the synthetic time series returned contains string values.
-        unit (Optional[str]): The unit of the time series.
+        expression (str | None): The synthetic time series expression. See this for syntax https://docs.cognite.com/api/v1/#tag/Synthetic-Time-Series.
+        name (str | None): The name of the Time Series.
+        description (str | None): The description for the Time Series.
+        metadata (dict[str, str] | None): Specifies metadata for the Time Series.
+        is_step (bool | None): Specifies if the synthetic time series is step based.
+        is_string (bool | None): Specifies if the synthetic time series returned contains string values.
+        unit (str | None): The unit of the time series.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        expression: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        is_step: Optional[bool] = None,
-        is_string: Optional[bool] = None,
-        unit: Optional[str] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        expression: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        is_step: bool | None = None,
+        is_string: bool | None = None,
+        unit: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.type = "syntheticTimeSeries"
         self.expression = expression
         self.name = name
@@ -170,15 +249,16 @@ class ViewResolver(CogniteResource):
     """Resolves the field by loading the data from a view.
 
     Args:
-        external_id (str): The external id of the view.
-        input (Optional[Dict[str, any]]): The input used to resolve the view.
+        external_id (str | None): The external id of the view.
+        input (dict[str, Any] | None): The input used to resolve the view.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        input: Optional[Dict[str, Any]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        external_id: str | None = None,
+        input: dict[str, Any] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.type = "view"
         self.external_id = external_id
@@ -186,104 +266,166 @@ class ViewResolver(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str, ViewResolver]
+FieldResolvers: TypeAlias = ConstantResolver | RawResolver | SyntheticTimeSeriesResolver | str | ViewResolver
 
 
-class TemplateInstance(CogniteResource):
+class TemplateInstanceCore(WriteableCogniteResource["TemplateInstanceWrite"], ABC):
     """A template instance that implements a template by specifying a resolver per field.
 
     Args:
-        external_id (str): The id of the template instance.
-        template_name (str): The template name to implement.
-        field_resolvers (Dict[str, FieldResolvers]): A set of field resolvers where the dictionary key correspond to the field name.
-        data_set_id (int): The id of the dataset this instance belongs to.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id (str | None): The id of the template instance.
+        template_name (str | None): The template name to implement.
+        field_resolvers (dict[str, FieldResolvers] | None): A set of field resolvers where the dictionary key correspond to the field name.
+        data_set_id (int | None): The id of the dataset this instance belongs to.
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        template_name: Optional[str] = None,
-        field_resolvers: Optional[Dict[str, FieldResolvers]] = None,
-        data_set_id: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        external_id: str | None = None,
+        template_name: str | None = None,
+        field_resolvers: dict[str, FieldResolvers] | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
         self.external_id = external_id
         self.template_name = template_name
         self.field_resolvers = field_resolvers
         self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    field_resolver_mapper: Dict[str, Type[CogniteResource]] = {
+    field_resolver_mapper: ClassVar[dict[str, type[FieldResolvers]]] = {
         "constant": ConstantResolver,
         "syntheticTimeSeries": SyntheticTimeSeriesResolver,
         "raw": RawResolver,
         "view": ViewResolver,
     }
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
+            dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                to_camel_case(key): value
-                if key != "field_resolvers"
-                else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
-        return {
-            key: value
-            if key != "field_resolvers"
-            else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
+        dumped = {
+            key: value if key != "field_resolvers" else self._encode_field_resolvers(value, camel_case=camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(dumped)
+        return dumped
 
     @staticmethod
-    def _encode_field_resolvers(field_resolvers: Dict[str, FieldResolvers], camel_case: bool) -> Dict[str, Any]:
+    def _encode_field_resolvers(field_resolvers: dict[str, FieldResolvers], camel_case: bool) -> dict[str, Any]:
         return {
-            key: value.dump(camel_case=camel_case) if not isinstance(value, str) else value
+            key: value if isinstance(value, str) else value.dump(camel_case=camel_case)
             for key, value in field_resolvers.items()
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TemplateInstance:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    if key == "fieldResolvers":
-                        setattr(
-                            instance,
-                            snake_case_key,
-                            {
-                                key: TemplateInstance._field_resolver_load(field_resolver)
-                                for key, field_resolver in value.items()
-                            },
-                        )
-                    else:
-                        setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _field_resolver_load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FieldResolvers:
+        resolver = cls.field_resolver_mapper[resource["type"]]
+        if isinstance(resolver, str):
+            return resolver
+        elif issubclass(resolver, (ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, ViewResolver)):
+            return resolver._load(resource, cognite_client)
+        else:
+            raise ValueError(f"Unknown field resolver type {resolver}")
 
-    @staticmethod
-    def _field_resolver_load(resource: Dict, cognite_client: Optional[CogniteClient] = None) -> CogniteResource:
-        return TemplateInstance.field_resolver_mapper[resource["type"]]._load(resource, cognite_client)
+
+class TemplateInstance(TemplateInstanceCore):
+    """A template instance that implements a template by specifying a resolver per field.
+
+    Args:
+        external_id (str | None): The id of the template instance.
+        template_name (str | None): The template name to implement.
+        field_resolvers (dict[str, FieldResolvers] | None): A set of field resolvers where the dictionary key correspond to the field name.
+        data_set_id (int | None): The id of the dataset this instance belongs to.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): No description.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        template_name: str | None = None,
+        field_resolvers: dict[str, FieldResolvers] | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(external_id, template_name, field_resolvers, data_set_id)
+        # created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> TemplateInstanceWrite:
+        return TemplateInstanceWrite(
+            external_id=self.external_id,
+            template_name=self.template_name,
+            field_resolvers=self.field_resolvers,
+            data_set_id=self.data_set_id,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TemplateInstance:
+        return cls(
+            external_id=resource.get("externalId"),
+            template_name=resource.get("templateName"),
+            field_resolvers={
+                key: cls._field_resolver_load(field_resolver)
+                for key, field_resolver in resource.get("fieldResolvers", {}).items()
+            }
+            or None,
+            data_set_id=resource.get("dataSetId"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            cognite_client=cognite_client,
+        )
+
+
+class TemplateInstanceWrite(TemplateInstanceCore):
+    """A template instance that implements a template by specifying a resolver per field.
+
+    Args:
+        external_id (str | None): The id of the template instance.
+        template_name (str | None): The template name to implement.
+        field_resolvers (dict[str, FieldResolvers] | None): A set of field resolvers where the dictionary key correspond to the field name.
+        data_set_id (int | None): The id of the dataset this instance belongs to.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        template_name: str | None = None,
+        field_resolvers: dict[str, FieldResolvers] | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        super().__init__(external_id, template_name, field_resolvers, data_set_id)
+
+    def as_write(self) -> TemplateInstanceWrite:
+        return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TemplateInstanceWrite:
+        return cls(
+            external_id=resource.get("externalId"),
+            template_name=resource.get("templateName"),
+            field_resolvers={
+                key: cls._field_resolver_load(field_resolver)
+                for key, field_resolver in resource.get("fieldResolvers", {}).items()
+            }
+            or None,
+            data_set_id=resource.get("dataSetId"),
+        )
 
 
 class TemplateInstanceUpdate(CogniteUpdate):
@@ -294,13 +436,13 @@ class TemplateInstanceUpdate(CogniteUpdate):
     """
 
     class _ObjectAssetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> TemplateInstanceUpdate:
+        def set(self, value: dict) -> TemplateInstanceUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> TemplateInstanceUpdate:
+        def add(self, value: dict) -> TemplateInstanceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TemplateInstanceUpdate:
+        def remove(self, value: list) -> TemplateInstanceUpdate:
             return self._remove(value)
 
     @property
@@ -308,7 +450,7 @@ class TemplateInstanceUpdate(CogniteUpdate):
         return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("field_resolvers"),
         ]
@@ -319,17 +461,18 @@ class Source(CogniteResource):
     A source defines the data source with filters and a mapping table.
 
     Args:
-        type (str): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
-        filter (Dict[str, any]): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
-        mappings (Dict[str, str]): The mapping between source result and expected schema.
+        type (str | None): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
+        filter (dict[str, Any] | None): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
+        mappings (dict[str, str] | None): The mapping between source result and expected schema.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        type: Optional[str] = None,
-        filter: Optional[Dict[str, Any]] = None,
-        mappings: Optional[Dict[str, str]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        type: str | None = None,
+        filter: dict[str, Any] | None = None,
+        mappings: dict[str, str] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.type = type
         self.filter = filter
@@ -337,99 +480,154 @@ class Source(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class View(CogniteResource):
+class ViewCore(WriteableCogniteResource["ViewWrite"], ABC):
     """
     A view is used to map existing data to a type in the template group. A view supports input, that can be bound to the underlying filter.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        source (Source): Defines the data source for the view.
-        data_set_id (Optional[int]): The dataSetId of the view
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        source (Source | None): Defines the data source for the view.
+        data_set_id (int | None): The dataSetId of the view
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        source: Optional[Source] = None,
-        data_set_id: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        external_id: str | None = None,
+        source: Source | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
         self.external_id = external_id
         self.source = source
         self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
 
         Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
+            dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                to_camel_case(key): View.resolve_nested_classes(value, camel_case)
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
-        return {
-            key: View.resolve_nested_classes(value, camel_case)
+        dumped = {
+            key: self.resolve_nested_classes(value, camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(dumped)
+        return dumped
 
     @staticmethod
-    def resolve_nested_classes(value: Union[CogniteResource, Dict], camel_case: bool) -> Dict:
+    def resolve_nested_classes(value: CogniteResource | dict, camel_case: bool) -> dict:
         if isinstance(value, CogniteResource):
             return value.dump(camel_case)
         else:
             return value
 
+
+class View(ViewCore):
+    """
+    A view is used to map existing data to a type in the template group. A view supports input, that can be bound to the underlying filter.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        source (Source | None): Defines the data source for the view.
+        data_set_id (int | None): The dataSetId of the view
+        created_time (int | None): No description.
+        last_updated_time (int | None): No description.
+        cognite_client (CogniteClient | None): No description.
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        source: Source | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(external_id=external_id, source=source, data_set_id=data_set_id)
+        # created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def as_write(self) -> ViewWrite:
+        return ViewWrite(
+            external_id=self.external_id,
+            source=self.source,
+            data_set_id=self.data_set_id,
+        )
+
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> View:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
-            instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    value = value if key != "source" else Source._load(value, cognite_client)
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> View:
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                value = value if key != "source" else Source._load(value, cognite_client)
+                setattr(instance, snake_case_key, value)
+        return instance
+
+
+class ViewWrite(ViewCore):
+    """
+    A view is used to map existing data to a type in the template group. A view supports input, that can be bound to the underlying filter.
+    This is the write format of a view.
+
+    Args:
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        source (Source | None): Defines the data source for the view.
+        data_set_id (int | None): The dataSetId of the view
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        source: Source | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        super().__init__(external_id, source, data_set_id)
+
+    def as_write(self) -> ViewWrite:
+        return self
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ViewWrite:
+        return cls(
+            external_id=resource.get("externalId"),
+            source=Source._load(source, cognite_client) if (source := resource.get("source")) else None,
+            data_set_id=resource.get("dataSetId"),
+        )
 
 
 class ViewResolveItem(UserDict, CogniteResource):
-    def __init__(self, data: Dict[str, Any], cognite_client: Optional[CogniteClient] = None) -> None:
+    def __init__(self, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> None:
         super().__init__(data)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return self.data
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return self.data.copy()
 
     @classmethod
-    def _load(cls, data: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ViewResolveItem:
-        if isinstance(data, str):
-            return cls._load(json.loads(data), cognite_client=cognite_client)
-        elif isinstance(data, Dict):
-            return cls(data, cognite_client=cognite_client)
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ViewResolveItem:
+        return cls(data, cognite_client=cognite_client)
 
 
 class GraphQlError(CogniteResource):
     def __init__(
         self,
-        message: Optional[str] = None,
-        path: Optional[List[str]] = None,
-        locations: Optional[List[Dict[str, Any]]] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        message: str | None = None,
+        path: list[str] | None = None,
+        locations: list[dict[str, Any]] | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.message = message
         self.path = path
         self.locations = locations
@@ -439,21 +637,49 @@ class GraphQlError(CogniteResource):
 class GraphQlResponse(CogniteResource):
     def __init__(
         self,
-        data: Optional[Any] = None,
-        errors: Optional[List[GraphQlError]] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        data: Any | None = None,
+        errors: list[GraphQlError] | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.data = data
         self.errors = errors
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.errors:
+            output["errors"] = [error.dump(camel_case) for error in self.errors]
+        return output
 
-class TemplateInstanceList(CogniteResourceList[TemplateInstance]):
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> GraphQlResponse:
+        return cls(
+            data=resource.get("data"),
+            errors=[GraphQlError._load(error) for error in resource.get("errors", [])] or None,
+            cognite_client=cognite_client,
+        )
+
+
+class TemplateInstanceWriteList(CogniteResourceList[TemplateInstanceWrite]):
+    _RESOURCE = TemplateInstanceWrite
+
+
+class TemplateInstanceList(WriteableCogniteResourceList[TemplateInstanceWrite, TemplateInstance]):
     _RESOURCE = TemplateInstance
 
+    def as_write(self) -> TemplateInstanceWriteList:
+        return TemplateInstanceWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
-class ViewList(CogniteResourceList[View]):
+
+class ViewWriteList(CogniteResourceList[ViewWrite]):
+    _RESOURCE = ViewWrite
+
+
+class ViewList(WriteableCogniteResourceList[ViewWrite, View]):
     _RESOURCE = View
+
+    def as_write(self) -> ViewWriteList:
+        return ViewWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
 class ViewResolveList(CogniteResourceList[ViewResolveItem]):

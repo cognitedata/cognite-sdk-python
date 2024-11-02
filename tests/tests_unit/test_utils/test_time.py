@@ -3,8 +3,9 @@ from __future__ import annotations
 import platform
 import re
 import time
+from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -14,15 +15,19 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    MonthAligner,
+    ZoneInfo,
     align_large_granularity,
     align_start_and_end_for_granularity,
-    convert_time_attributes_to_datetime,
+    convert_and_isoformat_time_attrs,
+    convert_data_modelling_timestamp,
     datetime_to_ms,
+    datetime_to_ms_iso_timestamp,
     granularity_to_ms,
-    granularity_unit_to_ms,
-    import_zoneinfo,
     ms_to_datetime,
     pandas_date_range_tz,
+    parse_str_timezone,
+    parse_str_timezone_offset,
     split_time_range,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -33,6 +38,72 @@ from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
+
+
+@pytest.mark.parametrize(
+    "offset_inp, expected",
+    (
+        ("", timedelta(0)),
+        ("01:15", timedelta(seconds=4500)),
+        ("01:15:12", timedelta(seconds=4512)),
+        ("23:59", timedelta(seconds=86340)),
+        ("0", timedelta(0)),
+        ("01", timedelta(seconds=3600)),
+        ("1", timedelta(seconds=3600)),
+        ("7", timedelta(seconds=25200)),
+        ("18", timedelta(seconds=64800)),
+    ),
+)
+def test_parse_str_timezone_offset(offset_inp, expected):
+    for pm in "+-":
+        for prefix in ["", "UTC", "UT", "GMT"]:
+            if not prefix and not offset_inp:
+                continue
+            inp = prefix + pm + offset_inp if offset_inp else prefix
+            res = parse_str_timezone_offset(inp)
+            assert res == timezone(int(pm + "1") * expected)
+
+
+@pytest.mark.parametrize(
+    "inp, expected",
+    (
+        ("Europe/Oslo", ZoneInfo("Europe/Oslo")),
+        ("Asia/Tokyo", ZoneInfo("Asia/Tokyo")),
+        ("GMT", ZoneInfo("GMT")),
+        ("UTC-0", timezone.utc),
+        ("UTC+01:15", timezone(timedelta(seconds=4500))),
+    ),
+)
+def test_parse_str_timezone(inp, expected):
+    assert expected == parse_str_timezone(inp)
+
+
+class TestDatetimeToMsIsoTimestamp:
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_unaware(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
+        with tmp_set_envvar("TZ", "CET"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    @pytest.mark.dsl
+    def test_timezone_cet(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        utc_datetime = input_datetime.astimezone(timezone.utc)
+        assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+        assert datetime_to_ms_iso_timestamp(utc_datetime) == "2020-12-31T23:00:00.000+00:00"
+
+    @pytest.mark.dsl
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
+    def test_timezone_cet_in_local_tz(self):
+        input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
+        with tmp_set_envvar("TZ", "UTC"):
+            time.tzset()
+            assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
+
+    def test_incorrect_type(self):
+        with pytest.raises(TypeError, match="Expected datetime object, got <class 'str'>"):
+            datetime_to_ms_iso_timestamp("2021-01-01T00:00:00.000")
 
 
 class TestDatetimeToMs:
@@ -62,21 +133,17 @@ class TestDatetimeToMs:
             datetime_to_ms(datetime(1925, 8, 3))
 
     def test_aware_datetime_to_ms(self):
-        # TODO: Starting from PY39 we should also add tests using:
-        # from zoneinfo import ZoneInfo
-        # datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
         utc = timezone.utc
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
 
-    @pytest.mark.dsl
     def test_aware_datetime_to_ms_zoneinfo(self):
-        ZoneInfo = import_zoneinfo()
         # The correct answer was obtained using: https://dencode.com/en/date/unix-time
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=ZoneInfo("Europe/Oslo"))) == 1517353200000
         assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("Europe/Oslo"))) == -2208992400000
         assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("America/New_York"))) == -2208970800000
+        assert datetime_to_ms(datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))) == 1604170800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
@@ -165,6 +232,27 @@ class TestTimestampToMs:
             timestamp_to_ms(t)
 
 
+class TestConvertDataModelingTimestamp:
+    @pytest.mark.parametrize(
+        "timestamp_str, expected",
+        [
+            ("2021-01-01T00:00:00.000+00:00", datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc)),
+            ("2021-01-01T00:00:00.000+01:00", datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=1)))),
+            (
+                "2021-01-01T00:00:00.000+01:15",
+                datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=1, minutes=15))),
+            ),
+            (
+                "2021-01-01T00:00:00.000-01:15",
+                datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=timezone(timedelta(hours=-1, minutes=-15))),
+            ),
+            ("2024-09-03T09:36:01.17+00:00", datetime(2024, 9, 3, 9, 36, 1, 170000, tzinfo=timezone.utc)),
+        ],
+    )
+    def test_valid_timestamp_str(self, timestamp_str: str, expected: datetime) -> None:
+        assert expected == convert_data_modelling_timestamp(timestamp_str)
+
+
 class TestGranularityToMs:
     @pytest.mark.parametrize(
         "granularity, expected_ms",
@@ -187,8 +275,6 @@ class TestGranularityToMs:
         with pytest.raises(ValueError, match=granularity):
             granularity_to_ms(granularity)
 
-
-class TestGranularityUnitToMs:
     @pytest.mark.parametrize(
         "granularity, expected_ms",
         [
@@ -202,36 +288,40 @@ class TestGranularityUnitToMs:
             ("13d", 1 * 24 * 60 * 60 * 1000),
         ],
     )
-    def test_to_ms(self, granularity, expected_ms):
-        assert granularity_unit_to_ms(granularity) == expected_ms
+    def test_to_ms_as_unit(self, granularity, expected_ms):
+        assert granularity_to_ms(granularity, as_unit=True) == expected_ms
 
     @pytest.mark.parametrize("granularity", ["2w", "-3h", "13m-ago", "13", "bla"])
-    def test_to_ms_invalid(self, granularity):
-        with pytest.raises(ValueError, match="format"):
-            granularity_unit_to_ms(granularity)
+    def test_to_ms_as_unit_invalid(self, granularity):
+        with pytest.raises(ValueError, match=rf"Invalid granularity format: `{granularity}`"):
+            granularity_to_ms(granularity, as_unit=True)
 
 
 class TestObjectTimeConversion:
     @pytest.mark.parametrize(
         "item, expected_output",
         [
-            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00"}),
-            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00"}),
-            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00"}),
-            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00"}),
+            ({"created_time": 0}, {"created_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"last_updated_time": 0}, {"last_updated_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"start_time": 0}, {"start_time": "1970-01-01 00:00:00.000+00:00"}),
+            ({"end_time": 0}, {"end_time": "1970-01-01 00:00:00.000+00:00"}),
             ({"not_a_time": 0}, {"not_a_time": 0}),
-            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00"}]),
-            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00"}]),
-            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00"}]),
-            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00"}]),
-            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00"}]),
-            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00"}]),
+            ({"expirationTime": -41103211}, {"expirationTime": "1969-12-31 12:34:56.789+00:00"}),
+            ({"lastSuccess": -1}, {"lastSuccess": "1969-12-31 23:59:59.999+00:00"}),
+            ({"scheduledExecutionTime": 1}, {"scheduledExecutionTime": "1970-01-01 00:00:00.001+00:00"}),
+            ({"uploaded_time": 123456789}, {"uploaded_time": "1970-01-02 10:17:36.789+00:00"}),
+            ([{"created_time": 0}], [{"created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"last_updated_time": 0}], [{"last_updated_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"start_time": 0}], [{"start_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"end_time": 0}], [{"end_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_created_time": 0}], [{"source_created_time": "1970-01-01 00:00:00.000+00:00"}]),
+            ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00.000+00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
         ],
     )
-    def test_convert_time_attributes_to_datetime(self, item, expected_output):
-        assert expected_output == convert_time_attributes_to_datetime(item)
+    def test_convert_and_isoformat_time_attrs(self, item, expected_output):
+        assert expected_output == convert_and_isoformat_time_attrs(item)
 
 
 class TestSplitTimeDomain:
@@ -344,25 +434,17 @@ class TestCDFAggregation:
     def test_cdf_aggregation(
         start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
     ):
-        # Arrange
         import pandas as pd
 
         index = pd.date_range(start, end, freq=raw_freq)
         raw_df = pd.DataFrame(data=range(len(index)), index=index)
 
-        # Act
         actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
 
-        # Assert
         pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
-    try:
-        ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
-        return []
-
     oslo = ZoneInfo("Europe/Oslo")
     utc = dict(tzinfo=ZoneInfo("UTC"))
     oslo_dst = datetime(2023, 3, 25, 23, **utc)
@@ -489,11 +571,6 @@ class TestToFixedUTCIntervals:
 
 
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
-    try:
-        ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
-        return []
-
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
 
@@ -527,7 +604,6 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
-        ZoneInfo = import_zoneinfo()
         import pandas as pd
         import pytz  # hard pandas dependency
     except (ImportError, CogniteImportError):
@@ -602,7 +678,6 @@ class TestValidateTimeZone:
     def test_infer_timezone(start: datetime, end: datetime, expected_tz):
         actual_tz = validate_timezone(start, end)
 
-        ZoneInfo = import_zoneinfo()
         assert isinstance(actual_tz, ZoneInfo)
         assert actual_tz is expected_tz
 
@@ -629,16 +704,13 @@ class TestToPandasFreq:
         ],
     )
     def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
-        # Arrange
         import pandas as pd
 
         start = pd.Timestamp(start)
         expected_index = pd.DatetimeIndex([start, expected_first_step])
 
-        # Act
         freq = to_pandas_freq(granularity, start.to_pydatetime())
 
-        # Assert
         actual_index = pd.date_range(start, periods=2, freq=freq)
         pd.testing.assert_index_equal(actual_index, expected_index)
 
@@ -647,16 +719,57 @@ class TestPandasDateRangeTz:
     @staticmethod
     @pytest.mark.dsl
     def test_pandas_date_range_tz_ambiguous_time_error():
-        # Arrange
-        ZoneInfo = import_zoneinfo()
         oslo = ZoneInfo("Europe/Oslo")
         start = datetime(1916, 8, 1, tzinfo=oslo)
         end = datetime(1916, 12, 1, tzinfo=oslo)
         expected_length = 5
         freq = to_pandas_freq("1month", start)
 
-        # Act
         index = pandas_date_range_tz(start, end, freq)
 
-        # Assert
         assert len(index) == expected_length
+
+
+class TestDateTimeAligner:
+    # TODO: DayAligner
+    # TODO: WeekAligner
+    # TODO: MonthAligner
+    # TODO: QuarterAligner
+    # TODO: YearAligner
+
+    @pytest.mark.parametrize(
+        "dt, expected",
+        (
+            (datetime(2023, 11, 1), datetime(2023, 11, 1)),
+            (datetime(2023, 10, 15), datetime(2023, 11, 1)),
+            (datetime(2023, 12, 15), datetime(2024, 1, 1)),
+            (datetime(2024, 1, 10), datetime(2024, 2, 1)),
+            # Bug prior to 7.5.7 would cause this to raise:
+            (datetime(2023, 11, 2), datetime(2023, 12, 1)),
+        ),
+    )
+    def test_month_aligner__ceil(self, dt, expected):
+        assert expected == MonthAligner.ceil(dt)
+
+    def test_month_aligner_ceil__invalid_date(self):
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 7, 31), 2)  # sept has 30 days
+
+    @pytest.mark.parametrize(
+        "dt, n_units, expected",
+        (
+            (datetime(2023, 7, 2), 12, datetime(2024, 7, 2)),
+            (datetime(2023, 7, 2), 12 * 12, datetime(2035, 7, 2)),
+            (datetime(2023, 7, 2), -12 * 2, datetime(2021, 7, 2)),
+            # Bug prior to 7.5.7 would cause these to raise:
+            (datetime(2023, 11, 15), 1, datetime(2023, 12, 15)),
+            (datetime(2023, 12, 15), 0, datetime(2023, 12, 15)),
+            (datetime(2024, 1, 15), -1, datetime(2023, 12, 15)),
+        ),
+    )
+    def test_month_aligner__add_unites(self, dt, n_units, expected):
+        assert expected == MonthAligner.add_units(dt, n_units)
+
+    def test_month_aligner_add_unites__invalid_date(self):
+        with pytest.raises(ValueError, match="^day is out of range for month$"):
+            MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year

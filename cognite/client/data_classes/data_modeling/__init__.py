@@ -12,8 +12,8 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
     ContainerProperty,
     Index,
-    RequiresConstraintDefinition,
-    UniquenessConstraintDefinition,
+    RequiresConstraint,
+    UniquenessConstraint,
 )
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
@@ -35,7 +35,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
     Int32,
     Int64,
     Json,
-    Primitive,
     PropertyType,
     SequenceReference,
     Text,
@@ -50,6 +49,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     DataModelingId,
     EdgeId,
     NodeId,
+    PropertyId,
     VersionedDataModelingId,
     ViewId,
     ViewIdentifier,
@@ -76,12 +76,23 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
     NodeListWithCursor,
     NodeOrEdgeData,
+    PropertyOptions,
+    TypedEdge,
+    TypedEdgeApply,
+    TypedNode,
+    TypedNodeApply,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
+    EdgeConnection,
+    EdgeConnectionApply,
     MappedProperty,
     MappedPropertyApply,
+    MultiEdgeConnection,
+    MultiEdgeConnectionApply,
+    MultiReverseDirectRelation,
+    MultiReverseDirectRelationApply,
     SingleHopConnectionDefinition,
     View,
     ViewApply,
@@ -91,13 +102,6 @@ from cognite.client.data_classes.data_modeling.views import (
 )
 from cognite.client.data_classes.filters import Filter
 
-# TODO: Remove these in next major version, there just here to ensure backwards compatibility after renaming and
-#  removing some data classes.
-ViewDirectRelation = DirectRelation
-ContainerDirectRelation = DirectRelation
-MapppedPropertyDefinition = MappedProperty
-MappedApplyPropertyDefinition = MappedPropertyApply
-
 __all__ = [
     "Aggregation",
     "AggregatedValue",
@@ -105,15 +109,13 @@ __all__ = [
     "ViewIdentifier",
     "ViewApply",
     "ViewApplyList",
+    "PropertyId",
     "MappedPropertyApply",
-    "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
     "ContainerIdentifier",
     "DataModelIdentifier",
     "DirectRelation",
-    "ViewDirectRelation",
-    "ContainerDirectRelation",
     "Filter",
     "filters",
     "DirectRelationReference",
@@ -126,9 +128,14 @@ __all__ = [
     "ContainerFilter",
     "ViewFilter",
     "MappedProperty",
-    "MapppedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
+    "EdgeConnection",
+    "EdgeConnectionApply",
+    "MultiEdgeConnection",
+    "MultiEdgeConnectionApply",
+    "MultiReverseDirectRelation",
+    "MultiReverseDirectRelationApply",
     "Space",
     "SpaceList",
     "SpaceApply",
@@ -142,11 +149,10 @@ __all__ = [
     "Index",
     "Constraint",
     "ContainerProperty",
-    "Primitive",
     "CDFExternalIdReference",
-    "RequiresConstraintDefinition",
-    "UniquenessConstraintDefinition",
+    "RequiresConstraint",
     "ContainerId",
+    "UniquenessConstraint",
     "ViewId",
     "DataModelId",
     "Text",
@@ -181,9 +187,14 @@ __all__ = [
     "NodeId",
     "EdgeId",
     "InstancesApplyResult",
+    "InstancesApply",
     "InstancesDeleteResult",
     "InstancesResult",
     "InstanceApply",
-    "InstancesApply",
     "query",
+    "PropertyOptions",
+    "TypedEdgeApply",
+    "TypedNodeApply",
+    "TypedNode",
+    "TypedEdge",
 ]

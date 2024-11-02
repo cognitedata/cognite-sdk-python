@@ -1,33 +1,69 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import (
+    Identifier,
+    IdentifierSequence,
+    InstanceId,
+    UserIdentifier,
+    UserIdentifierSequence,
+    Username,
+    UsernameSequence,
+)
 
 
 class TestIdentifier:
     @pytest.mark.parametrize(
-        "id, external_id, exp_tpl",
+        "id, external_id, instance_id, exp_tpl",
         (
-            (1, None, ("id", 1)),
-            (MAX_VALID_INTERNAL_ID, None, ("id", MAX_VALID_INTERNAL_ID)),
-            (None, "foo", ("external_id", "foo")),
+            (1, None, None, ("id", 1)),
+            (MAX_VALID_INTERNAL_ID, None, None, ("id", MAX_VALID_INTERNAL_ID)),
+            (None, "foo", None, ("external_id", "foo")),
+            (None, None, InstanceId("s", "extid"), ("instance_id", InstanceId("s", "extid"))),
         ),
     )
-    def test_of_either__normal_input(self, id, external_id, exp_tpl):
-        assert exp_tpl == Identifier.of_either(id, external_id).as_tuple(camel_case=False)
+    def test_of_either__normal_input(self, id, external_id, instance_id, exp_tpl):
+        assert exp_tpl == Identifier.of_either(id, external_id, instance_id).as_tuple(camel_case=False)
 
     @pytest.mark.parametrize(
-        "id, external_id, err_msg",
+        "id, external_id, instance_id, err_msg",
         (
-            (None, None, "Exactly one of id or external id must be specified, got neither"),
-            (123, "foo", "Exactly one of id or external id must be specified, got both"),
-            (0, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
-            (MAX_VALID_INTERNAL_ID + 1, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+            (None, None, None, "Exactly one of id, external id, or instance_id must be specified, got neither"),
+            (123, "foo", None, "Exactly one of id, external id, or instance_id must be specified, got multiple"),
+            (
+                None,
+                "foo",
+                InstanceId("space", "external_id"),
+                "Exactly one of id, external id, or instance_id must be specified, got multiple",
+            ),
+            (0, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+            (MAX_VALID_INTERNAL_ID + 1, None, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
         ),
     )
-    def test_of_either__bad_input(self, id, external_id, err_msg):
+    def test_of_either__bad_input(self, id, external_id, instance_id, err_msg):
         with pytest.raises(ValueError, match=err_msg):
-            Identifier.of_either(id, external_id)
+            Identifier.of_either(id, external_id, instance_id)
+
+    def test_handles_id_type_correctly(self):
+        # int is ok
+        Identifier(1)
+
+        # string is ok
+        Identifier("abc")
+
+        # InstanceId is ok
+        Identifier(InstanceId("s", "e"))
+
+        # anything else is not ok
+        with pytest.raises(TypeError, match="Expected id/external_id to be of type int or str"):
+            Identifier(object())
+
+    def test_is_hashable(self) -> None:
+        assert hash(Identifier(1)) == hash(Identifier(1))
+        assert hash(Identifier(1)) != hash(Identifier(2))
+        assert hash(Identifier(InstanceId("s", "e1"))) != hash(Identifier(InstanceId("s", "e2")))
 
 
 class TestIdentifierSequence:
@@ -54,13 +90,10 @@ class TestIdentifierSequence:
         else:
             assert identifiers.as_primitives() == expected
 
-    @pytest.mark.parametrize(
-        "ids, external_ids, exception, match",
-        [(None, None, ValueError, "No identifiers specified")],
-    )
-    def test_process_ids_fail(self, ids, external_ids, exception, match) -> None:
-        with pytest.raises(exception, match=match):
-            IdentifierSequence.load(ids, external_ids)
+    def test_process_ids_empty(self) -> None:
+        sequence = IdentifierSequence.load(None, None)
+
+        assert len(sequence) == 0
 
     @pytest.mark.parametrize(
         "id, external_id, expected",
@@ -83,3 +116,57 @@ class TestIdentifierSequence:
 
         seq = IdentifierSequence.of(external_ids)
         assert seq.is_singleton() is is_singleton
+
+
+class TestUserIdentifier:
+    def test_methods(self):
+        user_id = UserIdentifier("foo")
+        assert user_id.as_primitive() == "foo"
+        assert user_id.as_dict(camel_case=True) == {"userIdentifier": "foo"}
+        assert user_id.as_dict(camel_case=False) == {"user_identifier": "foo"}
+
+
+class TestUserIdentifierSequence:
+    @pytest.mark.parametrize(
+        "user_ids, exp_dcts, exp_primitives",
+        (
+            ("foo", [{"userIdentifier": "foo"}], ["foo"]),
+            (["foo", "bar"], [{"userIdentifier": "foo"}, {"userIdentifier": "bar"}], ["foo", "bar"]),
+        ),
+    )
+    def test_load_and_dump(self, user_ids, exp_dcts, exp_primitives):
+        user_id_seq = UserIdentifierSequence.load(user_ids)
+        assert user_id_seq.as_primitives() == exp_primitives
+        assert user_id_seq.as_dicts() == exp_dcts
+
+    def test_load_wrong_type(self):
+        with pytest.raises(TypeError):
+            UserIdentifierSequence.load(123)
+
+
+class TestUsername:
+    def test_methods(self) -> None:
+        user_id = Username("foo")
+        assert user_id.as_primitive() == "foo"
+        assert user_id.as_dict(camel_case=True) == {"username": "foo"}
+        assert user_id.as_dict(camel_case=False) == {"username": "foo"}
+
+
+class TestUsernameSequence:
+    @pytest.mark.parametrize(
+        "usernames, exp_dcts, exp_primitives",
+        (
+            ("foo", [{"username": "foo"}], ["foo"]),
+            (["foo", "bar"], [{"username": "foo"}, {"username": "bar"}], ["foo", "bar"]),
+        ),
+    )
+    def test_load_and_dump(
+        self, usernames: str | list[str], exp_dcts: dict[str, str], exp_primitives: list[str]
+    ) -> None:
+        user_id_seq = UsernameSequence.load(usernames)
+        assert user_id_seq.as_primitives() == exp_primitives
+        assert user_id_seq.as_dicts() == exp_dcts
+
+    def test_load_wrong_type(self) -> None:
+        with pytest.raises(TypeError):
+            UsernameSequence.load(123)

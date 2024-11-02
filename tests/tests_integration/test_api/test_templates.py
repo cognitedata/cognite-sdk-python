@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import pytest
@@ -11,9 +12,31 @@ from cognite.client.data_classes import (
     TemplateInstance,
     TemplateInstanceList,
 )
-from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolver
+from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolveList, ViewResolver
 from cognite.client.exceptions import CogniteNotFoundError
+
+
+@pytest.fixture(scope="session")
+def ensure_event_test_data(cognite_client):
+    events = EventList(
+        [
+            Event(
+                external_id=f"test_evt_templates_1_{i}",
+                type="test_templates_1",
+                start_time=i * 1000,
+            )
+            for i in range(1001)
+        ]
+    )
+    try:
+        cognite_client.events.retrieve_multiple(
+            external_ids=events.as_external_ids(),
+            ignore_unknwown_ids=False,
+        )
+    except CogniteNotFoundError:
+        cognite_client.events.upsert(events)
+        time.sleep(3)
 
 
 @pytest.fixture
@@ -22,7 +45,9 @@ def new_template_group(cognite_client):
     username = cognite_client.iam.token.inspect().subject
     template_group = cognite_client.templates.groups.create(
         TemplateGroup(
-            external_id=external_id, description="some description", owners=[username, external_id + "@cognite.com"]
+            external_id=external_id,
+            description="some description",
+            owners=[username, f"{external_id}@cognite.com"],
         )
     )
     yield template_group, external_id
@@ -74,16 +99,8 @@ def new_template_instance(cognite_client, new_template_group_version):
 
 
 @pytest.fixture
+@pytest.mark.usefixtures("ensure_event_test_data")
 def new_view(cognite_client, new_template_group_version):
-    events = []
-    for i in range(0, 1001):
-        events.append(Event(external_id="test_evt_templates_1_" + str(i), type="test_templates_1", start_time=i * 1000))
-    try:
-        cognite_client.events.create(events)
-    except Exception:
-        # We only generate this data once for a given project, to prevent issues with eventual consistency etc.
-        None
-
     new_group, ext_id, new_version = new_template_group_version
     view = View(
         external_id="test",
@@ -108,14 +125,14 @@ class TestTemplatesCogniteClient:
         assert isinstance(res[0], TemplateGroup)
         assert new_group.external_id == ext_id
 
-    def test_groups_retrieve_unknown(self, cognite_client, new_template_group):
+    def test_groups_retrieve_unknown(self, cognite_client):
         with pytest.raises(CogniteNotFoundError):
             cognite_client.templates.groups.retrieve_multiple(external_ids=["this does not exist"])
         assert cognite_client.templates.groups.retrieve_multiple(external_ids="this does not exist") is None
 
     def test_groups_list_filter(self, cognite_client, new_template_group):
         new_group, ext_id = new_template_group
-        res = cognite_client.templates.groups.list(owners=[ext_id + "@cognite.com"])
+        res = cognite_client.templates.groups.list(owners=[f"{ext_id}@cognite.com"])
         assert len(res) == 1
         assert isinstance(res, TemplateGroupList)
 
@@ -207,40 +224,42 @@ class TestTemplatesCogniteClient:
 
     def test_view_list(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
-        first_element = [
+        first_element = next(
             res
             for res in cognite_client.templates.views.list(ext_id, new_version.version)
             if res.external_id == view.external_id
-        ][0]
+        )
         assert first_element == view
 
     def test_view_delete(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         cognite_client.templates.views.delete(ext_id, new_version.version, [view.external_id])
-        assert (
-            len(
-                [
-                    res
-                    for res in cognite_client.templates.views.list(ext_id, new_version.version)
-                    if res.external_id == view.external_id
-                ]
-            )
-            == 0
-        )
+        should_be_empty = [
+            res
+            for res in cognite_client.templates.views.list(ext_id, new_version.version)
+            if res.external_id == view.external_id
+        ]
+        assert len(should_be_empty) == 0
 
     def test_view_resolve(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         res = cognite_client.templates.views.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 10 * 1000}, limit=10
         )
-        assert res == [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(0, 10)]
+        expected = ViewResolveList.load(
+            [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(10)]
+        )
+        assert res == expected
 
     def test_view_resolve_pagination(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         res = cognite_client.templates.views.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1
         )
-        assert res == [{"startTime": i * 1000, "test_type": "test_templates_1"} for i in range(0, 1001)]
+        expected = ViewResolveList.load(
+            [{"startTime": i, "test_type": "test_templates_1"} for i in range(0, 1_000_001, 1000)]
+        )
+        assert res == expected
 
     def test_view_upsert(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view

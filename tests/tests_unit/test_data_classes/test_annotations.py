@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 import pytest
 
@@ -46,7 +45,7 @@ class TestAnnotation:
         [("john.doe@cognite.com", False), ("john.doe@cognite.com", True), (None, False), (None, True)],
         ids=["snake_case", "camel_case", "snake_case_None", "camel_case_None"],
     )
-    def test_dump(self, annotation: Annotation, creating_user: Optional[str], camel_case: bool) -> None:
+    def test_dump(self, annotation: Annotation, creating_user: str | None, camel_case: bool) -> None:
         annotation.creating_user = creating_user
         super_dump = super(Annotation, annotation).dump(camel_case=camel_case)
         dump = annotation.dump(camel_case=camel_case)
@@ -62,7 +61,7 @@ class TestAnnotation:
 
     def test_load(self, annotation: Annotation) -> None:
         resource = json.dumps(annotation.dump(camel_case=True))
-        loaded_annotation = Annotation._load(resource, cognite_client=None)
+        loaded_annotation = Annotation.load(resource, cognite_client=None)
         assert annotation == loaded_annotation
 
 
@@ -79,7 +78,7 @@ class TestAnnotationFilter:
         ],
         ids=["snake_case", "camel_case", "snake_case_None", "camel_case_None", "snake_case_empty", "camel_case_empty"],
     )
-    def test_dump(self, annotation_filter: AnnotationFilter, creating_user: Optional[str], camel_case: bool) -> None:
+    def test_dump(self, annotation_filter: AnnotationFilter, creating_user: str | None, camel_case: bool) -> None:
         annotation_filter.creating_user = creating_user
         super_dump = super(AnnotationFilter, annotation_filter).dump(camel_case=camel_case)
         dump = annotation_filter.dump(camel_case=camel_case)

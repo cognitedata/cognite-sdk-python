@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Dict, get_args, get_type_hints
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
 
 from cognite.client.data_classes import ContextualizationJob
-from cognite.client.data_classes.contextualization import VISION_FEATURE_MAP, DetectJobBundle, VisionExtractPredictions
+from cognite.client.data_classes.contextualization import (
+    VISION_FEATURE_MAP,
+    ConnectionFlags,
+    DetectJobBundle,
+    DiagramDetectConfig,
+    VisionExtractPredictions,
+)
 from cognite.client.testing import monkeypatch_cognite_client
 
 
 @pytest.fixture
-def mock_base_job_response() -> Dict[str, Any]:
+def mock_base_job_response() -> dict[str, Any]:
     return {
         "status": "Completed",
         "createdTime": 1666601590000,
@@ -39,12 +45,22 @@ def mock_update_status_completed(self):
 class TestVisionExtractPredictions:
     def test_visionextractpredictions_in_sync_with_vision_feature_map(self) -> None:
         """This test ensures that the mapping and VisionExtractPredictions class is 'in sync'"""
+
+        # Needed in local namespace for type lookup:
+        from cognite.client.data_classes.annotation_types.images import (  # noqa F401
+            AssetLink,
+            ObjectDetection,
+            TextRegion,
+            KeypointCollectionWithObjectDetection,
+        )
+
+        local_namespace = locals()
+        annots_as_set = {
+            (k, local_namespace.get(v.replace("list[", "").replace("] | None", "")))
+            for k, v in VisionExtractPredictions.__annotations__.items()
+        }
         mapping_as_set = set(VISION_FEATURE_MAP.items())
-        (annot_dct := get_type_hints(VisionExtractPredictions)).pop("_cognite_client")
-        # Unwrap the first level of type hints, (MUST be an Optional), since Optional[X] == Union[X, None].
-        # Unwrap the second level of type hint (i.e., the List[...]):
-        annots_as_set = {(k, get_args(get_args(a)[0])[0]) for k, a in annot_dct.items()}
-        assert mapping_as_set == annots_as_set
+        assert mapping_as_set == annots_as_set, "type annots. must follow this pattern: <list[SomeCls] | None>"
 
 
 class TestContextualizationJob:
@@ -171,3 +187,34 @@ class TestJobBundle:
             # With no job_ids
             with pytest.raises(ValueError):
                 res = DetectJobBundle(cognite_client=mock_client, job_ids=[])
+
+
+class TestDiagramDetectConfig:
+    def test_connection_flags(self) -> None:
+        cf = ConnectionFlags(
+            natural_reading_order=True,
+            no_text_inbetween=True,
+            new_parameter=True,
+            excluded_parameter=False,
+            newCamelCaseParameter=True,
+        )
+        expected = [
+            "natural_reading_order",
+            "no_text_inbetween",
+            "new_parameter",
+            "newCamelCaseParameter",
+        ]
+        assert cf.dump() == expected
+
+    @pytest.mark.parametrize(
+        "param_name",
+        [
+            "annotationExtract",
+            "annotation_Extract",
+            "minFuzzyScore",
+        ],
+    )
+    def test_overlapping_parameter_name(self, param_name: str):
+        kwargs = {param_name: True}
+        with pytest.raises(ValueError):
+            DiagramDetectConfig(**kwargs)

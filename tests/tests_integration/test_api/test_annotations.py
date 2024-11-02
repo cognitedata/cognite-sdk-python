@@ -2,20 +2,19 @@ from __future__ import annotations
 
 import uuid
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import is_unlimited
 
 
-def delete_with_check(
-    cognite_client: CogniteClient, delete_ids: List[int], check_ids: Optional[List[int]] = None
-) -> None:
+def delete_with_check(cognite_client: CogniteClient, delete_ids: list[int], check_ids: list[int] | None = None) -> None:
     if check_ids is None:
         check_ids = delete_ids
     cognite_client.annotations.delete(id=delete_ids)
@@ -24,15 +23,15 @@ def delete_with_check(
         raise ValueError(f"retrieve_multiple after delete successful for ids {check_ids}")
     except CogniteAPIError as e:
         assert e.code == 404
-        missing = [i["id"] for i in e.missing]
+        missing = [i["id"] for i in e.failed]
         assert sorted(check_ids) == sorted(missing)
 
 
-def remove_None_from_nested_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+def remove_none_from_nested_dict(d: dict[str, Any]) -> dict[str, Any]:
     new_dict = {}
     for key, val in d.items():
         if isinstance(val, dict):
-            val = remove_None_from_nested_dict(val)
+            val = remove_none_from_nested_dict(val)
         if val is not None:
             new_dict[key] = val
     return new_dict
@@ -135,7 +134,7 @@ def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient)
     return cognite_client.annotations.create(annotation)
 
 
-def assert_payload_dict(local: Dict[str, Any], remote: Dict[str, Any]) -> None:
+def assert_payload_dict(local: dict[str, Any], remote: dict[str, Any]) -> None:
     for k, local_v in local.items():
         if local_v is None:
             continue
@@ -150,8 +149,8 @@ def assert_payload_dict(local: Dict[str, Any], remote: Dict[str, Any]) -> None:
 
 
 def check_created_vs_base(base_annotation: Annotation, created_annotation: Annotation) -> None:
-    base_dump = base_annotation.dump()
-    created_dump = created_annotation.dump()
+    base_dump = base_annotation.dump(camel_case=False)
+    created_dump = created_annotation.dump(camel_case=False)
     special_keys = ["id", "created_time", "last_updated_time", "data"]
     found_special_keys = 0
     for k, v in created_dump.items():
@@ -162,13 +161,13 @@ def check_created_vs_base(base_annotation: Annotation, created_annotation: Annot
             assert v == base_dump[k]
     assert found_special_keys == len(special_keys)
     # assert data is equal, except None fields
-    created_dump_data = remove_None_from_nested_dict(created_dump["data"])
-    base_dump_data = remove_None_from_nested_dict(base_dump["data"])
+    created_dump_data = remove_none_from_nested_dict(created_dump["data"])
+    base_dump_data = remove_none_from_nested_dict(base_dump["data"])
     assert created_dump_data == base_dump_data
 
 
 def _test_list_on_created_annotations(
-    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = LIST_LIMIT_DEFAULT
+    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = DEFAULT_LIMIT_READ
 ):
     annotation = annotations[0]
     filter = AnnotationFilter(
@@ -181,7 +180,7 @@ def _test_list_on_created_annotations(
     )
     annotations_list = cognite_client.annotations.list(filter=filter, limit=limit)
     assert isinstance(annotations_list, AnnotationList)
-    if limit == -1 or limit > len(annotations):
+    if is_unlimited(limit) or limit > len(annotations):
         assert len(annotations_list) == len(annotations)
     else:
         assert len(annotations_list) == limit
@@ -236,12 +235,12 @@ class TestAnnotationsIntegration:
     def test_update_annotation_by_annotation(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         # Create annotation, make some local changes and cache a dump
         annotation = cognite_client.annotations.create(base_annotation)
-        local_dump = annotation.dump()
+        local_dump = annotation.dump(camel_case=False)
         # Update the annotation on remote and make a dump
         annotation = cognite_client.annotations.update(annotation)
         assert isinstance(annotation, Annotation)
         # Check that the local dump matches the remove dump
-        remote_dump = annotation.dump()
+        remote_dump = annotation.dump(camel_case=False)
         for k, v in remote_dump.items():
             if k == "last_updated_time":
                 assert v > local_dump[k]
@@ -311,6 +310,8 @@ class TestAnnotationsIntegration:
         _test_list_on_created_annotations(cognite_client, created_annotations)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=30)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=-1)
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=None)
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))
 
     def test_retrieve(self, cognite_client: CogniteClient, base_annotation: Annotation) -> None:
         created_annotation = cognite_client.annotations.create(base_annotation)
@@ -323,13 +324,7 @@ class TestAnnotationsIntegration:
         ids = [c.id for c in created_annotations]
         retrieved_annotations = cognite_client.annotations.retrieve_multiple(ids)
         assert isinstance(retrieved_annotations, AnnotationList)
-
-        # TODO assert the order and do without sorting
-        # as soon as the API is fixed
-        for ret, new in zip(
-            sorted(retrieved_annotations, key=lambda a: a.id), sorted(created_annotations, key=lambda a: a.id)
-        ):
-            assert ret.dump() == new.dump()
+        assert retrieved_annotations.dump() == created_annotations.dump()
 
     def test_annotations_reverse_lookup(
         self, asset_link_annotation: Annotation, cognite_client: CogniteClient, permanent_file_id: int

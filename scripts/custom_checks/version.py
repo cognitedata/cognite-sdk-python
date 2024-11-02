@@ -1,7 +1,9 @@
 import re
+from collections.abc import Iterator
 from datetime import datetime
+from itertools import pairwise
 from pathlib import Path
-from typing import Iterator, Match, Optional
+from re import Match
 
 import toml
 from packaging.version import Version
@@ -11,7 +13,7 @@ from cognite.client import __version__
 CWD = Path.cwd()
 
 
-def pyproj_version_matches() -> Optional[str]:
+def pyproj_version_matches() -> str | None:
     with (CWD / "pyproject.toml").open() as fh:
         version_in_pyproject = toml.load(fh)["tool"]["poetry"]["version"]
 
@@ -28,7 +30,7 @@ def _parse_changelog() -> Iterator[Match[str]]:
     return re.finditer(r"##\s\[(\d+\.\d+\.\d+)\]\s-\s(\d+-\d+-\d+)", changelog)
 
 
-def changelog_entry_version_matches() -> Optional[str]:
+def changelog_entry_version_matches() -> str | None:
     match = next(_parse_changelog())
     version = match.group(1)
     if version != __version__:
@@ -40,7 +42,7 @@ def changelog_entry_version_matches() -> Optional[str]:
     return None
 
 
-def changelog_entry_date() -> Optional[str]:
+def changelog_entry_date() -> str | None:
     match = next(_parse_changelog())
     try:
         datetime.strptime(date := match.group(2), "%Y-%m-%d")
@@ -49,9 +51,9 @@ def changelog_entry_date() -> Optional[str]:
         return f"Date given in the newest entry in 'CHANGELOG.md', {date!r}, is not valid/parsable (YYYY-MM-DD)"
 
 
-def version_number_is_increasing() -> Optional[str]:
+def version_number_is_increasing() -> str | None:
     versions = [Version(match.group(1)) for match in _parse_changelog()]
-    for new, old in zip(versions[:-1], versions[1:]):
+    for new, old in pairwise(versions):
         if new < old:
             return f"Versions must be strictly increasing: {new} is not higher than the previous, {old}."
     return None

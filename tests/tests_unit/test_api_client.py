@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import math
 import random
+import time
 import unittest
 from collections import namedtuple
-from typing import Any
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 from requests import Response
@@ -13,8 +14,9 @@ from responses import matchers
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
+from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -33,7 +35,7 @@ URL_PATH = "/someurl"
 RESPONSE = {"any": "ok"}
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token_factory(cognite_client):
     return APIClient(
         ClientConfig(
@@ -49,7 +51,7 @@ def api_client_with_token_factory(cognite_client):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def api_client_with_token(cognite_client):
     return APIClient(
         ClientConfig(
@@ -85,7 +87,7 @@ class TestBasicRequests:
             rsps.add(method, BASE_URL + URL_PATH, status=500, json={"error": "Server error"})
             rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": {"code": 400, "message": "Client error"}})
 
-    request_cases = [
+    request_cases: ClassVar = [
         lambda api_client: RequestCase(
             name="post", method=api_client._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
         ),
@@ -206,7 +208,7 @@ class SomeUpdate(CogniteUpdate):
         return PrimitiveUpdate(self, "externalId")
 
     @classmethod
-    def _get_update_properties(cls) -> list[PropertySpec]:
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [PropertySpec("y", is_nullable=False), PropertySpec("external_id", is_nullable=False)]
 
 
@@ -221,6 +223,7 @@ class SomeResource(CogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SomeResourceList(CogniteResourceList):
@@ -233,9 +236,13 @@ class SomeFilter(CogniteFilter):
         self.var_y = var_y
 
 
-class SomeAggregation(dict):
+class SomeAggregation(CogniteResource):
     def __init__(self, count):
         self.count = count
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SomeAggregation:
+        return cls(count=resource["count"])
 
 
 class TestStandardRetrieve:
@@ -260,12 +267,8 @@ class TestStandardRetrieve:
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.GET, BASE_URL + URL_PATH + "/1", status=200, json={"x": 1, "y": 2})
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve(
-                cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)
-            )._cognite_client
-        )
+        res = api_client_with_token._retrieve(cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1))
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardRetrieveMultiple:
@@ -344,13 +347,15 @@ class TestStandardRetrieveMultiple:
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_token):
-        with pytest.raises(ValueError, match="No identifiers specified"):
-            api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(),
-            )
+        result = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(),
+        )
+
+        assert isinstance(result, SomeResourceList)
+        assert len(result) == 0
 
     def test_single_id_not_found(self, api_client_with_token, rsps):
         rsps.add(
@@ -380,6 +385,9 @@ class TestStandardRetrieveMultiple:
             status=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 2}]}},
         )
+        # Second request may be skipped intentionally depending on which thread runs when:
+        rsps.assert_all_requests_are_fired = False
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteNotFoundError) as e:
                 api_client_with_token._retrieve_multiple(
@@ -389,18 +397,16 @@ class TestStandardRetrieveMultiple:
                     identifiers=IdentifierSequence.of(1, 2),
                 )
         assert {"id": 1} in e.value.not_found
-        assert {"id": 2} in e.value.not_found
+        assert {"id": 2} in e.value.not_found + e.value.skipped
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, mock_by_ids):
-        assert (
-            cognite_client
-            == api_client_with_token._retrieve_multiple(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                identifiers=IdentifierSequence.of(1, 2),
-            )._cognite_client
+        res = api_client_with_token._retrieve_multiple(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            identifiers=IdentifierSequence.of(1, 2),
         )
+        assert cognite_client == res._cognite_client
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/byids", status=200, json={"items": [{"x": 1, "y": 2}]})
@@ -464,7 +470,7 @@ class TestStandardList:
         assert "Client Error" == e.value.message
 
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
-    ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
+    ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
     def test_list_partitions(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
@@ -493,9 +499,10 @@ class TestStandardList:
         def request_callback(request):
             payload = jsgz_load(request.body)
             np, total = payload["partition"].split("/")
-            if int(np) == 2:
+            if int(np) == 3:
                 return 503, {}, json.dumps({"message": "Service Unavailable"})
             else:
+                time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
 
         rsps.add_callback(
@@ -507,11 +514,15 @@ class TestStandardList:
                 resource_cls=SomeResource,
                 resource_path=URL_PATH,
                 method="POST",
-                partitions=4,
+                partitions=15,
                 limit=None,
             )
         assert 503 == exc.value.code
-        assert 4 == len(rsps.calls)
+        assert exc.value.unknown == [("3/15",)]
+        assert exc.value.skipped
+        assert exc.value.successful
+        assert 14 == len(exc.value.successful) + len(exc.value.skipped)
+        assert 1 < len(rsps.calls)
 
     @pytest.fixture
     def mock_get_for_autopaging(self, rsps):
@@ -580,7 +591,7 @@ class TestStandardList:
             elif len(resource_chunk) == 500:
                 total_resources += 500
             else:
-                raise AssertionError("resource chunk length was not 1000 or 500")
+                raise ValueError("resource chunk length was not 1000 or 500")
         assert 11500 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging_2589")
@@ -659,6 +670,24 @@ class TestStandardList:
         assert 2002 == total_resources
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
+    def test_standard_list_generator_vs_partitions(self, api_client_with_token):
+        total_resources = 0
+        for resource_chunk in api_client_with_token._list_generator(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            partitions=1,
+            limit=2000,
+            chunk_size=1001,
+        ):
+            # TODO: chunk_size is ignored when partitions is set, fix in next major version
+            assert isinstance(resource_chunk, SomeResource)
+            total_resources += 1
+
+        assert 2000 == total_resources
+
+    @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_autopaging(self, api_client_with_token):
         res = api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
@@ -675,18 +704,15 @@ class TestStandardList:
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
         rsps.add(rsps.GET, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
-            )._cognite_client
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
         )
-        assert (
-            cognite_client
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
-            )._cognite_client
+        assert cognite_client == res._cognite_client
+
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
+        assert cognite_client == res._cognite_client
 
 
 class TestStandardAggregate:
@@ -757,12 +783,13 @@ class TestStandardCreate:
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
                     items=[
-                        SomeResource(1, external_id="400"),
+                        # The external id here is also used as the fake api response status code:
+                        SomeResource(1, external_id="400"),  # i.e, this will raise CogniteAPIError(..., code=400)
                         SomeResource(external_id="500"),
                         SomeResource(1, 1, external_id="200"),
                     ],
                 )
-        assert 500 == e.value.code
+        assert e.value.code in (400, 500)  # race condition, don't know which failing is -last-
         assert [SomeResource(1, external_id="400")] == e.value.failed
         assert [SomeResource(1, 1, external_id="200")] == e.value.successful
         assert [SomeResource(external_id="500")] == e.value.unknown
@@ -864,7 +891,7 @@ class TestStandardDelete:
                 )
 
         unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
-        assert [1, 2, 3] == e.value.failed
+        assert [1, 2, 3] == sorted(e.value.failed)
 
     def test_over_limit_concurrent(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/delete", status=200, json={})
@@ -1011,16 +1038,11 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
-        # Note 1: We have two tasks being added to an executor, but that doesnt mean we know the
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
+        # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
         # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
         # to make sure the responses match the two tasks.
-
-        # Note 2: The matcher function expects request.body to not be gzipped (it just does .decode("utf-8")
-        # which fails, making the matching functions useless.. so we temporarily turn off gzip for this test
-        monkeypatch.setattr(global_config, "disable_gzip", True)
-
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",
@@ -1147,37 +1169,200 @@ class TestStandardSearch:
         )
 
 
-class TestHelpers:
+class TestRetryableEndpoints:
     @pytest.mark.parametrize(
         "method, path, expected",
         [
-            ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
-            ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
-            ("PUT", "https://api.cognitedata.com/bla", True),
-            (
-                "POST",
-                "https://api.cognitedata.com/api/v1/projects/sebnickelgreenfield/files/downloadlink?extendedExpiration=true",
-                True,
-            ),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/blabla/timeseries/list", True),
-            ("POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", False),
-            ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
-            ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
-            ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/mydb/tables/mytable", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/files/search", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/spaces", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/containers", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/views", True),
-            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/datamodels", True),
+            test_case
+            for resource in [
+                "assets",
+                "events",
+                "files",
+                "timeseries",
+                "sequences",
+                "datasets",
+                "relationships",
+                "labels",
+            ]
+            for test_case in [
+                # Should retry POST on all _read_ endpoints
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/search", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/aggregate", True),
+                # Should not retry POST /create and /update as they are not idempotent
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}", False),
+                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/update", False),
+            ]
         ],
+    )
+    def test_is_retryable_resource_api_endpoints(self, api_client_with_token, method, path, expected):
+        assert expected == api_client_with_token._is_retryable(method, path)
+
+    @pytest.mark.parametrize(
+        "method, path, expected",
+        sorted(
+            [
+                # Versions
+                *(
+                    # Should work on all api version
+                    ("POST", f"https://api.cognitedata.com/api/{version}/projects/bla/assets/list", True)
+                    for version in ["v1", "playground"]
+                ),
+                # Hosts
+                *(
+                    # Should work on all hosts
+                    ("POST", f"https://{host}/api/v1/projects/bla/assets/list", True)
+                    for host in ["api.cognitedata.com", "greenfield.cognitedata.com", "localhost:8000"]
+                ),
+                # Methods
+                *(
+                    # Should by default retry GET, PUT, and PATCH
+                    (method, "https://api.cognitedata.com/api/v1/projects/bla", True)
+                    for method in {"GET", "PUT", "PATCH"}
+                ),
+                # Annotations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/suggest", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/annotations/reverselookup", True),
+                # Functions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/status", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/delete", False),
+                # Function calls
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/call", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/calls/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/xyz/calls/byids", False),
+                # Function schedules
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/delete", False),
+                # User Profiles
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/profiles/search", True),
+                # Documents
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/aggregate", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/search", True),
+                # Transformations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/update", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config/revert", False),
+                # Transformations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/run", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/update", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/cancel", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/notifications", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/jobs/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/query/run", True),
+                # 3D models
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/delete", False),
+                # 3D model revisions
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/34/nodes/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/ab/nodes/list", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byids", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byXids",
+                    False,
+                ),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/cd/nodes/byids",
+                    False,
+                ),
+                # 3D asset mappings
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings", False),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings/list",
+                    True,
+                ),
+                # Geospatial
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/compute", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs/byids", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/list", True),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/update", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/delete", False),
+                *[
+                    (
+                        "POST",
+                        f"https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/abc_123/features/{endpoint}",
+                        True,
+                    )
+                    for endpoint in ("aggregate", "list", "byids", "search-streaming", "search")
+                ],
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/delete", False),
+                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/update", False),
+                (
+                    "POST",
+                    "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/b_2/rasters/c_3",
+                    True,
+                ),
+                # Files
+                ("POST", "https://api.c.com/api/v1/projects/bla/files/downloadlink?extendedExpiration=true", True),
+                # Timeseries
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/delete", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/data/latest", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/synthetic/query", True),
+                # Sequences
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/data/delete", True),
+                # Data modeling
+                *[
+                    # should retry _all_ data modeling schema endpoints as they are idempotent.
+                    test_case
+                    for resource in ("spaces", "containers", "views", "datamodels")
+                    for test_case in [
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/list", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/byids", True),
+                        ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/{resource}/delete", True),
+                    ]
+                ],
+                # Retry all data modeling instances endpoints as they are idempotent
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
+                *(
+                    ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/models/instances/{endpoint}", True)
+                    for endpoint in ("list", "byids", "delete", "aggregate", "search")
+                ),
+                # Retry all data modeling graphql endpoints
+                ("POST", "https://api.cognitedata.com/api/v1/projects/any/dml/graphql", True),
+                (
+                    "POST",
+                    "https://api.cognitedata.com/api/v1/projects/any/userapis/spaces/bla/datamodels/bla/versions/v1/graphql",
+                    True,
+                ),
+                # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
+            ]
+        ),
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):
         assert expected == api_client_with_token._is_retryable(method, path)
@@ -1185,7 +1370,7 @@ class TestHelpers:
     @pytest.mark.parametrize(
         "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/token/inspect")]
     )
-    def test_is_retryable_fail(self, api_client_with_token, method, path):
+    def test_is_retryable_should_fail(self, api_client_with_token, method, path):
         with pytest.raises(ValueError, match="is not valid"):
             api_client_with_token._is_retryable(method, path)
 
@@ -1196,6 +1381,8 @@ class TestHelpers:
         test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
         assert api_client_with_token._is_retryable("POST", test_url) is True
 
+
+class TestHelpers:
     @pytest.mark.parametrize(
         "before, after",
         [
@@ -1216,6 +1403,55 @@ class TestHelpers:
         res = Response()
         res._content = content
         assert APIClient._get_response_content_safe(res) == expected
+
+    @pytest.mark.parametrize(
+        "resource, mode, expected_update_object",
+        [
+            pytest.param(
+                TimeSeries(id=42, name="bla", metadata={"myNew": "metadataValue"}),
+                "replace_ignore_null",
+                {
+                    "name": {"set": "bla"},
+                    "metadata": {"set": {"myNew": "metadataValue"}},
+                },
+                id="replace_ignore_null",
+            ),
+            pytest.param(
+                # is_string is ignored as it cannot be updated.
+                TimeSeries(id=42, name="bla", is_string=False, metadata={"myNew": "metadataValue"}),
+                "patch",
+                {
+                    "name": {"set": "bla"},
+                    "metadata": {"add": {"myNew": "metadataValue"}},
+                },
+                id="patch",
+            ),
+            pytest.param(
+                TimeSeries(id=42, name="bla"),
+                "replace",
+                {
+                    "assetId": {"setNull": True},
+                    "dataSetId": {"setNull": True},
+                    "description": {"setNull": True},
+                    "name": {"set": "bla"},
+                    "metadata": {"set": {}},
+                    "securityCategories": {"set": []},
+                    "unit": {"setNull": True},
+                    "unitExternalId": {"setNull": True},
+                },
+                id="replace",
+            ),
+        ],
+    )
+    def test_convert_resource_to_patch_object(
+        self,
+        resource: CogniteResource,
+        mode: Literal["replace_ignore_null", "patch", "replace"],
+        expected_update_object: dict[str, dict[str, dict]],
+    ):
+        update_attributes = TimeSeriesUpdate._get_update_properties()
+        actual = APIClient._convert_resource_to_patch_object(resource, update_attributes, mode)
+        assert actual["update"] == expected_update_object
 
 
 class TestConnectionPooling:
@@ -1250,3 +1486,11 @@ def test_worker_in_backoff_loop_gets_new_token(rsps):
     assert call_count > 0
     assert rsps.calls[0].request.headers["Authorization"] == "Bearer outdated-token"
     assert rsps.calls[1].request.headers["Authorization"] == "Bearer valid-token"
+
+
+@pytest.mark.parametrize("limit, expected_error", ((-2, ValueError), (0, ValueError), ("10", TypeError)))
+def test_list_and_search__bad_limit_value_raises(limit, expected_error, cognite_client):
+    with pytest.raises(expected_error):
+        cognite_client.assets.list(limit=limit)
+    with pytest.raises(expected_error):
+        cognite_client.assets.search(limit=limit)

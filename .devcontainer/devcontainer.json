@@ -1,0 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+  "name": "Dev Container for Cognite Python SDK",
+
+  // Python base image reference: https://github.com/devcontainers/images/tree/main/src/python
+  "image": "mcr.microsoft.com/devcontainers/python:3.10-bullseye",
+
+  // Features to add to the dev container. More info: https://containers.dev/features
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/poetry:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "postCreateCommand": "./.devcontainer/postCreateCommand.sh",
+
+  // Customizations for various specific tools. See https://containers.dev/supporting
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "zeshuaro.vscode-python-poetry",
+        "njpwerner.autodocstring",
+        "mutantdino.resourcemonitor",
+        "streetsidesoftware.code-spell-checker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "~/.cache/pypoetry/virtualenvs/cognite-sdk-*-py3.10/bin/python"
+      }
+    }
+  }
+}

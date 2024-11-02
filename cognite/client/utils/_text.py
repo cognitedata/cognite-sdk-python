@@ -3,15 +3,18 @@ from __future__ import annotations
 import random
 import re
 import string
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Sequence
+from typing import Any
+
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class DrawTables:
-    HLINE = "\N{box drawings light horizontal}"
-    VLINE = "\N{box drawings light vertical}"
-    XLINE = "\N{box drawings light vertical and horizontal}"
-    TOPLINE = "\N{box drawings light down and horizontal}"
+    HLINE = "\N{BOX DRAWINGS LIGHT HORIZONTAL}"
+    VLINE = "\N{BOX DRAWINGS LIGHT VERTICAL}"
+    XLINE = "\N{BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL}"
+    TOPLINE = "\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}"
 
 
 def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
@@ -30,15 +33,18 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
+def iterable_to_case(seq: SequenceNotStr[str], camel_case: bool) -> Iterator[str]:
     if camel_case:
         yield from map(to_camel_case, seq)
     else:
         yield from map(to_snake_case, seq)
 
 
-def convert_all_keys_to_camel_case(dct: Dict[str, Any]) -> Dict[str, Any]:
-    return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+def convert_all_keys_to_camel_case(dct: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
+    except AttributeError:
+        raise TypeError("Expected a dictionary")
 
 
 def convert_all_keys_to_camel_case_recursive(dct: dict[str, Any]) -> dict[str, Any]:
@@ -65,11 +71,11 @@ def convert_all_keys_recursive(dct: dict[str, Any], camel_case: bool = False) ->
     }
 
 
-def convert_all_keys_to_snake_case(dct: Dict[str, Any]) -> Dict[str, Any]:
+def convert_all_keys_to_snake_case(dct: dict[str, Any]) -> dict[str, Any]:
     return dict(zip(map(to_snake_case, dct.keys()), dct.values()))
 
 
-def convert_dict_to_case(dct: Dict[str, Any], camel_case: bool) -> Dict[str, Any]:
+def convert_dict_to_case(dct: dict[str, Any], camel_case: bool) -> dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(dct)
     return convert_all_keys_to_snake_case(dct)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -11,7 +11,7 @@ from cognite.client.data_classes.contextualization import ContextualizationJob, 
 
 
 @pytest.fixture
-def base_job_response() -> Dict[str, Any]:
+def base_job_response() -> dict[str, Any]:
     return {
         "status": "Completed",
         "createdTime": 1666601590000,
@@ -32,7 +32,7 @@ class TestPNIDParsingUnit:
         mocked_diagrams_get: MagicMock,
         mocked_diagrams_run_job: MagicMock,
         mocked_diagrams_post: MagicMock,
-        base_job_response: Dict[str, Any],
+        base_job_response: dict[str, Any],
         cognite_client: CogniteClient,
         monkeypatch,
     ):

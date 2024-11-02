@@ -1,4 +1,3 @@
-import socket
 from unittest.mock import MagicMock
 
 import pytest
@@ -63,6 +62,14 @@ class TestRetryTracker:
             rt.read += 1
             assert 0 <= rt.get_backoff_time() <= DEFAULT_CONFIG.max_backoff_seconds
 
+    def test_is_auto_retryable(self):
+        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt.config.max_retries_status = 1
+
+        # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
+        assert rt.should_retry(409, is_auto_retryable=True) is True
+        assert rt.should_retry(409, is_auto_retryable=False) is False
+
 
 def raise_exception_wrapped_as_in_requests_lib(exc: Exception):
     try:
@@ -85,13 +92,13 @@ class TestHTTPClient:
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(socket.timeout())
+                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(TimeoutError())
                 )
             ),
         )
 
         with pytest.raises(CogniteReadTimeout):
-            c.request("GET", "bla")
+            c.request("GET", "bla", accept="application/json")
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
         assert retry_tracker.read == DEFAULT_CONFIG.max_retries_read
@@ -115,7 +122,7 @@ class TestHTTPClient:
         )
 
         with pytest.raises(CogniteConnectionError):
-            c.request("GET", "bla")
+            c.request("GET", "bla", accept="application/json")
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.read == 0
@@ -140,7 +147,7 @@ class TestHTTPClient:
         )
 
         with pytest.raises(CogniteConnectionRefused):
-            c.request("GET", "bla")
+            c.request("GET", "bla", accept="application/json")
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
@@ -155,7 +162,7 @@ class TestHTTPClient:
             session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
         )
 
-        res = c.request("GET", "bla")
+        res = c.request("GET", "bla", accept="application/json")
         assert res.status_code == 429
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_status

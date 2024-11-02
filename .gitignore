@@ -60,3 +60,7 @@ scripts/tmp/
 
 # docs
 docs/source/generated/
+my_file.txt
+.venv/
+*.env
+.envrc

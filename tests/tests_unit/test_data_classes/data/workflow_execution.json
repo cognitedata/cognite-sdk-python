@@ -1,0 +1,1016 @@
+{
+    "id": "7b6bf517-4812-4874-b227-fa7db36830a3",
+    "workflowExternalId": "TestWorkflowTypeBidProcess",
+    "workflowDefinition": {
+        "hash": "8AE17296EE6BCCD0B7D9C184E100A5F98069553C",
+        "tasks": [
+            {
+                "externalId": "testTaskDispatcher",
+                "type": "function",
+                "parameters": {
+                    "function": {
+                        "externalId": "bid_process_task_dispatcher",
+                        "data": {
+                            "workflowType": "TestWorkflowType",
+                            "applicationVersion": "123456",
+                            "testProcessEventExternalId": "${workflow.input.triggerEvent.externalId}"
+                        }
+                    }
+                },
+                "retries": 2,
+                "timeout": 300,
+                "onFailure": "abortWorkflow",
+                "dependsOn": []
+            },
+            {
+                "externalId": "applicationExecution",
+                "type": "dynamic",
+                "description": "Run a collection of preprocessor and app runs concurrently",
+                "parameters": {
+                    "dynamic": {
+                        "tasks": "${testTaskDispatcher.output.response.testTasks}"
+                    }
+                },
+                "retries": 0,
+                "timeout": 3600,
+                "onFailure": "skipTask",
+                "dependsOn": [
+                    {
+                        "externalId": "testTaskDispatcher"
+                    }
+                ]
+            },
+            {
+                "externalId": "testMatrixCalculation",
+                "type": "dynamic",
+                "description": "Run a collection of test matrix calcs concurrently.",
+                "parameters": {
+                    "dynamic": {
+                        "tasks": "${testTaskDispatcher.output.response.partialBidMatrixTasks}"
+                    }
+                },
+                "retries": 0,
+                "timeout": 3600,
+                "onFailure": "abortWorkflow",
+                "dependsOn": [
+                    {
+                        "externalId": "testTaskDispatcher"
+                    },
+                    {
+                        "externalId": "applicationExecution"
+                    }
+                ]
+            },
+            {
+                "externalId": "totalTestMatrixCalculation",
+                "type": "function",
+                "parameters": {
+                    "function": {
+                        "externalId": "${testTaskDispatcher.output.response.totalTestMatrix.functionExternalId}",
+                        "data": "${testTaskDispatcher.output.response.totalTestMatrix.data}"
+                    }
+                },
+                "retries": 2,
+                "timeout": 300,
+                "onFailure": "abortWorkflow",
+                "dependsOn": [
+                    {
+                        "externalId": "testMatrixCalculation"
+                    }
+                ]
+            }
+        ]
+    },
+    "version": "latest",
+    "status": "COMPLETED",
+    "engineExecutionId": "4afb51bd-2015-4630-b567-fd3b46523e84",
+    "executedTasks": [
+        {
+            "id": "38b3e696-adcb-4bf8-9217-747449f55289",
+            "externalId": "testTaskDispatcher",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "applicationVersion": "123456",
+                        "workflowType": "TestWorkflowType",
+                        "testProcessEventExternalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "bid_process_task_dispatcher"
+                }
+            },
+            "output": {
+                "callId": 1453249902969082,
+                "functionId": 8863311186661323,
+                "response": {
+                    "testTasks": [
+                        {
+                            "externalId": "preprocessor_b0b3d8e1-e3a2-4529-a178-24b2b430886c",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "datasetId": 4272372867810023,
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                                    },
+                                    "externalId": "preprocessor"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 2,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "dependsOn": [
+                                {
+                                    "externalId": "preprocessor_b0b3d8e1-e3a2-4529-a178-24b2b430886c"
+                                }
+                            ],
+                            "externalId": "trigger-2_dcc1e79d-bb6b-4f0d-8e84-7846479bc677",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "applicationVersion": "123456",
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                                    },
+                                    "externalId": "trigger-2"
+                                },
+                                "isAsyncComplete": true
+                            },
+                            "retries": 1,
+                            "timeout": 3600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "preprocessor-1_1513aeee-04cf-43af-838c-c2e4323b3638",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "datasetId": 4272372867810023,
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                                    },
+                                    "externalId": "preprocessor-1"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 2,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "dependsOn": [
+                                {
+                                    "externalId": "preprocessor-1_1513aeee-04cf-43af-838c-c2e4323b3638"
+                                }
+                            ],
+                            "externalId": "trigger_3ace0bf8-9dbc-44cc-a937-cd1b775c02fc",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "applicationVersion": "123456",
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                                    },
+                                    "externalId": "trigger"
+                                },
+                                "isAsyncComplete": true
+                            },
+                            "retries": 1,
+                            "timeout": 3600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        }
+                    ],
+                    "partialBidMatrixTasks": [
+                        {
+                            "externalId": "generate_test_matrix_03d5de1e-01a7-4de9-9f70-302b85d682a3",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_1a1896c2-c101-41b7-a818-01985fd692aa_Holen",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_77e0ba96-9d52-4fc3-b2e2-63e12d581c3b",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_dc0d195d-4cfc-4f0f-a9c6-76f9eafa374b_Lund",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_df17612f-cdca-479b-9589-a348d6dfaf5b",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_a3319f4d-58be-439d-931a-42d5eadc3b06_Lien_krv",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_56342599-0e72-4ff0-94f8-7bd41cf6cda8",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_4169d9ec-8bd2-484f-84a7-02127c775478_Landet",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_d1e3ba33-2c1d-475c-afeb-19ff8c907b11",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_75647fd5-9858-48da-9e41-a14c5190bd80_Dalby",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_34e9b702-11c8-4736-8584-44bf73e49eae",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_79e59dc0-e901-474a-9a57-8c89c592d4ee_Rull1",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_8c11940d-ef66-4eb3-afe8-a3923e9e1625",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_8ecf77d2-1702-4eb4-a86e-395d87801a69_Rull2",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_acf2518f-7464-4ac8-bc33-601b2e2a6200",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_068c9f10-c8d9-4e6c-82aa-839b5e6dd1df_Scott",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_cabbe8cb-ff28-4e09-8fa0-e518e507f00c",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_5eb65417-bfd8-4702-9579-fda7d1e73bcb_Strand_krv",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        }
+                    ],
+                    "totalTestMatrix": {
+                        "data": {
+                            "event_external_id": "TEST_FUNCTION_CALL_ff877fea-65fa-40f6-b536-7bc2c79bb4dc",
+                            "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                        },
+                        "functionExternalId": "calculate_total_test_matrix"
+                    }
+                }
+            },
+            "startTime": 1696240548031,
+            "endTime": 1696240580027
+        },
+        {
+            "id": "e9ca204f-2031-46f4-9567-162a54f5eb38",
+            "externalId": "applicationExecution",
+            "status": "COMPLETED",
+            "taskType": "dynamic",
+            "input": {
+                "dynamic": {
+                    "tasks": [
+                        {
+                            "externalId": "preprocessor_b0b3d8e1-e3a2-4529-a178-24b2b430886c",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "datasetId": 4272372867810023,
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                                    },
+                                    "externalId": "preprocessor"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 2,
+                            "timeout": 600,
+                            "onFailure": "skipTask",
+                            "type": "function"
+                        },
+                        {
+                            "dependsOn": [
+                                {
+                                    "externalId": "preprocessor_b0b3d8e1-e3a2-4529-a178-24b2b430886c"
+                                }
+                            ],
+                            "externalId": "trigger-2_dcc1e79d-bb6b-4f0d-8e84-7846479bc677",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "applicationVersion": "123456",
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                                    },
+                                    "externalId": "trigger-2"
+                                },
+                                "isAsyncComplete": true
+                            },
+                            "retries": 1,
+                            "timeout": 3600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "preprocessor-1_1513aeee-04cf-43af-838c-c2e4323b3638",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "datasetId": 4272372867810023,
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                                    },
+                                    "externalId": "preprocessor-1"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 2,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "dependsOn": [
+                                {
+                                    "externalId": "preprocessor-1_1513aeee-04cf-43af-838c-c2e4323b3638"
+                                }
+                            ],
+                            "externalId": "trigger_3ace0bf8-9dbc-44cc-a937-cd1b775c02fc",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "applicationVersion": "123456",
+                                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                                    },
+                                    "externalId": "trigger"
+                                },
+                                "isAsyncComplete": true
+                            },
+                            "retries": 1,
+                            "timeout": 3600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        }
+                    ]
+                }
+            },
+            "output": {},
+            "startTime": 1696240580101,
+            "endTime": 1696240580149
+        },
+        {
+            "id": "475d03b3-6e6c-44ad-b8bb-534e1e5560c4",
+            "externalId": "testMatrixCalculation",
+            "status": "COMPLETED",
+            "taskType": "dynamic",
+            "input": {
+                "dynamic": {
+                    "tasks": [
+                        {
+                            "externalId": "generate_test_matrix_03d5de1e-01a7-4de9-9f70-302b85d682a3",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_1a1896c2-c101-41b7-a818-01985fd692aa_Holen",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_77e0ba96-9d52-4fc3-b2e2-63e12d581c3b",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_dc0d195d-4cfc-4f0f-a9c6-76f9eafa374b_Lund",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_df17612f-cdca-479b-9589-a348d6dfaf5b",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_a3319f4d-58be-439d-931a-42d5eadc3b06_Lien_krv",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_56342599-0e72-4ff0-94f8-7bd41cf6cda8",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_4169d9ec-8bd2-484f-84a7-02127c775478_Landet",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_d1e3ba33-2c1d-475c-afeb-19ff8c907b11",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_75647fd5-9858-48da-9e41-a14c5190bd80_Dalby",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_34e9b702-11c8-4736-8584-44bf73e49eae",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_79e59dc0-e901-474a-9a57-8c89c592d4ee_Rull1",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_8c11940d-ef66-4eb3-afe8-a3923e9e1625",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_8ecf77d2-1702-4eb4-a86e-395d87801a69_Rull2",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_acf2518f-7464-4ac8-bc33-601b2e2a6200",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_068c9f10-c8d9-4e6c-82aa-839b5e6dd1df_Scott",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        },
+                        {
+                            "externalId": "generate_test_matrix_cabbe8cb-ff28-4e09-8fa0-e518e507f00c",
+                            "parameters": {
+                                "function": {
+                                    "data": {
+                                        "event_external_id": "TEST_FUNCTION_CALL_5eb65417-bfd8-4702-9579-fda7d1e73bcb_Strand_krv",
+                                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                                    },
+                                    "externalId": "generate_test_matrix"
+                                },
+                                "isAsyncComplete": false
+                            },
+                            "retries": 1,
+                            "timeout": 600,
+                            "onFailure": "abortWorkflow",
+                            "type": "function"
+                        }
+                    ]
+                }
+            },
+            "output": {},
+            "startTime": 1696240747163,
+            "endTime": 1696240747181
+        },
+        {
+            "id": "3f41e58f-cf5d-4391-b276-4698384918fc",
+            "externalId": "totalTestMatrixCalculation",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_ff877fea-65fa-40f6-b536-7bc2c79bb4dc",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "calculate_total_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 6958901858387174,
+                "functionId": 3328142046480504,
+                "response": {
+                    "asset_ids": [
+                        958879706384559
+                    ]
+                }
+            },
+            "startTime": 1696240819513,
+            "endTime": 1696240833889
+        },
+        {
+            "id": "f7a73a85-73df-4a84-bcd2-3a6a05b48673",
+            "externalId": "preprocessor_b0b3d8e1-e3a2-4529-a178-24b2b430886c",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945",
+                        "datasetId": 4272372867810023
+                    },
+                    "externalId": "preprocessor"
+                }
+            },
+            "output": {
+                "callId": 7668632761093605,
+                "functionId": 2468751184837488,
+                "response": {
+                    "cog_shop_case_file": {
+                        "data_set_id": 4272372867810023,
+                        "external_id": "cog_preprocessor/cogShop/Case_2023-10-02T09:56:18.190902Z_112945/65620938-de5b-4f58-98f7-16ee8c0476a6",
+                        "id": 2595300370727380,
+                        "name": "cogShop-Case_2023-10-02T09:56:18.190902Z_112945-case.yaml"
+                    },
+                    "cog_shop_file_list": [
+                        {
+                            "external_id": "SHOP_Fornebu_water_value_cut_file_reservoir_mapping",
+                            "file_type": "ascii"
+                        },
+                        {
+                            "external_id": "SHOP_Fornebu_water_value_cut_file",
+                            "file_type": "ascii"
+                        }
+                    ],
+                    "shop_version": "14.4.3.0"
+                }
+            },
+            "startTime": 1696240580647,
+            "endTime": 1696240604356
+        },
+        {
+            "id": "9d65f598-5cef-4476-b6be-cc04bb832163",
+            "externalId": "preprocessor-1_1513aeee-04cf-43af-838c-c2e4323b3638",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd",
+                        "datasetId": 4272372867810023
+                    },
+                    "externalId": "preprocessor-1"
+                }
+            },
+            "output": {
+                "callId": 1952977430849976,
+                "functionId": 162527280303730,
+                "response": {
+                    "cog_shop_case_file": {
+                        "data_set_id": 4272372867810023,
+                        "external_id": "cog_preprocessor/cogShop/Case_2023-10-02T09:56:18.191236Z_740acd/68978016-aac4-461f-ae8b-e79451889b4a",
+                        "id": 2718311250375720,
+                        "name": "cogShop-Case_2023-10-02T09:56:18.191236Z_740acd-case.yaml"
+                    },
+                    "cog_shop_file_list": [
+                        {
+                            "external_id": "SHOP_Fornebu_water_value_cut_file_reservoir_mapping",
+                            "file_type": "ascii"
+                        },
+                        {
+                            "external_id": "SHOP_Fornebu_water_value_cut_file",
+                            "file_type": "ascii"
+                        }
+                    ],
+                    "shop_version": "14.4.3.0"
+                }
+            },
+            "startTime": 1696240580725,
+            "endTime": 1696240609457
+        },
+        {
+            "id": "f69f7b1c-6aea-4213-b5d0-deb2fbabe5a0",
+            "externalId": "trigger-2_dcc1e79d-bb6b-4f0d-8e84-7846479bc677",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": true,
+                "function": {
+                    "data": {
+                        "applicationVersion": "123456",
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                    },
+                    "externalId": "trigger-2"
+                }
+            },
+            "output": {
+                "callId": 3675281144107549,
+                "functionId": 5835690711631694,
+                "response": {
+                    "cogniteOrchestrationTaskId": "f69f7b1c-6aea-4213-b5d0-deb2fbabe5a0",
+                    "requestBody": {
+                        "applicationVersion": "123456",
+                        "cogniteOrchestrationTaskId": "f69f7b1c-6aea-4213-b5d0-deb2fbabe5a0",
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.190902Z_112945"
+                    },
+                    "requestUrl": "https://power-ops-api.staging.bluefield.cognite.ai/power-ops-staging/run-shop",
+                    "responseBody": {
+                        "message": "Shop run triggered"
+                    },
+                    "responseStatus": 200
+                }
+            },
+            "startTime": 1696240605108,
+            "endTime": 1696240734843
+        },
+        {
+            "id": "eb240dbc-0062-4314-b4d6-fb51442d02e7",
+            "externalId": "trigger_3ace0bf8-9dbc-44cc-a937-cd1b775c02fc",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": true,
+                "function": {
+                    "data": {
+                        "applicationVersion": "123456",
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                    },
+                    "externalId": "trigger"
+                }
+            },
+            "output": {
+                "callId": 2967264911514077,
+                "functionId": 7745404375267235,
+                "response": {
+                    "cogniteOrchestrationTaskId": "eb240dbc-0062-4314-b4d6-fb51442d02e7",
+                    "requestBody": {
+                        "applicationVersion": "123456",
+                        "cogniteOrchestrationTaskId": "eb240dbc-0062-4314-b4d6-fb51442d02e7",
+                        "testEventExternalId": "TEST_RUN_2023-10-02T09:56:18.191236Z_740acd"
+                    },
+                    "requestUrl": "https://power-ops-api.staging.bluefield.cognite.ai/power-ops-staging/run-shop",
+                    "responseBody": {
+                        "message": "Shop run triggered"
+                    },
+                    "responseStatus": 200
+                }
+            },
+            "startTime": 1696240610180,
+            "endTime": 1696240739918
+        },
+        {
+            "id": "f7ced93f-e686-4a15-9676-5b32b1f4e52c",
+            "externalId": "generate_test_matrix_03d5de1e-01a7-4de9-9f70-302b85d682a3",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_1a1896c2-c101-41b7-a818-01985fd692aa_Holen",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 8805488770050088,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240747371,
+            "endTime": 1696240795785
+        },
+        {
+            "id": "e326b41e-302a-4f29-847b-f0eb76fcde59",
+            "externalId": "generate_test_matrix_77e0ba96-9d52-4fc3-b2e2-63e12d581c3b",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_dc0d195d-4cfc-4f0f-a9c6-76f9eafa374b_Lund",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 5300981250266599,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240747711,
+            "endTime": 1696240794709
+        },
+        {
+            "id": "dc9a55a8-eeaf-4beb-9842-8767de7385ec",
+            "externalId": "generate_test_matrix_df17612f-cdca-479b-9589-a348d6dfaf5b",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_a3319f4d-58be-439d-931a-42d5eadc3b06_Lien_krv",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 4673999868714216,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240749725,
+            "endTime": 1696240799814
+        },
+        {
+            "id": "3ee0ed1f-dd5c-4334-a239-9e076c68230e",
+            "externalId": "generate_test_matrix_56342599-0e72-4ff0-94f8-7bd41cf6cda8",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_4169d9ec-8bd2-484f-84a7-02127c775478_Landet",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 1736067993713132,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240750389,
+            "endTime": 1696240800688
+        },
+        {
+            "id": "185a8630-0a60-4adc-b0bb-4fa27fd915df",
+            "externalId": "generate_test_matrix_d1e3ba33-2c1d-475c-afeb-19ff8c907b11",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_75647fd5-9858-48da-9e41-a14c5190bd80_Dalby",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 3044388486346549,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240750742,
+            "endTime": 1696240803588
+        },
+        {
+            "id": "51bcfd5e-3ba7-41a2-bc27-34eb9d18e8d0",
+            "externalId": "generate_test_matrix_34e9b702-11c8-4736-8584-44bf73e49eae",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_79e59dc0-e901-474a-9a57-8c89c592d4ee_Rull1",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 5421875616701543,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240751407,
+            "endTime": 1696240805996
+        },
+        {
+            "id": "11653aa1-391c-4efa-93be-13b0e05f9e9f",
+            "externalId": "generate_test_matrix_8c11940d-ef66-4eb3-afe8-a3923e9e1625",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_8ecf77d2-1702-4eb4-a86e-395d87801a69_Rull2",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 244237303353736,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240751758,
+            "endTime": 1696240808009
+        },
+        {
+            "id": "c17875c7-6f8f-4ada-84ef-43b4191428aa",
+            "externalId": "generate_test_matrix_acf2518f-7464-4ac8-bc33-601b2e2a6200",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_068c9f10-c8d9-4e6c-82aa-839b5e6dd1df_Scott",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 8400742455854509,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240752429,
+            "endTime": 1696240810695
+        },
+        {
+            "id": "2c3f97df-12a7-4d9e-a488-b3e2400d2434",
+            "externalId": "generate_test_matrix_cabbe8cb-ff28-4e09-8fa0-e518e507f00c",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {
+                "asyncComplete": false,
+                "function": {
+                    "data": {
+                        "event_external_id": "TEST_FUNCTION_CALL_5eb65417-bfd8-4702-9579-fda7d1e73bcb_Strand_krv",
+                        "workflow_event_external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+                    },
+                    "externalId": "generate_test_matrix"
+                }
+            },
+            "output": {
+                "callId": 2097899365071295,
+                "functionId": 2774602009950522,
+                "response": null
+            },
+            "startTime": 1696240752781,
+            "endTime": 1696240812630
+        }
+    ],
+    "input": {
+        "triggerEvent": {
+            "externalId": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26"
+        },
+        "version": "latest",
+        "snake_case_lets_go": "yes"
+    },
+    "createdTime": 1696240547972,
+    "startTime": 1696240547886,
+    "endTime": 1696240836564,
+    "metadata": {
+        "supervisor": "Jimmy",
+        "best_number": 42
+    }
+}

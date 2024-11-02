@@ -18,6 +18,8 @@ class TestListAndIterSignatures:
                     "data_set_external_ids",
                     "aggregated_properties",
                     "partitions",
+                    "advanced_filter",
+                    "sort",
                 ],
             ),
             (
@@ -28,46 +30,87 @@ class TestListAndIterSignatures:
                     "data_set_external_ids",
                     "partitions",
                     "sort",
+                    "advanced_filter",
                 ],
             ),
             (
                 files.FilesAPI,
                 files.FileMetadataFilter,
-                ["data_set_external_ids", "asset_subtree_external_ids"],
+                [
+                    "data_set_external_ids",
+                    "asset_subtree_external_ids",
+                    "partitions",
+                ],
             ),
-            (sequences.SequencesAPI, sequences.SequenceFilter, ["asset_subtree_external_ids", "data_set_external_ids"]),
+            (
+                sequences.SequencesAPI,
+                sequences.SequenceFilter,
+                [
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "partitions",
+                    "advanced_filter",
+                    "sort",
+                ],
+            ),
             (
                 time_series.TimeSeriesAPI,
                 time_series.TimeSeriesFilter,
-                ["asset_subtree_external_ids", "data_set_external_ids", "partitions"],
+                [
+                    "asset_subtree_external_ids",
+                    "data_set_external_ids",
+                    "partitions",
+                    "advanced_filter",
+                    "sort",
+                ],
             ),
             (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
         ],
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
-        iter_parameters = dict(inspect.signature(api.__call__).parameters)
-        for name in set([*ignore, "chunk_size", "limit"]):
-            del iter_parameters[name]
+        iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
+        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
+        filter_parameters = {p.name for p in inspect.signature(filter.__init__).parameters.values()}
 
-        list_parameters = dict(inspect.signature(api.list).parameters)
-        for name in [*ignore, "limit"]:
-            del list_parameters[name]
+        ignore_params = {
+            *ignore,
+            "chunk_size",
+            "limit",
+        }
 
-        filter_parameters = dict(inspect.signature(filter.__init__).parameters)
-        del filter_parameters["cognite_client"]
+        assert ignore_params.issuperset(iter_parameters - filter_parameters), signature_error_msg(
+            filter_parameters, iter_parameters, ignore_params
+        )
+        assert ignore_params.issuperset(list_parameters - filter_parameters), signature_error_msg(
+            filter_parameters, list_parameters, ignore_params
+        )
 
-        iter_parameters = {v.name for _, v in iter_parameters.items()}
-        filter_parameters = {v.name for _, v in filter_parameters.items()}
-        list_parameters = {v.name for _, v in list_parameters.items()}
+    @pytest.mark.parametrize(
+        "api",
+        [
+            assets.AssetsAPI,
+            events.EventsAPI,
+            files.FilesAPI,
+            sequences.SequencesAPI,
+            time_series.TimeSeriesAPI,
+            data_sets.DataSetsAPI,
+        ],
+    )
+    def test_list_and_iter_signatures_are_same(self, api):
+        ignore_params = {"chunk_size"}
+        iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
+        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
+        assert ignore_params.issuperset(iter_parameters.symmetric_difference(list_parameters)), signature_error_msg(
+            iter_parameters, list_parameters, ignore_params
+        )
 
-        assert iter_parameters == filter_parameters, signature_error_msg(filter_parameters, iter_parameters)
-        assert list_parameters == filter_parameters, signature_error_msg(filter_parameters, list_parameters)
 
-
-def signature_error_msg(expected, actual):
-    pretty_expected_params = json.dumps(list(expected), indent=4, sort_keys=True)
-    pretty_actual_params = json.dumps(list(actual), indent=4, sort_keys=True)
+def signature_error_msg(expected, actual, ignore=None):
+    pretty_expected_params = json.dumps(sorted(expected), indent=4, sort_keys=True)
+    pretty_actual_params = json.dumps(sorted(actual), indent=4, sort_keys=True)
     diff = actual.symmetric_difference(expected)
+    if ignore:
+        diff = diff - ignore
     return f"Signatures don't match. \nExpected: {pretty_expected_params}\nGot: {pretty_actual_params}\nDiff: {diff}"
 
 
@@ -86,6 +129,7 @@ class TestFileMetadataUploadSignatures:
         del upload_from_memory_parameters["security_categories"]
         file_metadata_parameters = dict(inspect.signature(files.FileMetadata.__init__).parameters)
         del file_metadata_parameters["id"]
+        del file_metadata_parameters["instance_id"]
         del file_metadata_parameters["uploaded_time"]
         del file_metadata_parameters["created_time"]
         del file_metadata_parameters["last_updated_time"]

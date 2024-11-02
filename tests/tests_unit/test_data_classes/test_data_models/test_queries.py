@@ -1,43 +1,69 @@
-from typing import Any, Dict, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
 from _pytest.mark import ParameterSet
 
 from cognite.client.data_classes import filters as f
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import InstanceSort, ViewId
 from cognite.client.data_classes.data_modeling import query as q
 
 
 def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
     raw = {
         "nodes": {
-            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}}
+            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}},
+            "from": "bla",
+            "through": {
+                "source": {"type": "view", "space": "some", "externalId": "extid", "version": "v1"},
+                "identifier": "bla",
+            },
+            "chainTo": "destination",
+            "direction": "outwards",
         },
         "limit": 1,
     }
     loaded_node = q.NodeResultSetExpression(
-        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}), limit=1
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
+        limit=1,
+        from_="bla",
+        through=["some", "extid/v1", "bla"],
     )
-    yield pytest.param(
-        raw,
-        loaded_node,
-        id="Documentation Example",
-    )
+    yield pytest.param(raw, loaded_node, id="NTE with through view reference")
 
     raw = {
         "nodes": {
-            "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}}
+            "filter": {"equals": {"property": ["node", "externalId"], "value": {"parameter": "airplaneExternalId"}}},
+            "from": "bla",
+            "through": {
+                "source": {"type": "container", "space": "some", "externalId": "extid"},
+                "identifier": "bla",
+            },
+            "chainTo": "destination",
+            "direction": "outwards",
+        },
+        "limit": 1,
+    }
+    loaded_node = q.NodeResultSetExpression(
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
+        limit=1,
+        from_="bla",
+        through=["some", "extid", "bla"],
+    )
+    yield pytest.param(raw, loaded_node, id="NTE with through container reference")
+
+    raw = {
+        "nodes": {
+            "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}},
+            "chainTo": "destination",
+            "direction": "outwards",
         }
     }
     loaded_node = q.NodeResultSetExpression(
         filter=f.Range(lt=2000, property=["IntegrationTestsImmutable", "Movie/2", "releaseYear"])
     )
 
-    yield pytest.param(
-        raw,
-        loaded_node,
-        id="Filter Node on Range",
-    )
+    yield pytest.param(raw, loaded_node, id="Filter Node on Range")
 
     raw = {
         "edges": {
@@ -45,16 +71,13 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
             "filter": {
                 "equals": {"property": ["edge", "type"], "value": {"space": "MovieSpace", "externalId": "Movie.actors"}}
             },
+            "chainTo": "destination",
         }
     }
     loaded_edge = q.EdgeResultSetExpression(
         filter=f.Equals(property=["edge", "type"], value={"space": "MovieSpace", "externalId": "Movie.actors"})
     )
-    yield pytest.param(
-        raw,
-        loaded_edge,
-        id="Filter Edge on Type",
-    )
+    yield pytest.param(raw, loaded_edge, id="Filter Edge on Type")
 
 
 class TestResultSetExpressions:
@@ -76,7 +99,7 @@ class TestResultSetExpressions:
 
 
 def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
-    raw: Dict[str, Any] = {}
+    raw: dict[str, Any] = {}
     loaded = q.Select()
     yield pytest.param(raw, loaded, id="Empty")
 
@@ -86,10 +109,18 @@ def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
                 "properties": ["title"],
                 "source": {"externalId": "Movie", "space": "IntegrationTestsImmutable", "type": "view", "version": "2"},
             }
-        ]
+        ],
+        "sort": [
+            {
+                "property": ("IntegrationTestSpace", "Person", "name"),
+                "direction": "descending",
+                "nullsFirst": True,
+            }
+        ],
     }
     loaded = q.Select(
-        [q.SourceSelector(ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"), ["title"])]
+        [q.SourceSelector(ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"), ["title"])],
+        [InstanceSort(("IntegrationTestSpace", "Person", "name"), direction="descending", nulls_first=True)],
     )
     yield pytest.param(raw, loaded, id="Select single property")
 
@@ -120,6 +151,8 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
                 equals:
                     property: ["node", "externalId"]
                     value: {"parameter": "airplaneExternalId"}
+            chainTo: destination
+            direction: outwards
         limit: 1
     lands_in_airports:
         edges:
@@ -130,8 +163,11 @@ def query_load_yaml_data() -> Iterator[ParameterSet]:
                 equals:
                     property: ["edge", "type"]
                     value: ["aviation", "lands-in"]
+            chainTo: destination
     airports:
         nodes:
+            chainTo: destination
+            direction: outwards
             from: lands_in_airports
 parameters:
     airplaneExternalId: myFavouriteAirplane
@@ -167,6 +203,8 @@ select:
           - Movie/2
           - releaseYear
           value: 1994
+      chainTo: destination
+      direction: outwards
 select:
   movies:
     sources:
@@ -196,8 +234,5 @@ cursors:
 class TestQuery:
     @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
-        # Act
         actual = q.Query.load_yaml(raw_data)
-
-        # Assert
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)

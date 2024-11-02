@@ -52,20 +52,30 @@ Contents
    :maxdepth: 2
 
    identity_and_access_management
-   core_data_model
+   data_modeling
+   assets
+   events
+   files
+   time_series
+   sequences
+   geospatial
    3d
    contextualization
    documents
    data_ingestion
+   hosted_extractors
+   postgres_gateway
    data_organization
    transformations
    functions
-   data_modeling
 
 .. toctree::
    :caption: Miscellaneous
    :maxdepth: 2
 
+   data_workflows
+   unit_catalog
+   filters
    deprecated
    base_data_classes
    exceptions

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import (
@@ -10,21 +10,26 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionFeature,
 )
-from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._validation import assert_type
 
 
 class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     @staticmethod
-    def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
+    def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
-        Utility for sanitizing a given lists of ids and external ids.
-        Returns the concatenation of the ids an external ids in the format
+        Utility for sanitizing a given lists of IDs and external ids.
+        Returns the concatenation of the IDs an external IDs in the format
         expected by the Context API.
-        """
+
+        Args:
+            ids (list[int] | int | None): No description.
+            external_ids (list[str] | str | None): No description.
+        Returns:
+            list: No description."""
         identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()
         id_objs = [{"fileId": id} for id in identifier_sequence if isinstance(id, int)]
         external_id_objs = [
@@ -35,9 +40,9 @@ class VisionAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        job_cls: Type[T_ContextualizationJob],
-        status_path: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        job_cls: type[T_ContextualizationJob],
+        status_path: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -56,17 +61,18 @@ class VisionAPI(APIClient):
 
     def extract(
         self,
-        features: Union[VisionFeature, List[VisionFeature]],
-        file_ids: Optional[List[int]] = None,
-        file_external_ids: Optional[List[str]] = None,
-        parameters: Optional[FeatureParameters] = None,
+        features: VisionFeature | list[VisionFeature],
+        file_ids: list[int] | None = None,
+        file_external_ids: list[str] | None = None,
+        parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
-        """Start an asynchronous job to extract features from image files.
+        """`Start an asynchronous job to extract features from image files <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_.
 
         Args:
-            features (Union[VisionFeature, List[VisionFeature]]): The feature(s) to extract from the provided image files.
-            file_ids (List[int]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (List[str]): The external file ids of the image files to analyze.
+            features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
+            file_ids (list[int] | None): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
+            file_external_ids (list[str] | None): The external file IDs of the image files to analyze.
+            parameters (FeatureParameters | None): No description.
         Returns:
             VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
@@ -75,8 +81,8 @@ class VisionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
-                >>> c = CogniteClient()
-                >>> extract_job = c.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
+                >>> client = CogniteClient()
+                >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions
@@ -101,13 +107,17 @@ class VisionAPI(APIClient):
             status_path="/extract/",
             items=self._process_file_ids(file_ids, file_external_ids),
             features=features,
-            parameters=parameters.dump(camel_case=True) if parameters is not None else None,
+            parameters=parameters
+            if isinstance(parameters, dict)
+            else parameters.dump(camel_case=True)
+            if parameters is not None
+            else None,
             job_cls=VisionExtractJob,
             headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
         )
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
-        """Retrieve an existing extract job by ID.
+        """`Retrieve an existing extract job by ID <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_.
 
         Args:
             job_id (int): ID of an existing feature extraction job.
@@ -119,8 +129,8 @@ class VisionAPI(APIClient):
             Retrieve a vision extract job by ID::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> extract_job = c.vision.get_extract_job(job_id=1)
+                >>> client = CogniteClient()
+                >>> extract_job = client.vision.get_extract_job(job_id=1)
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions

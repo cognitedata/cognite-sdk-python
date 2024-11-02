@@ -3,8 +3,8 @@ import uuid
 
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes.geospatial import Feature, FeatureList, FeatureType
+from cognite.client.utils._importing import local_import
 
 
 @pytest.fixture()
@@ -76,14 +76,14 @@ class TestGeospatialAPI:
     def test_to_geopandas(self, test_feature_type, test_features):
         gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
-        geopandas = utils._auxiliary.local_import("geopandas")
-        assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
+        geopandas = local_import("geopandas")
+        assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
 
     @pytest.mark.dsl
     def test_from_geopandas(self, test_feature_type, test_features):
         gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
-        assert type(fl) == FeatureList
+        assert type(fl) is FeatureList
         assert len(fl) == 4
         for idx, f in enumerate(fl):
             for attr_name in test_feature_type.properties:
@@ -99,9 +99,9 @@ class TestGeospatialAPI:
 
     @pytest.mark.dsl
     def test_from_geopandas_missing_column(self, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame([{"externalId": "12", "volume": 12.0}])
-        geopandas = utils._auxiliary.local_import("geopandas")
+        geopandas = local_import("geopandas")
         gdf = geopandas.GeoDataFrame(df)
         with pytest.raises(ValueError) as error:
             FeatureList.from_geopandas(test_feature_type, gdf)
@@ -109,7 +109,7 @@ class TestGeospatialAPI:
 
     @pytest.mark.dsl
     def test_from_geopandas_nan_values(self, test_feature_type):
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         df = pd.DataFrame(
             [
                 {"externalId": "12", "temperature": 11.0, "pressure": 10.0, "volume": 12.0, "weight": 10.0},
@@ -124,7 +124,7 @@ class TestGeospatialAPI:
                 },
             ]
         )
-        geopandas = utils._auxiliary.local_import("geopandas")
+        geopandas = local_import("geopandas")
         gdf = geopandas.GeoDataFrame(df)
         features = FeatureList.from_geopandas(test_feature_type, gdf)
         assert features[0].weight == 10.0

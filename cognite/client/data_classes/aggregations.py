@@ -1,46 +1,70 @@
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
+from collections import UserList
+from collections.abc import Collection, Iterator, MutableSequence, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, TypeVar, Union, cast, final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    SupportsIndex,
+    TypeAlias,
+    TypeVar,
+    cast,
+    final,
+    overload,
+)
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteObject, CogniteResourceList, UnknownCogniteObject
 from cognite.client.data_classes.labels import Label
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+class CountAggregate(CogniteObject):
+    """
+    [DEPRECATED] This represents the result of a count aggregation.
+
+    Args:
+        count (int): The number of items matching the aggregation.
+    """
+
+    def __init__(self, count: int) -> None:
+        self.count = count
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> CountAggregate:
+        return cls(count=resource["count"])
+
+
 @dataclass
-class Aggregation(ABC):
+class Aggregation(CogniteObject, ABC):
     _aggregation_name: ClassVar[str]
 
     property: str
 
     @classmethod
-    def load(cls, aggregation: dict[str, Any]) -> Aggregation:
-        (aggregation_name,) = aggregation
-        body = convert_all_keys_to_snake_case(aggregation[aggregation_name])
-        if aggregation_name == "avg":
-            return Avg(**body)
-        elif aggregation_name == "count":
-            return Count(**body)
-        elif aggregation_name == "max":
-            return Max(**body)
-        elif aggregation_name == "min":
-            return Min(**body)
-        elif aggregation_name == "sum":
-            return Sum(**body)
-        elif aggregation_name == "histogram":
-            return Histogram(**body)
-        raise ValueError(f"Unknown aggregation: {aggregation_name}")
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Aggregation:
+        if "avg" in resource:
+            return Avg(property=resource["avg"]["property"])
+        elif "count" in resource:
+            return Count(property=resource["count"]["property"])
+        elif "max" in resource:
+            return Max(property=resource["max"]["property"])
+        elif "min" in resource:
+            return Min(property=resource["min"]["property"])
+        elif "sum" in resource:
+            return Sum(property=resource["sum"]["property"])
+        elif "histogram" in resource:
+            return Histogram(property=resource["histogram"]["property"], interval=resource["histogram"]["interval"])
+        return cast(Aggregation, UnknownCogniteObject(resource))
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -48,8 +72,7 @@ class Aggregation(ABC):
 
 
 @dataclass
-class MetricAggregation(Aggregation):
-    ...
+class MetricAggregation(Aggregation, ABC): ...
 
 
 @final
@@ -89,46 +112,43 @@ class Histogram(Aggregation):
 
     interval: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output[self._aggregation_name]["interval"] = self.interval
         return output
 
 
-T_AggregatedValue = TypeVar("T_AggregatedValue", bound="AggregatedValue")
-
-
 @dataclass
-class AggregatedValue(ABC):
+class AggregatedValue(CogniteObject, ABC):
     _aggregate: ClassVar[str] = field(init=False)
 
     property: str
 
     @classmethod
-    def load(cls: Type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
-        if "aggregate" not in aggregated_value:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        if "aggregate" not in resource:
             raise ValueError("Missing aggregate, this is required")
-        aggregate = aggregated_value["aggregate"]
-        aggregated_value = rename_and_exclude_keys(aggregated_value, exclude={"aggregate"})
-        body = convert_all_keys_to_snake_case(aggregated_value)
+        aggregate = resource["aggregate"]
 
         if aggregate == "avg":
-            deserialized: AggregatedValue = AvgValue(**body)
+            deserialized: Any = AvgValue(property=resource["property"], value=resource["value"])
         elif aggregate == "count":
-            deserialized = CountValue(**body)
+            deserialized = CountValue(property=resource["property"], value=resource["value"])
         elif aggregate == "max":
-            deserialized = MaxValue(**body)
+            deserialized = MaxValue(property=resource["property"], value=resource["value"])
         elif aggregate == "min":
-            deserialized = MinValue(**body)
+            deserialized = MinValue(property=resource["property"], value=resource["value"])
         elif aggregate == "sum":
-            deserialized = SumValue(**body)
+            deserialized = SumValue(property=resource["property"], value=resource["value"])
         elif aggregate == "histogram":
-            deserialized = HistogramValue(**body)
+            deserialized = HistogramValue(
+                property=resource["property"], interval=resource["interval"], buckets=resource["buckets"]
+            )
         else:
-            raise ValueError(f"Unknown aggregation: {aggregate}")
-        return cast(T_AggregatedValue, deserialized)
+            deserialized = UnknownCogniteObject(resource)
+        return cast(Self, deserialized)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {"aggregate": self._aggregate, "property": self.property}
         if camel_case:
             output = convert_all_keys_recursive(output)
@@ -136,12 +156,12 @@ class AggregatedValue(ABC):
 
 
 @dataclass
-class AggregatedNumberedValue(AggregatedValue):
+class AggregatedNumberedValue(AggregatedValue, ABC):
     _aggregate: ClassVar[str] = "number"
 
     value: float
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["value"] = self.value
         return output
@@ -183,8 +203,47 @@ class Bucket:
     start: float
     count: int
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"start": self.start, "count": self.count}
+
+
+class Buckets(UserList, MutableSequence[Bucket]):
+    def __init__(self, items: Collection[dict | Bucket]) -> None:
+        buckets = [
+            Bucket(start=bucket["start"], count=bucket["count"]) if isinstance(bucket, dict) else bucket
+            for bucket in items
+        ]
+        super().__init__(buckets)
+
+    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
+        return [bucket.dump(camel_case) for bucket in self.data]
+
+    @property
+    def starts(self) -> list[float]:
+        return [bucket.start for bucket in self.data]
+
+    @property
+    def counts(self) -> list[int]:
+        return [bucket.count for bucket in self.data]
+
+    # The following methods are needed for proper type hinting
+    def pop(self, i: int = -1) -> Bucket:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[Bucket]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> Bucket: ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Buckets: ...
+
+    def __getitem__(self, item: SupportsIndex | slice) -> Bucket | Buckets:
+        value = self.data[item]
+        if isinstance(item, slice):
+            return type(self)(value)
+        return cast(Bucket, value)
 
 
 @final
@@ -192,19 +251,20 @@ class Bucket:
 class HistogramValue(AggregatedValue):
     _aggregate: ClassVar[str] = "histogram"
     interval: float
-    buckets: list[Bucket]
+    buckets: Buckets
 
     def __post_init__(self) -> None:
-        self.buckets = [Bucket(**bucket) if isinstance(bucket, dict) else bucket for bucket in self.buckets]
+        if isinstance(self.buckets, Collection):
+            self.buckets = Buckets(self.buckets)
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
-        output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
+        output["buckets"] = self.buckets.dump(camel_case)
         return output
 
 
-FilterValue: TypeAlias = Union[str, float, bool, Label]
+FilterValue: TypeAlias = str | float | bool | Label
 
 
 class AggregationFilter(ABC):
@@ -212,10 +272,6 @@ class AggregationFilter(ABC):
 
     def dump(self) -> dict[str, Any]:
         return {self._filter_name: self._filter_body()}
-
-    @classmethod
-    def load(cls, filter_: dict[str, Any]) -> AggregationFilter:
-        ...
 
     @abstractmethod
     def _filter_body(self) -> list | dict:
@@ -233,8 +289,10 @@ class CompoundFilter(AggregationFilter):
 
 
 def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
-    if isinstance(value, Label):
+    if isinstance(value, Label) and value.external_id is not None:
         return {"externalId": value.external_id}
+    elif isinstance(value, Label):
+        raise ValueError("Label must have external_id set")
     return value
 
 
@@ -295,10 +353,10 @@ class Range(AggregationFilter):
 
     def __init__(
         self,
-        gt: Optional[str | int | float] = None,
-        gte: Optional[str | int | float] = None,
-        lt: Optional[str | int | float] = None,
-        lte: Optional[str | int | float] = None,
+        gt: str | int | float | None = None,
+        gte: str | int | float | None = None,
+        lt: str | int | float | None = None,
+        lte: str | int | float | None = None,
     ):
         self._gt = gt
         self._gte = gte
@@ -319,7 +377,7 @@ class Range(AggregationFilter):
 
 
 @dataclass
-class UniqueResult(CogniteResource):
+class UniqueResult(CogniteObject):
     count: int
     values: list[str | int | float | Label]
 
@@ -328,8 +386,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> UniqueResult:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> UniqueResult:
         return cls(
             count=resource["count"],
             values=resource["values"],

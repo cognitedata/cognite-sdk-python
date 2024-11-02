@@ -14,6 +14,7 @@ from cognite.client.data_classes.data_modeling import (
     DirectRelation,
     DirectRelationReference,
     MappedPropertyApply,
+    PropertyId,
     Space,
     Text,
     View,
@@ -21,8 +22,12 @@ from cognite.client.data_classes.data_modeling import (
     ViewId,
     ViewList,
 )
-from cognite.client.data_classes.data_modeling.views import SingleHopConnectionDefinitionApply
+from cognite.client.data_classes.data_modeling.views import (
+    MultiEdgeConnectionApply,
+    SingleReverseDirectRelationApply,
+)
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
@@ -40,25 +45,26 @@ def movie_view(movie_views: ViewList) -> View:
     return cast(View, movie_views.get(external_id="Movie"))
 
 
+@pytest.fixture()
+def actor_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Actor"))
+
+
 class TestViewsAPI:
     def test_list(self, cognite_client: CogniteClient, movie_views: ViewList, integration_test_space: Space) -> None:
-        # Arrange
         expected_views = ViewList([v for v in movie_views if v.space == integration_test_space.space])
         expected_ids = set(expected_views.as_ids())
 
-        # Act
         actual_views = cognite_client.data_modeling.views.list(space=integration_test_space.space, limit=-1)
 
-        # Assert
         assert expected_ids, "The movie model is missing views"
         assert expected_ids <= set(actual_views.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_views)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        # Arrange
         new_view = ViewApply(
             space=integration_test_space.space,
-            external_id="IntegrationTestView",
+            external_id="IntegrationTestView" + random_string(5),
             version="v1",
             description="Integration test, should not persist",
             name="Create and delete view",
@@ -78,27 +84,22 @@ class TestViewsAPI:
         deleted_ids: list[ViewId] = []
         new_id = new_view.as_id()
         try:
-            # Act
             created = cognite_client.data_modeling.views.apply(new_view)
             retrieved = cognite_client.data_modeling.views.retrieve(new_id)
 
-            # Assert
             assert created.created_time
             assert created.last_updated_time
             assert created.as_apply().dump() == new_view.dump()
             assert len(retrieved) == 1
             assert retrieved[0].dump() == created.dump()
 
-            # Act
             deleted_ids = cognite_client.data_modeling.views.delete(new_id)
             retrieved_deleted = cognite_client.data_modeling.views.retrieve(new_id)
 
-            # Assert
             assert len(deleted_ids) == 1
             assert deleted_ids[0] == new_id
             assert not retrieved_deleted
         finally:
-            # Cleanup
             if created and not deleted_ids:
                 cognite_client.data_modeling.views.delete(new_id)
 
@@ -110,34 +111,25 @@ class TestViewsAPI:
         )
 
     def test_retrieve_without_inherited_properties(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
-        # Arrange
         view = movie_views[0]
 
-        # Act
         retrieved = cognite_client.data_modeling.views.retrieve(view.as_id(), include_inherited_properties=False)
 
-        # Assert
         assert len(retrieved) == 1
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
-        # Arrange
         ids = movie_views.as_ids()
 
-        # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
 
-        # Assert
         assert set(retrieved.as_ids()) == set(ids)
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
-        # Arrange
         ids_without_missing = movie_views.as_ids()
         ids_with_missing = [*ids_without_missing, ViewId("myNonExistingSpace", "myImaginaryView", "v0")]
 
-        # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids_with_missing)
 
-        # Assert
         assert set(retrieved.as_ids()) == set(ids_without_missing)
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
@@ -169,14 +161,12 @@ class TestViewsAPI:
                 )
             )
 
-        # Assert
         assert error.value.code == 400
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
         self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
     ) -> None:
-        # Arrange
         valid_view = ViewApply(
             space=integration_test_space.space,
             external_id="myView",
@@ -210,39 +200,32 @@ class TestViewsAPI:
         monkeypatch.setattr(cognite_client.data_modeling.views, "_CREATE_LIMIT", 1)
 
         try:
-            # Act
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.views.apply([valid_view, invalid_view])
 
-            # Assert
             assert "One or more spaces do not exist" in error.value.message
             assert error.value.code == 400
             assert len(error.value.successful) == 1
             assert len(error.value.failed) == 1
         finally:
-            # Cleanup
             cognite_client.data_modeling.views.delete(valid_view.as_id())
 
     def test_dump_json_serialize_load(self, movie_views: ViewList) -> None:
-        # Arrange
         view = movie_views.get(external_id="Movie")
         assert view is not None, "Movie view not found in test environment"
 
-        # Act
         view_dumped = view.dump(camel_case=True)
         view_json = json.dumps(view_dumped)
         view_loaded = View.load(view_json)
 
-        # Assert
         assert view == view_loaded
 
     def test_apply_different_property_types(
         self, cognite_client: CogniteClient, integration_test_space: Space, person_view: View, movie_view: View
     ) -> None:
-        # Arrange
         new_container = ContainerApply(
             space=integration_test_space.space,
-            external_id="Critic",
+            external_id=f"Critic_{random_string(10)}",
             name="Critic",
             description="This is a test container, and should not persist.",
             properties={
@@ -262,7 +245,7 @@ class TestViewsAPI:
             space=integration_test_space.space,
             external_id="Critic",
             version="v1",
-            description="This i a test view, and should not persist.",
+            description="This is a test view, and should not persist.",
             name="Critic",
             properties={
                 "name": MappedPropertyApply(
@@ -284,7 +267,7 @@ class TestViewsAPI:
                     container_property_identifier="reviews",
                     name="reviews",
                 ),
-                "movies": SingleHopConnectionDefinitionApply(
+                "movies": MultiEdgeConnectionApply(
                     type=DirectRelationReference(
                         space=integration_test_space.space,
                         external_id="Critic.movies",
@@ -297,14 +280,36 @@ class TestViewsAPI:
         )
 
         try:
-            # Act
             created_container = cognite_client.data_modeling.containers.apply(new_container)
             created_view = cognite_client.data_modeling.views.apply(new_view)
 
-            # Assert
             assert created_container.created_time
             assert created_view.created_time
         finally:
-            # Cleanup
             cognite_client.data_modeling.views.delete(new_view.as_id())
             cognite_client.data_modeling.containers.delete(new_container.as_id())
+
+    def test_apply_view_with_reverse_direct_relation(
+        self, cognite_client: CogniteClient, integration_test_space: Space, person_view: View, actor_view: View
+    ) -> None:
+        new_view = ViewApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            version="v3",
+            description="This is a test view, and should not persist.",
+            name="Critic",
+            properties={
+                "persons": SingleReverseDirectRelationApply(
+                    source=person_view.as_id(),
+                    name="Person",
+                    through=PropertyId(source=actor_view.as_id(), property="person"),
+                )
+            },
+        )
+
+        try:
+            created_view = cognite_client.data_modeling.views.apply(new_view)
+
+            assert created_view.created_time
+        finally:
+            cognite_client.data_modeling.views.delete(new_view.as_id())

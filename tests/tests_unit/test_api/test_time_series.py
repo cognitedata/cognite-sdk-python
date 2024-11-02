@@ -148,7 +148,7 @@ class TestTimeSeries:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_ts_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
@@ -158,7 +158,7 @@ class TestTimeSeries:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_ts_response.calls[0].request.body)
 
     def test_search_with_filter(self, cognite_client, mock_ts_response):
@@ -226,7 +226,9 @@ class TestPandasIntegration:
     def test_time_series_to_pandas(self, cognite_client, mock_ts_response):
         import pandas as pd
 
-        df = cognite_client.time_series.retrieve(id=1).to_pandas(camel_case=True)
+        df = cognite_client.time_series.retrieve(id=1).to_pandas(
+            expand_metadata=True, metadata_prefix="", camel_case=True
+        )
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]

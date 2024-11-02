@@ -1,21 +1,20 @@
-import json
 import math
 import re
 import warnings
-from decimal import Decimal
 from itertools import zip_longest
 
 import pytest
 
-from cognite.client.exceptions import CogniteImportError
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import (
-    assert_type,
     exactly_one_is_not_none,
+    fast_dict_load,
     find_duplicates,
+    get_accepted_params,
     handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
-    json_dump_default,
-    local_import,
+    load_resource_to_dict,
+    remove_duplicates_keep_order,
     split_into_chunks,
     split_into_n_parts,
 )
@@ -69,84 +68,10 @@ def test_handle_deprecated_camel_case_argument__raises(new_arg, old_arg_name, fn
         handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
 
 
-class TestLocalImport:
-    @pytest.mark.dsl
-    def test_local_import_single_ok(self):
-        import pandas
-
-        assert pandas == local_import("pandas")
-
-    @pytest.mark.dsl
-    def test_local_import_multiple_ok(self):
-        import numpy
-        import pandas
-
-        assert (pandas, numpy) == local_import("pandas", "numpy")
-
-    def test_local_import_single_fail(self):
-        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
-            local_import("not-a-module")
-
-    @pytest.mark.dsl
-    def test_local_import_multiple_fail(self):
-        with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
-            local_import("pandas", "not-a-module")
-
-    @pytest.mark.coredeps
-    def test_dsl_deps_not_installed(self):
-        for dep in ["geopandas", "pandas", "shapely", "sympy", "numpy"]:
-            with pytest.raises(CogniteImportError, match=dep):
-                local_import(dep)
-
-
 class TestUrlEncode:
     def test_url_encode(self):
         assert "/bla/yes%2Fno/bla" == interpolate_and_url_encode("/bla/{}/bla", "yes/no")
         assert "/bla/123/bla/456" == interpolate_and_url_encode("/bla/{}/bla/{}", "123", "456")
-
-
-class TestJsonDumpDefault:
-    def test_json_serializable_Decimal(self):
-        with pytest.raises(TypeError):
-            json.dumps(Decimal(1))
-
-        assert json.dumps(Decimal(1), default=json_dump_default)
-
-    def test_json_not_serializable_sets(self):
-        with pytest.raises(TypeError):
-            json.dumps({1, 2})
-        with pytest.raises(TypeError):
-            json.dumps({1, 2})
-
-    @pytest.mark.dsl
-    def test_json_serializable_numpy(self):
-        np = local_import("numpy")
-        arr = np.array([1.2, 3.4], dtype=np.float32)
-        with pytest.raises(TypeError):
-            json.dumps(arr)
-        with pytest.raises(TypeError):
-            json.dumps(arr[0])
-        with pytest.raises(TypeError):  # core sdk makes it hard to serialize np.ndarray
-            assert json.dumps(arr, default=json_dump_default)
-        assert json.dumps(arr[0], default=json_dump_default)
-
-    def test_json_serializable_object(self):
-        class Obj:
-            def __init__(self):
-                self.x = 1
-
-        with pytest.raises(TypeError):
-            json.dumps(Obj())
-
-        assert json.dumps({"x": 1}) == json.dumps(Obj(), default=json_dump_default)
-
-    @pytest.mark.dsl
-    def test_json_serialiable_numpy_integer(self):
-        import numpy as np
-
-        inputs = [np.int32(1), np.int64(1)]
-        for input in inputs:
-            assert json.dumps(input, default=json_dump_default)
 
 
 class TestSplitIntoChunks:
@@ -171,15 +96,17 @@ class TestSplitIntoChunks:
             assert element in actual_output
 
 
-class TestAssertions:
-    @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
-    def test_assert_type_ok(self, var, var_name, types):
-        assert_type(var, var_name, types=types)
-
-    @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
-    def test_assert_type_fail(self, var, var_name, types):
-        with pytest.raises(TypeError, match=str(types)):
-            assert_type(var, var_name, types)
+class TestRemoveDuplicatesKeepOrder:
+    @pytest.mark.parametrize(
+        "inp, expected",
+        (
+            ([], []),
+            ((1, 1, 2, 1), [1, 2]),
+            ("abccba", ["a", "b", "c"]),
+        ),
+    )
+    def test_no_duplicates(self, inp, expected):
+        assert expected == remove_duplicates_keep_order(inp)
 
 
 class TestFindDuplicates:
@@ -273,3 +200,53 @@ class TestExactlyOneIsNotNone:
     )
     def test_exactly_one_is_not_none(self, inp, expected):
         assert exactly_one_is_not_none(*inp) == expected
+
+
+class MyTestResource(CogniteResource):
+    # Test resource for fast_dict_load below
+    def __init__(self, foo=None, foo_bar=None, foo_bar_baz=None, cognite_client=None):
+        self.foo = foo
+        self.foo_bar = foo_bar
+        self.foo_bar_baz = foo_bar_baz
+        self._cognite_client = cognite_client
+
+    def load(*a, **kw):
+        raise NotImplementedError
+
+
+class TestFastDictLoad:
+    @pytest.mark.parametrize(
+        "item, expected",
+        (
+            # Simple load test for all keys:
+            ({"foo": "a", "fooBar": "b", "fooBarBaz": "c"}, MyTestResource(*"abc")),
+            # Ensure unknown keys are skipped silently:
+            ({"f": "a", "foot": "b", "fooBarBaz": "c"}, MyTestResource(foo_bar_baz="c")),
+            # Ensure keys must be camel cased:
+            ({"foo": "a", "foo_bar": "b", "foo_bar_baz": "c"}, MyTestResource(foo="a")),
+        ),
+    )
+    def test_load(self, item, expected):
+        get_accepted_params.cache_clear()  # For good measure
+        assert expected == fast_dict_load(MyTestResource, item, cognite_client=None)
+
+
+class TestLoadDictOrStr:
+    @pytest.mark.parametrize(
+        "input, expected",
+        (
+            ({"foo": "bar"}, {"foo": "bar"}),
+            ({"foo": None}, {"foo": None}),
+            ('{"foo": "bar"}', {"foo": "bar"}),
+            ('{"foo": null}', {"foo": None}),
+            ("foo: bar", {"foo": "bar"}),
+            ('{"foo": {"bar": "thing"}}', {"foo": {"bar": "thing"}}),
+        ),
+    )
+    def test_load_resource_to_dict(self, input, expected):
+        assert expected == load_resource_to_dict(input)
+
+    @pytest.mark.parametrize("input", ("foo", 100))
+    def test_load_resource_to_dict_raises(self, input):
+        with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
+            load_resource_to_dict(input)

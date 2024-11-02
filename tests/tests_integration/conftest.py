@@ -3,13 +3,55 @@ import random
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
+from cognite.client.data_classes import DataSet, DataSetWrite
+from cognite.client.data_classes.data_modeling import SpaceApply
+from tests.utils import REPO_ROOT
 
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
+    return make_cognite_client(beta=False)
+
+
+@pytest.fixture(scope="session")
+def cognite_client_alpha() -> CogniteClient:
+    load_dotenv(REPO_ROOT / "alpha.env")
+    if "COGNITE_ALPHA_PROJECT" not in os.environ:
+        # TODO: If we are in CI, we should fail the test instead of skipping
+        pytest.skip("ALPHA environment variables not set. Skipping ALPHA tests.")
+    return CogniteClient.default_oauth_client_credentials(
+        project=os.environ["COGNITE_ALPHA_PROJECT"],
+        cdf_cluster=os.environ["COGNITE_ALPHA_CLUSTER"],
+        client_id=os.environ["COGNITE_ALPHA_CLIENT_ID"],
+        client_secret=os.environ["COGNITE_ALPHA_CLIENT_SECRET"],
+        tenant_id=os.environ["COGNITE_ALPHA_TENANT_ID"],
+    )
+
+
+@pytest.fixture(scope="session")
+def instance_id_test_space(cognite_client: CogniteClient) -> str:
+    return cognite_client.data_modeling.spaces.apply(SpaceApply(space="sp_python_sdk_instance_id_tests")).space
+
+
+@pytest.fixture(scope="session")
+def alpha_test_dataset(cognite_client_alpha: CogniteClient) -> DataSet:
+    ds = DataSetWrite(name="ds_python_sdk_instance_id_tests", external_id="ds_python_sdk_instance_id_tests")
+    retrieved = cognite_client_alpha.data_sets.retrieve(external_id=ds.external_id)
+    if retrieved:
+        return retrieved
+    return cognite_client_alpha.data_sets.create(ds)
+
+
+@pytest.fixture(scope="session")
+def cognite_client_beta() -> CogniteClient:
+    return make_cognite_client(beta=True)
+
+
+def make_cognite_client(beta: bool = False) -> CogniteClient:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
         credentials = OAuthClientCredentials(
@@ -38,11 +80,14 @@ def cognite_client() -> CogniteClient:
             "Environment variable LOGIN_FLOW must be set to 'client_credentials', 'client_certificate' or 'interactive'"
         )
 
+    beta_configuration = dict(api_subversion="beta") if beta else dict()
+
     return CogniteClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=credentials,
+            **beta_configuration,
         )
     )

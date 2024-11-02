@@ -107,7 +107,6 @@ class TestDataset:
         assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_event_update_object(self):
-
         assert isinstance(
             DataSetUpdate(1)
             .description.set("")
@@ -151,8 +150,10 @@ class TestPandasIntegration:
     def test_datasets_to_pandas(self, cognite_client, mock_ds_response):
         import pandas as pd
 
-        df = cognite_client.data_sets.retrieve(id=1).to_pandas(camel_case=True)
+        df = cognite_client.data_sets.retrieve(id=1).to_pandas(
+            expand_metadata=True, metadata_prefix="", camel_case=True
+        )
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
-        assert df.loc["writeProtected"].bool() is False
-        assert "metadata-value" == df.loc["metadata-key"][0]
+        assert df.at["writeProtected", "value"] is False
+        assert "metadata-value" == df.at["metadata-key", "value"]

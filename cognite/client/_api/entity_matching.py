@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
+from collections.abc import Sequence
+from typing import Any, Literal, TypeVar
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
@@ -13,6 +15,7 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.utils._auxiliary import convert_true_match, is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
@@ -23,10 +26,10 @@ class EntityMatchingAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        job_cls: Type[T_ContextualizationJob],
-        json: Dict[str, Any],
-        status_path: Optional[str] = None,
-        headers: Optional[Dict] = None,
+        job_cls: type[T_ContextualizationJob],
+        json: dict[str, Any],
+        status_path: str | None = None,
+        headers: dict | None = None,
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
@@ -39,31 +42,44 @@ class EntityMatchingAPI(APIClient):
             cognite_client=self._cognite_client,
         )
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[EntityMatchingModel]:
-        """Retrieve entity matching model.
-
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
+        """`Retrieve model <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_.
         Args:
-            id (int): id of the model to retrieve.
-            external_id (str): external id of the model to retrieve.
+            id (int | None): ID of the model to retrieve.
+            external_id (str | None): External ID of the model to retrieve.
 
         Returns:
-            EntityMatchingModel: Model requested."""
+            EntityMatchingModel | None: Model requested.
+
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> retrieved_model = client.entity_matching.retrieve(id=1)
+        """
+
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
             list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
     def retrieve_multiple(
-        self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
+        self, ids: Sequence[int] | None = None, external_ids: SequenceNotStr[str] | None = None
     ) -> EntityMatchingModelList:
-        """Retrieve entity matching models.
+        """`Retrieve models <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_.
 
         Args:
-            ids (Sequence[int]): ids of the model to retrieve.
-            external_ids (Sequence[str]): external ids of the model to retrieve.
+            ids (Sequence[int] | None): IDs of the model to retrieve.
+            external_ids (SequenceNotStr[str] | None): External IDs of the model to retrieve.
 
         Returns:
-            EntityMatchingModelList: Models requested."""
+            EntityMatchingModelList: Models requested.
+
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
+
+        """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
@@ -71,45 +87,61 @@ class EntityMatchingAPI(APIClient):
 
     def update(
         self,
-        item: Union[
-            EntityMatchingModel,
-            EntityMatchingModelUpdate,
-            Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]],
-        ],
-    ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
-        """Update entity matching model.
+        item: EntityMatchingModel
+        | EntityMatchingModelUpdate
+        | Sequence[EntityMatchingModel | EntityMatchingModelUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> EntityMatchingModelList | EntityMatchingModel:
+        """`Update model <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_.
 
         Args:
-            item (Union[EntityMatchingModel,EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
+            item (EntityMatchingModel | EntityMatchingModelUpdate | Sequence[EntityMatchingModel | EntityMatchingModelUpdate]): Model(s) to update.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (EntityMatchingModel). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
+
+        Returns:
+            EntityMatchingModelList | EntityMatchingModel: No description.
+
+        Examples:
+            >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> client.entity_matching.update(EntityMatchingModelUpdate(id=1).name.set("New name"))
         """
         return self._update_multiple(
             list_cls=EntityMatchingModelList,
             resource_cls=EntityMatchingModel,
             update_cls=EntityMatchingModelUpdate,
             items=item,
+            mode=mode,
         )
 
     def list(
         self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        original_id: Optional[int] = None,
-        feature_type: Optional[str] = None,
-        classifier: Optional[str] = None,
-        limit: int = 100,
+        name: str | None = None,
+        description: str | None = None,
+        original_id: int | None = None,
+        feature_type: str | None = None,
+        classifier: str | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EntityMatchingModelList:
-        """List entity matching models.
+        """`List models <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingModels>`_.
 
         Args:
-            name (str): Optional user-defined name of model.
-            description (str): Optional user-defined description of model.
-            feature_type (str): feature type that defines the combination of features used.
-            classifier (str): classifier used in training.
-            original_id (int): id of the original model for models that were created with refit.
-            limit (int, optional): Maximum number of items to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            name (str | None): Optional user-defined name of model.
+            description (str | None): Optional user-defined description of model.
+            original_id (int | None): ID of the original model for models that were created with refit.
+            feature_type (str | None): Feature type that defines the combination of features used.
+            classifier (str | None): Classifier used in training.
+            limit (int | None): Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            EntityMatchingModelList: List of models."""
+            EntityMatchingModelList: List of models.
+
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> client.entity_matching.list(limit=1, name="test")
+        """
         if is_unlimited(limit):
             limit = 1_000_000_000  # currently no pagination
         filter = {
@@ -122,11 +154,10 @@ class EntityMatchingAPI(APIClient):
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
-        return EntityMatchingModelList(
-            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
-        )
+        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
 
     def list_jobs(self) -> ContextualizationJobList:
+        # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
 
         Returns:
@@ -136,29 +167,39 @@ class EntityMatchingAPI(APIClient):
         )
 
     def delete(
-        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
+        self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
-        """Delete one or more entity matching models.
+        """`Delete models <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingDelete>`_.
+
+        https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete
+
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids"""
+            id (int | Sequence[int] | None): ID or list of IDs
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> client.entity_matching.delete(id=1)
+        """
 
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def fit(
         self,
-        sources: Sequence[Union[Dict, CogniteResource]],
-        targets: Sequence[Union[Dict, CogniteResource]],
-        true_matches: Optional[Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]] = None,
-        match_fields: Optional[Union[Dict, Sequence[Tuple[str, str]]]] = None,
-        feature_type: Optional[str] = None,
-        classifier: Optional[str] = None,
+        sources: Sequence[dict | CogniteResource],
+        targets: Sequence[dict | CogniteResource],
+        true_matches: Sequence[dict | tuple[int | str, int | str]] | None = None,
+        match_fields: dict | Sequence[tuple[str, str]] | None = None,
+        feature_type: str | None = None,
+        classifier: str | None = None,
         ignore_missing_fields: bool = False,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        external_id: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        external_id: str | None = None,
     ) -> EntityMatchingModel:
+        # TODO: Not in service contract
+
         """Fit entity matching model.
 
         Note:
@@ -166,19 +207,32 @@ class EntityMatchingAPI(APIClient):
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
-            targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
-            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model.
-             A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
-            feature_type (str): feature type that defines the combination of features used, see API docs for details.
-            classifier (str): classifier used in training.
-            ignore_missing_fields (bool): whether missing data in match_fields should return error or be filled in with an empty string.
-            name (str): Optional user-defined name of model.
-            description (str): Optional user-defined description of model.
-            external_id (str): Optional external id. Must be unique within the project.
+            sources (Sequence[dict | CogniteResource]): Entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
+            targets (Sequence[dict | CogniteResource]): Entities to match to, should have an 'id' field. Tolerant to passing more than is needed or used.
+            true_matches (Sequence[dict | tuple[int | str, int | str]] | None): Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model. A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            match_fields (dict | Sequence[tuple[str, str]] | None): List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
+            feature_type (str | None): Feature type that defines the combination of features used, see API docs for details.
+            classifier (str | None): Classifier used in training.
+            ignore_missing_fields (bool): Whether missing data in match_fields should return error or be filled in with an empty string.
+            name (str | None): Optional User-defined name of model.
+            description (str | None): Optional user-defined description of model.
+            external_id (str | None): Optional external ID. Must be unique within the project.
         Returns:
-            EntityMatchingModel: Resulting queued model."""
+            EntityMatchingModel: Resulting queued model.
+
+        Example:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
+            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.fit(
+            ...     sources=sources,
+            ...     targets=targets,
+            ...     true_matches=true_matches,
+            ...     description="AssetMatchingJob1"
+            ... )
+        """
 
         if match_fields:
             match_fields_processed = [
@@ -207,14 +261,14 @@ class EntityMatchingAPI(APIClient):
 
     def predict(
         self,
-        sources: Optional[Sequence[Dict]] = None,
-        targets: Optional[Sequence[Dict]] = None,
+        sources: Sequence[dict] | None = None,
+        targets: Sequence[dict] | None = None,
         num_matches: int = 1,
-        score_threshold: Optional[float] = None,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
+        score_threshold: float | None = None,
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> ContextualizationJob:
-        """Predict using an entity matching model.
+        """`Predict entity matching <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingPredict>`_.
 
         Warning:
             Blocks and waits for the model to be ready if it has been recently created.
@@ -224,17 +278,31 @@ class EntityMatchingAPI(APIClient):
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources (Optional[Sequence[Dict]]): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets (Optional[Sequence[Dict]]): entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
-            num_matches (int): number of matches to return for each item.
-            score_threshold (float): only return matches with a score above this threshold
-            ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
-            id: ids of the model to use.
-            external_id: external ids of the model to use.
+            sources (Sequence[dict] | None): Entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
+            targets (Sequence[dict] | None): Entities to match to, does not need an 'id' field. Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            num_matches (int): Number of matches to return for each item.
+            score_threshold (float | None): Only return matches with a score above this threshold.
+            id (int | None): IDs of the model to use.
+            external_id (str | None): External IDs of the model to use.
 
         Returns:
             ContextualizationJob: Object which can be used to wait for and retrieve results.
+
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
+            >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.predict(
+            ...     sources = sources,
+            ...     targets = targets,
+            ...     num_matches = 1,
+            ...     score_threshold = 0.6,
+            ...     id=1
+            ... )
         """
+
         model = self.retrieve(id=id, external_id=external_id)
         assert model
         return model.predict(  # could call predict directly but this is friendlier
@@ -246,24 +314,32 @@ class EntityMatchingAPI(APIClient):
 
     def refit(
         self,
-        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
+        true_matches: Sequence[dict | tuple[int | str, int | str]],
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> EntityMatchingModel:
-        """Re-fits an entity matching model, using the combination of the old and new true matches.
+        """`Re-fits an entity matching model, using the combination of the old and new true matches <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingReFit>`_.
 
         Note:
             All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
             capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            true_matches(Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]): Updated known valid matches
-                given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
-                A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
-            id: ids of the model to use.
-            external_id: external ids of the model to use.
+            true_matches (Sequence[dict | tuple[int | str, int | str]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            id (int | None): IDs of the model to use.
+            external_id (str | None): External IDs of the model to use.
+
         Returns:
-            EntityMatchingModel: new model refitted to true_matches."""
+            EntityMatchingModel: new model refitted to true_matches.
+
+        Examples:
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
+            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.refit(true_matches = true_matches, description="AssetMatchingJob1", id=1)
+        """
         model = self.retrieve(id=id, external_id=external_id)
         assert model
         return model.refit(true_matches=true_matches)

@@ -3,8 +3,9 @@ import re
 import pytest
 
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate
-from cognite.client.data_classes import AssetFilter, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes import AggregateResultItem, AssetFilter, Label, LabelFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 from tests.utils import jsgz_load
 
 EXAMPLE_ASSET = {
@@ -260,7 +261,7 @@ class TestAssets:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"name": "1"},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
@@ -270,7 +271,7 @@ class TestAssets:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"parentIds": "bla"},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     def test_get_subtree(self, cognite_client, mock_get_subtree):
@@ -338,11 +339,24 @@ class TestPandasIntegration:
         import pandas as pd
 
         asset = cognite_client.assets.retrieve(id=1)
-        df = asset.to_pandas()
+        df = asset.to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
+
+    def test_expand_aggregates(self):
+        agg_props = {"childCount": 0, "depth": 4, "path": [{"id": 35927223}, {"id": 20283836}, {"id": 296}]}
+        asset = Asset(name="foo", aggregates=AggregateResultItem._load(agg_props))
+        expanded = asset.to_pandas(expand_aggregates=True)
+        not_expanded = asset.to_pandas(expand_aggregates=False)
+
+        assert expanded.columns == ["value"]  # This was wrongly col=0 prior to 7.8.1
+        assert not_expanded.columns == ["value"]
+        assert convert_all_keys_to_snake_case(agg_props) == not_expanded.loc["aggregates"].item()
+        assert agg_props["childCount"] == expanded.loc["aggregates.child_count"].item()
+        assert agg_props["depth"] == expanded.loc["aggregates.depth"].item()
+        assert agg_props["path"] == expanded.loc["aggregates.path"].item()
 
     # need subtree here to get list, since to_pandas on a single Asset gives int for id, but on AssetList it gives int64
     def test_asset_id_from_to_pandas(self, cognite_client, mock_get_subtree):

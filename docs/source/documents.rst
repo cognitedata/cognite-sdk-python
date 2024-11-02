@@ -18,7 +18,7 @@ Documents classes
    :toctree: generated/
    :template: custom-automodule-template.rst
    
-   cognite.client.data_classes.documents
+   data_classes.documents
 
 Preview
 ---------

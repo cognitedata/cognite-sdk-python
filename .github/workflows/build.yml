@@ -5,79 +5,42 @@ on:
   pull_request:
     branches: [master]
 
-env:
-  PYTHON_VERSION: '3.8'
-
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install required dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E numpy
-
+          extras: "-E pandas"
       - name: Linting and static code checks
-        run: |
-          pre-commit run --all-files
-
-      - name: Verify proto files
-        env:
-          TMPDIR: latest_proto
-          PROTO_URL: https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries
-        run: |
-          mkdir $TMPDIR
-          curl --silent $PROTO_URL/data_points.proto --output $TMPDIR/data_points.proto
-          curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
-          diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
-          diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
-
+        run: pre-commit run --all-files --show-diff-on-failure
 
   build_docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'poetry'
-
-      - name: Install core dependencies
-        run: poetry install --with docs --without dev
-
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - name: Build docs
         run: |
           source $(poetry env info --path)/bin/activate
           cd docs && make html SPHINXOPTS="-W --keep-going"
 
+  build_package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build package
+        run: poetry build
+
   test_core:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
-
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - name: Test core
-        env:
-          CI: 1
-        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl'
-          --test-deps-only-core
+        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   test_full:
     runs-on: ${{ matrix.os }}
@@ -85,17 +48,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install -E all
+          python_version: ${{ matrix.python-version }}
+          extras: "-E all"
 
       - name: Test full
         env:
@@ -107,26 +66,10 @@ jobs:
           COGNITE_PROJECT: python-sdk-test
           COGNITE_BASE_URL: https://greenfield.cognitedata.com
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          CI: 1
-        run: |
-          pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
+        # Testpaths are defined in the pytest.ini file:
+        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
+        if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install full dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-
-      - name: Build package
-        run: poetry build

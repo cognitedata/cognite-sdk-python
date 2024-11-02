@@ -20,7 +20,7 @@ RESERVED_EXTERNAL_IDS = frozenset(
         "PageInfo",
         "File",
         "Sequence",
-        "TimeSerie",
+        "TimeSeries",
     }
 )
 RESERVED_SPACE_IDS = frozenset({"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"})
@@ -45,6 +45,6 @@ RESERVED_PROPERTIES = frozenset(
 
 def validate_data_modeling_identifier(space: str | None, external_id: str | None = None) -> None:
     if space and space in RESERVED_SPACE_IDS:
-        raise ValueError(f"The space ID: {space} is reserved. Please use another ID.")
+        raise ValueError(f"The space ID: {space!r} is reserved. Please use another ID.")
     if external_id and external_id in RESERVED_EXTERNAL_IDS:
-        raise ValueError(f"The external ID: {external_id} is reserved. Please use another ID.")
+        raise ValueError(f"The external ID: {external_id!r} is reserved. Please use another ID.")

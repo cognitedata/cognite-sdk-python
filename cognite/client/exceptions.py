@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-import json
 import reprlib
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any
+
+from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client.utils import _json
+from cognite.client.utils._auxiliary import no_op
 
 if TYPE_CHECKING:
     from cognite.client.data_classes import AssetHierarchy
@@ -16,12 +20,12 @@ class CogniteException(Exception):
 @dataclass
 class GraphQLErrorSpec:
     message: str
-    hint: Optional[str]
-    kind: Optional[str]
-    location: Optional[dict[str, dict[str, int]]]
-    locations: Optional[list[dict[str, int]]]  # yes, the api distinguishes on plurality....
-    path: Optional[list[str]]
-    extensions: Optional[dict[str, str]]
+    hint: str | None
+    kind: str | None
+    location: dict[str, dict[str, int]] | None
+    locations: list[dict[str, int]] | None  # yes, the api distinguishes on plurality....
+    path: list[str] | None
+    extensions: dict[str, str] | None
 
     def __repr__(self) -> str:
         attrs_string = f"message={self.message}"
@@ -31,7 +35,7 @@ class GraphQLErrorSpec:
         return f"GraphQLErrorSpec({attrs_string})"
 
     @classmethod
-    def load(cls, data: Dict[str, Any]) -> GraphQLErrorSpec:
+    def load(cls, data: dict[str, Any]) -> GraphQLErrorSpec:
         return cls(
             message=data["message"],
             hint=data.get("hint"),
@@ -44,7 +48,7 @@ class GraphQLErrorSpec:
 
 
 class CogniteGraphQLError(CogniteException):
-    def __init__(self, errors: list[GraphQLErrorSpec]):
+    def __init__(self, errors: list[GraphQLErrorSpec]) -> None:
         self.errors = errors
 
 
@@ -61,31 +65,58 @@ class CogniteReadTimeout(CogniteException):
     pass
 
 
+class CogniteFileUploadError(CogniteException):
+    def __init__(
+        self,
+        message: str,
+        code: int,
+    ) -> None:
+        self.message = message
+        self.code = code
+
+    def __str__(self) -> str:
+        return f"{self.message} | code: {self.code}"
+
+
 class CogniteMultiException(CogniteException):
     def __init__(
         self,
-        successful: Optional[Sequence] = None,
-        failed: Optional[Sequence] = None,
-        unknown: Optional[Sequence] = None,
-        unwrap_fn: Optional[Callable] = None,
-    ):
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
+        unwrap_fn: Callable = no_op,
+    ) -> None:
         self.successful = successful or []
         self.failed = failed or []
         self.unknown = unknown or []
-        self._unwrap_fn = unwrap_fn or (lambda x: x)
+        self.skipped = skipped or []
+        self._unwrap_fn = unwrap_fn
+
+    def _unwrap_list(self, lst: list) -> list:
+        return [self._unwrap_fn(elem) for elem in lst]
+
+    def _truncate_elements(self, lst: list) -> str:
+        truncate_at = 10
+        elements = ",".join([str(element) for element in lst[:truncate_at]])
+        if len(elements) > truncate_at:
+            elements += ", ..."
+        return f"[{elements}]"
 
     def _get_multi_exception_summary(self) -> str:
-        if len(self.successful) == 0 and len(self.unknown) == 0 and len(self.failed) == 0:
+        if len(self.successful) == 0 and len(self.unknown) == 0 and len(self.failed) == 0 and len(self.skipped) == 0:
             return ""
-        return "\n".join(
-            (
-                "",  # start string with newline
-                "The API Failed to process some items.",
-                f"Successful (2xx): {list(map(self._unwrap_fn, self.successful))}",
-                f"Unknown (5xx): {list(map(self._unwrap_fn, self.unknown))}",
-                f"Failed (4xx): {list(map(self._unwrap_fn, self.failed))}",
-            )
-        )
+        summary = [
+            "",  # start string with newline
+            "The API Failed to process some items.",
+            f"Successful (2xx): {self._truncate_elements(self._unwrap_list(self.successful))}",
+            f"Unknown (5xx): {self._truncate_elements(self._unwrap_list(self.unknown))}",
+            f"Failed (4xx): {self._truncate_elements(self._unwrap_list(self.failed))}",
+        ]
+        # Only show 'skipped' when tasks were skipped to avoid confusion:
+        if skipped := self._unwrap_list(self.skipped):
+            summary.append(f"Skipped: {skipped}")
+        return "\n".join(summary)
 
 
 class CogniteAPIError(CogniteMultiException):
@@ -98,14 +129,16 @@ class CogniteAPIError(CogniteMultiException):
     Args:
         message (str): The error message produced by the API.
         code (int): The error code produced by the failure.
-        x_request_id (str): The request-id generated for the failed request.
-        missing: (List) List of missing identifiers.
-        duplicated: (List) List of duplicated identifiers.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
-        extra (Dict): A dict of any additional information.
+        x_request_id (str | None): The request-id generated for the failed request.
+        missing (list | None): (List) List of missing identifiers.
+        duplicated (list | None): (List) List of duplicated identifiers.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        skipped (list | None): List of items that were skipped due to "fail fast" mode.
+        unwrap_fn (Callable): Function to extract identifier from the Cognite resource.
+        cluster (str | None): Which Cognite cluster the user's project is on.
+        extra (dict | None): A dict of any additional information.
 
     Examples:
         Catching an API-error and handling it based on the error code::
@@ -113,10 +146,10 @@ class CogniteAPIError(CogniteMultiException):
             from cognite.client import CogniteClient
             from cognite.client.exceptions import CogniteAPIError
 
-            c = CogniteClient()
+            client = CogniteClient()
 
             try:
-                c.iam.token.inspect()
+                client.iam.token.inspect()
             except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
@@ -131,32 +164,37 @@ class CogniteAPIError(CogniteMultiException):
         self,
         message: str,
         code: int,
-        x_request_id: Optional[str] = None,
-        missing: Optional[Sequence] = None,
-        duplicated: Optional[Sequence] = None,
-        successful: Optional[Sequence] = None,
-        failed: Optional[Sequence] = None,
-        unknown: Optional[Sequence] = None,
-        unwrap_fn: Optional[Callable] = None,
-        extra: Optional[Dict] = None,
+        x_request_id: str | None = None,
+        missing: list | None = None,
+        duplicated: list | None = None,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
+        unwrap_fn: Callable = no_op,
+        cluster: str | None = None,
+        extra: dict | None = None,
     ) -> None:
         self.message = message
         self.code = code
         self.x_request_id = x_request_id
         self.missing = missing
         self.duplicated = duplicated
+        self.cluster = cluster
         self.extra = extra
-        super().__init__(successful, failed, unknown, unwrap_fn)
+        super().__init__(successful, failed, unknown, skipped, unwrap_fn)
 
     def __str__(self) -> str:
         msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
+        if self.cluster:
+            msg += f" | cluster: {self.cluster}"
         if self.missing:
-            msg += f"\nMissing: {self.missing}"
+            msg += f"\nMissing: {self._truncate_elements(self.missing)}"
         if self.duplicated:
-            msg += f"\nDuplicated: {self.duplicated}"
+            msg += f"\nDuplicated: {self._truncate_elements(self.duplicated)}"
         msg += self._get_multi_exception_summary()
         if self.extra:
-            pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
+            pretty_extra = _json.dumps(self.extra, indent=4, sort_keys=True)
             msg += f"\nAdditional error info: {pretty_extra}"
         return msg
 
@@ -164,25 +202,28 @@ class CogniteAPIError(CogniteMultiException):
 class CogniteNotFoundError(CogniteMultiException):
     """Cognite Not Found Error
 
-    Raised if one or more of the referenced ids/external ids are not found.
+    Raised if one or more of the referenced IDs/external IDs are not found.
 
     Args:
-        not_found (List): The ids not found.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
+        not_found (list): The IDs not found.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        skipped (list | None): List of items that were skipped due to "fail fast" mode.
+        unwrap_fn (Callable): No description.
     """
 
     def __init__(
         self,
-        not_found: List,
-        successful: Optional[List] = None,
-        failed: Optional[List] = None,
-        unknown: Optional[List] = None,
-        unwrap_fn: Optional[Callable] = None,
-    ):
+        not_found: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
+        unwrap_fn: Callable = no_op,
+    ) -> None:
         self.not_found = not_found
-        super().__init__(successful, failed, unknown, unwrap_fn)
+        super().__init__(successful, failed, unknown, skipped, unwrap_fn)
 
     def __str__(self) -> str:
         if len(not_found := self.not_found) > 200:
@@ -196,23 +237,25 @@ class CogniteDuplicatedError(CogniteMultiException):
     Raised if one or more of the referenced ids/external ids have been duplicated in the request.
 
     Args:
-        duplicated (List): The duplicated ids.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
+        duplicated (list): The duplicated ids.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        skipped (list | None): List of items that were skipped due to "fail fast" mode.
+        unwrap_fn (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
         self,
-        duplicated: List,
-        successful: Optional[List] = None,
-        failed: Optional[List] = None,
-        unknown: Optional[List] = None,
-        unwrap_fn: Optional[Callable] = None,
-    ):
+        duplicated: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        skipped: list | None = None,
+        unwrap_fn: Callable = no_op,
+    ) -> None:
         self.duplicated = duplicated
-        super().__init__(successful, failed, unknown, unwrap_fn)
+        super().__init__(successful, failed, unknown, skipped, unwrap_fn)
 
     def __str__(self) -> str:
         msg = f"Duplicated: {self.duplicated}"
@@ -220,17 +263,17 @@ class CogniteDuplicatedError(CogniteMultiException):
         return msg
 
 
-class CogniteImportError(CogniteException):
+class CogniteImportError(CogniteException, ImportError):
     """Cognite Import Error
 
     Raised if the user attempts to use functionality which requires an uninstalled package.
 
     Args:
         module (str): Name of the module which could not be imported
-        message (str): The error message to output.
+        message (str | None): The error message to output.
     """
 
-    def __init__(self, module: str, message: Optional[str] = None):
+    def __init__(self, module: str, message: str | None = None) -> None:
         self.module = module
         self.message = message or f"The functionality you are trying to use requires '{self.module}' to be installed."
 
@@ -242,23 +285,28 @@ class CogniteMissingClientError(CogniteException):
     """Cognite Missing Client Error
 
     Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
+
+    Args:
+        obj (Any): Object missing client reference.
     """
 
+    def __init__(self, obj: Any) -> None:
+        self.type = type(obj)
+
     def __str__(self) -> str:
-        return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
+        return (
+            f"A CogniteClient has not been set on this object ({self.type}), did you create it yourself? "
+            "Hint: You can pass an instantiated client along when you initialise the object."
+        )
 
 
-class CogniteAuthError(CogniteException):
-    ...
+class CogniteAuthError(CogniteException): ...
 
 
-class CogniteAssetHierarchyError(CogniteException, AssertionError):
+class CogniteAssetHierarchyError(CogniteException):
     """Cognite Asset Hierarchy validation Error.
 
     Raised if the given assets form an invalid hierarchy (by CDF standards).
-
-    Note:
-        For historical reasons, we make the error catchable as an AssertionError.
 
     Args:
         message (str): The error message to output.
@@ -271,7 +319,7 @@ class CogniteAssetHierarchyError(CogniteException, AssertionError):
         self._hierarchy = hierarchy
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({str(self)})"
+        return f"{type(self).__name__}({self!s})"
 
     def __str__(self) -> str:
         msg = self.message.strip() + " Issue(s): "
@@ -302,3 +350,17 @@ class ModelFailedException(Exception):
 
     def __str__(self) -> str:
         return f"{self.typename} {self.id} failed with error '{self.error_message}'"
+
+
+class CogniteAuthorizationError(CogniteAPIError): ...
+
+
+if _RUNNING_IN_BROWSER:
+    from pyodide.ffi import JsException  # type: ignore [import-not-found]
+else:
+
+    class JsException(Exception):  # type: ignore [no-redef]
+        ...
+
+
+PyodideJsException = JsException

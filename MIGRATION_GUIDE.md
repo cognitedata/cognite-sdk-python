@@ -8,17 +8,120 @@ Changes are grouped as follows:
 - `Changed` for changes that do not fall into any other category
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
-## From v5 to v6
+## From v6 to v7
+### Functionality
+- `CogniteResource.to_pandas` and `CogniteResourceList.to_pandas` now converts known timestamps to `datetime` by
+  default. Can be turned off with the new parameter `convert_timestamps`. Note: To comply with older pandas v1, the
+  dtype will always be `datetime64[ns]`, although in v2 this could have been `datetime64[ms]`.
+- Read operations, like `retrieve_multiple` will now fast-fail. Previously, all requests would be executed
+  before the error was raised, potentially fetching thousands of unneccesary resources.
+
+### Deprecated
+- The Templates API is deprecated, and will be removed in a future version. Please migrate to Data Modeling.
+  Read more at: https://docs.cognite.com/cdf/data_modeling/
+- The `client.assets.aggregate` use `client.assets.aggregate_count` instead.
+- The `client.events.aggregate` use `client.events.aggregate_count` instead.
+- The `client.sequence.aggregate` use `client.sequence.aggregate_count` instead.
+- The `client.time_series.aggregate` use `client.time_series.aggregate_count` instead.
 
 ### Removed
-- Removed support for legacy auth (apikeys, serviceaccounts, client.login.status()). Use OIDC to authenitcate instead and use `client.iam.token.inspect()` instead of `login.status()`.
+- Deprecated method `aggregate_metadata_keys` on AssetsAPI. Update your query from
+  `aggregate_metadata_keys(filter=my_filter)` to `aggregate_unique_properties("metadata", filter=my_filter)`.
+- Deprecated method `aggregate_metadata_values` on AssetsAPI. Update your query from
+  `aggregate_metadata_values(keys=["country"], filter=my_filter)` to
+  `aggregate_unique_values(["metadata", "country"], filter=my_filter)`.
+- Deprecated method `update_feature_types` on GeospatialAPI, use `patch_feature_types` instead.
+- The `SequenceColumns` no longer set the `external_id` to `column{no}` if it is missing. It now must be set
+  explicitly by the user.
+- Dataclasses `ViewDirectRelation` and `ContainerDirectRelation` are replaced by `DirectRelation`.
+- Dataclasses `MappedPropertyDefinition` and `MappedApplyPropertyDefinition` are replaced by `MappedProperty` and `MappedPropertyApply`.
+- Dataclasses `RequiresConstraintDefinition` and `UniquenessConstraintDefinition` are replaced by `RequiresConstraint` and `UniquenessConstraint`.
+- In data class `Transformation` attributes `has_source_oidc_credentials` and `has_destination_oidc_credentials` are replaced by properties.
+
+### Function Signature
+- All `.dump` methods for CogniteResource classes like `Asset` or `Event` now uses `camel_case=True` by default. This is
+  to match the intended use case, preparing the object to be sent in an API request.
+- `CogniteResource.to_pandas` now more closely resembles `CogniteResourceList.to_pandas` with parameters
+  `expand_metadata` and `metadata_prefix`, instead of accepting a sequence of column names (`expand`) to expand,
+  with no easy way to add a prefix. Also, it no longer expands metadata by default.
+- Additionally, `Asset.to_pandas`, have `expand_aggregates` and `aggregates_prefix`. Since the possible `aggregates`
+  keys are known, `camel_case` will also apply to these if expanded as opposed to metadata keys.
+- Removed parameters `property` and `aggregates` for method `aggregate_unique_values` on GeospatialAPI, use the
+  `output` parameter instead.
+- Removed parameter `fields` for method `aggregate_unique_values` on EventsAPI, use the other aggregate-prefixed
+  methods instead.
+- Removed parameter `function_external_id` for method `create` on FunctionSchedulesAPI (function_id has been
+  required since the deprecation of API keys).
+- `client.data_modeling.instances.aggregate` the parameters `instance_type` and `group_by` has swapped order.
+- The return type of `client.data_modeling.instances.aggregate` has changed from `InstanceAggregationResultList` to
+  a more specific value `AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList` depending on the `aggregates` and `group_by` parameters.
+- The `client.sequences.data` methods `.retrieve` and `.insert`  method has changed signature:
+  The parameter `column_external_ids` is renamed `columns`. The old parameter `column_external_ids` is still there, but is
+  deprecated. In addition, int the `.retrieve` method, the parameters `id` and `external_id` have
+  been moved to the beginning of the signature. This is to better match the API and have a consistent overload
+  implementation.
+- The `client.sequences.data.retrieve_latest` is renamed `client.sequences.data.retrieve_last_row`.
+
+### Changed
+- All `assert`s meant for the SDK user, now raise appropriate errors instead (`ValueError`, `RuntimeError`...).
+- `CogniteAssetHierarchyError` is no longer possible to catch as an `AssertionError`.
+- More narrow exception types like `CogniteNotFoundError` and `CogniteDuplicatedError` are now raised instead of
+  `CogniteAPIError` for the following methods: `DatapointsAPI.retrieve_latest`, `RawRowsAPI.list`,
+  `RelationshipsAPI.list`, `SequencesDataAPI.retrieve`, `SyntheticDatapointsAPI.query`. Additionally, all calls
+  using `partitions` to API methods like `list` (or the generator version) now do the same.
+- Several methods in the data modelling APIs have had parameter names now correctly reflect whether they accept
+  a single or multiple items (i.e. id -> ids).
+- Passing `limit=0` no longer returns `DEFAULT_LIMIT_READ` (25) resources, but raises a `ValueError`.
+- Loading `ObjectDetection` attributes `.attributes`, `.bounding_box`, `.polygon` and
+  `.polyline` now returns types `dict[str, Attribute]`, `BoundingBox`, `Polygon` and `Polyline` instead of `dicts`.
+- Loading `TextRegion` attribute `.text_region` now return `BoundingBox` instead of `dict`.
+- Loading `AssetLink` attribute `.text_region` and `.asset_ref` returns `BoundingBox` and `CdfResourceRef` instead of `dict`.
+- Loading `KeypointCollection` attributes `.keypoints` and `.attributes` return `dict[str, Keypoint]` and
+  `dict[str, Attribute]` instead of `dict`.
+- Loading `VisionExtractPredictions` the attributes `text_predictions`, `asset_tag_prediction`,
+  `industrial_object_prediction`, `people_predictions`, `personal_protective_equipment_predictions`,
+  `digital_gauge_predictions`, `dial_gauge_predictions`, `level_gauge_predictions`, `valve_predictions`
+   now returns `dict[str, TextRegion]`, `list[AssetLink]`, `list[ObjectDetection]`, `list[KeypointCollectionWithObjectDetection]` instead of `dict`.
+- Loading `FeatureParameters` the attributes `text_detection_parameters`, `asset_tag_detection_parameters`,
+  `industrial_object_prediction_parameters`, `personal_protective_equipment_parameters`,
+  `digital_gauge_parameters`, `dial_gauge_detection_parameters`, `level_gauge_parameters`, `valve_detection_parameters`
+   now returns `TextDetectionParameter`, `AssetTagDetectionParameters`, `PeopleDetectionParameters`,
+  `IndustrialObjectDetectionParameters`, `PersonalProtectiveEquimentDetectionParameters`, `DigitalGaugeDetection`,
+  `ValveDetection` instead of `dict`.
+- Loading `ExtractionPipeline` the attribute `.contacts` now returns `list[ExtractionPipelineContact]` instead of `dict`.
+- Loading `GeospatialComputedResponse` the attribute `.items` now returns `GeospatialComputedItemList` instead of `list[dict]`.
+- Loading `Transformation` the attributes `.running_job`, `.last_finished_job`, `.blocked`, `.schedule` `.source_session`,
+  `.destination_session`, `.source_nonce`, `destination_nonce`, `.source_oidc_credentials`, `.destination_oidc_credentials`
+  now returns `TransformationJob`, `TransformationBlockedInfo`, `TransformationSchedule`, `SessionDetails`, `NonceCredentials`
+  `OidcCredentials`, instead of `dict`s.
+- Loading `TransformationPreviewResult` the attribute `.schema` now returns `TransformationSchemaColumnList` instead of `list[dict]`.
+- Loading `TransformationJob` the attribute `.destination` and `.status` now return `TransformationDestination` and `TransformationJobStatus` instead of `dict`.
+- The `Group` attribute `capabilities` is now a `Capabilities` object, instead of a `dict`.
+- The class `SequenceData` has been replaced by `SequenceRows`. The old `SequenceData` class is still available for
+  backwards compatibility, but will be removed in the next major version. However, all API methods now return
+  `SequenceRows` instead of `SequenceData`.
+- The attribute `columns` in `Sequence` has been changed from `SequenceType[dict]` to `SequnceColumnList`.
+- The class `SequenceRows` in `client.data_classes.transformations.common` has been renamed to `SequenceRowsDestination`.
+- Classes `Geometry`, `AssetAggregate`, `AggregateResultItem`, `EndTimeFilter`, `Label`, `LabelFilter`, `ExtractionPipelineContact`,
+  `TimestampRange`, `AggregateResult`, `GeometryFilter`, `GeoLocation`, `RevisionCameraProperties`, `BoundingBox3D` are no longer
+  `dict` but classes with attributes matchhng the API.
+- Calling `client.iam.token.inspect()` now gives an object `TokenInspection` with attribute `cababilities` of type `ProjectCapabilityList`
+  instead of `list[dict]`
+- In data class `Transformation` the attribute `schedule`, `running_job`, and `last_running_job`, `external_id` and `id`
+  are set to the `Transformation` `id` and `external_id` if not set. If they are set to a different value, a `ValueError` is raised
+
+### Optional
+- `CogniteImportError` can now be caught as `ImportError`.
+
+## From v5 to v6
+### Removed
+- Removed support for legacy auth (API keys, service accounts, client.login.status()). Use OIDC to authenticate instead and use `client.iam.token.inspect()` instead of `login.status()`.
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
 - Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.
 - Removed the deprecated `external_id` attribute on `ExtractionPipelineRun`. This has been replaced with `extpipe_external_id`.
 
 ## From v4 to v5
-
 ### Dependency
 - Required dependency, `protobuf`.
 - Optional dependency, `numpy` (performance benefits, but requires refactoring).

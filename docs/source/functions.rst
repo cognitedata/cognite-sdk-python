@@ -32,6 +32,10 @@ Function schedules
    CogniteClient.functions.schedules
 
 
+Get function schedule input data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.get_input_data
+
 Data classes
 ^^^^^^^^^^^^
 .. autosummary::

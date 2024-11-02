@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+from contextlib import suppress
+
 import pytest
 
-from cognite.client.data_classes import ThreeDModelRevisionUpdate, ThreeDModelUpdate
+from cognite.client import CogniteClient
+from cognite.client.data_classes import ThreeDModel, ThreeDModelRevisionUpdate, ThreeDModelUpdate, ThreeDModelWrite
+from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="class")
@@ -11,7 +17,7 @@ def test_revision(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def new_model(cognite_client):
+def new_model(cognite_client: CogniteClient) -> ThreeDModel:
     res = cognite_client.three_d.models.create(name="NewTestModel")
     yield res
     cognite_client.three_d.models.delete(id=res.id)
@@ -28,8 +34,28 @@ class TestThreeDModelsAPI:
     def test_list_and_retrieve(self, cognite_client):
         res = cognite_client.three_d.models.list(limit=1)
         assert 1 == len(res)
-        res = [r for r in cognite_client.three_d.models(limit=None) if r.name == "MyModel775"][0]
+        res = next(r for r in cognite_client.three_d.models(limit=None) if r.name == "MyModel775")
         assert res == cognite_client.three_d.models.retrieve(res.id)
+
+    def test_create_update_delete(self, cognite_client) -> None:
+        my_model = ThreeDModelWrite(name="MyModel775", metadata={"key": "value"})
+
+        created: ThreeDModel | None = None
+        try:
+            created = cognite_client.three_d.models.create(my_model)
+            assert created.as_write().dump() == my_model.dump()
+
+            update = ThreeDModelUpdate(id=created.id).metadata.add({"key2": "value2"})
+
+            updated = cognite_client.three_d.models.update(update)
+
+            assert updated.metadata == {"key": "value", "key2": "value2"}
+
+            cognite_client.three_d.models.delete(id=created.id)
+        finally:
+            if created:
+                with suppress(CogniteAPIError):
+                    cognite_client.three_d.models.delete(id=created.id)
 
     def test_update_with_resource(self, new_model, cognite_client):
         model = new_model

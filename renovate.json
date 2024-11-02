@@ -1,16 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "local>cognitedata/renovate-config-public",
+    ":automergeMinor"
   ],
   "packageRules": [
     {
       "enabled": false,
       "matchManagers": ["poetry"],
       "matchPackagePatterns": ["*"]
+    },
+    {
+      "enabled": false,
+      "matchPackageNames": ["mcr.microsoft.com/devcontainers/python"]
     }
   ],
   "vulnerabilityAlerts": {
     "enabled": true
-  }
+  },
+  "labels": [
+    "dependencies",
+    "auto-merge"
+  ]
 }
