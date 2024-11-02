@@ -8,7 +8,6 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
@@ -306,8 +305,7 @@ class TestCogniteObject:
             seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
 
-        dumped = instance.dump(camel_case=True)
-        yaml_serialised = yaml.safe_dump(dumped)
+        yaml_serialised = instance.dump_yaml()
         loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()
