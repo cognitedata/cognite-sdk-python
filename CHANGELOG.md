@@ -17,6 +17,35 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.5] - 2024-11-01
+### Fixed
+- The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
+
+## [7.64.4] - 2024-11-01
+### Fixed
+- Data Workflows: apply more robust path parameter encoding.
+
+## [7.64.3] - 2024-11-01
+### Fixed
+- Removed superfluous properties from authentication subclass read objects
+
+## [7.64.2] - 2024-10-31
+### Fixed
+- `HostedExtractor` REST source `authentication` property updated to follow API change.
+
+## [7.64.1] - 2024-10-30
+### Fixed
+- Loading `HostedExtractor` class `RestSourceWrite` no longer requires the optional `scheme` parameter.
+
+## [7.64.0] - 2024-10-28
+### Added
+- New instance inspection endpoint `client.data_modeling.instances.inspect` enabling easy reverse
+  lookup to find which views and containers they have data in.
+
+## [7.63.11] - 2024-10-26
+### Fixed
+- The `/context/diagram/` endpoints are now retried on 5xx and 429 errors.
+
 ## [7.63.10] - 2024-10-22
 ### Fixed
 - The Not() filter now only accepts a single filter (and no longer silently ignores the rest).
