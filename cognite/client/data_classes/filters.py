@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 PropertyReference: TypeAlias = str | tuple[str, ...] | list[str] | EnumProperty
 
-RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label
+RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId
 
 
 @dataclass
@@ -31,7 +31,7 @@ class ParameterValue:
 
 
 FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
-FilterValueList: TypeAlias = Sequence[RawValue | InstanceId] | PropertyReferenceValue | ParameterValue
+FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
