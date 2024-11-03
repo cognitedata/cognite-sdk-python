@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
+import cognite.client.data_classes.postgres_gateway.tables as pg
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.postgres_gateway.tables import Table, TableList, TableWrite
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import TablenameSequence
@@ -31,20 +31,20 @@ class TablesAPI(APIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-    ) -> Iterator[Table]: ...
+    ) -> Iterator[pg.Table]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
-    ) -> Iterator[TableList]: ...
+    ) -> Iterator[pg.TableList]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[Table] | Iterator[TableList]:
+    ) -> Iterator[pg.Table] | Iterator[pg.TableList]:
         """Iterate over custom tables
 
         Fetches custom table as they are iterated over, so you keep a limited number of custom tables in memory.
@@ -54,45 +54,45 @@ class TablesAPI(APIClient):
             limit (int | None): Maximum number of custom tables to return. Defaults to return all.
 
         Returns:
-            Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.Table`] | Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.TableList`]: yields CustomTable one by one if chunk_size is not specified, else CustomTableList objects.
+            Iterator[pg.Table] | Iterator[pg.TableList]: yields Table one by one if chunk_size is not specified, else TableList objects.
         """
         self._warning.warn()
 
         return self._list_generator(
-            list_cls=TableList,
-            resource_cls=Table,  # type: ignore[type-abstract]
+            list_cls=pg.TableList,
+            resource_cls=pg.Table,  # type: ignore[type-abstract]
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "beta"},
         )
 
-    def __iter__(self) -> Iterator[Table]:
+    def __iter__(self) -> Iterator[pg.Table]:
         """Iterate over custom tables
 
         Fetches custom tables as they are iterated over, so you keep a
         limited number of custom tables in memory.
 
         Returns:
-            Iterator[:py:class:`cognite.client.data_classes.postgres_gateway.Table`]: yields custom table one by one.
+            Iterator[pg.Table]: yields custom table one by one.
         """
         return self()
 
     @overload
-    def create(self, items: TableWrite, username: str) -> Table: ...
+    def create(self, items: pg.TableWrite, username: str) -> pg.Table: ...
 
     @overload
-    def create(self, items: Sequence[TableWrite], username: str) -> TableList: ...
+    def create(self, items: Sequence[pg.TableWrite], username: str) -> pg.TableList: ...
 
-    def create(self, items: TableWrite | Sequence[TableWrite], username: str) -> Table | TableList:
+    def create(self, items: pg.TableWrite | Sequence[pg.TableWrite], username: str) -> pg.Table | pg.TableList:
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
-            items (:py:class:`cognite.client.data_classes.postgres_gateway.TableWrite` | Sequence[:py:class:`cognite.client.data_classes.postgres_gateway.TableWrite`]): The table(s) to create
+            items (pg.TableWrite | Sequence[pg.TableWrite]): The table(s) to create
             username (str): The name of the username (a.k.a. database) to be managed from the API
 
         Returns:
-            :py:class:`cognite.client.data_classes.postgres_gateway.Table` | :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Created tables
+            pg.Table | pg.TableList: Created tables
 
         Examples:
 
@@ -108,28 +108,28 @@ class TablesAPI(APIClient):
         """
         self._warning.warn()
         return self._create_multiple(
-            list_cls=TableList,
-            resource_cls=Table,  # type: ignore[type-abstract]
+            list_cls=pg.TableList,
+            resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             items=items,  # type: ignore[arg-type]
-            input_resource_cls=TableWrite,
+            input_resource_cls=pg.TableWrite,
             headers={"cdf-version": "beta"},
         )
 
     @overload
-    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[False] = False) -> Table: ...
+    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[False] = False) -> pg.Table: ...
 
     @overload
-    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[True]) -> Table | None: ...
+    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[True]) -> pg.Table | None: ...
 
     @overload
     def retrieve(
         self, tablename: SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
-    ) -> TableList: ...
+    ) -> pg.TableList: ...
 
     def retrieve(
         self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
-    ) -> Table | TableList | None:
+    ) -> pg.Table | pg.TableList | None:
         """`Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
 
         Retreive a list of postgres tables for a user by their table names, optionally ignoring unknown table names
@@ -140,7 +140,7 @@ class TablesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore table names not found
 
         Returns:
-            :py:class:`cognite.client.data_classes.postgres_gateway.Table` | :py:class:`cognite.client.data_classes.postgres_gateway.TableList` | None: Foreign tables
+            pg.Table | pg.TableList | None: Foreign tables
 
         Examples:
 
@@ -161,8 +161,8 @@ class TablesAPI(APIClient):
         self._warning.warn()
 
         return self._retrieve_multiple(
-            list_cls=TableList,
-            resource_cls=Table,  # type: ignore[type-abstract]
+            list_cls=pg.TableList,
+            resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             other_params={"ignoreUnknownIds": ignore_unknown_ids},
             identifiers=TablenameSequence.load(tablenames=tablename),
@@ -204,7 +204,7 @@ class TablesAPI(APIClient):
         username: str,
         include_built_ins: Literal["yes", "no"] | None = "no",
         limit: int | None = DEFAULT_LIMIT_READ,
-    ) -> TableList:
+    ) -> pg.TableList:
         """`List postgres tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/list_tables>`_
 
         List all tables in a given project.
@@ -215,7 +215,7 @@ class TablesAPI(APIClient):
             limit (int | None): Limits the number of results to be returned.
 
         Returns:
-            :py:class:`cognite.client.data_classes.postgres_gateway.TableList`: Foreign tables
+            pg.TableList: Foreign tables
 
         Examples:
 
@@ -244,8 +244,8 @@ class TablesAPI(APIClient):
         filter_ = {"includeBuiltIns": include_built_ins}
 
         return self._list(
-            list_cls=TableList,
-            resource_cls=Table,  # type: ignore[type-abstract]
+            list_cls=pg.TableList,
+            resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             filter=filter_,
             method="GET",

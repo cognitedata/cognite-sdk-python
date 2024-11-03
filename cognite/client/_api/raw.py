@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
-from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, Table, TableList
-from cognite.client.data_classes.raw import RowCore
+from cognite.client.data_classes import raw
+from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
     find_duplicates,
     interpolate_and_url_encode,
@@ -175,14 +175,14 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     @overload
-    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[Table]: ...
+    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[raw.Table]: ...
 
     @overload
-    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[TableList]: ...
+    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[raw.TableList]: ...
 
     def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Table] | Iterator[TableList]:
+    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -193,11 +193,11 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Returns:
-            Iterator[Table] | Iterator[:py:class:`cognite.client.data_classes.raw.TableList`]: No description.
+            Iterator[raw.Table] | Iterator[raw.TableList]: No description.
         """
         table_iterator = self._list_generator(
-            list_cls=TableList,
-            resource_cls=Table,
+            list_cls=raw.TableList,
+            resource_cls=raw.Table,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
@@ -206,12 +206,12 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
-    def create(self, db_name: str, name: str) -> Table: ...
+    def create(self, db_name: str, name: str) -> raw.Table: ...
 
     @overload
-    def create(self, db_name: str, name: list[str]) -> TableList: ...
+    def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
 
-    def create(self, db_name: str, name: str | list[str]) -> Table | TableList:
+    def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
@@ -219,7 +219,7 @@ class RawTablesAPI(APIClient):
             name (str | list[str]): A table name or list of table names to create.
 
         Returns:
-            Table | :py:class:`cognite.client.data_classes.raw.TableList`: Table or list of tables that has been created.
+            raw.Table | raw.TableList: raw.Table or list of tables that has been created.
 
         Examples:
 
@@ -235,8 +235,8 @@ class RawTablesAPI(APIClient):
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
-            list_cls=TableList,
-            resource_cls=Table,
+            list_cls=raw.TableList,
+            resource_cls=raw.Table,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             items=items,
         )
@@ -274,23 +274,23 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
-        if isinstance(tb, Table):
+    def _set_db_name_on_tables(self, tb: raw.Table | raw.TableList, db_name: str) -> raw.Table | raw.TableList:
+        if isinstance(tb, raw.Table):
             tb._db_name = db_name
             return tb
-        elif isinstance(tb, TableList):
+        elif isinstance(tb, raw.TableList):
             for t in tb:
                 t._db_name = db_name
             return tb
-        raise TypeError("tb must be Table or TableList")
+        raise TypeError("tb must be raw.Table or raw.TableList")
 
     def _set_db_name_on_tables_generator(
-        self, table_iterator: Iterator[Table] | Iterator[TableList], db_name: str
-    ) -> Iterator[Table] | Iterator[TableList]:
+        self, table_iterator: Iterator[raw.Table] | Iterator[raw.TableList], db_name: str
+    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
         for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> TableList:
+    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
@@ -298,7 +298,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            :py:class:`cognite.client.data_classes.raw.TableList`: List of requested tables.
+            raw.TableList: List of requested tables.
 
         Examples:
 
@@ -323,13 +323,13 @@ class RawTablesAPI(APIClient):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
-            list_cls=TableList,
-            resource_cls=Table,
+            list_cls=raw.TableList,
+            resource_cls=raw.Table,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             method="GET",
             limit=limit,
         )
-        return cast(TableList, self._set_db_name_on_tables(tb, db_name))
+        return cast(raw.TableList, self._set_db_name_on_tables(tb, db_name))
 
 
 class RawRowsAPI(APIClient):

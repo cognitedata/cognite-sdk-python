@@ -53,7 +53,7 @@ repos:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)
         args:
-          - --style=sphinx
+          - --style=google
           - --exclude=tests/|scripts/
           - --quiet  # otherwise prints all checked files that are ok...
           - --skip-checking-raises=true
