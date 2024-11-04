@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.64.7] - 2024-11-04
 ### Fixed
-- Set batch size to 10 for hosted extractor jobs to avoid hitting the API limit.
+- Set batch size to 10 for `create` and `update` of hosted extractor jobs to avoid hitting the API limit.
 
 
 
