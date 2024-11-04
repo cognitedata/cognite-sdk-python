@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.7] - 2024-11-04
+### Fixed
+- Set batch size to 10 for hosted extractor jobs to avoid hitting the API limit.
+
+
+
 ## [7.64.6] - 2024-10-22
 ### Added
 - Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
