@@ -35,7 +35,7 @@ class JobsAPI(APIClient):
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
