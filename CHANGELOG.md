@@ -17,6 +17,26 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.6] - 2024-10-22
+### Added
+- Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
+
+## [7.64.5] - 2024-11-01
+### Fixed
+- The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
+
+## [7.64.4] - 2024-11-01
+### Fixed
+- Data Workflows: apply more robust path parameter encoding.
+
+## [7.64.3] - 2024-11-01
+### Fixed
+- Removed superfluous properties from authentication subclass read objects
+
+## [7.64.2] - 2024-10-31
+### Fixed
+- `HostedExtractor` REST source `authentication` property updated to follow API change.
+
 ## [7.64.1] - 2024-10-30
 ### Fixed
 - Loading `HostedExtractor` class `RestSourceWrite` no longer requires the optional `scheme` parameter.
