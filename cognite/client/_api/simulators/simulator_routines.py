@@ -7,6 +7,8 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorRoutine,
     SimulatorRoutineList,
+    SimulatorRoutineRevision,
+    SimulatorRoutineRevisionsList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
@@ -48,5 +50,35 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/list",
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
+            headers={"cdf-version": "beta"},
+        )
+
+    def list_routine_revisions(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorRoutineRevisionsList:
+        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+
+        List simulators
+
+        Args:
+            limit (int): The maximum number of simulators to return. Defaults to 25. Set to -1, float("inf") or None
+
+        Returns:
+            SimulatorRoutineRevisionsList: List of simulator routines
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.list_models()
+
+        """
+        self._warning.warn()
+        return self._list(
+            method="POST",
+            limit=limit,
+            url_path="/simulators/routines/revisions/list",
+            resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionsList,
             headers={"cdf-version": "beta"},
         )

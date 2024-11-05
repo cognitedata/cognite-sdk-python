@@ -46,3 +46,9 @@ class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:
         routines = cognite_client.simulators.list_routines(limit=5)
         assert len(routines) > 0
+
+    def test_list_routine_revisions(self, cognite_client: CogniteClient) -> None:
+        revisions = cognite_client.simulators.list_routine_revisions(limit=5)
+        assert revisions[0].configuration is not None
+        assert revisions[0].script is not None
+        assert len(revisions) > 0

@@ -18,6 +18,269 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class SimulationValueUnitInput(CogniteObject):
+    name: str
+    quantity: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            quantity=resource.get("quantity"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineInputTimeseries(CogniteObject):
+    name: str
+    reference_id: str
+    source_external_id: str
+    aggregate: str | None = None
+    save_timeseries_external_id: str | None = None
+    unit: SimulationValueUnitInput | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            reference_id=resource["referenceId"],
+            source_external_id=resource["sourceExternalId"],
+            aggregate=resource.get("aggregate"),
+            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
+            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+
+        return output
+
+
+@dataclass
+class SimulatorRoutineInputConstant(CogniteObject):
+    name: str
+    reference_id: str
+    value: str
+    value_type: str
+    unit: SimulationValueUnitInput | None = None
+    save_timeseries_external_id: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            reference_id=resource["referenceId"],
+            value=resource["value"],
+            value_type=resource["valueType"],
+            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
+            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+
+        return output
+
+
+@dataclass
+class SimulatorRoutineOutput(CogniteObject):
+    name: str
+    reference_id: str
+    value_type: str
+    unit: SimulationValueUnitInput | None = None
+    save_timeseries_external_id: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            reference_id=resource["referenceId"],
+            value_type=resource["valueType"],
+            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
+            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+
+        return output
+
+
+@dataclass
+class SimulatorRoutineSchedule(CogniteObject):
+    enabled: bool
+    cron_expression: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            enabled=resource["enabled"],
+            cron_expression=resource.get("cronExpression"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineDataSampling(CogniteObject):
+    enabled: bool
+    validation_window: int | None = None
+    sampling_window: int | None = None
+    granularity: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            enabled=resource["enabled"],
+            validation_window=resource.get("validationWindow"),
+            sampling_window=resource.get("samplingWindow"),
+            granularity=resource.get("granularity"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
+    enabled: bool
+    timeseries_external_id: str | None = None
+    aggregate: str | None = None
+    operator: str | None = None
+    value: float | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            enabled=resource["enabled"],
+            timeseries_external_id=resource.get("timeseriesExternalId"),
+            aggregate=resource.get("aggregate"),
+            operator=resource.get("operator"),
+            value=resource.get("value"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
+    enabled: bool
+    timeseries_external_id: str | None = None
+    aggregate: str | None = None
+    min_section_size: int | None = None
+    var_threshold: float | None = None
+    slope_threshold: float | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            enabled=resource["enabled"],
+            timeseries_external_id=resource.get("timeseriesExternalId"),
+            aggregate=resource.get("aggregate"),
+            min_section_size=resource.get("minSectionSize"),
+            var_threshold=resource.get("varThreshold"),
+            slope_threshold=resource.get("slopeThreshold"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineConfiguration(CogniteObject):
+    schedule: SimulatorRoutineSchedule
+    data_sampling: SimulatorRoutineDataSampling
+    logical_check: list[SimulatorRoutineLogicalCheckEnabled]
+    steady_state_detection: list[SimulatorRoutineSteadyStateDetectionEnabled]
+    inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries]
+    outputs: list[SimulatorRoutineOutput]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            schedule=SimulatorRoutineSchedule._load(resource["schedule"], cognite_client),
+            data_sampling=SimulatorRoutineDataSampling._load(resource["dataSampling"], cognite_client),
+            logical_check=[
+                SimulatorRoutineLogicalCheckEnabled._load(check_, cognite_client) for check_ in resource["logicalCheck"]
+            ],
+            steady_state_detection=[
+                SimulatorRoutineSteadyStateDetectionEnabled._load(detection_, cognite_client)
+                for detection_ in resource["steadyStateDetection"]
+            ],
+            inputs=[
+                SimulatorRoutineInputConstant._load(input_, cognite_client)
+                if "value" in input_
+                else SimulatorRoutineInputTimeseries._load(input_, cognite_client)
+                for input_ in resource["inputs"]
+            ],
+            outputs=[SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]],
+        )
+
+
+@dataclass
+class SimulatorRoutineStepArguments(CogniteObject):
+    reference_id: str | None = None
+    object_name: str | None = None
+    object_property: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            reference_id=resource.get("referenceId"),
+            object_name=resource.get("objectName"),
+            object_property=resource.get("objectProperty"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineStep(CogniteObject):
+    step_type: str
+    arguments: dict[str, Any]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            step_type=resource["stepType"],
+            arguments=resource["arguments"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
+class SimulatorRoutineStage(CogniteObject):
+    order: int
+    steps: list[SimulatorRoutineStep]
+    description: str | None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            order=resource["order"],
+            steps=[SimulatorRoutineStep._load(step_, cognite_client) for step_ in resource["steps"]],
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+@dataclass
 class SimulatorUnitEntry(CogniteObject):
     label: str
     name: str
@@ -231,7 +494,10 @@ class Simulator(CogniteResource):
 
 class SimulatorIntegration(CogniteResource):
     """
-    The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF). It provides information about the configured connectors for a given simulator, including their status and additional details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
+    The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF).
+    It provides information about the configured connectors for a given simulator, including their status and additional
+    details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential
+    for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
 
     Limitations:  - A project can have a maximum of 100 simulators
 
@@ -421,6 +687,8 @@ class SimulatorRoutineRevision(CogniteResource):
         created_by_user_id: str,
         version_number: int,
         created_time: int,
+        configuration: SimulatorRoutineConfiguration,
+        script: list[SimulatorRoutineStage],
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -432,13 +700,44 @@ class SimulatorRoutineRevision(CogniteResource):
         self.created_by_user_id = created_by_user_id
         self.version_number = version_number
         self.created_time = created_time
+        self.configuration = configuration
+        self.script = script
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            routine_external_id=resource["routineExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            model_external_id=resource["modelExternalId"],
+            data_set_id=resource["dataSetId"],
+            created_by_user_id=resource["createdByUserId"],
+            version_number=resource["versionNumber"],
+            created_time=resource["createdTime"],
+            configuration=SimulatorRoutineConfiguration._load(resource["configuration"], cognite_client),
+            script=[SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource["script"]],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["configuration"] = self.configuration.dump(camel_case=camel_case)
+        output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script]
+
+        return output
 
 
 class SimulatorModel(CogniteResource):
     """
-    The simulator model resource represents an asset modeled in a simulator. This asset could range from a pump or well to a complete processing facility or refinery. The simulator model is the root of its associated revisions, routines, runs, and results. The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby maintaining the integrity and hierarchy of the simulation data.
+    The simulator model resource represents an asset modeled in a simulator.
+    This asset could range from a pump or well to a complete processing facility or refinery.
+    The simulator model is the root of its associated revisions, routines, runs, and results.
+    The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
+    maintaining the integrity and hierarchy of the simulation data.
 
-    Simulator model revisions track changes and updates to a simulator model over time. Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+    Simulator model revisions track changes and updates to a simulator model over time.
+    Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
     Limitations:
         - A project can have a maximum of 1000 simulator models
@@ -507,7 +806,9 @@ class SimulatorRoutine(CogniteResource):
     * Commands (actions to be performed by the simulator)
     * Outputs (values read from the simulator model)
 
-    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time. Each model can have multiple routines, each performing different objectives such as calculating optimal operation setpoints, forecasting production, benchmarking asset performance, and more.
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
+    Each model can have multiple routines, each performing different objectives such as calculating optimal
+    operation setpoints, forecasting production, benchmarking asset performance, and more.
 
     Limitations:
         - Each simulator model can have a maximum of 10 simulator routines
@@ -574,6 +875,10 @@ class SimulatorRoutine(CogniteResource):
 
 class SimulatorRoutineList(CogniteResourceList[SimulatorRoutine]):
     _RESOURCE = SimulatorRoutine
+
+
+class SimulatorRoutineRevisionsList(CogniteResourceList[SimulatorRoutineRevision]):
+    _RESOURCE = SimulatorRoutineRevision
 
 
 class SimulatorList(CogniteResourceList[Simulator]):
