@@ -248,7 +248,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient):
     cognite_client.workflows.versions.upsert(version)
     trigger = cognite_client.workflows.triggers.upsert(
         WorkflowTriggerUpsert(
-            external_id="integration_test-workflow-scheduled-trigger",
+            external_id=f"{workflow.external_id}-scheduled-trigger",
             trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
             workflow_external_id=version.workflow_external_id,
             workflow_version=version.version,
@@ -503,7 +503,7 @@ class TestWorkflowTriggers:
         history = cognite_client.workflows.triggers.get_trigger_run_history(
             external_id=workflow_scheduled_trigger.external_id
         )
-        assert history is not None
+        assert len(history) > 0
         assert history[0].external_id == workflow_scheduled_trigger.external_id
         assert history[0].workflow_external_id == workflow_scheduled_trigger.workflow_external_id
         assert history[0].workflow_version == workflow_scheduled_trigger.workflow_version
