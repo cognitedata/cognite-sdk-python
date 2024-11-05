@@ -230,6 +230,33 @@ class Simulator(CogniteResource):
 
 
 class SimulatorIntegration(CogniteResource):
+    """
+    The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF). It provides information about the configured connectors for a given simulator, including their status and additional details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
+
+    Limitations:  - A project can have a maximum of 100 simulators
+
+    This is the read/response format of the simulator integration.
+
+    Args:
+
+        id (int): A unique id of a simulator integration
+        external_id (str): External id of the simulator integration
+        simulator_external_id (str): External id of the associated simulator
+        heartbeat (int): The interval in seconds between the last heartbeat and the current time
+        active (bool): Whether the simulator integration is active
+        data_set_id (int): The id of the dataset associated with the simulator integration
+        connector_version (str): The version of the connector
+        log_id (int): The id of the log associated with the simulator integration
+        created_time (int): The time when the simulator integration was created
+        last_updated_time (int): The time when the simulator integration was last updated
+        license_status (str | None): The status of the license
+        simulator_version (str | None): The version of the simulator
+        license_last_checked_time (int | None): The time when the license was last checked
+        connector_status (str | None): The status of the connector
+        connector_status_updated_time (int | None): The time when the connector status was last updated
+
+    """
+
     def __init__(
         self,
         id: int,
@@ -408,22 +435,45 @@ class SimulatorRoutineRevision(CogniteResource):
 
 
 class SimulatorModel(CogniteResource):
+    """
+    The simulator model resource represents an asset modeled in a simulator. This asset could range from a pump or well to a complete processing facility or refinery. The simulator model is the root of its associated revisions, routines, runs, and results. The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby maintaining the integrity and hierarchy of the simulation data.
+
+    Simulator model revisions track changes and updates to a simulator model over time. Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
+    Limitations:
+        - A project can have a maximum of 1000 simulator models
+        - Each simulator model can have a maximum of 200 revisions
+
+
+    This is the read/response format of a simulator model.
+
+    Args:
+        id (int): A unique id of a simulator model
+        external_id (str): External id of the simulator model
+        simulator_external_id (str): External id of the associated simulator
+        data_set_id (int): The id of the dataset associated with the simulator model
+        created_time (int): The time when the simulator model was created
+        last_updated_time (int): The time when the simulator model was last updated
+        name (str): The name of the simulator model
+        type_key (str | None): The type key of the simulator model
+        description (str | None): The description of the simulator model
+    """
+
     def __init__(
         self,
         id: int,
         external_id: str,
         simulator_external_id: str,
-        name: str,
         data_set_id: int,
         created_time: int,
         last_updated_time: int,
+        name: str,
         type_key: str | None = None,
         description: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
-        self.data_set_id = data_set_id
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -450,6 +500,35 @@ class SimulatorModel(CogniteResource):
 
 
 class SimulatorRoutine(CogniteResource):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
+
+    * Inputs (values set into the simulator model)
+    * Commands (actions to be performed by the simulator)
+    * Outputs (values read from the simulator model)
+
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time. Each model can have multiple routines, each performing different objectives such as calculating optimal operation setpoints, forecasting production, benchmarking asset performance, and more.
+
+    Limitations:
+        - Each simulator model can have a maximum of 10 simulator routines
+
+    Each simulator routine can have a maximum of 10 revisions
+
+    This is the read/response format of a simulator routine.
+
+    Args:
+        id (int): A unique id of a simulator routine
+        external_id (str): External id of the simulator routine
+        simulator_external_id (str): External id of the associated simulator
+        model_external_id (str): External id of the associated simulator model
+        simulator_integration_external_id (str): External id of the associated simulator integration
+        name (str): The name of the simulator routine
+        data_set_id (int): The id of the dataset associated with the simulator routine
+        created_time (int): The time when the simulator routine was created
+        last_updated_time (int): The time when the simulator routine was last updated
+        description (str | None): The description of the simulator routine
+    """
+
     def __init__(
         self,
         id: int,
