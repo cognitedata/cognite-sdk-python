@@ -37,7 +37,7 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None) -> None:
+    def __init__(self, external_id: str, description: str | None = None) -> None:
         self.external_id = external_id
         self.description = description
 
@@ -730,7 +730,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
     def __init__(
         self,
         tasks: list[WorkflowTask],
-        description: str | None,
+        description: str | None = None,
     ) -> None:
         self.tasks = tasks
         self.description = description
@@ -766,7 +766,7 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
     def __init__(
         self,
         tasks: list[WorkflowTask],
-        description: str | None,
+        description: str | None = None,
     ) -> None:
         super().__init__(tasks, description)
 
@@ -1295,6 +1295,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
+        metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1306,6 +1307,8 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         }
         if self.input:
             item["input"] = self.input
+        if self.metadata:
+            item["metadata"] = self.metadata
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1318,6 +1321,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
             workflow_version=resource["workflowVersion"],
             trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
+            metadata=resource.get("metadata"),
         )
 
     def as_write(self) -> WorkflowTriggerUpsert:
