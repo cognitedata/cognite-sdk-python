@@ -301,6 +301,112 @@ class SimulatorIntegrationFilter(CogniteFilter):
         return super().dump(camel_case=camel_case)
 
 
+class SimulatorModelsFilter(CogniteFilter):
+    def __init__(
+        self,
+        simulator_external_ids: Sequence[str] | None = None,
+    ) -> None:
+        self.simulator_external_ids = simulator_external_ids
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+class SimulatorModelRevisionsFilter(CogniteFilter):
+    def __init__(
+        self,
+        model_external_ids: Sequence[str] | None = None,
+        all_versions: bool | None = None,
+    ) -> None:
+        self.model_external_ids = model_external_ids
+        self.all_versions = all_versions
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+class SimulatorModelRevision(CogniteResource):
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        model_external_id: str,
+        data_set_id: int,
+        file_id: int,
+        created_by_user_id: str,
+        status: str,
+        created_time: int,
+        last_updated_time: int,
+        version_number: int,
+        log_id: int,
+        description: str | None = None,
+        status_message: str | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.model_external_id = model_external_id
+        self.data_set_id = data_set_id
+        self.file_id = file_id
+        self.created_by_user_id = created_by_user_id
+        self.status = status
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.version_number = version_number
+        self.log_id = log_id
+        self.description = description
+        self.status_message = status_message
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            model_external_id=resource["modelExternalId"],
+            data_set_id=resource["dataSetId"],
+            file_id=resource["fileId"],
+            created_by_user_id=resource["createdByUserId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            version_number=resource["versionNumber"],
+            log_id=resource["logId"],
+            description=resource.get("description"),
+            status_message=resource.get("statusMessage"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+class SimulatorRoutineRevision(CogniteResource):
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        routine_external_id: str,
+        simulator_integration_external_id: str,
+        model_external_id: str,
+        data_set_id: int,
+        created_by_user_id: str,
+        version_number: int,
+        created_time: int,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.routine_external_id = routine_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.data_set_id = data_set_id
+        self.created_by_user_id = created_by_user_id
+        self.version_number = version_number
+        self.created_time = created_time
+
+
 class SimulatorModel(CogniteResource):
     def __init__(
         self,
@@ -343,6 +449,54 @@ class SimulatorModel(CogniteResource):
         return super().dump(camel_case=camel_case)
 
 
+class SimulatorRoutine(CogniteResource):
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        model_external_id: str,
+        simulator_integration_external_id: str,
+        name: str,
+        data_set_id: int,
+        created_time: int,
+        last_updated_time: int,
+        description: str | None = None,
+    ) -> None:
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.model_external_id = model_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.name = name
+        self.data_set_id = data_set_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.description = description
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            model_external_id=resource["modelExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            name=resource["name"],
+            data_set_id=resource["dataSetId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+class SimulatorRoutineList(CogniteResourceList[SimulatorRoutine]):
+    _RESOURCE = SimulatorRoutine
+
+
 class SimulatorList(CogniteResourceList[Simulator]):
     _RESOURCE = Simulator
 
@@ -353,3 +507,7 @@ class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration]):
 
 class SimulatorModelList(CogniteResourceList[SimulatorModel]):
     _RESOURCE = SimulatorModel
+
+
+class SimulatorModelRevisionList(CogniteResourceList[SimulatorModelRevision]):
+    _RESOURCE = SimulatorModelRevision

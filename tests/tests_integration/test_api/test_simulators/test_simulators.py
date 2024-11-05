@@ -35,3 +35,14 @@ class TestSimulatorModels:
         models = cognite_client.simulators.list_models(limit=5)
 
         assert len(models) > 0
+
+    def test_list_model_revisions(self, cognite_client: CogniteClient) -> None:
+        revisions = cognite_client.simulators.list_model_revisions(limit=5)
+
+        assert len(revisions) > 0
+
+
+class TestSimulatorRoutines:
+    def test_list_routines(self, cognite_client: CogniteClient) -> None:
+        routines = cognite_client.simulators.list_routines(limit=5)
+        assert len(routines) > 0
