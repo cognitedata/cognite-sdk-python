@@ -1,5 +1,5 @@
 from cognite.client import CogniteClient
-from cognite.client.data_classes.simulators.simulators import SimulatorIntegrationFilter
+from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 
 
 class TestSimulators:

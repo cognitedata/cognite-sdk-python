@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorModel,
     SimulatorModelList,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
-    SimulatorModelRevisionsFilter,
-    SimulatorModelsFilter,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
