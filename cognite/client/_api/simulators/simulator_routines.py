@@ -12,6 +12,7 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorRoutineRevisionsList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -44,7 +45,7 @@ class SimulatorRoutinesAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_models()
+                    >>> res = client.simulators.list_routines()
 
         """
         self._warning.warn()
@@ -82,7 +83,7 @@ class SimulatorRoutinesAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_models()
+                    >>> res = client.simulators.list_routine_revisions()
 
         """
         self._warning.warn()
@@ -98,4 +99,36 @@ class SimulatorRoutinesAPI(APIClient):
             else filter
             if isinstance(filter, dict)
             else None,  # fix this
+        )
+
+    def retrieve_routine_revision(
+        self, id: int | None = None, external_id: str | None = None
+    ) -> SimulatorRoutineRevision | None:
+        """`Retrieve Simulator Routine Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+
+        Retrieve Simulator Routine Revisions
+
+        Args:
+            id (int | None): The id of the simulator routine revision.
+            external_id (str | None): The external id of the simulator routine revision.
+
+        Returns:
+            SimulatorRoutineRevision | None: Requested simulator routine revision
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.retrieve_routine_revision()
+
+        """
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionsList,
+            identifiers=identifiers,
+            resource_path="/simulators/routines/revisions",
+            headers={"cdf-version": "beta"},
         )

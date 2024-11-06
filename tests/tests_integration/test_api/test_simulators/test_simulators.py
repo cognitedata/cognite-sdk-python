@@ -10,6 +10,9 @@ class TestSimulators:
 
 
 class TestSimulatorIntegrations:
+    # test list
+    # test filter
+    # test retrieve
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
         integrations = cognite_client.simulators.list_integrations(limit=5)
 
@@ -33,13 +36,21 @@ class TestSimulatorIntegrations:
 class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient) -> None:
         models = cognite_client.simulators.list_models(limit=5)
-
         assert len(models) > 0
+
+    def test_retrieve_model(self, cognite_client: CogniteClient) -> None:
+        model = cognite_client.simulators.retrieve_model(external_id="TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL")
+        assert model is not None
+        assert model.external_id == "TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL"
 
     def test_list_model_revisions(self, cognite_client: CogniteClient) -> None:
         revisions = cognite_client.simulators.list_model_revisions(limit=5)
-
         assert len(revisions) > 0
+
+    def test_retrieve_model_revision(self, cognite_client: CogniteClient) -> None:
+        model = cognite_client.simulators.retrieve_model_revision(external_id="Shower_mixer-1")
+        assert model is not None
+        assert model.external_id == "Shower_mixer-1"
 
 
 class TestSimulatorRoutines:
@@ -52,3 +63,14 @@ class TestSimulatorRoutines:
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
+
+    def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
+        revision = cognite_client.simulators.retrieve_routine_revision(external_id="ShowerMixerForTests-1")
+        assert revision is not None
+        assert revision.external_id == "ShowerMixerForTests-1"
+
+
+class TestSimulationRuns:
+    def test_list_runs(self, cognite_client: CogniteClient) -> None:
+        routines = cognite_client.simulators.list_runs(limit=5)
+        assert len(routines) > 0

@@ -12,6 +12,7 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorModelRevisionList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -62,6 +63,36 @@ class SimulatorModelsAPI(APIClient):
             else None,  # fix this
         )
 
+    def retrieve_model(self, id: int | None = None, external_id: str | None = None) -> SimulatorModel | None:
+        """`Retrieve Simulator Model <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
+
+        Get a simulator model by id/externalId
+
+        Args:
+            id (int | None): The id of the simulator model.
+            external_id (str | None): The external id of the simulator model.
+
+        Returns:
+            SimulatorModel | None: Requested simulator model
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.retrieve_model()
+
+        """
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=SimulatorModelList,
+            resource_cls=SimulatorModel,
+            identifiers=identifiers,
+            resource_path="/simulators/models",
+            headers={"cdf-version": "beta"},
+        )
+
     def list_model_revisions(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorModelRevisionList:
@@ -98,4 +129,36 @@ class SimulatorModelsAPI(APIClient):
             else filter
             if isinstance(filter, dict)
             else None,  # fix this
+        )
+
+    def retrieve_model_revision(
+        self, id: int | None = None, external_id: str | None = None
+    ) -> SimulatorModelRevision | None:
+        """`Retrieve Simulator Model Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+
+        Retrieve simulator model revisions by IDs or external IDs
+
+        Args:
+            id (int | None): The id of the simulator model revision.
+            external_id (str | None): The external id of the simulator model revision.
+
+        Returns:
+            SimulatorModelRevision | None: Requested simulator model revision
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.retrieve_model_revision()
+
+        """
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
+            identifiers=identifiers,
+            resource_path="/simulators/models/revisions",
+            headers={"cdf-version": "beta"},
         )

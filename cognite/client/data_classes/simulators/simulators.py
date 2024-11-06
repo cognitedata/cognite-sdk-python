@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -760,6 +761,108 @@ class SimulatorModel(CogniteResource):
         return super().dump(camel_case=camel_case)
 
 
+class SimulationRun(CogniteResource):
+    """
+    Every time a simulation routine executes, a simulation run object is created.
+    This object ensures that each execution of a routine is documented and traceable.
+    Each run has an associated simulation data resource, which stores the inputs and outputs of a
+    simulation run, capturing the values set into and read from the simulator model to ensure
+    the traceability and integrity of the simulation data.
+
+    Simulation runs provide a historical record of the simulations performed, allowing users to analyze
+    and compare different runs, track changes over time, and make informed decisions based on the simulation results.
+
+    Limitations:
+    * A retention policy is in place for simulation runs, allowing up to 100000 entries.
+    * Once this limit is reached, the oldest runs will be deleted to accommodate new runs.
+
+    This is the read/response format of a simulation run.
+
+    Args:
+        id (int): A unique id of a simulation run
+        simulator_external_id (str): External id of the associated simulator
+        simulator_integration_external_id (str): External id of the associated simulator integration
+        model_external_id (str): External id of the associated simulator model
+        model_revision_external_id (str): External id of the associated simulator model revision
+        routine_external_id (str): External id of the associated simulator routine
+        routine_revision_external_id (str): External id of the associated simulator routine revision
+        run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+        simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
+        status (str): The status of the simulation run
+        status_message (str | None): The status message of the simulation run
+        data_set_id (int): The id of the dataset associated with the simulation run
+        run_type (str): The type of the simulation run
+        user_id (str): The id of the user who executed the simulation run
+        log_id (int): The id of the log associated with the simulation run
+        created_time (int): The number of milliseconds since epoch
+        last_updated_time (int): The number of milliseconds since epoch
+
+    """
+
+    def __init__(
+        self,
+        id: int,
+        simulator_external_id: str,
+        simulator_integration_external_id: str,
+        model_external_id: str,
+        model_revision_external_id: str,
+        routine_external_id: str,
+        routine_revision_external_id: str,
+        run_time: int | None,
+        simulation_time: int | None,
+        status: str,
+        status_message: str | None,
+        data_set_id: int,
+        run_type: str,
+        user_id: str,
+        log_id: int,
+        created_time: int,
+        last_updated_time: int,
+    ) -> None:
+        self.id = id
+        self.simulator_external_id = simulator_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.model_revision_external_id = model_revision_external_id
+        self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.run_time = run_time
+        self.simulation_time = simulation_time
+        self.status = status
+        self.status_message = status_message
+        self.data_set_id = data_set_id
+        self.run_type = run_type
+        self.user_id = user_id
+        self.log_id = log_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            simulator_external_id=resource["simulatorExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            model_external_id=resource["modelExternalId"],
+            model_revision_external_id=resource["modelRevisionExternalId"],
+            routine_external_id=resource["routineExternalId"],
+            routine_revision_external_id=resource["routineRevisionExternalId"],
+            run_time=resource.get("runTime"),
+            simulation_time=resource.get("simulationTime"),
+            status=resource["status"],
+            status_message=resource.get("statusMessage"),
+            data_set_id=resource["dataSetId"],
+            run_type=resource["runType"],
+            user_id=resource["userId"],
+            log_id=resource["logId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
 class SimulatorRoutine(CogniteResource):
     """
     The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
@@ -857,3 +960,7 @@ class SimulatorModelList(CogniteResourceList[SimulatorModel]):
 
 class SimulatorModelRevisionList(CogniteResourceList[SimulatorModelRevision]):
     _RESOURCE = SimulatorModelRevision
+
+
+class SimulationRunsList(CogniteResourceList[SimulationRun]):
+    _RESOURCE = SimulationRun
