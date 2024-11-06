@@ -194,7 +194,13 @@ class _FullDatapointsQuery:
             f"{exp_type}, {DatapointsQuery}, or a (mixed) list of these, but got `{identifier}`."
         )
 
-    def validate(self, queries: list[DatapointsQuery], dps_limit_raw: int, dps_limit_agg: int) -> list[DatapointsQuery]:
+
+@dataclass(kw_only=True)
+class _DpsQueryValidator:
+    dps_limit_raw: int
+    dps_limit_agg: int
+
+    def __call__(self, queries: list[DatapointsQuery]) -> list[DatapointsQuery]:
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
@@ -210,9 +216,9 @@ class _FullDatapointsQuery:
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
-                query.max_query_limit = dps_limit_raw
+                query.max_query_limit = self.dps_limit_raw
             else:
-                query.max_query_limit = dps_limit_agg
+                query.max_query_limit = self.dps_limit_agg
                 if isinstance(query.aggregates, str):
                     query.aggregates = [query.aggregates]
         return queries
@@ -295,13 +301,14 @@ class _FullDatapointsQuery:
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
 
-    @staticmethod
+    @classmethod
     def _verify_time_range(
+        cls,
         query: DatapointsQuery,
         frozen_time_now: int,
     ) -> tuple[int, int]:
-        start = _FullDatapointsQuery._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
-        end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
+        start = cls._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
+        end = cls._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
                 f"Invalid time range, {end=} {f'({query.end!r}) ' if end != query.end else ''}"

@@ -27,7 +27,7 @@ from cognite.client.data_classes._base import CogniteResource, CogniteResourceLi
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import find_duplicates
-from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     concat_dps_dataframe_list,
@@ -139,12 +139,11 @@ class _DatapointsPayload(_DatapointsPayloadItem):
     ignoreUnknownIds: NotRequired[bool]
 
 
-_NOT_SET = object()
-
-
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
+
+    _NOT_SET = object()
 
     OPTIONAL_DICT_KEYS: ClassVar[frozenset[str]] = frozenset(
         {
@@ -165,7 +164,7 @@ class DatapointsQuery:
     )
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
-    instance_id: InitVar[NodeId | None] = None
+    instance_id: InitVar[NodeId | tuple[str, str] | None] = None
     start: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     end: int | str | datetime.datetime = _NOT_SET  # type: ignore [assignment]
     aggregates: Aggregate | list[Aggregate] | None = _NOT_SET  # type: ignore [assignment]
@@ -180,9 +179,15 @@ class DatapointsQuery:
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
-    def __post_init__(self, id: int | None, external_id: str | None, instance_id: NodeId | None) -> None:
+    def __post_init__(
+        self, id: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
+    ) -> None:
         # Ensure user have just specified one of id/xid:
         self._identifier = Identifier.of_either(id, external_id, instance_id)
+        if instance_id is not None:
+            # dump/load is used in parsing and it loses info of this being a NodeId (loads back as InstanceId). We need
+            # to lookup by identifier to sort (match user queries), and then InstanceId won't compare equal to NodeId:
+            self._identifier = Identifier(NodeId(*self._identifier.as_primitive().as_tuple()))
         # Store the possibly custom granularity (we support more than the API and a translation is done)
         self._original_granularity = self.granularity
 
@@ -295,7 +300,7 @@ class DatapointsQuery:
         # We need to dump only those fields specifically passed by the user:
         return {
             **self.identifier.as_dict(camel_case=False),
-            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not _NOT_SET),
+            **dict((fld.name, val) for fld in fields(self) if (val := getattr(self, fld.name)) is not self._NOT_SET),
         }
 
     @property
@@ -361,7 +366,7 @@ class LatestDatapointQuery:
 
     def __post_init__(self, id: int | None, external_id: str | None) -> None:
         # Ensure user have just specified one of id/xid:
-        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id))
+        object.__setattr__(self, "_identifier", Identifier.of_either(id, external_id, None))
 
     @property
     def identifier(self) -> Identifier:
@@ -1241,17 +1246,22 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         # Fix what happens for duplicated identifiers:
         ids = [dps.id for dps in self if dps.id is not None]
         xids = [dps.external_id for dps in self if dps.external_id is not None]
+        inst_ids = [dps.instance_id for dps in self if dps.instance_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+        dupe_inst_ids, inst_id_dct = find_duplicates(inst_ids), defaultdict(list)
 
         for dps in self:
             if (id_ := dps.id) is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
+            if (inst_id := dps.external_id) is not None and inst_id in dupe_inst_ids:
+                inst_id_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
+        self._instance_id_to_item.update(inst_id_dct)
 
     def concat_duplicate_ids(self) -> None:
         """
@@ -1296,6 +1306,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> DatapointsArray | list[DatapointsArray] | None:
         """Get a specific DatapointsArray from this list by id or external_id.
 
@@ -1305,12 +1316,13 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         Args:
             id (int | None): The id of the item(s) to get.
             external_id (str | None): The external_id of the item(s) to get.
+            instance_id (NodeId | tuple[str, str] | None): The instance_id of the item(s) to get.
 
         Returns:
             DatapointsArray | list[DatapointsArray] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)
+        return super().get(id, external_id, instance_id)
 
     def __str__(self) -> str:
         return _json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -1363,24 +1375,30 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         # Fix what happens for duplicated identifiers:
         ids = [dps.id for dps in self if dps.id is not None]
         xids = [dps.external_id for dps in self if dps.external_id is not None]
+        inst_ids = [dps.instance_id for dps in self if dps.instance_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+        dupe_inst_ids, inst_id_dct = find_duplicates(inst_ids), defaultdict(list)
 
         for dps in self:
             if (id_ := dps.id) is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
+            if (inst_id := dps.external_id) is not None and inst_id in dupe_inst_ids:
+                inst_id_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
+        self._instance_id_to_item.update(inst_id_dct)
 
     def get(  # type: ignore [override]
         self,
         id: int | None = None,
         external_id: str | None = None,
+        instance_id: InstanceId | tuple[str, str] | None = None,
     ) -> Datapoints | list[Datapoints] | None:
-        """Get a specific Datapoints from this list by id or external_id.
+        """Get a specific Datapoints from this list by id, external_id or instance_id.
 
         Note:
             For duplicated time series, returns a list of Datapoints.
@@ -1388,12 +1406,13 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         Args:
             id (int | None): The id of the item(s) to get.
             external_id (str | None): The external_id of the item(s) to get.
+            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item(s) to get.
 
         Returns:
             Datapoints | list[Datapoints] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)
+        return super().get(id, external_id, instance_id)
 
     def __str__(self) -> str:
         dumped = self.dump()

@@ -454,6 +454,109 @@ class TestTimeSeriesCreatedInDMS:
         assert dps1.value == dps2.value == numbers
 
 
+@pytest.fixture
+def queries_for_iteration():
+    # Mix of ids, external_ids, and instance_ids
+    return [
+        DatapointsQuery(
+            external_id="PYSDK integration test 039: weekly values, 1950-2000, numeric",
+            start=-39052800000,
+            end=565142400000 + 1,
+        ),
+        DatapointsQuery(
+            instance_id=NodeId(
+                space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 125: clone of 109"
+            ),
+            start=132710400000,
+        ),
+        DatapointsQuery(
+            id=1162585250935723,  # 'PYSDK integration test 089: weekly values, 1950-2000, string,
+            start=-334195200000,
+            end=270000000000 + 1,
+        ),
+        DatapointsQuery(
+            external_id="PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            start=1166400000,
+        ),
+        DatapointsQuery(
+            id=7134564432527017,  # 'PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric,
+            start=-1118,
+        ),
+        DatapointsQuery(
+            id=8856777097037888,  # 'PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric,
+            start=-111360848336,
+        ),
+        DatapointsQuery(
+            instance_id=NodeId(
+                space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 126: clone of 114"
+            ),
+            start=89356795502,
+            end=91618492299 + 1,
+        ),
+        DatapointsQuery(
+            external_id="PYSDK integration test 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            start=947678498800,
+        ),
+        DatapointsQuery(
+            instance_id=NodeId(
+                space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 127: clone of 121"
+            ),
+            start=1702252800000,
+        ),
+        DatapointsQuery(
+            id=6236123831652881,  # 'PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric,
+            start=1678924800000,
+        ),
+        DatapointsQuery(
+            external_id="PYSDK integration test 124: only bad status codes, daily values, 2023-2024, string",
+            start=1699747200000,
+        ),
+    ]
+
+
+class TestIterateDatapoints:
+    # This is for __call__, not subscriptions.
+
+    def test_iterate_datapoints(self, cognite_client, queries_for_iteration):
+        # One external id to follow through all iterations and use for asserts:
+        ts_xid = (
+            "PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric"
+        )
+
+        dps_iterator = cognite_client.time_series.data(
+            queries_for_iteration,
+            ignore_bad_datapoints=False,
+            start=MIN_TIMESTAMP_MS,
+            end=MAX_TIMESTAMP_MS,
+            chunk_size_datapoints=1_000,
+            return_arrays=False,
+        )
+        dps_lst = next(dps_iterator)
+        # First iteration, every time series is returned (all have data)
+        exp_lengths = (1000, 291, 1000, 1000, 1000, 1000, 1000, 1000, 21, 291, 50)
+        for query, dps, exp_len in zip(queries_for_iteration, dps_lst, exp_lengths):
+            # Check that the order is preserved:
+            assert query.identifier.as_primitive() == getattr(dps, query.identifier.name())
+            assert len(dps) == exp_len
+        dps = dps_lst.get(external_id=ts_xid)
+        assert (dps.timestamp[0], dps.timestamp[-1]) == (-1118, -119)
+
+        dps_lst = next(dps_iterator)
+        assert len(dps_lst) == 4  # some few time series are exhausted
+        assert list(map(len, dps_lst)) == [93, 1000, 1000, 1000]
+        assert dps_lst[0].external_id == "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric"
+        dps = dps_lst.get(external_id=ts_xid)
+        assert (dps.timestamp[0], dps.timestamp[-1]) == (-118, 881)
+
+        dps_lst = next(dps_iterator)
+        assert len(dps_lst) == 3  # another bites the dust
+        assert list(map(len, dps_lst)) == [619, 1000, 1000]
+        assert dps_lst[0].external_id == ts_xid
+
+        dps = dps_lst.get(external_id=ts_xid)
+        assert (dps.timestamp[0], dps.timestamp[-1]) == (882, 1500)
+
+
 class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endpoints should give identical results,
     except for the data container types, all tests run both endpoints except those targeting a specific bug

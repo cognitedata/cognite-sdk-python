@@ -20,6 +20,7 @@ from typing import (
     TypeGuard,
     TypeVar,
     cast,
+    overload,
 )
 
 from typing_extensions import Self
@@ -27,6 +28,7 @@ from typing_extensions import Self
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
+    _DpsQueryValidator,
     _FullDatapointsQuery,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
@@ -47,6 +49,7 @@ from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
     find_duplicates,
+    is_finite,
     split_into_chunks,
     split_into_n_parts,
     unpack_items_in_payload,
@@ -77,49 +80,26 @@ if TYPE_CHECKING:
 
 as_completed = import_as_completed()
 
-_TSQueryList = list[DatapointsQuery]
 PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
-def select_dps_fetch_strategy(dps_client: DatapointsAPI, full_query: _FullDatapointsQuery) -> DpsFetchStrategy:
-    all_queries = full_query.parse_into_queries()
-    full_query.validate(all_queries, dps_limit_raw=dps_client._DPS_LIMIT_RAW, dps_limit_agg=dps_client._DPS_LIMIT_AGG)
-    agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
-
-    # Running mode is decided based on how many time series are requested VS. number of workers:
-    if len(all_queries) <= (max_workers := dps_client._config.max_workers):
-        # Start shooting requests from the hip immediately:
-        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
-    # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
-    # guesstimation of dps density - then chunk away:
-    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
-
-
-def split_queries_into_raw_and_aggs(all_queries: _TSQueryList) -> tuple[_TSQueryList, _TSQueryList]:
-    split_qs: tuple[_TSQueryList, _TSQueryList] = [], []
-    for query in all_queries:
-        split_qs[query.is_raw_query].append(query)
-    return split_qs
-
-
 class DpsFetchStrategy(ABC):
-    def __init__(
-        self,
-        dps_client: DatapointsAPI,
-        all_queries: _TSQueryList,
-        agg_queries: _TSQueryList,
-        raw_queries: _TSQueryList,
-        max_workers: int,
-    ) -> None:
+    def __init__(self, dps_client: DatapointsAPI, all_queries: list[DatapointsQuery], max_workers: int) -> None:
         self.dps_client = dps_client
         self.all_queries = all_queries
-        self.agg_queries = agg_queries
-        self.raw_queries = raw_queries
+        self.agg_queries, self.raw_queries = self.split_queries(all_queries)
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
+
+    @staticmethod
+    def split_queries(all_queries: list[DatapointsQuery]) -> tuple[list[DatapointsQuery], list[DatapointsQuery]]:
+        split_qs: tuple[list[DatapointsQuery], list[DatapointsQuery]] = [], []
+        for query in all_queries:
+            split_qs[query.is_raw_query].append(query)
+        return split_qs
 
     def fetch_all_datapoints(self) -> DatapointsList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
@@ -324,9 +304,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _create_initial_tasks(
         self, pool: ThreadPoolExecutor
-    ) -> tuple[dict[DatapointsQuery, int], dict[Future, tuple[_TSQueryList, _TSQueryList]]]:
+    ) -> tuple[dict[DatapointsQuery, int], dict[Future, tuple[list[DatapointsQuery], list[DatapointsQuery]]]]:
         initial_query_limits: dict[DatapointsQuery, int] = {}
-        initial_futures_dct: dict[Future, tuple[_TSQueryList, _TSQueryList]] = {}
+        initial_futures_dct: dict[Future, tuple[list[DatapointsQuery], list[DatapointsQuery]]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `_FETCH_TS_LIMIT * max_workers`):
         n_queries = max(self.max_workers, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
@@ -351,7 +331,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     def _create_ts_tasks_and_handle_missing(
         self,
         res: Sequence[DataPointListItem],
-        chunk_queues: tuple[_TSQueryList, _TSQueryList],
+        chunk_queues: tuple[list[DatapointsQuery], list[DatapointsQuery]],
         initial_query_limits: dict[DatapointsQuery, int],
         use_numpy: bool,
     ) -> tuple[dict[DatapointsQuery, BaseTaskOrchestrator], set[DatapointsQuery]]:
@@ -489,9 +469,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     @staticmethod
     def _handle_missing_ts(
         res: Sequence[DataPointListItem],
-        agg_queries: _TSQueryList,
-        raw_queries: _TSQueryList,
-    ) -> tuple[tuple[_TSQueryList, _TSQueryList], set[DatapointsQuery]]:
+        agg_queries: list[DatapointsQuery],
+        raw_queries: list[DatapointsQuery],
+    ) -> tuple[tuple[list[DatapointsQuery], list[DatapointsQuery]], set[DatapointsQuery]]:
         to_raise = set()
         not_missing = {("id", r.id) for r in res}.union(("externalId", r.externalId) for r in res)
         for query in chain(agg_queries, raw_queries):
@@ -516,6 +496,244 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
+
+        self.query_validator = _DpsQueryValidator(dps_limit_raw=self._DPS_LIMIT_RAW, dps_limit_agg=self._DPS_LIMIT_AGG)
+
+    @overload
+    def __call__(
+        self,
+        queries: DatapointsQuery,
+        *,
+        return_arrays: Literal[True],
+    ) -> Iterator[DatapointsArray]: ...
+
+    @overload
+    def __call__(
+        self,
+        queries: Sequence[DatapointsQuery],
+        *,
+        return_arrays: Literal[True],
+    ) -> Iterator[DatapointsArrayList]: ...
+
+    @overload
+    def __call__(
+        self,
+        queries: DatapointsQuery,
+        *,
+        return_arrays: Literal[False],
+    ) -> Iterator[Datapoints]: ...
+
+    @overload
+    def __call__(
+        self,
+        queries: Sequence[DatapointsQuery],
+        *,
+        return_arrays: Literal[False],
+    ) -> Iterator[DatapointsList]: ...
+
+    def __call__(
+        self,
+        queries: DatapointsQuery | Sequence[DatapointsQuery],
+        *,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        chunk_size_datapoints: int = 100_000,
+        chunk_size_time_series: int | None = None,
+        return_arrays: bool = True,
+    ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
+        """`Iterate through datapoints in chunks, for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+
+        Note:
+            Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
+            how many datapoints to yield per iteration. Note that in order to make efficient use of the API request limits, this method will never hold
+            less than 100k datapoints in memory at a time, per time series.
+
+            If you run with memory constraints, use ``return_arrays=True`` (the default).
+
+            No empty chunk will ever be returned.
+
+        Args:
+            queries (DatapointsQuery | Sequence[DatapointsQuery]): Query, or queries, using id, external_id or instance_id for time series to fetch data for. Individual settings in the DatapointsQuery take precedence over top-level settings. The options 'limit' and 'include_outside_points' are not supported.
+            start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
+            timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
+            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
+            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
+            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
+            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            chunk_size_datapoints (int): The number of datapoints per time series to yield per iteration. Must evenly divide 100k OR be an integer multiple of 100k. Default: 100_000.
+            chunk_size_time_series (int | None): The max number of time series to yield per iteration (varies as time series get exhausted, but is always at least 1). Default: None (all given queries are returned).
+            return_arrays (bool): Whether to return the datapoints as numpy arrays. Default: True.
+
+        Yields:
+            DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList: If return_arrays=True, a ``DatapointsArray`` object containing the datapoints chunk, or a ``DatapointsArrayList`` if multiple time series were asked for. When False, a ``Datapoints`` object containing the datapoints chunk, or a ``DatapointsList`` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, iteration will quit.
+
+        Examples:
+
+            BACKUP: DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList:
+            Iterate through the datapoints of a single time series with external_id="foo", in chunks of 25k:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DatapointsQuery
+                >>> client = CogniteClient()
+                >>> query = DatapointsQuery(external_id="foo", start="2w-ago")
+                >>> for chunk in client.time_series.data(query, chunk_size=25_000)
+                ...     pass  # do something with the datapoints chunk
+
+            Iterate through datapoints from multiple time series, and do not return them as numpy arrays. As one or more time
+            series get exhausted (no more data), they are no longer part of the returned "chunk list", but the order is
+            still preserved (for the remaining).
+
+            If you run with ``chunk_size_time_series=None``, an easy way to check is to use the ``.get`` method, as illustrated below:
+
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> queries = [
+                ...     DatapointsQuery(id=123),
+                ...     DatapointsQuery(external_id="foo"),
+                ...     DatapointsQuery(instance_id=NodeId("my-space", "my-ts-xid"))
+                ... ]
+                >>> for chunk_lst in client.time_series.data(query, return_arrays=False):
+                ...     if chunk_lst.get(id=2) is None:
+                ...         print("Time series with id=2 has no more datapoints!")
+
+            A likely use case for iterating datapoints is to clone data from one project to another, while keeping a low memory
+            footprint and without having to write very custom logic involving count aggregates (which won't work for string data)
+            and time domain splitting.
+
+            Here's an example of how to do so efficiently, while not ignoring bad and uncertain data (``ignore_bad_datapoints=False``)
+            and copying status codes (automatically taken care of when requested, ``include_status=True``). The only assumption is that
+            the time series are already created in the target project.
+
+                >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
+                >>> target_client = CogniteClient(...)
+                >>> to_copy = client.time_series.list(data_set_external_ids="my-use-case")
+                >>> queries = [DatapointsQuery(external_id=ts.external_id) for ts in to_copy]
+                >>> for dps_chunk in client.time_series.data(
+                ...     queries,  # may be several thousand time series...
+                ...     chunk_size_time_series=20,  # control memory usage by specifying how many to iterate at a time
+                ...     chunk_size_datapoints=100_000,
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ...     start=MIN_TIMESTAMP_MS,
+                ...     end=MAX_TIMESTAMP_MS + 1,  # end is exclusive
+                ... ):
+                ...     target_client.time_series.data.insert_multiple(
+                ...         [{"external_id": dps.external_id, "datapoints": dps} for dps in dps_chunk]
+                ...     )
+
+        """
+        # To make efficient usage of the API, we don't want a chunk size like 10 to send a million API requests when we can
+        # get 10k/100k datapoints per request. Thus, we round up the given chunk size to the nearest integer multiple of 100k,
+        # then subdivide and yield client-side (we use the raw limit also when dealing with aggregates):
+        request_limit = self._DPS_LIMIT_RAW * math.ceil(chunk_size_datapoints / self._DPS_LIMIT_RAW)
+        if (
+            not is_finite(chunk_size_datapoints)
+            or chunk_size_datapoints != request_limit
+            and request_limit % chunk_size_datapoints
+        ):
+            raise ValueError(
+                "The 'chunk_size_datapoints' must be a positive integer that evenly divides 100k OR an integer multiple of 100k "
+                f"(to ensure efficient API usage), not {chunk_size_datapoints}."
+            )
+        chunk_fn = functools.partial(split_into_chunks, chunk_size=chunk_size_datapoints)
+
+        if not (chunk_size_time_series is None or is_finite(chunk_size_time_series)):
+            raise ValueError(
+                f"'chunk_size_time_series' must be a positive integer or None, not {chunk_size_time_series}"
+            )
+
+        user_queries = [queries] if (is_single := isinstance(queries, DatapointsQuery)) else queries
+        dps_lst_cls: type[DatapointsArrayList | DatapointsList] = (
+            DatapointsArrayList if return_arrays else DatapointsList
+        )
+
+        # Note: Next major we should remove id/xid/instance_id from the other retrieve methods and just accept queries:
+        qs_per_id_type = defaultdict(list)
+        for q in user_queries:
+            qs_per_id_type[q.identifier.name()].append(q)
+
+            if q.include_outside_points is True or q.limit is not DatapointsQuery._NOT_SET:
+                raise ValueError(
+                    "When iterating datapoints, the options 'include_outside_points' and 'limit' are not supported."
+                )
+
+        for ident_type, queries in qs_per_id_type.items():
+            if dupes := find_duplicates(q.identifier.as_primitive() for q in queries):
+                raise ValueError(
+                    f"When iterating datapoints, identifiers must be unique! Duplicates found for {ident_type}: {dupes}"
+                )
+        original_order = [q.identifier for q in user_queries]
+
+        parsed_queries = _FullDatapointsQuery(
+            start=start,
+            end=end,
+            id=qs_per_id_type["id"],
+            external_id=qs_per_id_type["external_id"],
+            instance_id=qs_per_id_type["instance_id"],
+            aggregates=aggregates,
+            granularity=granularity,
+            timezone=timezone,
+            target_unit=target_unit,
+            target_unit_system=target_unit_system,
+            limit=request_limit,
+            include_outside_points=False,
+            ignore_unknown_ids=ignore_unknown_ids,
+            include_status=include_status,
+            ignore_bad_datapoints=ignore_bad_datapoints,
+            treat_uncertain_as_bad=treat_uncertain_as_bad,
+        ).parse_into_queries()
+        self.query_validator(parsed_queries)
+        alive_queries = {q.identifier: q for q in parsed_queries}
+        alive_queries = {ident: alive_queries[ident] for ident in original_order}  # ..and sort
+
+        while alive_queries:
+            to_fetch_queries = list(itertools.islice(alive_queries.values(), chunk_size_time_series))
+            fetcher = self._select_dps_fetch_strategy(to_fetch_queries)(
+                self, to_fetch_queries, self._config.max_workers
+            )
+            dps_lst: DatapointsArrayList | DatapointsList = (
+                fetcher.fetch_all_datapoints_numpy() if return_arrays else fetcher.fetch_all_datapoints()
+            )
+            for query in to_fetch_queries:
+                ident = query.identifier
+                dps = dps_lst.get(**ident.as_dict(camel_case=False))
+                # Update query.start for next iteration if ts is not yet exhausted:
+                if dps and len(dps) == request_limit:
+                    new_start = cast(int, dps[-1].timestamp) + 1
+                    if query.end_ms > new_start:
+                        query.start = new_start  # manual cursoring ftw
+                        continue
+                alive_queries.pop(ident)
+
+            # We should never yield an empty chunk, so we filter out empty or exhausted time series from result
+            # (need to rebuild to not keep references to those empty in various private "id lookups")
+            dps_lst = dps_lst_cls(list(filter(None, dps_lst)), cognite_client=self._cognite_client)
+            if not any(dps_lst):
+                if alive_queries:
+                    continue
+                break
+
+            if chunk_size_datapoints == request_limit:
+                yield dps_lst[0] if is_single else dps_lst  # type: ignore [return-value]
+            elif is_single:
+                yield from chunk_fn(dps_lst[0])  # type: ignore [misc]
+            else:
+                for all_chunks in itertools.zip_longest(*map(chunk_fn, dps_lst)):
+                    # Filter out dps as ts get exhausted, then rebuild the Dps(Array)List container and yield chunk:
+                    yield dps_lst_cls(list(filter(None, all_chunks)), cognite_client=self._cognite_client)  # type: ignore [return-value]
 
     def retrieve(
         self,
@@ -744,8 +962,10 @@ class DatapointsAPI(APIClient):
             ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, full_query=query)
-        dps_lst = fetcher.fetch_all_datapoints()
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(
+            self, parsed_queries, self._config.max_workers
+        ).fetch_all_datapoints()
 
         if not query.is_single_identifier:
             return dps_lst
@@ -872,9 +1092,11 @@ class DatapointsAPI(APIClient):
             ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, full_query=query)
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(
+            self, parsed_queries, self._config.max_workers
+        ).fetch_all_datapoints_numpy()
 
-        dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_lst
         elif not dps_lst:
@@ -1008,7 +1230,8 @@ class DatapointsAPI(APIClient):
             ignore_bad_datapoints=ignore_bad_datapoints,
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
-        fetcher = select_dps_fetch_strategy(self, full_query=query)
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries, self._config.max_workers)
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
@@ -1544,6 +1767,15 @@ class DatapointsAPI(APIClient):
             else:
                 dps.append({"datapoints": datapoints, "id": int(column_id)})
         self.insert_multiple(dps)
+
+    def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
+        # Running mode is decided based on how many time series are requested VS. number of workers:
+        if len(queries) <= self._config.max_workers:
+            # Start shooting requests from the hip immediately:
+            return EagerDpsFetcher
+        # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
+        # guesstimation of dps density - then chunk away:
+        return ChunkingDpsFetcher
 
 
 class _InsertDatapoint(NamedTuple):

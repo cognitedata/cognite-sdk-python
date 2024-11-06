@@ -206,6 +206,11 @@ def split_into_chunks(
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
+    from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray
+
+    if isinstance(collection, (DatapointsArray, Datapoints)):
+        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
+
     raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 

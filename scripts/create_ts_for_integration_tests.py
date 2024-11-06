@@ -42,6 +42,12 @@ SPARSE_NAMES = [
     "PYSDK integration test 118: single dp at 2099-12-31 23:59:59.999, numeric",
 ]
 
+NAMES_USING_INSTANCE_ID = [
+    "125: same as 114",
+    "126: same as 121",
+    "127: only bad status codes, daily values, 2023-2024, string",
+]
+
 
 def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
     np.random.seed(seed)
