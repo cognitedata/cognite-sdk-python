@@ -23,7 +23,7 @@ from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
-from cognite.client._api.simulators import SimulatorsAPI
+from cognite.client._api.simulators.simulators import SimulatorsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI

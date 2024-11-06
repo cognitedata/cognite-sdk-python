@@ -22,7 +22,7 @@ class SimulatorIntegrationsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list_integrations(
+    def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
         filter: SimulatorIntegrationFilter | dict[str, Any] | None = None,

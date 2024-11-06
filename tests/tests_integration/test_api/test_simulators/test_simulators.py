@@ -1,5 +1,63 @@
+import pytest
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+from tests.tests_integration.test_api.test_simulators.seed.data import (
+    simulator,
+    simulator_integration,
+    simulator_model,
+    simulator_model_revision,
+    simulator_routine,
+    simulator_routine_revision,
+)
+
+
+@pytest.fixture
+def add_simulator_resoures(cognite_client: CogniteClient) -> None:
+    simulator_external_id = "integration_tests_workflow"
+    simulator_model_file_external_id = "ShowerMixer_simulator_model_file"
+
+    file = cognite_client.files.upload(
+        path="tests/tests_integration/test_api/test_simulators/seed/data/ShowerMixer.dwxmz",
+        external_id=simulator_model_file_external_id,
+        name="ShowerMixer.dwxmz",
+        data_set_id=97552494921583,
+    )
+
+    resources = [
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators", "seed": simulator},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
+            "seed": simulator_integration,
+        },
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models", "seed": simulator_model},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
+            "seed": {**simulator_model_revision, "fileId": file.id},
+        },
+        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines", "seed": simulator_routine},
+        {
+            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
+            "seed": simulator_routine_revision,
+        },
+    ]
+
+    for resource in resources:
+        cognite_client.post(
+            resource["url"],
+            json={"items": [resource["seed"]]},
+            headers={"cdf-version": "alpha"},
+        )
+
+    yield None
+
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+        json={"items": [{"externalId": simulator_external_id}]},
+        headers={"cdf-version": "alpha"},
+    )
+
+    cognite_client.files.delete(external_id=simulator_model_file_external_id)
 
 
 class TestSimulators:
@@ -14,16 +72,16 @@ class TestSimulatorIntegrations:
     # test filter
     # test retrieve
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
-        integrations = cognite_client.simulators.list_integrations(limit=5)
+        integrations = cognite_client.simulators.integrations.list(limit=5)
 
         assert len(integrations) > 0
 
     def test_filter_integrations(self, cognite_client: CogniteClient) -> None:
-        all_integrations = cognite_client.simulators.list_integrations()
-        active_integrations = cognite_client.simulators.list_integrations(
+        all_integrations = cognite_client.simulators.integrations.list()
+        active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
         )
-        dwsim_integrations = cognite_client.simulators.list_integrations(
+        dwsim_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(simulator_external_ids=["DWSIM"])
         )
 
@@ -35,42 +93,42 @@ class TestSimulatorIntegrations:
 
 class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient) -> None:
-        models = cognite_client.simulators.list_models(limit=5)
+        models = cognite_client.simulators.models.list(limit=5)
         assert len(models) > 0
 
     def test_retrieve_model(self, cognite_client: CogniteClient) -> None:
-        model = cognite_client.simulators.retrieve_model(external_id="TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL")
+        model = cognite_client.simulators.models.retrieve(external_id="TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL")
         assert model is not None
         assert model.external_id == "TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL"
 
     def test_list_model_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.list_model_revisions(limit=5)
+        revisions = cognite_client.simulators.models.list_revisions(limit=5)
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient) -> None:
-        model = cognite_client.simulators.retrieve_model_revision(external_id="Shower_mixer-1")
+        model = cognite_client.simulators.models.retrieve_revision(external_id="Shower_mixer-1")
         assert model is not None
         assert model.external_id == "Shower_mixer-1"
 
 
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:
-        routines = cognite_client.simulators.list_routines(limit=5)
+        routines = cognite_client.simulators.routines.list(limit=5)
         assert len(routines) > 0
 
     def test_list_routine_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.list_routine_revisions(limit=5)
+        revisions = cognite_client.simulators.routines.list_revisions(limit=5)
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
 
     def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
-        revision = cognite_client.simulators.retrieve_routine_revision(external_id="ShowerMixerForTests-1")
+        revision = cognite_client.simulators.routines.retrieve_revision(external_id="ShowerMixerForTests-1")
         assert revision is not None
         assert revision.external_id == "ShowerMixerForTests-1"
 
 
 class TestSimulationRuns:
     def test_list_runs(self, cognite_client: CogniteClient) -> None:
-        routines = cognite_client.simulators.list_runs(limit=5)
+        routines = cognite_client.simulators.runs.list(limit=5)
         assert len(routines) > 0

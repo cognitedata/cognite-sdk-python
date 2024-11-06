@@ -19,7 +19,7 @@ class SimulatorRunsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list_runs(
+    def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulationRunsFilter | dict[str, Any] | None = None
     ) -> SimulationRunsList:
         """`Filter simulation runs <https://api-docs.cogheim.net/redoc/#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
@@ -39,7 +39,7 @@ class SimulatorRunsAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_runs()
+                    >>> res = client.simulators.list()
 
         """
         self._warning.warn()
