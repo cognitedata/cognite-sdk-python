@@ -79,8 +79,8 @@ class ValueFormat(JobFormat):
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> ValueFormat:
         return cls(
-            encoding=resource.get("encoding", None),
-            compression=resource.get("compression", None),
+            encoding=resource.get("encoding"),
+            compression=resource.get("compression", "gzip"),
             prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
         )
 
@@ -101,7 +101,7 @@ class RockwellFormat(JobFormat):
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> RockwellFormat:
         return cls(
-            encoding=resource.get("encoding", None),
+            encoding=resource.get("encoding"),
             compression=resource.get("compression", "gzip"),
             prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
         )
