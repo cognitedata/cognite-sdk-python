@@ -73,14 +73,14 @@ class Prefix(CogniteObject):
 class ValueFormat(JobFormat):
     _type = "value"
     encoding: Literal["utf16", "utf16le"] | None = None
-    compression: str | None = "gzip"
+    compression: str | None = None
     prefix: Prefix | None = None
 
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> ValueFormat:
         return cls(
             encoding=resource.get("encoding"),
-            compression=resource.get("compression", "gzip"),
+            compression=resource.get("compression"),
             prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
         )
 
@@ -95,14 +95,14 @@ class ValueFormat(JobFormat):
 class RockwellFormat(JobFormat):
     _type = "rockwell"
     encoding: Literal["utf16", "utf16le"] | None = None
-    compression: str | None = "gzip"
+    compression: str | None = None
     prefix: Prefix | None = None
 
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> RockwellFormat:
         return cls(
             encoding=resource.get("encoding"),
-            compression=resource.get("compression", "gzip"),
+            compression=resource.get("compression"),
             prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
         )
 
@@ -118,13 +118,13 @@ class CustomFormat(JobFormat):
     _type = "custom"
     mapping_id: str
     encoding: Literal["utf16", "utf16le"] | None = None
-    compression: str | None = "gzip"
+    compression: str | None = None
 
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> CustomFormat:
         return cls(
             encoding=resource.get("encoding", None),
-            compression=resource.get("compression", "gzip"),
+            compression=resource.get("compression"),
             mapping_id=resource["mappingId"],
         )
 
@@ -133,14 +133,14 @@ class CustomFormat(JobFormat):
 class CogniteFormat(JobFormat):
     _type = "cognite"
     encoding: Literal["utf16", "utf16le"] | None = None
-    compression: str | None = "gzip"
+    compression: str | None = None
     prefix: Prefix | None = None
 
     @classmethod
     def _load_job(cls, resource: dict[str, Any]) -> CogniteFormat:
         return cls(
             encoding=resource.get("encoding", None),
-            compression=resource.get("compression", "gzip"),
+            compression=resource.get("compression"),
             prefix=Prefix._load(resource["prefix"]) if "prefix" in resource else None,
         )
 
