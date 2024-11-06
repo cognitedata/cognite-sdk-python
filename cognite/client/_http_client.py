@@ -4,8 +4,9 @@ import functools
 import random
 import socket
 import time
+from collections.abc import Callable, Iterable, MutableMapping
 from http import cookiejar
-from typing import Any, Callable, Iterable, Literal, MutableMapping
+from typing import Any, Literal
 
 import requests
 import requests.adapters

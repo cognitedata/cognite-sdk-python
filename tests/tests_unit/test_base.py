@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
@@ -37,6 +37,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
+from cognite.client.data_classes.postgres_gateway import User, UserList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -196,7 +197,7 @@ class TestCogniteObject:
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
-            if cls not in {Destination} and not issubclass(cls, Source)
+            if cls not in {Destination, User} and not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
@@ -214,7 +215,7 @@ class TestCogniteObject:
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             for cls in all_concrete_subclasses(WriteableCogniteResourceList)
-            if cls not in [EdgeListWithCursor, NodeListWithCursor, SourceList, DestinationList]
+            if cls not in {EdgeListWithCursor, NodeListWithCursor, SourceList, DestinationList, UserList}
         ],
     )
     def test_writable_list_as_write(
@@ -304,8 +305,7 @@ class TestCogniteObject:
             seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
 
-        dumped = instance.dump(camel_case=True)
-        yaml_serialised = yaml.safe_dump(dumped)
+        yaml_serialised = instance.dump_yaml()
         loaded = instance.load(yaml_serialised, cognite_client=cognite_mock_client_placeholder)
 
         assert loaded.dump() == instance.dump()

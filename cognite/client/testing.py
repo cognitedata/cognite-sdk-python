@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
@@ -36,6 +37,8 @@ from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
+from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -149,6 +152,9 @@ class CogniteClientMock(MagicMock):
         self.hosted_extractors.destinations = MagicMock(spec_set=DestinationsAPI)
         self.hosted_extractors.jobs = MagicMock(spec_set=JobsAPI)
         self.hosted_extractors.mappings = MagicMock(spec_set=MappingsAPI)
+
+        self.postgres_gateway = MagicMock(spec=PostgresGatewaysAPI)
+        self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)

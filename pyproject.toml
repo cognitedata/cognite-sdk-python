@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "7.62.6"
+version = "7.64.7"
 description = "Cognite Python SDK"
 readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
@@ -19,31 +19,21 @@ packages = [{ include="cognite", from="." }]
 "scripts/*" = ["T201"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 
 requests = "^2.27"
 requests_oauthlib = "^1"
-msal = "^1"
+msal = "^1.31"
 protobuf = ">=4"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
 backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9" }
 # Windows does not have a ANSI database and need tzdata... pyodide also needs it:
 tzdata = { version = ">=2024.1", markers = "platform_system == 'Windows' or platform_system == 'Emscripten'" }
-numpy = [
-    { version = ">=1.20, <1.25", python = "~3.8", optional = true },
-    { version = "^1.25", python = ">=3.9, <3.12", optional = true },
-    { version = "^1.26", python = "^3.12", optional = true },
-]
+numpy = { version = ">=1.25", optional = true }
 sympy = { version = "*", optional = true }
-pandas = [
-    { version = ">=1.4, <2.1", python = "~3.8", optional = true },
-    { version = ">=2.1", python = ">=3.9", optional = true },
-]
-geopandas = [
-    { version = ">=0.10, <0.14", python = "~3.8", optional = true },
-    { version = ">=0.14", python = ">=3.9", optional = true },
-]
+pandas = { version = ">=2.1", optional = true }
+geopandas = { version = ">=0.14", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 pyodide-http = { version = "^0.2.1", optional = true }
 graphlib-backport = { version = "^1.0.0", python = "<3.9" }

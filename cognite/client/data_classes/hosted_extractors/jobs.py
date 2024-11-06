@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
@@ -310,7 +310,7 @@ class _JobCore(WriteableCogniteResource["JobWrite"]):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["format"] = self.format.dump(camel_case)
-        if isinstance(self.config, JobConfig):
+        if self.config is not None:
             output["config"] = self.config.dump(camel_case)
         return output
 
@@ -476,7 +476,7 @@ class JobLogs(CogniteResource):
 
     Args:
         job_external_id (str): The external ID of the job.
-        type (Literal["paused", "startup_error", "connection_error", "connected", "transform_error", "cdf_write_error", "ok"]): Type of log entry.
+        type (Literal['paused', 'startup_error', 'connection_error', 'connected', 'transform_error', 'cdf_write_error', 'ok']): Type of log entry.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         message (str | None): Log message. Not all log entries have messages.
 

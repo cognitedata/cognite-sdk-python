@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Tuple, Union, overload
-from urllib.parse import quote
-
-from typing_extensions import TypeAlias
+from collections.abc import Iterator, MutableSequence
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -31,6 +28,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -42,8 +40,8 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
     from cognite.client.data_classes import ClientCredentials
 
-WorkflowIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str], str]
-WorkflowVersionIdentifier: TypeAlias = Union[WorkflowVersionId, Tuple[str, str]]
+WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
+WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
 
 
 def wrap_workflow_ids(
@@ -232,7 +230,7 @@ class WorkflowTaskAPI(APIClient):
 
         Args:
             task_id (str): The server-generated id of the task.
-            status (Literal["completed", "failed"]): The new status of the task. Must be either 'completed' or 'failed'.
+            status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
         Returns:
@@ -398,7 +396,10 @@ class WorkflowExecutionAPI(APIClient):
         if metadata is not None:
             body["metadata"] = metadata
 
-        response = self._post(url_path=f"/workflows/{workflow_external_id}/versions/{version}/run", json=body)
+        response = self._post(
+            url_path=interpolate_and_url_encode("/workflows/{}/versions/{}/run", workflow_external_id, version),
+            json=body,
+        )
         return WorkflowExecution._load(response.json())
 
     def list(
@@ -678,7 +679,7 @@ class WorkflowVersionAPI(APIClient):
         """
         try:
             response = self._get(
-                url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
+                url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", workflow_external_id, version)
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -823,7 +824,7 @@ class WorkflowAPI(APIClient):
                 >>> res = client.workflows.retrieve("my workflow")
         """
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
+            response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", external_id))
         except CogniteAPIError as e:
             if e.code == 404:
                 return None

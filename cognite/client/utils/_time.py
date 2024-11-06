@@ -5,20 +5,16 @@ import functools
 import math
 import numbers
 import re
-import sys
 import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from itertools import pairwise
 from typing import TYPE_CHECKING, cast, overload
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-else:
-    from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 if TYPE_CHECKING:
     from datetime import tzinfo
@@ -75,7 +71,7 @@ _GRANULARITY_CONVERSION = {
 
 @functools.lru_cache(1)
 def get_zoneinfo_utc() -> ZoneInfo:
-    return ZoneInfo("UTC")  # type: ignore [abstract]
+    return ZoneInfo("UTC")
 
 
 def parse_str_timezone_offset(tz: str) -> timezone:
@@ -96,7 +92,7 @@ def parse_str_timezone_offset(tz: str) -> timezone:
 
 def parse_str_timezone(tz: str) -> timezone | ZoneInfo:
     try:
-        return ZoneInfo(tz)  # type: ignore [abstract]
+        return ZoneInfo(tz)
     except ZoneInfoNotFoundError:
         try:
             return parse_str_timezone_offset(tz)
@@ -613,7 +609,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
             "end": end.to_pydatetime().astimezone(UTC),
             "granularity": f"{_check_max_granularity_limit((end - start) // timedelta(hours=1), granularity)}h",
         }
-        for start, end in zip(index[:-1], index[1:])
+        for start, end in pairwise(index)
     ]
 
 
@@ -630,7 +626,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     transitions = []
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
-    for t_start, t_end in zip(transition_raw[:-1], transition_raw[1:]):
+    for t_start, t_end in pairwise(transition_raw):
         if t_start.dst() == t_end.dst():
             dst_adjustment = 0
         elif t_start.dst() == hour and t_end.dst() == zero:
@@ -697,7 +693,7 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
         return True
     with suppress(ValueError, ZoneInfoNotFoundError):
         # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
-        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):  # type: ignore [abstract]
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
             return True
     return False
 
@@ -717,7 +713,7 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
 
     pd = local_import("pandas")
     if isinstance(start, pd.Timestamp):
-        return ZoneInfo(str(start_tz))  # type: ignore [abstract]
+        return ZoneInfo(str(start_tz))
 
     raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 

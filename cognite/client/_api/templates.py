@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, List, Sequence, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -145,9 +146,9 @@ class TemplateGroupsAPI(APIClient):
         path = self._RESOURCE_PATH + "/upsert"
         is_single = not isinstance(template_groups, list)
         if is_single:
-            template_groups_processed: list[TemplateGroup] = cast(List[TemplateGroup], [template_groups])
+            template_groups_processed: list[TemplateGroup] = cast(list[TemplateGroup], [template_groups])
         else:
-            template_groups_processed = cast(List[TemplateGroup], template_groups)
+            template_groups_processed = cast(list[TemplateGroup], template_groups)
         updated = self._post(
             path, {"items": [item.dump(camel_case=True) for item in template_groups_processed]}
         ).json()["items"]

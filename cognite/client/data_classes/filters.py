@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Mapping, NoReturn, Sequence, Tuple, Union, cast, final
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference: TypeAlias = Union[str, Tuple[str, ...], List[str], EnumProperty]
+PropertyReference: TypeAlias = str | tuple[str, ...] | list[str] | EnumProperty
 
-RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
+RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId
 
 
 @dataclass
@@ -30,8 +30,8 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
-FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
+FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
+FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
@@ -42,6 +42,9 @@ def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
 
     elif isinstance(value, ParameterValue):
         return {"parameter": value.parameter}
+
+    elif isinstance(value, InstanceId):
+        return value.dump(include_instance_type=False)
 
     elif hasattr(value, "dump"):
         return value.dump()
@@ -174,10 +177,10 @@ class Filter(ABC):
                 property=filter_body["property"],
                 geometry=Geometry.load(filter_body["geometry"]),
             )
-        elif (filter_body := filter_.get(SpaceFilter._filter_name)) is not None:
+        elif (filter_body := filter_.get(InAssetSubtree._filter_name)) is not None:
             return InAssetSubtree(
                 property=filter_body["property"],
-                value=_load_filter_value(filter_body["value"]),
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
         elif (filter_body := filter_.get(Search._filter_name)) is not None:
             return Search(
@@ -202,6 +205,21 @@ class Filter(ABC):
             for filter_ in self._filters:
                 output.update(filter_._involved_filter_types())
         return output
+
+    def _list_filters_without_nesting(self, other: Filter, operator: type[CompoundFilter]) -> list[Filter]:
+        filters: list[Filter] = []
+        filters.extend(self._filters) if isinstance(self, operator) else filters.append(self)
+        filters.extend(other._filters) if isinstance(other, operator) else filters.append(other)
+        return filters
+
+    def __and__(self, other: Filter) -> And:
+        return And(*self._list_filters_without_nesting(other, And))
+
+    def __or__(self, other: Filter) -> Or:
+        return Or(*self._list_filters_without_nesting(other, Or))
+
+    def __invert__(self) -> Not:
+        return Not(self)
 
 
 class UnknownFilter(Filter):
@@ -254,11 +272,13 @@ def _validate_filter(
 
 
 class CompoundFilter(Filter, ABC):
-    _filter_name = "compound"
+    _filter_name: str
 
     def __init__(self, *filters: Filter) -> None:
         if not_flt := [flt for flt in filters if not isinstance(flt, Filter)]:
             raise TypeError(f"One or more invalid filters, expected Filter, got: {not_flt}")
+        if not filters:
+            raise TypeError("At least one filter must be provided")
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -266,7 +286,7 @@ class CompoundFilter(Filter, ABC):
 
 
 class FilterWithProperty(Filter, ABC):
-    _filter_name = "propertyFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference) -> None:
         self._property = property
@@ -279,7 +299,7 @@ class FilterWithProperty(Filter, ABC):
 
 
 class FilterWithPropertyAndValue(FilterWithProperty, ABC):
-    _filter_name = "propertyAndValueFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference, value: FilterValue) -> None:
         super().__init__(property)
@@ -290,7 +310,7 @@ class FilterWithPropertyAndValue(FilterWithProperty, ABC):
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
-    _filter_name = "propertyAndValueListFilter"
+    _filter_name: str
 
     def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
         super().__init__(property)
@@ -323,6 +343,10 @@ class And(CompoundFilter):
             >>> flt = And(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "&" operator:
+
+            >>> flt = Equals("age", 42) & Equals("name", "Alice")
     """
 
     _filter_name = "and"
@@ -350,6 +374,10 @@ class Or(CompoundFilter):
             >>> flt = Or(
             ...     Equals(my_view.as_property_ref("some_property"), 42),
             ...     In(my_view.as_property_ref("another_property"), ["a", "b", "c"]))
+
+        Using the "|" operator:
+
+            >>> flt = Equals("name", "Bob") | Equals("name", "Alice")
     """
 
     _filter_name = "or"
@@ -375,9 +403,16 @@ class Not(CompoundFilter):
 
             >>> is_42 = Equals(my_view.as_property_ref("some_property"), 42)
             >>> flt = Not(is_42)
+
+        Using the "~" operator:
+
+            >>> flt = ~Equals("name", "Bob")
     """
 
     _filter_name = "not"
+
+    def __init__(self, filter: Filter) -> None:
+        super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return self._filters[0].dump(camel_case_property)
@@ -790,7 +825,27 @@ class GeoJSONWithin(GeoJSON):
 
 
 @final
-class InAssetSubtree(FilterWithPropertyAndValue):
+class InAssetSubtree(FilterWithPropertyAndValueList):
+    """Filters results based on whether item/resource is connected to an asset with an ID (or external ID)
+    that is in the subtree rooted at any of the provided IDs.
+
+    Args:
+        property (PropertyReference): The property to filter on, e.g. 'assetId' or 'assetExternalId'.
+        values (FilterValueList): The value(s) to filter on.
+
+    Example:
+
+        Count the number of documents with a related asset in a subtree rooted at any of
+        the specified external IDs, e.g. 'Plant_1' and 'Plant_2':
+
+            >>> client.documents.aggregate_count(
+            ...     filter=filters.InAssetSubtree(
+            ...         property=DocumentProperty.asset_external_ids,
+            ...         values=['Plant_1', 'Plant_2'],
+            ...     )
+            ... )
+    """
+
     _filter_name = "inAssetSubtree"
 
 
@@ -814,7 +869,7 @@ class SpaceFilter(FilterWithProperty):
 
     Args:
         space (str | SequenceNotStr[str]): The space (or spaces) to filter on.
-        instance_type (Literal["node", "edge"]): Type of instance to filter on. Defaults to "node".
+        instance_type (Literal['node', 'edge']): Type of instance to filter on. Defaults to "node".
 
     Example:
         Filter than can be used to retrieve nodes from space "space1" or "space2":
@@ -826,6 +881,8 @@ class SpaceFilter(FilterWithProperty):
 
             >>> flt = SpaceFilter("space3", instance_type="edge")
     """
+
+    _filter_name = "__space"
 
     def __init__(self, space: str | SequenceNotStr[str], instance_type: Literal["node", "edge"] = "node") -> None:
         super().__init__(property=[instance_type, "space"])

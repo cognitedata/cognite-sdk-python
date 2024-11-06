@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import collections.abc
+import dataclasses
 import enum
 import gzip
 import importlib
@@ -10,13 +11,13 @@ import math
 import os
 import random
 import string
-import sys
 import typing
-from collections import Counter
+from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast, get_args, get_origin, get_type_hints
+from types import UnionType
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -61,11 +62,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 
-UNION_TYPES = {typing.Union}
-if sys.version_info >= (3, 10):
-    from types import UnionType
-
-    UNION_TYPES.add(UnionType)
+UNION_TYPES = {typing.Union, UnionType}
 
 
 def all_subclasses(base: T_Type) -> list[T_Type]:
@@ -472,23 +469,22 @@ class FakeCogniteResourceGenerator:
         elif container_type is typing.Literal:
             return self._random.choice(args)
         elif container_type in [
-            typing.List,
             list,
             typing.Sequence,
             collections.abc.Sequence,
             collections.abc.Collection,
         ]:
             return [self.create_value(first_not_none) for _ in range(3)]
-        elif container_type in [typing.Dict, dict, collections.abc.MutableMapping, collections.abc.Mapping]:
+        elif container_type in [dict, collections.abc.MutableMapping, collections.abc.Mapping]:
             if first_not_none is None:
                 return self.create_value(dict)
             key_type, value_type = args
             return {
                 self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
             }
-        elif container_type in [typing.Set, set]:
+        elif container_type is set:
             return set(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
-        elif container_type in [typing.Tuple, tuple]:
+        elif container_type is tuple:
             if any(arg is ... for arg in args):
                 return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
             raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
@@ -542,8 +538,10 @@ class FakeCogniteResourceGenerator:
             return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
         elif inspect.isclass(type_):
             return self.create_instance(type_)
+        elif type(type_) is dataclasses.InitVar:
+            return self.create_value(type_.type)
 
-        raise NotImplementedError(f"Unsupported container type {container_type}. {self._error_msg}")
+        raise NotImplementedError(f"Unsupported {type_=} or {container_type=}. {self._error_msg}")
 
     def _random_string(
         self,
@@ -596,63 +594,5 @@ class FakeCogniteResourceGenerator:
             return eval(annotation, resource_module_vars, local_vars)
         except TypeError:
             # Python 3.10 Type Hint
-            return cls._type_hint_3_10_to_8(annotation, resource_module_vars, local_vars)
-
-    @classmethod
-    def _type_hint_3_10_to_8(
-        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
-    ) -> Any:
-        if cls._is_vertical_union(annotation):
-            alternatives = [
-                cls._create_type_hint_3_10(a.strip(), resource_module_vars, local_vars) for a in annotation.split("|")
-            ]
-            return typing.Union[tuple(alternatives)]
-        elif annotation.startswith("dict[") and annotation.endswith("]"):
-            if Counter(annotation)[","] > 1:
-                key, rest = annotation[5:-1].split(",", 1)
-                return typing.Dict[
-                    key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars, local_vars)
-                ]
-            key, value = annotation[5:-1].split(",")
-            return typing.Dict[
-                cls._create_type_hint_3_10(key.strip(), resource_module_vars, local_vars),
-                cls._create_type_hint_3_10(value.strip(), resource_module_vars, local_vars),
-            ]
-        elif annotation.startswith("Mapping[") and annotation.endswith("]"):
-            if Counter(annotation)[","] > 1:
-                key, rest = annotation[8:-1].split(",", 1)
-                return typing.Mapping[
-                    key.strip(), cls._create_type_hint_3_10(rest.strip(), resource_module_vars, local_vars)
-                ]
-            key, value = annotation[8:-1].split(",")
-            return typing.Mapping[
-                cls._create_type_hint_3_10(key.strip(), resource_module_vars, local_vars),
-                cls._create_type_hint_3_10(value.strip(), resource_module_vars, local_vars),
-            ]
-        elif annotation.startswith("Optional[") and annotation.endswith("]"):
-            return typing.Optional[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("list[") and annotation.endswith("]"):
-            return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("tuple[") and annotation.endswith("]"):
-            return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("set[") and annotation.endswith("]"):
-            return typing.Set[cls._create_type_hint_3_10(annotation[4:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("typing.Sequence[") and annotation.endswith("]"):
-            # This is used in the Sequence data class file to avoid name collision
-            return typing.Sequence[cls._create_type_hint_3_10(annotation[16:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("Sequence[") and annotation.endswith("]"):
-            return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
-        elif annotation.startswith("Collection[") and annotation.endswith("]"):
-            return typing.Collection[cls._create_type_hint_3_10(annotation[11:-1], resource_module_vars, local_vars)]
-        raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
-
-    @classmethod
-    def _is_vertical_union(cls, annotation: str) -> bool:
-        if "|" not in annotation:
-            return False
-        parts = [p.strip() for p in annotation.split("|")]
-        for part in parts:
-            counts = Counter(part)
-            if counts["["] != counts["]"]:
-                return False
-        return True
+            if annotation.startswith("Sequence[") and annotation.endswith("]"):
+                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]

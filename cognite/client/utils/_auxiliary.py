@@ -4,22 +4,19 @@ import functools
 import math
 import platform
 import warnings
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
-    Hashable,
-    Iterable,
-    Iterator,
-    Sequence,
+    TypeGuard,
     TypeVar,
     overload,
 )
 from urllib.parse import quote
 
-from typing_extensions import TypeGuard
-
 from cognite.client.utils import _json
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -87,8 +84,7 @@ def fast_dict_load(
 
 def load_yaml_or_json(resource: str) -> Any:
     try:
-        import yaml
-
+        yaml = local_import("yaml")
         return yaml.safe_load(resource)
     except ImportError:
         return _json.loads(resource)

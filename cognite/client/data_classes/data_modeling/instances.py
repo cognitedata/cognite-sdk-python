@@ -5,7 +5,17 @@ import threading
 import warnings
 from abc import ABC, abstractmethod
 from collections import UserDict, defaultdict
-from collections.abc import Iterable
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    ValuesView,
+)
 from dataclasses import dataclass
 from datetime import date, datetime
 from functools import lru_cache
@@ -13,29 +23,20 @@ from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
-    Dict,
     Generic,
-    ItemsView,
-    Iterator,
-    KeysView,
-    List,
     Literal,
-    Mapping,
-    MutableMapping,
     NoReturn,
-    Sequence,
+    TypeAlias,
     TypeVar,
-    Union,
-    ValuesView,
     cast,
     overload,
 )
 
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CogniteResource,
     CogniteResourceList,
     T_CogniteResource,
     T_WriteClass,
@@ -61,7 +62,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
-from cognite.client.utils._auxiliary import flatten_dict
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, find_duplicates, flatten_dict
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
@@ -73,38 +74,29 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-PropertyValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    dict,
-    List[str],
-    List[int],
-    List[float],
-    List[bool],
-    List[dict],
-]
-PropertyValueWrite: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    dict,
-    SequenceNotStr[str],
-    Sequence[int],
-    Sequence[float],
-    Sequence[bool],
-    Sequence[dict],
-    NodeId,
-    DirectRelationReference,
-    date,
-    datetime,
-    Sequence[Union[NodeId, DirectRelationReference]],
-    Sequence[date],
-    Sequence[datetime],
-    None,
-]
+PropertyValue: TypeAlias = (
+    str | int | float | bool | dict | list[str] | list[int] | list[float] | list[bool] | list[dict]
+)
+PropertyValueWrite: TypeAlias = (
+    str
+    | int
+    | float
+    | bool
+    | dict
+    | SequenceNotStr[str]
+    | Sequence[int]
+    | Sequence[float]
+    | Sequence[bool]
+    | Sequence[dict]
+    | NodeId
+    | DirectRelationReference
+    | date
+    | datetime
+    | Sequence[NodeId | DirectRelationReference]
+    | Sequence[date]
+    | Sequence[datetime]
+    | None
+)
 
 Space: TypeAlias = str
 PropertyIdentifier: TypeAlias = str
@@ -158,7 +150,7 @@ class InstanceCore(DataModelingResource, ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"]) -> None:
@@ -180,7 +172,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         existing_version (int | None): Fail the ingestion request if the instance's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the instance (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the instance already exists. If skipOnVersionConflict is set on the ingestion request, then the instance will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData] | None): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
@@ -254,7 +246,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
-            props[view_id.space][view_id_str] = cast(Dict[PropertyIdentifier, PropertyValue], properties)
+            props[view_id.space][view_id_str] = cast(dict[PropertyIdentifier, PropertyValue], properties)
         # Defaultdict is not yaml serializable
         return dict(props)
 
@@ -328,7 +320,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         version (int): Current version of the instance.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Properties | None): Properties of the instance.
     """
@@ -484,7 +476,7 @@ class InstanceApplyResult(InstanceCore, ABC):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]): The type of instance.
+        instance_type (Literal['node', 'edge']): The type of instance.
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (int): DMS version of the instance.
@@ -525,19 +517,18 @@ class InstanceAggregationResult(DataModelingResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         """
-        Loads an instance from a json string or dictionary.
+        Loads an instance aggregation result from a json string or dictionary.
 
         Args:
             resource (dict): No description.
             cognite_client (CogniteClient | None): No description.
 
         Returns:
-            Self: An instance.
-
+            Self: An instance aggregation result.
         """
         return cls(
             aggregates=[AggregatedNumberedValue.load(agg) for agg in resource["aggregates"]],
-            group=cast(Dict[str, Union[str, int, float, bool]], resource.get("group")),
+            group=cast(dict[str, str | int | float | bool], resource.get("group")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -559,6 +550,93 @@ class InstanceAggregationResult(DataModelingResource):
 
 class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResult]):
     _RESOURCE = InstanceAggregationResult
+
+
+class InspectionResults(CogniteResource):
+    def __init__(self, involved_views: list[ViewId] | None, involved_containers: list[ContainerId] | None) -> None:
+        self.involved_views = involved_views
+        self.involved_containers = involved_containers
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        involved_views = (
+            [ViewId.load(vid) for vid in resource["involvedViews"]] if "involvedViews" in resource else None
+        )
+        involved_containers = (
+            [ContainerId.load(cid) for cid in resource["involvedContainers"]]
+            if "involvedContainers" in resource
+            else None
+        )
+        return cls(
+            involved_views=involved_views,
+            involved_containers=involved_containers,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        results = {}
+        if self.involved_views:
+            results["involvedViews" if camel_case else "involved_views"] = [
+                vid.dump(camel_case, include_type=True) for vid in self.involved_views
+            ]
+        if self.involved_containers:
+            results["involvedContainers" if camel_case else "involved_containers"] = [
+                cid.dump(camel_case, include_type=True) for cid in self.involved_containers
+            ]
+        return results
+
+
+@dataclass
+class InspectOperation(ABC): ...
+
+
+@dataclass
+class InvolvedContainers(InspectOperation): ...
+
+
+@dataclass
+class InvolvedViews(InspectOperation):
+    all_versions: bool = False
+
+
+class InstanceInspectResult(CogniteResource):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        instance_type: Literal["node", "edge"],
+        inspection_results: InspectionResults,
+    ) -> None:
+        self.space = space
+        self.external_id = external_id
+        self.instance_type = instance_type
+        self.inspection_results = inspection_results
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            instance_type=resource["instanceType"],
+            inspection_results=InspectionResults.load(resource["inspectionResults"]),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "instanceType" if camel_case else "instance_type": self.instance_type,
+            "inspectionResults" if camel_case else "inspection_results": self.inspection_results.dump(camel_case),
+        }
+
+
+class InstanceInspectResultList(CogniteResourceList[InstanceInspectResult]):
+    _RESOURCE = InstanceInspectResult
+
+
+@dataclass
+class InstanceInspectResults:
+    nodes: InstanceInspectResultList
+    edges: InstanceInspectResultList
 
 
 class NodeApply(InstanceApply["NodeApply"]):
@@ -944,41 +1022,55 @@ T_Instance = TypeVar("T_Instance", bound=Instance)
 class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Instance], ABC):
     def _build_id_mappings(self) -> None:
         self._instance_id_to_item = {(inst.space, inst.external_id): inst for inst in self.data}
-        # TODO: Remove when we ditch PY3.8 (Oct, 2024), reason: ambiguous without space:
+        # We allow fast lookup via external ID when not ambiguous:
+        self._ambiguous_xids = find_duplicates(inst.external_id for inst in self.data)
         self._ext_id_to_item = {inst.external_id: inst for inst in self.data}
 
-    def get(
+    def get(  # type: ignore [override]
         self,
-        id: InstanceId | tuple[str, str] | None = None,  # type: ignore [override]
+        instance_id: InstanceId | tuple[str, str] | None = None,
         external_id: str | None = None,
+        *,
+        id: InstanceId | tuple[str, str] | None = None,
     ) -> T_Instance | None:
         """Get an instance from this list by instance ID.
 
         Args:
-            id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
-            external_id (str | None): DEPRECATED (reason: ambiguous). The external ID of the instance to return.
+            instance_id (InstanceId | tuple[str, str] | None): The instance ID to get. A tuple on the form (space, external_id) is also accepted.
+            external_id (str | None): The external ID of the instance to return. Will raise ValueError when ambiguous (in presence of multiple spaces).
+            id (InstanceId | tuple[str, str] | None): (DEPRECATED) Backwards-compatible alias for instance_id. Will be removed in the next major version.
 
         Returns:
             T_Instance | None: The requested instance if present, else None
         """
-        # TODO: Remove when we ditch PY3.8
-        if external_id is not None:
+        if not exactly_one_is_not_none(instance_id, external_id, id):
+            raise ValueError(
+                "Pass exactly one of 'instance_id' or 'external_id' ('id' is a deprecated alias for 'instance_id'). "
+                "Using an external ID requires all instances to be from the same space."
+            )
+        if id is not None:
+            instance_id = id
             warnings.warn(
-                "Calling .get with an external ID is deprecated due to being ambiguous in the absense of 'space', and "
-                "will be removed as of Oct, 2024. Pass an instance ID instead (or a tuple of (space, external_id)).",
+                "Calling .get using `id` is deprecated and will be removed in the next major version. "
+                "Use 'instance_id' instead",
                 UserWarning,
             )
+        elif external_id is not None:
+            if external_id in self._ambiguous_xids:
+                raise ValueError(
+                    f"{external_id=} is ambiguous (multiple spaces are present). Pass 'instance_id' instead."
+                )
             return self._ext_id_to_item.get(external_id)
 
-        if isinstance(id, InstanceId):
-            id = id.as_tuple()
-        return self._instance_id_to_item.get(id)  # type: ignore [arg-type]
+        if isinstance(instance_id, InstanceId):
+            instance_id = instance_id.as_tuple()
+        return self._instance_id_to_item.get(instance_id)  # type: ignore [arg-type]
 
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other_res_list.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
@@ -1097,7 +1189,7 @@ class NodeListWithCursor(NodeList[T_Node]):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
@@ -1193,7 +1285,7 @@ class EdgeListWithCursor(EdgeList):
         other_res_list = type(self)(other, other.cursor)  # See if we can accept the types
         if self._instance_id_to_item.keys().isdisjoint(other_res_list._instance_id_to_item):
             self.data.extend(other.data)
-            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
+            self._build_id_mappings()
             self.cursor = other.cursor
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")

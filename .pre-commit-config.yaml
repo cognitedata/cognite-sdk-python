@@ -1,18 +1,18 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.8
+    rev: v0.7.2
     hooks:
       - id: ruff
         args:
           - --fix
           - --exit-non-zero-on-fix
           - --line-length=120
-          - --ignore=E731,E501,W605
+          - --ignore=E731,E501,W605,UP038
             # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
           - --select=E,W,F,I,T,RUF,TID,UP
           - --fixable=E,W,F,I,T,RUF,TID,UP
-          - --target-version=py38
+          - --target-version=py310
           - --exclude=cognite/client/_proto
       - id: ruff-format
         args:
@@ -20,7 +20,7 @@ repos:
           - --exclude=cognite/client/_proto*
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: debug-statements
       - id: check-docstring-first

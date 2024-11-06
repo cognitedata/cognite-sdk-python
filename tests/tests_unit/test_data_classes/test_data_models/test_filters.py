@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, Literal
+import re
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
+from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client.data_classes._base import EnumProperty
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
 
 if TYPE_CHECKING:
@@ -18,6 +21,7 @@ if TYPE_CHECKING:
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     yield pytest.param(
+        f.And,
         {
             "and": [
                 {"in": {"property": ["tag"], "values": ["1001_1", "1001_1"]}},
@@ -28,6 +32,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Or,
         {
             "or": [
                 {"equals": {"property": ["name"], "value": "Quentin Tarantino"}},
@@ -43,16 +48,19 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Not,
         {"not": {"equals": {"property": ["scenario"], "value": "scenario7"}}},
         id="Not equals",
     )
 
     yield pytest.param(
+        f.Range,
         {"range": {"property": ["weight"], "lte": 100, "gt": 0}},
         id="Range, lte and gt",
     )
 
     yield pytest.param(
+        f.And,
         {
             "and": [
                 {
@@ -70,6 +78,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
+        f.Or,
         {
             "or": [
                 {
@@ -85,6 +94,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         id="Or overlaps or containsAny",
     )
     yield pytest.param(
+        f.Nested,
         {
             "nested": {
                 "scope": ("space", "container", "prop"),
@@ -95,13 +105,16 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
 
     yield pytest.param(
-        {"range": {"property": ["weight"], "gte": {"property": ["capacity"]}}}, id="Range with gte another property"
+        f.Range,
+        {"range": {"property": ["weight"], "gte": {"property": ["capacity"]}}},
+        id="Range with gte another property",
     )
 
     yield pytest.param(
-        {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
+        f.Prefix, {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
     )
     yield pytest.param(
+        f.Prefix,
         {
             "prefix": {
                 "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
@@ -116,6 +129,7 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         id="prefix with list of dicts",
     )
     yield pytest.param(
+        f.Prefix,
         {
             "prefix": {
                 "property": ["cdf_cdm", "CogniteAsset/v1", "path"],
@@ -129,11 +143,22 @@ def load_and_dump_equals_data() -> Iterator[ParameterSet]:
         },
         id="prefix with list of objects",
     )
+    yield pytest.param(
+        f.InAssetSubtree,
+        {
+            "inAssetSubtree": {
+                "property": ["assetIds"],
+                "values": [11, 22],
+            }
+        },
+        id="InAssetSubtree with list of asset ids",
+    )
 
 
-@pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
-def test_load_and_dump_equals(raw_data: dict) -> None:
+@pytest.mark.parametrize("expected_filter_cls, raw_data", list(load_and_dump_equals_data()))
+def test_load_and_dump_equals(expected_filter_cls: type[Filter], raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
+    assert isinstance(parsed, expected_filter_cls)
     dumped = parsed.dump(camel_case_property=False)
     assert dumped == raw_data
 
@@ -227,6 +252,44 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
     )
     yield pytest.param(prop_list1, expected, id="Prefix filter with list property of objects")
     yield pytest.param(prop_list2, expected, id="Prefix filter with list property of dicts")
+    overloaded_filter = f.Equals(property="name", value="bob") & f.HasData(
+        containers=[("space", "container")]
+    ) | ~f.Range(property="size", gt=0)
+    expected = {
+        "or": [
+            {
+                "and": [
+                    {"equals": {"property": ["name"], "value": "bob"}},
+                    {"hasData": [{"type": "container", "space": "space", "externalId": "container"}]},
+                ]
+            },
+            {"not": {"range": {"property": ["size"], "gt": 0}}},
+        ]
+    }
+    yield pytest.param(overloaded_filter, expected, id="Compound filter with overloaded operators")
+    nested_overloaded_filter = (f.Equals("a", "b") & f.Equals("c", "d")) & (f.Equals("e", "f") & f.Equals("g", "h"))
+    expected = {
+        "and": [
+            {"equals": {"property": ["a"], "value": "b"}},
+            {"equals": {"property": ["c"], "value": "d"}},
+            {"equals": {"property": ["e"], "value": "f"}},
+            {"equals": {"property": ["g"], "value": "h"}},
+        ]
+    }
+    yield pytest.param(nested_overloaded_filter, expected, id="Compound filter with nested overloaded and")
+    in_filter_with_node_id = f.In("name", [NodeId(space="space", external_id="ex_id")])
+    expected = {
+        "in": {
+            "property": ["name"],
+            "values": [
+                {
+                    "externalId": "ex_id",
+                    "space": "space",
+                },
+            ],
+        },
+    }
+    yield pytest.param(in_filter_with_node_id, expected, id="In filter with node ID")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
@@ -253,6 +316,51 @@ def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> Non
     assert dumped["value"] == "value_foo Bar_baz"
 
 
+def test_not_filter_only_accepts_a_single_filter() -> None:
+    # Bug prior to 7.63.10: Not-filter would accept and ignore all-but-the-first filter given:
+    err_msg = re.escape("Not.__init__() takes 2 positional arguments but 3 were given")
+    with pytest.raises(TypeError, match=f"^{err_msg}$"):
+        f.Not(f.Exists("foo"), f.Exists("bar"))  # type: ignore [call-arg]
+
+
+@pytest.mark.parametrize("compound_flt", [f.And, f.Or, f.Not])
+def test_compound_filters_require_at_least_one_filter(compound_flt: type[f.CompoundFilter]) -> None:
+    # Bug prior to 7.63.10: CompoundFilters (and/or/not) would accept no filters given:
+    if compound_flt is f.Not:
+        err_msg = re.escape("Not.__init__() missing 1 required positional argument: 'filter'")
+    else:
+        err_msg = "^At least one filter must be provided$"
+    with pytest.raises(TypeError, match=err_msg):
+        compound_flt()
+
+
+@pytest.mark.parametrize("space", (None, "s1", ["s1", "s2"]))
+@pytest.mark.parametrize("user_filter", (None, f.Exists("x1"), f.And(f.Exists("x1"), f.Exists("x2"))))
+@pytest.mark.parametrize("pass_as_dict", (True, False))
+def test_merge_space_into_filter(
+    space: str | list[str] | None, user_filter: f.Filter | None, pass_as_dict: bool
+) -> None:
+    flt_used = user_filter.dump() if pass_as_dict and user_filter else user_filter
+    res = InstancesAPI._merge_space_into_filter(
+        instance_type="node",
+        space=space,
+        filter=flt_used,
+    )
+    if space is user_filter is None:
+        assert res is None
+    elif space is None:
+        assert res == flt_used
+    elif user_filter is None:
+        assert isinstance(res, f.SpaceFilter)
+    else:
+        assert isinstance(res, f.And)
+        f1, *fs = res._filters
+        assert isinstance(f1, f.SpaceFilter)
+        # Ensure that the user filter if passed as an And-filter, is merged, rather than nested:
+        for flt in fs:
+            assert isinstance(flt, f.Exists)
+
+
 class TestSpaceFilter:
     @pytest.mark.parametrize(
         "inst_type, space, expected",
@@ -273,6 +381,19 @@ class TestSpaceFilter:
     def test_space_filter_passes_isinstance_checks(self) -> None:
         space_filter = f.SpaceFilter("myspace", "edge")
         assert isinstance(space_filter, Filter)
+
+    @pytest.mark.parametrize(
+        "body",
+        (
+            {"property": ["edge", "space"], "value": "myspace"},
+            {"property": ["node", "space"], "values": ["myspace", "another"]},
+        ),
+    )
+    def test_space_filter_loads_as_unknown(self, body: dict[str, str | list[str]]) -> None:
+        # Space Filter is an SDK concept, so it should load as an UnknownFilter:
+        dumped = {f.SpaceFilter._filter_name: body}
+        loaded_flt = Filter.load(dumped)
+        assert isinstance(loaded_flt, UnknownFilter)
 
     @pytest.mark.parametrize(
         "space_filter",

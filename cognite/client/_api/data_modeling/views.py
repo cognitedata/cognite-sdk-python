@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Iterator, Sequence, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -262,6 +263,7 @@ class ViewsAPI(APIClient):
                 ...     ViewId
                 ... )
                 >>> client = CogniteClient()
+                >>> acts_in_edge_type = DirectRelationReference(space="imdb", external_id="acts-in")
                 >>> movie_view = ViewApply(
                 ...     space="imdb",
                 ...     external_id="Movie",
@@ -273,12 +275,10 @@ class ViewsAPI(APIClient):
                 ...             container_property_identifier="title",
                 ...         ),
                 ...         "actors": MultiEdgeConnectionApply(
-                ...             type=DirectRelationReference(
-                ...                 space="imdb", external_id="Movie.actors"
-                ...             ),
+                ...             type=acts_in_edge_type,
+                ...             direction="inwards",
                 ...             source=ViewId("imdb", "Actor", "1"),
                 ...             name="actors",
-                ...             direction="outwards",
                 ...         ),
                 ...     }
                 ... )
@@ -294,12 +294,10 @@ class ViewsAPI(APIClient):
                 ...             container_property_identifier="name",
                 ...         ),
                 ...         "movies": MultiEdgeConnectionApply(
-                ...             type=DirectRelationReference(
-                ...                 space="imdb", external_id="Role.movies"
-                ...             ),
+                ...             type=acts_in_edge_type,
+                ...             direction="outwards",
                 ...             source=ViewId("imdb", "Movie", "1"),
                 ...             name="movies",
-                ...             direction="outwards",
                 ...         ),
                 ...     }
                 ... )

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Sequence
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, Sequence, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TextIO, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,

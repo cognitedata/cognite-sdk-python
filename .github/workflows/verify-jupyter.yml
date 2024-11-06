@@ -12,18 +12,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           cache: 'pip'
       - name: Build package using poetry
         run: |
-            pip install poetry
-            poetry build
+          pip install poetry
+          poetry build
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Install dependencies
-        run: npm install pyodide@0.25.1 # JupyterLite currently using pyodide 0.25.0
+        run: npm install pyodide@0.26.2 # JupyterLite currently using pyodide 0.26.2
       - name: Install cognite-sdk in pyodide environment
         run: |
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix

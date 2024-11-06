@@ -20,8 +20,6 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._text import random_string
 
-TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(20)]
-
 
 @contextmanager
 def create_subscription_with_cleanup(
@@ -36,18 +34,20 @@ def create_subscription_with_cleanup(
 
 
 @pytest.fixture(scope="session")
-def all_time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
+def all_time_series_external_ids(cognite_client: CogniteClient, os_and_py_version: str) -> list[str]:
+    timeseries_external_ids = [f"PYSDK DataPoint Subscription {os_and_py_version} Test {no}" for no in range(20)]
+
     existing_xids = cognite_client.time_series.retrieve_multiple(
-        external_ids=TIMESERIES_EXTERNAL_IDS, ignore_unknown_ids=True
+        external_ids=timeseries_external_ids, ignore_unknown_ids=True
     ).as_external_ids()
 
-    if existing_xids == TIMESERIES_EXTERNAL_IDS:
+    if existing_xids == timeseries_external_ids:
         return existing_xids
 
     return cognite_client.time_series.upsert(
         [
             TimeSeries(external_id=external_id, name=external_id, is_string=False)
-            for external_id in TIMESERIES_EXTERNAL_IDS
+            for external_id in timeseries_external_ids
         ],
         mode="replace",
     ).as_external_ids()
@@ -261,10 +261,11 @@ class TestDatapointSubscriptions:
             assert batch.subscription_changes.added[0].external_id == time_series_external_ids[0]
 
             existing_data = cognite_client.time_series.data.retrieve_dataframe(external_id=time_series_external_ids[0])
+            start = pd.Timestamp("now") if existing_data.empty else existing_data.index[-1] + pd.Timedelta("1d")
             new_values = [42, 43]
             new_data = pd.DataFrame(
                 {time_series_external_ids[0]: new_values},
-                index=pd.date_range(start=existing_data.index[-1] + pd.Timedelta("1d"), periods=2, freq="1d"),
+                index=pd.date_range(start=start, periods=2, freq="1d"),
             )
             new_timestamps = new_data.index.asi8 // 10**6
             try:

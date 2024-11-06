@@ -17,9 +17,111 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.7] - 2024-11-04
+### Fixed
+- Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings to avoid hitting the API limits.
+
+
+
+## [7.64.6] - 2024-10-22
+### Added
+- Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
+
+## [7.64.5] - 2024-11-01
+### Fixed
+- The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
+
+## [7.64.4] - 2024-11-01
+### Fixed
+- Data Workflows: apply more robust path parameter encoding.
+
+## [7.64.3] - 2024-11-01
+### Fixed
+- Removed superfluous properties from authentication subclass read objects
+
+## [7.64.2] - 2024-10-31
+### Fixed
+- `HostedExtractor` REST source `authentication` property updated to follow API change.
+
+## [7.64.1] - 2024-10-30
+### Fixed
+- Loading `HostedExtractor` class `RestSourceWrite` no longer requires the optional `scheme` parameter.
+
+## [7.64.0] - 2024-10-28
+### Added
+- New instance inspection endpoint `client.data_modeling.instances.inspect` enabling easy reverse
+  lookup to find which views and containers they have data in.
+
+## [7.63.11] - 2024-10-26
+### Fixed
+- The `/context/diagram/` endpoints are now retried on 5xx and 429 errors.
+
+## [7.63.10] - 2024-10-22
+### Fixed
+- The Not() filter now only accepts a single filter (and no longer silently ignores the rest).
+- The And(), Or() and Not() filter now requires at least one argument.
+
+## [7.63.9] - 2024-10-21
+### Added
+- Filters can now be combined using `And` and `Or` by using the operators `&` and `|`.
+- Filters can now be negated by using the `~` operator (instead of using the `Not` filter)
+
+## [7.63.8] - 2024-10-21
+### Fixed
+- Data Workflows: workflow external ID and version are now URL encoded to allow characters like `/`  when calling `workflows.executions.run`
+
+## [7.63.7] - 2024-10-18
+### Fixed
+- Calling `cognite_client.data_modeling.instances(..., chunk_size=False, include_typing=False)` no longer raises a
+  `TypeError`.
+
+## [7.63.6] - 2024-10-17
+### Fixed
+- Files, or other resources with geo.location data, created long ago before the current API restriction(s) were in-place
+  now load as UnknownCogniteObject, rather than throwing an exception (typically `KeyError`).
+
+## [7.63.5] - 2024-10-15
+### Fixed
+- Added missing parameter `notification_config` to `ExtractionPipeline`.
+
+## [7.63.4] - 2024-10-14
+### Fixed
+- Using `OAuthDeviceCode.load` now includes the missing parameters `oauth_discovery_url`, `clear_cache`, and `mem_cache_only`.
+- All unknown parameters to `OAuthDeviceCode.load` are now passed on as `token_custom_args`.
+
+## [7.63.3] - 2024-10-13
+### Fixed
+- NodeList and EdgeList (and subclasses) now support using `.get` with an `external_id` as a shortcut over
+  using `instance_id`. When the `external_id` is ambiguous (non-unique, multiple spaces), a ValueError
+  is raised. Thus, using `external_id` is no longer deprecated.
+
+## [7.63.2] - 2024-10-11
+### Fixed
+- Setting up interactive `OAuthInteractive` sessions no longer raises `TypeError` as the lower bound for the `msal`
+  dependency has been increased to `1.31`.
+
+## [7.63.1] - 2024-10-10
+### Fixed
+- [Feature Preview - alpha] Dumping `HostedExtractor` `Job` and `Source` data classes creates valid JSON/YAML
+  even when unknown fields are present.
+
+## [7.63.0] - 2024-10-10
+### Removed
+- Dropped support for Python 3.8 and 3.9.
+
+## [7.62.8] - 2024-10-07
+### Added
+- [Feature Preview - alpha] Support for `PostgresGateway` `Users` `client.postegres_gateway.users`.
+
+## [7.62.7] - 2024-10-07
+### Fixed
+- Several bugfixes for the filter `InAssetSubtree`:
+  - No longer causes `CogniteAPIError` when used, by accepting a list of values rather than a single value.
+  - Loading via `Filter.load` now works as expected (a regression introduced in 7.38.3).
+
 ## [7.62.6] - 2024-09-27
 ### Fixed
-- Instances with a single property no longer fail `to_pandas()` with `TypeError`, when using expand_properties=True.
+- Instances with a single property no longer fail `to_pandas()` with `TypeError`, when using `expand_properties=True`.
 
 ## [7.62.5] - 2024-09-26
 ### Added

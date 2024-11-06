@@ -163,7 +163,7 @@ class TransformationDestination(CogniteObject):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> TransformationDestination:
         type_ = resource.get("type")
         if type_ is None:
-            return UnknownCogniteObject._load(resource)  # type: ignore[return-value]
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
 
         if type_ == "raw":
             return RawTable._load(resource)

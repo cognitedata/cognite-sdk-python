@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -23,11 +23,11 @@ class SourcesAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
-        self._CREATE_LIMIT = 100
+        self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
@@ -208,12 +208,7 @@ class SourcesAPI(APIClient):
 
         Args:
             items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Source(s) to update.
-            mode (Literal["replace_ignore_null", "patch", "replace"]): How to update data when a non-update
-                object is given (SourceWrite). If you use 'replace_ignore_null', only the fields
-                you have set will be used to replace existing (default). Using 'replace' will additionally
-                clear all the fields that are not specified by you. Last option, 'patch', will update only
-                the fields you have set and for container-like fields such as metadata or labels, add the
-                values to the existing. For more details, see :ref:`appendix-update`.
+            mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (SourceWrite). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Source | SourceList: Updated source(s)

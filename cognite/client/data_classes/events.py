@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Sequence
 from enum import auto
-from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -409,7 +408,7 @@ class EventProperty(EnumProperty):
         return ["metadata", key]
 
 
-EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
+EventPropertyLike: TypeAlias = EventProperty | str | list[str]
 
 
 class SortableEventProperty(EnumProperty):
@@ -430,7 +429,7 @@ class SortableEventProperty(EnumProperty):
         return ["metadata", key]
 
 
-SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
+SortableEventPropertyLike: TypeAlias = SortableEventProperty | str | list[str]
 
 
 class EventSort(CogniteSort):

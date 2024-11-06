@@ -1,4 +1,6 @@
-from typing import Any, Dict, Iterator
+import textwrap
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
 from _pytest.mark import ParameterSet
@@ -6,6 +8,7 @@ from _pytest.mark import ParameterSet
 from cognite.client.data_classes import filters as f
 from cognite.client.data_classes.data_modeling import InstanceSort, ViewId
 from cognite.client.data_classes.data_modeling import query as q
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
 
 
 def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -98,7 +101,7 @@ class TestResultSetExpressions:
 
 
 def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
-    raw: Dict[str, Any] = {}
+    raw: dict[str, Any] = {}
     loaded = q.Select()
     yield pytest.param(raw, loaded, id="Empty")
 
@@ -143,37 +146,38 @@ class TestSelect:
 
 
 def query_load_yaml_data() -> Iterator[ParameterSet]:
-    raw_yaml = """with:
-    airplanes:
-        nodes:
-            filter:
-                equals:
-                    property: ["node", "externalId"]
-                    value: {"parameter": "airplaneExternalId"}
-            chainTo: destination
-            direction: outwards
-        limit: 1
-    lands_in_airports:
-        edges:
-            from: airplanes
-            maxDistance: 1
-            direction: outwards
-            filter:
-                equals:
-                    property: ["edge", "type"]
-                    value: ["aviation", "lands-in"]
-            chainTo: destination
-    airports:
-        nodes:
-            chainTo: destination
-            direction: outwards
-            from: lands_in_airports
-parameters:
-    airplaneExternalId: myFavouriteAirplane
-select:
-    airplanes: {}
-    airports: {}
-"""
+    raw_yaml = """\
+        with:
+            airplanes:
+                nodes:
+                    filter:
+                        equals:
+                            property: ["node", "externalId"]
+                            value: {"parameter": "airplaneExternalId"}
+                    chainTo: destination
+                    direction: outwards
+                limit: 1
+            lands_in_airports:
+                edges:
+                    from: airplanes
+                    maxDistance: 1
+                    direction: outwards
+                    filter:
+                        equals:
+                            property: ["edge", "type"]
+                            value: ["aviation", "lands-in"]
+                    chainTo: destination
+            airports:
+                nodes:
+                    chainTo: destination
+                    direction: outwards
+                    from: lands_in_airports
+        parameters:
+            airplaneExternalId: myFavouriteAirplane
+        select:
+            airplanes: {}
+            airports: {}
+    """
     expected = q.Query(
         with_={
             "airplanes": q.NodeResultSetExpression(
@@ -190,34 +194,35 @@ select:
         parameters={"airplaneExternalId": "myFavouriteAirplane"},
         select={"airplanes": q.Select(), "airports": q.Select()},
     )
-    yield pytest.param(raw_yaml, expected, id="Documentation Example")
+    yield pytest.param(textwrap.dedent(raw_yaml), expected, id="Documentation Example")
 
-    raw_yaml = """with:
-  movies:
-    nodes:
-      filter:
-        equals:
-          property:
-          - IntegrationTestsImmutable
-          - Movie/2
-          - releaseYear
-          value: 1994
-      chainTo: destination
-      direction: outwards
-select:
-  movies:
-    sources:
-    - source:
-        space: IntegrationTestsImmutable
-        externalId: Movie
-        version: '2'
-        type: view
-      properties:
-      - title
-      - releaseYear
-cursors:
-  movies: Z0FBQUFBQmtwc0RxQmducHpsWFd6VnZFdWwyWnFJbmxWS1BlT
-"""
+    raw_yaml = """\
+      with:
+        movies:
+          nodes:
+            filter:
+              equals:
+                property:
+                - IntegrationTestsImmutable
+                - Movie/2
+                - releaseYear
+                value: 1994
+            chainTo: destination
+            direction: outwards
+      select:
+        movies:
+          sources:
+          - source:
+              space: IntegrationTestsImmutable
+              externalId: Movie
+              version: '2'
+              type: view
+            properties:
+            - title
+            - releaseYear
+      cursors:
+        movies: Z0FBQUFBQmtwc0RxQmducHpsWFd6VnZFdWwyWnFJbmxWS1BlT
+    """
     movie_id = ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2")
     movies_released_1994 = q.NodeResultSetExpression(
         filter=f.Equals(list(movie_id.as_property_ref("releaseYear")), 1994)
@@ -227,7 +232,26 @@ cursors:
         select={"movies": q.Select([q.SourceSelector(movie_id, ["title", "releaseYear"])])},
         cursors={"movies": "Z0FBQUFBQmtwc0RxQmducHpsWFd6VnZFdWwyWnFJbmxWS1BlT"},
     )
-    yield pytest.param(raw_yaml, expected, id="Example with cursors")
+    yield pytest.param(textwrap.dedent(raw_yaml), expected, id="Example with cursors")
+
+
+@pytest.fixture
+def query_with_non_yaml_native_data_classes() -> q.Query:
+    # YAML doesn't support tuple, so we want to test that yaml tags e.g. !!python/tuple does not end
+    # up in the output when dumping a Query object.
+    return q.Query(
+        with_={
+            "files": q.NodeResultSetExpression(
+                filter=f.Exists(CogniteFile.get_source().as_property_ref("category")),
+                limit=None,
+            ),
+            "categories": q.NodeResultSetExpression(
+                from_="files",
+                through=CogniteFile.get_source().as_property_ref("category"),
+            ),
+        },
+        select={"categories": q.Select()},
+    )
 
 
 class TestQuery:
@@ -235,3 +259,17 @@ class TestQuery:
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
         actual = q.Query.load_yaml(raw_data)
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)
+
+    def test_dump_yaml_no_tags(self, query_with_non_yaml_native_data_classes: q.Query) -> None:
+        query = query_with_non_yaml_native_data_classes
+        dumped = query.dump_yaml()
+        assert "!!python/tuple" not in dumped
+
+        # Load will now load tuple as list:
+        loaded = q.Query.load_yaml(dumped)
+        assert loaded != query
+
+        # ...re-dump-loading should be equal to the first loaded
+        dumped_again = loaded.dump_yaml()
+        assert "!!python/tuple" not in dumped_again
+        assert q.Query.load_yaml(dumped_again) == loaded

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry
+from cognite.client.data_classes._base import CogniteFilter, CogniteObject, Geometry, UnknownCogniteObject
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -52,7 +53,7 @@ class GeometryFilter(CogniteFilter):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        type (Literal['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']): The geometry type.
         coordinates (Sequence[float] | Sequence[Sequence[float]] | Sequence[Sequence[Sequence[float]]] | Sequence[Sequence[Sequence[Sequence[float]]]]): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
 
     Point:
@@ -143,11 +144,14 @@ class GeoLocation(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeoLocation:
-        return cls(
-            type=resource["type"],
-            geometry=Geometry._load(resource["geometry"], cognite_client),
-            properties=resource.get("properties"),
-        )
+        if "type" in resource:
+            return cls(
+                type=resource["type"],
+                geometry=Geometry._load(resource["geometry"], cognite_client),
+                properties=resource.get("properties"),
+            )
+        # Years ago, the API didn't enforce the current restriction on the type field:
+        return UnknownCogniteObject(resource)  # type: ignore[return-value]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, cast
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (

@@ -45,7 +45,13 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.instances import TargetUnit
+from cognite.client.data_classes.data_modeling.instances import (
+    InstanceInspectResult,
+    InstanceInspectResults,
+    InvolvedContainers,
+    InvolvedViews,
+    TargetUnit,
+)
 from cognite.client.data_classes.data_modeling.query import (
     NodeResultSetExpression,
     Query,
@@ -813,8 +819,8 @@ class TestInstancesAPI:
         assert "One or more views do not exist: " in error.value.message
         assert view_id.as_source_identifier() in error.value.message
 
-    def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
-        node = movie_nodes.get(external_id="movie:pulp_fiction")
+    def test_dump_json_serialize_load_node(self, movie_nodes: NodeList, integration_test_space: Space) -> None:
+        node = movie_nodes.get((integration_test_space.space, "movie:pulp_fiction"))
         assert node is not None, "Pulp fiction movie not found, please recreate it"
 
         node_dumped = node.dump(camel_case=True)
@@ -823,8 +829,8 @@ class TestInstancesAPI:
 
         assert node == node_loaded
 
-    def test_dump_json_serialize_load_edge(self, movie_edges: EdgeList) -> None:
-        edge = movie_edges.get(external_id="person:quentin_tarantino:director:quentin_tarantino")
+    def test_dump_json_serialize_load_edge(self, movie_edges: EdgeList, integration_test_space: Space) -> None:
+        edge = movie_edges.get((integration_test_space.space, "person:quentin_tarantino:director:quentin_tarantino"))
         assert edge is not None, "Relation between Quentin Tarantino person and director not found, please recreate it"
 
         edge_dumped = edge.dump(camel_case=True)
@@ -906,6 +912,13 @@ class TestInstancesAPI:
         type_ = cast(Float64, listed.typing[unit_view.as_property_ref("pressure")].type)
         assert type_.unit is not None
         assert type_.unit.external_id == "pressure:pa"
+
+    @pytest.mark.usefixtures("node_with_1_1_pressure_in_bar")
+    def test_iterate_one_by_one(self, cognite_client: CogniteClient, unit_view: View) -> None:
+        is_source = filters.HasData(views=[unit_view.as_id()])
+        iterator = cognite_client.data_modeling.instances(filter=is_source, instance_type="node")
+        first_iter = next(iterator)
+        assert isinstance(first_iter, Node)
 
     def test_iterate_in_units(
         self, cognite_client: CogniteClient, node_with_1_1_pressure_in_bar: NodeApply, unit_view: View
@@ -1091,6 +1104,30 @@ class TestInstancesAPI:
             space="cdf_cdm_units", sources=CogniteUnit.get_source(), limit=5
         )
         assert len(nodes) == 5
+
+    def test_inspecting_instances(
+        self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
+    ) -> None:
+        inspect_result = cognite_client.data_modeling.instances.inspect(
+            nodes=movie_nodes[:5].as_ids(),
+            edges=movie_edges[0].as_id(),
+            involved_views=InvolvedViews(),
+            involved_containers=InvolvedContainers(),
+        )
+        assert isinstance(inspect_result, InstanceInspectResults)
+        assert len(inspect_result.nodes) == 5
+        assert len(inspect_result.edges) == 1
+        assert isinstance(inspect_result.edges[0], InstanceInspectResult)
+
+        for node_res in inspect_result.nodes:
+            res = node_res.inspection_results
+            assert res.involved_views and res.involved_views[0].space == "IntegrationTestSpace"
+            assert res.involved_views and res.involved_views[0].external_id == "Movie"
+            assert res.involved_containers and res.involved_containers[0].space == "IntegrationTestSpace"
+            assert res.involved_containers and res.involved_containers[0].external_id == "Movie"
+
+        assert inspect_result.edges[0].inspection_results.involved_views == []
+        assert inspect_result.edges[0].inspection_results.involved_containers == []
 
 
 class TestInstancesSync:

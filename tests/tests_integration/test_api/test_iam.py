@@ -19,7 +19,7 @@ def group_list(cognite_client) -> GroupList:
 
 class TestGroupsAPI:
     def test_dump_load_group_list(self, group_list: GroupList) -> None:
-        loaded = GroupList.load(group_list.dump(camel_case=True))
+        loaded = GroupList._load(group_list.dump(camel_case=True), allow_unknown=True)
         assert group_list.dump() == loaded.dump()
 
     @pytest.mark.skip(

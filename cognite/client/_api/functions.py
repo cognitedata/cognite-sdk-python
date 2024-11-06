@@ -7,12 +7,12 @@ import re
 import sys
 import textwrap
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Literal, NoReturn, Sequence, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -158,7 +158,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
@@ -415,7 +415,7 @@ class FunctionsAPI(APIClient):
             file_id (int | None): The file ID of the zip-file used to create the function.
             status (FunctionStatus | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
             external_id_prefix (str | None): External ID prefix to filter on.
-            created_time (dict[Literal["min", "max"], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            created_time (dict[Literal['min', 'max'], int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32, value 512 characters, up to 16 key-value pairs. Maximum size of entire metadata is 4096 bytes.
             limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
@@ -1284,7 +1284,8 @@ class FunctionSchedulesAPI(APIClient):
                 raise ValueError("cron_expression must be specified when creating a new schedule.")
             item = FunctionScheduleWrite(name, cron_expression, function_id, function_external_id, description, data)
         else:
-            item = name
+            # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
+            item = FunctionScheduleWrite._load(name.dump())
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_id is None:
             item.function_id = _get_function_internal_id(self._cognite_client, identifier)

@@ -148,7 +148,7 @@ class MappingWrite(_MappingCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         mapping (CustomMapping): The custom mapping.
         published (bool): Whether this mapping is published and should be available to be used in jobs.
-        input (InputMapping | Literal["csv", "json", "xml"]): The input mapping. Defaults to 'json'
+        input (InputMapping | Literal['csv', 'json', 'xml']): The input mapping. Defaults to 'json'
     """
 
     def __init__(

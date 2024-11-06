@@ -26,7 +26,7 @@ def disable_gzip():
 
 
 @pytest.fixture(scope="session")
-def os_and_py_version():
+def os_and_py_version() -> str:
     # Nice to use to create resources that is unique to each test runner
     return f"{platform.system()}-{platform.python_version()}"
 

@@ -19,6 +19,7 @@ from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
@@ -74,6 +75,7 @@ class CogniteClient:
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
         self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
+        self.postgres_gateway = PostgresGatewaysAPI(self._config, self._API_VERSION, self)
         self.transformations = TransformationsAPI(self._config, self._API_VERSION, self)
         self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
