@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorRoutine,
     SimulatorRoutineList,
@@ -23,13 +24,16 @@ class SimulatorRoutinesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list_routines(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorRoutineList:
+    def list_routines(
+        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
+    ) -> SimulatorRoutineList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
 
         Args:
-            limit (int): The maximum number of simulators to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int): The maximum number of simulators to return. Defaults to 100.
+            filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
 
         Returns:
             SimulatorRoutineList: List of simulator routines
@@ -51,15 +55,23 @@ class SimulatorRoutinesAPI(APIClient):
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
             headers={"cdf-version": "beta"},
+            filter=filter.dump()
+            if isinstance(filter, SimulatorRoutinesFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,  # fix this
         )
 
-    def list_routine_revisions(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorRoutineRevisionsList:
+    def list_routine_revisions(
+        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None
+    ) -> SimulatorRoutineRevisionsList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
 
         Args:
             limit (int): The maximum number of simulators to return. Defaults to 25. Set to -1, float("inf") or None
+            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator routine revisions.
 
         Returns:
             SimulatorRoutineRevisionsList: List of simulator routines
@@ -81,4 +93,9 @@ class SimulatorRoutinesAPI(APIClient):
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionsList,
             headers={"cdf-version": "beta"},
+            filter=filter.dump()
+            if isinstance(filter, SimulatorRoutineRevisionsFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,  # fix this
         )
