@@ -727,13 +727,13 @@ class DatapointsAPI(APIClient):
                 break
 
             if chunk_size_datapoints == request_limit:
-                yield dps_lst[0] if is_single else dps_lst  # type: ignore [return-value]
+                yield dps_lst[0] if is_single else dps_lst
             elif is_single:
                 yield from chunk_fn(dps_lst[0])  # type: ignore [misc]
             else:
                 for all_chunks in itertools.zip_longest(*map(chunk_fn, dps_lst)):
                     # Filter out dps as ts get exhausted, then rebuild the Dps(Array)List container and yield chunk:
-                    yield dps_lst_cls(list(filter(None, all_chunks)), cognite_client=self._cognite_client)  # type: ignore [return-value]
+                    yield dps_lst_cls(list(filter(None, all_chunks)), cognite_client=self._cognite_client)
 
     def retrieve(
         self,
