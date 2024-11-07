@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -17,6 +18,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.query import ResultSetExpression, Select
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -1230,6 +1232,36 @@ class WorkflowTriggerRule(CogniteObject, ABC):
         raise NotImplementedError()
 
 
+class WorkflowTriggerDataModelingQuery(CogniteObject):
+    """This class represents a data modeling trigger query."""
+
+    with_: dict[str, ResultSetExpression]
+    select: dict[str, Select]
+
+    def __init__(
+        self,
+        with_: dict[str, ResultSetExpression] = {},
+        select: dict[str, Select] = {},
+    ) -> None:
+        super().__init__()
+        self.with_ = with_
+        self.select = select
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
+            "select": {k: v.dump(camel_case) for k, v in self.select.items()},
+        }
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerDataModelingQuery:
+        return cls(
+            with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
+            select={k: Select.load(v) for k, v in resource["select"].items()},
+        )
+
+
 class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     """
     This class represents a scheduled trigger rule.
@@ -1247,6 +1279,53 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
         return cls(cron_expression=data.get("cronExpression"))
+
+
+class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
+    """
+    This class represents a data modeling trigger rule.
+
+    Args:
+        data_modeling_query (WorkflowTriggerDataModelingQuery | None): The data modeling query of the trigger.
+        batch_size (int | None): The batch size of the trigger.
+        batch_timeout (int | None): The batch timeout of the trigger.
+    """
+
+    _trigger_type = "dataModeling"
+
+    def __init__(
+        self,
+        data_modeling_query: WorkflowTriggerDataModelingQuery | None = None,
+        batch_size: int | None = None,
+        batch_timeout: int | None = None,
+    ) -> None:
+        super().__init__()
+        self.data_modeling_query = data_modeling_query
+        self.batch_size = batch_size
+        self.batch_timeout = batch_timeout
+
+    @classmethod
+    def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
+        return cls(
+            data_modeling_query=WorkflowTriggerDataModelingQuery.load(typing.cast(dict, data.get("dataModelingQuery")))
+            if data.get("dataModelingQuery")
+            else None,
+            batch_size=data.get("batchSize"),
+            batch_timeout=data.get("batchTimeout"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "trigger_type": self._trigger_type,
+            "data_modeling_query": self.data_modeling_query.dump(camel_case=camel_case)
+            if self.data_modeling_query
+            else None,
+            "batch_size": self.batch_size,
+            "batch_timeout": self.batch_timeout,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
 
 
 _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {
