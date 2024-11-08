@@ -590,7 +590,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> client = CogniteClient()
                 >>> query = DatapointsQuery(external_id="foo", start="2w-ago")
-                >>> for chunk in client.time_series.data(query, chunk_size=25_000)
+                >>> for chunk in client.time_series.data(query, chunk_size=25_000):
                 ...     pass  # do something with the datapoints chunk
 
             Iterate through datapoints from multiple time series, and do not return them as numpy arrays. As one or more time
@@ -618,7 +618,7 @@ class DatapointsAPI(APIClient):
             the time series are already created in the target project.
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
-                >>> target_client = CogniteClient(...)
+                >>> target_client = CogniteClient()
                 >>> to_copy = client.time_series.list(data_set_external_ids="my-use-case")
                 >>> queries = [DatapointsQuery(external_id=ts.external_id) for ts in to_copy]
                 >>> for dps_chunk in client.time_series.data(
