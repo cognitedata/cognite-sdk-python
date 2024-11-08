@@ -12,6 +12,7 @@ import math
 import random
 import re
 import unittest
+from collections import UserList
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
@@ -516,13 +517,134 @@ def queries_for_iteration():
 
 class TestIterateDatapoints:
     # This is for __call__, not subscriptions.
+    @pytest.mark.parametrize(
+        "chunk_size_datapoints, raises_ctx",
+        (
+            (10, does_not_raise()),
+            (3125, does_not_raise()),
+            (25_000, does_not_raise()),
+            (40_000, pytest.raises(ValueError, match="evenly divides 100k OR an integer multiple")),
+            (300_000, does_not_raise()),
+        ),
+    )
+    def test_chunk_size_datapoints(self, cognite_client, chunk_size_datapoints, raises_ctx, queries_for_iteration):
+        with raises_ctx:
+            for dps_lst in cognite_client.time_series.data(
+                queries_for_iteration[7:],
+                chunk_size_datapoints=chunk_size_datapoints,
+                chunk_size_time_series=1,
+            ):
+                assert len(dps_lst) == 1
+                assert len(dps_lst[0]) == chunk_size_datapoints
+                break
 
-    def test_iterate_datapoints(self, cognite_client, queries_for_iteration):
-        # One external id to follow through all iterations and use for asserts:
-        ts_xid = (
-            "PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric"
+    @pytest.mark.parametrize(
+        "chunk_size_time_series, n_exp_returned, raises_ctx",
+        (
+            (math.inf, 0, pytest.raises(ValueError, match="must be a positive integer or None")),
+            (-1, 0, pytest.raises(ValueError, match="must be a positive integer or None")),
+            (None, 5, does_not_raise()),
+            (0, 0, pytest.raises(ValueError, match="must be a positive integer or None")),
+            (1, 1, does_not_raise()),
+            (4, 4, does_not_raise()),
+        ),
+    )
+    def test_chunk_sizes_time_series(
+        self, cognite_client, chunk_size_time_series, n_exp_returned, raises_ctx, queries_for_iteration
+    ):
+        with raises_ctx:
+            for dps_lst in cognite_client.time_series.data(
+                queries_for_iteration[:5],
+                chunk_size_time_series=chunk_size_time_series,
+            ):
+                assert len(dps_lst) == n_exp_returned
+                assert list(map(len, dps_lst)) == [1000, 291, 1000, 1093, 2619][:n_exp_returned]
+                break
+
+    def test_invalid_options(self, cognite_client, queries_for_iteration):
+        _, q2, q3, q4, *_ = queries_for_iteration
+        q2.limit = 100_000
+        q3.limit = random.choice([None, -1, math.inf])
+        q4.include_outside_points = True
+        for query in q2, q3, q4:
+            with pytest.raises(ValueError, match="options 'include_outside_points' and 'limit' are not supported"):
+                next(cognite_client.time_series.data(query))
+
+    def test_duplicates_not_allowed(self, cognite_client, queries_for_iteration):
+        qs_with_duplicates = random.choices(queries_for_iteration * 2, k=len(queries_for_iteration) + 3)
+        with pytest.raises(ValueError, match="identifiers must be unique! Duplicates found"):
+            next(cognite_client.time_series.data(qs_with_duplicates))
+
+    def test_hidden_duplicates_also_not_allowed(self, cognite_client, ts_create_in_dms):
+        # We won't know that these are duplicates before runtime:
+        instance_id = ts_create_in_dms.as_id()
+        id_ = cognite_client.time_series.retrieve(instance_id=instance_id).id
+        qs_with_hidden_duplicates = [DatapointsQuery(id=id_), DatapointsQuery(instance_id=instance_id)]
+
+        with pytest.raises(RuntimeError, match="must be unique! You can not get around this"):
+            next(cognite_client.time_series.data(qs_with_hidden_duplicates))
+
+    @pytest.mark.parametrize(
+        "is_single, use_numpy, exp_type",
+        (
+            (True, False, Datapoints),
+            (False, False, DatapointsList),
+            (True, True, DatapointsArray),
+            (False, True, DatapointsArrayList),
+        ),
+    )
+    def test_iterate_single_ts(self, cognite_client, is_single, use_numpy, exp_type, all_test_time_series):
+        xid1 = all_test_time_series[0].external_id
+        query = DatapointsQuery(external_id=xid1)
+        if not is_single:
+            xid2 = all_test_time_series[1].external_id
+            query = [query, DatapointsQuery(external_id=xid2)]
+
+        res = next(cognite_client.time_series.data(query, return_arrays=use_numpy, chunk_size_datapoints=5))
+        assert isinstance(res, exp_type)
+        assert 5 == len(res[0] if isinstance(res, UserList) else res)
+
+    def test_no_data_is_noop(self, cognite_client, all_test_time_series):
+        xid = all_test_time_series[0].external_id
+        query = DatapointsQuery(external_id=xid, start=ts_to_ms("1970-01-01 00:00:00.100") + 1)
+        for _ in cognite_client.time_series.data(query):
+            assert False, "No iteration should happen"
+
+    def test_no_data_due_to_missing_is_noop(self, cognite_client):
+        xid = random_cognite_external_ids(1, str_len=80)[0]
+        query = DatapointsQuery(external_id=xid, ignore_unknown_ids=True)
+        for _ in cognite_client.time_series.data(query, ignore_unknown_ids=False):  # query should take precedence
+            assert False, "No iteration should happen"
+
+    def test_iterate_exhausted_but_queue_not_empty(self, cognite_client, weekly_dps_ts, all_test_time_series):
+        # These two have exactly 100k dps left, and we chunk time series 1-by-1, so the first will be unknowningly
+        # exhausted after the first iteration, then second iteration is not yielded because empty, but since the
+        # queue is not empty, the third iteration yields the second and on the fourth iteration, we quit (queue empty):
+        xid = all_test_time_series[115].external_id
+        instance_id = NodeId(
+            space="PySDK-DMS-time-series-integration-test",
+            external_id="PYSDK integration test 126: clone of 114",
         )
+        q1 = DatapointsQuery(external_id=xid, start=ts_to_ms("2013-07-21 12:00"))
+        q2 = DatapointsQuery(instance_id=instance_id, start=1356395118928)
+        dps_iterator = cognite_client.time_series.data(
+            [q1, q2], chunk_size_datapoints=100_000, chunk_size_time_series=1
+        )
+        (dps,) = dps_lst = next(dps_iterator)
+        assert len(dps_lst) == 1
+        assert len(dps) == 100_000
+        assert dps.external_id == xid
 
+        (dps,) = dps_lst = next(dps_iterator)
+        assert len(dps_lst) == 1
+        assert len(dps) == 100_000
+        assert dps.instance_id == instance_id
+
+        assert next(dps_iterator, None) is None
+
+    def test_iterate_datapoints(self, cognite_client, queries_for_iteration, all_test_time_series):
+        # One external id to follow through all iterations and use for asserts:
+        ts_xid = all_test_time_series[107].external_id
         dps_iterator = cognite_client.time_series.data(
             queries_for_iteration,
             ignore_bad_datapoints=False,
@@ -544,7 +666,7 @@ class TestIterateDatapoints:
         dps_lst = next(dps_iterator)
         assert len(dps_lst) == 4  # some few time series are exhausted
         assert list(map(len, dps_lst)) == [93, 1000, 1000, 1000]
-        assert dps_lst[0].external_id == "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric"
+        assert dps_lst[0].external_id == all_test_time_series[104].external_id
         dps = dps_lst.get(external_id=ts_xid)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (-118, 881)
 
