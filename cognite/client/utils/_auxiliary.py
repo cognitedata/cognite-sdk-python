@@ -43,6 +43,10 @@ def is_finite(limit: Any) -> TypeGuard[int]:
     return isinstance(limit, int) and limit >= 0
 
 
+def is_positive(limit: Any) -> TypeGuard[int]:
+    return isinstance(limit, int) and limit > 0
+
+
 def is_unlimited(limit: float | int | None) -> bool:
     return limit in {None, -1, math.inf}
 

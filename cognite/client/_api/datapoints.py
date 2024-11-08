@@ -50,6 +50,7 @@ from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
     find_duplicates,
     is_finite,
+    is_positive,
     split_into_chunks,
     split_into_n_parts,
     unpack_items_in_payload,
@@ -554,8 +555,8 @@ class DatapointsAPI(APIClient):
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
-            how many datapoints to yield per iteration. Note that in order to make efficient use of the API request limits, this method will never hold
-            less than 100k datapoints in memory at a time, per time series.
+            how many datapoints to yield per iteration. See full example in examples. Note that in order to make efficient use of the API request limits,
+            this method will never hold less than 100k datapoints in memory at a time, per time series.
 
             If you run with memory constraints, use ``return_arrays=True`` (the default).
 
@@ -649,7 +650,7 @@ class DatapointsAPI(APIClient):
             )
         chunk_fn = functools.partial(split_into_chunks, chunk_size=chunk_size_datapoints)
 
-        if not (chunk_size_time_series is None or is_finite(chunk_size_time_series)):
+        if not (chunk_size_time_series is None or is_positive(chunk_size_time_series)):
             raise ValueError(
                 f"'chunk_size_time_series' must be a positive integer or None, not {chunk_size_time_series}"
             )
@@ -709,6 +710,11 @@ class DatapointsAPI(APIClient):
             for query in to_fetch_queries:
                 ident = query.identifier
                 dps = dps_lst.get(**ident.as_dict(camel_case=False))
+                if isinstance(dps, list):
+                    raise RuntimeError(
+                        "When iterating datapoints, identifiers must be unique! You can not get around this by passing "
+                        "several of [id, external_id, instance_id] for the same underlying time series."
+                    )
                 # Update query.start for next iteration if ts is not yet exhausted:
                 if dps and len(dps) == request_limit:
                     new_start = cast(int, dps[-1].timestamp) + 1
