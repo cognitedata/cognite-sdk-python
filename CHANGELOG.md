@@ -17,9 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.65.0] - 2024-11-08
+## [7.65.0] - 2024-11-12
 ### Added
 - DatapointsAPI now support iteration like most other APIs: `for dps in client.time_series.data(...)`.
+  You may control memory usage by specifying how many time series to fetch in parallel with the
+  `chunk_size_time_series` parameter, and datapoints with `chunk_size_datapoints`.
 
 ## [7.64.13] - 2024-11-12
 ### Added
