@@ -32,7 +32,7 @@ class DocumentPreviewAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
     def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
-        """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
+        """`Downloads an image preview for a specific page of the specified document <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_.
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.
@@ -63,7 +63,7 @@ class DocumentPreviewAPI(APIClient):
     def download_page_as_png(
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
     ) -> None:
-        """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
+        """`Downloads an image preview for a specific page of the specified document <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_.
 
         Args:
             path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the file name will be '[id]_page[page_number].png'.
@@ -94,7 +94,7 @@ class DocumentPreviewAPI(APIClient):
         path.write_bytes(content)
 
     def download_document_as_pdf_bytes(self, id: int) -> bytes:
-        """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
+        """`Downloads a pdf preview of the specified document <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -116,7 +116,7 @@ class DocumentPreviewAPI(APIClient):
         return res.content
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
-        """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
+        """`Downloads a pdf preview of the specified document <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -148,7 +148,7 @@ class DocumentPreviewAPI(APIClient):
         path.write_bytes(content)
 
     def retrieve_pdf_link(self, id: int) -> TemporaryLink:
-        """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
+        """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_.
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.
@@ -240,7 +240,7 @@ class DocumentsAPI(APIClient):
         return cast(Iterator[Document], self())
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
-        """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Count of documents matching the specified filters and search <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_.
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
@@ -286,7 +286,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate property count for documents <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_.
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
@@ -342,7 +342,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate paths count for documents <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_.
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -380,7 +380,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique properties with counts for documents <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_.
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
@@ -441,7 +441,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique paths with counts for documents <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_.
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -476,7 +476,7 @@ class DocumentsAPI(APIClient):
         )
 
     def retrieve_content(self, id: int) -> bytes:
-        """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_.
 
         Returns extracted textual information for the given document.
 
@@ -504,7 +504,7 @@ class DocumentsAPI(APIClient):
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
-        """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+        """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_.
 
         Returns extracted textual information for the given document.
 
@@ -563,7 +563,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
-        """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
+        """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_.
 
         This endpoint lets you search for documents by using advanced filters and free text queries.
         Free text queries are matched against the documents' filenames and contents. For more information, see

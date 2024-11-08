@@ -119,12 +119,12 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     """A data point subscription is a way to listen to changes to time series data points, in ingestion order.
         This is the write version of a subscription, used to create new subscriptions.
 
-    A subscription can either be defined directly by a list of time series ids or indirectly by a filter.
+    A subscription can either be defined directly by a list of time series IDs or indirectly by a filter.
 
     Args:
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
-        time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        time_series_ids (list[ExternalId] | None): List of (external) IDs of time series that this subscription will listen to. Not compatible with filter.
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
@@ -166,7 +166,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
 
 
 # TODO: Remove this in next major release
-DataPointSubscriptionCreate = DataPointSubscriptionWrite
+DataPointSubscriptionCreate = DataPointSubscriptionWrite  #: :meta private:
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):
@@ -431,4 +431,4 @@ class DatapointSubscriptionProperty(EnumProperty):
 
 
 # TODO: Remove in major version 8:
-DatapointSubscriptionFilterProperties = DatapointSubscriptionProperty
+DatapointSubscriptionFilterProperties = DatapointSubscriptionProperty  #: :meta private:

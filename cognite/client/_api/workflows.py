@@ -60,7 +60,7 @@ class WorkflowTriggerAPI(APIClient):
         workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+        """`Create or update a trigger for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_.
 
         Args:
             workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specitification.
@@ -103,7 +103,7 @@ class WorkflowTriggerAPI(APIClient):
         workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`[DEPRECATED] Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+        """`[DEPRECATED] Create or update a trigger for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_.
 
         This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.
 
@@ -141,14 +141,14 @@ class WorkflowTriggerAPI(APIClient):
         self,
         external_id: str,
     ) -> None:
-        """`Delete a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+        """`Delete a trigger for a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_.
 
         Args:
-            external_id (str): The external id of the trigger to delete.
+            external_id (str): The external ID of the trigger to delete.
 
         Examples:
 
-            Delete a trigger with external id 'my_trigger':
+            Delete a trigger with external ID 'my_trigger':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -163,7 +163,7 @@ class WorkflowTriggerAPI(APIClient):
         self,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerList:
-        """`Retrieve the trigger list. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+        """`Retrieve the trigger list <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_.
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -192,10 +192,10 @@ class WorkflowTriggerAPI(APIClient):
         external_id: str,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerRunList:
-        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/listTriggerRuns>`_
+        """`List the history of runs for a trigger <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/listTriggerRuns>`_.
 
         Args:
-            external_id (str): The external id of the trigger to list runs for.
+            external_id (str): The external ID of the trigger to list runs for.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -203,7 +203,7 @@ class WorkflowTriggerAPI(APIClient):
 
         Examples:
 
-            Get all runs for a trigger with external id 'my_trigger':
+            Get all runs for a trigger with external ID 'my_trigger':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -224,12 +224,12 @@ class WorkflowTaskAPI(APIClient):
     def update(
         self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
     ) -> WorkflowTaskExecution:
-        """`Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
+        """`Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_.
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed' or 'failed'.
 
         Args:
-            task_id (str): The server-generated id of the task.
+            task_id (str): The server-generated ID of the task.
             status (Literal['completed', 'failed']): The new status of the task. Must be either 'completed' or 'failed'.
             output (dict | None): The output of the task. This will be available for tasks that has specified it as an output with the string "${<taskExternalId>.output}"
 
@@ -273,10 +273,10 @@ class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
-        """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
+        """`Retrieve a workflow execution with detailed information <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_.
 
         Args:
-            id (str): The server-generated id of the workflow execution.
+            id (str): The server-generated ID of the workflow execution.
 
         Returns:
             WorkflowExecutionDetailed | None: The requested workflow execution if it exists, None otherwise.
@@ -313,12 +313,12 @@ class WorkflowExecutionAPI(APIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`[DEPRECATED]Trigger a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`[DEPRECATED]Trigger a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_.
 
         This method is deprecated, use '.run' instead. It will be completely removed October 2024.
 
         Args:
-            workflow_external_id (str): External id of the workflow.
+            workflow_external_id (str): External ID of the workflow.
             version (str): Version of the workflow.
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
@@ -341,10 +341,10 @@ class WorkflowExecutionAPI(APIClient):
         client_credentials: ClientCredentials | None = None,
         nonce: str | None = None,
     ) -> WorkflowExecution:
-        """`Run a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Run a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_.
 
         Args:
-            workflow_external_id (str): External id of the workflow.
+            workflow_external_id (str): External ID of the workflow.
             version (str): Version of the workflow.
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
@@ -410,10 +410,10 @@ class WorkflowExecutionAPI(APIClient):
         statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
-        """`List workflow executions in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
+        """`List workflow executions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_.
 
         Args:
-            workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_version_ids (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None): Workflow version ID or list of workflow version IDs to filter on.
             created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
             created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
             statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
@@ -462,10 +462,10 @@ class WorkflowExecutionAPI(APIClient):
         )
 
     def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
-        """`cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
+        """`cancel a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_.
 
         Args:
-            id (str): The server-generated id of the workflow execution.
+            id (str): The server-generated ID of the workflow execution.
             reason (str | None): The reason for the cancellation, this will be put within the execution's `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
 
         Note:
@@ -496,10 +496,10 @@ class WorkflowExecutionAPI(APIClient):
         return WorkflowExecution._load(response.json())
 
     def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
-        """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
+        """`Retry a workflow execution <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_.
 
         Args:
-            id (str): The server-generated id of the workflow execution.
+            id (str): The server-generated ID of the workflow execution.
             client_credentials (ClientCredentials | None): Specific credentials that should be used to retry the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
@@ -553,11 +553,11 @@ class WorkflowVersionAPI(APIClient):
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
     ) -> Iterator[WorkflowVersion] | Iterator[WorkflowVersionList]:
-        """Iterate over workflow versions
+        """Iterate over workflow versions.
 
         Args:
             chunk_size (int | None): The number of workflow versions to return in each chunk. Defaults to yielding one workflow version at a time.
-            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version ID or list of workflow version IDs to filter on.
             limit (int | None): Maximum number of workflow versions to return. Defaults to returning all.
 
         Returns:
@@ -577,9 +577,9 @@ class WorkflowVersionAPI(APIClient):
         return self()
 
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
-        """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
+        """`Create a workflow version <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_.
 
-        Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
+        Note this is an upsert endpoint, so if a workflow with the same version external ID already exists, it will be updated.
 
         Furthermore, if the workflow does not exist, it will be created.
 
@@ -630,11 +630,11 @@ class WorkflowVersionAPI(APIClient):
         workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
+        """`Delete a workflow version(s) <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_.
 
         Args:
-            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
-            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version ID or list of workflow version IDs to delete.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -660,10 +660,10 @@ class WorkflowVersionAPI(APIClient):
         )
 
     def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
-        """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
+        """`Retrieve a workflow version <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_.
 
         Args:
-            workflow_external_id (str): External id of the workflow.
+            workflow_external_id (str): External ID of the workflow.
             version (str): Version of the workflow.
 
         Returns:
@@ -693,10 +693,10 @@ class WorkflowVersionAPI(APIClient):
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
-        """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_
+        """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_.
 
         Args:
-            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
+            workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version ID or list of workflow version IDs to filter on.
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
@@ -758,7 +758,7 @@ class WorkflowAPI(APIClient):
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[Workflow] | Iterator[WorkflowList]:
-        """Iterate over workflows
+        """Iterate over workflows.
 
         Args:
             chunk_size (int | None): The number of workflows to return in each chunk. Defaults to yielding one workflow at a time.
@@ -777,9 +777,9 @@ class WorkflowAPI(APIClient):
         return self()
 
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
-        """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+        """`Create a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_.
 
-        Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
+        Note this is an upsert endpoint, so if a workflow with the same external ID already exists, it will be updated.
 
         Args:
             workflow (WorkflowUpsert): The workflow to create or update.
@@ -807,7 +807,7 @@ class WorkflowAPI(APIClient):
         return Workflow._load(response.json()["items"][0])
 
     def retrieve(self, external_id: str) -> Workflow | None:
-        """`Retrieve a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+        """`Retrieve a workflow <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_.
 
         Args:
             external_id (str): Identifier for a Workflow. Must be unique for the project.
@@ -832,11 +832,11 @@ class WorkflowAPI(APIClient):
         return Workflow._load(response.json())
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
+        """`Delete one or more workflows with versions <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_.
 
         Args:
-            external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
-            ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs to delete.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:
 
@@ -853,7 +853,7 @@ class WorkflowAPI(APIClient):
         )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
-        """`List all workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/FetchAllWorkflows>`_
+        """`List all workflows in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/FetchAllWorkflows>`_.
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None

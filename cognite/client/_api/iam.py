@@ -312,7 +312,7 @@ class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
     def list(self, all: bool = False) -> GroupList:
-        """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
+        """`List groups <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_.
 
         Args:
             all (bool): Whether to get all groups, only available with the groups:list acl.
@@ -344,7 +344,7 @@ class GroupsAPI(APIClient):
     def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
     def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
-        """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
+        """`Create one or more groups <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_.
 
         Args:
             group (Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]): Group or list of groups to create.
@@ -410,7 +410,7 @@ class GroupsAPI(APIClient):
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
+        """`Delete one or more groups <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_.
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of groups to delete.
@@ -430,7 +430,7 @@ class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
-        """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
+        """`List security categories <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_.
 
         Args:
             limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -463,7 +463,7 @@ class SecurityCategoriesAPI(APIClient):
         | Sequence[SecurityCategory]
         | Sequence[SecurityCategoryWrite],
     ) -> SecurityCategory | SecurityCategoryList:
-        """`Create one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_
+        """`Create one or more security categories <https://developer.cognite.com/api#tag/Security-categories/operation/createSecurityCategories>`_.
 
         Args:
             security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
@@ -489,7 +489,7 @@ class SecurityCategoriesAPI(APIClient):
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
+        """`Delete one or more security categories <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_.
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of security categories to delete.
@@ -507,7 +507,7 @@ class SecurityCategoriesAPI(APIClient):
 
 class TokenAPI(APIClient):
     def inspect(self) -> TokenInspection:
-        """Inspect a token.
+        """Inspect the token currently used by the client.
 
         Get details about which projects it belongs to and which capabilities are granted to it.
 
@@ -538,7 +538,7 @@ class SessionsAPI(APIClient):
         client_credentials: ClientCredentials | None = None,
         session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
     ) -> CreatedSession:
-        """`Create a session. <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_
+        """`Create a session <https://developer.cognite.com/api#tag/Sessions/operation/createSessions>`_.
 
         Args:
             client_credentials (ClientCredentials | None): The client credentials to create the session. This is required
@@ -589,10 +589,12 @@ class SessionsAPI(APIClient):
     def revoke(self, id: Sequence[int]) -> SessionList: ...
 
     def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
+        """`Revoke access to a session <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_.
+
+        Revocation of a session may in some cases take up to 1 hour to take effect.
 
         Args:
-            id (int | Sequence[int]): Id or list of session ids
+            id (int | Sequence[int]): ID or list of session IDs.
 
         Returns:
             Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
@@ -610,7 +612,7 @@ class SessionsAPI(APIClient):
     def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
     def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
-        """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
+        """`Retrieves sessions with given IDs <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_.
 
         The request will fail if any of the IDs does not belong to an existing session.
 
@@ -629,7 +631,7 @@ class SessionsAPI(APIClient):
         )
 
     def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
-        """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
+        """`List all sessions in the current project <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_.
 
         Args:
             status (SessionStatus | None): If given, only sessions with the given status are returned.

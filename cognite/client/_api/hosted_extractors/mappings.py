@@ -93,7 +93,7 @@ class MappingsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
-        """`Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
+        """`Retrieve one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -162,7 +162,7 @@ class MappingsAPI(APIClient):
     def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
 
     def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
-        """`Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
+        """`Create one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_.
 
         Args:
             items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
@@ -198,7 +198,7 @@ class MappingsAPI(APIClient):
     def update(
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
-        """`Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
+        """`Update one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_.
 
         Args:
             items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.

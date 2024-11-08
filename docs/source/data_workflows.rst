@@ -3,98 +3,56 @@ Data Workflows
 
 Workflows
 ------------
-Upsert Workflow
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.upsert
+.. currentmodule:: cognite.client
 
-Delete Workflow(s)
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.delete
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve Workflow
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.retrieve
-
-List Workflows
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.list
-
+   CogniteClient.workflows
 
 Workflow Versions
 ------------------
-Upsert Workflow Version
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.upsert
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Delete Workflow Version(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.delete
-
-Retrieve Workflow Version
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.retrieve
-
-List Workflow Versions
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.list
-
+   CogniteClient.workflows.versions
 
 Workflow Executions
 --------------------
-List Workflow Executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve Detailed Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
-
-Run Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.run
-
-Trigger Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
-
-Cancel Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.cancel
-
-Retry Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retry
+   CogniteClient.workflows.executions
 
 Workflow Tasks
 ------------------
-Update Status of Async Task
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTaskAPI.update
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.workflows.tasks
 
 Workflow Triggers
 -------------------
-Create or update triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.upsert
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.create
-
-Delete triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.delete
-
-Get triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_triggers
-
-Get trigger run history for a workflow trigger
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_trigger_run_history
+   CogniteClient.workflows.triggers
 
 Data Workflows data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.workflows
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.workflows

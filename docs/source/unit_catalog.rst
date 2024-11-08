@@ -3,22 +3,29 @@ Unit Catalog
 
 Units
 ------------
-List Units
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitAPI.list
+.. currentmodule:: cognite.client
 
-Retrieve Unit
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.units
 
 Unit Systems
 ------------------
-List Unit System
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitSystemAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.units.systems
 
 Unit data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.units
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.units

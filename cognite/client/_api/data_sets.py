@@ -63,7 +63,7 @@ class DataSetsAPI(APIClient):
         write_protected: bool | None = None,
         limit: int | None = None,
     ) -> Iterator[DataSet] | Iterator[DataSetList]:
-        """Iterate over data sets
+        """Iterate over data sets.
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
@@ -91,12 +91,12 @@ class DataSetsAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[DataSet]:
-        """Iterate over data sets
+        """Iterate over data sets.
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Returns:
-            Iterator[DataSet]: yields DataSet one by one.
+            Iterator[DataSet]: Yields DataSet one by one.
         """
         return self()
 
@@ -109,13 +109,13 @@ class DataSetsAPI(APIClient):
     def create(
         self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
     ) -> DataSet | DataSetList:
-        """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
+        """`Create one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_.
 
         Args:
             data_set (DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
-            DataSet | DataSetList: Created data set(s)
+            DataSet | DataSetList: Created data set(s).
 
         Examples:
 
@@ -132,7 +132,7 @@ class DataSetsAPI(APIClient):
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
-        """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
+        """`Retrieve a single data set by ID <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_.
 
         Args:
             id (int | None): ID
@@ -143,13 +143,13 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Get data set by id::
+            Get data set by ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve(id=1)
 
-            Get data set by external id::
+            Get data set by external ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -164,7 +164,7 @@ class DataSetsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
-        """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
+        """`Retrieve multiple data sets by ID <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -176,13 +176,13 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Get data sets by id::
+            Get data sets by ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve_multiple(ids=[1, 2, 3])
 
-            Get data sets by external id::
+            Get data sets by external ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -194,13 +194,13 @@ class DataSetsAPI(APIClient):
         )
 
     def aggregate(self, filter: DataSetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
-        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
+        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_.
 
         Args:
-            filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
+            filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match.
 
         Returns:
-            list[CountAggregate]: List of data set aggregates
+            list[CountAggregate]: List of data set aggregates.
 
         Examples:
 
@@ -272,7 +272,7 @@ class DataSetsAPI(APIClient):
         write_protected: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DataSetList:
-        """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
+        """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_.
 
         Args:
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.

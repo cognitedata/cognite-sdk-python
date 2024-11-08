@@ -21,8 +21,8 @@ class VisionAPI(APIClient):
     @staticmethod
     def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
-        Utility for sanitizing a given lists of ids and external ids.
-        Returns the concatenation of the ids an external ids in the format
+        Utility for sanitizing a given lists of IDs and external ids.
+        Returns the concatenation of the IDs an external IDs in the format
         expected by the Context API.
 
         Args:
@@ -66,12 +66,12 @@ class VisionAPI(APIClient):
         file_external_ids: list[str] | None = None,
         parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
-        """`Start an asynchronous job to extract features from image files. <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_
+        """`Start an asynchronous job to extract features from image files <https://developer.cognite.com/api#tag/Vision/operation/postVisionExtract>`_.
 
         Args:
             features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
             file_ids (list[int] | None): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (list[str] | None): The external file ids of the image files to analyze.
+            file_external_ids (list[str] | None): The external file IDs of the image files to analyze.
             parameters (FeatureParameters | None): No description.
         Returns:
             VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
@@ -117,7 +117,7 @@ class VisionAPI(APIClient):
         )
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
-        """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
+        """`Retrieve an existing extract job by ID <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_.
 
         Args:
             job_id (int): ID of an existing feature extraction job.

@@ -49,8 +49,8 @@ class TemplatesAPI(APIClient):
         )
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
-        """
-        `Run a GraphQL Query.`
+        """`Run a GraphQL Query.`
+
         To learn more, see https://graphql.org/learn/
 
         Args:
@@ -124,6 +124,7 @@ class TemplateGroupsAPI(APIClient):
 
     def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Upsert one or more template groups.`
+
         Will overwrite existing template group(s) with the same external id(s).
 
         Args:
@@ -189,6 +190,7 @@ class TemplateGroupsAPI(APIClient):
         self, limit: int | None = DEFAULT_LIMIT_READ, owners: SequenceNotStr[str] | None = None
     ) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
+
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
@@ -246,6 +248,7 @@ class TemplateGroupVersionsAPI(APIClient):
 
     def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`
+
         A Template Group update supports specifying different conflict modes, which is used when an existing schema already exists.
 
         Patch -> It diffs the new schema with the old schema and fails if there are breaking changes.
@@ -297,6 +300,7 @@ class TemplateGroupVersionsAPI(APIClient):
         max_version: int | None = None,
     ) -> TemplateGroupVersionList:
         """`Lists versions of a specified template group.`
+
         Up to 1000 template group version can be retrieved in one operation.
 
         Args:
@@ -404,6 +408,7 @@ class TemplateInstancesAPI(APIClient):
         self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Upsert one or more template instances.`
+
         Will overwrite existing instances.
 
         Args:
@@ -454,6 +459,7 @@ class TemplateInstancesAPI(APIClient):
         self, external_id: str, version: int, item: TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Update one or more template instances`
+
         Args:
             external_id (str): No description.
             version (int): No description.
@@ -484,7 +490,7 @@ class TemplateInstancesAPI(APIClient):
     def retrieve_multiple(
         self, external_id: str, version: int, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
-        """`Retrieve multiple template instances by external id.`
+        """`Retrieve multiple template instances by external ID.`
 
         Args:
             external_id (str): The template group to retrieve instances from.
@@ -522,6 +528,7 @@ class TemplateInstancesAPI(APIClient):
         template_names: SequenceNotStr[str] | None = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
+
         Up to 1000 template instances can be retrieved in one operation.
 
         Args:
@@ -565,11 +572,11 @@ class TemplateInstancesAPI(APIClient):
         Args:
             external_id (str): External ID of the template group.
             version (int): The version of the template group.
-            external_ids (SequenceNotStr[str]): The external ids of the template instances to delete
+            external_ids (SequenceNotStr[str]): The external IDs of the template instances to delete.
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Examples:
-            Delete template groups by external id:
+            Delete template groups by external ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -679,6 +686,7 @@ class TemplateViewsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ViewResolveList:
         """`Resolves a View.`
+
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
 
         Args:
@@ -711,6 +719,7 @@ class TemplateViewsAPI(APIClient):
 
     def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
         """`Lists view in a template group.`
+
         Up to 1000 views can be retrieved in one operation.
 
         Args:

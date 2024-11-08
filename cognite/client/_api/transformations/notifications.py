@@ -49,7 +49,7 @@ class TransformationNotificationsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = None,
     ) -> Iterator[TransformationNotification] | Iterator[TransformationNotificationList]:
-        """Iterate over transformation notifications
+        """Iterate over transformation notifications.
 
         Args:
             chunk_size (int | None): Number of notifications to yield per chunk. Defaults to yielding notifications one by one.
@@ -97,13 +97,13 @@ class TransformationNotificationsAPI(APIClient):
         | Sequence[TransformationNotification]
         | Sequence[TransformationNotificationWrite],
     ) -> TransformationNotification | TransformationNotificationList:
-        """`Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
+        """`Subscribe for notifications on the transformation errors <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_.
 
         Args:
             notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
 
         Returns:
-            TransformationNotification | TransformationNotificationList: Created notification(s)
+            TransformationNotification | TransformationNotificationList: Created notification(s).
 
         Examples:
 
@@ -130,7 +130,7 @@ class TransformationNotificationsAPI(APIClient):
         destination: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationNotificationList:
-        """`List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
+        """`List notification subscriptions <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_.
 
         Args:
             transformation_id (int | None): Filter by transformation internal numeric ID.
@@ -170,14 +170,16 @@ class TransformationNotificationsAPI(APIClient):
         )
 
     def delete(self, id: int | Sequence[int] | None = None) -> None:
-        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
+        """`Deletes the specified notification subscriptions on the transformation <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_.
+
+        Does nothing when the subscriptions already don't exist.
 
         Args:
-            id (int | Sequence[int] | None): Id or list of transformation notification ids
+            id (int | Sequence[int] | None): ID or list of transformation notification IDs.
 
         Examples:
 
-            Delete schedules by id or external id::
+            Delete schedules by ID or external ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

@@ -129,7 +129,7 @@ class LabelDefinitionFilter(CogniteFilter):
 
     Args:
         name (str | None): Returns the label definitions matching that name.
-        external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
+        external_id_prefix (str | None): Filter label definitions with external IDs starting with the prefix specified.
         data_set_ids (list[dict[str, Any]] | None): Only include labels that belong to these datasets.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """

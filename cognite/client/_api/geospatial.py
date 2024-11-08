@@ -121,8 +121,7 @@ class GeospatialAPI(APIClient):
         )
 
     def list_feature_types(self) -> FeatureTypeList:
-        """`List feature types`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatureTypes>
+        """`List feature types <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatureTypes>`_.
 
         Returns:
             FeatureTypeList: List of feature types
@@ -314,8 +313,7 @@ class GeospatialAPI(APIClient):
     def delete_features(
         self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
-        """`Delete one or more feature`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>
+        """`Delete one or more features <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>`_.
 
         Args:
             feature_type_external_id (str): No description.
@@ -398,8 +396,7 @@ class GeospatialAPI(APIClient):
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
     ) -> FeatureList:
-        """`Update features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
+        """`Update features <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>`_.
 
         Args:
             feature_type_external_id (str): No description.
@@ -453,8 +450,7 @@ class GeospatialAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
-        """`List features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatures>
+        """`List features <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatures>`_.
 
         This method allows to filter all features.
 
@@ -533,8 +529,7 @@ class GeospatialAPI(APIClient):
         allow_crs_transformation: bool = False,
         allow_dimensionality_mismatch: bool = False,
     ) -> FeatureList:
-        """`Search for features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>
+        """`Search for features <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>`_.
 
         This method allows to order the result by one or more of the properties of the feature type.
         However, the number of items returned is limited to 1000 and there is no support for cursors yet.
@@ -726,8 +721,7 @@ class GeospatialAPI(APIClient):
         order_by: Sequence[OrderSpec] | None = None,
         output: dict[str, Any] | None = None,
     ) -> FeatureAggregateList:
-        """`Aggregate filtered features`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>
+        """`Aggregate filtered features <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>`_.
 
         Args:
             feature_type_external_id (str): the feature type to filter features from
@@ -803,8 +797,7 @@ class GeospatialAPI(APIClient):
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
-        """`List Coordinate Reference Systems`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
+        """`List Coordinate Reference Systems <https://developer.cognite.com/api#tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>`_.
 
         Args:
             only_custom (bool): list only custom CRSs or not
@@ -830,8 +823,7 @@ class GeospatialAPI(APIClient):
         | Sequence[CoordinateReferenceSystem]
         | Sequence[CoordinateReferenceSystemWrite],
     ) -> CoordinateReferenceSystemList:
-        """`Create Coordinate Reference System`
-        <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
+        """`Create Coordinate Reference System <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>`_.
 
         Args:
             crs (CoordinateReferenceSystem | CoordinateReferenceSystemWrite | Sequence[CoordinateReferenceSystem] | Sequence[CoordinateReferenceSystemWrite]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
@@ -929,7 +921,7 @@ class GeospatialAPI(APIClient):
         raster_scale_x: float | None = None,
         raster_scale_y: float | None = None,
     ) -> RasterMetadata:
-        """`Put raster <https://developer.cognite.com/api#tag/Geospatial/operation/putRaster>`
+        """`Put raster <https://developer.cognite.com/api#tag/Geospatial/operation/putRaster>`_.
 
         Args:
             feature_type_external_id (str): No description.
@@ -985,7 +977,7 @@ class GeospatialAPI(APIClient):
         feature_external_id: str,
         raster_property_name: str,
     ) -> None:
-        """`Delete raster <https://developer.cognite.com/api#tag/Geospatial/operation/deleteRaster>`
+        """`Delete raster <https://developer.cognite.com/api#tag/Geospatial/operation/deleteRaster>`_.
 
         Args:
             feature_type_external_id (str): No description.
@@ -1024,7 +1016,7 @@ class GeospatialAPI(APIClient):
         raster_scale_y: float | None = None,
         allow_crs_transformation: bool = False,
     ) -> bytes:
-        """`Get raster <https://developer.cognite.com/api#tag/Geospatial/operation/getRaster>`
+        """`Get raster <https://developer.cognite.com/api#tag/Geospatial/operation/getRaster>`_.
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -1072,7 +1064,7 @@ class GeospatialAPI(APIClient):
         self,
         output: dict[str, GeospatialComputeFunction],
     ) -> GeospatialComputedResponse:
-        """`Compute <https://developer.cognite.com/api#tag/Geospatial/operation/compute>`
+        """`Compute <https://developer.cognite.com/api#tag/Geospatial/operation/compute>`_.
 
         Args:
             output (dict[str, GeospatialComputeFunction]): No description.

@@ -86,7 +86,7 @@ class CredentialProvider(Protocol):
 
 
 class Token(CredentialProvider):
-    """Token credential provider
+    """Token credential provider.
 
     Args:
         token (str | Callable[[], str]): A token or a token factory.
@@ -262,7 +262,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     Args:
         authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
-        client_id (str): Your application's client id that allows device code flows.
+        client_id (str): Your application's client ID that allows device code flows.
         scopes (list[str] | None): A list of scopes.
         cdf_cluster (str | None): The CDF cluster where the CDF project is located. If provided, scopes will be set to
             [f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"].
@@ -517,7 +517,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         app registration for device code flow. If you need device code flow with another app registration, instantiate
         OAuthDeviceCode directly.
 
-        The default configuration creates the URLs based on the tenant id and cluster:
+        The default configuration creates the URLs based on the tenant ID and cluster:
 
         * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
@@ -674,7 +674,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         """
         Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
 
-        The default configuration creates the URLs based on the tenant id and cluster:
+        The default configuration creates the URLs based on the tenant ID and cluster:
 
         * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
@@ -851,7 +851,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         """
         Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
 
-        The default configuration creates the URLs based on the tenant id and cluster/oauth2/v2.0/token:
+        The default configuration creates the URLs based on the tenant ID and cluster/oauth2/v2.0/token:
 
         * Token URL: "https://login.microsoftonline.com/{tenant_id}"
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]

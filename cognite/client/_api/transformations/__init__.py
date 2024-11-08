@@ -163,7 +163,7 @@ class TransformationsAPI(APIClient):
         self,
         transformation: Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite],
     ) -> Transformation | TransformationList:
-        """`Create one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_
+        """`Create one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_.
 
         Args:
             transformation (Transformation | TransformationWrite | Sequence[Transformation] | Sequence[TransformationWrite]): Transformation or list of transformations to create.
@@ -261,7 +261,7 @@ class TransformationsAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
+        """`Delete one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -298,7 +298,7 @@ class TransformationsAPI(APIClient):
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
-        """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_
+        """`List all transformations <https://developer.cognite.com/api#tag/Transformations/operation/filterTransformations>`_.
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -352,7 +352,7 @@ class TransformationsAPI(APIClient):
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
-        """`Retrieve a single transformation by id. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
+        """`Retrieve a single transformation by ID <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_.
 
         Args:
             id (int | None): ID
@@ -388,7 +388,7 @@ class TransformationsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationList:
-        """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
+        """`Retrieve multiple transformations by ID <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_.
 
         Args:
             ids (Sequence[int] | None): List of ids to retrieve.
@@ -510,7 +510,7 @@ class TransformationsAPI(APIClient):
         wait: bool = True,
         timeout: float | None = None,
     ) -> TransformationJob:
-        """`Run a transformation. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
+        """`Run a transformation <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_.
 
         Args:
             transformation_id (int | None): Transformation internal id
@@ -555,7 +555,7 @@ class TransformationsAPI(APIClient):
         transformation_external_id: str | None = None,
         timeout: float | None = None,
     ) -> TransformationJob:
-        """`Run a transformation to completion asynchronously. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
+        """`Run a transformation to completion asynchronously <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_.
 
         Args:
             transformation_id (int | None): internal Transformation id
@@ -588,11 +588,11 @@ class TransformationsAPI(APIClient):
         return await job.wait_async(timeout=timeout)
 
     def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
-        """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_
+        """`Cancel a running transformation <https://developer.cognite.com/api#tag/Transformations/operation/postApiV1ProjectsProjectTransformationsCancel>`_.
 
         Args:
-            transformation_id (int | None): Transformation internal id
-            transformation_external_id (str | None): Transformation external id
+            transformation_id (int | None): Transformation internal ID.
+            transformation_external_id (str | None): Transformation external ID.
 
         Examples:
 
@@ -621,7 +621,7 @@ class TransformationsAPI(APIClient):
         infer_schema_limit: int | None = 10_000,
         timeout: int | None = 240,
     ) -> TransformationPreviewResult:
-        """`Preview the result of a query. <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_
+        """`Preview the result of a query <https://developer.cognite.com/api#tag/Query/operation/runPreview>`_.
 
         Args:
             query (str | None): SQL query to run for preview.

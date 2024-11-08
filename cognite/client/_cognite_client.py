@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from requests import Response
@@ -34,6 +35,53 @@ from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
+
+_build_docs = os.getenv("BUILD_COGNITE_SDK_DOCS")
+if _build_docs:
+    from cognite.client._api.data_modeling.containers import ContainersAPI
+    from cognite.client._api.data_modeling.data_models import DataModelsAPI
+    from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
+    from cognite.client._api.data_modeling.instances import InstancesAPI
+    from cognite.client._api.data_modeling.spaces import SpacesAPI
+    from cognite.client._api.data_modeling.views import ViewsAPI
+    from cognite.client._api.datapoints import DatapointsAPI
+    from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
+    from cognite.client._api.documents import DocumentPreviewAPI
+    from cognite.client._api.extractionpipelines import (
+        ExtractionPipelineConfigsAPI,
+        ExtractionPipelineRunsAPI,
+    )
+    from cognite.client._api.functions import FunctionCallsAPI, FunctionSchedulesAPI
+    from cognite.client._api.iam import GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+    from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+    from cognite.client._api.sequences import SequencesDataAPI
+    from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
+    from cognite.client._api.templates import (
+        TemplateGroupsAPI,
+        TemplateGroupVersionsAPI,
+        TemplateInstancesAPI,
+        TemplateViewsAPI,
+    )
+    from cognite.client._api.three_d import (
+        ThreeDAssetMappingAPI,
+        ThreeDFilesAPI,
+        ThreeDModelsAPI,
+        ThreeDRevisionsAPI,
+    )
+    from cognite.client._api.transformations import (
+        TransformationJobsAPI,
+        TransformationNotificationsAPI,
+        TransformationSchedulesAPI,
+        TransformationSchemaAPI,
+    )
+    from cognite.client._api.units import UnitSystemAPI
+    from cognite.client._api.user_profiles import UserProfilesAPI
+    from cognite.client._api.workflows import (
+        WorkflowExecutionAPI,
+        WorkflowTaskAPI,
+        WorkflowTriggerAPI,
+        WorkflowVersionAPI,
+    )
 
 
 class CogniteClient:
@@ -218,11 +266,83 @@ class CogniteClient:
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
-    @classmethod
-    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
+
+def _make_accessors_for_building_docs() -> None:
+    CogniteClient.assets = AssetsAPI  # type: ignore
+    CogniteClient.events = EventsAPI  # type: ignore
+    CogniteClient.files = FilesAPI  # type: ignore
+    CogniteClient.iam = IAMAPI  # type: ignore
+    CogniteClient.iam.token = TokenAPI  # type: ignore
+    CogniteClient.iam.groups = GroupsAPI  # type: ignore
+    CogniteClient.iam.security_categories = SecurityCategoriesAPI  # type: ignore
+    CogniteClient.iam.sessions = SessionsAPI  # type: ignore
+    CogniteClient.iam.user_profiles = UserProfilesAPI  # type: ignore
+    CogniteClient.data_sets = DataSetsAPI  # type: ignore
+    CogniteClient.sequences = SequencesAPI  # type: ignore
+    CogniteClient.sequences.data = SequencesDataAPI  # type: ignore
+    CogniteClient.time_series = TimeSeriesAPI  # type: ignore
+    CogniteClient.time_series.data = DatapointsAPI  # type: ignore
+    CogniteClient.time_series.data.synthetic = SyntheticDatapointsAPI  # type: ignore
+    CogniteClient.time_series.subscriptions = DatapointsSubscriptionAPI  # type: ignore
+    CogniteClient.geospatial = GeospatialAPI  # type: ignore
+    CogniteClient.raw = RawAPI  # type: ignore
+    CogniteClient.raw.databases = RawDatabasesAPI  # type: ignore
+    CogniteClient.raw.tables = RawTablesAPI  # type: ignore
+    CogniteClient.raw.rows = RawRowsAPI  # type: ignore
+    CogniteClient.three_d = ThreeDAPI  # type: ignore
+    CogniteClient.three_d.models = ThreeDModelsAPI  # type: ignore
+    CogniteClient.three_d.revisions = ThreeDRevisionsAPI  # type: ignore
+    CogniteClient.three_d.files = ThreeDFilesAPI  # type: ignore
+    CogniteClient.three_d.asset_mappings = ThreeDAssetMappingAPI  # type: ignore
+    CogniteClient.labels = LabelsAPI  #  type: ignore
+    CogniteClient.relationships = RelationshipsAPI  # type: ignore
+    CogniteClient.entity_matching = EntityMatchingAPI  # type: ignore
+    CogniteClient.templates = TemplatesAPI  # type: ignore
+    CogniteClient.templates.groups = TemplateGroupsAPI  # type: ignore
+    CogniteClient.templates.versions = TemplateGroupVersionsAPI  # type: ignore
+    CogniteClient.templates.instances = TemplateInstancesAPI  # type: ignore
+    CogniteClient.templates.views = TemplateViewsAPI  # type: ignore
+    CogniteClient.vision = VisionAPI  # type: ignore
+    CogniteClient.extraction_pipelines = ExtractionPipelinesAPI  # type: ignore
+    CogniteClient.extraction_pipelines.runs = ExtractionPipelineRunsAPI  # type: ignore
+    CogniteClient.extraction_pipelines.config = ExtractionPipelineConfigsAPI  # type: ignore
+    CogniteClient.transformations = TransformationsAPI  # type: ignore
+    CogniteClient.transformations.schedules = TransformationSchedulesAPI  # type: ignore
+    CogniteClient.transformations.notifications = TransformationNotificationsAPI  # type: ignore
+    CogniteClient.transformations.jobs = TransformationJobsAPI  # type: ignore
+    CogniteClient.transformations.schema = TransformationSchemaAPI  # type: ignore
+    CogniteClient.diagrams = DiagramsAPI  # type: ignore
+    CogniteClient.annotations = AnnotationsAPI  # type: ignore
+    CogniteClient.functions = FunctionsAPI  # type: ignore
+    CogniteClient.functions.calls = FunctionCallsAPI  # type: ignore
+    CogniteClient.functions.schedules = FunctionSchedulesAPI  # type: ignore
+    CogniteClient.data_modeling = DataModelingAPI  # type: ignore
+    CogniteClient.data_modeling.data_models = DataModelsAPI  # type: ignore
+    CogniteClient.data_modeling.spaces = SpacesAPI  # type: ignore
+    CogniteClient.data_modeling.views = ViewsAPI  # type: ignore
+    CogniteClient.data_modeling.containers = ContainersAPI  # type: ignore
+    CogniteClient.data_modeling.instances = InstancesAPI  # type: ignore
+    CogniteClient.data_modeling.graphql = DataModelingGraphQLAPI  # type: ignore
+    CogniteClient.documents = DocumentsAPI  # type: ignore
+    CogniteClient.documents.previews = DocumentPreviewAPI  # type: ignore
+    CogniteClient.workflows = WorkflowAPI  # type: ignore
+    CogniteClient.workflows.versions = WorkflowVersionAPI  # type: ignore
+    CogniteClient.workflows.executions = WorkflowExecutionAPI  # type: ignore
+    CogniteClient.workflows.tasks = WorkflowTaskAPI  # type: ignore
+    CogniteClient.workflows.triggers = WorkflowTriggerAPI  # type: ignore
+    CogniteClient.units = UnitAPI  # type: ignore
+    CogniteClient.units.systems = UnitSystemAPI  # type: ignore
+
+
+if _build_docs == "true":
+    _make_accessors_for_building_docs()
+
+    @classmethod  # type: ignore
+    def load(cls: type[CogniteClient], config: dict[str, Any] | str) -> CogniteClient:
         """Load a cognite client object from a YAML/JSON string or dict.
 
         Args:
+            cls (type[CogniteClient]): The CogniteClient class.
             config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
 
         Returns:

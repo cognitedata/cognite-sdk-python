@@ -1,129 +1,84 @@
 Data Ingestion
 ==============
+.. currentmodule:: cognite.client
 
 Raw
 ---
 Databases
 ^^^^^^^^^
-List databases
-~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create new databases
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.create
-
-Delete databases
-~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.delete
+   CogniteClient.raw.databases
 
 
 Tables
 ^^^^^^
-List tables in a database
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create new tables in a database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.create
-
-Delete tables from a database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.delete
+   CogniteClient.raw.tables
 
 
 Rows
 ^^^^
-Get a row from a table
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List rows in a table
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.list
-
-Insert rows into a table
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert
-
-Delete rows from a table
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.delete
-
-Retrieve pandas dataframe
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
-
-Insert pandas dataframe
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+   CogniteClient.raw.rows
 
 
 RAW Data classes
 ^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.raw
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.raw
+
 
 Extraction pipelines
 --------------------
-List extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create extraction pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.create
-
-Retrieve an extraction pipeline by ID
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve
-
-Retrieve multiple extraction pipelines by ID
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve_multiple
-
-Update extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.update
-
-Delete extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.delete
+   CogniteClient.extraction_pipelines
 
 
 Extraction pipeline runs
 ------------------------
-List runs for an extraction pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Report new runs
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create
+   CogniteClient.extraction_pipelines.runs
 
 
 Extraction pipeline configs
 ---------------------------
-Get the latest or a specific config revision
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List configuration revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.list
+   CogniteClient.extraction_pipelines.config
 
-Create a config revision
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.create
-
-Revert to an earlier config revision
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
 
 Extractor Config Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.extractionpipelines
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.extractionpipelines

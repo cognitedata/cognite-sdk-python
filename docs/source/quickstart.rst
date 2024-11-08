@@ -3,8 +3,8 @@ Quickstart
 
 There are multiple ways that a CogniteClient can be configured to authenticate with Cognite Data Fusion (CDF). For the purpose of
 this quickstart we'll demonstrate the most common/recommended patterns. More details and usage examples can be found in each respective
-section: :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
-:ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`.
+section: :doc:`generated/cognite.client.CogniteClient`, :doc:`generated/cognite.client.ClientConfig`,
+:doc:`generated/cognite.client.global_config`, and :ref:`credential_providers:Credential Providers`.
 
 .. warning::
     Ensure that credentials are stored and handled securely by not hard-coding it or storing them in a text file. All the below examples
@@ -15,12 +15,12 @@ Instantiate a new client from a configuration file
 Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
 
 .. note::
-    How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method
+    How you read in the configuration file is up to you as the :doc:`generated/cognite.client.CogniteClient` load method
     accepts both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
 
-See :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
-:ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`
+See :doc:`generated/cognite.client.CogniteClient`, :doc:`generated/cognite.client.ClientConfig`,
+:doc:`generated/cognite.client.global_config`, and :ref:`credential_providers:Credential Providers`
 for more information on the configuration options.
 
 .. code:: yaml
@@ -95,7 +95,7 @@ Use this code to instantiate a client using the ClientConfig and global_config i
 
 Use this code to instantiate a client in order to execute API calls to Cognite Data Fusion (CDF).
 The :code:`client_name` is a user-defined string intended to give the client a unique identifier. You
-can provide the :code:`client_name` by passing it directly to the :ref:`ClientConfig <class_client_ClientConfig>` constructor.
+can provide the :code:`client_name` by passing it directly to the :doc:`generated/cognite.client.ClientConfig` constructor.
 
 The Cognite API uses OpenID Connect (OIDC) to authenticate.
 Use one of the credential providers such as OAuthClientCredentials to authenticate:
@@ -177,8 +177,8 @@ You can also make your own credential provider:
 
 Discover time series
 --------------------
-For this, you will need to supply ids for the time series that you want to retrieve. You can find
-some ids by listing the available time series. Limits for listing resources default to 25, so
+For this, you will need to supply IDs for the time series that you want to retrieve. You can find
+some IDs by listing the available time series. Limits for listing resources default to 25, so
 the following code will return the first 25 time series resources.
 
 .. code:: python

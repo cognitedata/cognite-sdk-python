@@ -1,17 +1,11 @@
 Utils
 =====
-Convert timestamp to milliseconds since epoch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.utils.timestamp_to_ms
+.. currentmodule:: cognite.client.utils
 
-Convert milliseconds since epoch to datetime
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.utils.ms_to_datetime
+.. autosummary::
+   :toctree: generated/
 
-Convert datetime to milliseconds since epoch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.utils.datetime_to_ms
-
-Convert datetime to ISO timestamp
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autofunction:: cognite.client.utils.datetime_to_ms_iso_timestamp
+   timestamp_to_ms
+   ms_to_datetime
+   datetime_to_ms
+   datetime_to_ms_iso_timestamp

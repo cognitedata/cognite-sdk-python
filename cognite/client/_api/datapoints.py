@@ -537,7 +537,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> Datapoints | DatapointsList | None:
-        """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
@@ -773,7 +773,7 @@ class DatapointsAPI(APIClient):
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArray | DatapointsArrayList | None:
-        """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             This method requires ``numpy`` to be installed.
@@ -800,7 +800,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
 
         Returns:
-            DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is IDs first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Note:
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
@@ -946,7 +946,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
+            Get a pandas dataframe using a single ID, and use this ID as column name, with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1081,7 +1081,7 @@ class DatapointsAPI(APIClient):
             uniform_index (bool): If querying aggregates with a non-calendar granularity, specifying ``uniform_index=True`` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
-            column_names (Literal['id', 'external_id']): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+            column_names (Literal['id', 'external_id']): Use either IDs or external IDs as column names. Time series missing external ID will use ID as backup. Default: "external_id"
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given timezone.
@@ -1192,7 +1192,7 @@ class DatapointsAPI(APIClient):
 
         Args:
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
-            external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
+            external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External ID or list of external IDs.
             before (None | int | str | datetime.datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
@@ -1283,7 +1283,7 @@ class DatapointsAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> None:
-        """Insert datapoints into a time series
+        """Insert datapoints into a time series.
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
@@ -1294,7 +1294,7 @@ class DatapointsAPI(APIClient):
         Args:
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
-            external_id (str | None): External id of time series to insert datapoint into.
+            external_id (str | None): External ID of time series to insert datapoint into.
             instance_id (NodeId | None): (Alpha) Instance ID of time series to insert datapoints into.
 
         Note:
@@ -1344,7 +1344,7 @@ class DatapointsAPI(APIClient):
                 ... ]
                 >>> client.time_series.data.insert(datapoints, external_id="abcd")
 
-            Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
+            Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that th id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
             `external_id="foo"`.
@@ -1366,7 +1366,7 @@ class DatapointsAPI(APIClient):
         DatapointsPoster(self).insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
-        """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
+        """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_.
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
         are interpreted to be in the local timezone (not UTC), adhering to Python conventions for datetime handling.
@@ -1375,7 +1375,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the IDs of the time series. See examples below.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1442,7 +1442,7 @@ class DatapointsAPI(APIClient):
             start (int | str | datetime.datetime): Inclusive start of delete range
             end (int | str | datetime.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
-            external_id (str | None): External id of time series to delete data from
+            external_id (str | None): External ID of time series to delete data from
             instance_id (NodeId | None): (Alpha) Instance ID of time series to delete data from
 
         Examples:
@@ -1463,10 +1463,10 @@ class DatapointsAPI(APIClient):
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
-        """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
+        """`Delete a range of datapoints from multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_.
 
         Args:
-            ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
+            ranges (list[dict[str, Any]]): The list of datapoint IDs along with time range to delete. See examples below.
 
         Examples:
 

@@ -202,10 +202,10 @@ class CogniteAPIError(CogniteMultiException):
 class CogniteNotFoundError(CogniteMultiException):
     """Cognite Not Found Error
 
-    Raised if one or more of the referenced ids/external ids are not found.
+    Raised if one or more of the referenced IDs/external IDs are not found.
 
     Args:
-        not_found (list): The ids not found.
+        not_found (list): The IDs not found.
         successful (list | None): List of items which were successfully processed.
         failed (list | None): List of items which failed.
         unknown (list | None): List of items which may or may not have been successfully processed.

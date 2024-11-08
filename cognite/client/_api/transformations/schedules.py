@@ -44,7 +44,7 @@ class TransformationSchedulesAPI(APIClient):
     def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
     ) -> Iterator[TransformationSchedule] | Iterator[TransformationScheduleList]:
-        """Iterate over transformation schedules
+        """Iterate over transformation schedules.
 
         Args:
             chunk_size (int | None): The number of schedules to return in each chunk. Defaults to yielding one schedule a time.
@@ -83,7 +83,7 @@ class TransformationSchedulesAPI(APIClient):
         | Sequence[TransformationSchedule]
         | Sequence[TransformationScheduleWrite],
     ) -> TransformationSchedule | TransformationScheduleList:
-        """`Schedule the specified transformation with the specified configuration(s). <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_
+        """`Schedule the specified transformation with the specified configuration(s) <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/createTransformationSchedules>`_.
 
         Args:
             schedule (TransformationSchedule | TransformationScheduleWrite | Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]): Configuration or list of configurations of the schedules to create.
@@ -111,24 +111,24 @@ class TransformationSchedulesAPI(APIClient):
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
-        """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        """`Retrieve a single transformation schedule by the ID or external ID of its transformation <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_.
 
         Args:
-            id (int | None): transformation ID
-            external_id (str | None): transformation External ID
+            id (int | None): Transformation ID.
+            external_id (str | None): Transformation External ID.
 
         Returns:
             TransformationSchedule | None: Requested transformation schedule or None if it does not exist.
 
         Examples:
 
-            Get transformation schedule by transformation id:
+            Get transformation schedule by transformation ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.transformations.schedules.retrieve(id=1)
 
-            Get transformation schedule by transformation external id:
+            Get transformation schedule by transformation external ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -145,11 +145,11 @@ class TransformationSchedulesAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationScheduleList:
-        """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
+        """`Retrieve multiple transformation schedules by the IDs or external IDs of the corresponding transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_.
 
         Args:
-            ids (Sequence[int] | None): transformation IDs
-            external_ids (SequenceNotStr[str] | None): transformation External IDs
+            ids (Sequence[int] | None): Transformation IDs.
+            external_ids (SequenceNotStr[str] | None): Transformation External IDs.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -157,13 +157,13 @@ class TransformationSchedulesAPI(APIClient):
 
         Examples:
 
-            Get transformation schedules by transformation ids:
+            Get transformation schedules by transformation IDs:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.transformations.schedules.retrieve_multiple(ids=[1, 2, 3])
 
-            Get transformation schedules by transformation external ids:
+            Get transformation schedules by transformation external IDs:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -178,7 +178,7 @@ class TransformationSchedulesAPI(APIClient):
         )
 
     def list(self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ) -> TransformationScheduleList:
-        """`List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
+        """`List all transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_.
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
@@ -211,16 +211,16 @@ class TransformationSchedulesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
+        """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_.
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            id (int | Sequence[int] | None): ID or list of IDs
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
 
-            Delete schedules by id or external id::
+            Delete schedules by ID or external ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -254,7 +254,7 @@ class TransformationSchedulesAPI(APIClient):
         | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationSchedule | TransformationScheduleList:
-        """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_
+        """`Update one or more transformation schedules <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/updateTransformationSchedules>`_.
 
         Args:
             item (TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate | Sequence[TransformationSchedule | TransformationScheduleWrite | TransformationScheduleUpdate]): Transformation schedule(s) to update

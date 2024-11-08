@@ -330,20 +330,20 @@ class Sequence(SequenceCore):
 
     @property
     def column_external_ids(self) -> list[str]:
-        """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
+        """Retrieves list of column external IDs for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
-            list[str]: List of sequence column external ids
+            list[str]: List of sequence column external IDs.
         """
         assert self.columns is not None
         return self.columns.as_external_ids()
 
     @property
     def column_value_types(self) -> list[ValueType]:
-        """Retrieves list of column value types
+        """Retrieves list of column value types.
 
         Returns:
-            list[ValueType]: List of column value types
+            list[ValueType]: List of column value types.
         """
         assert self.columns is not None
         return self.columns.value_types
@@ -907,7 +907,7 @@ class SequenceRowsList(CogniteResourceList[SequenceRows]):
         return self.to_pandas(key="external_id", concat=True)._repr_html_()
 
 
-SequenceDataList = SequenceRowsList
+SequenceDataList = SequenceRowsList  #: :meta private:
 
 
 class SequenceProperty(EnumProperty):

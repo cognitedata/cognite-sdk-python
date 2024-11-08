@@ -818,13 +818,13 @@ class HasExternalAndInternalId(Protocol):
 class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
     def as_external_ids(self) -> list[str]:
         """
-        Returns the external ids of all resources.
+        Returns the external IDs of all resources.
 
         Raises:
-            ValueError: If any resource in the list does not have an external id.
+            ValueError: If any resource in the list does not have an external ID.
 
         Returns:
-            list[str]: The external ids of all resources in the list.
+            list[str]: The external IDs of all resources in the list.
         """
         external_ids: list[str] = []
         for x in self:
@@ -856,13 +856,13 @@ class NameTransformerMixin(Sequence[HasName], ABC):
 class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
     def as_ids(self) -> list[int]:
         """
-        Returns the ids of all resources.
+        Returns the IDs of all resources.
 
         Raises:
-            ValueError: If any resource in the list does not have an id.
+            ValueError: If any resource in the list does not have an ID.
 
         Returns:
-            list[int]: The ids of all resources in the list.
+            list[int]: The IDs of all resources in the list.
         """
         ids: list[int] = []
         for x in self:

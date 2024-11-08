@@ -3,120 +3,65 @@ Transformations
 
 TransformationsAPI
 ------------------
-Create transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.create
+.. currentmodule:: cognite.client
 
-Retrieve transformations by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.retrieve_multiple
+   CogniteClient.transformations
 
-Run transformations by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.run
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
-
-Preview transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.preview
-
-Cancel transformation run by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.cancel
-
-List transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.list
-
-Update transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.update
-
-Delete transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.TransformationsAPI.delete
 
 Transformation Schedules
 ------------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create transformation Schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.create
+   CogniteClient.transformations.schedules
 
-Retrieve transformation schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.retrieve
-
-Retrieve multiple transformation schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.retrieve_multiple
-
-List transformation schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.list
-
-Update transformation schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.update
-
-Delete transformation schedules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schedules.TransformationSchedulesAPI.delete
 
 Transformation Notifications
 ----------------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create transformation notifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.create
+   CogniteClient.transformations.notifications
 
-List transformation notifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.list
-
-Delete transformation notifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.notifications.TransformationNotificationsAPI.delete
 
 Transformation Jobs
 -------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+   
+   CogniteClient.transformations.jobs
 
-Retrieve transformation jobs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.retrieve
-
-.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.retrieve_multiple
-
-List transformation jobs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.jobs.TransformationJobsAPI.list
 
 Transformation Schema
 ----------------------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+   
+   CogniteClient.transformations.schema
 
-Get transformation schema
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.transformations.schema.TransformationSchemaAPI.retrieve
 
 Data classes
 ------------
-.. automodule:: cognite.client.data_classes.transformations
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformations.schedules
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformations.notifications
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformations.jobs
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformations.schema
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.transformations.common
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.transformations.common
+   data_classes.transformations.jobs
+   data_classes.transformations.notifications
+   data_classes.transformations.schedules
+   data_classes.transformations.schema

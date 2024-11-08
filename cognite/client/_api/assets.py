@@ -167,8 +167,8 @@ class AssetsAPI(APIClient):
             asset_subtree_ids (int | Sequence[int] | None): Only include assets in subtrees rooted at any of the specified assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include assets in subtrees rooted at any of the specified assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
-            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this ID / these IDs.
+            data_set_external_ids (str | SequenceNotStr[str] | None): Return only assets in the specified data set(s) with this external ID / these external IDs.
             labels (LabelFilter | None): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
             source (str | None): The source of this asset
@@ -232,7 +232,7 @@ class AssetsAPI(APIClient):
         return self()
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
-        """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
+        """`Retrieve a single asset by ID <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_.
 
         Args:
             id (int | None): ID
@@ -264,7 +264,7 @@ class AssetsAPI(APIClient):
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
-        """`Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
+        """`Retrieve multiple assets by ID <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -321,7 +321,7 @@ class AssetsAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Count of assets matching the specified filters <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
@@ -364,7 +364,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate property count for assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Args:
             property (AssetPropertyLike): The property to count the cardinality of.
@@ -410,7 +410,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
-        """`Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate paths count for assets  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -446,7 +446,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Get unique properties with counts for assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -512,7 +512,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Get unique paths with counts for assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -552,7 +552,7 @@ class AssetsAPI(APIClient):
     def create(self, asset: Asset | AssetWrite) -> Asset: ...
 
     def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
-        """`Create one or more assets. <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_
+        """`Create one or more assets <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_.
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
@@ -724,7 +724,7 @@ class AssetsAPI(APIClient):
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_
+        """`Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -945,7 +945,8 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
-        """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
+        """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:

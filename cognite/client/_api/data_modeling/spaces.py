@@ -79,7 +79,7 @@ class SpacesAPI(APIClient):
     def retrieve(self, spaces: SequenceNotStr[str]) -> SpaceList: ...
 
     def retrieve(self, spaces: str | SequenceNotStr[str]) -> Space | SpaceList | None:
-        """`Retrieve one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
+        """`Retrieve one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_.
 
         Args:
             spaces (str | SequenceNotStr[str]): Space ID
@@ -112,12 +112,12 @@ class SpacesAPI(APIClient):
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            spaces (str | SequenceNotStr[str]): ID or ID list ids of spaces.
+            spaces (str | SequenceNotStr[str]): ID or list of IDs of spaces.
         Returns:
             list[str]: The space(s) which has been deleted.
         Examples:
 
-            Delete spaces by id::
+            Delete spaces by ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -139,7 +139,7 @@ class SpacesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> SpaceList:
-        """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
+        """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_.
 
         Args:
             limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
@@ -185,7 +185,7 @@ class SpacesAPI(APIClient):
     def apply(self, spaces: SpaceApply) -> Space: ...
 
     def apply(self, spaces: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
-        """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
+        """`Create or patch one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_.
 
         Args:
             spaces (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.

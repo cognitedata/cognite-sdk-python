@@ -158,7 +158,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Relationship]:
-        """Iterate over relationships
+        """Iterate over relationships.
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
@@ -168,10 +168,10 @@ class RelationshipsAPI(APIClient):
         return self()
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
-        """Retrieve a single relationship by external id.
+        """Retrieve a single relationship by external ID.
 
         Args:
-            external_id (str): External ID
+            external_id (str): External ID.
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
@@ -196,7 +196,7 @@ class RelationshipsAPI(APIClient):
     def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
-        """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
+        """`Retrieve multiple relationships by external ID <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_.
 
         Args:
             external_ids (SequenceNotStr[str]): External IDs
@@ -209,7 +209,7 @@ class RelationshipsAPI(APIClient):
 
         Examples:
 
-            Get relationships by external id::
+            Get relationships by external ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -243,7 +243,9 @@ class RelationshipsAPI(APIClient):
         partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
-        """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
+        """`Lists relationships stored in the project based on a query filter given in the payload of this request <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_.
+
+        Up to 1000 relationships can be retrieved in one operation.
 
         Args:
             source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
@@ -358,7 +360,7 @@ class RelationshipsAPI(APIClient):
     def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
-        """`Create one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_
+        """`Create one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/createRelationships>`_.
 
         Args:
             relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
@@ -524,7 +526,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more relationships. <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_
+        """`Delete one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/deleteRelationships>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids

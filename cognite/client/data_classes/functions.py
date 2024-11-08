@@ -31,7 +31,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
 
     Args:
         name (str | None): Name of the function.
-        external_id (str | None): External id of the function.
+        external_id (str | None): External ID of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
         file_id (int | None): File id of the code represented by this object.
@@ -80,6 +80,7 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
 
 class Function(FunctionCore):
     """A representation of a Cognite Function.
+
     This is the reading version, which is used when retrieving a function.
 
     Args:
@@ -170,7 +171,7 @@ class Function(FunctionCore):
         )
 
     def call(self, data: dict | None = None, wait: bool = True) -> FunctionCall:
-        """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
+        """`Call this particular function <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_.
 
         Args:
             data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
@@ -211,7 +212,7 @@ class Function(FunctionCore):
         )
 
     def list_schedules(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
-        """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
+        """`List all schedules associated with this function <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_.
 
         Args:
             limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
@@ -222,7 +223,7 @@ class Function(FunctionCore):
         return self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
     def retrieve_call(self, id: int) -> FunctionCall | None:
-        """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
+        """`Retrieve call by ID <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_.
 
         Args:
             id (int): ID of the call.
@@ -247,12 +248,13 @@ class Function(FunctionCore):
 
 class FunctionWrite(FunctionCore):
     """A representation of a Cognite Function.
+
     This is the writing version, which is used when creating a function.
 
     Args:
         name (str): Name of the function.
-        file_id (int): File id of the code represented by this object.
-        external_id (str | None): External id of the function.
+        file_id (int): File ID of the code represented by this object.
+        external_id (str | None): External ID of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
@@ -363,10 +365,10 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
 
     Args:
         name (str | None): Name of the function schedule.
-        function_id (int | None): Id of the function.
+        function_id (int | None): ID of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
-        cron_expression (str | None): Cron expression
+        cron_expression (str | None): Cron expression.
     """
 
     def __init__(
@@ -391,6 +393,7 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
 
 class FunctionSchedule(FunctionScheduleCore):
     """A representation of a Cognite Function Schedule.
+
     This is the reading version, which is used when retrieving a function schedule.
 
     Args:
@@ -467,7 +470,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
 
     Args:
         name (str): Name of the function schedule.
-        cron_expression (str): Cron expression
+        cron_expression (str): Cron expression.
         function_id (int | None): ID of the function.
         function_external_id (str | None): External ID of the function.
         description (str | None): Description of the function schedule.
@@ -557,7 +560,7 @@ class FunctionCall(CogniteResource):
         end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         status (str | None): Status of the function call ("Running", "Completed" or "Failed").
-        schedule_id (int | None): The schedule id belonging to the call.
+        schedule_id (int | None): The schedule ID belonging to the call.
         error (dict | None): Error from the function call. It contains an error message and the stack trace.
         function_id (int | None): No description.
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
@@ -600,7 +603,7 @@ class FunctionCall(CogniteResource):
         return self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
 
     def get_logs(self) -> FunctionCallLog:
-        """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
+        """`Retrieve logs for this function call <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_.
 
         Returns:
             FunctionCallLog: Log for the function call.

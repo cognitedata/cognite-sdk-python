@@ -333,8 +333,8 @@ class ProjectSpec(CogniteResponse):
     """A CDF project spec
 
     Args:
-        url_name (str): The url name for the project
-        groups (list[int]): Group ids in the project
+        url_name (str): The url name for the project.
+        groups (list[int]): Group IDs in the project.
     """
 
     def __init__(self, url_name: str, groups: list[int]) -> None:

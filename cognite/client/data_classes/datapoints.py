@@ -1257,7 +1257,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """
         Concatenates all arrays with duplicated IDs.
 
-        Arrays with the same ids are stacked in chronological order.
+        Arrays with the same IDs are stacked in chronological order.
 
         **Caveat** This method is not guaranteed to preserve the order of the list.
         """

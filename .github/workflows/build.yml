@@ -22,7 +22,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+        run: |
+          source $(poetry env info --path)/bin/activate
+          cd docs && make html SPHINXOPTS="-W --keep-going"
 
   build_package:
     runs-on: ubuntu-latest

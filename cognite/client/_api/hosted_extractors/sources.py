@@ -89,7 +89,7 @@ class SourcesAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Source | SourceList:
-        """`Retrieve one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/retrieve_sources>`_
+        """`Retrieve one or more sources <https://developer.cognite.com/api#tag/Sources/operation/retrieve_sources>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -104,7 +104,7 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
 
-            Get multiple sources by id:
+            Get multiple sources by ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -158,7 +158,7 @@ class SourcesAPI(APIClient):
     def create(self, items: Sequence[SourceWrite]) -> SourceList: ...
 
     def create(self, items: SourceWrite | Sequence[SourceWrite]) -> Source | SourceList:
-        """`Create one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_
+        """`Create one or more sources <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_.
 
         Args:
             items (SourceWrite | Sequence[SourceWrite]): Source(s) to create.
@@ -204,7 +204,7 @@ class SourcesAPI(APIClient):
         items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Source | SourceList:
-        """`Update one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_
+        """`Update one or more sources <https://developer.cognite.com/api#tag/Sources/operation/update_sources>`_.
 
         Args:
             items (SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate]): Source(s) to update.

@@ -235,7 +235,7 @@ class FilesAPI(APIClient):
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
-        """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by ID <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_.
 
         Args:
             id (int | None): ID
@@ -275,7 +275,7 @@ class FilesAPI(APIClient):
         instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by ID <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -339,7 +339,7 @@ class FilesAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
+        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -449,7 +449,8 @@ class FilesAPI(APIClient):
         filter: FileMetadataFilter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
-        """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
+        """`Search for files <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -1067,7 +1068,7 @@ class FilesAPI(APIClient):
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
-        """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
+        """`Download files by ID or external ID <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_.
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.

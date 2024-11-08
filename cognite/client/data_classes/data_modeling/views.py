@@ -599,7 +599,7 @@ class MultiEdgeConnection(EdgeConnection):
         )
 
 
-SingleHopConnectionDefinition: TypeAlias = MultiEdgeConnection
+SingleHopConnectionDefinition: TypeAlias = MultiEdgeConnection  #: :meta private:
 
 
 @dataclass
@@ -792,7 +792,7 @@ class MultiEdgeConnectionApply(EdgeConnectionApply):
         return output
 
 
-SingleHopConnectionDefinitionApply: TypeAlias = MultiEdgeConnectionApply
+SingleHopConnectionDefinitionApply: TypeAlias = MultiEdgeConnectionApply  #: :meta private:
 
 
 @dataclass

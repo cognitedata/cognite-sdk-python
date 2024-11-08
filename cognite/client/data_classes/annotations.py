@@ -279,7 +279,7 @@ class AnnotationFilter(AnnotationReverseLookupFilter):
 
     Args:
         annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_ids (list[dict[str, int]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
+        annotated_resource_ids (list[dict[str, int]]): List of IDs of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
         status (str | None): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
         creating_user (str | None): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
         creating_app (str | None): Name of the app from which the annotations to filter for where created.

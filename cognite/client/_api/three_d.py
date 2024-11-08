@@ -58,14 +58,14 @@ class ThreeDModelsAPI(APIClient):
     def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
     ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
-        """Iterate over 3d models
+        """Iterate over 3D models.
 
-        Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
+        Fetches 3D models as they are iterated over, so you keep a limited number of 3D models in memory.
 
         Args:
-            chunk_size (int | None): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
+            chunk_size (int | None): Number of 3D models to return in each chunk. Defaults to yielding one model a time.
             published (bool | None): Filter based on whether or not the model has published revisions.
-            limit (int | None): Maximum number of 3d models to return. Defaults to return all items.
+            limit (int | None): Maximum number of 3D models to return. Defaults to return all items.
 
         Returns:
             Iterator[ThreeDModel] | Iterator[ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
@@ -80,7 +80,7 @@ class ThreeDModelsAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[ThreeDModel]:
-        """Iterate over 3d models
+        """Iterate over 3D models.
 
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
 
@@ -90,17 +90,17 @@ class ThreeDModelsAPI(APIClient):
         return self()
 
     def retrieve(self, id: int) -> ThreeDModel | None:
-        """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
+        """`Retrieve a 3D model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
         Args:
-            id (int): Get the model with this id.
+            id (int): Get the model with this ID.
 
         Returns:
-            ThreeDModel | None: The requested 3d model.
+            ThreeDModel | None: The requested 3D model.
 
         Example:
 
-            Get 3d model by id::
+            Get 3D model by ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -109,36 +109,36 @@ class ThreeDModelsAPI(APIClient):
         return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
     def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
-        """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
+        """`List 3D models <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_.
 
         Args:
             published (bool | None): Filter based on whether or not the model has published revisions.
             limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDModelList: The list of 3d models.
+            ThreeDModelList: The list of 3D models.
 
         Examples:
 
-            List 3d models::
+            List 3D models::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> three_d_model_list = client.three_d.models.list()
 
-            Iterate over 3d models::
+            Iterate over 3D models::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for three_d_model in client.three_d.models:
-                ...     three_d_model # do something with the 3d model
+                ...     three_d_model # do something with the 3D model
 
-            Iterate over chunks of 3d models to reduce memory load::
+            Iterate over chunks of 3D models to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for three_d_model in client.three_d.models(chunk_size=50):
-                ...     three_d_model # do something with the 3d model
+                ...     three_d_model # do something with the 3D model
         """
         return self._list(
             list_cls=ThreeDModelList,
@@ -154,21 +154,21 @@ class ThreeDModelsAPI(APIClient):
         data_set_id: int | None = None,
         metadata: dict[str, str] | None = None,
     ) -> ThreeDModel | ThreeDModelList:
-        """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
+        """`Create new 3D models <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_.
 
         Args:
-            name (str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite]): The name of the 3d model(s) or 3D
+            name (str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite]): The name of the 3D model(s) or 3D
                 model object to create. If a 3D model object is provided, the other arguments are ignored.
             data_set_id (int | None): The id of the dataset this 3D model belongs to.
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.
                 Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
 
         Returns:
-            ThreeDModel | ThreeDModelList: The created 3d model(s).
+            ThreeDModel | ThreeDModelList: The created 3D model(s).
 
         Example:
 
-            Create new 3d models::
+            Create new 3D models::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -212,7 +212,7 @@ class ThreeDModelsAPI(APIClient):
         item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModel | ThreeDModelList:
-        """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
+        """`Update 3D models <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_.
 
         Args:
             item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
@@ -223,7 +223,7 @@ class ThreeDModelsAPI(APIClient):
 
         Examples:
 
-            Update 3d model that you have fetched. This will perform a full update of the model::
+            Update 3D model that you have fetched. This will perform a full update of the model::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -231,7 +231,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> three_d_model.name = "New Name"
                 >>> res = client.three_d.models.update(three_d_model)
 
-            Perform a partial update on a 3d model::
+            Perform a partial update on a 3D model::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelUpdate
@@ -251,14 +251,14 @@ class ThreeDModelsAPI(APIClient):
         )
 
     def delete(self, id: int | Sequence[int]) -> None:
-        """`Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
+        """`Delete 3D models <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_.
 
         Args:
             id (int | Sequence[int]): ID or list of IDs to delete.
 
         Example:
 
-            Delete 3d model by id::
+            Delete 3D model by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -282,15 +282,15 @@ class ThreeDRevisionsAPI(APIClient):
     def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
     ) -> Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]:
-        """Iterate over 3d model revisions
+        """Iterate over 3D model revisions.
 
-        Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
+        Fetches 3D model revisions as they are iterated over, so you keep a limited number of 3D model revisions in memory.
 
         Args:
             model_id (int): Iterate over revisions for the model with this id.
-            chunk_size (int | None): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
+            chunk_size (int | None): Number of 3D model revisions to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the revision has been published.
-            limit (int | None): Maximum number of 3d model revisions to return. Defaults to return all items.
+            limit (int | None): Maximum number of 3D model revisions to return. Defaults to return all items.
 
         Returns:
             Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
@@ -306,18 +306,18 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
-        """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
+        """`Retrieve a 3D model revision by ID <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_.
 
         Args:
-            model_id (int): Get the revision under the model with this id.
-            id (int): Get the model revision with this id.
+            model_id (int): Get the revision under the model with this ID.
+            id (int): Get the model revision with this ID.
 
         Returns:
-            ThreeDModelRevision | None: The requested 3d model revision.
+            ThreeDModelRevision | None: The requested 3D model revision.
 
         Example:
 
-            Retrieve 3d model revision by model id and revision id::
+            Retrieve 3D model revision by model ID and revision ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -347,7 +347,7 @@ class ThreeDRevisionsAPI(APIClient):
         | Sequence[ThreeDModelRevision]
         | Sequence[ThreeDModelRevisionWrite],
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
-        """`Create a revisions for a specified 3d model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_
+        """`Create a revisions for a specified 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_.
 
         Args:
             model_id (int): Create revisions for this model.
@@ -358,7 +358,7 @@ class ThreeDRevisionsAPI(APIClient):
 
         Example:
 
-            Create 3d model revision::
+            Create 3D model revision::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelRevisionWrite
@@ -377,19 +377,19 @@ class ThreeDRevisionsAPI(APIClient):
     def list(
         self, model_id: int, published: bool = False, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDModelRevisionList:
-        """`List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
+        """`List 3D model revisions <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_.
 
         Args:
-            model_id (int): List revisions under the model with this id.
+            model_id (int): List revisions under the model with this ID.
             published (bool): Filter based on whether or not the revision is published.
             limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDModelRevisionList: The list of 3d model revisions.
+            ThreeDModelRevisionList: The list of 3D model revisions.
 
         Example:
 
-            List 3d model revisions::
+            List 3D model revisions::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -412,10 +412,10 @@ class ThreeDRevisionsAPI(APIClient):
         | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelRevision | ThreeDModelRevisionList:
-        """`Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
+        """`Update 3D model revisions <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_.
 
         Args:
-            model_id (int): Update the revision under the model with this id.
+            model_id (int): Update the revision under the model with this ID.
             item (ThreeDModelRevision | ThreeDModelRevisionUpdate | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate]): ThreeDModelRevision(s) to update
             mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (ThreeDModelRevision or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
@@ -450,15 +450,15 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def delete(self, model_id: int, id: int | Sequence[int]) -> None:
-        """`Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
+        """`Delete 3D model revisions <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_.
 
         Args:
-            model_id (int): Delete the revision under the model with this id.
+            model_id (int): Delete the revision under the model with this ID.
             id (int | Sequence[int]): ID or list of IDs to delete.
 
         Example:
 
-            Delete 3d model revision by id::
+            Delete 3D model revision by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -471,12 +471,12 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
-        """`Update a revision thumbnail. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_
+        """`Update a revision thumbnail <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
-            file_id (int): Id of the thumbnail file in the Files API.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
+            file_id (int): ID of the thumbnail file in the Files API.
 
         Example:
 
@@ -500,7 +500,7 @@ class ThreeDRevisionsAPI(APIClient):
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDNodeList:
-        """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodes>`_
+        """`Retrieve a list of nodes from the hierarchy in the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodes>`_.
 
         You can also request a specific subtree with the 'nodeId' query parameter and limit the depth of
         the resulting subtree with the 'depth' query parameter.
@@ -515,11 +515,11 @@ class ThreeDRevisionsAPI(APIClient):
             limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            ThreeDNodeList: The list of 3D nodes.
 
         Example:
 
-            List nodes from the hierarchy in the 3d model::
+            List nodes from the hierarchy in the 3D model::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -545,21 +545,21 @@ class ThreeDRevisionsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
     ) -> ThreeDNodeList:
-        """`List nodes in a revision, filtered by node property values. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_
+        """`List nodes in a revision, filtered by node property values <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
             properties (dict[str, dict[str, SequenceNotStr[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the category+property combination with a value that is contained within the corresponding list in the filter.
             limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            ThreeDNodeList: The list of 3D nodes.
 
         Example:
 
-            Filter nodes from the hierarchy in the 3d model that have one of the values "AB76", "AB77" or "AB78" for property PDMS/Area AND that also have one of the values "PIPE", "BEND" or "PIPESUP" for the property PDMS/Type.
+            Filter nodes from the hierarchy in the 3D model that have one of the values "AB76", "AB77" or "AB78" for property PDMS/Area AND that also have one of the values "PIPE", "BEND" or "PIPESUP" for the property PDMS/Type.
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -579,16 +579,16 @@ class ThreeDRevisionsAPI(APIClient):
     def list_ancestor_nodes(
         self, model_id: int, revision_id: int, node_id: int | None = None, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDNodeList:
-        """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
+        """`Retrieve a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
             node_id (int | None): ID of the node to get the ancestors of.
             limit (int | None): Maximum number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ThreeDNodeList: The list of 3d nodes.
+            ThreeDNodeList: The list of 3D nodes.
 
         Example:
 
@@ -613,17 +613,17 @@ class ThreeDFilesAPI(APIClient):
     _RESOURCE_PATH = "/3d/files"
 
     def retrieve(self, id: int) -> bytes:
-        """`Retrieve the contents of a 3d file by id. <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_
+        """`Retrieve the contents of a 3D file by ID <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_.
 
         Args:
-            id (int): The id of the file to retrieve.
+            id (int): The ID of the file to retrieve.
 
         Returns:
             bytes: The contents of the file.
 
         Example:
 
-            Retrieve the contents of a 3d file by id::
+            Retrieve the contents of a 3D file by ID::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -645,11 +645,11 @@ class ThreeDAssetMappingAPI(APIClient):
         intersects_bounding_box: BoundingBox3D | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
-        """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
+        """`List 3D node asset mappings <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
             node_id (int | None): List only asset mappings associated with this node.
             asset_id (int | None): List only asset mappings associated with this asset.
             intersects_bounding_box (BoundingBox3D | None): If given, only return asset mappings for assets whose bounding box intersects with the given bounding box.
@@ -660,13 +660,13 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Example:
 
-            List 3d node asset mappings:
+            List 3D node asset mappings:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.three_d.asset_mappings.list(model_id=1, revision_id=1)
 
-            List 3d node asset mappings for assets whose bounding box intersects with a given bounding box:
+            List 3D node asset mappings for assets whose bounding box intersects with a given bounding box:
 
                 >>> from cognite.client.data_classes import BoundingBox3D
                 >>> bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
@@ -708,11 +708,11 @@ class ThreeDAssetMappingAPI(APIClient):
         | Sequence[ThreeDAssetMapping]
         | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
-        """`Create 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_
+        """`Create 3D node asset mappings <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
             asset_mapping (ThreeDAssetMapping | ThreeDAssetMappingWrite | Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite]): The asset mapping(s) to create.
 
         Returns:
@@ -720,7 +720,7 @@ class ThreeDAssetMappingAPI(APIClient):
 
         Example:
 
-            Create new 3d node asset mapping::
+            Create new 3D node asset mapping::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDAssetMappingWrite
@@ -740,16 +740,16 @@ class ThreeDAssetMappingAPI(APIClient):
     def delete(
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
-        """`Delete 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_
+        """`Delete one or more 3D node asset mappings <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_.
 
         Args:
-            model_id (int): Id of the model.
-            revision_id (int): Id of the revision.
+            model_id (int): ID of the model.
+            revision_id (int): ID of the revision.
             asset_mapping (ThreeDAssetMapping | Sequence[ThreeDAssetMapping]): The asset mapping(s) to delete.
 
         Example:
 
-            Delete 3d node asset mapping::
+            Delete 3D node asset mapping::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

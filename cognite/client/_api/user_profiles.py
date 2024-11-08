@@ -50,7 +50,7 @@ class UserProfilesAPI(APIClient):
     def retrieve(self, user_identifier: SequenceNotStr[str]) -> UserProfileList: ...
 
     def retrieve(self, user_identifier: str | SequenceNotStr[str]) -> UserProfile | UserProfileList | None:
-        """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_
+        """`Retrieve user profiles by user identifier <https://developer.cognite.com/api#tag/User-profiles/operation/getUserProfilesByIds>`_.
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
 
