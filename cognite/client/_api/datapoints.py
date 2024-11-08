@@ -583,7 +583,6 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            BACKUP: DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList:
             Iterate through the datapoints of a single time series with external_id="foo", in chunks of 25k:
 
                 >>> from cognite.client import CogniteClient

@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.65.0] - 2024-11-08
+### Added
+- DatapointsAPI now support iteration like most other APIs: `for dps in client.time_series.data(...)`.
+
 ## [7.64.13] - 2024-11-12
 ### Added
 - Added new `SAPWriteback` and `SAPWritebackRequests` capabilities.
@@ -24,7 +28,7 @@ Changes are grouped as follows
 ## [7.64.12] - 2024-11-11
 ### Fixed
 - `FunctionSchedulesAPI.__call__()` calls `FunctionSchedulesAPI.list()` instead of `APIClient._list_generator()`.
-  (The latter relied on pagination, which was not implemented by `/schedules/list`). 
+  (The latter relied on pagination, which was not implemented by `/schedules/list`).
 
 ## [7.64.11] - 2024-11-10
 ### Added
@@ -44,7 +48,8 @@ Changes are grouped as follows
 
 ## [7.64.7] - 2024-11-04
 ### Fixed
-- Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings to avoid hitting the API limits.
+- Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings
+  to avoid hitting the API limits.
 
 ## [7.64.6] - 2024-10-22
 ### Added
