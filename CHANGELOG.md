@@ -18,6 +18,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [7.64.9] - 2024-11-08
+### Added
+- Adding data modeling triggers support for data workflows.
+
+
 ## [7.64.8] - 2024-11-06
 ### Fixed
 - Made `compression` and `encoding` of hosted extractor job formats optional to conform with the API.
