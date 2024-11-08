@@ -615,11 +615,13 @@ class TestWorkflowTriggers:
         self,
         cognite_client: CogniteClient,
         workflow_scheduled_trigger: WorkflowTrigger,
+        workflow_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
         triggers = cognite_client.workflows.triggers.get_triggers()
         external_ids = {trigger.external_id for trigger in triggers}
 
         assert workflow_scheduled_trigger.external_id in external_ids
+        assert workflow_data_modeling_trigger.external_id in external_ids
 
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_trigger_run_history(
