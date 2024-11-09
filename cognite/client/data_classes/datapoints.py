@@ -1256,7 +1256,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
-            if (inst_id := dps.external_id) is not None and inst_id in dupe_inst_ids:
+            if (inst_id := dps.instance_id) is not None and inst_id in dupe_inst_ids:
                 inst_id_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
@@ -1385,7 +1385,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
-            if (inst_id := dps.external_id) is not None and inst_id in dupe_inst_ids:
+            if (inst_id := dps.instance_id) is not None and inst_id in dupe_inst_ids:
                 inst_id_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
