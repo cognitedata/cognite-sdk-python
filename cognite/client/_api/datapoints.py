@@ -1328,7 +1328,7 @@ class DatapointsAPI(APIClient):
                 >>> datapoints = [
                 ...     (150000000000, 1000),
                 ...     (160000000000, 2000, 3145728),
-                ...     (160000000000, 2000, 2147483648),  # Same as StatusCode.Bad
+                ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
@@ -1414,7 +1414,7 @@ class DatapointsAPI(APIClient):
                 ...         {"timestamp": 170000000, "value": 4000},
                 ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
                 ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
-                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
+                ...         {"timestamp": 200000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
 
             If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
