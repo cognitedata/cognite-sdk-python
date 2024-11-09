@@ -749,7 +749,7 @@ class DatapointsAPI(APIClient):
 
         if not query.is_single_identifier:
             return dps_lst
-        elif not dps_lst and ignore_unknown_ids:
+        elif not dps_lst:
             return None
         return dps_lst[0]
 
@@ -877,7 +877,7 @@ class DatapointsAPI(APIClient):
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_lst
-        elif not dps_lst and ignore_unknown_ids:
+        elif not dps_lst:
             return None
         return dps_lst[0]
 
@@ -1269,7 +1269,7 @@ class DatapointsAPI(APIClient):
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return DatapointsList._load(res, cognite_client=self._cognite_client)
-        elif not res and ignore_unknown_ids:
+        elif not res:
             return None
         return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
