@@ -17,6 +17,8 @@ from cognite.client.data_classes.postgres_gateway.tables import (
 from cognite.client.data_classes.postgres_gateway.users import (
     SessionCredentials,
     User,
+    UserCreated,
+    UserCreatedList,
     UserList,
     UserUpdate,
     UserWrite,
@@ -30,6 +32,8 @@ __all__ = [
     "UserWrite",
     "UserWriteList",
     "SessionCredentials",
+    "UserCreated",
+    "UserCreatedList",
     "Table",
     "TableList",
     "TableWrite",

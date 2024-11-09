@@ -10,7 +10,7 @@ from _pytest.mark import ParameterSet
 import cognite.client.data_classes.filters as f
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client.data_classes._base import EnumProperty
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
@@ -277,6 +277,19 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         ]
     }
     yield pytest.param(nested_overloaded_filter, expected, id="Compound filter with nested overloaded and")
+    in_filter_with_node_id = f.In("name", [NodeId(space="space", external_id="ex_id")])
+    expected = {
+        "in": {
+            "property": ["name"],
+            "values": [
+                {
+                    "externalId": "ex_id",
+                    "space": "space",
+                },
+            ],
+        },
+    }
+    yield pytest.param(in_filter_with_node_id, expected, id="In filter with node ID")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))

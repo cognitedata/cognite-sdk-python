@@ -73,17 +73,23 @@ class UserWrite(_UserCore):
 class User(_UserCore):
     """A user.
 
-    This is the read/response format of the user.
+    This is the read/response format of the user for list and retrieve endpoints.
 
     Args:
         username (str): Username to authenticate the user on the DB.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        session_id (int): ID of the session tied to this user.
+        session_id (int | None): ID of the session tied to this user.
 
     """
 
-    def __init__(self, username: str, created_time: int, last_updated_time: int, session_id: int) -> None:
+    def __init__(
+        self,
+        username: str,
+        created_time: int,
+        last_updated_time: int,
+        session_id: int | None = None,
+    ) -> None:
         self.username = username
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -95,11 +101,51 @@ class User(_UserCore):
             username=resource["username"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            session_id=resource["sessionId"],
+            session_id=resource.get("sessionId"),
         )
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+
+class UserCreated(User):
+    """A user.
+
+    This is the read/response format of the user for the create endpoint
+
+    Args:
+        host(str): Host of the DB.
+        username (str): Username to authenticate the user on the DB.
+        password (str): Password to authenticate the user on the DB.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        session_id (int | None): ID of the session tied to this user.
+
+    """
+
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        created_time: int,
+        last_updated_time: int,
+        session_id: int | None = None,
+    ) -> None:
+        super().__init__(username, created_time, last_updated_time, session_id)
+        self.host = host
+        self.password = password
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            host=resource["host"],
+            username=resource["username"],
+            password=resource["password"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            session_id=resource.get("sessionId"),
+        )
 
 
 class UserUpdate(CogniteUpdate):
@@ -141,6 +187,13 @@ class UserWriteList(CogniteResourceList[UserWrite]):
 
 class UserList(WriteableCogniteResourceList[UserWrite, User]):
     _RESOURCE = User
+
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+
+class UserCreatedList(WriteableCogniteResourceList[UserWrite, UserCreated]):
+    _RESOURCE = UserCreated
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")

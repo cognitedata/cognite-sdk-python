@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterator, MutableSequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
-from urllib.parse import quote
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -29,6 +28,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -397,7 +397,8 @@ class WorkflowExecutionAPI(APIClient):
             body["metadata"] = metadata
 
         response = self._post(
-            url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}/run", json=body
+            url_path=interpolate_and_url_encode("/workflows/{}/versions/{}/run", workflow_external_id, version),
+            json=body,
         )
         return WorkflowExecution._load(response.json())
 
@@ -678,7 +679,7 @@ class WorkflowVersionAPI(APIClient):
         """
         try:
             response = self._get(
-                url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
+                url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", workflow_external_id, version)
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -823,7 +824,7 @@ class WorkflowAPI(APIClient):
                 >>> res = client.workflows.retrieve("my workflow")
         """
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
+            response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", external_id))
         except CogniteAPIError as e:
             if e.code == 404:
                 return None
