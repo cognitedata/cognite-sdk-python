@@ -1295,7 +1295,7 @@ class DatapointsAPI(APIClient):
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
-            instance_id (NodeId | None): (Alpha) Instance ID of time series to insert datapoints into.
+            instance_id (NodeId | None): Instance ID of time series to insert datapoints into.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1443,7 +1443,7 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
-            instance_id (NodeId | None): (Alpha) Instance ID of time series to delete data from
+            instance_id (NodeId | None): Instance ID of time series to delete data from
 
         Examples:
 
