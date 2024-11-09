@@ -158,7 +158,6 @@ class TablesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
 
-
         """
         self._warning.warn()
 
@@ -171,12 +170,12 @@ class TablesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False) -> None:
+    def delete(self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
 
         Args:
-            tablename (str | SequenceNotStr[str]): The name of the table(s) to be deleted
             username (str): The name of the username (a.k.a. database) to be managed from the API
+            tablename (str | SequenceNotStr[str]): The name of the table(s) to be deleted
             ignore_unknown_ids (bool): Ignore table names that are not found
 
         Examples:
@@ -185,7 +184,7 @@ class TablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.postgres_gateway.tables.delete(["myCustom", "myCustom2"], username="myUserName")
+                >>> client.postgres_gateway.tables.delete("myUserName", ["myCustom", "myCustom2"])
 
 
         """

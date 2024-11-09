@@ -88,9 +88,9 @@ def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tupl
             Column(name="name", type="TEXT"),
         ],
     )
-    created = cognite_client.postgres_gateway.tables.create(my_table, one_user.username)
+    created = cognite_client.postgres_gateway.tables.create(one_user.username, my_table)
     yield created
-    cognite_client.postgres_gateway.tables.delete(created.tablename, one_user.username, ignore_unknown_ids=True)
+    cognite_client.postgres_gateway.tables.delete(one_user.username, created.tablename, ignore_unknown_ids=True)
 
 
 class TestTables:
@@ -103,25 +103,23 @@ class TestTables:
         tablename = my_table.tablename
         created: Table | None = None
         try:
-            created = cognite_client.postgres_gateway.tables.create(my_table, username)
+            created = cognite_client.postgres_gateway.tables.create(username, my_table)
             assert isinstance(created, Table | UnknownCogniteObject)
 
-            retrieved = cognite_client.postgres_gateway.tables.retrieve(tablename, username)
+            retrieved = cognite_client.postgres_gateway.tables.retrieve(username, tablename)
             assert retrieved is not None
 
-            cognite_client.postgres_gateway.tables.delete(tablename, username)
+            cognite_client.postgres_gateway.tables.delete(username, tablename)
 
             with pytest.raises(CogniteAPIError):
-                cognite_client.postgres_gateway.tables.retrieve(tablename, username)
+                cognite_client.postgres_gateway.tables.retrieve(username, tablename)
 
-            result = cognite_client.postgres_gateway.tables.retrieve(tablename, username, ignore_unknown_ids=True)
+            result = cognite_client.postgres_gateway.tables.retrieve(username, tablename, ignore_unknown_ids=True)
 
             assert result is None
         finally:
             if created:
-                with suppress(CogniteAPIError):
-                    # Bug in API, ignore_unknown_ids=True returns 500
-                    cognite_client.postgres_gateway.tables.delete(tablename, username)
+                cognite_client.postgres_gateway.tables.delete(username, tablename, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("one_table")
     def test_list(self, cognite_client: CogniteClient, one_user: User) -> None:
