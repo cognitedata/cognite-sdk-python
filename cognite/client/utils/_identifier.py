@@ -400,11 +400,13 @@ class UsernameSequence(IdentifierSequenceCore[Username]):
 
     @staticmethod
     def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
-        if isinstance(identifier, (str, int)):
+        if isinstance(identifier, str):
             return identifier
-        if "username" in identifier:
-            return identifier["username"]
-        raise ValueError(f"{identifier} does not contain 'username'.")
+        elif isinstance(identifier, dict):
+            if "username" in identifier:
+                return identifier["username"]
+            raise ValueError(f"{identifier} does not contain 'username'.")
+        raise TypeError(f"identifier must be of type str or dict. Found {type(identifier)}")
 
 
 class TablenameSequence(IdentifierSequenceCore[Tablename]):
@@ -424,11 +426,13 @@ class TablenameSequence(IdentifierSequenceCore[Tablename]):
 
     @staticmethod
     def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
-        if isinstance(identifier, (str, int)):
+        if isinstance(identifier, str):
             return identifier
-        if "tablename" in identifier:
-            return identifier["tablename"]
-        raise ValueError(f"{identifier} does not contain 'tablename'.")
+        elif isinstance(identifier, dict):
+            if "tablename" in identifier:
+                return identifier["tablename"]
+            raise ValueError(f"{identifier} does not contain 'tablename'.")
+        raise TypeError(f"identifier must be of type str or dict. Found {type(identifier)}")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):

@@ -1,5 +1,6 @@
+from contextlib import suppress
+
 import pytest
-from jaraco.context import suppress
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes._base import UnknownCogniteObject
@@ -70,6 +71,7 @@ def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
     yield db_table_pair
     with suppress(CogniteAPIError):
         cognite_client.raw.tables.delete(*db_table_pair)
+    with suppress(CogniteAPIError):
         cognite_client.raw.databases.delete(db_table_pair[0])
 
 

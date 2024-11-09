@@ -21,22 +21,22 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 ColumnType: TypeAlias = Literal[
-    "TEXT",
-    "VARCHAR",
-    "BOOL",
     "BIGINT",
-    "DOUBLE PRECISION",
-    "REAL",
-    "TIMESTAMPTZ",
-    "JSON",
-    "TEXT[]",
-    "VARCHAR[]",
-    "BOOL[]",
     "BIGINT[]",
-    "DOUBLE PRECISION[]",
-    "REAL[]",
-    "JSON[]",
+    "BOOL",
+    "BOOL[]",
     "BYTEA",
+    "DOUBLE PRECISION",
+    "DOUBLE PRECISION[]",
+    "JSON",
+    "JSON[]",
+    "REAL",
+    "REAL[]",
+    "TEXT",
+    "TEXT[]",
+    "TIMESTAMPTZ",
+    "VARCHAR",
+    "VARCHAR[]",
 ]
 
 
@@ -225,7 +225,7 @@ class Table(_TableCore, ABC):
     @classmethod
     @abstractmethod
     def _load_table(cls, data: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class RawTable(Table):

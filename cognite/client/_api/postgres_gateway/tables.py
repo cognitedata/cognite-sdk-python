@@ -20,7 +20,9 @@ class TablesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Tables")
+        self._warning = FeaturePreviewWarning(
+            api_maturity="beta", sdk_maturity="alpha", feature_name="Postgres Gateway: Tables"
+        )
         self._CREATE_LIMIT = 10
         self._DELETE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -47,10 +49,10 @@ class TablesAPI(APIClient):
     ) -> Iterator[pg.Table] | Iterator[pg.TableList]:
         """Iterate over custom tables
 
-        Fetches custom table as they are iterated over, so you keep a limited number of custom tables in memory.
+        Fetches custom tables as they are iterated over, so you keep a limited number of custom tables in memory.
 
         Args:
-            chunk_size (int | None): Number of custom tables to return in each chunk. Defaults to yielding one custom table a time.
+            chunk_size (int | None): Number of custom tables to return in each chunk. Defaults to yielding one custom table at a time.
             limit (int | None): Maximum number of custom tables to return. Defaults to return all.
 
         Returns:
@@ -79,17 +81,17 @@ class TablesAPI(APIClient):
         return self()
 
     @overload
-    def create(self, items: pg.TableWrite, username: str) -> pg.Table: ...
+    def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...
 
     @overload
-    def create(self, items: Sequence[pg.TableWrite], username: str) -> pg.TableList: ...
+    def create(self, username: str, items: Sequence[pg.TableWrite]) -> pg.TableList: ...
 
-    def create(self, items: pg.TableWrite | Sequence[pg.TableWrite], username: str) -> pg.Table | pg.TableList:
+    def create(self, username: str, items: pg.TableWrite | Sequence[pg.TableWrite]) -> pg.Table | pg.TableList:
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
-            items (pg.TableWrite | Sequence[pg.TableWrite]): The table(s) to create
             username (str): The name of the username (a.k.a. database) to be managed from the API
+            items (pg.TableWrite | Sequence[pg.TableWrite]): The table(s) to create
 
         Returns:
             pg.Table | pg.TableList: Created tables
@@ -103,7 +105,7 @@ class TablesAPI(APIClient):
                 >>> from cognite.client.data_classes.postgres_gateway import ViewTableWrite
                 >>> client = CogniteClient()
                 >>> table = ViewTableWrite(tablename="myCustom", options=ViewId(space="mySpace", external_id="myExternalId", version="v1"))
-                >>> res = client.postgres_gateway.tables.create(table, "myUserName")
+                >>> res = client.postgres_gateway.tables.create("myUserName",table)
 
         """
         self._warning.warn()
@@ -117,26 +119,26 @@ class TablesAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[False] = False) -> pg.Table: ...
+    def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[False] = False) -> pg.Table: ...
 
     @overload
-    def retrieve(self, tablename: str, username: str, ignore_unknown_ids: Literal[True]) -> pg.Table | None: ...
+    def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[True]) -> pg.Table | None: ...
 
     @overload
     def retrieve(
-        self, tablename: SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
+        self, username: str, tablename: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.TableList: ...
 
     def retrieve(
-        self, tablename: str | SequenceNotStr[str], username: str, ignore_unknown_ids: bool = False
+        self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.Table | pg.TableList | None:
         """`Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
 
-        Retreive a list of postgres tables for a user by their table names, optionally ignoring unknown table names
+        Retrieve a list of Postgres tables for a user by their table names, optionally ignoring unknown table names
 
         Args:
+            username (str): The username (a.k.a. database) to be managed from the API
             tablename (str | SequenceNotStr[str]): The name of the table(s) to be retrieved
-            username (str): The name of the username (a.k.a. database) to be managed from the API
             ignore_unknown_ids (bool): Ignore table names not found
 
         Returns:
@@ -148,13 +150,13 @@ class TablesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.postgres_gateway.tables.retrieve('myCustom', username="myUserName")
+                >>> res = client.postgres_gateway.tables.retrieve("myUserName", 'myCustom')
 
             Get multiple custom tables by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.postgres_gateway.tables.retrieve(["myCustom", "myCustom2"], username="myUserName")
+                >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
 
 
         """
@@ -188,14 +190,13 @@ class TablesAPI(APIClient):
 
         """
         self._warning.warn()
-        extra_body_fields = {"ignoreUnknownIds": ignore_unknown_ids}
 
         self._delete_multiple(
             identifiers=TablenameSequence.load(tablenames=tablename),
             wrap_ids=True,
             returns_items=False,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
-            extra_body_fields=extra_body_fields,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
             headers={"cdf-version": "beta"},
         )
 
@@ -241,13 +242,12 @@ class TablesAPI(APIClient):
 
         """
         self._warning.warn()
-        filter_ = {"includeBuiltIns": include_built_ins}
 
         return self._list(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
-            filter=filter_,
+            filter={"includeBuiltIns": include_built_ins},
             method="GET",
             limit=limit,
             headers={"cdf-version": "beta"},
