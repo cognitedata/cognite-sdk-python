@@ -23,11 +23,11 @@ class SourcesAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
-        self._CREATE_LIMIT = 100
+        self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
