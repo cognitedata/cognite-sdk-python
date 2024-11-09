@@ -18,16 +18,17 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [7.64.9] - 2024-11-12
+### Fixed
+- Fixed an IndexError that could be raised in an edge cases where datapoints methods should return None.
+
 ## [7.64.8] - 2024-11-06
 ### Fixed
 - Made `compression` and `encoding` of hosted extractor job formats optional to conform with the API.
 
-
 ## [7.64.7] - 2024-11-04
 ### Fixed
 - Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings to avoid hitting the API limits.
-
-
 
 ## [7.64.6] - 2024-10-22
 ### Added
