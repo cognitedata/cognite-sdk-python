@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.64.12] - 2024-11-10
+## [7.64.12] - 2024-11-11
 ### Fixed
 - `FunctionSchedulesAPI.__call__()` calls `FunctionSchedulesAPI.list()` instead of `APIClient._list_generator()`.
   (The latter relied on pagination, which was not implemented by `/schedules/list`). 
