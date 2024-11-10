@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.64.10] - 2024-11-09
+## [7.64.11] - 2024-11-10
+### Added
+- [Feature Preview - alpha] Support for `PostgresGateway` `Tables` `client.postegres_gateway.tables`.
+
+## [7.64.10] - 2024-11-10
 ### Fixed
 - [Feature Preview - alpha] Updated `PostgresGateway` `Users` `client.postegres_gateway.users` to changes in the API.
 
