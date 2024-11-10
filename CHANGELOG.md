@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - [Feature Preview - alpha] Updated `PostgresGateway` `Users` `client.postegres_gateway.users` to changes in the API.
 
+## [7.64.9] - 2024-11-12
+### Fixed
+- Fixed an IndexError that could be raised in an edge cases where datapoints methods should return None.
+
 ## [7.64.8] - 2024-11-06
 ### Fixed
 - Made `compression` and `encoding` of hosted extractor job formats optional to conform with the API.

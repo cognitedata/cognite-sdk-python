@@ -749,7 +749,7 @@ class DatapointsAPI(APIClient):
 
         if not query.is_single_identifier:
             return dps_lst
-        elif not dps_lst and ignore_unknown_ids:
+        elif not dps_lst:
             return None
         return dps_lst[0]
 
@@ -877,7 +877,7 @@ class DatapointsAPI(APIClient):
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_lst
-        elif not dps_lst and ignore_unknown_ids:
+        elif not dps_lst:
             return None
         return dps_lst[0]
 
@@ -1269,7 +1269,7 @@ class DatapointsAPI(APIClient):
         res = fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return DatapointsList._load(res, cognite_client=self._cognite_client)
-        elif not res and ignore_unknown_ids:
+        elif not res:
             return None
         return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
@@ -1295,7 +1295,7 @@ class DatapointsAPI(APIClient):
             datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
-            instance_id (NodeId | None): (Alpha) Instance ID of time series to insert datapoints into.
+            instance_id (NodeId | None): Instance ID of time series to insert datapoints into.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1328,7 +1328,7 @@ class DatapointsAPI(APIClient):
                 >>> datapoints = [
                 ...     (150000000000, 1000),
                 ...     (160000000000, 2000, 3145728),
-                ...     (160000000000, 2000, 2147483648),  # Same as StatusCode.Bad
+                ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
                 >>> client.time_series.data.insert(datapoints, id=2)
 
@@ -1414,7 +1414,7 @@ class DatapointsAPI(APIClient):
                 ...         {"timestamp": 170000000, "value": 4000},
                 ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
                 ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
-                ...         {"timestamp": 190000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
+                ...         {"timestamp": 200000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
 
             If the Datapoints or DatapointsArray are fetched with status codes, these will be automatically used in the insert:
@@ -1443,7 +1443,7 @@ class DatapointsAPI(APIClient):
             end (int | str | datetime.datetime): Exclusive end of delete range
             id (int | None): Id of time series to delete data from
             external_id (str | None): External id of time series to delete data from
-            instance_id (NodeId | None): (Alpha) Instance ID of time series to delete data from
+            instance_id (NodeId | None): Instance ID of time series to delete data from
 
         Examples:
 
