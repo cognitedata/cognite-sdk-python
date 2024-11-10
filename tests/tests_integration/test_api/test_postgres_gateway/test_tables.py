@@ -96,7 +96,7 @@ def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tupl
 class TestTables:
     def test_create_retrieve_delete(self, cognite_client: CogniteClient, one_user: User, one_view: View) -> None:
         my_table = ViewTableWrite(
-            tablename="my_table",
+            tablename=f"my_table-{random_string(10)}",
             options=one_view.as_id(),
         )
         username = one_user.username
