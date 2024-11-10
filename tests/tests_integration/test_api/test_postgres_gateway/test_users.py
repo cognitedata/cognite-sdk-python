@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pytest
 
 from cognite.client import CogniteClient
@@ -12,14 +10,6 @@ from cognite.client.data_classes.postgres_gateway import (
     UserWrite,
 )
 from cognite.client.exceptions import CogniteAPIError
-
-
-@pytest.fixture
-def one_user(cognite_client: CogniteClient, fresh_credentials: SessionCredentials) -> User:
-    my_user = UserWrite(credentials=fresh_credentials)
-    created = cognite_client.postgres_gateway.users.create(my_user)
-    yield created
-    cognite_client.postgres_gateway.users.delete(created.username, ignore_unknown_ids=True)
 
 
 class TestUsers:
