@@ -581,7 +581,7 @@ class TestIterateDatapoints:
         id_ = cognite_client.time_series.retrieve(instance_id=instance_id).id
         qs_with_hidden_duplicates = [DatapointsQuery(id=id_), DatapointsQuery(instance_id=instance_id)]
 
-        with pytest.raises(RuntimeError, match="must be unique! You can not get around this"):
+        with pytest.raises(RuntimeError, match="must be unique! You cannot get around this"):
             next(cognite_client.time_series.data(qs_with_hidden_duplicates))
 
     @pytest.mark.parametrize(
