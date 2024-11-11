@@ -590,7 +590,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client.data_classes import DatapointsQuery
                 >>> client = CogniteClient()
                 >>> query = DatapointsQuery(external_id="foo", start="2w-ago")
-                >>> for chunk in client.time_series.data(query, chunk_size=25_000):
+                >>> for chunk in client.time_series.data(query, chunk_size_datapoints=25_000):
                 ...     pass  # do something with the datapoints chunk
 
             Iterate through datapoints from multiple time series, and do not return them as numpy arrays. As one or more time
@@ -606,8 +606,8 @@ class DatapointsAPI(APIClient):
                 ...     DatapointsQuery(instance_id=NodeId("my-space", "my-ts-xid"))
                 ... ]
                 >>> for chunk_lst in client.time_series.data(query, return_arrays=False):
-                ...     if chunk_lst.get(id=2) is None:
-                ...         print("Time series with id=2 has no more datapoints!")
+                ...     if chunk_lst.get(id=123) is None:
+                ...         print("Time series with id=123 has no more datapoints!")
 
             A likely use case for iterating datapoints is to clone data from one project to another, while keeping a low memory
             footprint and without having to write very custom logic involving count aggregates (which won't work for string data)
@@ -712,7 +712,7 @@ class DatapointsAPI(APIClient):
                 dps = dps_lst.get(**ident.as_dict(camel_case=False))
                 if isinstance(dps, list):
                     raise RuntimeError(
-                        "When iterating datapoints, identifiers must be unique! You can not get around this by passing "
+                        "When iterating datapoints, identifiers must be unique! You cannot get around this by passing "
                         "several of [id, external_id, instance_id] for the same underlying time series."
                     )
                 # Update query.start for next iteration if ts is not yet exhausted:
