@@ -38,7 +38,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     _DatapointsPayloadItem,
 )
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -290,7 +290,7 @@ class _DpsQueryValidator:
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
-        elif isinstance(limit, int) and limit >= 0:  # limit=0 is accepted by the API
+        elif is_finite(limit):  # limit=0 is accepted by the API
             try:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)
