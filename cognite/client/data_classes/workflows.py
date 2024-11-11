@@ -1272,7 +1272,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str | None = None) -> None:
+    def __init__(self, cron_expression: str | None) -> None:
         super().__init__()
         self.cron_expression = cron_expression
 
@@ -1286,7 +1286,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
     This class represents a data modeling trigger rule.
 
     Args:
-        data_modeling_query (WorkflowTriggerDataModelingQuery | None): The data modeling query of the trigger.
+        data_modeling_query (WorkflowTriggerDataModelingQuery): The data modeling query of the trigger.
         batch_size (int | None): The batch size of the trigger.
         batch_timeout (int | None): The batch timeout of the trigger.
     """
@@ -1295,7 +1295,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
 
     def __init__(
         self,
-        data_modeling_query: WorkflowTriggerDataModelingQuery | None = None,
+        data_modeling_query: WorkflowTriggerDataModelingQuery,
         batch_size: int | None = None,
         batch_timeout: int | None = None,
     ) -> None:
@@ -1307,9 +1307,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
         return cls(
-            data_modeling_query=WorkflowTriggerDataModelingQuery.load(typing.cast(dict, data.get("dataModelingQuery")))
-            if data.get("dataModelingQuery")
-            else None,
+            data_modeling_query=WorkflowTriggerDataModelingQuery.load(typing.cast(dict, data.get("dataModelingQuery"))),
             batch_size=data.get("batchSize"),
             batch_timeout=data.get("batchTimeout"),
         )
