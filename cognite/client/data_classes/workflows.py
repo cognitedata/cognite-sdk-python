@@ -1240,8 +1240,8 @@ class WorkflowTriggerDataModelingQuery(CogniteObject):
 
     def __init__(
         self,
-        with_: dict[str, ResultSetExpression] = {},
-        select: dict[str, Select] = {},
+        with_: dict[str, ResultSetExpression],
+        select: dict[str, Select],
     ) -> None:
         super().__init__()
         self.with_ = with_
