@@ -7,6 +7,8 @@ from cognite.client.utils._identifier import (
     Identifier,
     IdentifierSequence,
     InstanceId,
+    Tablename,
+    TablenameSequence,
     UserIdentifier,
     UserIdentifierSequence,
     Username,
@@ -170,3 +172,31 @@ class TestUsernameSequence:
     def test_load_wrong_type(self) -> None:
         with pytest.raises(TypeError):
             UsernameSequence.load(123)
+
+
+class TestTablename:
+    def test_methods(self) -> None:
+        user_id = Tablename("foo")
+        assert user_id.as_primitive() == "foo"
+        assert user_id.as_dict(camel_case=True) == {"tablename": "foo"}
+        assert user_id.as_dict(camel_case=False) == {"tablename": "foo"}
+
+
+class TestTablenameSequence:
+    @pytest.mark.parametrize(
+        "tablenames, exp_dcts, exp_primitives",
+        (
+            ("foo", [{"tablename": "foo"}], ["foo"]),
+            (["foo", "bar"], [{"tablename": "foo"}, {"tablename": "bar"}], ["foo", "bar"]),
+        ),
+    )
+    def test_load_and_dump(
+        self, tablenames: str | list[str], exp_dcts: dict[str, str], exp_primitives: list[str]
+    ) -> None:
+        user_id_seq = TablenameSequence.load(tablenames)
+        assert user_id_seq.as_primitives() == exp_primitives
+        assert user_id_seq.as_dicts() == exp_dcts
+
+    def test_load_wrong_type(self) -> None:
+        with pytest.raises(TypeError):
+            TablenameSequence.load(123)

@@ -488,6 +488,18 @@ class TestRetrieveRawDatapointsAPI:
             assert df.shape == (2506, 101)
             assert df.notna().any(axis=None)
 
+    def test_retrieve_ignore_unknown_ids_true_passed_as_query_param_not_top_level(
+        self, cognite_client, retrieve_endpoints
+    ):
+        # From v5 to 7.64.8, when requesting datapoints from a single time series that do not exist,
+        # and passing ignore_unknown_ids=True as part of the datapoints-query (instead of the top-level),
+        # an IndexError would be raised (no such issue for retrieve_latest which only allows top-level):
+
+        for endpoint in retrieve_endpoints:
+            query = DatapointsQuery(id=123, ignore_unknown_ids=True)
+            res = cognite_client.time_series.data.retrieve(id=query, ignore_unknown_ids=False)
+            assert res is None
+
     def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
         # non-ignorable ts would be raised in a CogniteNotFoundError.
