@@ -16,7 +16,6 @@ from typing import (
     ClassVar,
     Literal,
     TypedDict,
-    cast,
     overload,
 )
 
@@ -424,7 +423,7 @@ class Datapoint(CogniteResource):
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.timestamp = timestamp
+        self.timestamp: int = timestamp  # type: ignore
         self.value = value
         self.average = average
         self.max = max
@@ -448,7 +447,7 @@ class Datapoint(CogniteResource):
 
     def __str__(self) -> str:
         item = self.dump(camel_case=False)
-        item["timestamp"] = convert_and_isoformat_timestamp(cast(int, self.timestamp), self.timezone)
+        item["timestamp"] = convert_and_isoformat_timestamp(self.timestamp, self.timezone)
         return _json.dumps(item, indent=4)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
@@ -531,7 +530,9 @@ class DatapointsArray(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
-        self.timestamp = timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
+        self.timestamp: NumpyDatetime64NSArray = (
+            timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
+        )  # type: ignore
         self.value = value
         self.average = average
         self.max = max
@@ -926,7 +927,7 @@ class Datapoints(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.granularity = granularity
-        self.timestamp = timestamp or []  # Needed in __len__
+        self.timestamp: list[int] = timestamp or []  # type: ignore
         self.value = value
         self.average = average
         self.max = max

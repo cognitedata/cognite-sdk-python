@@ -707,21 +707,7 @@ class DatapointsAPI(APIClient):
             dps_lst: DatapointsArrayList | DatapointsList = (
                 fetcher.fetch_all_datapoints_numpy() if return_arrays else fetcher.fetch_all_datapoints()
             )
-            for query in to_fetch_queries:
-                ident = query.identifier
-                dps = dps_lst.get(**ident.as_dict(camel_case=False))
-                if isinstance(dps, list):
-                    raise RuntimeError(
-                        "When iterating datapoints, identifiers must be unique! You cannot get around this by passing "
-                        "several of [id, external_id, instance_id] for the same underlying time series."
-                    )
-                # Update query.start for next iteration if ts is not yet exhausted:
-                if dps and len(dps) == request_limit:
-                    new_start = cast(int, dps[-1].timestamp) + 1
-                    if query.end_ms > new_start:
-                        query.start = new_start  # manual cursoring ftw
-                        continue
-                alive_queries.pop(ident)
+            self._update_alive_queries_and_do_manual_cursoring(alive_queries, dps_lst, to_fetch_queries, request_limit)
 
             # We should never yield an empty chunk, so we filter out empty or exhausted time series from result
             # (need to rebuild to not keep references to those empty in various private "id lookups")
@@ -739,6 +725,29 @@ class DatapointsAPI(APIClient):
                 for all_chunks in itertools.zip_longest(*map(chunk_fn, dps_lst)):
                     # Filter out dps as ts get exhausted, then rebuild the Dps(Array)List container and yield chunk:
                     yield dps_lst_cls(list(filter(None, all_chunks)), cognite_client=self._cognite_client)
+
+    @staticmethod
+    def _update_alive_queries_and_do_manual_cursoring(
+        alive_queries: dict[Identifier, DatapointsQuery],
+        dps_lst: DatapointsArrayList | DatapointsList,
+        to_fetch_queries: list[DatapointsQuery],
+        request_limit: int,
+    ) -> None:
+        for query in to_fetch_queries:
+            ident = query.identifier
+            dps = dps_lst.get(**ident.as_dict(camel_case=False))
+            if isinstance(dps, list):
+                raise RuntimeError(
+                    "When iterating datapoints, identifiers must be unique! You cannot get around this by passing "
+                    "several of [id, external_id, instance_id] for the same underlying time series."
+                )
+            # Update query.start for next iteration if ts is not yet exhausted:
+            if dps and len(dps) == request_limit:
+                new_start = dps[-1].timestamp + 1
+                if query.end_ms > new_start:
+                    query.start = new_start  # manual cursoring ftw
+                    continue
+            alive_queries.pop(ident)
 
     def retrieve(
         self,
