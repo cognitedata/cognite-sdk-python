@@ -532,7 +532,7 @@ class DatapointsArray(CogniteResource):
         self.granularity = granularity
         self.timestamp: NumpyDatetime64NSArray = (
             timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
-        )  # type: ignore
+        )
         self.value = value
         self.average = average
         self.max = max
