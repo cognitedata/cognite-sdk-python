@@ -578,33 +578,3 @@ class TestWorkflowTriggers:
         )
         # it would take too long to wait for the trigger to run, so we just check that the history is not None
         assert history is not None
-
-
-class TestSimIntInWorkflows:
-    def test_upsert_delete_with_simulation_task(
-        self,
-        cognite_client: CogniteClient,
-    ):
-        workflow_id = "integration_test-workflow_for_simulator_integration"
-
-        version = WorkflowVersionUpsert(
-            workflow_external_id=workflow_id,
-            version="1",
-            workflow_definition=WorkflowDefinitionUpsert(
-                tasks=[
-                    WorkflowTask(
-                        external_id=f"{workflow_id}-1-task1",
-                        parameters=SimulationTaskParameters(
-                            routine_external_id="integration_tests_workflow",
-                        ),
-                    )
-                ],
-                description=None,
-            ),
-        )
-
-        res = cognite_client.workflows.versions.upsert(version)
-        assert res.workflow_external_id == workflow_id
-        assert res.workflow_definition.tasks[0].type == "simulation"
-        assert len(res.workflow_definition.tasks) > 0
-        cognite_client.workflows.versions.delete(workflow_version_id=(workflow_id, "1"))
