@@ -97,7 +97,12 @@ def all_acls():
         {"sapWritebackAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"sapWritebackAcl": {"actions": ["READ", "WRITE"], "scope": {"instancesScope": {"instances": ["123", "456"]}}}},
         {"sapWritebackRequestsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
-        {"sapWritebackRequestsAcl": {"actions": ["READ", "WRITE"], "instancesScope": {"instances": ["123", "456"]}}},
+        {
+            "sapWritebackRequestsAcl": {
+                "actions": ["READ", "WRITE"],
+                "scope": {"instancesScope": {"instances": ["123", "456"]}},
+            }
+        },
         {"scheduledCalculationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {
             "securityCategoriesAcl": {
