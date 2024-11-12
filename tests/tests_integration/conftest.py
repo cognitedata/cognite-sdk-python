@@ -88,6 +88,7 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=credentials,
+            headers={"cdf-version": "alpha"},
             **beta_configuration,
         )
     )
