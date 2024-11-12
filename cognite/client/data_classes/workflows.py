@@ -37,9 +37,10 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None) -> None:
+    def __init__(self, external_id: str, description: str | None, data_set_id: int | None) -> None:
         self.external_id = external_id
         self.description = description
+        self.data_set_id = data_set_id
 
 
 class WorkflowUpsert(WorkflowCore):
@@ -49,8 +50,11 @@ class WorkflowUpsert(WorkflowCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         description (str | None): Description of the workflow. Note that when updating a workflow, the description will
-                            always be overwritten also if it is set to None. Meaning if the wokflow already has a description,
+                            always be overwritten also if it is set to None. Meaning if the workflow already has a description,
                             and you want to keep it, you need to provide the description when updating the workflow.
+        data_set_id (int | None): The id of the data set this workflow belongs to.
+                            If a dataSetId is provided, any operations on this workflow, or its versions, executions,
+                            and triggers will require appropriate access to the data set.
     """
 
     @classmethod
@@ -70,7 +74,7 @@ class Workflow(WorkflowCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
-
+        data_set_id (int | None): The id of the data set this workflow belongs to.
     """
 
     def __init__(
@@ -78,8 +82,9 @@ class Workflow(WorkflowCore):
         external_id: str,
         created_time: int,
         description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
-        super().__init__(external_id, description)
+        super().__init__(external_id, description, data_set_id)
         self.created_time = created_time
 
     @classmethod
@@ -88,6 +93,7 @@ class Workflow(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
+            data_set_id=resource["dataSetId"],
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -95,6 +101,7 @@ class Workflow(WorkflowCore):
         return WorkflowUpsert(
             external_id=self.external_id,
             description=self.description,
+            data_set_id=self.data_set_id,
         )
 
 

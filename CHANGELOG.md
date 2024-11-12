@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.64.12] - 2023-11-12
+### Added
+- Added Scope `DataSet` for `WorkflowOrchestrationAcl`.
+- Added optional `data_set_id` to `Workflow` and `WorkflowUpsert`.
+
 ## [7.64.11] - 2024-11-10
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Tables` `client.postegres_gateway.tables`.
