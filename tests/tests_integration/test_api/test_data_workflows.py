@@ -305,6 +305,43 @@ class TestWorkflows:
 
 
 class TestWorkflowVersions:
+    def test_upsert_delete_with_simulation_task(
+        self,
+        cognite_client: CogniteClient,
+    ):
+        workflow_id = "integration_test-workflow_for_simulator_integration" + random_string(5)
+
+        version = WorkflowVersionUpsert(
+            workflow_external_id=workflow_id,
+            version="1",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id=f"{workflow_id}-1-task1" + random_string(5),
+                        parameters=SimulationTaskParameters(
+                            routine_external_id="integration_tests_workflow",
+                        ),
+                    )
+                ],
+                description=None,
+            ),
+        )
+
+        cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
+        created_version: WorkflowVersion | None = None
+
+        try:
+            created_version = cognite_client.workflows.versions.upsert(version)
+            assert created_version.workflow_external_id == workflow_id
+            assert created_version.workflow_definition.tasks[0].type == "simulation"
+            assert len(created_version.workflow_definition.tasks) > 0
+        finally:
+            if created_version is not None:
+                cognite_client.workflows.versions.delete(
+                    created_version.as_id(),
+                )
+                cognite_client.workflows.delete(created_version.workflow_external_id)
+
     def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionUpsert(
             workflow_external_id="integration_test-workflow_versions-test_create_delete" + random_string(5),
@@ -544,7 +581,7 @@ class TestWorkflowTriggers:
 
 
 class TestSimIntInWorkflows:
-    def test_create_and_run_simint_workflow(
+    def test_upsert_delete_with_simulation_task(
         self,
         cognite_client: CogniteClient,
     ):
@@ -568,6 +605,6 @@ class TestSimIntInWorkflows:
 
         res = cognite_client.workflows.versions.upsert(version)
         assert res.workflow_external_id == workflow_id
-        assert res.workflow_definition.tasks[0].type == "simulator"
+        assert res.workflow_definition.tasks[0].type == "simulation"
         assert len(res.workflow_definition.tasks) > 0
         cognite_client.workflows.versions.delete(workflow_version_id=(workflow_id, "1"))
