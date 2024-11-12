@@ -390,6 +390,15 @@ class IDScopeLowerCase(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class InstancesScope(Capability.Scope):
+    _scope_name = "instancesScope"
+    instances: list[str]
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, s) for s in self.instances}
+
+
+@dataclass(frozen=True)
 class ExtractionPipelineScope(Capability.Scope):
     _scope_name = "extractionPipelineScope"
     ids: list[int]
@@ -857,6 +866,36 @@ class RoboticsAcl(Capability):
     class Scope:
         All = AllScope
         DataSet = DataSetScope
+
+
+@dataclass
+class SAPWritebackAcl(Capability):
+    _capability_name = "sapWritebackAcl"
+    actions: Sequence[Action]
+    scope: AllScope | InstancesScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        Instances = InstancesScope
+
+
+@dataclass
+class SAPWritebackRequestsAcl(Capability):
+    _capability_name = "sapWritebackRequestsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | InstancesScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Write = "WRITE"
+        List = "LIST"
+
+    class Scope:
+        All = AllScope
+        Instances = InstancesScope
 
 
 @dataclass
