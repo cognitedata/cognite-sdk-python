@@ -5,7 +5,7 @@ import datetime
 import json
 import typing
 import warnings
-from collections import defaultdict
+from collections import ChainMap, defaultdict
 from collections.abc import Collection, Iterator, Sequence
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
@@ -199,6 +199,10 @@ class DatapointsQuery:
 
     def __hash__(self) -> int:
         return hash(id(self))  # See note on __eq__
+
+    @classmethod
+    def valid_from_user_query(cls, query: Self, **settings: Any) -> Self:
+        return cls(**ChainMap(query.dump(), settings, dict.fromkeys(cls.OPTIONAL_DICT_KEYS)))
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)

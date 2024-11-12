@@ -611,9 +611,13 @@ class TestIterateDatapoints:
             assert False, "No iteration should happen"
 
     def test_no_data_due_to_missing_is_noop(self, cognite_client):
-        xid = random_cognite_external_ids(1, str_len=80)[0]
-        query = DatapointsQuery(external_id=xid, ignore_unknown_ids=True)
-        for _ in cognite_client.time_series.data(query, ignore_unknown_ids=False):  # query should take precedence
+        xid1, xid2 = random_cognite_external_ids(2, str_len=60)
+        query1 = DatapointsQuery(external_id=xid1, ignore_unknown_ids=True)
+        for _ in cognite_client.time_series.data(query1):
+            assert False, "No iteration should happen"
+
+        query2 = DatapointsQuery(external_id=xid2, ignore_unknown_ids=True)
+        for _ in cognite_client.time_series.data([query1, query2]):
             assert False, "No iteration should happen"
 
     def test_iterate_exhausted_but_queue_not_empty(self, cognite_client, weekly_dps_ts, all_test_time_series):

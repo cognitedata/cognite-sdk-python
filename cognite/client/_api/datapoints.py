@@ -536,17 +536,6 @@ class DatapointsAPI(APIClient):
         self,
         queries: DatapointsQuery | Sequence[DatapointsQuery],
         *,
-        start: int | str | datetime.datetime | None = None,
-        end: int | str | datetime.datetime | None = None,
-        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
-        granularity: str | None = None,
-        timezone: str | datetime.timezone | ZoneInfo | None = None,
-        target_unit: str | None = None,
-        target_unit_system: str | None = None,
-        ignore_unknown_ids: bool = False,
-        include_status: bool = False,
-        ignore_bad_datapoints: bool = True,
-        treat_uncertain_as_bad: bool = True,
         chunk_size_datapoints: int = 100_000,
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
@@ -555,32 +544,21 @@ class DatapointsAPI(APIClient):
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
-            how many datapoints to yield per iteration. See full example in examples. Note that in order to make efficient use of the API request limits,
-            this method will never hold less than 100k datapoints in memory at a time, per time series.
+            how many datapoints to yield per iteration (per individual time series). See full example in examples. Note that in order to make efficient
+            use of the API request limits, this method will never hold less than 100k datapoints in memory at a time, per time series.
 
             If you run with memory constraints, use ``return_arrays=True`` (the default).
 
-            No empty chunk will ever be returned.
+            No empty chunk is ever returned.
 
         Args:
-            queries (DatapointsQuery | Sequence[DatapointsQuery]): Query, or queries, using id, external_id or instance_id for time series to fetch data for. Individual settings in the DatapointsQuery take precedence over top-level settings. The options 'limit' and 'include_outside_points' are not supported.
-            start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
-            end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
-            timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
-            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
-            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            queries (DatapointsQuery | Sequence[DatapointsQuery]): Query, or queries, using id, external_id or instance_id for the time series to fetch data for, with individual settings specified. The options 'limit' and 'include_outside_points' are not supported when iterating.
             chunk_size_datapoints (int): The number of datapoints per time series to yield per iteration. Must evenly divide 100k OR be an integer multiple of 100k. Default: 100_000.
-            chunk_size_time_series (int | None): The max number of time series to yield per iteration (varies as time series get exhausted, but is always at least 1). Default: None (all given queries are returned).
+            chunk_size_time_series (int | None): The max number of time series to yield per iteration (varies as time series get exhausted, but is never empty). Default: None (all given queries are iterated at the same time).
             return_arrays (bool): Whether to return the datapoints as numpy arrays. Default: True.
 
         Yields:
-            DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList: If return_arrays=True, a ``DatapointsArray`` object containing the datapoints chunk, or a ``DatapointsArrayList`` if multiple time series were asked for. When False, a ``Datapoints`` object containing the datapoints chunk, or a ``DatapointsList`` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, iteration will quit.
+            DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList: If return_arrays=True, a ``DatapointsArray`` object containing the datapoints chunk, or a ``DatapointsArrayList`` if multiple time series were asked for. When False, a ``Datapoints`` object containing the datapoints chunk, or a ``DatapointsList`` if multiple time series were asked for.
 
         Examples:
 
@@ -593,11 +571,12 @@ class DatapointsAPI(APIClient):
                 >>> for chunk in client.time_series.data(query, chunk_size_datapoints=25_000):
                 ...     pass  # do something with the datapoints chunk
 
-            Iterate through datapoints from multiple time series, and do not return them as numpy arrays. As one or more time
-            series get exhausted (no more data), they are no longer part of the returned "chunk list", but the order is
-            still preserved (for the remaining).
+            Iterate through datapoints from multiple time series, and do not return them as memory-efficient numpy arrays.
+            As one or more time series get exhausted (no more data), they are no longer part of the returned "chunk list".
+            Note that the order is still preserved (for the remaining).
 
-            If you run with ``chunk_size_time_series=None``, an easy way to check is to use the ``.get`` method, as illustrated below:
+            If you run with ``chunk_size_time_series=None``, an easy way to check when a time series is exhausted is to
+            use the ``.get`` method, as illustrated below:
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> queries = [
@@ -611,24 +590,29 @@ class DatapointsAPI(APIClient):
 
             A likely use case for iterating datapoints is to clone data from one project to another, while keeping a low memory
             footprint and without having to write very custom logic involving count aggregates (which won't work for string data)
-            and time domain splitting.
+            or do time-domain splitting yourself.
 
-            Here's an example of how to do so efficiently, while not ignoring bad and uncertain data (``ignore_bad_datapoints=False``)
-            and copying status codes (automatically taken care of when requested, ``include_status=True``). The only assumption is that
-            the time series are already created in the target project.
+            Here's an example of how to do so efficiently, while including bad- and uncertain data (``ignore_bad_datapoints=False``) and
+            copying status codes (``include_status=True``). This is automatically taken care of when the Datapoints(-Array) objects are passed
+            directly to an insert method. The only assumption below is that the time series have already been created in the target project.
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
                 >>> target_client = CogniteClient()
-                >>> to_copy = client.time_series.list(data_set_external_ids="my-use-case")
-                >>> queries = [DatapointsQuery(external_id=ts.external_id) for ts in to_copy]
+                >>> ts_to_copy = client.time_series.list(data_set_external_ids="my-use-case")
+                >>> queries = [
+                ...     DatapointsQuery(
+                ...         external_id=ts.external_id,
+                ...         include_status=True,
+                ...         ignore_bad_datapoints=False,
+                ...         start=MIN_TIMESTAMP_MS,
+                ...         end=MAX_TIMESTAMP_MS + 1,  # end is exclusive
+                ...     )
+                ...     for ts in ts_to_copy
+                ... ]
                 >>> for dps_chunk in client.time_series.data(
                 ...     queries,  # may be several thousand time series...
                 ...     chunk_size_time_series=20,  # control memory usage by specifying how many to iterate at a time
                 ...     chunk_size_datapoints=100_000,
-                ...     include_status=True,
-                ...     ignore_bad_datapoints=False,
-                ...     start=MIN_TIMESTAMP_MS,
-                ...     end=MAX_TIMESTAMP_MS + 1,  # end is exclusive
                 ... ):
                 ...     target_client.time_series.data.insert_multiple(
                 ...         [{"external_id": dps.external_id, "datapoints": dps} for dps in dps_chunk]
@@ -659,45 +643,20 @@ class DatapointsAPI(APIClient):
         dps_lst_cls: type[DatapointsArrayList | DatapointsList] = (
             DatapointsArrayList if return_arrays else DatapointsList
         )
-
-        # Note: Next major we should remove id/xid/instance_id from the other retrieve methods and just accept queries:
-        qs_per_id_type = defaultdict(list)
-        for q in user_queries:
-            qs_per_id_type[q.identifier.name()].append(q)
-
-            if q.include_outside_points is True or q.limit is not DatapointsQuery._NOT_SET:
+        for uq in user_queries:
+            if uq.include_outside_points is True or uq.limit is not DatapointsQuery._NOT_SET:
                 raise ValueError(
                     "When iterating datapoints, the options 'include_outside_points' and 'limit' are not supported."
                 )
 
-        for ident_type, queries in qs_per_id_type.items():
-            if dupes := find_duplicates(q.identifier.as_primitive() for q in queries):
-                raise ValueError(
-                    f"When iterating datapoints, identifiers must be unique! Duplicates found for {ident_type}: {dupes}"
-                )
-        original_order = [q.identifier for q in user_queries]
+        if dupes := find_duplicates(uq.identifier.as_primitive() for uq in user_queries):
+            raise ValueError(f"When iterating datapoints, identifiers must be unique! Duplicates found for: {dupes}")
 
-        parsed_queries = _FullDatapointsQuery(
-            start=start,
-            end=end,
-            id=qs_per_id_type["id"],
-            external_id=qs_per_id_type["external_id"],
-            instance_id=qs_per_id_type["instance_id"],
-            aggregates=aggregates,
-            granularity=granularity,
-            timezone=timezone,
-            target_unit=target_unit,
-            target_unit_system=target_unit_system,
-            limit=request_limit,
-            include_outside_points=False,
-            ignore_unknown_ids=ignore_unknown_ids,
-            include_status=include_status,
-            ignore_bad_datapoints=ignore_bad_datapoints,
-            treat_uncertain_as_bad=treat_uncertain_as_bad,
-        ).parse_into_queries()
-        self.query_validator(parsed_queries)
-        alive_queries = {q.identifier: q for q in parsed_queries}
-        alive_queries = {ident: alive_queries[ident] for ident in original_order}  # ..and sort
+        alive_queries = {
+            uq.identifier: DatapointsQuery.valid_from_user_query(uq, limit=request_limit, include_outside_points=False)
+            for uq in user_queries
+        }
+        self.query_validator(alive_queries.values())
 
         while alive_queries:
             to_fetch_queries = list(itertools.islice(alive_queries.values(), chunk_size_time_series))
@@ -780,6 +739,10 @@ class DatapointsAPI(APIClient):
             4. Limited queries, (e.g. ``limit=500_000``) are much less performant, at least for large limits, as each individual time series is fetched serially (we can't predict where on the timeline the datapoints are). Thus parallelisation is only used when asking for multiple "limited" time series.
             5. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't use start=0 (1970).
             6. Using ``timezone`` and/or calendar granularities like month/quarter/year in aggregate queries comes at a penalty.
+
+        Tip:
+            To read datapoints efficiently, while keeping a low memory footprint e.g. to copy from one project to another, check out :py:meth:`~DatapointsAPI.__call__`.
+            It allows you to iterate through datapoints in chunks, and also control how many time series to iterate at the same time.
 
         Time series support status codes like Good, Uncertain and Bad. You can read more in the Cognite Data Fusion developer documentation on
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_

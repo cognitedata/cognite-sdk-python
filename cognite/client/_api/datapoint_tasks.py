@@ -6,7 +6,7 @@ import operator as op
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import chain, pairwise
@@ -200,7 +200,7 @@ class _DpsQueryValidator:
     dps_limit_raw: int
     dps_limit_agg: int
 
-    def __call__(self, queries: list[DatapointsQuery]) -> list[DatapointsQuery]:
+    def __call__(self, queries: Iterable[DatapointsQuery]) -> Iterable[DatapointsQuery]:
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
