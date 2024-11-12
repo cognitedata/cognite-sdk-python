@@ -649,18 +649,22 @@ class TestIterateDatapoints:
     def test_iterate_datapoints(self, cognite_client, queries_for_iteration, all_test_time_series):
         # One external id to follow through all iterations and use for asserts:
         ts_xid = all_test_time_series[107].external_id
-        dps_iterator = cognite_client.time_series.data(
-            queries_for_iteration,
-            ignore_bad_datapoints=False,
-            start=MIN_TIMESTAMP_MS,
-            end=MAX_TIMESTAMP_MS,
-            chunk_size_datapoints=1_000,
-            return_arrays=False,
-        )
+        # Add a few query options:
+        queries = [
+            DatapointsQuery.valid_from_user_query(
+                query,
+                start=MIN_TIMESTAMP_MS,
+                end=MAX_TIMESTAMP_MS,
+                ignore_bad_datapoints=False,
+                limit=DatapointsQuery._NOT_SET,  # small hack to avoid repeating the entire queries_for_iteration
+            )
+            for query in queries_for_iteration
+        ]
+        dps_iterator = cognite_client.time_series.data(queries, chunk_size_datapoints=1_000, return_arrays=False)
         dps_lst = next(dps_iterator)
         # First iteration, every time series is returned (all have data)
         exp_lengths = (1000, 291, 1000, 1000, 1000, 1000, 1000, 1000, 21, 291, 50)
-        for query, dps, exp_len in zip(queries_for_iteration, dps_lst, exp_lengths):
+        for query, dps, exp_len in zip(queries, dps_lst, exp_lengths):
             # Check that the order is preserved:
             assert query.identifier.as_primitive() == getattr(dps, query.identifier.name())
             assert len(dps) == exp_len
@@ -1345,7 +1349,7 @@ class TestRetrieveAggregateDatapointsAPI:
         granularity = random_granularity()
         for endpoint in retrieve_endpoints:
             with pytest.raises(
-                CogniteAPIError, match=re.escape("Could not recognize aggregation value: min-max-lol | code: 400")
+                CogniteAPIError, match=re.escape("Could not recognize aggregation value: 'min-max-lol'. | code: 400")
             ):
                 endpoint(id=ts.id, granularity=granularity, aggregates="min-max-lol")
 
