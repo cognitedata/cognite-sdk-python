@@ -17,6 +17,11 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.simulators import (
+    SimulatorRoutineInputConstant,
+    SimulatorRoutineInputTimeseries,
+    SimulatorRoutineOutput,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -227,7 +232,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
     Args:
         routine_external_id (str): The external ID of the simulation routine to be executed.
         run_time (int | None): Reference timestamp used for data pre-processing and data sampling.
-        inputs (list[dict[str, Any]] | None): List of input overrides
+        inputs (list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None): List of input overrides
     """
 
     task_type = "simulation"
@@ -236,7 +241,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         self,
         routine_external_id: str,
         run_time: int | None = None,
-        inputs: list[dict[str, Any]] | None = None,
+        inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None = None,
     ) -> None:
         self.routine_external_id = routine_external_id
         self.run_time = run_time
@@ -612,7 +617,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         run_id (int | None): The run id of the simulation execution in the SimInt API.
         logs (list[dict[str, Any]] | None): Logs from the simulation execution.
         status_message (str | None): Status of the current simulation execution.
-        outputs (list[dict[str, Any]] | None): Outputs results from the simulation execution
+        outputs (list[SimulatorRoutineOutput] | None): Outputs results from the simulation execution
     """
 
     task_type: ClassVar[str] = "simulation"
@@ -622,7 +627,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         run_id: int | None,
         logs: list[dict[str, Any]] | None,
         status_message: str | None,
-        outputs: list[dict[str, Any]] | None,
+        outputs: list[SimulatorRoutineOutput] | None,
     ) -> None:
         self.run_id = run_id
         self.logs = logs
