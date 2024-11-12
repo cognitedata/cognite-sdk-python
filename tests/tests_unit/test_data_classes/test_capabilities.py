@@ -21,6 +21,7 @@ from cognite.client.data_classes.capabilities import (
     ProjectCapabilityList,
     ProjectsAcl,
     RawAcl,
+    SAPWritebackAcl,
     SpaceIDScope,
     TableScope,
     UnknownAcl,
@@ -380,6 +381,13 @@ def proj_capabs_list(project_name):
                 ),
                 project_scope=ProjectCapability.Scope.Projects([project_name]),
             ),
+            ProjectCapability(
+                capability=SAPWritebackAcl(
+                    [SAPWritebackAcl.Action.Read, SAPWritebackAcl.Action.Write],
+                    scope=SAPWritebackAcl.Scope.All(),
+                ),
+                project_scope=ProjectCapability.Scope.Projects([project_name]),
+            ),
         ]
     )
 
@@ -475,6 +483,7 @@ class TestIAMCompareCapabilities:
             EventsAcl([EventsAcl.Action.Read], scope=EventsAcl.Scope.All()),
             EventsAcl([EventsAcl.Action.Write], scope=EventsAcl.Scope.DataSet([1, "2"])),
             RawAcl([RawAcl.Action.Read], scope=RawAcl.Scope.Table({"my_db": ["my_table"]})),
+            SAPWritebackAcl([SAPWritebackAcl.Action.Write], scope=SAPWritebackAcl.Scope.Instances(["1", "2"])),
         ],
     )
     def test_has_capability(
