@@ -96,10 +96,10 @@ def all_acls():
         {"roboticsAcl": {"actions": ["READ"], "scope": {"datasetScope": {"ids": ["583194012260066"]}}}},
         {"sapWritebackAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"sapWritebackAcl": {"actions": ["READ", "WRITE"], "scope": {"instancesScope": {"instances": ["123", "456"]}}}},
-        {"sapWritebackRequestsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"sapWritebackRequestsAcl": {"actions": ["WRITE", "LIST"], "scope": {"all": {}}}},
         {
             "sapWritebackRequestsAcl": {
-                "actions": ["READ", "WRITE"],
+                "actions": ["WRITE", "LIST"],
                 "scope": {"instancesScope": {"instances": ["123", "456"]}},
             }
         },

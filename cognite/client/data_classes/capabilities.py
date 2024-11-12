@@ -890,8 +890,8 @@ class SAPWritebackRequestsAcl(Capability):
     scope: AllScope | InstancesScope
 
     class Action(Capability.Action):  # type: ignore [misc]
-        Read = "READ"
         Write = "WRITE"
+        List = "LIST"
 
     class Scope:
         All = AllScope
