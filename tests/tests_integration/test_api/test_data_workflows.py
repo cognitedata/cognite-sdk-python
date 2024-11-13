@@ -5,7 +5,7 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function
+from cognite.client.data_classes import DataSet, Function
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
@@ -29,8 +29,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
-    data_set = cognite_client.data_sets.list(limit=1)[0]
+def workflow_list(cognite_client: CogniteClient, data_set: DataSet) -> WorkflowList:
     workflow1 = WorkflowUpsert(
         external_id="integration_test-workflow1",
         description="This is  workflow for testing purposes",
@@ -266,9 +265,13 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     cognite_client.workflows.triggers.delete(trigger.external_id)
 
 
+@pytest.fixture(scope="session")
+def data_set(cognite_client: CogniteClient) -> DataSet:
+    return cognite_client.data_sets.list(limit=1)[0]
+
+
 class TestWorkflows:
-    def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
-        data_set = cognite_client.data_sets.list(limit=1)[0]
+    def test_upsert_delete(self, cognite_client: CogniteClient, data_set: DataSet) -> None:
         workflow = WorkflowUpsert(
             external_id="integration_test-test_create_delete" + random_string(5),
             description="This is ephemeral workflow for testing purposes",

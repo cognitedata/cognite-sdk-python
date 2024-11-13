@@ -37,7 +37,7 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None, data_set_id: int | None) -> None:
+    def __init__(self, external_id: str, description: str | None = None, data_set_id: int | None = None) -> None:
         self.external_id = external_id
         self.description = description
         self.data_set_id = data_set_id
@@ -59,7 +59,11 @@ class WorkflowUpsert(WorkflowCore):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        return cls(external_id=resource["externalId"], description=resource.get("description"))
+        return cls(
+            external_id=resource["externalId"],
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+        )
 
     def as_write(self) -> WorkflowUpsert:
         """Returns this workflow instance."""
