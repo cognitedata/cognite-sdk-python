@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -1267,18 +1266,18 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     This class represents a scheduled trigger rule.
 
     Args:
-        cron_expression(str | None): The cron specification for the scheduled trigger.
+        cron_expression (str): The cron specification for the scheduled trigger.
     """
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str | None) -> None:
+    def __init__(self, cron_expression: str) -> None:
         super().__init__()
         self.cron_expression = cron_expression
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data.get("cronExpression"))
+        return cls(cron_expression=data["cronExpression"])
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
@@ -1307,7 +1306,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
         return cls(
-            data_modeling_query=WorkflowTriggerDataModelingQuery.load(typing.cast(dict, data.get("dataModelingQuery"))),
+            data_modeling_query=WorkflowTriggerDataModelingQuery.load(data["dataModelingQuery"]),
             batch_size=data.get("batchSize"),
             batch_timeout=data.get("batchTimeout"),
         )
