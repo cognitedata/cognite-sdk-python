@@ -93,7 +93,7 @@ class Workflow(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
-            data_set_id=resource["dataSetId"],
+            data_set_id=resource.get("dataSetId"),
         )
 
     def as_write(self) -> WorkflowUpsert:
