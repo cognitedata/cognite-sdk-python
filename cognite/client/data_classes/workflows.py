@@ -1251,8 +1251,10 @@ class WorkflowTriggerDataModelingQuery(Query):
         with_: dict[str, ResultSetExpression],
         select: dict[str, Select],
     ) -> None:
+        super().__init__(with_, select)
         # Parameters and cursors are not supported for workflow trigger queries:
-        super().__init__(with_, select, parameters=None, cursors=None)
+        self.parameters = None
+        self.cursors = None  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
