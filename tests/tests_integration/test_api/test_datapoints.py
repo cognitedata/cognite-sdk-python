@@ -1116,7 +1116,7 @@ class TestRetrieveAggregateDatapointsAPI:
         granularity = random_granularity()
         for endpoint in retrieve_endpoints:
             with pytest.raises(
-                CogniteAPIError, match=re.escape("Could not recognize aggregation value: min-max-lol | code: 400")
+                CogniteAPIError, match=re.escape("Could not recognize aggregation value: 'min-max-lol'. | code: 400")
             ):
                 endpoint(id=ts.id, granularity=granularity, aggregates="min-max-lol")
 
