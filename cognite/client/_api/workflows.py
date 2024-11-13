@@ -85,6 +85,31 @@ class WorkflowTriggerAPI(APIClient):
                 ...         input={"a": 1, "b": 2},
                 ...     )
                 ... )
+
+            Create or update a data modeling trigger for a workflow:
+                >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
+                >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Equals
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowDataModelingTriggerRule(
+                ...             data_modeling_query=WorkflowTriggerDataModelingQuery(
+                ...                 with_={"timeseries": NodeResultSetExpression(filter=Equals(view_id.as_property_ref("name"), value="my_name"))},
+                ...                 select={"timeseries": Select([SourceSelector(view_id, ["name"])])},
+                ...             ),
+                ...             batch_size=500,
+                ...             batch_timeout=300,
+                ...         ),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...     )
+                ... )
+
         """
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials

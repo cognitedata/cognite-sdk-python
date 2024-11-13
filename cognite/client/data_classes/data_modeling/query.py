@@ -128,11 +128,10 @@ class Query(CogniteObject):
             raise ValueError(
                 f"The select keys must match the with keys, the following are not matching: {not_matching}"
             )
-
         self.with_ = with_
         self.select = select
         self.parameters = parameters
-        self.cursors = cursors or {k: None for k in select}
+        self.cursors = cursors or dict.fromkeys(select)
 
     def instance_type_by_result_expression(self) -> dict[str, type[NodeListWithCursor] | type[EdgeListWithCursor]]:
         return {
