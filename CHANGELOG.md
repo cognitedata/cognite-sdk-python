@@ -17,9 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.64.12] - 2024-11-11
+## [7.64.14] - 2024-11-11
 ### Added
 - [Feature Preview - beta] Adding data modeling triggers support for data workflows.
+
+## [7.64.13] - 2024-11-12
+### Added
+- Added new `SAPWriteback` and `SAPWritebackRequests` capabilities.
+
+## [7.64.12] - 2024-11-11
+### Fixed
+- `FunctionSchedulesAPI.__call__()` calls `FunctionSchedulesAPI.list()` instead of `APIClient._list_generator()`.
+  (The latter relied on pagination, which was not implemented by `/schedules/list`). 
 
 ## [7.64.11] - 2024-11-10
 ### Added
