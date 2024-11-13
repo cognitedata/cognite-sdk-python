@@ -54,7 +54,8 @@ class WorkflowUpsert(WorkflowCore):
                             and you want to keep it, you need to provide the description when updating the workflow.
         data_set_id (int | None): The id of the data set this workflow belongs to.
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
-                            and triggers will require appropriate access to the data set.
+                            and triggers will require appropriate access to the data set. More information on data sets
+                            and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
     """
 
     @classmethod
