@@ -17,10 +17,61 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.65.0] - 2024-11-13
+### Added
+- DatapointsAPI now support iteration like most other APIs: `for dps in client.time_series.data(...)`.
+  You may control memory usage by specifying how many time series to fetch in parallel with the
+  `chunk_size_time_series` parameter, and datapoints with `chunk_size_datapoints`.
+
+## [7.64.14] - 2024-11-11
+### Added
+- [Feature Preview - beta] Adding data modeling triggers support for data workflows.
+
+## [7.64.13] - 2024-11-12
+### Added
+- Added new `SAPWriteback` and `SAPWritebackRequests` capabilities.
+
+## [7.64.12] - 2024-11-11
+### Fixed
+- `FunctionSchedulesAPI.__call__()` calls `FunctionSchedulesAPI.list()` instead of `APIClient._list_generator()`.
+  (The latter relied on pagination, which was not implemented by `/schedules/list`).
+
+## [7.64.11] - 2024-11-10
+### Added
+- [Feature Preview - alpha] Support for `PostgresGateway` `Tables` `client.postegres_gateway.tables`.
+
+## [7.64.10] - 2024-11-10
+### Fixed
+- [Feature Preview - alpha] Updated `PostgresGateway` `Users` `client.postegres_gateway.users` to changes in the API.
+
+## [7.64.9] - 2024-11-12
+### Fixed
+- Fixed an IndexError that could be raised in an edge cases where datapoints methods should return None.
+
+## [7.64.8] - 2024-11-06
+### Fixed
+- Made `compression` and `encoding` of hosted extractor job formats optional to conform with the API.
+
+## [7.64.7] - 2024-11-04
+### Fixed
+- Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings
+  to avoid hitting the API limits.
+
+## [7.64.6] - 2024-10-22
+### Added
+- Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
+
+## [7.64.5] - 2024-11-01
+### Fixed
+- The `client.functions.schedules.create` method no longer mutates the input `FunctionScheduleWrite` object.
+
+## [7.64.4] - 2024-11-01
+### Fixed
+- Data Workflows: apply more robust path parameter encoding.
+
 ## [7.64.3] - 2024-11-01
 ### Fixed
 - Removed superfluous properties from authentication subclass read objects
-
 
 ## [7.64.2] - 2024-10-31
 ### Fixed

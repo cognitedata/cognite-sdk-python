@@ -43,6 +43,10 @@ def is_finite(limit: Any) -> TypeGuard[int]:
     return isinstance(limit, int) and limit >= 0
 
 
+def is_positive(limit: Any) -> TypeGuard[int]:
+    return isinstance(limit, int) and limit > 0
+
+
 def is_unlimited(limit: float | int | None) -> bool:
     return limit in {None, -1, math.inf}
 
@@ -205,6 +209,11 @@ def split_into_chunks(
     if isinstance(collection, dict):
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
+
+    from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray
+
+    if isinstance(collection, (DatapointsArray, Datapoints)):
+        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
 
     raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
