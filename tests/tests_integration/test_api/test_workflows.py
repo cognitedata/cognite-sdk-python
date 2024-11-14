@@ -256,7 +256,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
     )
     # have to sleep until workflow is triggered because it's the only way to properly test get_trigger_run_history
     now = datetime.now()
-    seconds_til_next_minute = 60 - now.second
+    seconds_til_next_minute = 60 - now.second + 5
     time.sleep(seconds_til_next_minute)
 
     yield trigger
@@ -577,7 +577,7 @@ class TestWorkflowTriggers:
         workflow_scheduled_trigger: WorkflowTrigger,
         workflow_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
-        listed = cognite_client.workflows.triggers.get_triggers()
+        listed = cognite_client.workflows.triggers.get_triggers(limit=-1)
         assert workflow_scheduled_trigger.external_id in listed._external_id_to_item
         assert workflow_data_modeling_trigger.external_id in listed._external_id_to_item
 
