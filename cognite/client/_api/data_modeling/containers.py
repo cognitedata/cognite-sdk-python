@@ -365,14 +365,19 @@ class ContainersAPI(APIClient):
                 ...     "prop20": ContainerProperty(Json),
                 ...     "prop21": ContainerProperty(Json(is_list=True)),
                 ...     "prop22": ContainerProperty(SequenceReference),
-                ...     "prop22": ContainerProperty(SequenceReference(is_list=True)),
+                ...     "prop23": ContainerProperty(SequenceReference(is_list=True)),
                 ...     # Note: It is adviced to represent files and time series directly as nodes
                 ...     #       instead of referencing existing:
-                ...     "prop23": ContainerProperty(FileReference),
-                ...     "prop23": ContainerProperty(FileReference(is_list=True)),
-                ...     "prop24": ContainerProperty(TimeSeriesReference),
-                ...     "prop24": ContainerProperty(TimeSeriesReference(is_list=True)),
+                ...     "prop24": ContainerProperty(FileReference),
+                ...     "prop25": ContainerProperty(FileReference(is_list=True)),
+                ...     "prop26": ContainerProperty(TimeSeriesReference),
+                ...     "prop27": ContainerProperty(TimeSeriesReference(is_list=True)),
                 ... }
+                >>> container = ContainerApply(
+                ...     space="my-space",
+                ...     external_id="my-everything-container",
+                ...     properties=container_properties,
+                ... )
 
         """
         return self._create_multiple(
