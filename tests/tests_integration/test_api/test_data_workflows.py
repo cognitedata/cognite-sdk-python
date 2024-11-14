@@ -268,11 +268,11 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     yield trigger
     cognite_client.workflows.triggers.delete(trigger.external_id)
 
-    
+
 @pytest.fixture(scope="session")
 def data_set(cognite_client: CogniteClient) -> DataSet:
     return cognite_client.data_sets.list(limit=1)[0]
- 
+
 
 @pytest.fixture()
 def workflow_data_modeling_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
@@ -298,7 +298,7 @@ def workflow_data_modeling_trigger(cognite_client: CogniteClient, add_multiply_w
     yield trigger
     cognite_client.workflows.triggers.delete(trigger.external_id)
 
-    
+
 class TestWorkflows:
     def test_upsert_delete(self, cognite_client: CogniteClient, data_set: DataSet) -> None:
         workflow = WorkflowUpsert(
