@@ -1462,6 +1462,7 @@ class InstancesAPI(APIClient):
             a UnitReference or a UnitSystemReference. Note that in order for a property to be converted, they
             need to have a unit defined in the underlying container.
 
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
                 >>> selected_source = SourceSelector(
                 ...     source=ViewId("my-space", "my-xid", "v1"),
                 ...     properties=["f32_prop1", "f32_prop2", "f64_prop1", "f64_prop2"],
