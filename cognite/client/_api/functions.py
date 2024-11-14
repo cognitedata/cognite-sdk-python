@@ -40,11 +40,7 @@ from cognite.client.data_classes.functions import (
     FunctionWrite,
     RunTime,
 )
-from cognite.client.utils._auxiliary import (
-    at_most_one_is_not_none,
-    is_unlimited,
-    split_into_chunks,
-)
+from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -1106,22 +1102,20 @@ class FunctionSchedulesAPI(APIClient):
         """
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
-        filter_ = FunctionSchedulesFilter(
+        schedules = self.list(
             name=name,
             function_id=function_id,
             function_external_id=function_external_id,
             created_time=created_time,
             cron_expression=cron_expression,
-        ).dump(camel_case=True)
-
-        return self._list_generator(
-            method="POST",
-            url_path=f"{self._RESOURCE_PATH}/list",
-            filter=filter_,
-            resource_cls=FunctionSchedule,
-            list_cls=FunctionSchedulesList,
-            chunk_size=chunk_size,
             limit=limit,
+        )
+
+        if chunk_size is None:
+            return iter(schedules)
+        return (
+            FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
+            for chunk in split_into_chunks(schedules.data, chunk_size)
         )
 
     def __iter__(self) -> Iterator[FunctionSchedule]:

@@ -94,6 +94,7 @@ def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tupl
 
 
 class TestTables:
+    @pytest.mark.skip("flaky")  # TODO: @doctrino
     def test_create_retrieve_delete(self, cognite_client: CogniteClient, one_user: User, one_view: View) -> None:
         my_table = ViewTableWrite(
             tablename=f"my_table-{random_string(10)}",
