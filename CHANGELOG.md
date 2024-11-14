@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.65.1] - 2023-11-14
+### Added
+- Workflows now support data sets
+
 ## [7.65.0] - 2024-11-13
 ### Added
 - DatapointsAPI now support iteration like most other APIs: `for dps in client.time_series.data(...)`.

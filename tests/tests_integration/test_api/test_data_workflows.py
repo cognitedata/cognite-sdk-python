@@ -5,7 +5,7 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function
+from cognite.client.data_classes import DataSet, Function
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
 from cognite.client.data_classes.workflows import (
@@ -33,10 +33,11 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
+def workflow_list(cognite_client: CogniteClient, data_set: DataSet) -> WorkflowList:
     workflow1 = WorkflowUpsert(
         external_id="integration_test-workflow1",
         description="This is  workflow for testing purposes",
+        data_set_id=data_set.id,
     )
     workflow2 = WorkflowUpsert(
         external_id="integration_test-workflow2",
@@ -268,6 +269,11 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     cognite_client.workflows.triggers.delete(trigger.external_id)
 
 
+@pytest.fixture(scope="session")
+def data_set(cognite_client: CogniteClient) -> DataSet:
+    return cognite_client.data_sets.list(limit=1)[0]
+
+
 @pytest.fixture()
 def workflow_data_modeling_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
     trigger = cognite_client.workflows.triggers.create(
@@ -294,10 +300,11 @@ def workflow_data_modeling_trigger(cognite_client: CogniteClient, add_multiply_w
 
 
 class TestWorkflows:
-    def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
+    def test_upsert_delete(self, cognite_client: CogniteClient, data_set: DataSet) -> None:
         workflow = WorkflowUpsert(
             external_id="integration_test-test_create_delete" + random_string(5),
             description="This is ephemeral workflow for testing purposes",
+            data_set_id=data_set.id,
         )
         cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
 
@@ -308,6 +315,7 @@ class TestWorkflows:
             assert created_workflow.external_id == workflow.external_id
             assert created_workflow.description == workflow.description
             assert created_workflow.created_time is not None
+            assert created_workflow.data_set_id == data_set.id
         finally:
             if created_workflow is not None:
                 cognite_client.workflows.delete(created_workflow.external_id)
