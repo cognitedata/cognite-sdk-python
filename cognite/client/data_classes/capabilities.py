@@ -1275,6 +1275,7 @@ class WorkflowOrchestrationAcl(Capability):
 
     class Scope:
         All = AllScope
+        DataSet = DataSetScope
 
 
 @dataclass
