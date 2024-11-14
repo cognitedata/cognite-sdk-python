@@ -8,8 +8,8 @@ from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
-    ContainerFilter,
     ContainerList,
+    _ContainerFilter,
 )
 from cognite.client.data_classes.data_modeling.ids import (
     ConstraintIdentifier,
@@ -72,14 +72,14 @@ class ContainersAPI(APIClient):
         Returns:
             Iterator[Container] | Iterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
-        filter = ContainerFilter(space, include_global)
+        flt = _ContainerFilter(space, include_global)
         return self._list_generator(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            filter=filter.dump(camel_case=True),
+            filter=flt.dump(camel_case=True),
         )
 
     def __iter__(self) -> Iterator[Container]:
@@ -256,14 +256,13 @@ class ContainersAPI(APIClient):
                 >>> for container_list in client.data_modeling.containers(chunk_size=10):
                 ...     container_list # do something with the containers
         """
-        filter = ContainerFilter(space, include_global)
-
+        flt = _ContainerFilter(space, include_global)
         return self._list(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
             limit=limit,
-            filter=filter.dump(camel_case=True),
+            filter=flt.dump(camel_case=True),
         )
 
     @overload

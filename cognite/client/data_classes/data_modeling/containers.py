@@ -229,14 +229,7 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
         return self.as_apply()
 
 
-class ContainerFilter(CogniteFilter):
-    """Represent the filter arguments for the list endpoint.
-
-    Args:
-        space (str | None): The space to query
-        include_global (bool): Whether the global containers should be included.
-    """
-
+class _ContainerFilter(CogniteFilter):
     def __init__(self, space: str | None = None, include_global: bool = False) -> None:
         self.space = space
         self.include_global = include_global
