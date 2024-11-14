@@ -1457,6 +1457,25 @@ class InstancesAPI(APIClient):
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.query(query)
+
+            To convert units, specify what your target units are in the SourceSelector. You can either use
+            a UnitReference or a UnitSystemReference. Note that in order for a property to be converted, they
+            need to have a unit defined in the underlying container.
+
+                >>> selected_source = SourceSelector(
+                ...     source=ViewId("my-space", "my-xid", "v1"),
+                ...     properties=["f32_prop1", "f32_prop2", "f64_prop1", "f64_prop2"],
+                ...     target_units=[
+                ...         TargetUnit("f32_prop1", UnitReference("pressure:kilopa")),
+                ...         TargetUnit("f32_prop2", UnitReference("pressure:barg")),
+                ...         TargetUnit("f64_prop1", UnitSystemReference("SI")),
+                ...         TargetUnit("f64_prop2", UnitSystemReference("Imperial")),
+                ...     ],
+                ... )
+
+            To select all properties, use '[*]' in your SourceSelector:
+
+                >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
         """
         return self._query_or_sync(query, "query", include_typing)
 
