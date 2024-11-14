@@ -245,6 +245,11 @@ class ContainerProperty(CogniteObject):
     description: str | None = None
     immutable: bool = False
 
+    def __post_init__(self) -> None:
+        # We allow passing e.g. Int32 instead of Int32():
+        if not isinstance(self.type, PropertyType):
+            object.__setattr__(self, "type", self.type())
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         if "type" not in resource:
