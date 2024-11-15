@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.66.0] - 2023-11-15
+### Added
+- User's trying to access a CDF project they do not have access to, will now be met with a more helpful
+  exception: `CogniteProjectAccessError` will be raised and accessible projects on the given cluser will
+  be listed, rather than just "401 - Unauthorized".
+
 ## [7.65.1] - 2023-11-14
 ### Added
 - Workflows now support data sets
