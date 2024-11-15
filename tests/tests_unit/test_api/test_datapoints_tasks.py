@@ -8,11 +8,16 @@ from decimal import Decimal
 
 import pytest
 
-from cognite.client._api.datapoint_tasks import _FullDatapointsQuery
+from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
 from cognite.client.utils._text import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_granularity
 
 LIMIT_KWS = dict(dps_limit_raw=1234, dps_limit_agg=5678)
+
+
+@pytest.fixture
+def query_validator():
+    return _DpsQueryValidator(**LIMIT_KWS)
 
 
 class TestSingleTSQueryValidator:
@@ -95,17 +100,18 @@ class TestSingleTSQueryValidator:
             query.parse_into_queries()
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
-    def test_valid_limits(self, limit, exp_limit):
+    def test_valid_limits(self, limit, exp_limit, query_validator):
         query = _FullDatapointsQuery(id=1, limit=limit)
-        ts_queries = query.validate(query.parse_into_queries(), **LIMIT_KWS)
+        ts_queries = query.parse_into_queries()
+        query_validator(ts_queries)
         assert len(ts_queries) == 1
         assert ts_queries[0].limit == exp_limit
 
     @pytest.mark.parametrize("limit", (-2, -math.inf, math.nan, ..., "5000"))
-    def test_limits_not_allowed_values(self, limit):
+    def test_limits_not_allowed_values(self, limit, query_validator):
         with pytest.raises(TypeError, match=re.escape("Parameter `limit` must be a non-negative integer -OR-")):
             query = _FullDatapointsQuery(id=1, limit=limit)
-            query.validate(query.parse_into_queries(), **LIMIT_KWS)
+            query_validator(query.parse_into_queries())
 
     @pytest.mark.parametrize(
         "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
@@ -118,7 +124,9 @@ class TestSingleTSQueryValidator:
             ("4h", ["min"], True, ValueError, 5),
         ),
     )
-    def test_function_validate_and_create_query(self, granularity, aggregates, outside, exp_err, exp_err_msg_idx):
+    def test_function_validate_and_create_query(
+        self, granularity, aggregates, outside, exp_err, exp_err_msg_idx, query_validator
+    ):
         err_msgs = [
             f"Expected `granularity` to be of type `str` or None, not {type(granularity)}",
             f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}",
@@ -127,11 +135,11 @@ class TestSingleTSQueryValidator:
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
         ]
-        full_query = _FullDatapointsQuery(
+        queries = _FullDatapointsQuery(
             id=1, granularity=granularity, aggregates=aggregates, include_outside_points=outside
-        )
+        ).parse_into_queries()
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
-            full_query.validate(full_query.parse_into_queries(), **LIMIT_KWS)
+            query_validator(queries)
 
     @pytest.mark.parametrize(
         "start, end",
@@ -145,11 +153,11 @@ class TestSingleTSQueryValidator:
             (1, datetime.now(timezone.utc)),
         ),
     )
-    def test_function__verify_time_range__valid_inputs(self, start, end):
+    def test_function__verify_time_range__valid_inputs(self, start, end, query_validator):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
-            ts_query = full_query.validate(full_query.parse_into_queries(), **LIMIT_KWS)
+            ts_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs).parse_into_queries()
+            query_validator(ts_query)
             assert isinstance(ts_query[0].start, int)
             assert isinstance(ts_query[0].end, int)
 
@@ -166,15 +174,15 @@ class TestSingleTSQueryValidator:
             (datetime.now(timezone.utc), 123),
         ),
     )
-    def test_function__verify_time_range__raises(self, start, end):
+    def test_function__verify_time_range__raises(self, start, end, query_validator):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
             full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
             all_queries = full_query.parse_into_queries()
             with pytest.raises(ValueError, match="Invalid time range"):
-                full_query.validate(all_queries, **LIMIT_KWS)
+                query_validator(all_queries)
 
-    def test_retrieve_aggregates__include_outside_points_raises(self):
+    def test_retrieve_aggregates__include_outside_points_raises(self, query_validator):
         id_dct_lst = [
             {"id": ts_id, "granularity": random_granularity(), "aggregates": random_aggregates()}
             for ts_id in random_cognite_ids(10)
@@ -185,4 +193,4 @@ class TestSingleTSQueryValidator:
         full_query = _FullDatapointsQuery(id=id_dct_lst, include_outside_points=False)
         all_queries = full_query.parse_into_queries()
         with pytest.raises(ValueError, match="'Include outside points' is not supported for aggregates."):
-            full_query.validate(all_queries, **LIMIT_KWS)
+            query_validator(all_queries)

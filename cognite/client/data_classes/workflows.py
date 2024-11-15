@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast, final
 
 from typing_extensions import Self
 
@@ -22,6 +22,7 @@ from cognite.client.data_classes.simulators import (
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
 )
+from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -42,9 +43,10 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None) -> None:
+    def __init__(self, external_id: str, description: str | None = None, data_set_id: int | None = None) -> None:
         self.external_id = external_id
         self.description = description
+        self.data_set_id = data_set_id
 
 
 class WorkflowUpsert(WorkflowCore):
@@ -54,13 +56,21 @@ class WorkflowUpsert(WorkflowCore):
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         description (str | None): Description of the workflow. Note that when updating a workflow, the description will
-                            always be overwritten also if it is set to None. Meaning if the wokflow already has a description,
+                            always be overwritten also if it is set to None. Meaning if the workflow already has a description,
                             and you want to keep it, you need to provide the description when updating the workflow.
+        data_set_id (int | None): The id of the data set this workflow belongs to.
+                            If a dataSetId is provided, any operations on this workflow, or its versions, executions,
+                            and triggers will require appropriate access to the data set. More information on data sets
+                            and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
     """
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        return cls(external_id=resource["externalId"], description=resource.get("description"))
+        return cls(
+            external_id=resource["externalId"],
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+        )
 
     def as_write(self) -> WorkflowUpsert:
         """Returns this workflow instance."""
@@ -75,7 +85,7 @@ class Workflow(WorkflowCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
-
+        data_set_id (int | None): The id of the data set this workflow belongs to.
     """
 
     def __init__(
@@ -83,8 +93,9 @@ class Workflow(WorkflowCore):
         external_id: str,
         created_time: int,
         description: str | None = None,
+        data_set_id: int | None = None,
     ) -> None:
-        super().__init__(external_id, description)
+        super().__init__(external_id, description, data_set_id)
         self.created_time = created_time
 
     @classmethod
@@ -93,6 +104,7 @@ class Workflow(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
+            data_set_id=resource.get("dataSetId"),
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -100,6 +112,7 @@ class Workflow(WorkflowCore):
         return WorkflowUpsert(
             external_id=self.external_id,
             description=self.description,
+            data_set_id=self.data_set_id,
         )
 
 
@@ -1306,8 +1319,15 @@ class WorkflowTriggerRule(CogniteObject, ABC):
 
     _trigger_type: ClassVar[str]
 
-    def __init__(self) -> None:
-        self.trigger_type = self._trigger_type
+    @final
+    @property
+    def trigger_type(self) -> str:
+        return self._trigger_type
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
+        dumped["triggerType" if camel_case else "trigger_type"] = self.trigger_type
+        return dumped
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -1320,7 +1340,33 @@ class WorkflowTriggerRule(CogniteObject, ABC):
     @classmethod
     @abstractmethod
     def _load_trigger(cls, data: dict) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
+
+
+class WorkflowTriggerDataModelingQuery(Query):
+    r"""This class represents a data modeling trigger query.
+
+    Args:
+        with_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys are used to reference the result set expressions in the select.
+        select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
+    """
+
+    def __init__(
+        self,
+        with_: dict[str, ResultSetExpression],
+        select: dict[str, Select],
+    ) -> None:
+        super().__init__(with_, select)
+        # Parameters and cursors are not supported for workflow trigger queries:
+        self.parameters = None
+        self.cursors = None  # type: ignore [assignment]
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
+            select={k: Select.load(v) for k, v in resource["select"].items()},
+        )
 
 
 class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
@@ -1328,18 +1374,59 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     This class represents a scheduled trigger rule.
 
     Args:
-        cron_expression(str | None): The cron specification for the scheduled trigger.
+        cron_expression (str): The cron specification for the scheduled trigger.
     """
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str | None = None) -> None:
-        super().__init__()
+    def __init__(self, cron_expression: str) -> None:
         self.cron_expression = cron_expression
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data.get("cronExpression"))
+        return cls(cron_expression=data["cronExpression"])
+
+
+class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
+    """
+    This class represents a data modeling trigger rule.
+
+    Args:
+        data_modeling_query (WorkflowTriggerDataModelingQuery): The data modeling query of the trigger.
+        batch_size (int | None): The batch size of the trigger.
+        batch_timeout (int | None): The batch timeout of the trigger.
+    """
+
+    _trigger_type = "dataModeling"
+
+    def __init__(
+        self,
+        data_modeling_query: WorkflowTriggerDataModelingQuery,
+        batch_size: int | None = None,
+        batch_timeout: int | None = None,
+    ) -> None:
+        self.data_modeling_query = data_modeling_query
+        self.batch_size = batch_size
+        self.batch_timeout = batch_timeout
+
+    @classmethod
+    def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
+        return cls(
+            data_modeling_query=WorkflowTriggerDataModelingQuery.load(data["dataModelingQuery"]),
+            batch_size=data.get("batchSize"),
+            batch_timeout=data.get("batchTimeout"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "trigger_type": self.trigger_type,
+            "data_modeling_query": self.data_modeling_query.dump(camel_case=camel_case),
+            "batch_size": self.batch_size,
+            "batch_timeout": self.batch_timeout,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
 
 
 _TRIGGER_RULE_BY_TYPE: dict[str, type[WorkflowTriggerRule]] = {

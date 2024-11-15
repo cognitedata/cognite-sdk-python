@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterator, MutableSequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
-from urllib.parse import quote
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -29,6 +28,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -85,6 +85,31 @@ class WorkflowTriggerAPI(APIClient):
                 ...         input={"a": 1, "b": 2},
                 ...     )
                 ... )
+
+            Create or update a data modeling trigger for a workflow:
+                >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
+                >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Equals
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowDataModelingTriggerRule(
+                ...             data_modeling_query=WorkflowTriggerDataModelingQuery(
+                ...                 with_={"timeseries": NodeResultSetExpression(filter=Equals(view_id.as_property_ref("name"), value="my_name"))},
+                ...                 select={"timeseries": Select([SourceSelector(view_id, ["name"])])},
+                ...             ),
+                ...             batch_size=500,
+                ...             batch_timeout=300,
+                ...         ),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...     )
+                ... )
+
         """
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
@@ -397,7 +422,8 @@ class WorkflowExecutionAPI(APIClient):
             body["metadata"] = metadata
 
         response = self._post(
-            url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}/run", json=body
+            url_path=interpolate_and_url_encode("/workflows/{}/versions/{}/run", workflow_external_id, version),
+            json=body,
         )
         return WorkflowExecution._load(response.json())
 
@@ -678,7 +704,7 @@ class WorkflowVersionAPI(APIClient):
         """
         try:
             response = self._get(
-                url_path=f"/workflows/{quote(workflow_external_id, '')}/versions/{quote(version, '')}",
+                url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", workflow_external_id, version)
             )
         except CogniteAPIError as e:
             if e.code == 404:
@@ -823,7 +849,7 @@ class WorkflowAPI(APIClient):
                 >>> res = client.workflows.retrieve("my workflow")
         """
         try:
-            response = self._get(url_path=f"{self._RESOURCE_PATH}/{quote(external_id, '')}")
+            response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", external_id))
         except CogniteAPIError as e:
             if e.code == 404:
                 return None

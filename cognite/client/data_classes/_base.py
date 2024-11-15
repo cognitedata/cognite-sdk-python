@@ -26,7 +26,7 @@ from typing_extensions import Self
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
     convert_nullable_int_cols,
@@ -264,13 +264,15 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         self._build_id_mappings()
 
     def _build_id_mappings(self) -> None:
-        self._id_to_item, self._external_id_to_item = {}, {}
+        self._id_to_item, self._external_id_to_item, self._instance_id_to_item = {}, {}, {}
         if not self.data:
             return
         if hasattr(self.data[0], "external_id"):
             self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
         if hasattr(self.data[0], "id"):
             self._id_to_item = {item.id: item for item in self.data if item.id is not None}
+        if hasattr(self.data[0], "instance_id"):
+            self._instance_id_to_item = {item.instance_id: item for item in self.data if item.instance_id is not None}
 
     def pop(self, i: int = -1) -> T_CogniteResource:
         return super().pop(i)
@@ -303,6 +305,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
             super().extend(other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
             self._id_to_item.update(other_res_list._id_to_item)
+            self._instance_id_to_item.update(other_res_list._instance_id_to_item)
         else:
             raise ValueError("Unable to extend as this would introduce duplicates")
 
@@ -326,20 +329,28 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         yaml = local_import("yaml")
         return yaml.safe_dump(self.dump(camel_case=True), sort_keys=False)
 
-    def get(self, id: int | None = None, external_id: str | None = None) -> T_CogniteResource | None:
-        """Get an item from this list by id or external_id.
+    def get(
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: InstanceId | tuple[str, str] | None = None,
+    ) -> T_CogniteResource | None:
+        """Get an item from this list by id, external_id or instance_id.
 
         Args:
             id (int | None): The id of the item to get.
             external_id (str | None): The external_id of the item to get.
+            instance_id (InstanceId | tuple[str, str] | None): The instance_id of the item to get.
 
         Returns:
-            T_CogniteResource | None: The requested item
+            T_CogniteResource | None: The requested item if present, otherwise None.
         """
-        IdentifierSequence.load(id, external_id).assert_singleton()
+        (ident := IdentifierSequence.load(id, external_id, instance_id)).assert_singleton()
         if id:
             return self._id_to_item.get(id)
-        return self._external_id_to_item.get(external_id)
+        elif external_id:
+            return self._external_id_to_item.get(external_id)
+        return self._instance_id_to_item.get(ident.as_primitives()[0])
 
     def to_pandas(
         self,

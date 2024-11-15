@@ -5,7 +5,9 @@ import time
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Function
+from cognite.client.data_classes import DataSet, Function
+from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
@@ -13,12 +15,14 @@ from cognite.client.data_classes.workflows import (
     SubworkflowTaskParameters,
     TransformationTaskParameters,
     Workflow,
+    WorkflowDataModelingTriggerRule,
     WorkflowDefinitionUpsert,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTrigger,
+    WorkflowTriggerDataModelingQuery,
     WorkflowTriggerUpsert,
     WorkflowUpsert,
     WorkflowVersion,
@@ -30,10 +34,11 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
+def workflow_list(cognite_client: CogniteClient, data_set: DataSet) -> WorkflowList:
     workflow1 = WorkflowUpsert(
         external_id="integration_test-workflow1",
         description="This is  workflow for testing purposes",
+        data_set_id=data_set.id,
     )
     workflow2 = WorkflowUpsert(
         external_id="integration_test-workflow2",
@@ -265,11 +270,42 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, add_multiply_workf
     cognite_client.workflows.triggers.delete(trigger.external_id)
 
 
+@pytest.fixture(scope="session")
+def data_set(cognite_client: CogniteClient) -> DataSet:
+    return cognite_client.data_sets.list(limit=1)[0]
+
+
+@pytest.fixture()
+def workflow_data_modeling_trigger(cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion) -> None:
+    trigger = cognite_client.workflows.triggers.create(
+        WorkflowTriggerUpsert(
+            external_id="integration_test-workflow-data-modeling-trigger",
+            trigger_rule=WorkflowDataModelingTriggerRule(
+                data_modeling_query=WorkflowTriggerDataModelingQuery(
+                    with_={"timeseries": NodeResultSetExpression()},
+                    select={
+                        "timeseries": Select(
+                            sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
+                        )
+                    },
+                ),
+                batch_size=500,
+                batch_timeout=300,
+            ),
+            workflow_external_id="integration_test-workflow-add_multiply",
+            workflow_version="1",
+        )
+    )
+    yield trigger
+    cognite_client.workflows.triggers.delete(trigger.external_id)
+
+
 class TestWorkflows:
-    def test_upsert_delete(self, cognite_client: CogniteClient) -> None:
+    def test_upsert_delete(self, cognite_client: CogniteClient, data_set: DataSet) -> None:
         workflow = WorkflowUpsert(
             external_id="integration_test-test_create_delete" + random_string(5),
             description="This is ephemeral workflow for testing purposes",
+            data_set_id=data_set.id,
         )
         cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
 
@@ -280,6 +316,7 @@ class TestWorkflows:
             assert created_workflow.external_id == workflow.external_id
             assert created_workflow.description == workflow.description
             assert created_workflow.created_time is not None
+            assert created_workflow.data_set_id == data_set.id
         finally:
             if created_workflow is not None:
                 cognite_client.workflows.delete(created_workflow.external_id)
@@ -524,7 +561,7 @@ class TestWorkflowExecutions:
 
 class TestWorkflowTriggers:
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
-    def test_create_update_delete(
+    def test_create_update_delete_scheduled_trigger(
         self,
         cognite_client: CogniteClient,
         workflow_scheduled_trigger: WorkflowTrigger,
@@ -557,15 +594,80 @@ class TestWorkflowTriggers:
         assert updated_trigger.last_updated_time > workflow_scheduled_trigger.last_updated_time
 
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
+    def test_create_update_delete_data_modeling_trigger(
+        self,
+        cognite_client: CogniteClient,
+        workflow_data_modeling_trigger: WorkflowTrigger,
+    ) -> None:
+        assert workflow_data_modeling_trigger is not None
+        assert workflow_data_modeling_trigger.external_id == "integration_test-workflow-data-modeling-trigger"
+        assert workflow_data_modeling_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
+            data_modeling_query=WorkflowTriggerDataModelingQuery(
+                with_={"timeseries": NodeResultSetExpression()},
+                select={
+                    "timeseries": Select(
+                        sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
+                    )
+                },
+            ),
+            batch_size=500,
+            batch_timeout=300,
+        )
+        assert workflow_data_modeling_trigger.workflow_external_id == "integration_test-workflow-add_multiply"
+        assert workflow_data_modeling_trigger.workflow_version == "1"
+        assert workflow_data_modeling_trigger.created_time is not None
+        assert workflow_data_modeling_trigger.last_updated_time is not None
+
+        updated_trigger = cognite_client.workflows.triggers.upsert(
+            WorkflowTriggerUpsert(
+                external_id=workflow_data_modeling_trigger.external_id,
+                trigger_rule=WorkflowDataModelingTriggerRule(
+                    data_modeling_query=WorkflowTriggerDataModelingQuery(
+                        with_={"timeseries": NodeResultSetExpression()},
+                        select={
+                            "timeseries": Select(
+                                sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
+                            )
+                        },
+                    ),
+                    batch_size=100,
+                    batch_timeout=100,
+                ),
+                workflow_external_id=workflow_data_modeling_trigger.workflow_external_id,
+                workflow_version=workflow_data_modeling_trigger.workflow_version,
+            )
+        )
+        assert updated_trigger is not None
+        assert updated_trigger.external_id == workflow_data_modeling_trigger.external_id
+        assert updated_trigger.trigger_rule == WorkflowDataModelingTriggerRule(
+            data_modeling_query=WorkflowTriggerDataModelingQuery(
+                with_={"timeseries": NodeResultSetExpression()},
+                select={
+                    "timeseries": Select(
+                        sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
+                    )
+                },
+            ),
+            batch_size=100,
+            batch_timeout=100,
+        )
+        assert updated_trigger.workflow_external_id == workflow_data_modeling_trigger.workflow_external_id
+        assert updated_trigger.workflow_version == workflow_data_modeling_trigger.workflow_version
+        assert updated_trigger.created_time == workflow_data_modeling_trigger.created_time
+        assert updated_trigger.last_updated_time > workflow_data_modeling_trigger.last_updated_time
+
+    @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_trigger_list(
         self,
         cognite_client: CogniteClient,
         workflow_scheduled_trigger: WorkflowTrigger,
+        workflow_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
         triggers = cognite_client.workflows.triggers.get_triggers()
         external_ids = {trigger.external_id for trigger in triggers}
 
         assert workflow_scheduled_trigger.external_id in external_ids
+        assert workflow_data_modeling_trigger.external_id in external_ids
 
     @pytest.mark.usefixtures("clean_created_sessions", "clean_created_workflow_triggers")
     def test_trigger_run_history(
