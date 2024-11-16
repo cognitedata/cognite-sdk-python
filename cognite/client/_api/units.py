@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import difflib
+from collections import defaultdict
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -68,6 +70,47 @@ class UnitAPI(APIClient):
             resource_cls=Unit,
             ignore_unknown_ids=ignore_unknown_ids,
         )
+
+    def _prep_unit_lookup(self) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
+        units = self.list()
+
+        alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
+        for unit in units:
+            dct = alias_by_quantity[unit.quantity]
+            # fun fact, for some units, alias_names has duplicates:
+            for alias in unit.alias_names:
+                dct[alias] = unit
+
+        alias_lookup = defaultdict(list)
+        for dct in alias_by_quantity.values():
+            for alias, unit in dct.items():
+                alias_lookup[alias].append(unit)
+        # don't want failed lookups to mutate, so we convert to dict:
+        return dict(alias_by_quantity), dict(alias_lookup)
+
+    def from_alias(self, alias: str, quantity: str | None = None) -> Unit:
+        alias_by_quantity, alias_lookup = self._prep_unit_lookup()
+        if quantity is None:
+            try:
+                unit, *extra = alias_lookup[alias]
+                if not extra:
+                    return unit
+                raise ValueError(f"Ambiguous alias, matches all of: {[u.external_id for u in (unit, *extra)]}")
+            except KeyError:
+                err_msg = f"Unknown {alias=}"
+                if close_matches := difflib.get_close_matches(alias, alias_lookup, n=5):
+                    err_msg += f", did you mean one of: {close_matches}?"
+                raise ValueError(err_msg) from None
+        try:
+            quantity_dct = alias_by_quantity[quantity]
+        except KeyError:
+            raise ValueError(f"Unknown {quantity=}. Known quantities: {sorted(alias_by_quantity)}") from None
+        try:
+            return quantity_dct[alias]
+        except KeyError:
+            raise ValueError(
+                f"Unknown {alias=} for known {quantity=}. Known aliases: {sorted(set(quantity_dct))}"
+            ) from None
 
     def list(self) -> UnitList:
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
