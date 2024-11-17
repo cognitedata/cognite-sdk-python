@@ -99,6 +99,9 @@ class Unit(CogniteResource):
         self.source = source
         self.source_reference = source_reference
 
+    def __hash__(self) -> int:
+        return hash(self.external_id)
+
     def as_unit_id(self) -> UnitID:
         """Returns the UnitID of this unit."""
         return UnitID(unit_external_id=self.external_id, name=self.name)
