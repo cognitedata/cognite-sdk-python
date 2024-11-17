@@ -324,7 +324,7 @@ class TestWorkflows:
     def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list()
         assert len(listed) >= len(workflow_list)
-        assert all(wf in listed for wf in workflow_list)
+        assert workflow_list._external_id_to_item.keys() <= listed._external_id_to_item.keys()
 
 
 class TestWorkflowVersions:
@@ -339,13 +339,12 @@ class TestWorkflowVersions:
     def test_list_workflow_versions(
         self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList
     ) -> None:
-        listed_by_wf_xid = cognite_client.workflows.versions.list(workflow_version_list[0].workflow_external_id)
-        listed_by_wf_version_id = cognite_client.workflows.versions.list(
-            WorkflowVersionId(workflow_version_list[0].workflow_external_id)
-        )
+        wf_xid = workflow_version_list[0].workflow_external_id
+        listed_by_wf_xid = cognite_client.workflows.versions.list(wf_xid)
+        listed_by_wf_version_id = cognite_client.workflows.versions.list(WorkflowVersionId(wf_xid)
         listed_by_as_ids = cognite_client.workflows.versions.list(workflow_version_list.as_ids())
 
-        ids_tuples = [tuple(x.__dict__.values()) for x in workflow_version_list.as_ids()]
+        ids_tuples = [wid.as_primitive() for wid in workflow_version_list.as_ids()]
         listed_by_tuples = cognite_client.workflows.versions.list(ids_tuples)
 
         assert (
