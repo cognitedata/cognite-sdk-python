@@ -69,7 +69,7 @@ class TestGlobalConfig:
 
 
 @pytest.fixture
-def client_config():
+def client_config() -> ClientConfig:
     return ClientConfig.default(
         **{
             "project": "test-project",
@@ -108,14 +108,24 @@ class TestClientConfig:
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
-    def test_extract_cdf_cluster(self, client_config, protocol, end):
-        for valid in ("3D", "my_clus-ter", "jazz-testing-asia-northeast1-1", "trial-00ed82e12d9cbadfe28e4"):
-            client_config.base_url = f"{protocol}://{valid}.cognitedata.com{end}"
-            assert client_config.cdf_cluster == valid
+    @pytest.mark.parametrize(
+        "cluster", ("3D", "my_clus-ter", "jazz-testing-asia-northeast1-1", "trial-00ed82e12d9cbadfe28e4")
+    )
+    def test_extract_valid_cdf_cluster(
+        self, client_config: ClientConfig, protocol: str, end: str, cluster: str
+    ) -> None:
+        client_config.base_url = f"{protocol}://{cluster}.cognitedata.com{end}"
+        assert client_config.cdf_cluster == cluster
 
-        for invalid in ("", ".", "..", "huh.my_cluster."):
-            client_config.base_url = f"{protocol}://{valid}cognitedata.com{end}"
-            assert client_config.cdf_cluster is None
+    @pytest.mark.parametrize("protocol", ("http", "https"))
+    @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
+    @pytest.mark.parametrize("cluster", ("", ".", "..", "huh.my_cluster."))
+    def test_extract_invalid_cdf_cluster(
+        self, client_config: ClientConfig, protocol: str, end: str, cluster: str
+    ) -> None:
+        client_config.base_url = f"{protocol}://{cluster}cognitedata.com{end}"
+        assert client_config.cdf_cluster is None
 
+    def test_extract_invalid_url(self, client_config: ClientConfig) -> None:
         client_config.base_url = "invalid"
         assert client_config.cdf_cluster is None
