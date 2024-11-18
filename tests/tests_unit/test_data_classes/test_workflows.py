@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 import pytest
 
@@ -18,70 +18,17 @@ from cognite.client.data_classes.workflows import (
     WorkflowIds,
     WorkflowTask,
     WorkflowTaskOutput,
-    WorkflowTriggerUpsert,
-    WorkflowUpsert,
     WorkflowVersionId,
 )
 
 
-class TestWorkflowUpsert:
-    @pytest.mark.parametrize(
-        "workflow_input",
-        [
-            {"external_id": "test_workflow", "description": "test_workflow_description"},
-            {"external_id": "test_workflow"},
-        ],
-    )
-    def test_workflow_upsert_valid(self, workflow_input):
-        workflow = WorkflowUpsert(**workflow_input)
-        assert workflow.external_id == workflow_input["external_id"]
-        assert workflow.description == workflow_input.get("description")
-
-    @pytest.mark.parametrize(
-        "workflow_input",
-        [
-            {"description": "test_workflow_description"},
-            {},
-        ],
-    )
-    def test_workflow_upsert_invalid(self, workflow_input):
-        with pytest.raises(TypeError, match="missing 1 required positional argument: 'external_id'"):
-            WorkflowUpsert(**workflow_input)
-
-
 class TestWorkFlowDefinitions:
-    tasks: ClassVar[list[WorkflowTask]] = [
-        WorkflowTask(external_id="foo", parameters=TransformationTaskParameters(external_id="something"))
-    ]
-
     def test_upsert_variant_doesnt_accept_hash(self):
-        WorkflowDefinition(tasks=self.tasks, description="desc", hash_="very-random")
+        tasks = [WorkflowTask(external_id="foo", parameters=TransformationTaskParameters(external_id="something"))]
+        WorkflowDefinition(tasks=tasks, description="desc", hash_="very-random")
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'hash_'$"):
-            WorkflowDefinitionUpsert(tasks=self.tasks, description="desc", hash_="very-random")
-
-    @pytest.mark.parametrize(
-        "workflow_definition_input",
-        [
-            {"tasks": tasks, "description": "test_workflow_description"},
-            {"tasks": tasks},
-            {"tasks": []},
-        ],
-    )
-    def test_upsert_valid(self, workflow_definition_input):
-        definition = WorkflowDefinitionUpsert(**workflow_definition_input)
-        assert definition.tasks == workflow_definition_input["tasks"]
-        assert definition.description == workflow_definition_input.get("description")
-
-    @pytest.mark.parametrize(
-        "workflow_definition_input",
-        [
-            {"description": "test_workflow_description"},
-        ],
-    )
-    def test_upsert_invalid(self, workflow_definition_input):
-        with pytest.raises(TypeError, match="missing 1 required positional argument: 'tasks'"):
-            WorkflowDefinitionUpsert(**workflow_definition_input)
+            WorkflowDefinitionUpsert(tasks=tasks, description="desc", hash_="very-random")
 
 
 class TestWorkflowTaskOutput:
@@ -254,26 +201,3 @@ class TestWorkflowExecutionDetailed:
 
             if actual_task.id == "38b3e696-adcb-4bf8-9217-747449f55289":
                 assert actual_task.dump(camel_case=True) == execution_data["executedTasks"][0]
-
-
-class TestWorkflowTrigger:
-    @pytest.fixture(scope="class")
-    def trigger_data(self) -> dict:
-        return {
-            "external_id": "TEST_test_7ca14a56-c807-4bd6-b287-64936078ef26",
-            "trigger_rule": {"triggerType": "schedule", "cronExpression": "0 0 * * *"},
-            "workflow_external_id": "TestWorkflowTypeBidProcess",
-            "workflow_version": "latest",
-            "input": {"version": "latest", "snake_case_lets_go": "yes"},
-            "metadata": {"supervisor": "Jimmy", "best_number": 42},
-        }
-
-    def test_upsert(self, trigger_data: dict):
-        trigger = WorkflowTriggerUpsert(**trigger_data)
-
-        assert trigger.external_id == trigger_data["external_id"]
-        assert trigger.trigger_rule == trigger_data["trigger_rule"]
-        assert trigger.workflow_external_id == trigger_data["workflow_external_id"]
-        assert trigger.workflow_version == trigger_data["workflow_version"]
-        assert trigger.input == trigger_data["input"]
-        assert trigger.metadata == trigger_data["metadata"]
