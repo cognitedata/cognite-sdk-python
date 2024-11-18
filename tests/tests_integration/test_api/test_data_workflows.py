@@ -341,7 +341,7 @@ class TestWorkflowVersions:
     ) -> None:
         wf_xid = workflow_version_list[0].workflow_external_id
         listed_by_wf_xid = cognite_client.workflows.versions.list(wf_xid)
-        listed_by_wf_version_id = cognite_client.workflows.versions.list(WorkflowVersionId(wf_xid)
+        listed_by_wf_version_id = cognite_client.workflows.versions.list(WorkflowVersionId(wf_xid))
         listed_by_as_ids = cognite_client.workflows.versions.list(workflow_version_list.as_ids())
 
         ids_tuples = [wid.as_primitive() for wid in workflow_version_list.as_ids()]
