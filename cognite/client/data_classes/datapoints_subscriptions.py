@@ -208,6 +208,16 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         def remove(self, value: list) -> DataPointSubscriptionUpdate:
             return self._remove(value)
 
+    class _ListDataPointSubscriptionNodeIdUpdate(CogniteListUpdate):
+        def set(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._set([item.dump(include_instance_type=False) for item in value])
+
+        def add(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._add([item.dump(include_instance_type=False) for item in value])
+
+        def remove(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._remove([item.dump(include_instance_type=False) for item in value])
+
     @property
     def name(self) -> _PrimitiveDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
@@ -221,8 +231,8 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
     @property
-    def instance_ids(self) -> _ListDataPointSubscriptionUpdate:
-        return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "instanceIds")
+    def instance_ids(self) -> _ListDataPointSubscriptionNodeIdUpdate:
+        return DataPointSubscriptionUpdate._ListDataPointSubscriptionNodeIdUpdate(self, "instanceIds")
 
     @property
     def filter(self) -> _FilterDataPointSubscriptionUpdate:
