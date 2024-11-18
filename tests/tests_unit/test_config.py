@@ -108,13 +108,14 @@ class TestClientConfig:
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
+    @pytest.mark.parametrize("subdomain", ("", "p001.plink."))
     @pytest.mark.parametrize(
         "cluster", ("3D", "my_clus-ter", "jazz-testing-asia-northeast1-1", "trial-00ed82e12d9cbadfe28e4")
     )
     def test_extract_valid_cdf_cluster(
-        self, client_config: ClientConfig, protocol: str, end: str, cluster: str
+        self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
-        client_config.base_url = f"{protocol}://{cluster}.cognitedata.com{end}"
+        client_config.base_url = f"{protocol}://{subdomain}{cluster}.cognitedata.com{end}"
         assert client_config.cdf_cluster == cluster
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
