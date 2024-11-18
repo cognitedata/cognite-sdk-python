@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.66.2] - 2023-11-18
+### Added
+- InstanceId is now supported in the `client.time_series.subscriptions` methods.
+
 ## [7.66.1] - 2023-11-18
 ### Removed
 - The Core Data Model (v1) is now considered stable and the alpha warning has been removed.
