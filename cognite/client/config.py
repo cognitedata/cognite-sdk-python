@@ -271,6 +271,8 @@ class ClientConfig:
     @property
     def cdf_cluster(self) -> str | None:
         # A best effort attempt to extract the cluster from the base url
-        if match := re.match(r"https?://([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url):
-            return match.group(1)
+        if match := re.match(
+            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url
+        ):
+            return match.group(2)
         return None
