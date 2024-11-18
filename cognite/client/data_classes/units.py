@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    ExternalIDTransformerMixin,
+    NameTransformerMixin,
+)
 from cognite.client.utils._text import convert_dict_to_case
 
 if TYPE_CHECKING:
@@ -126,13 +131,10 @@ class Unit(CogniteResource):
         return convert_dict_to_case(dumped, camel_case)
 
 
-class UnitList(CogniteResourceList[Unit]):
+class UnitList(CogniteResourceList[Unit], ExternalIDTransformerMixin):
     """List of Units"""
 
     _RESOURCE = Unit
-
-    def as_external_ids(self) -> list[str]:
-        return [unit.external_id for unit in self]
 
 
 class UnitSystem(CogniteResource):
@@ -160,10 +162,7 @@ class UnitSystem(CogniteResource):
         return {"name": self.name, "quantities": [quantity.dump(camel_case) for quantity in self.quantities]}
 
 
-class UnitSystemList(CogniteResourceList[UnitSystem]):
+class UnitSystemList(CogniteResourceList[UnitSystem], NameTransformerMixin):
     """List of Unit Systems"""
 
     _RESOURCE = UnitSystem
-
-    def as_names(self) -> list[str]:
-        return [unit_system.name for unit_system in self]
