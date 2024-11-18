@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+## Removed
+- Usage of `instance_id` in the FilesAPI is considered stable and the alpha warning has been removed.
+
 ## [7.66.0] - 2023-11-15
 ### Added
 - User's trying to access a CDF project they do not have access to, will now be met with a more helpful
