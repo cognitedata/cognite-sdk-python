@@ -10,11 +10,45 @@ from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import no_op
 
 if TYPE_CHECKING:
+    from cognite.client._cognite_client import CogniteClient
     from cognite.client.data_classes import AssetHierarchy
 
 
 class CogniteException(Exception):
     pass
+
+
+class CogniteProjectAccessError(CogniteException):
+    """Raised when we get a 401 response from the API which means we don't have project access at all."""
+
+    def __init__(
+        self, client: CogniteClient, project: str, x_request_id: str | None, cluster: str | None = None
+    ) -> None:
+        self.x_request_id = x_request_id
+        self.cluster = cluster
+        self.project = project
+        self.maybe_projects = self._attempt_to_get_projects(client)
+
+    @staticmethod
+    def _attempt_to_get_projects(client: CogniteClient) -> list[str] | None:
+        # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
+        api_client = client.iam.token
+        _, full_url = api_client._resolve_url("GET", "/api/v1/token/inspect")
+        headers = api_client._configure_headers("application/json", client._config.headers.copy())  # type: ignore [has-type]
+        try:
+            token_inspect = api_client._http_client.request("GET", url=full_url, headers=headers)
+            return sorted({proj["projectUrlName"] for proj in token_inspect.json()["projects"]})
+        except Exception:
+            return None
+
+    def __str__(self) -> str:
+        msg = f"You don't have access to the requested CDF project={self.project!r}"
+        if self.maybe_projects:
+            msg += f". Did you intend to use one of: {self.maybe_projects}?"
+        msg += f" | code: 401 | X-Request-ID: {self.x_request_id}"
+        if self.cluster:
+            msg += f" | cluster: {self.cluster}"
+        return msg
 
 
 @dataclass
