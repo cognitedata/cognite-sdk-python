@@ -150,7 +150,7 @@ class UnitAPI(APIClient):
 
                 Search for the closest matching unit of 'kilo watt' (should be 'kilowatt'):
 
-                    >>> unit_matches = client.units.from_alias("kilo watt", return_closest_matches=True):
+                    >>> unit_matches = client.units.from_alias("kilo watt", return_closest_matches=True)
         """
         alias_by_quantity, alias_lookup = self._create_unit_lookups
         if quantity is None:
@@ -214,7 +214,7 @@ class UnitAPI(APIClient):
 
         Examples:
 
-            List all supported unit in CDF:
+            List all supported units in CDF:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
