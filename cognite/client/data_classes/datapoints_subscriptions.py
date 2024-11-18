@@ -168,7 +168,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case)
         if self.instance_ids is not None:
-            data["instanceIds"] = [item.dump() for item in self.instance_ids]
+            data["instanceIds"] = [item.dump(include_instance_type=False) for item in self.instance_ids]
         return data
 
     def as_write(self) -> DataPointSubscriptionWrite:
@@ -246,23 +246,36 @@ class TimeSeriesID(CogniteResource):
     Args:
         id (int): A server-generated ID for the object.
         external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of an instance in Cognite Data Models.
     """
 
-    def __init__(self, id: int, external_id: ExternalId | None = None) -> None:
+    def __init__(self, id: int, external_id: ExternalId | None = None, instance_id: NodeId | None = None) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
 
     def __repr__(self) -> str:
-        return f"TimeSeriesID(id={self.id}, external_id={self.external_id})"
+        identifier = "id={self.id}"
+        if self.external_id is not None:
+            identifier = f", external_id={self.external_id}"
+        elif self.instance_id is not None:
+            identifier = f", instance_id={self.instance_id!r}"
+        return f"TimeSeriesID({identifier})"
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
-        return cls(id=resource["id"], external_id=resource.get("externalId"))
+        return cls(
+            id=resource["id"],
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {"id": self.id}
         if self.external_id is not None:
             resource["externalId" if camel_case else "external_id"] = self.external_id
+        if self.instance_id is not None:
+            resource["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(include_instance_type=False)
         return resource
 
 
