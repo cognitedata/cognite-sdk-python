@@ -85,7 +85,6 @@ def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
                     ),
                 ),
             ],
-            description=None,
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
@@ -133,7 +132,6 @@ def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow)
                     ),
                 )
             ],
-            description=None,
         ),
     )
     version_2 = WorkflowVersionUpsert(
@@ -173,7 +171,6 @@ def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow)
                     depends_on=["subworkflow1"],
                 ),
             ],
-            description=None,
         ),
     )
     for version in [version_1, version_2]:
@@ -230,7 +227,6 @@ def workflow_setup_pre_trigger(cognite_client: CogniteClient):
                     ),
                 ),
             ],
-            description=None,
         ),
     )
     cognite_client.workflows.versions.upsert(version)
