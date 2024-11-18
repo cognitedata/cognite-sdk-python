@@ -319,7 +319,7 @@ class TestWorkflows:
         assert non_existing is None
 
     def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
-        listed = cognite_client.workflows.list()
+        listed = cognite_client.workflows.list(limit=-1)
         assert len(listed) >= len(workflow_list)
         assert workflow_list._external_id_to_item.keys() <= listed._external_id_to_item.keys()
 
