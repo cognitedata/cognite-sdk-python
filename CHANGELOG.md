@@ -17,8 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
-## Removed
+## [7.66.1] - 2023-11-18
+### Removed
+- The Core Data Model (v1) is now considered stable and the alpha warning has been removed.
 - Usage of `instance_id` in the FilesAPI is considered stable and the alpha warning has been removed.
 
 ## [7.66.0] - 2023-11-15
