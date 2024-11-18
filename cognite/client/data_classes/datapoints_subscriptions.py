@@ -21,6 +21,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils import _json
@@ -125,6 +126,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
         time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        instance_ids(list[NodeId] | None): List of instance ids of time series that this subscription will listen to. Not compatible with filter.
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
@@ -136,16 +138,18 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         external_id: str,
         partition_count: int,
         time_series_ids: list[ExternalId] | None = None,
+        instance_ids: list[NodeId] | None = None,
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
         data_set_id: int | None = None,
     ) -> None:
-        if not exactly_one_is_not_none(time_series_ids, filter):
+        if not exactly_one_is_not_none(time_series_ids or instance_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
         _validate_filter(filter, _FILTERS_SUPPORTED, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
+        self.instance_ids = instance_ids
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -154,11 +158,18 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
             time_series_ids=resource.get("timeSeriesIds"),
+            instance_ids=[NodeId.load(item) for item in resource["instanceIds"]] if "instanceIds" in resource else None,
             filter=filter,
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case)
+        if self.instance_ids is not None:
+            data["instanceIds"] = [item.dump() for item in self.instance_ids]
+        return data
 
     def as_write(self) -> DataPointSubscriptionWrite:
         """Returns this DatapointSubscription instance"""
@@ -210,6 +221,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
     @property
+    def instance_ids(self) -> _ListDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "instanceIds")
+
+    @property
     def filter(self) -> _FilterDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
 
@@ -218,6 +233,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return [
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_list=True),
+            PropertySpec("instance_ids", is_list=True),
             PropertySpec("filter", is_nullable=False),
             PropertySpec("data_set_id"),
         ]
