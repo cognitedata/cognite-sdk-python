@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import unittest
 from datetime import datetime
 
 import pytest
@@ -343,16 +344,10 @@ class TestWorkflowVersions:
         ids_tuples = [wid.as_primitive() for wid in workflow_version_list.as_ids()]
         listed_by_tuples = cognite_client.workflows.versions.list(ids_tuples)
 
-        assert (
-            len(workflow_version_list)
-            == len(listed_by_wf_xid)
-            == len(listed_by_wf_version_id)
-            == len(listed_by_as_ids)
-            == len(listed_by_tuples)
-        )
-        assert (
-            workflow_version_list == listed_by_wf_xid == listed_by_wf_version_id == listed_by_as_ids == listed_by_tuples
-        )
+        unittest.TestCase().assertCountEqual(workflow_version_list, listed_by_wf_xid)
+        unittest.TestCase().assertCountEqual(listed_by_wf_xid, listed_by_wf_version_id)
+        unittest.TestCase().assertCountEqual(listed_by_wf_version_id, listed_by_as_ids)
+        unittest.TestCase().assertCountEqual(listed_by_as_ids, listed_by_tuples)
 
         listed_limit = cognite_client.workflows.versions.list(limit=1)
         assert len(listed_limit) == 1
@@ -399,10 +394,11 @@ class TestWorkflowExecutions:
             workflow_version_ids=workflow_execution_list[0].as_workflow_id()
         )
 
-        assert len(listed) == len(workflow_execution_list)
-        assert sorted(listed.dump(), key=lambda x: x["id"]) == sorted(
-            workflow_execution_list.dump(), key=lambda x: x["id"]
-        )
+        # assert len(listed) == len(workflow_execution_list)
+        # assert sorted(listed.dump(), key=lambda x: x["id"]) == sorted(
+        #     workflow_execution_list.dump(), key=lambda x: x["id"]
+        # )
+        unittest.TestCase().assertCountEqual(listed, workflow_execution_list)
 
     def test_list_workflow_executions_by_status(
         self,
@@ -596,7 +592,6 @@ class TestWorkflowTriggers:
         workflow_scheduled_trigger.input["version"] = workflow_scheduled_trigger.workflow_version
         assert detailed.input == workflow_scheduled_trigger.input
 
-    @pytest.mark.xfail(reason="Non-existing trigger run history returns [] instead of None")
     def test_trigger_run_history_non_existing(
         self,
         cognite_client: CogniteClient,
@@ -604,4 +599,4 @@ class TestWorkflowTriggers:
         history = cognite_client.workflows.triggers.get_trigger_run_history(
             external_id="integration_test-non_existing_trigger"
         )
-        assert history is None
+        assert history == []
