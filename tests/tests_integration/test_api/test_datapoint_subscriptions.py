@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import random
 import time
+import unittest
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -90,7 +91,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture
 def time_series_node_ids(all_times_series_node_ids: list[NodeId]) -> list[NodeId]:
-    return random.sample(all_times_series_node_ids, k=1)
+    return random.choice(all_times_series_node_ids)
 
 
 @pytest.fixture(scope="session")
@@ -159,13 +160,11 @@ class TestDatapointSubscriptions:
             retrieved_time_series_external_ids = [
                 ts.external_id for ts in time_series_in_subscription if ts.external_id
             ]
-            assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
+            unittest.TestCase().assertCountEqual(new_subscription.time_series_ids, retrieved_time_series_external_ids)
             retrieved_time_series_instance_ids = [
                 ts.instance_id for ts in time_series_in_subscription if ts.instance_id
             ]
-            assert sorted(retrieved_time_series_instance_ids, key=lambda x: x.external_id) == sorted(
-                time_series_node_ids, key=lambda x: x.external_id
-            )
+            unittest.TestCase().assertCountEqual(new_subscription.instance_ids, retrieved_time_series_instance_ids)
 
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
             retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)

@@ -145,7 +145,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         data_set_id: int | None = None,
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids or instance_ids, filter):
-            raise ValueError("Exactly one of time_series_ids and filter must be given")
+            raise ValueError("Exactly one of time_series_ids/instance_ids or filter must be provided")
         _validate_filter(filter, _FILTERS_SUPPORTED, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
@@ -265,11 +265,11 @@ class TimeSeriesID(CogniteResource):
         self.instance_id = instance_id
 
     def __repr__(self) -> str:
-        identifier = "id={self.id}"
+        identifier = f"id={self.id}"
         if self.external_id is not None:
-            identifier = f", external_id={self.external_id}"
+            identifier += f", external_id={self.external_id}"
         elif self.instance_id is not None:
-            identifier = f", instance_id={self.instance_id!r}"
+            identifier += f", instance_id={self.instance_id!r}"
         return f"TimeSeriesID({identifier})"
 
     @classmethod

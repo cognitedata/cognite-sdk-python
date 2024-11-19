@@ -17,9 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.66.2] - 2023-11-18
+## [7.66.2] - 2023-11-19
 ### Added
-- InstanceId is now supported in the `client.time_series.subscriptions` methods.
+- Instance ID is now supported for DatapointsSubscriptionsAPI (`client.time_series.subscriptions`)
 
 ## [7.66.1] - 2023-11-18
 ### Removed
