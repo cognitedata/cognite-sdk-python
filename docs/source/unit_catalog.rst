@@ -11,6 +11,10 @@ Retrieve Unit
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.units.UnitAPI.retrieve
 
+Look up Unit from alias
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.units.UnitAPI.from_alias
+
 Unit Systems
 ------------------
 List Unit System
