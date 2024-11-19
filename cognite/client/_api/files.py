@@ -593,7 +593,7 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
-        """Upload bytes or string.
+        """Upload bytes or string (UTF-8 assumed).
 
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_content_session`.
 
@@ -607,11 +607,18 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Upload a file from memory:
+            Finish a file creation by uploading the content using external_id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = client.files.upload_content_bytes(
+                ...     b"some content", external_id="my_file_xid")
+
+            ...or by using instance_id:
+
+                >>> from cognite.client.data_classes import NodeId
+                >>> res = client.files.upload_content_bytes(
+                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
         """
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
@@ -633,7 +640,7 @@ class FilesAPI(APIClient):
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
-        file_metadata = FileMetadata.load(returned_file_metadata)
+        file_metadata = FileMetadata._load(returned_file_metadata)
         upload_response = self._http_client_with_retry.request(
             "PUT",
             full_upload_url,
