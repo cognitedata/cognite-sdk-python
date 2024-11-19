@@ -239,7 +239,7 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
     return {x for x in seq if x in seen or add(x)}
 
 
-def remove_duplicates_keep_order(seq: Sequence[THashable]) -> list[THashable]:
+def remove_duplicates_keep_order(seq: Iterable[THashable]) -> list[THashable]:
     seen: set[THashable] = set()
     add = seen.add
     return [x for x in seq if x not in seen and not add(x)]

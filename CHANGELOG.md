@@ -17,22 +17,33 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.66.2] - 2023-11-19
+## [7.67.2] - 2023-11-19
 ### Added
 - Instance ID is now supported for DatapointsSubscriptionsAPI (`client.time_series.subscriptions`)
 
-## [7.66.1] - 2023-11-18
+## [7.67.1] - 2024-11-19
+### Added
+- Workflow triggers support metadata field
+### Fixed
+- Workflow description is optional
+
+## [7.67.0] - 2024-11-19
+### Added
+- Convenience method `from_alias` to the UnitsAPI (`client.units.from_alias`) to help with looking up
+  units by their aliases (similarity search is supported).
+
+## [7.66.1] - 2024-11-18
 ### Removed
 - The Core Data Model (v1) is now considered stable and the alpha warning has been removed.
 - Usage of `instance_id` in the FilesAPI is considered stable and the alpha warning has been removed.
 
-## [7.66.0] - 2023-11-15
+## [7.66.0] - 2024-11-15
 ### Added
 - User's trying to access a CDF project they do not have access to, will now be met with a more helpful
   exception: `CogniteProjectAccessError` will be raised and accessible projects on the given cluser will
   be listed, rather than just "401 - Unauthorized".
 
-## [7.65.1] - 2023-11-14
+## [7.65.1] - 2024-11-14
 ### Added
 - Workflows now support data sets
 
