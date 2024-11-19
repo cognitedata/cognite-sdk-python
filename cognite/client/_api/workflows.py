@@ -63,11 +63,11 @@ class WorkflowTriggerAPI(APIClient):
         """`Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created  or updated workflow trigger specification.
+            WorkflowTrigger: The created or updated workflow trigger specification.
 
         Examples:
 
@@ -83,6 +83,7 @@ class WorkflowTriggerAPI(APIClient):
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
+                ...         metadata={"key": "value"},
                 ...     )
                 ... )
 
@@ -133,7 +134,7 @@ class WorkflowTriggerAPI(APIClient):
         This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.
 
         Args:
-            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
@@ -507,7 +508,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.run("foo", "1")
-                >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
+                >>> client.workflows.executions.cancel(id="foo", reason="test cancellation")
         """
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
