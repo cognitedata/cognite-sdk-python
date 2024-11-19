@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.67.0] - 2023-11-19
+### Added
+- Convenience method `from_alias` to the UnitsAPI (`client.units.from_alias`) to help with looking up
+  units by their aliases (similarity search is supported).
+
 ## [7.66.1] - 2023-11-18
 ### Removed
 - The Core Data Model (v1) is now considered stable and the alpha warning has been removed.
