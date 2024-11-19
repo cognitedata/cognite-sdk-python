@@ -120,11 +120,12 @@ class TestClientConfig:
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
+    @pytest.mark.parametrize("subdomain", ("", "p001.plink."))
     @pytest.mark.parametrize("cluster", ("", ".", "..", "huh.my_cluster."))
     def test_extract_invalid_cdf_cluster(
-        self, client_config: ClientConfig, protocol: str, end: str, cluster: str
+        self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
-        client_config.base_url = f"{protocol}://{cluster}cognitedata.com{end}"
+        client_config.base_url = f"{protocol}://{subdomain}{cluster}cognitedata.com{end}"
         assert client_config.cdf_cluster is None
 
     def test_extract_invalid_url(self, client_config: ClientConfig) -> None:
