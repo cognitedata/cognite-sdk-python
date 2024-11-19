@@ -394,10 +394,6 @@ class TestWorkflowExecutions:
             workflow_version_ids=workflow_execution_list[0].as_workflow_id()
         )
 
-        # assert len(listed) == len(workflow_execution_list)
-        # assert sorted(listed.dump(), key=lambda x: x["id"]) == sorted(
-        #     workflow_execution_list.dump(), key=lambda x: x["id"]
-        # )
         unittest.TestCase().assertCountEqual(listed, workflow_execution_list)
 
     def test_list_workflow_executions_by_status(
