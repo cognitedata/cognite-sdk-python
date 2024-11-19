@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.67.2] - 2023-11-19
+### Added
+- Instance ID is now supported for DatapointsSubscriptionsAPI (`client.time_series.subscriptions`)
+
 ## [7.67.1] - 2024-11-19
 ### Added
 - Workflow triggers support metadata field
