@@ -1620,8 +1620,8 @@ class DatapointsAPI(APIClient):
                 >>> import math
                 >>> to_insert.append(
                 ...     {"external_id": "bar", "datapoints": [
-                ...         {"timestamp": 170000000, "value": 4000},
-                ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
+                ...         {"timestamp": 170000000, "value": 7000},
+                ...         {"timestamp": 180000000, "value": 8000, "status": {"symbol": "Uncertain"}},
                 ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
                 ...         {"timestamp": 200000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
@@ -1634,7 +1634,7 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
         if not isinstance(datapoints, Sequence):
-            raise ValueError("Input must be a list of dictionaries")
+            raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
         DatapointsPoster(self).insert(datapoints)
 
     def delete_range(
