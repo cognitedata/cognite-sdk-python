@@ -91,7 +91,7 @@ def time_series_external_ids(all_time_series_external_ids):
 
 @pytest.fixture
 def time_series_node_ids(all_times_series_node_ids: list[NodeId]) -> list[NodeId]:
-    return random.choice(all_times_series_node_ids)
+    return [random.choice(all_times_series_node_ids)]
 
 
 @pytest.fixture(scope="session")
