@@ -57,7 +57,7 @@ Changes are grouped as follows
   You may control memory usage by specifying how many time series to fetch in parallel with the
   `chunk_size_time_series` parameter, and datapoints with `chunk_size_datapoints`.
 
-## [7.64.14] - 2024-11-11
+## [7.64.14] - 2024-11-12
 ### Added
 - [Feature Preview - beta] Adding data modeling triggers support for data workflows.
 
@@ -65,16 +65,16 @@ Changes are grouped as follows
 ### Added
 - Added new `SAPWriteback` and `SAPWritebackRequests` capabilities.
 
-## [7.64.12] - 2024-11-11
+## [7.64.12] - 2024-11-12
 ### Fixed
 - `FunctionSchedulesAPI.__call__()` calls `FunctionSchedulesAPI.list()` instead of `APIClient._list_generator()`.
   (The latter relied on pagination, which was not implemented by `/schedules/list`).
 
-## [7.64.11] - 2024-11-10
+## [7.64.11] - 2024-11-12
 ### Added
 - [Feature Preview - alpha] Support for `PostgresGateway` `Tables` `client.postegres_gateway.tables`.
 
-## [7.64.10] - 2024-11-10
+## [7.64.10] - 2024-11-12
 ### Fixed
 - [Feature Preview - alpha] Updated `PostgresGateway` `Users` `client.postegres_gateway.users` to changes in the API.
 
@@ -91,7 +91,7 @@ Changes are grouped as follows
 - Set batch size to 10 for `create` and `update` of hosted extractor jobs, destinations, sources and mappings
   to avoid hitting the API limits.
 
-## [7.64.6] - 2024-10-22
+## [7.64.6] - 2024-11-02
 ### Added
 - Data modeling filters now support the use of `NodeId` (and `EdgeId`) directly.
 
@@ -345,13 +345,13 @@ Changes are grouped as follows
 ### Fixed
 - Missing exports for workflow triggers
 
-## [7.55.0] - 2024-08-23
+## [7.55.0] - 2024-08-27
 ### Added
 - Support for creating a session using a one-shot token in the `client.iam.session.create` method.
 - Parameter `nonce` to the `client.functions.call()` and `client.workflow.executions.run()` methods to allow passing
   a custom nonce instead of letting the SDK generate it from your current credentials.
 
-## [7.54.19] - 2024-08-23
+## [7.54.19] - 2024-08-27
 ### Added
 - [Feature Preview - beta] Support for `client.workflows.triggers`.
 
@@ -572,11 +572,11 @@ Changes are grouped as follows
   occur without warning. Set beta header to avoid warning. Users of `retrieve_dataframe_in_tz` should
   consider preparing to upgrade as soon as the features reach general availability (GA).
 
-## [7.44.1] - 2024-05-24
+## [7.44.1] - 2024-05-29
 ### Added
 - Missing parameter `timeout` to `client.transformations.preview`.
 
-## [7.44.0] - 2024-05-24
+## [7.44.0] - 2024-05-29
 ### Added
 - New utility function `datetime_to_ms_iso_timestamp` in `cognite.client.utils` to convert a datetime object
   to a string representing a timestamp in the format expected by the Cognite GraphQL API.
@@ -823,7 +823,7 @@ Changes are grouped as follows
   bounded memory usage profile (for when the caller's code isn't processing fast enough to keep up). Worth noting
   that this has no effect on the total retrieval time.
 
-## [7.27.0] - 2024-03-04
+## [7.27.0] - 2024-03-06
 ### Added
 - Added support for multipart file uploads using the `client.files.multipart_upload_session` method.
 
@@ -898,7 +898,7 @@ Changes are grouped as follows
 ### Fixed
 - Data Workflows: mark parameter `jobId` as optional in `TransformationTaskOutput`, as it may not be populated in case of a failure.
 
-## [7.21.0] - 2024-02-10
+## [7.21.0] - 2024-02-20
 ### Added
 - Parameter `sort` to `client.documents.list`.
 
@@ -1011,7 +1011,7 @@ Changes are grouped as follows
 ### Added
 - EdgeConnection, MultiEdgeConnection, MultiReverseDirectRelation and their corresponding Apply View dataclasses are now importable from `cognite.client.dataclasses.data_modeling`.
 
-## [7.13.4] - 2024-01-11
+## [7.13.4] - 2024-01-13
 ### Fixed
 - When calling `WorkflowExecution.load` not having a `schedule` would raise a `KeyError` even though it is optional. This is now fixed.
 - When calling `Datapoints.load` not having a `isString` would raise a `KeyError` even though it is optional. This is now fixed.
@@ -1549,7 +1549,7 @@ Support for setting and fetching TimeSeries and Datapoints with "real" units (`u
 ### Added
 - Support for the WorkflowOrchestrationAPI with the implementation `client.workflows`.
 
-## [6.27.0] - 2023-09-13
+## [6.27.0] - 2023-09-24
 ### Changed
 - Reduce concurrency in data modeling client to 1
 
@@ -1563,7 +1563,7 @@ of `time_series.subscriptions.iterate_data`.
 ### Added
 - Support for setting and retrieving `data_set_id` in data class `client.data_classes.ThreeDModel`.
 
-## [6.25.2] - 2023-09-12
+## [6.25.2] - 2023-09-17
 ### Fixed
 - Using the `HasData` filter would raise an API error in CDF.
 
