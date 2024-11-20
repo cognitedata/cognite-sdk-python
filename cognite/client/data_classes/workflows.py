@@ -75,11 +75,12 @@ class WorkflowUpsert(WorkflowCore):
 
 class Workflow(WorkflowCore):
     """
-    This class represents a workflow. This is the reading version, used when reading or listing a workflows.
+    This class represents a workflow. This is the reading version, used when reading or listing workflows.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
         data_set_id (int | None): The id of the data set this workflow belongs to.
     """
@@ -88,11 +89,13 @@ class Workflow(WorkflowCore):
         self,
         external_id: str,
         created_time: int,
+        last_updated_time: int,
         description: str | None = None,
         data_set_id: int | None = None,
     ) -> None:
         super().__init__(external_id, description, data_set_id)
         self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -100,6 +103,7 @@ class Workflow(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource.get("dataSetId"),
         )
 
