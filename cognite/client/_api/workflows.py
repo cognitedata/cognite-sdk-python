@@ -28,7 +28,8 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -773,6 +774,7 @@ class WorkflowAPI(APIClient):
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
         self.triggers = WorkflowTriggerAPI(config, api_version, cognite_client)
+        self._RETRIEVE_LIMIT = 1
         self._DELETE_LIMIT = 100
 
     @overload
@@ -830,32 +832,58 @@ class WorkflowAPI(APIClient):
             url_path=self._RESOURCE_PATH,
             json={"items": [workflow.dump(camel_case=True)]},
         )
-        return Workflow._load(response.json()["items"][0])
 
-    def retrieve(self, external_id: str) -> Workflow | None:
-        """`Retrieve a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+    @overload
+    def retrieve(self, external_id: str) -> Workflow | None: ...
+
+    @overload
+    def retrieve(self, external_id: SequenceNotStr[str]) -> WorkflowList: ...
+
+    def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> Workflow | WorkflowList | None:
+        """`Retrieve one or more workflows. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/fetchWorkflowDetails>`_
 
         Args:
-            external_id (str): Identifier for a Workflow. Must be unique for the project.
+            external_id (str | SequenceNotStr[str]): Identifier (or sequence of identifiers) for a Workflow. Must be unique.
+            ignore_unknown_ids (bool): When requesting multiple workflows, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
-            Workflow | None: The requested workflow if it exists, None otherwise.
+            Workflow | WorkflowList | None: If a single external ID is specified: the requested workflow, or None if it does not exist. If several external IDs are specified: the requested workflows.
 
         Examples:
 
-            Retrieve workflow my workflow:
+            Retrieve workflow with external ID "my-workflow":
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.retrieve("my workflow")
+                >>> workflow = client.workflows.retrieve("my-workflow")
+
+            Retrieve multiple workflows:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> workflow_list = client.workflows.retrieve(["foo", "bar"])
         """
-        try:
-            response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", external_id))
-        except CogniteAPIError as e:
-            if e.code == 404:
-                return None
-            raise e
-        return Workflow._load(response.json())
+
+        # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
+        def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
+            try:
+                response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", xid))
+                return Workflow._load(response.json())
+            except CogniteAPIError as e:
+                if ignore_missing and e.code == 404:
+                    return None
+                raise e
+
+        if isinstance(external_id, str):
+            return get_single(external_id, ignore_missing=True)
+
+        # Not really a point in splitting into chunks when chunk_size is 1, but...
+        tasks = list(map(tuple, split_into_chunks(external_id, self._RETRIEVE_LIMIT)))
+        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+        return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
