@@ -365,6 +365,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/metrics",
             list_cls=JobMetricsList,
             resource_cls=JobMetrics,
             filter=filter_ or None,
