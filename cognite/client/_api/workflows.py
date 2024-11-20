@@ -210,10 +210,21 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     def get_trigger_run_history(
-        self,
-        external_id: str,
-        limit: int | None = DEFAULT_LIMIT_READ,
+        self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
     ) -> WorkflowTriggerRunList:
+        """List the history of runs for a trigger.
+
+        .. admonition:: Deprecation Warning
+
+            This method is deprecated, use '.list_runs' instead. It will be removed in the next major version.
+        """
+        warnings.warn(
+            "The 'get_trigger_run_history' method is deprecated, use 'list_runs' instead. It will be removed in the next major release.",
+            UserWarning,
+        )
+        return self.list_runs(external_id, limit)
+
+    def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
         """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
@@ -229,7 +240,7 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.triggers.get_trigger_run_history("my_trigger")
+                >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
         return self._list(
             method="GET",
