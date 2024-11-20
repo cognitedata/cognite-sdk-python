@@ -542,7 +542,7 @@ class ThreeDNode(CogniteResource):
         return result
 
 
-class ThreeDNodeList(CogniteResourceList[ThreeDNode]):
+class ThreeDNodeList(CogniteResourceList[ThreeDNode], InternalIdTransformerMixin):
     _RESOURCE = ThreeDNode
 
 

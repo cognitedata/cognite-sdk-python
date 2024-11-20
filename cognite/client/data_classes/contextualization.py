@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
 from cognite.client.data_classes.annotation_types.images import (
@@ -349,7 +350,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         ]
 
 
-class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):
+class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel], IdTransformerMixin):
     _RESOURCE = EntityMatchingModel
 
 
@@ -1045,7 +1046,7 @@ class ResourceReference(CogniteResource):
         self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
 
-class ResourceReferenceList(CogniteResourceList[ResourceReference]):
+class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransformerMixin):
     _RESOURCE = ResourceReference
 
 
