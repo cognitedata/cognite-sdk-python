@@ -4,8 +4,15 @@ from pathlib import Path
 import pytest
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from tests.utils import all_subclasses
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    ExternalIDTransformerMixin,
+    IdTransformerMixin,
+    InternalIdTransformerMixin,
+)
+from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from tests.utils import all_concrete_subclasses, all_subclasses
 
 ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
 
@@ -92,3 +99,30 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     # If the below check fails, it means an API that has been specifically except from POST retries now have
     # been given a retry regex anyway. Please update 'apis_that_should_not_have_post_retry_rule' above!
     assert not (has_retry and no_retry_needed)
+
+
+@pytest.mark.parametrize("lst_cls", all_concrete_subclasses(CogniteResourceList))
+def test_ensure_identifier_mixins(lst_cls):
+    # TODO: Data Modeling uses "as_ids()" even though existing classes use the same for "integer internal ids"
+    if "data_modeling" in str(lst_cls):
+        return
+    elif lst_cls in {DatapointsList, DatapointsArrayList}:  # May contain duplicates
+        return
+
+    bases = lst_cls.__mro__
+    sig = inspect.signature(lst_cls._RESOURCE).parameters
+
+    missing_id = "id" in sig and not (InternalIdTransformerMixin in bases or IdTransformerMixin in bases)
+    missing_external_id = "external_id" in sig and not (
+        ExternalIDTransformerMixin in bases or IdTransformerMixin in bases
+    )
+
+    # TODO: Make an instance ID mixin class, for now, we just ignore:
+    # missing_instance_id = "instance_id" in sig and ...
+
+    if missing_id and missing_external_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from IdTransformerMixin (id+external_id)")
+    elif missing_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from InternalIdTransformerMixin")
+    elif missing_external_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from ExternalIDTransformerMixin")
