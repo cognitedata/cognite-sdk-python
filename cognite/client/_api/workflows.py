@@ -165,11 +165,20 @@ class WorkflowTriggerAPI(APIClient):
         )
 
     def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
-        """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+        """List the workflow triggers.
 
         .. admonition:: Deprecation Warning
 
             This method is deprecated, use '.list' instead. It will be removed in the next major version.
+        """
+        warnings.warn(
+            "The 'get_triggers' method is deprecated, use 'list' instead. It will be removed in the next major release.",
+            UserWarning,
+        )
+        return self.list(limit)
+
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
+        """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -179,11 +188,11 @@ class WorkflowTriggerAPI(APIClient):
 
         Examples:
 
-            Get all triggers:
+            List all triggers:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.triggers.get_triggers()
+                >>> res = client.workflows.triggers.list(limit=None)
         """
         return self._list(
             method="GET",
