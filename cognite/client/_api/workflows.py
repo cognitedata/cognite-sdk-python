@@ -93,6 +93,7 @@ class WorkflowTriggerAPI(APIClient):
                 ... )
 
             Create or update a data modeling trigger for a workflow:
+
                 >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
                 >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling import ViewId
@@ -189,7 +190,7 @@ class WorkflowTriggerAPI(APIClient):
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            WorkflowTriggerList: The trigger list.
+            WorkflowTriggerList: The list of triggers.
 
         Examples:
 
@@ -258,13 +259,13 @@ class WorkflowTaskAPI(APIClient):
 
         Examples:
 
-            Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'completed':
+            Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'completed':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
 
-            Update task with UUID '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
+            Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -303,7 +304,7 @@ class WorkflowExecutionAPI(APIClient):
 
         Examples:
 
-            Retrieve workflow execution with UUID '000560bc-9080-4286-b242-a27bb4819253':
+            Retrieve workflow execution with id '000560bc-9080-4286-b242-a27bb4819253':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -333,7 +334,7 @@ class WorkflowExecutionAPI(APIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`Trigger a workflow execution.
+        """Trigger a workflow execution.
 
         .. admonition:: Deprecation Warning
 
@@ -362,7 +363,7 @@ class WorkflowExecutionAPI(APIClient):
             input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
             metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
             client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
-            nonce (str | None): The nonce to use to bind the session. If not provided, a new session will be created using the current credentials.
+            nonce (str | None): The nonce to use to bind the session. If not provided, a new session will be created using the given 'client_credentials'. If this is not given, the current credentials will be used.
 
         Tip:
             The workflow input can be available in the workflow tasks. For example, if you have a Task with
@@ -373,7 +374,7 @@ class WorkflowExecutionAPI(APIClient):
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}",}))
+                ...         data={"workflow_data": "${workflow.input}"}))
 
         Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
@@ -443,12 +444,13 @@ class WorkflowExecutionAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.list(("my_workflow", "1"))
 
-            Get all workflow executions for workflows after last 24 hours:
+            Get all workflow executions from the last 24 hours:
 
                 >>> from cognite.client import CogniteClient
-                >>> from datetime import datetime, timedelta
+                >>> from cognite.client.utils import timestamp_to_ms
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.list(created_time_start=int((datetime.now() - timedelta(days=1)).timestamp() * 1000))
+                >>> res = client.workflows.executions.list(
+                ...     created_time_start=timestamp_to_ms("1d-ago"))
 
         """
         filter_: dict[str, Any] = {}
@@ -475,15 +477,16 @@ class WorkflowExecutionAPI(APIClient):
         )
 
     def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
-        """`cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
+        """`Cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
+
+        Note:
+            Cancelling a workflow will immediately cancel the `in_progress` tasks, but not their spawned work in
+            other services (like transformations and functions).
 
         Args:
             id (str): The server-generated id of the workflow execution.
             reason (str | None): The reason for the cancellation, this will be put within the execution's `reasonForIncompletion` field. It is defaulted to 'cancelled' if not provided.
 
-        Note:
-            Cancelling a workflow will immediately cancel the `in_progress` tasks, but not their spawned work in
-            other services (like transformations and functions).
 
         Returns:
             WorkflowExecution: The canceled workflow execution.
@@ -592,9 +595,7 @@ class WorkflowVersionAPI(APIClient):
     def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
         """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
-        Note this is an upsert endpoint, so if a workflow with the same version external id already exists, it will be updated.
-
-        Furthermore, if the workflow does not exist, it will be created.
+        Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 
         Args:
             version (WorkflowVersionUpsert): The workflow version to create or update.
@@ -793,7 +794,7 @@ class WorkflowAPI(APIClient):
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
         """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
-        Note this is an upsert endpoint, so if a workflow with the same external id already exists, it will be updated.
+        Note this is an upsert endpoint, so workflows that already exist will be updated, and new ones will be created.
 
         Args:
             workflow (WorkflowUpsert): The workflow to create or update.
@@ -804,7 +805,7 @@ class WorkflowAPI(APIClient):
 
         Examples:
 
-            Create workflow my workflow:
+            Create one workflow with external id "my-workflow":
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
@@ -880,11 +881,11 @@ class WorkflowAPI(APIClient):
 
         Examples:
 
-            Delete workflow my workflow:
+            Delete workflow with external_id "my_workflow":
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.workflows.delete("my workflow")
+                >>> client.workflows.delete("my_workflow")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
@@ -907,7 +908,7 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.list()
+                >>> res = client.workflows.list(limit=None)
         """
         return self._list(
             method="GET",
