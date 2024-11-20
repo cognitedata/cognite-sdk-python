@@ -776,6 +776,7 @@ class WorkflowAPI(APIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
         self.triggers = WorkflowTriggerAPI(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 1
+        self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 100
 
     @overload
@@ -805,17 +806,25 @@ class WorkflowAPI(APIClient):
         """Iterate all over workflows"""
         return self()
 
-    def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow:
-        """`Create a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
+    @overload
+    def upsert(self, workflow: WorkflowUpsert) -> Workflow: ...
+
+    @overload
+    def upsert(self, workflow: Sequence[WorkflowUpsert]) -> WorkflowList: ...
+
+    def upsert(
+        self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
+    ) -> Workflow | WorkflowList:
+        """`Create one or more workflow(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
 
         Note this is an upsert endpoint, so workflows that already exist will be updated, and new ones will be created.
 
         Args:
-            workflow (WorkflowUpsert): The workflow to create or update.
+            workflow (WorkflowUpsert | Sequence[WorkflowUpsert]): The workflow(s) to upsert.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
-            Workflow: The created workflow.
+            Workflow | WorkflowList: The created workflow(s).
 
         Examples:
 
@@ -824,14 +833,24 @@ class WorkflowAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> client = CogniteClient()
-                >>> res = client.workflows.upsert(WorkflowUpsert(external_id="my workflow", description="my workflow description"))
+                >>> wf = WorkflowUpsert(external_id="my-workflow", description="my workflow description")
+                >>> res = client.workflows.upsert(wf)
+
+            Create multiple workflows:
+
+                >>> wf2 = WorkflowUpsert(external_id="other", data_set_id=123)
+                >>> res = client.workflows.upsert([wf, wf2])
         """
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflows.")
 
-        response = self._post(
-            url_path=self._RESOURCE_PATH,
-            json={"items": [workflow.dump(camel_case=True)]},
+        assert_type(workflow, "workflow", [WorkflowUpsert, Sequence])
+
+        return self._create_multiple(
+            list_cls=WorkflowList,
+            resource_cls=Workflow,
+            items=workflow,
+            input_resource_cls=WorkflowUpsert,
         )
 
     @overload
