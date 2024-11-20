@@ -68,7 +68,6 @@ class JobsAPI(APIClient):
             Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
         self._warning.warn()
-
         return self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
