@@ -17,12 +17,12 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
 from cognite.client.data_classes.simulators import (
     SimulatorRoutineInputConstant,
     SimulatorRoutineInputTimeseries,
     SimulatorRoutineOutput,
 )
-from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
