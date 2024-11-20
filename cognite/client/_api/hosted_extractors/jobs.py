@@ -320,6 +320,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/logs",
             list_cls=JobLogsList,
             resource_cls=JobLogs,
             filter=filter_ or None,
