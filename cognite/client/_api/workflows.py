@@ -56,6 +56,10 @@ def wrap_workflow_ids(
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 1
+
     def upsert(
         self,
         workflow_trigger: WorkflowTriggerUpsert,
@@ -142,14 +146,11 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.upsert(workflow_trigger, client_credentials)
 
-    def delete(
-        self,
-        external_id: str,
-    ) -> None:
-        """`Delete a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+    def delete(self, external_id: str | SequenceNotStr[str]) -> None:
+        """`Delete one ore more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
         Args:
-            external_id (str): The external id of the trigger to delete.
+            external_id (str | SequenceNotStr[str]): The external id(s) of the trigger(s) to delete.
 
         Examples:
 
@@ -158,10 +159,14 @@ class WorkflowTriggerAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.delete("my_trigger")
+
+            Delete a list of triggers:
+
+                >>> client.workflows.triggers.delete(["my_trigger", "another_trigger"])
         """
-        self._post(
-            url_path=self._RESOURCE_PATH + "/delete",
-            json={"items": [{"externalId": external_id}]},
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            wrap_ids=True,
         )
 
     def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
