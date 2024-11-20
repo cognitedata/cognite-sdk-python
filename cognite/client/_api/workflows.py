@@ -219,7 +219,7 @@ class WorkflowTriggerAPI(APIClient):
         external_id: str,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerRunList:
-        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/listTriggerRuns>`_
+        """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
             external_id (str): The external id of the trigger to list runs for.
@@ -886,7 +886,7 @@ class WorkflowAPI(APIClient):
         return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more workflows with versions. <https://pr-2282.specs.preview.cogniteapp.com/20230101.json.html#tag/Workflows/operation/DeleteWorkflows>`_
+        """`Delete one or more workflows with versions. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
@@ -907,12 +907,13 @@ class WorkflowAPI(APIClient):
         )
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
-        """`List all workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/FetchAllWorkflows>`_
+        """`List workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/FetchAllWorkflows>`_
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+
         Returns:
-            WorkflowList: All workflows in the CDF project.
+            WorkflowList: Workflows in the CDF project.
 
         Examples:
 
