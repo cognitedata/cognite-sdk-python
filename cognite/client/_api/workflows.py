@@ -233,7 +233,7 @@ class WorkflowTriggerAPI(APIClient):
         """
         return self._list(
             method="GET",
-            url_path=self._RESOURCE_PATH + f"/{external_id}/history",
+            url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/history", external_id),
             resource_cls=WorkflowTriggerRun,
             list_cls=WorkflowTriggerRunList,
             limit=limit,
@@ -503,13 +503,8 @@ class WorkflowExecutionAPI(APIClient):
         """
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
-            json={
-                "reason": reason,
-            }
-            if reason
-            else {},
+            json={"reason": reason} if reason else {},
         )
-
         return WorkflowExecution._load(response.json())
 
     def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
