@@ -219,7 +219,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            # API uses isAsyncComplete and asyncComplete inconsistently:
+            # TODO: Fix: API uses isAsyncComplete and asyncComplete inconsistently:
             is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
         )
 
@@ -234,7 +234,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             "function": function,
         }
         if self.is_async_complete is not None:
-            output[("isAsyncComplete" if camel_case else "is_async_complete")] = self.is_async_complete
+            output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
 
 
@@ -1172,7 +1172,7 @@ class WorkflowVersionId:
         return self.as_tuple()
 
     @classmethod
-    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
+    def load(cls, resource: dict) -> Self:
         if "workflowExternalId" in resource:
             workflow_external_id = resource["workflowExternalId"]
         elif "externalId" in resource:
@@ -1213,7 +1213,7 @@ class WorkflowIds(UserList):
         return [wid.as_tuple() for wid in self]
 
     @classmethod
-    def load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
+    def load(cls, resource: Any) -> Self:
         workflow_ids: Sequence[WorkflowVersionId]
         if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
             workflow_ids = [WorkflowVersionId(*resource)]
@@ -1230,7 +1230,7 @@ class WorkflowIds(UserList):
         elif isinstance(resource, Sequence) and resource and isinstance(resource[0], str):
             workflow_ids = [WorkflowVersionId(workflow_external_id=x) for x in resource]
         else:
-            raise ValueError("Invalid input to WorkflowIds")
+            raise ValueError("Invalid input to WorkflowIds.load")
         return cls(workflow_ids)
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
@@ -1587,8 +1587,6 @@ class WorkflowTriggerRun(CogniteResource):
 
 
 class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun], ExternalIDTransformerMixin):
-    """
-    This class represents a list of workflow trigger runs.
-    """
+    """This class represents a list of workflow trigger runs."""
 
     _RESOURCE = WorkflowTriggerRun
