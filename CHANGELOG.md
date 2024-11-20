@@ -21,7 +21,7 @@ Changes are grouped as follows
 ### Fixed
 - Fixed wrong url paths for `client.hosted_extractors.jobs.[list_logs, list_metrics]`
 
-## [7.67.2] - 2023-11-19
+## [7.67.2] - 2024-11-19
 ### Added
 - Instance ID is now supported for DatapointsSubscriptionsAPI (`client.time_series.subscriptions`)
 
