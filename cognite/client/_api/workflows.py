@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, MutableSequence
+from collections.abc import Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
@@ -35,6 +35,7 @@ from cognite.client.utils._identifier import (
     WorkflowVersionIdentifierSequence,
 )
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -545,6 +546,7 @@ class WorkflowVersionAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 100
 
     @overload
@@ -592,38 +594,48 @@ class WorkflowVersionAPI(APIClient):
         """Iterate all over workflow versions"""
         return self()
 
-    def upsert(self, version: WorkflowVersionUpsert, mode: Literal["replace"] = "replace") -> WorkflowVersion:
-        """`Create a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
+    @overload
+    def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
+
+    @overload
+    def upsert(self, version: Sequence[WorkflowVersionUpsert]) -> WorkflowVersionList: ...
+
+    def upsert(
+        self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
+    ) -> WorkflowVersion | WorkflowVersionList:
+        """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
 
         Note this is an upsert endpoint, so workflow versions that already exist will be updated, and new ones will be created.
 
         Args:
-            version (WorkflowVersionUpsert): The workflow version to create or update.
+            version (WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert]): The workflow version(s) to upsert.
             mode (Literal['replace']): This is not an option for the API, but is included here to document that the upserts are always done in replace mode.
 
         Returns:
-            WorkflowVersion: The created workflow version.
+            WorkflowVersion | WorkflowVersionList: The created workflow version(s).
 
         Examples:
 
-            Create workflow version with one Function task:
+            Create one workflow version with a single Function task:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import WorkflowVersionUpsert, WorkflowDefinitionUpsert, WorkflowTask, FunctionTaskParameters
+                >>> from cognite.client.data_classes import (
+                ...     WorkflowVersionUpsert, WorkflowDefinitionUpsert,
+                ...     WorkflowTask, FunctionTaskParameters,
+                ... )
                 >>> client = CogniteClient()
+                >>> function_task = WorkflowTask(
+                ...     external_id="my_workflow-task1",
+                ...     parameters=FunctionTaskParameters(
+                ...         external_id="my_fn_xid",
+                ...         data={"a": 1, "b": 2},
+                ...     ),
+                ... )
                 >>> new_version = WorkflowVersionUpsert(
                 ...    workflow_external_id="my_workflow",
                 ...    version="1",
                 ...    workflow_definition=WorkflowDefinitionUpsert(
-                ...        tasks=[
-                ...            WorkflowTask(
-                ...                external_id="my_workflow-task1",
-                ...                parameters=FunctionTaskParameters(
-                ...                    external_id="cdf_deployed_function:my_function",
-                ...                    data={"a": 1, "b": 2},
-                ...                ),
-                ...            )
-                ...        ],
+                ...        tasks=[function_task],
                 ...        description="This workflow has one step",
                 ...    ),
                 ... )
@@ -632,12 +644,14 @@ class WorkflowVersionAPI(APIClient):
         if mode != "replace":
             raise ValueError("Only replace mode is supported for upserting workflow versions.")
 
-        response = self._post(
-            url_path=self._RESOURCE_PATH,
-            json={"items": [version.dump(camel_case=True)]},
-        )
+        assert_type(version, "workflow version", [WorkflowVersionUpsert, Sequence])
 
-        return WorkflowVersion._load(response.json()["items"][0])
+        return self._create_multiple(
+            list_cls=WorkflowVersionList,
+            resource_cls=WorkflowVersion,
+            items=version,
+            input_resource_cls=WorkflowVersionUpsert,
+        )
 
     def delete(
         self,
