@@ -172,7 +172,7 @@ class WorkflowTriggerAPI(APIClient):
             This method is deprecated, use '.list' instead. It will be removed in the next major version.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             WorkflowTriggerList: The trigger list.
@@ -196,13 +196,13 @@ class WorkflowTriggerAPI(APIClient):
     def get_trigger_run_history(
         self,
         external_id: str,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> WorkflowTriggerRunList:
         """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
             external_id (str): The external id of the trigger to list runs for.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             WorkflowTriggerRunList: The requested trigger runs.
@@ -407,7 +407,7 @@ class WorkflowExecutionAPI(APIClient):
         created_time_start: int | None = None,
         created_time_end: int | None = None,
         statuses: WorkflowStatus | MutableSequence[WorkflowStatus] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
         """`List workflow executions in the project. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ListWorkflowExecutions>`_
 
@@ -416,8 +416,8 @@ class WorkflowExecutionAPI(APIClient):
             created_time_start (int | None): Filter out executions that was created before this time. Time is in milliseconds since epoch.
             created_time_end (int | None): Filter out executions that was created after this time. Time is in milliseconds since epoch.
             statuses (WorkflowStatus | MutableSequence[WorkflowStatus] | None): Workflow status or list of workflow statuses to filter on.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
-                        to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
         Returns:
             WorkflowExecutionList: The requested workflow executions.
 
@@ -690,13 +690,13 @@ class WorkflowVersionAPI(APIClient):
     def list(
         self,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> WorkflowVersionList:
         """`List workflow versions in the project <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/ListWorkflowVersions>`_
 
         Args:
             workflow_version_ids (WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None): Workflow version id or list of workflow version ids to filter on.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
 
         Returns:
             WorkflowVersionList: The requested workflow versions.
