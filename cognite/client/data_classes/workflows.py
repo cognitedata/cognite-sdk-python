@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -1160,8 +1161,15 @@ class WorkflowVersionId:
     workflow_external_id: str
     version: str | None = None
 
-    def as_primitive(self) -> tuple[str, str | None]:
+    def as_tuple(self) -> tuple[str, str | None]:
         return self.workflow_external_id, self.version
+
+    def as_primitive(self) -> tuple[str, str | None]:
+        warnings.warn(
+            "as_primitive() is deprecated, use as_tuple instead. Will be removed in the next major release.",
+            DeprecationWarning,
+        )
+        return self.as_tuple()
 
     @classmethod
     def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
@@ -1200,6 +1208,9 @@ class WorkflowIds(UserList):
                     f"'{type(WorkflowVersionId).__name__}', not '{type(workflow_id)}'."
                 )
         super().__init__(workflow_ids)
+
+    def as_tuples(self) -> list[tuple[str, str | None]]:
+        return [wid.as_tuple() for wid in self]
 
     @classmethod
     def load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
