@@ -124,39 +124,17 @@ class WorkflowTriggerAPI(APIClient):
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
-    # TODO: remove method and associated data classes in next release
+    # TODO: remove method and associated data classes in next major release
     def create(
         self,
         workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`[DEPRECATED] Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
+        """`Create or update a trigger for a workflow.
 
-        This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.
+        .. admonition:: Deprecation Warning
 
-        Args:
-            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specification.
-            client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
-
-        Returns:
-            WorkflowTrigger: The created or updated workflow trigger specification.
-
-        Examples:
-
-            Create or update a scheduled trigger for a workflow:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTriggerCreate, WorkflowScheduledTriggerRule
-                >>> client = CogniteClient()
-                >>> client.workflows.triggers.create(
-                ...     WorkflowTriggerCreate(
-                ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
-                ...         workflow_external_id="my_workflow",
-                ...         workflow_version="1",
-                ...         input={"a": 1, "b": 2},
-                ...     )
-                ... )
+            This method is deprecated, use '.upsert' instead. It will be removed in the next major version.
         """
         warnings.warn(
             "This method is deprecated, use '.upsert' instead. It will be removed in the next major release.",
@@ -186,11 +164,12 @@ class WorkflowTriggerAPI(APIClient):
             json={"items": [{"externalId": external_id}]},
         )
 
-    def get_triggers(
-        self,
-        limit: int = DEFAULT_LIMIT_READ,
-    ) -> WorkflowTriggerList:
-        """`Retrieve the trigger list. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+    def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
+        """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
+
+        .. admonition:: Deprecation Warning
+
+            This method is deprecated, use '.list' instead. It will be removed in the next major version.
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -340,18 +319,11 @@ class WorkflowExecutionAPI(APIClient):
         metadata: dict | None = None,
         client_credentials: ClientCredentials | None = None,
     ) -> WorkflowExecution:
-        """`[DEPRECATED]Trigger a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/TriggerRunOfSpecificVersionOfWorkflow>`_
+        """`Trigger a workflow execution.
 
-        This method is deprecated, use '.run' instead. It will be completely removed October 2024.
+        .. admonition:: Deprecation Warning
 
-        Args:
-            workflow_external_id (str): External id of the workflow.
-            version (str): Version of the workflow.
-            input (dict | None): The input to the workflow execution. This will be available for tasks that have specified it as an input with the string "${workflow.input}" See tip below for more information.
-            metadata (dict | None): Application specific metadata. Keys have a maximum length of 32 characters, values a maximum of 255, and there can be a maximum of 10 key-value pairs.
-            client_credentials (ClientCredentials | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
-        Returns:
-            WorkflowExecution: No description.
+            This method is deprecated, use '.run' instead. It will be completely removed in the next major version.
         """
         warnings.warn(
             "This methods has been deprecated, use '.run' instead. It will completely removed in the next major release.",
