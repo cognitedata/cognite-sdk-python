@@ -28,7 +28,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import at_least_one_is_not_none, interpolate_and_url_encode, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import (
     IdentifierSequence,
@@ -454,6 +454,12 @@ class WorkflowExecutionAPI(APIClient):
                 ...     created_time_start=timestamp_to_ms("1d-ago"))
 
         """
+        # Passing at least one filter criterion is required:
+        if not at_least_one_is_not_none(workflow_version_ids, created_time_start, created_time_end, statuses):
+            raise ValueError(
+                "At least one of 'workflow_version_ids', 'created_time_start', "
+                "'created_time_end', 'statuses' must be provided."
+            )
         filter_: dict[str, Any] = {}
         if workflow_version_ids is not None:
             filter_["workflowFilters"] = WorkflowIds.load(workflow_version_ids).dump(
