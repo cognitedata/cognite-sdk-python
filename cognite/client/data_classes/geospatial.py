@@ -150,7 +150,7 @@ class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTran
     _RESOURCE = FeatureTypeWrite
 
 
-class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType]):
+class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType], ExternalIDTransformerMixin):
     _RESOURCE = FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:

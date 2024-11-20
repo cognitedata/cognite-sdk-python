@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
+    InternalIdTransformerMixin,
     UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -1041,7 +1042,7 @@ class WorkflowExecution(CogniteResource):
         )
 
 
-class WorkflowExecutionList(CogniteResourceList[WorkflowExecution]):
+class WorkflowExecutionList(CogniteResourceList[WorkflowExecution], InternalIdTransformerMixin):
     """
     This class represents a list of workflow executions.
     """
@@ -1500,11 +1501,13 @@ class WorkflowTrigger(WorkflowTriggerCore):
         )
 
 
-class WorkflowTriggerUpsertList(CogniteResourceList[WorkflowTriggerUpsert]):
+class WorkflowTriggerUpsertList(CogniteResourceList[WorkflowTriggerUpsert], ExternalIDTransformerMixin):
     _RESOURCE = WorkflowTriggerUpsert
 
 
-class WorkflowTriggerList(WriteableCogniteResourceList[WorkflowTriggerUpsert, WorkflowTrigger]):
+class WorkflowTriggerList(
+    WriteableCogniteResourceList[WorkflowTriggerUpsert, WorkflowTrigger], ExternalIDTransformerMixin
+):
     """
     This class represents a list of workflow triggers.
     """
@@ -1568,7 +1571,7 @@ class WorkflowTriggerRun(CogniteResource):
         )
 
 
-class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun]):
+class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun], ExternalIDTransformerMixin):
     """
     This class represents a list of workflow trigger runs.
     """
