@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResponse,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    InternalIdTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -528,7 +529,9 @@ class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
     _RESOURCE = FunctionScheduleWrite
 
 
-class FunctionSchedulesList(WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule]):
+class FunctionSchedulesList(
+    WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule], InternalIdTransformerMixin
+):
     _RESOURCE = FunctionSchedule
 
     def as_write(self) -> FunctionScheduleWriteList:
@@ -631,7 +634,7 @@ class FunctionCall(CogniteResource):
             time.sleep(1.0)
 
 
-class FunctionCallList(CogniteResourceList[FunctionCall]):
+class FunctionCallList(CogniteResourceList[FunctionCall], InternalIdTransformerMixin):
     _RESOURCE = FunctionCall
 
 
