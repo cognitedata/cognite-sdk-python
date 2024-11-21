@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.67.4] - 2024-11-21
+### Fixed
+- Creating a `CogniteClient` no longer gives a `UserWarning` for private link projects.
+
 ## [7.67.3] - 2024-11-20
 ### Fixed
 - Fixed wrong url paths for `client.hosted_extractors.jobs.[list_logs, list_metrics]`
