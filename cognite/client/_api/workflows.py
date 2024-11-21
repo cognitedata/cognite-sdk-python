@@ -897,12 +897,12 @@ class WorkflowAPI(APIClient):
 
         Examples:
 
-            Create one workflow with external id "my-workflow":
+            Create one workflow with external id "my_workflow":
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowUpsert
                 >>> client = CogniteClient()
-                >>> wf = WorkflowUpsert(external_id="my-workflow", description="my workflow description")
+                >>> wf = WorkflowUpsert(external_id="my_workflow", description="my workflow description")
                 >>> res = client.workflows.upsert(wf)
 
             Create multiple workflows:
@@ -942,11 +942,11 @@ class WorkflowAPI(APIClient):
 
         Examples:
 
-            Retrieve workflow with external ID "my-workflow":
+            Retrieve workflow with external ID "my_workflow":
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> workflow = client.workflows.retrieve("my-workflow")
+                >>> workflow = client.workflows.retrieve("my_workflow")
 
             Retrieve multiple workflows:
 
