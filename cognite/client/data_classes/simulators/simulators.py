@@ -213,6 +213,20 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        inputs = []
+        outputs = []
+
+        if resource.get("inputs", None) is not None:
+            inputs = [
+                SimulatorRoutineInputConstant._load(input_, cognite_client)
+                if "value" in input_
+                else SimulatorRoutineInputTimeseries._load(input_, cognite_client)
+                for input_ in resource["inputs"]
+            ]
+
+        if resource.get("outputs", None) is not None:
+            outputs = [SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]]
+
         return cls(
             schedule=SimulatorRoutineSchedule._load(resource["schedule"], cognite_client),
             data_sampling=SimulatorRoutineDataSampling._load(resource["dataSampling"], cognite_client),
@@ -223,13 +237,8 @@ class SimulatorRoutineConfiguration(CogniteObject):
                 SimulatorRoutineSteadyStateDetectionEnabled._load(detection_, cognite_client)
                 for detection_ in resource["steadyStateDetection"]
             ],
-            inputs=[
-                SimulatorRoutineInputConstant._load(input_, cognite_client)
-                if "value" in input_
-                else SimulatorRoutineInputTimeseries._load(input_, cognite_client)
-                for input_ in resource["inputs"]
-            ],
-            outputs=[SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]],
+            inputs=inputs,
+            outputs=outputs,
         )
 
 
@@ -324,7 +333,7 @@ class SimulatorModelType(CogniteObject):
         )
 
     @classmethod
-    def _load_list_or_dict(
+    def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
     ) -> SimulatorModelType | list[SimulatorModelType]:
         if isinstance(resource, list):
@@ -348,7 +357,7 @@ class SimulatorQuantity(CogniteObject):
         )
 
     @classmethod
-    def _load_list_or_dict(
+    def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
     ) -> SimulatorQuantity | list[SimulatorQuantity]:
         if isinstance(resource, list):
@@ -402,7 +411,7 @@ class SimulatorStep(CogniteObject):
         )
 
     @classmethod
-    def _load_list_or_dict(
+    def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
     ) -> SimulatorStep | list[SimulatorStep]:
         if isinstance(resource, list):
@@ -472,13 +481,13 @@ class Simulator(CogniteResource):
             file_extension_types=resource["fileExtensionTypes"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            model_types=SimulatorModelType._load_list_or_dict(resource["modelTypes"], cognite_client)
+            model_types=SimulatorModelType._load_list(resource["modelTypes"], cognite_client)
             if "modelTypes" in resource
             else None,
-            step_fields=SimulatorStep._load_list_or_dict(resource["stepFields"], cognite_client)
+            step_fields=SimulatorStep._load_list(resource["stepFields"], cognite_client)
             if "stepFields" in resource
             else None,
-            unit_quantities=SimulatorQuantity._load_list_or_dict(resource["unitQuantities"], cognite_client)
+            unit_quantities=SimulatorQuantity._load_list(resource["unitQuantities"], cognite_client)
             if "unitQuantities" in resource
             else None,
         )
@@ -673,6 +682,10 @@ class SimulatorRoutineRevision(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        script = []
+
+        if resource.get("script", None) is not None:
+            script = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource["script"]]
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -685,7 +698,7 @@ class SimulatorRoutineRevision(CogniteResource):
             version_number=resource["versionNumber"],
             created_time=resource["createdTime"],
             configuration=SimulatorRoutineConfiguration._load(resource["configuration"], cognite_client),
-            script=[SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource["script"]],
+            script=script,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

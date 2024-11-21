@@ -1064,7 +1064,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
 
         if isinstance(instance_id, InstanceId):
             instance_id = instance_id.as_tuple()
-        return self._instance_id_to_item.get(instance_id)  # type: ignore [arg-type]
+        return self._instance_id_to_item.get(instance_id)
 
     def extend(self, other: Iterable[Any]) -> None:
         other_res_list = type(self)(other)  # See if we can accept the types

@@ -113,7 +113,6 @@ class HTTPClient:
         self,
         method: str,
         url: str,
-        accept: str,
         data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
         headers: MutableMapping[str, Any] | None = None,
         timeout: float | None = None,
@@ -122,7 +121,7 @@ class HTTPClient:
         allow_redirects: bool = False,
     ) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
-        accepts_json = accept == "application/json"
+        accepts_json = (headers or {}).get("accept") == "application/json"
         is_auto_retryable = False
         while True:
             try:

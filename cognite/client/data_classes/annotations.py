@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -370,7 +371,7 @@ class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
     _RESOURCE = AnnotationWrite
 
 
-class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation]):
+class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation], IdTransformerMixin):
     _RESOURCE = Annotation
 
     def as_write(self) -> AnnotationWriteList:

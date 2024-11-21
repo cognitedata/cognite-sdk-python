@@ -25,7 +25,7 @@ class SimulatorRoutinesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
 
-    def list_routines(
+    def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
@@ -63,7 +63,7 @@ class SimulatorRoutinesAPI(APIClient):
             else None,  # fix this
         )
 
-    def list_routine_revisions(
+    def list_revisions(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineRevisionsList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
@@ -83,7 +83,7 @@ class SimulatorRoutinesAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_routine_revisions()
+                    >>> res = client.simulators.list_revisions()
 
         """
         self._warning.warn()
@@ -101,7 +101,7 @@ class SimulatorRoutinesAPI(APIClient):
             else None,  # fix this
         )
 
-    def retrieve_routine_revision(
+    def retrieve_revision(
         self, id: int | None = None, external_id: str | None = None
     ) -> SimulatorRoutineRevision | None:
         """`Retrieve Simulator Routine Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
@@ -121,7 +121,7 @@ class SimulatorRoutinesAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.retrieve_routine_revision()
+                    >>> res = client.simulators.retrieve_revision()
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()

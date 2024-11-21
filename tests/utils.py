@@ -340,7 +340,7 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments["time_series_ids"] = ["my_timeseries1", "my_timeseries2"]
             else:
                 keyword_arguments.pop("filter", None)
-        elif resource_cls is Query:
+        elif issubclass(resource_cls, Query):
             # The fake generator makes all dicts from 1-3 values, we need to make sure that the query is valid
             # by making sure that the list of equal length, so we make both to length 1.
             with_key, with_value = next(iter(keyword_arguments["with_"].items()))

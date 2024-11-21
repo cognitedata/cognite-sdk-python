@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
+    IdTransformerMixin,
     InternalIdTransformerMixin,
     NameTransformerMixin,
     WriteableCogniteResource,
@@ -321,7 +322,11 @@ class SecurityCategoryWriteList(CogniteResourceList[SecurityCategoryWrite], Name
     _RESOURCE = SecurityCategoryWrite
 
 
-class SecurityCategoryList(WriteableCogniteResourceList[SecurityCategoryWrite, SecurityCategory], NameTransformerMixin):
+class SecurityCategoryList(
+    WriteableCogniteResourceList[SecurityCategoryWrite, SecurityCategory],
+    InternalIdTransformerMixin,
+    NameTransformerMixin,
+):
     _RESOURCE = SecurityCategory
 
     def as_write(self) -> SecurityCategoryWriteList:
@@ -459,7 +464,7 @@ class Session(CogniteResource):
         self.client_id = client_id
 
 
-class SessionList(CogniteResourceList[Session]):
+class SessionList(CogniteResourceList[Session], IdTransformerMixin):
     _RESOURCE = Session
 
 

@@ -63,11 +63,11 @@ class WorkflowTriggerAPI(APIClient):
         """`Create or update a trigger for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/CreateOrUpdateTriggers>`_
 
         Args:
-            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerUpsert): The workflow trigger specification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
-            WorkflowTrigger: The created  or updated workflow trigger specification.
+            WorkflowTrigger: The created or updated workflow trigger specification.
 
         Examples:
 
@@ -83,8 +83,34 @@ class WorkflowTriggerAPI(APIClient):
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
+                ...         metadata={"key": "value"},
                 ...     )
                 ... )
+
+            Create or update a data modeling trigger for a workflow:
+                >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
+                >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> from cognite.client.data_classes.filters import Equals
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowDataModelingTriggerRule(
+                ...             data_modeling_query=WorkflowTriggerDataModelingQuery(
+                ...                 with_={"timeseries": NodeResultSetExpression(filter=Equals(view_id.as_property_ref("name"), value="my_name"))},
+                ...                 select={"timeseries": Select([SourceSelector(view_id, ["name"])])},
+                ...             ),
+                ...             batch_size=500,
+                ...             batch_timeout=300,
+                ...         ),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...     )
+                ... )
+
         """
         nonce = create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
@@ -108,7 +134,7 @@ class WorkflowTriggerAPI(APIClient):
         This method is deprecated, use '.upsert' instead. It will be completely removed October 2024.
 
         Args:
-            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specitification.
+            workflow_trigger (WorkflowTriggerCreate): The workflow trigger specification.
             client_credentials (ClientCredentials | dict | None): Specific credentials that should be used to trigger the workflow execution. When passed will take precedence over the current credentials.
 
         Returns:
@@ -482,7 +508,7 @@ class WorkflowExecutionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.workflows.executions.run("foo", "1")
-                >>> client.workflows.executions.cancel(id="foo", reason="test cancelation")
+                >>> client.workflows.executions.cancel(id="foo", reason="test cancellation")
         """
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{id}/cancel",
