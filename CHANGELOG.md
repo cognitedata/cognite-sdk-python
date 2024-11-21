@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.67.4] - 2023-11-21
+## [7.67.4] - 2024-11-21
 ### Fixed
 - Creating a `CogniteClient` no longer gives a `UserWarning` for private link projects.
 
