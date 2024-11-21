@@ -149,7 +149,7 @@ class WorkflowTriggerAPI(APIClient):
         return self.upsert(workflow_trigger, client_credentials)
 
     def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """`Delete one ore more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
+        """`Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): The external id(s) of the trigger(s) to delete.
