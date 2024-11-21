@@ -556,6 +556,7 @@ class WorkflowVersionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
+        self._RETRIEVE_LIMIT = 1
         self._DELETE_LIMIT = 100
 
     @overload
@@ -696,34 +697,91 @@ class WorkflowVersionAPI(APIClient):
             wrap_ids=True,
         )
 
-    def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
+    def retrieve(
+        self,
+        workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str,
+        version: str | None = None,
+        *,
+        ignore_unknown_ids: bool = False,
+    ) -> WorkflowVersion | WorkflowVersionList | None:
         """`Retrieve a workflow version. <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/GetSpecificVersion>`_
 
         Args:
-            workflow_external_id (str): External id of the workflow.
-            version (str): Version of the workflow.
+            workflow_external_id (WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str): External id of the workflow.
+            version (str | None): Version of the workflow.
+            ignore_unknown_ids (bool): When requesting multiple, whether to ignore external IDs that are not found rather than throwing an exception.
 
         Returns:
-            WorkflowVersion | None: The requested workflow version if it exists, None otherwise.
+            WorkflowVersion | WorkflowVersionList | None: If a single identifier is specified: the requested workflow version, or None if it does not exist. If several ids are specified: the requested workflow versions.
 
         Examples:
 
-            Retrieve workflow version 1 of workflow my workflow:
+            Retrieve workflow version 'v1' of workflow "my_workflow":
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> client = CogniteClient()
-                >>> res = client.workflows.versions.retrieve("my workflow", "1")
-        """
-        try:
-            response = self._get(
-                url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", workflow_external_id, version)
-            )
-        except CogniteAPIError as e:
-            if e.code == 404:
-                return None
-            raise e
+                >>> res = client.workflows.versions.retrieve(WorkflowVersionId("my_workflow", "v1"))
 
-        return WorkflowVersion._load(response.json())
+            Retrieve multiple workflow versions and ignore unknown:
+
+                >>> res = client.workflows.versions.retrieve(
+                ...     [WorkflowVersionId("my_workflow", "v1"), WorkflowVersionId("other", "v3.2")],
+                ...     ignore_unknown_ids=True,
+                ... )
+                >>> # A sequence of tuples is also accepted:
+                >>> res = client.workflows.versions.retrieve([("my_workflow", "v1"), ("other", "v3.2")])
+
+            DEPRECATED: You can also pass workflow_external_id and version as separate arguments:
+
+                >>> res = client.workflows.versions.retrieve("my_workflow", "v1")
+
+        """
+        match workflow_external_id, version:
+            case str(), str():
+                warnings.warn(
+                    "This usage is deprecated, please pass one or more `WorkflowVersionId` instead.'",
+                    DeprecationWarning,
+                )
+                workflow_external_id = WorkflowVersionId(workflow_external_id, version)
+            case str(), None:
+                raise TypeError(
+                    "You must specify which 'version' of the workflow to retrieve. Deprecation Warning: This usage is deprecated, please pass "
+                    "one or more `WorkflowVersionId` instead."
+                )
+            case WorkflowVersionId() | Sequence(), str():
+                warnings.warn("Argument 'version' is ignored when passing one or more 'WorkflowVersionId'", UserWarning)
+
+        # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
+        def get_single(wf_xid: WorkflowVersionId, ignore_missing: bool = ignore_unknown_ids) -> WorkflowVersion | None:
+            try:
+                response = self._get(
+                    url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", *wf_xid.as_tuple())
+                )
+                return WorkflowVersion._load(response.json())
+            except CogniteAPIError as e:
+                if ignore_missing and e.code == 404:
+                    return None
+                raise
+
+        # WorkflowVersionId doesn't require 'version' to be given, so we raise in case it is missing:
+        given_wf_ids = WorkflowIds.load(workflow_external_id)
+        if any(wf_id.version is None for wf_id in given_wf_ids):
+            raise ValueError("Version must be specified for all workflow version IDs.")
+
+        is_single = (
+            isinstance(workflow_external_id, WorkflowVersionId)
+            or isinstance(workflow_external_id, tuple)
+            and len(given_wf_ids) == 1
+        )
+        if is_single:
+            return get_single(given_wf_ids[0], ignore_missing=True)
+
+        # Not really a point in splitting into chunks when chunk_size is 1, but...
+        tasks = list(map(tuple, split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)))
+        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+        return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
     def list(
         self,
@@ -905,7 +963,7 @@ class WorkflowAPI(APIClient):
             except CogniteAPIError as e:
                 if ignore_missing and e.code == 404:
                     return None
-                raise e
+                raise
 
         if isinstance(external_id, str):
             return get_single(external_id, ignore_missing=True)

@@ -1031,10 +1031,7 @@ class WorkflowExecution(CogniteResource):
         self.metadata = metadata
 
     def as_workflow_id(self) -> WorkflowVersionId:
-        return WorkflowVersionId(
-            workflow_external_id=self.workflow_external_id,
-            version=self.version,
-        )
+        return WorkflowVersionId(workflow_external_id=self.workflow_external_id, version=self.version)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
@@ -1187,25 +1184,20 @@ class WorkflowVersionId:
         else:
             raise ValueError("Invalid input to WorkflowVersionId.load")
 
-        return cls(
-            workflow_external_id=workflow_external_id,
-            version=resource.get("version"),
-        )
+        return cls(workflow_external_id=workflow_external_id, version=resource.get("version"))
 
     def dump(self, camel_case: bool = True, as_external_id_key: bool = False) -> dict[str, Any]:
         if as_external_id_key:
-            output: dict[str, Any] = {("externalId" if camel_case else "external_id"): self.workflow_external_id}
+            output: dict[str, Any] = {"externalId" if camel_case else "external_id": self.workflow_external_id}
         else:
-            output = {("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id}
+            output = {"workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id}
         if self.version:
             output["version"] = self.version
         return output
 
 
 class WorkflowIds(UserList):
-    """
-    This class represents a list of Workflow Version Identifiers.
-    """
+    """This class represents a list of Workflow Version Identifiers."""
 
     def __init__(self, workflow_ids: Collection[WorkflowVersionId]) -> None:
         for workflow_id in workflow_ids:
@@ -1230,12 +1222,16 @@ class WorkflowIds(UserList):
             workflow_ids = [WorkflowVersionId(workflow_external_id=resource)]
         elif isinstance(resource, dict):
             workflow_ids = [WorkflowVersionId.load(resource)]
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], tuple):
-            workflow_ids = [WorkflowVersionId(*x) for x in resource]
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], WorkflowVersionId):
-            workflow_ids = resource
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], str):
-            workflow_ids = [WorkflowVersionId(workflow_external_id=x) for x in resource]
+        elif isinstance(resource, Sequence) and resource:
+            workflow_ids = []
+            for wf in resource:
+                match wf:
+                    case tuple():
+                        workflow_ids.append(WorkflowVersionId(*wf))
+                    case str():
+                        workflow_ids.append(WorkflowVersionId(workflow_external_id=wf))
+                    case _:
+                        workflow_ids.append(wf)
         else:
             raise ValueError("Invalid input to WorkflowIds.load")
         return cls(workflow_ids)
