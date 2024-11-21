@@ -920,6 +920,8 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_external_id (str): The external ID of the workflow.
         version (str): The version of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -927,12 +929,13 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_external_id: str,
         version: str,
         workflow_definition: WorkflowDefinition,
+        created_time: int,
+        last_updated_time: int,
     ) -> None:
-        super().__init__(
-            workflow_external_id=workflow_external_id,
-            version=version,
-        )
+        super().__init__(workflow_external_id=workflow_external_id, version=version)
         self.workflow_definition = workflow_definition
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
@@ -941,13 +944,17 @@ class WorkflowVersion(WorkflowVersionCore):
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
             workflow_definition=WorkflowDefinition._load(workflow_definition),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            "workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id,
             "version": self.version,
-            ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
+            "workflowDefinition" if camel_case else "workflow_definition": self.workflow_definition.dump(camel_case),
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
         }
 
     def as_write(self) -> WorkflowVersionUpsert:
