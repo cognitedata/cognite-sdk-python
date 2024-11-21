@@ -136,7 +136,7 @@ class WorkflowTriggerAPI(APIClient):
         workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | dict | None = None,
     ) -> WorkflowTrigger:
-        """`Create or update a trigger for a workflow.
+        """Create or update a trigger for a workflow.
 
         .. admonition:: Deprecation Warning
 
@@ -295,10 +295,7 @@ class WorkflowTaskAPI(APIClient):
         body: dict[str, Any] = {"status": status.upper()}
         if output is not None:
             body["output"] = output
-        response = self._post(
-            url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
-            json=body,
-        )
+        response = self._post(url_path=f"{self._RESOURCE_PATH}/{task_id}/update", json=body)
         return WorkflowTaskExecution.load(response.json())
 
 
@@ -755,13 +752,15 @@ class WorkflowVersionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> client = CogniteClient()
-                >>> res = client.workflows.versions.list([WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+                >>> res = client.workflows.versions.list(
+                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
+                >>> res = client.workflows.versions.list(
+                ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
         return self._list(
