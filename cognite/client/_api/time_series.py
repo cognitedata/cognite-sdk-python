@@ -135,7 +135,7 @@ class TimeSeriesAPI(APIClient):
             unit (str | None): Unit of the time series.
             unit_external_id (str | None): Filter on unit external ID.
             unit_quantity (str | None): Filter on unit quantity.
-            is_string (bool | None): Whether the time series is an string time series.
+            is_string (bool | None): Whether the time series is a string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
             asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.
@@ -830,7 +830,7 @@ class TimeSeriesAPI(APIClient):
             unit (str | None): Unit of the time series.
             unit_external_id (str | None): Filter on unit external ID.
             unit_quantity (str | None): Filter on unit quantity.
-            is_string (bool | None): Whether the time series is an string time series.
+            is_string (bool | None): Whether the time series is a string time series.
             is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int] | None): List time series related to these assets.
             asset_external_ids (SequenceNotStr[str] | None): List time series related to these assets.

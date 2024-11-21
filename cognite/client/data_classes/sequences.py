@@ -842,7 +842,7 @@ class SequenceData(SequenceRows):
         )
 
 
-class SequenceRowsList(CogniteResourceList[SequenceRows]):
+class SequenceRowsList(CogniteResourceList[SequenceRows], IdTransformerMixin):
     _RESOURCE = SequenceRows
 
     def __str__(self) -> str:

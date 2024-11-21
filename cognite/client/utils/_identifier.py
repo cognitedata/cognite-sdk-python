@@ -16,6 +16,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Self
+
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -31,13 +33,16 @@ class InstanceId:
         return {"space": self.space, "externalId" if camel_case else "external_id": self.external_id}
 
     @classmethod
-    def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
+    def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):
             return data
-        if "externalId" in data:
-            return cls(space=data["space"], external_id=data["externalId"])
-        if "external_id" in data:
-            return cls(space=data["space"], external_id=data["external_id"])
+        elif isinstance(data, tuple) and len(data) == 2:
+            return cls(*data)
+        elif isinstance(data, dict):
+            if "externalId" in data:
+                return cls(space=data["space"], external_id=data["externalId"])
+            if "external_id" in data:
+                return cls(space=data["space"], external_id=data["external_id"])
         raise KeyError(f"Cannot load {data} into {cls}, missing 'externalId' or 'external_id' key")
 
     @property
@@ -69,13 +74,20 @@ class Identifier(Generic[T_ID]):
         self.__value: T_ID = value
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, Identifier) and self.__value == other.__value
+        if isinstance(other, Identifier):
+            return self.__value == other.__value
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash(self.__value)
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.__value!r} [{self.name(camel_case=False)}])"
+
     @classmethod
-    def of_either(cls, id: int | None, external_id: str | None, instance_id: InstanceId | None = None) -> Identifier:
+    def of_either(
+        cls, id: int | None, external_id: str | None, instance_id: InstanceId | tuple[str, str] | None = None
+    ) -> Identifier:
         if id is external_id is instance_id is None:
             raise ValueError("Exactly one of id, external id, or instance_id must be specified, got neither")
         elif id is not None:
@@ -91,7 +103,7 @@ class Identifier(Generic[T_ID]):
             elif not isinstance(external_id, str):
                 raise TypeError(f"Invalid external_id, expected str, got {type(external_id)}")
         elif instance_id is not None:
-            if isinstance(instance_id, dict):
+            if isinstance(instance_id, dict | tuple):
                 instance_id = InstanceId.load(instance_id)
             if not isinstance(instance_id, InstanceId):
                 raise TypeError(f"Invalid instance_id, expected InstanceId, got {type(instance_id)}")
@@ -134,7 +146,7 @@ class Identifier(Generic[T_ID]):
 
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         if isinstance(self.__value, InstanceId):
-            return {"instanceId": self.__value.dump(camel_case=camel_case, include_instance_type=False)}  # type: ignore[dict-item]
+            return {self.name(camel_case): self.__value.dump(camel_case=camel_case, include_instance_type=False)}  # type: ignore[dict-item]
         else:
             return {self.name(camel_case): self.__value}
 
@@ -162,6 +174,20 @@ class Username:
 
     def name(self, camel_case: bool = False) -> str:
         return "username"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
+class Tablename:
+    def __init__(self, value: str) -> None:
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "tablename"
 
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
         return {self.name(camel_case): self.__value}
@@ -238,7 +264,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
-            raise ValueError("Exactly one of id or external_id must be specified")
+            raise ValueError("Exactly one of id or external_id (or instance_id if accepted) must be specified")
 
     def as_singleton(self) -> SingletonIdentifierSequence:
         self.assert_singleton()
@@ -303,7 +329,11 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         cls,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
-        instance_ids: InstanceId | Sequence[InstanceId] | None = None,
+        instance_ids: InstanceId
+        | Sequence[InstanceId | tuple[str, str] | dict[str, str]]
+        | tuple[str, str]
+        | dict[str, str]
+        | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
@@ -332,9 +362,13 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
                     f"{id_name}external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}"
                 )
         if instance_ids is not None:
-            if isinstance(instance_ids, InstanceId):
+            if (
+                isinstance(instance_ids, InstanceId | dict)
+                or isinstance(instance_ids, tuple)
+                and len(instance_ids) == 2
+            ):
                 value_passed_as_primitive = True
-                all_identifiers.append(instance_ids)
+                all_identifiers.append(InstanceId.load(instance_ids))  # type: ignore[arg-type]
             elif isinstance(instance_ids, Sequence):
                 all_identifiers.extend([InstanceId.load(instance_id) for instance_id in instance_ids])  # type: ignore[arg-type]
             else:
@@ -383,6 +417,42 @@ class UsernameSequence(IdentifierSequenceCore[Username]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one username (string) must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
+        if isinstance(identifier, str):
+            return identifier
+        elif isinstance(identifier, dict):
+            if "username" in identifier:
+                return identifier["username"]
+            raise ValueError(f"{identifier} does not contain 'username'.")
+        raise TypeError(f"identifier must be of type str or dict. Found {type(identifier)}")
+
+
+class TablenameSequence(IdentifierSequenceCore[Tablename]):
+    @classmethod
+    def load(cls, tablenames: str | SequenceNotStr[str]) -> TablenameSequence:
+        if isinstance(tablenames, str):
+            return cls([Tablename(tablenames)], is_singleton=True)
+
+        elif isinstance(tablenames, Sequence):
+            return cls([Tablename(tablename) for tablename in tablenames], is_singleton=False)
+
+        raise TypeError(f"tablenames must be of type str or SequenceNotStr[str]. Found {type(tablenames)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one tablename (string) must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str | int | InstanceId:
+        if isinstance(identifier, str):
+            return identifier
+        elif isinstance(identifier, dict):
+            if "tablename" in identifier:
+                return identifier["tablename"]
+            raise ValueError(f"{identifier} does not contain 'tablename'.")
+        raise TypeError(f"identifier must be of type str or dict. Found {type(identifier)}")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):

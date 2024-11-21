@@ -21,6 +21,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils import _json
@@ -125,6 +126,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
         time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        instance_ids(list[NodeId] | None): List of instance ids of time series that this subscription will listen to. Not compatible with filter.
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
@@ -136,16 +138,18 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         external_id: str,
         partition_count: int,
         time_series_ids: list[ExternalId] | None = None,
+        instance_ids: list[NodeId] | None = None,
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
         data_set_id: int | None = None,
     ) -> None:
-        if not exactly_one_is_not_none(time_series_ids, filter):
-            raise ValueError("Exactly one of time_series_ids and filter must be given")
+        if not exactly_one_is_not_none(time_series_ids or instance_ids, filter):
+            raise ValueError("Exactly one of time_series_ids/instance_ids or filter must be provided")
         _validate_filter(filter, _FILTERS_SUPPORTED, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description, data_set_id)
         self.time_series_ids = time_series_ids
+        self.instance_ids = instance_ids
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -154,11 +158,18 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
             time_series_ids=resource.get("timeSeriesIds"),
+            instance_ids=[NodeId.load(item) for item in resource["instanceIds"]] if "instanceIds" in resource else None,
             filter=filter,
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case)
+        if self.instance_ids is not None:
+            data["instanceIds"] = [item.dump(include_instance_type=False) for item in self.instance_ids]
+        return data
 
     def as_write(self) -> DataPointSubscriptionWrite:
         """Returns this DatapointSubscription instance"""
@@ -197,6 +208,16 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         def remove(self, value: list) -> DataPointSubscriptionUpdate:
             return self._remove(value)
 
+    class _ListDataPointSubscriptionNodeIdUpdate(CogniteListUpdate):
+        def set(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._set([item.dump(include_instance_type=False) for item in value])
+
+        def add(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._add([item.dump(include_instance_type=False) for item in value])
+
+        def remove(self, value: list[NodeId]) -> DataPointSubscriptionUpdate:
+            return self._remove([item.dump(include_instance_type=False) for item in value])
+
     @property
     def name(self) -> _PrimitiveDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
@@ -210,6 +231,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
     @property
+    def instance_ids(self) -> _ListDataPointSubscriptionNodeIdUpdate:
+        return DataPointSubscriptionUpdate._ListDataPointSubscriptionNodeIdUpdate(self, "instanceIds")
+
+    @property
     def filter(self) -> _FilterDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
 
@@ -218,6 +243,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return [
             PropertySpec("name"),
             PropertySpec("time_series_ids", is_list=True),
+            PropertySpec("instance_ids", is_list=True),
             PropertySpec("filter", is_nullable=False),
             PropertySpec("data_set_id"),
         ]
@@ -230,23 +256,36 @@ class TimeSeriesID(CogniteResource):
     Args:
         id (int): A server-generated ID for the object.
         external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (NodeId | None): The ID of an instance in Cognite Data Models.
     """
 
-    def __init__(self, id: int, external_id: ExternalId | None = None) -> None:
+    def __init__(self, id: int, external_id: ExternalId | None = None, instance_id: NodeId | None = None) -> None:
         self.id = id
         self.external_id = external_id
+        self.instance_id = instance_id
 
     def __repr__(self) -> str:
-        return f"TimeSeriesID(id={self.id}, external_id={self.external_id})"
+        identifier = f"id={self.id}"
+        if self.external_id is not None:
+            identifier += f", external_id={self.external_id}"
+        elif self.instance_id is not None:
+            identifier += f", instance_id={self.instance_id!r}"
+        return f"TimeSeriesID({identifier})"
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
-        return cls(id=resource["id"], external_id=resource.get("externalId"))
+        return cls(
+            id=resource["id"],
+            external_id=resource.get("externalId"),
+            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {"id": self.id}
         if self.external_id is not None:
             resource["externalId" if camel_case else "external_id"] = self.external_id
+        if self.instance_id is not None:
+            resource["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(include_instance_type=False)
         return resource
 
 

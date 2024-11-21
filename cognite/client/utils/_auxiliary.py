@@ -43,6 +43,10 @@ def is_finite(limit: Any) -> TypeGuard[int]:
     return isinstance(limit, int) and limit >= 0
 
 
+def is_positive(limit: Any) -> TypeGuard[int]:
+    return isinstance(limit, int) and limit > 0
+
+
 def is_unlimited(limit: float | int | None) -> bool:
     return limit in {None, -1, math.inf}
 
@@ -206,6 +210,11 @@ def split_into_chunks(
         collection = list(collection.items())
         return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
 
+    from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray
+
+    if isinstance(collection, (DatapointsArray, Datapoints)):
+        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
+
     raise TypeError(f"Can only split list or dict, not {type(collection)}")
 
 
@@ -230,7 +239,7 @@ def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
     return {x for x in seq if x in seen or add(x)}
 
 
-def remove_duplicates_keep_order(seq: Sequence[THashable]) -> list[THashable]:
+def remove_duplicates_keep_order(seq: Iterable[THashable]) -> list[THashable]:
     seen: set[THashable] = set()
     add = seen.add
     return [x for x in seq if x not in seen and not add(x)]

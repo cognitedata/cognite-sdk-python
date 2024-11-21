@@ -4,14 +4,15 @@
 version: 2
 
 build:
-  os: ubuntu-22.04
+  os: ubuntu-lts-latest
   tools:
-    python: "3.8"
+    python: "3.10"
   jobs:
     post_create_environment:
       - pip install poetry
     post_install:
-      # Dependencies like sphinx/-theme are in the 'dev' dependency group
+      # 1. Dependencies like sphinx/-theme are in the 'dev' dependency group
+      # 2. As of poetry>1.8 we need to set VIRTUAL_ENV: https://github.com/python-poetry/poetry/issues/9025
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with dev
 
 sphinx:

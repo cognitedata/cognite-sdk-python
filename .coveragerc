@@ -1,5 +1,7 @@
 [run]
 source=cognite
+omit =
+    cognite/client/_proto/*
 
 [report]
 exclude_lines =

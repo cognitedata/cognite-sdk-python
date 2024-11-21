@@ -85,6 +85,20 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"])
                 >>> created = client.time_series.subscriptions.create(sub)
 
+            Create a subscription with explicit time series IDs given as Node IDs
+            either from CogniteTimeSeries or an extension of CogniteTimeseries:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataPointSubscriptionWrite
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> sub = DataPointSubscriptionWrite(
+                ...     external_id="my_subscription",
+                ...     name="My subscription with Data Model Ids",
+                ...     partition_count=1,
+                ...     instance_ids=[NodeId("my_space", "myFistTimeSeries"), NodeId("my_space", "mySecondTimeSeries")])
+                >>> created = client.time_series.subscriptions.create(sub)
+
             Create a filter defined subscription for all numeric time series that are stepwise:
 
                 >>> from cognite.client import CogniteClient

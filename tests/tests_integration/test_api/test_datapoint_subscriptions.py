@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import random
 import time
+import unittest
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -12,6 +13,8 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, filters
+from cognite.client.data_classes.data_modeling import NodeId, SpaceApply
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DatapointSubscriptionProperty,
@@ -53,11 +56,42 @@ def all_time_series_external_ids(cognite_client: CogniteClient, os_and_py_versio
     ).as_external_ids()
 
 
+@pytest.fixture(scope="session")
+def timeseries_space(cognite_client: CogniteClient) -> str:
+    return cognite_client.data_modeling.spaces.apply(
+        SpaceApply("PYSDK_timeSeries_subscription", description="Space for testing datapoint subscriptions")
+    ).space
+
+
+@pytest.fixture(scope="session")
+def all_times_series_node_ids(
+    cognite_client: CogniteClient, os_and_py_version: str, timeseries_space: str
+) -> list[NodeId]:
+    timeseries_node_ids = [f"PYSDK DataPoint Subscription Node {os_and_py_version} Test {no}" for no in range(20)]
+
+    return cognite_client.data_modeling.instances.apply(
+        [
+            CogniteTimeSeriesApply(
+                space=timeseries_space,
+                external_id=external_id,
+                is_step=False,
+                time_series_type="numeric",
+            )
+            for external_id in timeseries_node_ids
+        ]
+    ).nodes.as_ids()
+
+
 @pytest.fixture
 def time_series_external_ids(all_time_series_external_ids):
     # Spread the load to avoid API errors like 'a ts can't be part of too many subscriptions':
     ts_xids = all_time_series_external_ids[:]
-    return random.sample(ts_xids, k=3)
+    return random.sample(ts_xids, k=2)
+
+
+@pytest.fixture
+def time_series_node_ids(all_times_series_node_ids: list[NodeId]) -> list[NodeId]:
+    return [random.choice(all_times_series_node_ids)]
 
 
 @pytest.fixture(scope="session")
@@ -96,13 +130,14 @@ class TestDatapointSubscriptions:
         assert len(subscriptions) > 0, "Add at least one subscription to the test environment to run this test"
 
     def test_create_retrieve_delete_subscription(
-        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str], time_series_node_ids: list[NodeId]
     ):
         data_set = cognite_client.data_sets.list(limit=1)[0]
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionCreateRetrieveDeleteTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionCreateRetrieveDeleteTest",
             time_series_ids=time_series_external_ids,
+            instance_ids=time_series_node_ids,
             partition_count=1,
             data_set_id=data_set.id,
         )
@@ -111,7 +146,9 @@ class TestDatapointSubscriptions:
 
             assert created.created_time
             assert created.last_updated_time
-            assert created.time_series_count == len(new_subscription.time_series_ids)
+            assert created.time_series_count == len(new_subscription.time_series_ids) + len(
+                new_subscription.instance_ids
+            )
             assert retrieved_subscription.external_id == new_subscription.external_id == created.external_id
             assert retrieved_subscription.name == new_subscription.name == created.name
             assert retrieved_subscription.description == new_subscription.description == created.description
@@ -120,8 +157,14 @@ class TestDatapointSubscriptions:
             time_series_in_subscription = cognite_client.time_series.subscriptions.list_member_time_series(
                 new_subscription.external_id, limit=10
             )
-            retrieved_time_series_external_ids = [ts.external_id for ts in time_series_in_subscription]
-            assert sorted(new_subscription.time_series_ids) == sorted(retrieved_time_series_external_ids)
+            retrieved_time_series_external_ids = [
+                ts.external_id for ts in time_series_in_subscription if ts.external_id
+            ]
+            unittest.TestCase().assertCountEqual(new_subscription.time_series_ids, retrieved_time_series_external_ids)
+            retrieved_time_series_instance_ids = [
+                ts.instance_id for ts in time_series_in_subscription if ts.instance_id
+            ]
+            unittest.TestCase().assertCountEqual(new_subscription.instance_ids, retrieved_time_series_instance_ids)
 
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
             retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
