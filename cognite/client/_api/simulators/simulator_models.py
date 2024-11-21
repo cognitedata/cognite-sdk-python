@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorModel,
+    SimulatorModelCore,
     SimulatorModelList,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
+    SimulatorModelWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -161,4 +165,43 @@ class SimulatorModelsAPI(APIClient):
             identifiers=identifiers,
             resource_path="/simulators/models/revisions",
             headers={"cdf-version": "beta"},
+        )
+
+    @overload
+    def create(self, model: Sequence[SimulatorModel]) -> SimulatorModelList: ...
+
+    @overload
+    def create(self, model: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
+
+    def create(
+        self, model: SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]
+    ) -> SimulatorModel | SimulatorModelList:
+        """`Create one or more simulator models. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models>`_
+
+        You can create an arbitrary number of simulator models, and the SDK will split the request into multiple requests.
+
+        Args:
+            model (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): No description.
+
+        Returns:
+            SimulatorModel | SimulatorModelList: Created simulator model(s)
+
+        Examples:
+
+            Create new simulator models::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SimulatorModelWrite
+                >>> client = CogniteClient()
+                >>> models = [SimulatorModelWrite(name="model1"), SimulatorModelWrite(name="model2")]
+                >>> res = client.simulators.models.create(models)
+
+        """
+        assert_type(model, "simulatormodel", [SimulatorModelCore, Sequence])
+
+        return self._create_multiple(
+            list_cls=SimulatorModelList,
+            resource_cls=SimulatorModel,
+            items=model,
+            input_resource_cls=SimulatorModelWrite,
         )

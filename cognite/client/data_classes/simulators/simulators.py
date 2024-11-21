@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import Self
 
@@ -10,6 +11,10 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
+    IdTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -691,7 +696,7 @@ class SimulatorRoutineRevision(CogniteResource):
         return output
 
 
-class SimulatorModel(CogniteResource):
+class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     """
     The simulator model resource represents an asset modeled in a simulator.
     This asset could range from a pump or well to a complete processing facility or refinery.
@@ -710,12 +715,9 @@ class SimulatorModel(CogniteResource):
     This is the read/response format of a simulator model.
 
     Args:
-        id (int): A unique id of a simulator model
         external_id (str): External id of the simulator model
         simulator_external_id (str): External id of the associated simulator
         data_set_id (int): The id of the dataset associated with the simulator model
-        created_time (int): The time when the simulator model was created
-        last_updated_time (int): The time when the simulator model was last updated
         name (str): The name of the simulator model
         type_key (str | None): The type key of the simulator model
         description (str | None): The description of the simulator model
@@ -723,12 +725,9 @@ class SimulatorModel(CogniteResource):
 
     def __init__(
         self,
-        id: int,
         external_id: str,
         simulator_external_id: str,
         data_set_id: int,
-        created_time: int,
-        last_updated_time: int,
         name: str,
         type_key: str | None = None,
         description: str | None = None,
@@ -737,28 +736,136 @@ class SimulatorModel(CogniteResource):
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self.name = name
         self.type_key = type_key
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls: type[T_SimulatorModel], resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> T_SimulatorModel:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case=camel_case)
+
+
+T_SimulatorModel = TypeVar("T_SimulatorModel", bound=SimulatorModelCore)
+
+
+class SimulatorModelWrite(SimulatorModelCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        data_set_id: int,
+        name: str,
+        type_key: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            data_set_id=data_set_id,
+            name=name,
+            type_key=type_key,
+            description=description,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorModelWrite:
         return cls(
-            id=resource["id"],
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
-            name=resource["name"],
             data_set_id=resource["dataSetId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
+            name=resource["name"],
             type_key=resource.get("typeKey"),
             description=resource.get("description"),
         )
 
+    def as_write(self) -> SimulatorModelWrite:
+        """Returns self."""
+        return self
+
+
+class SimulatorModel(SimulatorModelCore):
+    """
+    The simulator model resource represents an asset modeled in a simulator.
+    This asset could range from a pump or well to a complete processing facility or refinery.
+    The simulator model is the root of its associated revisions, routines, runs, and results.
+    The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
+    maintaining the integrity and hierarchy of the simulation data.
+
+    Simulator model revisions track changes and updates to a simulator model over time.
+    Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
+    Limitations:
+        - A project can have a maximum of 1000 simulator models
+        - Each simulator model can have a maximum of 200 revisions
+
+
+    This is the read/response format of a simulator model.
+
+    Args:
+        external_id (str): External id of the simulator model
+        simulator_external_id (str): External id of the associated simulator
+        data_set_id (int): The id of the dataset associated with the simulator model
+        name (str): The name of the simulator model
+        id (int | None): A unique id of a simulator model
+        type_key (str | None): The type key of the simulator model
+        description (str | None): The description of the simulator model
+        created_time (int | None): The time when the simulator model was created
+        last_updated_time (int | None): The time when the simulator model was last updated
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        data_set_id: int,
+        name: str,
+        id: int | None = None,
+        type_key: str | None = None,
+        description: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            data_set_id=data_set_id,
+            name=name,
+            type_key=type_key,
+            description=description,
+        )
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorModelWrite:
+        """Returns this SimulatorModel in its writing version."""
+        return SimulatorModelWrite(
+            external_id=self.external_id,
+            simulator_external_id=self.simulator_external_id,
+            data_set_id=self.data_set_id,
+            name=self.name,
+            type_key=self.type_key,
+            description=self.description,
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+        result = super().dump(camel_case)
+        return result
 
 
 class SimulationRun(CogniteResource):
@@ -954,8 +1061,15 @@ class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration]):
     _RESOURCE = SimulatorIntegration
 
 
-class SimulatorModelList(CogniteResourceList[SimulatorModel]):
+class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorModelWrite
+
+
+class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, SimulatorModel], IdTransformerMixin):
     _RESOURCE = SimulatorModel
+
+    def as_write(self) -> SimulatorModelWriteList:
+        return SimulatorModelWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
 
 class SimulatorModelRevisionList(CogniteResourceList[SimulatorModelRevision]):
