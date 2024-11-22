@@ -17,6 +17,22 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.68.0] - 2024-11-22
+### Added
+- New methods: `WorkflowTriggerAPI.[list, list_runs]`
+- `WorkflowAPI.upsert` now supports upserting multiple.
+- `WorkflowAPI.retrieve` now supports retrieving multiple.
+- `WorkflowVersionAPI.upsert` now supports upserting multiple.
+- `WorkflowVersionAPI.retrieve` now supports retrieving multiple.
+- `WorkflowTriggerAPI.delete` now supports deleting multiple.
+- Missing field `last_updated_time` for `Workflow`.
+- Missing fields `last_updated_time` and `created_time` for `WorkflowVersion`.
+### Deprecated
+- `WorkflowTriggerAPI.get_triggers` is now deprecated in favor of `WorkflowTriggerAPI.list`
+- `WorkflowTriggerAPI.get_trigger_run_history` is now deprecated in favor of `WorkflowTriggerAPI.list_runs`
+### Fixed
+- Listing the history of (workflow trigger) runs now work as expected for all external_ids (properly URL encoded).
+
 ## [7.67.4] - 2024-11-21
 ### Fixed
 - Creating a `CogniteClient` no longer gives a `UserWarning` for private link projects.
