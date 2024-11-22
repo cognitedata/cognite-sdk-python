@@ -220,7 +220,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Examples:
 
-            Delete schedules by id or external id::
+            Delete schedules by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -265,7 +265,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Examples:
 
-            Update a transformation schedule that you have fetched. This will perform a full update of the schedule::
+            Update a transformation schedule that you have fetched. This will perform a full update of the schedule:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -273,7 +273,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> transformation_schedule.is_paused = True
                 >>> res = client.transformations.schedules.update(transformation_schedule)
 
-            Perform a partial update on a transformation schedule, updating the interval and unpausing it::
+            Perform a partial update on a transformation schedule, updating the interval and unpausing it:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate

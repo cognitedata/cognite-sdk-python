@@ -113,7 +113,7 @@ class ContainersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
-            Fetch using the ContainerId::
+            Fetch using the ContainerId:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ContainerId
@@ -137,7 +137,7 @@ class ContainersAPI(APIClient):
             list[ContainerId]: The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
-            Delete containers by id::
+            Delete containers by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -163,7 +163,7 @@ class ContainersAPI(APIClient):
             list[ConstraintIdentifier]: The constraints(s) which have been deleted.
         Examples:
 
-            Delete constraints by id::
+            Delete constraints by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -182,7 +182,7 @@ class ContainersAPI(APIClient):
             list[IndexIdentifier]: The indexes(s) which has been deleted.
         Examples:
 
-            Delete indexes by id::
+            Delete indexes by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -242,14 +242,14 @@ class ContainersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
-            Iterate over containers::
+            Iterate over containers:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for container in client.data_modeling.containers:
                 ...     container # do something with the container
 
-            Iterate over chunks of containers to reduce memory load::
+            Iterate over chunks of containers to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

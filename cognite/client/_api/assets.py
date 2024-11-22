@@ -243,13 +243,13 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Get asset by id::
+            Get asset by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.assets.retrieve(id=1)
 
-            Get asset by external id::
+            Get asset by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -276,13 +276,13 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Get assets by id::
+            Get assets by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.assets.retrieve_multiple(ids=[1, 2, 3])
 
-            Get assets by external id::
+            Get assets by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -565,7 +565,7 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Create new assets::
+            Create new assets:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite
@@ -573,7 +573,7 @@ class AssetsAPI(APIClient):
                 >>> assets = [AssetWrite(name="asset1"), AssetWrite(name="asset2")]
                 >>> res = client.assets.create(assets)
 
-            Create asset with label::
+            Create asset with label:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetWrite, Label
@@ -734,7 +734,7 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Delete assets by id or external id::
+            Delete assets by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -775,7 +775,7 @@ class AssetsAPI(APIClient):
             Asset | AssetList: Updated asset(s)
 
         Examples:
-            Perform a partial update on an asset, updating the description and adding a new field to metadata::
+            Perform a partial update on an asset, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -786,7 +786,7 @@ class AssetsAPI(APIClient):
                 >>> another_update = AssetUpdate(id=1).description.set(None)
                 >>> res2 = client.assets.update(another_update)
 
-            Remove the metadata on an asset::
+            Remove the metadata on an asset:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -798,7 +798,7 @@ class AssetsAPI(APIClient):
                 >>> another_update2 = AssetUpdate(id=1).metadata.set({})
                 >>> res2 = client.assets.update(another_update)
 
-            Attach labels to an asset::
+            Attach labels to an asset:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -806,7 +806,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
                 >>> res = client.assets.update(my_update)
 
-            Detach a single label from an asset::
+            Detach a single label from an asset:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -814,7 +814,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.assets.update(my_update)
 
-            Replace all labels for an asset::
+            Replace all labels for an asset:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -960,25 +960,25 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Search for assets by fuzzy search on name::
+            Search for assets by fuzzy search on name:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.assets.search(name="some name")
 
-            Search for assets by exact search on name::
+            Search for assets by exact search on name:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.assets.search(filter={"name": "some name"})
 
-            Search for assets by improved multi-field fuzzy search::
+            Search for assets by improved multi-field fuzzy search:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.assets.search(query="TAG 30 XV")
 
-            Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`::
+            Search for assets using multiple filters, finding all assets with name similar to `xyz` with parent asset `123` or `456` with source `some source`:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1099,27 +1099,27 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            List assets::
+            List assets:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> asset_list = client.assets.list(limit=5)
 
-            Iterate over assets::
+            Iterate over assets:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for asset in client.assets:
                 ...     asset # do something with the asset
 
-            Iterate over chunks of assets to reduce memory load::
+            Iterate over chunks of assets to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for asset_list in client.assets(chunk_size=2500):
                 ...     asset_list # do something with the assets
 
-            Filter assets based on labels::
+            Filter assets based on labels:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelFilter

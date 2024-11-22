@@ -260,14 +260,14 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
-            Iterate over jobs::
+            Iterate over jobs:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for job in client.hosted_extractors.jobs:
                 ...     job # do something with the job
 
-            Iterate over chunks of jobs to reduce memory load::
+            Iterate over chunks of jobs to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -303,7 +303,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests logs for a specific job::
+            Reqests logs for a specific job:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -348,7 +348,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests metrics for a specific job::
+            Reqests metrics for a specific job:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

@@ -803,7 +803,7 @@ class DatapointsAPI(APIClient):
 
             You may also slice a ``Datapoints`` object (you get ``Datapoints`` back), or ask for "a row of data" at a single index in same way you would do with a
             built-in `list` (you get a `Datapoint` object back, note the singular name). You'll also get `Datapoint` objects when iterating through a ``Datapoints``
-            object, but this should generally be avoided (consider this a performance warning)::
+            object, but this should generally be avoided (consider this a performance warning):
 
                 >>> dps_slice = dps[-10:]  # Last ten values
                 >>> dp = dps[3]  # The third value
@@ -858,7 +858,7 @@ class DatapointsAPI(APIClient):
             are stored as events in CDF, with both start- and end times, we can use these directly in the query.
 
             After fetching, the `.get` method will return a list of ``Datapoints`` instead, (assuming we have more than one event) in the
-            same order, similar to how slicing works with non-unique indices on Pandas DataFrames::
+            same order, similar to how slicing works with non-unique indices on Pandas DataFrames:
 
                 >>> periods = client.events.list(type="alarm", subtype="pressure")
                 >>> sensor_xid = "foo-pressure-bar"
@@ -873,7 +873,7 @@ class DatapointsAPI(APIClient):
 
             The API has an endpoint to :py:meth:`~DatapointsAPI.retrieve_latest`, i.e. "before", but not "after". Luckily, we can emulate that behaviour easily.
             Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
-            aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010)::
+            aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010):
 
                 >>> import itertools
                 >>> month_starts = [
@@ -1413,11 +1413,11 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.data.retrieve_latest(id=1)[0]
 
-            You can also get the first datapoint before a specific time::
+            You can also get the first datapoint before a specific time:
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
-            You can also retrieve the datapoint in a different unit or unit system::
+            You can also retrieve the datapoint in a different unit or unit system:
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
                 >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
@@ -1428,7 +1428,7 @@ class DatapointsAPI(APIClient):
                 >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
-            using external ids here, but either will work::
+            using external ids here, but either will work:
 
                 >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
@@ -1647,7 +1647,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Deleting the last week of data from a time series::
+            Deleting the last week of data from a time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1670,7 +1670,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Each element in the list ranges must be specify either id or external_id, and a range::
+            Each element in the list ranges must be specify either id or external_id, and a range:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

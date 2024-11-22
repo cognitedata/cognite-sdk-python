@@ -196,13 +196,13 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Get sequence by id::
+            Get sequence by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve(id=1)
 
-            Get sequence by external id::
+            Get sequence by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -229,13 +229,13 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Get sequences by id::
+            Get sequences by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve_multiple(ids=[1, 2, 3])
 
-            Get sequences by external id::
+            Get sequences by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -257,7 +257,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Aggregate sequences::
+            Aggregate sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -523,7 +523,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Create a new sequence::
+            Create a new sequence:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
@@ -534,7 +534,7 @@ class SequencesAPI(APIClient):
                 ... ]
                 >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
-            Create a new sequence with the same column specifications as an existing sequence::
+            Create a new sequence with the same column specifications as an existing sequence:
 
                 >>> seq2 = client.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
 
@@ -560,7 +560,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Delete sequences by id or external id::
+            Delete sequences by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -602,7 +602,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Update a sequence that you have fetched. This will perform a full update of the sequences::
+            Update a sequence that you have fetched. This will perform a full update of the sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -610,7 +610,7 @@ class SequencesAPI(APIClient):
                 >>> res.description = "New description"
                 >>> res = client.sequences.update(res)
 
-            Perform a partial update on a sequence, updating the description and adding a new field to metadata::
+            Perform a partial update on a sequence, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
@@ -622,7 +622,7 @@ class SequencesAPI(APIClient):
 
             Currently, updating the column definitions of a sequence is only supported through partial update, using `add`, `remove` and `modify` methods on the `columns` property.
 
-            Add a single new column::
+            Add a single new column:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
@@ -631,7 +631,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
                 >>> res = client.sequences.update(my_update)
 
-            Add multiple new columns::
+            Add multiple new columns:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
@@ -643,7 +643,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
-            Remove a single column::
+            Remove a single column:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
@@ -652,7 +652,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.remove("col_external_id1")
                 >>> res = client.sequences.update(my_update)
 
-            Remove multiple columns::
+            Remove multiple columns:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
@@ -661,7 +661,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.remove(["col_external_id1","col_external_id2"])
                 >>> res = client.sequences.update(my_update)
 
-            Update existing columns::
+            Update existing columns:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
@@ -748,7 +748,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Search for a sequence::
+            Search for a sequence:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -876,20 +876,20 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            List sequences::
+            List sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.list(limit=5)
 
-            Iterate over sequences::
+            Iterate over sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for seq in client.sequences:
                 ...     seq # do something with the sequence
 
-            Iterate over chunks of sequences to reduce memory load::
+            Iterate over chunks of sequences to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -991,7 +991,7 @@ class SequencesDataAPI(APIClient):
             **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Examples:
-            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
+            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Sequence, SequenceColumn
@@ -1001,14 +1001,14 @@ class SequencesDataAPI(APIClient):
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
-            They can also be provided as a list of API-style objects with a rowNumber and values field::
+            They can also be provided as a list of API-style objects with a rowNumber and values field:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
                 >>> client.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
-            Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
+            Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

@@ -148,7 +148,7 @@ class ViewsAPI(APIClient):
             list[ViewId]: The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
-            Delete views by id::
+            Delete views by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -187,20 +187,20 @@ class ViewsAPI(APIClient):
 
         Examples:
 
-            List 5 views::
+            List 5 views:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> view_list = client.data_modeling.views.list(limit=5)
 
-            Iterate over views::
+            Iterate over views:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for view in client.data_modeling.views:
                 ...     view # do something with the view
 
-            Iterate over chunks of views to reduce memory load::
+            Iterate over chunks of views to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -230,7 +230,7 @@ class ViewsAPI(APIClient):
 
         Examples:
 
-            Create new views::
+            Create new views:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewApply, MappedPropertyApply, ContainerId
@@ -251,7 +251,7 @@ class ViewsAPI(APIClient):
                 >>> res = client.data_modeling.views.apply(views)
 
 
-            Create views with edge relations::
+            Create views with edge relations:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import (

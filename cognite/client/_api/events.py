@@ -200,13 +200,13 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Get event by id::
+            Get event by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.events.retrieve(id=1)
 
-            Get event by external id::
+            Get event by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -233,13 +233,13 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Get events by id::
+            Get events by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.events.retrieve_multiple(ids=[1, 2, 3])
 
-            Get events by external id::
+            Get events by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -516,7 +516,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Create new events::
+            Create new events:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
@@ -541,7 +541,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Delete events by id or external id::
+            Delete events by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -583,7 +583,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Update an event that you have fetched. This will perform a full update of the event::
+            Update an event that you have fetched. This will perform a full update of the event:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -591,7 +591,7 @@ class EventsAPI(APIClient):
                 >>> event.description = "New description"
                 >>> res = client.events.update(event)
 
-            Perform a partial update on a event, updating the description and adding a new field to metadata::
+            Perform a partial update on a event, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventUpdate
@@ -622,7 +622,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Search for events::
+            Search for events:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -799,20 +799,20 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            List events and filter on max start time::
+            List events and filter on max start time:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
 
-            Iterate over events::
+            Iterate over events:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for event in client.events:
                 ...     event # do something with the event
 
-            Iterate over chunks of events to reduce memory load::
+            Iterate over chunks of events to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

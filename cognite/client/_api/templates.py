@@ -463,7 +463,7 @@ class TemplateInstancesAPI(APIClient):
             TemplateInstance | TemplateInstanceList: Updated template instance(s)
 
         Examples:
-            Perform a partial update on a template instance::
+            Perform a partial update on a template instance:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateInstanceUpdate

@@ -131,7 +131,7 @@ class SourcesAPI(APIClient):
             force (bool): Delete any jobs associated with each item.
         Examples:
 
-            Delete sources by id::
+            Delete sources by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -265,14 +265,14 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> source_list = client.hosted_extractors.sources.list(limit=5)
 
-            Iterate over sources::
+            Iterate over sources:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for source in client.hosted_extractors.sources:
                 ...     source # do something with the source
 
-            Iterate over chunks of sources to reduce memory load::
+            Iterate over chunks of sources to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

@@ -135,7 +135,7 @@ class MappingsAPI(APIClient):
 
         Examples:
 
-            Delete mappings by id::
+            Delete mappings by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -245,14 +245,14 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
-            Iterate over mappings::
+            Iterate over mappings:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for mapping in client.hosted_extractors.mappings:
                 ...     mapping # do something with the mapping
 
-            Iterate over chunks of mappings to reduce memory load::
+            Iterate over chunks of mappings to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

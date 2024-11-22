@@ -215,13 +215,13 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Get time series by id::
+            Get time series by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve(id=1)
 
-            Get time series by external id::
+            Get time series by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -254,13 +254,13 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Get time series by id::
+            Get time series by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.time_series.retrieve_multiple(ids=[1, 2, 3])
 
-            Get time series by external id::
+            Get time series by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -285,7 +285,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            List time series::
+            List time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -536,7 +536,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Create a new time series::
+            Create a new time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesWrite
@@ -565,7 +565,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Delete time series by id or external id::
+            Delete time series by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -610,7 +610,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Update a time series that you have fetched. This will perform a full update of the time series::
+            Update a time series that you have fetched. This will perform a full update of the time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -618,7 +618,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res.description = "New description"
                 >>> res = client.time_series.update(res)
 
-            Perform a partial update on a time series, updating the description and adding a new field to metadata::
+            Perform a partial update on a time series, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
@@ -626,7 +626,7 @@ class TimeSeriesAPI(APIClient):
                 >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.time_series.update(my_update)
 
-            Perform a partial update on a time series by instance id::
+            Perform a partial update on a time series by instance id:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
@@ -676,7 +676,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Upsert for TimeSeries::
+            Upsert for TimeSeries:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeries
@@ -719,13 +719,13 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Search for a time series::
+            Search for a time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.time_series.search(name="some name")
 
-            Search for all time series connected to asset with id 123::
+            Search for all time series connected to asset with id 123:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -858,20 +858,20 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            List time series::
+            List time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.time_series.list(limit=5)
 
-            Iterate over time series::
+            Iterate over time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> for ts in client.time_series:
                 ...     ts # do something with the time series
 
-            Iterate over chunks of time series to reduce memory load::
+            Iterate over chunks of time series to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

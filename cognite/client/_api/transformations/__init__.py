@@ -447,7 +447,7 @@ class TransformationsAPI(APIClient):
 
         Examples:
 
-            Update a transformation that you have fetched. This will perform a full update of the transformation::
+            Update a transformation that you have fetched. This will perform a full update of the transformation:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -455,7 +455,7 @@ class TransformationsAPI(APIClient):
                 >>> transformation.query = "SELECT * FROM _cdf.assets"
                 >>> res = client.transformations.update(transformation)
 
-            Perform a partial update on a transformation, updating the query and making it private::
+            Perform a partial update on a transformation, updating the query and making it private:
 
                 >>> from cognite.client.data_classes import TransformationUpdate
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
