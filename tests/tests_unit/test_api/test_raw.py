@@ -3,8 +3,8 @@ import re
 
 import pytest
 
-from cognite.client._api.raw import Database, DatabaseList, RawRowsAPI, Row, RowList, Table, TableList
-from cognite.client.data_classes import RowWrite, RowWriteList
+from cognite.client._api.raw import RawRowsAPI
+from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, RowWriteList, Table, TableList
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 

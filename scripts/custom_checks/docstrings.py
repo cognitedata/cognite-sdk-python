@@ -115,6 +115,11 @@ class DocstrFormatter:
         # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
 
         if string.startswith("Iterator["):
+            if string.count("Iterator[") > 1:
+                raise ValueError(
+                    "pydoclint doesn't allow unions between Iterators in 'Yields:' annotation. Example: instead of "
+                    "`Iterator[int] | Iterator[str]`, use `Iterator[int | str]`. Please fix manually."
+                )
             return string[9:-1]
 
         if not string.startswith("Generator["):
