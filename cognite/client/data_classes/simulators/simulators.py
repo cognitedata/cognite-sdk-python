@@ -715,29 +715,28 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     This is the read/response format of a simulator model.
 
     Args:
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        name (str): The name of the simulator model
-        type_key (str | None): The type key of the simulator model
+        external_id (str | None): External id of the simulator model
+        simulator_external_id (str | None): External id of the associated simulator
+        data_set_id (int | None): The id of the dataset associated with the simulator model
+        name (str | None): The name of the simulator model
+        type (str | None): The type key of the simulator model
         description (str | None): The description of the simulator model
     """
 
     def __init__(
         self,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        name: str,
-        type_key: str | None = None,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        type: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.data_set_id = data_set_id
         self.name = name
-        self.type_key = type_key
+        self.type = type
         self.description = description
 
     @classmethod
@@ -757,11 +756,11 @@ T_SimulatorModel = TypeVar("T_SimulatorModel", bound=SimulatorModelCore)
 class SimulatorModelWrite(SimulatorModelCore):
     def __init__(
         self,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        name: str,
-        type_key: str | None = None,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        type: str | None = None,
         description: str | None = None,
     ) -> None:
         super().__init__(
@@ -769,7 +768,7 @@ class SimulatorModelWrite(SimulatorModelCore):
             simulator_external_id=simulator_external_id,
             data_set_id=data_set_id,
             name=name,
-            type_key=type_key,
+            type=type,
             description=description,
         )
 
@@ -780,7 +779,7 @@ class SimulatorModelWrite(SimulatorModelCore):
             simulator_external_id=resource["simulatorExternalId"],
             data_set_id=resource["dataSetId"],
             name=resource["name"],
-            type_key=resource.get("typeKey"),
+            type=resource.get("typeKey"),
             description=resource.get("description"),
         )
 
@@ -808,12 +807,12 @@ class SimulatorModel(SimulatorModelCore):
     This is the read/response format of a simulator model.
 
     Args:
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        name (str): The name of the simulator model
+        external_id (str | None): External id of the simulator model
+        simulator_external_id (str | None): External id of the associated simulator
+        data_set_id (int | None): The id of the dataset associated with the simulator model
+        name (str | None): The name of the simulator model
         id (int | None): A unique id of a simulator model
-        type_key (str | None): The type key of the simulator model
+        type (str | None): The type key of the simulator model
         description (str | None): The description of the simulator model
         created_time (int | None): The time when the simulator model was created
         last_updated_time (int | None): The time when the simulator model was last updated
@@ -821,12 +820,12 @@ class SimulatorModel(SimulatorModelCore):
 
     def __init__(
         self,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        name: str,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
         id: int | None = None,
-        type_key: str | None = None,
+        type: str | None = None,
         description: str | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
@@ -836,7 +835,7 @@ class SimulatorModel(SimulatorModelCore):
             simulator_external_id=simulator_external_id,
             data_set_id=data_set_id,
             name=name,
-            type_key=type_key,
+            type=type,
             description=description,
         )
         # id/created_time/last_updated_time are required when using the class to read,
@@ -859,9 +858,12 @@ class SimulatorModel(SimulatorModelCore):
             simulator_external_id=self.simulator_external_id,
             data_set_id=self.data_set_id,
             name=self.name,
-            type_key=self.type_key,
+            type=self.type,
             description=self.description,
         )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)

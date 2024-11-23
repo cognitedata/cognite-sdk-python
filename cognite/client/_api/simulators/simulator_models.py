@@ -17,6 +17,7 @@ from cognite.client.data_classes.simulators.simulators import (
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -168,12 +169,12 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def create(self, model: Sequence[SimulatorModel]) -> SimulatorModelList: ...
+    def create_model(self, model: Sequence[SimulatorModel]) -> SimulatorModelList: ...
 
     @overload
-    def create(self, model: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
+    def create_model(self, model: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
 
-    def create(
+    def create_model(
         self, model: SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]
     ) -> SimulatorModel | SimulatorModelList:
         """`Create one or more simulator models. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models>`_
@@ -197,11 +198,38 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.create(models)
 
         """
-        assert_type(model, "simulatormodel", [SimulatorModelCore, Sequence])
+        assert_type(model, "simulator_model", [SimulatorModelCore, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             items=model,
             input_resource_cls=SimulatorModelWrite,
+            resource_path="/simulators/models",
+            headers={"cdf-version": "beta"},
+        )
+
+    def delete_models(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+    ) -> None:
+        """`Delete one or more models <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_
+
+        Args:
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+        Examples:
+
+            Delete models by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.simulators.delete_models(id=[1,2,3], external_id="3")
+        """
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            resource_path="/simulators/models",
+            headers={"cdf-version": "beta"},
         )
