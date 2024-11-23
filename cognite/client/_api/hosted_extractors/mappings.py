@@ -247,15 +247,11 @@ class MappingsAPI(APIClient):
 
             Iterate over mappings:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for mapping in client.hosted_extractors.mappings:
                 ...     mapping # do something with the mapping
 
             Iterate over chunks of mappings to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
                 ...     mapping_list # do something with the mappings
         """

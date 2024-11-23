@@ -209,15 +209,11 @@ class DataModelsAPI(APIClient):
 
             Iterate over data model:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_model in client.data_modeling.data_models:
                 ...     data_model # do something with the data_model
 
             Iterate over chunks of data model to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_model_list in client.data_modeling.data_models(chunk_size=10):
                 ...     data_model_list # do something with the data model
         """

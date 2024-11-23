@@ -151,8 +151,6 @@ class DataSetsAPI(APIClient):
 
             Get data set by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -184,8 +182,6 @@ class DataSetsAPI(APIClient):
 
             Get data sets by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -253,9 +249,7 @@ class DataSetsAPI(APIClient):
 
             Perform a partial update on a data set, updating the description and removing a field from metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataSetUpdate
-                >>> client = CogniteClient()
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = client.data_sets.update(my_update)
         """
@@ -295,15 +289,11 @@ class DataSetsAPI(APIClient):
 
             Iterate over data sets:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_set in client.data_sets:
                 ...     data_set # do something with the data_set
 
             Iterate over chunks of data sets to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_set_list in client.data_sets(chunk_size=2500):
                 ...     data_set_list # do something with the list
         """

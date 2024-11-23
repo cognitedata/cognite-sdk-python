@@ -256,15 +256,11 @@ class UsersAPI(APIClient):
 
             Iterate over users:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for user in client.postgres_gateway.users:
                 ...     user # do something with the user
 
             Iterate over chunks of users to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for user_list in client.postgres_gateway.users(chunk_size=25):
                 ...     user_list # do something with the users
 

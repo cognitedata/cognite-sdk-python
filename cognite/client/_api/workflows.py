@@ -99,8 +99,6 @@ class WorkflowTriggerAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
@@ -279,14 +277,10 @@ class WorkflowTaskAPI(APIClient):
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.workflows.executions.run("my workflow", "1")
                 >>> res = client.workflows.executions.retrieve_detailed(res.id)
                 >>> res = client.workflows.tasks.update(res.tasks[1].id, "completed")
@@ -321,8 +315,6 @@ class WorkflowExecutionAPI(APIClient):
 
             List workflow executions and retrieve detailed information for the first one:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.workflows.executions.list()
                 >>> res = client.workflows.executions.retrieve_detailed(res[0].id)
 
@@ -455,9 +447,7 @@ class WorkflowExecutionAPI(APIClient):
 
             Get all workflow executions from the last 24 hours:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> client = CogniteClient()
                 >>> res = client.workflows.executions.list(
                 ...     created_time_start=timestamp_to_ms("1d-ago"))
 
@@ -684,9 +674,7 @@ class WorkflowVersionAPI(APIClient):
 
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> client = CogniteClient()
                 >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
 
         """
@@ -825,16 +813,12 @@ class WorkflowVersionAPI(APIClient):
 
             Get all workflow versions for workflows 'my_workflow' and 'my_workflow_2' using the WorkflowVersionId class:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> client = CogniteClient()
                 >>> res = client.workflows.versions.list(
                 ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.workflows.versions.list(
                 ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
 
@@ -968,8 +952,6 @@ class WorkflowAPI(APIClient):
 
             Retrieve multiple workflows:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> workflow_list = client.workflows.retrieve(["foo", "bar"])
         """
 

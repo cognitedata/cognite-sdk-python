@@ -128,15 +128,11 @@ class ThreeDModelsAPI(APIClient):
 
             Iterate over 3d models:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for three_d_model in client.three_d.models:
                 ...     three_d_model # do something with the 3d model
 
             Iterate over chunks of 3d models to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for three_d_model in client.three_d.models(chunk_size=50):
                 ...     three_d_model # do something with the 3d model
         """
@@ -233,9 +229,7 @@ class ThreeDModelsAPI(APIClient):
 
             Perform a partial update on a 3d model:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelUpdate
-                >>> client = CogniteClient()
                 >>> my_update = ThreeDModelUpdate(id=1).name.set("New Name")
                 >>> res = client.three_d.models.update(my_update)
 
@@ -434,9 +428,7 @@ class ThreeDRevisionsAPI(APIClient):
 
             Perform a partial update on a revision, updating the published property and adding a new field to metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ThreeDModelRevisionUpdate
-                >>> client = CogniteClient()
                 >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
                 >>> res = client.three_d.revisions.update(model_id=1, item=my_update)
         """

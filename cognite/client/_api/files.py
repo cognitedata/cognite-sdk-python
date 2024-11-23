@@ -250,8 +250,6 @@ class FilesAPI(APIClient):
 
             Get file metadata by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
@@ -285,8 +283,6 @@ class FilesAPI(APIClient):
 
             Get file_metadatas by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
@@ -388,25 +384,19 @@ class FilesAPI(APIClient):
 
             Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
                 >>> res = client.files.update(my_update)
 
             Attach labels to a files:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
                 >>> res = client.files.update(my_update)
 
             Detach a single label from a file:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.files.update(my_update)
         """
@@ -446,8 +436,6 @@ class FilesAPI(APIClient):
 
             Search for an asset with an attached label:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
@@ -531,28 +519,20 @@ class FilesAPI(APIClient):
 
             If name is omitted, this method will use the name of the file
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/file")
 
             You can also upload all files in a directory by setting path to the path of a directory:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/my/directory")
 
             Upload a file with a label:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Label
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
             Upload a file with a geo_location:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
-                >>> client = CogniteClient()
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
                 >>> res = client.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
 
@@ -1281,31 +1261,23 @@ class FilesAPI(APIClient):
 
             Iterate over files metadata:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for file_metadata in client.files:
                 ...     file_metadata # do something with the file metadata
 
             Iterate over chunks of files metadata to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for file_list in client.files(chunk_size=2500):
                 ...     file_list # do something with the files
 
             Filter files based on labels:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelFilter
-                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
                 >>> file_list = client.files.list(labels=my_label_filter)
 
             Filter files based on geoLocation:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> client = CogniteClient()
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
                 >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """

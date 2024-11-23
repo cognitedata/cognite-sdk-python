@@ -308,19 +308,15 @@ class DocumentsAPI(APIClient):
 
             Count the number of authors of plain/text documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> client = CogniteClient()
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
                 >>> plain_text_author_count = client.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
 
             Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.data_classes import aggregations
-                >>> client = CogniteClient()
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
                 >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
@@ -404,20 +400,16 @@ class DocumentsAPI(APIClient):
 
             Get the different languages with count for documents with external id prefix "abc":
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> client = CogniteClient()
                 >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
                 >>> result = client.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
                 >>> unique_languages = result.unique
 
             Get the unique mime types with count of documents, but exclude mime types that start with text:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.data_classes import aggregations
-                >>> client = CogniteClient()
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
                 >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
@@ -594,11 +586,9 @@ class DocumentsAPI(APIClient):
             in plain text files created the last week in your CDF project and highlight the matches:
 
                 >>> from datetime import datetime, timedelta
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> client = CogniteClient()
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
                 >>> last_week = filters.Range(DocumentProperty.created_time,
                 ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
@@ -668,17 +658,13 @@ class DocumentsAPI(APIClient):
 
             Iterate over all documents in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> client = CogniteClient()
                 >>> for document in client.documents:
                 ...    print(document.name)
 
             List all documents in your CDF project sorted by mime/type in descending order:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.documents import SortableDocumentProperty
-                >>> client = CogniteClient()
                 >>> documents = client.documents.list(sort=(SortableDocumentProperty.mime_type, "desc"))
 
         """

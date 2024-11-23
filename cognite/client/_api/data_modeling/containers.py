@@ -115,9 +115,7 @@ class ContainersAPI(APIClient):
 
             Fetch using the ContainerId:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ContainerId
-                >>> client = CogniteClient()
                 >>> res = client.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
@@ -244,15 +242,11 @@ class ContainersAPI(APIClient):
 
             Iterate over containers:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for container in client.data_modeling.containers:
                 ...     container # do something with the container
 
             Iterate over chunks of containers to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for container_list in client.data_modeling.containers(chunk_size=10):
                 ...     container_list # do something with the containers
         """
@@ -295,7 +289,6 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client.data_classes.data_modeling import Float64
                 >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference
-                >>> client = CogniteClient()
                 >>> container = ContainerApply(
                 ...     space="mySpace",
                 ...     external_id="myContainer",

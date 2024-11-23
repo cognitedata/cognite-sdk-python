@@ -161,15 +161,11 @@ class LabelsAPI(APIClient):
 
             Iterate over label definitions:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for label in client.labels:
                 ...     label # do something with the label definition
 
             Iterate over chunks of label definitions to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for label_list in client.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """

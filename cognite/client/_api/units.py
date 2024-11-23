@@ -61,8 +61,6 @@ class UnitAPI(APIClient):
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
 
         """

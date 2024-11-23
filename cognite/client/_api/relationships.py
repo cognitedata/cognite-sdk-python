@@ -276,8 +276,6 @@ class RelationshipsAPI(APIClient):
 
             Iterate over relationships:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for relationship in client.relationships:
                 ...     relationship # do something with the relationship
         """
@@ -445,9 +443,7 @@ class RelationshipsAPI(APIClient):
 
             Perform a partial update on a relationship, setting a source_external_id and a confidence:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
                 >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
@@ -456,17 +452,13 @@ class RelationshipsAPI(APIClient):
 
             Attach labels to a relationship:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.add(["PUMP", "VERIFIED"])
                 >>> res = client.relationships.update(my_update)
 
             Detach a single label from a relationship:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """

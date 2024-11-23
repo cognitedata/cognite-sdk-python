@@ -195,15 +195,11 @@ class ViewsAPI(APIClient):
 
             Iterate over views:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for view in client.data_modeling.views:
                 ...     view # do something with the view
 
             Iterate over chunks of views to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
                 ...     view_list # do something with the views
         """
@@ -253,7 +249,6 @@ class ViewsAPI(APIClient):
 
             Create views with edge relations:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,
                 ...     DirectRelationReference,
@@ -262,7 +257,6 @@ class ViewsAPI(APIClient):
                 ...     ViewApply,
                 ...     ViewId
                 ... )
-                >>> client = CogniteClient()
                 >>> acts_in_edge_type = DirectRelationReference(space="imdb", external_id="acts-in")
                 >>> movie_view = ViewApply(
                 ...     space="imdb",

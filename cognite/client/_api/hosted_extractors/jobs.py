@@ -113,8 +113,6 @@ class JobsAPI(APIClient):
 
             Get multiple jobs by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"], ignore_unknown_ids=True)
 
         """
@@ -262,15 +260,11 @@ class JobsAPI(APIClient):
 
             Iterate over jobs:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for job in client.hosted_extractors.jobs:
                 ...     job # do something with the job
 
             Iterate over chunks of jobs to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for job_list in client.hosted_extractors.jobs(chunk_size=25):
                 ...     job_list # do something with the jobs
         """

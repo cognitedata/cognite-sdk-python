@@ -96,8 +96,6 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get extraction pipeline by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve(external_id="1")
         """
 
@@ -132,8 +130,6 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get assets by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -313,15 +309,11 @@ class ExtractionPipelineRunsAPI(APIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
         """
         if isinstance(created_time, str):

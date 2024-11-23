@@ -156,15 +156,11 @@ class RawDatabasesAPI(APIClient):
 
             Iterate over databases:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for db in client.raw.databases:
                 ...     db # do something with the db
 
             Iterate over chunks of databases to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
@@ -310,15 +306,11 @@ class RawTablesAPI(APIClient):
 
             Iterate over tables:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table in client.raw.tables(db_name="db1"):
                 ...     table # do something with the table
 
             Iterate over chunks of tables to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
                 ...     table_list # do something with the tables
         """
