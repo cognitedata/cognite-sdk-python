@@ -133,8 +133,6 @@ class TestSimulatorModels:
         # delete created model
         cognite_client.simulators.delete_models(id=models_created.id)
 
-        # assert model.external_id == "TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL"
-
 
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:

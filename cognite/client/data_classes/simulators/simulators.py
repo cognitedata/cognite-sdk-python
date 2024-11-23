@@ -879,8 +879,7 @@ class SimulatorModel(SimulatorModelCore):
         return hash(self.external_id)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case)
-        return result
+        return super().dump(camel_case)
 
 
 class SimulationRun(CogniteResource):
