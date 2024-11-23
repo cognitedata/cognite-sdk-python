@@ -373,10 +373,10 @@ class TestWorkflowVersions:
             ],
             ignore_unknown_ids=True,
         )
-        assert cognite_client.workflows.versions.retrieve(*new_workflow_version.as_id().as_primitive()) is None
+        assert cognite_client.workflows.versions.retrieve(new_workflow_version.as_id().as_tuple()) is None
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
-        retrieved = cognite_client.workflows.versions.retrieve(*new_workflow_version.as_id().as_primitive())
+        retrieved = cognite_client.workflows.versions.retrieve(new_workflow_version.as_id().as_tuple())
         assert retrieved == new_workflow_version
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:

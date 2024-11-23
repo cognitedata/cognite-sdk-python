@@ -697,6 +697,24 @@ class WorkflowVersionAPI(APIClient):
             wrap_ids=True,
         )
 
+    @overload
+    def retrieve(
+        self,
+        workflow_external_id: WorkflowVersionIdentifier | str,
+        version: str | None = None,
+        *,
+        ignore_unknown_ids: bool = False,
+    ) -> WorkflowVersion | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        workflow_external_id: Sequence[WorkflowVersionIdentifier] | WorkflowIds,
+        version: None = None,
+        *,
+        ignore_unknown_ids: bool = False,
+    ) -> WorkflowVersionList: ...
+
     def retrieve(
         self,
         workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str,
