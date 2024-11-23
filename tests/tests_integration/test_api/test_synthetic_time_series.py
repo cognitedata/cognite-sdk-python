@@ -1,3 +1,4 @@
+import random
 import re
 from datetime import datetime, timezone
 from unittest import mock
@@ -5,6 +6,7 @@ from unittest import mock
 import pytest
 
 from cognite.client.data_classes import Datapoints, DatapointsList
+from cognite.client.data_classes.data_modeling.ids import NodeId
 
 
 @pytest.fixture(scope="session")
@@ -81,6 +83,29 @@ class TestSyntheticDatapointsAPI:
                 limit=100,
                 variables={"A": test_time_series[0], "B": whoopsie_ts},
             )
+
+    def test_query_using_instance_ids(self, cognite_client):
+        node_id = NodeId("PySDK-DMS-time-series-integration-test", "PYSDK integration test 126: clone of 114")
+        ext_id = "PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric"
+        ts_with_ext_id, ts_with_instance_id = cognite_client.time_series.retrieve_multiple(
+            external_ids=ext_id, instance_ids=node_id
+        )
+        n_dps = random.choice(range(100, 1000))
+        res = cognite_client.time_series.data.synthetic.query(
+            expressions="(A / B) * (C / D) - 1",  # should yield zeros only
+            variables={
+                "A": node_id,  # NodeId
+                "B": ts_with_ext_id,  # TimeSeries using external_id
+                "C": ts_with_instance_id,  # TimeSeries using instance_id
+                "D": ext_id,  # str (external ID)
+            },
+            start=random.choice(range(1483228800000)),  # start between 1970 and 2017
+            end="now",
+            limit=n_dps,
+        )
+        assert len(res) == n_dps
+        assert all(err is None for err in res.error)
+        assert all(x == 0.0 for x in res.value)  # float, plz
 
     @pytest.mark.dsl
     def test_expression_builder_time_series_vs_string(self, cognite_client, test_time_series):

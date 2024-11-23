@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING, Any, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.time_series import TimeSeriesCore
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._identifier import Identifier, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -51,7 +53,7 @@ class SyntheticDatapointsAPI(APIClient):
         start: int | str | datetime,
         end: int | str | datetime,
         limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -64,7 +66,7 @@ class SyntheticDatapointsAPI(APIClient):
             start (int | str | datetime): Inclusive start.
             end (int | str | datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
-            variables (dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
+            variables (dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
@@ -75,21 +77,33 @@ class SyntheticDatapointsAPI(APIClient):
 
         Examples:
 
-            Request a synthetic time series query with direct syntax:
+            Execute a synthetic time series query with an expression. Here we sum three time series plus a constant. The first is referenced by ID,
+            the second by external ID, and the third by instance ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
+                >>> expression = '''
+                ...     123
+                ...     + ts{id:123}
+                ...     + ts{externalId:'abc'}
+                ...     + ts{space:'my-space',externalId:'my-ts-xid'}
+                ... '''
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="ts{id:123} + ts{externalId:'abc'}",
+                ...     expressions=expression,
                 ...     start="2w-ago",
                 ...     end="now")
 
-            Use variables to re-use an expression:
+            You can also specify variables for an easier query syntax:
 
+                >>> from cognite.client.data_classes.data_modeling.ids import NodeId
                 >>> ts = client.time_series.retrieve(id=123)
-                >>> variables = {"A": ts, "B": "my_ts_external_id"}
+                >>> variables = {
+                ...     "A": ts,
+                ...     "B": "my_ts_external_id",
+                ...     "C": NodeId("my-space", "my-ts-xid"),
+                ... }
                 >>> dps = client.time_series.data.synthetic.query(
-                ...     expressions="A+B", start="2w-ago", end="now", variables=variables)
+                ...     expressions="A+B+C", start="2w-ago", end="now", variables=variables)
 
             Use sympy to build complex expressions:
 
@@ -116,6 +130,7 @@ class SyntheticDatapointsAPI(APIClient):
                 user_expr, variables, aggregate, granularity, target_unit, target_unit_system
             )
             query = {"expression": expression, "start": timestamp_to_ms(start), "end": timestamp_to_ms(end)}
+            # NOTE / TODO: We misuse the 'external_id' field for the entire 'expression string':
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
             tasks.append((query, query_datapoints, limit))
 
@@ -142,7 +157,7 @@ class SyntheticDatapointsAPI(APIClient):
     def _build_expression(
         self,
         expression: str | sympy.Basic,
-        variables: dict[str | sympy.Symbol, str | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -181,11 +196,25 @@ class SyntheticDatapointsAPI(APIClient):
         to_substitute = {}
         for k, v in variables.items():
             if isinstance(v, TimeSeriesCore):
-                if v.external_id is None:
-                    raise ValueError(f"TimeSeries passed in 'variables' is missing required field 'external_id' ({v})")
-                v = v.external_id
+                try:
+                    v = Identifier.load(external_id=v.external_id, instance_id=v.instance_id).as_primitive()
+                except ValueError:
+                    # ^error message wrongly says id is accepted, which it is not
+                    raise ValueError(
+                        f"TimeSeries passed in 'variables' is missing required field 'external_id' or 'instance_id' ({v})"
+                    ) from None
+
+            if isinstance(v, str):
+                sub_string = f"externalId:'{v}'"
+            elif isinstance(v, InstanceId):
+                sub_string = f"space:'{v.space}',externalId:'{v.external_id}'"
+            else:
+                raise TypeError(
+                    f"Unsupported variable type={type(v)} in 'variables', must be str, NodeId or TimeSeries object"
+                )
+
             # We convert to str to ensure any sympy.Symbol is replaced with its name:
-            to_substitute[re.escape(str(k))] = f"ts{{externalId:'{v}'{aggregate_str}{target_unit_str}}}"
+            to_substitute[re.escape(str(k))] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
 
         # Substitute all variables in one go to avoid substitution of prior substitutions:
         pattern = re.compile(r"\b" + r"\b|\b".join(to_substitute) + r"\b")  # note: \b marks a word boundary

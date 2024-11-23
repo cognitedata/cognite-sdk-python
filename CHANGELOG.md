@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.69.0] - 2024-11-23
+### Added
+- Synthetic Datapoints API has better support for `instance_id`. Previously you had to specify these directly
+  in the expression(s), but now you can use the `variables` parameter to more easily substitute the time series
+  identifiers directly into the expression(s).
+
 ## [7.68.0] - 2024-11-22
 ### Added
 - New methods: `WorkflowTriggerAPI.[list, list_runs]`
