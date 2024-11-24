@@ -565,7 +565,7 @@ class Simulator(SimulatorCore):
         return hash(self.external_id)
 
 
-class SimulatorIntegration(CogniteResource):
+class SimulatorIntegrationCore(WriteableCogniteResource["SimulatorIntegrationWrite"], ABC):
     """
     The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF).
     It provides information about the configured connectors for a given simulator, including their status and additional
@@ -578,16 +578,11 @@ class SimulatorIntegration(CogniteResource):
 
     Args:
 
-        id (int): A unique id of a simulator integration
         external_id (str): External id of the simulator integration
         simulator_external_id (str): External id of the associated simulator
         heartbeat (int): The interval in seconds between the last heartbeat and the current time
-        active (bool): Whether the simulator integration is active
         data_set_id (int): The id of the dataset associated with the simulator integration
         connector_version (str): The version of the connector
-        log_id (int): The id of the log associated with the simulator integration
-        created_time (int): The time when the simulator integration was created
-        last_updated_time (int): The time when the simulator integration was last updated
         license_status (str | None): The status of the license
         simulator_version (str | None): The version of the simulator
         license_last_checked_time (int | None): The time when the license was last checked
@@ -598,32 +593,22 @@ class SimulatorIntegration(CogniteResource):
 
     def __init__(
         self,
-        id: int,
         external_id: str,
         simulator_external_id: str,
         heartbeat: int,
-        active: bool,
         data_set_id: int,
         connector_version: str,
-        log_id: int,
-        created_time: int,
-        last_updated_time: int,
         license_status: str | None = None,
         simulator_version: str | None = None,
         license_last_checked_time: int | None = None,
         connector_status: str | None = None,
         connector_status_updated_time: int | None = None,
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.heartbeat = heartbeat
-        self.active = active
         self.data_set_id = data_set_id
         self.connector_version = connector_version
-        self.log_id = log_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self.license_status = license_status
         self.simulator_version = simulator_version
         self.license_last_checked_time = license_last_checked_time
@@ -633,16 +618,11 @@ class SimulatorIntegration(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            id=resource["id"],
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             heartbeat=resource["heartbeat"],
-            active=resource["active"],
             data_set_id=resource["dataSetId"],
             connector_version=resource["connectorVersion"],
-            log_id=resource["logId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
             license_status=resource.get("licenseStatus"),
             simulator_version=resource.get("simulatorVersion"),
             license_last_checked_time=resource.get("licenseLastCheckedTime"),
@@ -652,6 +632,101 @@ class SimulatorIntegration(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
+
+
+class SimulatorIntegrationWrite(SimulatorIntegrationCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        heartbeat: int,
+        data_set_id: int,
+        connector_version: str,
+        license_status: str | None = None,
+        simulator_version: str | None = None,
+        license_last_checked_time: int | None = None,
+        connector_status: str | None = None,
+        connector_status_updated_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            heartbeat=heartbeat,
+            data_set_id=data_set_id,
+            connector_version=connector_version,
+            license_status=license_status,
+            simulator_version=simulator_version,
+            license_last_checked_time=license_last_checked_time,
+            connector_status=connector_status,
+            connector_status_updated_time=connector_status_updated_time,
+        )
+
+    def as_write(self) -> SimulatorIntegrationWrite:
+        """Returns a writeable version of this resource"""
+        return self
+
+
+class SimulatorIntegration(SimulatorIntegrationCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        heartbeat: int,
+        data_set_id: int,
+        connector_version: str,
+        license_status: str | None = None,
+        simulator_version: str | None = None,
+        license_last_checked_time: int | None = None,
+        connector_status: str | None = None,
+        connector_status_updated_time: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        id: int | None = None,
+        active: bool | None = None,
+        log_id: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.heartbeat = heartbeat
+        self.data_set_id = data_set_id
+        self.connector_version = connector_version
+        self.license_status = license_status
+        self.simulator_version = simulator_version
+        self.license_last_checked_time = license_last_checked_time
+        self.connector_status = connector_status
+        self.connector_status_updated_time = connector_status_updated_time
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int | None = id
+        self.created_time: int | None = created_time
+        self.last_updated_time: int | None = last_updated_time
+        self.active = active
+        self.log_id = log_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorIntegrationWrite:
+        """Returns a writeable version of this resource"""
+        return SimulatorIntegrationWrite(
+            external_id=self.external_id,
+            simulator_external_id=self.simulator_external_id,
+            heartbeat=self.heartbeat,
+            data_set_id=self.data_set_id,
+            connector_version=self.connector_version,
+            license_status=self.license_status,
+            simulator_version=self.simulator_version,
+            license_last_checked_time=self.license_last_checked_time,
+            connector_status=self.connector_status,
+            connector_status_updated_time=self.connector_status_updated_time,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
 
 
 class SimulatorModelRevision(CogniteResource):
@@ -1034,8 +1109,19 @@ class SimulatorList(WriteableCogniteResourceList[SimulatorWrite, Simulator], IdT
         return SimulatorWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
 
-class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration]):
+class SimulatorIntegrationWriteList(CogniteResourceList[SimulatorIntegrationWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorIntegrationWrite
+
+
+class SimulatorIntegrationList(
+    WriteableCogniteResourceList[SimulatorIntegrationWrite, SimulatorIntegration], IdTransformerMixin
+):
     _RESOURCE = SimulatorIntegration
+
+    def as_write(self) -> SimulatorIntegrationWriteList:
+        return SimulatorIntegrationWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class SimulatorModelList(CogniteResourceList[SimulatorModel]):
