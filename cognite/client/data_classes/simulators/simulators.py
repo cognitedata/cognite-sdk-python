@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -10,6 +11,10 @@ from cognite.client.data_classes._base import (
     CogniteObject,
     CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
+    IdTransformerMixin,
+    WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -421,7 +426,7 @@ class SimulatorStep(CogniteObject):
         return output
 
 
-class Simulator(CogniteResource):
+class SimulatorCore(WriteableCogniteResource["SimulatorWrite"], ABC):
     """The simulator resource contains the definitions necessary for Cognite Data Fusion (CDF) to interact with a given simulator.
 
     It serves as a central contract that allows APIs, UIs, and integrations (connectors) to utilize the same definitions
@@ -433,12 +438,9 @@ class Simulator(CogniteResource):
     This is the read/response format of the simulator.
 
     Args:
-        id (int): A unique id of a simulator
         external_id (str): External id of the simulator
         name (str): Name of the simulator
         file_extension_types (str | SequenceNotStr[str]): File extension types supported by the simulator
-        created_time (int): None
-        last_updated_time (int): None
         model_types (SimulatorModelType | Sequence[SimulatorModelType] | None): Model types supported by the simulator
         step_fields (SimulatorStep | Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
         unit_quantities (SimulatorQuantity | Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
@@ -447,12 +449,9 @@ class Simulator(CogniteResource):
 
     def __init__(
         self,
-        id: int,
         external_id: str,
         name: str,
         file_extension_types: str | SequenceNotStr[str],
-        created_time: int,
-        last_updated_time: int,
         model_types: SimulatorModelType | Sequence[SimulatorModelType] | None = None,
         step_fields: SimulatorStep | Sequence[SimulatorStep] | None = None,
         unit_quantities: SimulatorQuantity | Sequence[SimulatorQuantity] | None = None,
@@ -463,19 +462,13 @@ class Simulator(CogniteResource):
         self.model_types = model_types
         self.step_fields = step_fields
         self.unit_quantities = unit_quantities
-        self.id = id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            id=resource["id"],
             external_id=resource["externalId"],
             name=resource["name"],
             file_extension_types=resource["fileExtensionTypes"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
             model_types=SimulatorModelType._load_list(resource["modelTypes"], cognite_client)
             if "modelTypes" in resource
             else None,
@@ -499,6 +492,77 @@ class Simulator(CogniteResource):
             )
 
         return output
+
+
+class SimulatorWrite(SimulatorCore):
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        file_extension_types: str | SequenceNotStr[str],
+        model_types: SimulatorModelType | Sequence[SimulatorModelType] | None = None,
+        step_fields: SimulatorStep | Sequence[SimulatorStep] | None = None,
+        unit_quantities: SimulatorQuantity | Sequence[SimulatorQuantity] | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            file_extension_types=file_extension_types,
+            model_types=model_types,
+            step_fields=step_fields,
+            unit_quantities=unit_quantities,
+        )
+
+    def as_write(self) -> SimulatorWrite:
+        """Returns a writeable version of this resource"""
+        return self
+
+
+class Simulator(SimulatorCore):
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        file_extension_types: str | SequenceNotStr[str],
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        id: int | None = None,
+        model_types: SimulatorModelType | Sequence[SimulatorModelType] | None = None,
+        step_fields: SimulatorStep | Sequence[SimulatorStep] | None = None,
+        unit_quantities: SimulatorQuantity | Sequence[SimulatorQuantity] | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.file_extension_types = file_extension_types
+        self.model_types = model_types
+        self.step_fields = step_fields
+        self.unit_quantities = unit_quantities
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int | None = id
+        self.created_time: int | None = created_time
+        self.last_updated_time: int | None = last_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorWrite:
+        """Returns a writeable version of this resource"""
+        return SimulatorWrite(
+            external_id=self.external_id,
+            name=self.name,
+            file_extension_types=self.file_extension_types,
+            model_types=self.model_types,
+            step_fields=self.step_fields,
+            unit_quantities=self.unit_quantities,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
 
 
 class SimulatorIntegration(CogniteResource):
@@ -959,8 +1023,15 @@ class SimulatorRoutineRevisionsList(CogniteResourceList[SimulatorRoutineRevision
     _RESOURCE = SimulatorRoutineRevision
 
 
-class SimulatorList(CogniteResourceList[Simulator]):
+class SimulatorWriteList(CogniteResourceList[SimulatorWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorWrite
+
+
+class SimulatorList(WriteableCogniteResourceList[SimulatorWrite, Simulator], IdTransformerMixin):
     _RESOURCE = Simulator
+
+    def as_write(self) -> SimulatorWriteList:
+        return SimulatorWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
 
 class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration]):
