@@ -8,6 +8,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -19,6 +20,7 @@ from cognite.client.data_classes.documents import (
     TemporaryLink,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -475,7 +477,12 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    def retrieve_content(
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+    ) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -487,7 +494,9 @@ class DocumentsAPI(APIClient):
 
 
         Args:
-            id (int): The server-generated ID for the document you want to retrieve the content of.
+            id (int | None): The server-generated ID for the document you want to retrieve the content of.
+            external_id (str | None): External ID
+            instance_id (NodeId | None): Instance ID
 
         Returns:
             bytes: The content of the document.
@@ -500,7 +509,9 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json={"id": id})
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
+        identifier = identifiers.as_dicts()[0]
+        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=identifier)
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
