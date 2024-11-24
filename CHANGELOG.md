@@ -17,10 +17,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.70.0] - 2024-11-24
-### Added
-- Documents content endpoint now support external id and instance id.
-
 ## [7.69.0] - 2024-11-23
 ### Added
 - Synthetic Datapoints API has better support for `instance_id`. Previously you had to specify these directly
