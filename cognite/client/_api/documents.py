@@ -500,7 +500,7 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-        response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
+        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json={"id": id})
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
@@ -529,7 +529,7 @@ class DocumentsAPI(APIClient):
                 ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
         with self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
+            "POST", f"{self._RESOURCE_PATH}/content", stream=True, accept="text/plain", json={"id": id}
         ) as response:
             for chunk in response.iter_content(chunk_size=2**21):
                 if chunk:  # filter out keep-alive new chunks
