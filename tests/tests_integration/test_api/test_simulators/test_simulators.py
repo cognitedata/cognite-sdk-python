@@ -142,7 +142,7 @@ class TestSimulatorModels:
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_external_id + "-revision-1"
         # delete created model
-        cognite_client.simulators.models.delete_models(id=models_created.id)
+        cognite_client.simulators.models.delete(id=models_created.id)
 
 
 class TestSimulatorRoutines:

@@ -206,13 +206,12 @@ class SimulatorModelsAPI(APIClient):
             items=model,
             input_resource_cls=SimulatorModelWrite,
             resource_path="/simulators/models",
-            headers={"cdf-version": "beta"},
         )
 
-    def delete_models(
+    def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete one or more models <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models>`_
 
@@ -228,10 +227,9 @@ class SimulatorModelsAPI(APIClient):
                 >>> client.simulators.delete_models(id=[1,2,3], external_id="3")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
             wrap_ids=True,
             resource_path="/simulators/models",
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -272,5 +270,4 @@ class SimulatorModelsAPI(APIClient):
             items=revisions,
             input_resource_cls=SimulatorModelRevisionWrite,
             resource_path="/simulators/models/revisions",
-            headers={"cdf-version": "beta"},
         )
