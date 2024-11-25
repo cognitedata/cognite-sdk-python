@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.69.1] - 2024-11-25
+### Added
+- Support for future time shift strings, eg. `2w-ahead`
+
 ## [7.69.0] - 2024-11-23
 ### Added
 - Synthetic Datapoints API has better support for `instance_id`. Previously you had to specify these directly

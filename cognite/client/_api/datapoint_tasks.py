@@ -48,7 +48,7 @@ from cognite.client.utils._time import (
     parse_str_timezone,
     split_granularity_into_quantity_and_normalized_unit,
     split_time_range,
-    time_ago_to_ms,
+    time_shift_to_ms,
     timestamp_to_ms,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -329,7 +329,7 @@ class _DpsQueryValidator:
         if ts is None:
             return default
         elif isinstance(ts, str):
-            return frozen_time_now - time_ago_to_ms(ts)
+            return frozen_time_now - time_shift_to_ms(ts)
         else:
             return timestamp_to_ms(ts)
 
