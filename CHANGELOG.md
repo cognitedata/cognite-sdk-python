@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.69.1] - 2024-11-25
 ### Added
-- Support for future time shift strings, eg. `2w-ahead`
+- Support for future time shift strings in `timestamp_to_ms` and all resources using the function to process time input, eg. `2w-ahead`
 
 ## [7.69.0] - 2024-11-23
 ### Added
