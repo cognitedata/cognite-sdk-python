@@ -771,7 +771,7 @@ class DatapointsAPI(APIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            we are using the time-shift format to get raw data for the time series with id=42 from 2 weeks ago up until now.
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -821,7 +821,7 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         DatapointsQuery(id=42, end="1d-ago", aggregates="average"),
-                ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
+                ...         DatapointsQuery(id=69, end="2d-ahead", aggregates=["average"]),
                 ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
                 ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
@@ -1652,6 +1652,12 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+
+            Deleting the data from now until 2 days in the future from a time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.time_series.data.delete_range(start="now", end="2d-ahead", id=1)
         """
         start_ms = timestamp_to_ms(start)
         end_ms = timestamp_to_ms(end)
@@ -1675,7 +1681,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
-                ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
+                ...           {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"}]
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
