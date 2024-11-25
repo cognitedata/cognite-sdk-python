@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
-from cognite.client.data_classes.simulators.simulators import SimulatorModel
+from cognite.client.data_classes.simulators.simulators import SimulatorModel, SimulatorModelRevision
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator,
     simulator_integration,
@@ -96,6 +96,7 @@ class TestSimulatorIntegrations:
 
 class TestSimulatorModels:
     TEST_DATA_SET_ID = 97552494921583
+    TEST_FILE_ID = 1951667411909355
 
     def test_list_models(self, cognite_client: CogniteClient) -> None:
         models = cognite_client.simulators.models.list(limit=5)
@@ -115,7 +116,6 @@ class TestSimulatorModels:
         assert model is not None
         assert model.external_id == "Shower_mixer-1"
 
-    @pytest.fixture
     def test_create_model(self, cognite_client: CogniteClient) -> None:
         current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         model_external_id = current_time
@@ -127,11 +127,22 @@ class TestSimulatorModels:
             type="SteadyState",
         )
 
-        models_created = cognite_client.simulators.create_model(models_to_create)
+        models_created = cognite_client.simulators.models.create(models_to_create)
         assert models_created is not None
         assert models_created.external_id == model_external_id
+
+        model_revision_to_create = SimulatorModelRevision(
+            external_id=model_external_id + "-revision-1",
+            model_external_id=model_external_id,
+            file_id=self.TEST_FILE_ID,
+            description="Test revision",
+        )
+
+        model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
+        assert model_revision_created is not None
+        assert model_revision_created.external_id == model_external_id + "-revision-1"
         # delete created model
-        cognite_client.simulators.delete_models(id=models_created.id)
+        cognite_client.simulators.models.delete_models(id=models_created.id)
 
 
 class TestSimulatorRoutines:

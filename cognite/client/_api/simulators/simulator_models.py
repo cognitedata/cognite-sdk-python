@@ -11,7 +11,9 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorModelCore,
     SimulatorModelList,
     SimulatorModelRevision,
+    SimulatorModelRevisionCore,
     SimulatorModelRevisionList,
+    SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -167,12 +169,12 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def create_model(self, model: Sequence[SimulatorModel]) -> SimulatorModelList: ...
+    def create(self, model: Sequence[SimulatorModel]) -> SimulatorModelList: ...
 
     @overload
-    def create_model(self, model: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
+    def create(self, model: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
 
-    def create_model(
+    def create(
         self, model: SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]
     ) -> SimulatorModel | SimulatorModelList:
         """`Create one or more simulator models. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models>`_
@@ -229,5 +231,46 @@ class SimulatorModelsAPI(APIClient):
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             resource_path="/simulators/models",
+            headers={"cdf-version": "beta"},
+        )
+
+    @overload
+    def create_revisions(self, revision: Sequence[SimulatorModelRevision]) -> SimulatorModelRevisionList: ...
+
+    @overload
+    def create_revisions(self, revision: SimulatorModelRevision | SimulatorModelRevisionWrite) -> SimulatorModelRevisionList: ...
+
+    def create_revisions(
+        self, revisions: SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]
+    ) -> SimulatorModel | SimulatorModelList:
+        """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
+
+        You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
+
+        Args:
+            model (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): No description.
+
+        Returns:
+            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
+
+        Examples:
+
+            Create new simulator models::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SimulatorModelRevision
+                >>> client = CogniteClient()
+                >>> models = [SimulatorModelRevision(external_id="model1"), SimulatorModelRevision(external_id="model2")]
+                >>> res = client.simulators.models.create_revision(models)
+
+        """
+        assert_type(revisions, "simulator_model_revision", [SimulatorModelRevisionCore, Sequence])
+
+        return self._create_multiple(
+            list_cls=SimulatorModelList,
+            resource_cls=SimulatorModel,
+            items=revisions,
+            input_resource_cls=SimulatorModelRevisionWrite,
+            resource_path="/simulators/models/revisions",
             headers={"cdf-version": "beta"},
         )
