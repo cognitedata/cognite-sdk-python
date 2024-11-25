@@ -40,7 +40,7 @@ from cognite.client.utils._text import random_string
 @pytest.fixture(autouse=True, scope="module")
 def wf_setup_module(cognite_client: CogniteClient) -> None:
     """setup any state specific to the execution of the given module."""
-    resource_age = timestamp_to_ms("15m-ago")
+    resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
     wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.created_time < resource_age]
