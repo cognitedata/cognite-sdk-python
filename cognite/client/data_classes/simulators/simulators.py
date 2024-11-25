@@ -978,11 +978,6 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
-    Limitations:
-        - A project can have a maximum of 1000 simulator models
-        - Each simulator model can have a maximum of 200 revisions
-
-
     This is the read/response format of a simulator model.
 
     Args:
@@ -1069,10 +1064,6 @@ class SimulatorModel(SimulatorModelCore):
 
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
-
-    Limitations:
-        - A project can have a maximum of 1000 simulator models
-        - Each simulator model can have a maximum of 200 revisions
 
 
     This is the read/response format of a simulator model.
