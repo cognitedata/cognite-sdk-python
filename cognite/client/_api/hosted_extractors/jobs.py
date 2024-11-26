@@ -68,7 +68,6 @@ class JobsAPI(APIClient):
             Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
         self._warning.warn()
-
         return self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
@@ -320,6 +319,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/logs",
             list_cls=JobLogsList,
             resource_cls=JobLogs,
             filter=filter_ or None,
@@ -364,6 +364,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/metrics",
             list_cls=JobMetricsList,
             resource_cls=JobMetrics,
             filter=filter_ or None,

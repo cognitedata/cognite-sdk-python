@@ -2,11 +2,17 @@ import inspect
 from pathlib import Path
 
 import pytest
-import requests
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from tests.utils import all_subclasses
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    ExternalIDTransformerMixin,
+    IdTransformerMixin,
+    InternalIdTransformerMixin,
+)
+from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from tests.utils import all_concrete_subclasses, all_subclasses
 
 ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
 
@@ -95,12 +101,28 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     assert not (has_retry and no_retry_needed)
 
 
-@pytest.mark.xfail  # updated .proto-files not merged yet (StringDatapoint missing status)
-def test_verify_proto_files(tmpdir):
-    proto_url = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries"
+@pytest.mark.parametrize("lst_cls", all_concrete_subclasses(CogniteResourceList))
+def test_ensure_identifier_mixins(lst_cls):
+    # TODO: Data Modeling uses "as_ids()" even though existing classes use the same for "integer internal ids"
+    if "data_modeling" in str(lst_cls):
+        return
+    elif lst_cls in {DatapointsList, DatapointsArrayList}:  # May contain duplicates
+        return
 
-    remote_file1 = requests.get(f"{proto_url}/data_points.proto").text.splitlines()
-    remote_file2 = requests.get(f"{proto_url}/data_point_list_response.proto").text.splitlines()
+    bases = lst_cls.__mro__
+    sig = inspect.signature(lst_cls._RESOURCE).parameters
 
-    assert remote_file1 == Path("cognite/client/_proto/data_points.proto").read_text().splitlines()
-    assert remote_file2 == Path("cognite/client/_proto/data_point_list_response.proto").read_text().splitlines()
+    missing_id = "id" in sig and not (InternalIdTransformerMixin in bases or IdTransformerMixin in bases)
+    missing_external_id = "external_id" in sig and not (
+        ExternalIDTransformerMixin in bases or IdTransformerMixin in bases
+    )
+
+    # TODO: Make an instance ID mixin class, for now, we just ignore:
+    # missing_instance_id = "instance_id" in sig and ...
+
+    if missing_id and missing_external_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from IdTransformerMixin (id+external_id)")
+    elif missing_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from InternalIdTransformerMixin")
+    elif missing_external_id:
+        pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from ExternalIDTransformerMixin")

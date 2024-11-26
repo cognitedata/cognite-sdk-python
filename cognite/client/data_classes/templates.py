@@ -9,6 +9,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    ExternalIDTransformerMixin,
     PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
@@ -118,11 +119,11 @@ class TemplateGroupWrite(TemplateGroupCore):
         return self
 
 
-class TemplateGroupWriteList(CogniteResourceList[TemplateGroupWrite]):
+class TemplateGroupWriteList(CogniteResourceList[TemplateGroupWrite], ExternalIDTransformerMixin):
     _RESOURCE = TemplateGroupWrite
 
 
-class TemplateGroupList(WriteableCogniteResourceList[TemplateGroupWrite, TemplateGroup]):
+class TemplateGroupList(WriteableCogniteResourceList[TemplateGroupWrite, TemplateGroup], ExternalIDTransformerMixin):
     _RESOURCE = TemplateGroup
 
     def as_write(self) -> TemplateGroupWriteList:
@@ -660,22 +661,24 @@ class GraphQlResponse(CogniteResource):
         )
 
 
-class TemplateInstanceWriteList(CogniteResourceList[TemplateInstanceWrite]):
+class TemplateInstanceWriteList(CogniteResourceList[TemplateInstanceWrite], ExternalIDTransformerMixin):
     _RESOURCE = TemplateInstanceWrite
 
 
-class TemplateInstanceList(WriteableCogniteResourceList[TemplateInstanceWrite, TemplateInstance]):
+class TemplateInstanceList(
+    WriteableCogniteResourceList[TemplateInstanceWrite, TemplateInstance], ExternalIDTransformerMixin
+):
     _RESOURCE = TemplateInstance
 
     def as_write(self) -> TemplateInstanceWriteList:
         return TemplateInstanceWriteList([item.as_write() for item in self], cognite_client=self._get_cognite_client())
 
 
-class ViewWriteList(CogniteResourceList[ViewWrite]):
+class ViewWriteList(CogniteResourceList[ViewWrite], ExternalIDTransformerMixin):
     _RESOURCE = ViewWrite
 
 
-class ViewList(WriteableCogniteResourceList[ViewWrite, View]):
+class ViewList(WriteableCogniteResourceList[ViewWrite, View], ExternalIDTransformerMixin):
     _RESOURCE = View
 
     def as_write(self) -> ViewWriteList:

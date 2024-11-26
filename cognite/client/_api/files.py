@@ -30,7 +30,6 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import execute_tasks
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -38,10 +37,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
-
-    @staticmethod
-    def _warn_alpha() -> None:
-        FeaturePreviewWarning(api_maturity="alpha", feature_name="Files with Instance ID", sdk_maturity="alpha").warn()
 
     @overload
     def __call__(
@@ -259,14 +254,8 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve(external_id="1")
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
-        return self._retrieve_multiple(
-            list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers, headers=headers
-        )
+        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
@@ -300,17 +289,12 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
-        header: dict | None = None
-        if instance_ids is not None:
-            self._warn_alpha()
-            header = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
-            headers=header,
         )
 
     def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
@@ -426,20 +410,12 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.files.update(my_update)
         """
-        headers: dict | None = None
-        if (isinstance(item, Sequence) and any(file.instance_id for file in item)) or (
-            not isinstance(item, Sequence) and item.instance_id
-        ):
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
-
         return self._update_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             update_cls=FileMetadataUpdate,
             resource_path=self._RESOURCE_PATH,
             items=item,
-            headers=headers,
             mode=mode,
         )
 
@@ -657,29 +633,19 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
         if isinstance(content, str):
             content = content.encode("utf-8")
 
         try:
-            res = self._post(
-                url_path=f"{self._RESOURCE_PATH}/uploadlink",
-                json={"items": identifiers.as_dicts()},
-                headers=headers,
-            )
+            res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
         except CogniteAPIError as e:
             if e.code == 403:
                 raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
-        file_metadata = self._upload_bytes(content, res.json()["items"][0])
-
-        return file_metadata
+        return self._upload_bytes(content, res.json()["items"][0])
 
     def _upload_bytes(self, content: bytes | TextIO | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
         upload_url = returned_file_metadata["uploadUrl"]
@@ -688,20 +654,15 @@ class FilesAPI(APIClient):
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
         file_metadata = FileMetadata.load(returned_file_metadata)
-        headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
             "PUT",
             full_upload_url,
-            accept="*/*",
             data=content,
             timeout=self._config.file_transfer_timeout,
-            headers=headers,
+            headers={"Content-Type": file_metadata.mime_type, "accept": "*/*"},
         )
         if not upload_response.ok:
-            raise CogniteFileUploadError(
-                message=upload_response.text,
-                code=upload_response.status_code,
-            )
+            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
         return file_metadata
 
     def upload_bytes(
@@ -921,18 +882,12 @@ class FilesAPI(APIClient):
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
-
         try:
             res = self._post(
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
                 json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
-                headers=headers,
             )
         except CogniteAPIError as e:
             if e.code == 403:
@@ -962,10 +917,9 @@ class FilesAPI(APIClient):
         upload_response = self._http_client_with_retry.request(
             "PUT",
             upload_url,
-            accept="*/*",
             data=content,
             timeout=self._config.file_transfer_timeout,
-            headers=None,
+            headers={"accept": "*/*"},
         )
         if not upload_response.ok:
             raise CogniteFileUploadError(
@@ -979,13 +933,9 @@ class FilesAPI(APIClient):
         Args:
             session (FileMultipartUploadSession): Multipart upload session returned from
         """
-        headers: dict | None = None
-        if session.file_metadata.instance_id is not None:
-            headers = {"cdf-version": "alpha"}
         self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
-            headers=headers,
         )
 
     def retrieve_download_urls(
@@ -1006,11 +956,6 @@ class FilesAPI(APIClient):
         Returns:
             dict[int | str | NodeId, str]: Dictionary containing download urls.
         """
-
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
         batch_size = 100
@@ -1019,7 +964,7 @@ class FilesAPI(APIClient):
         if extended_expiration:
             query_params["extendedExpiration"] = True
         tasks = [
-            dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params, headers=headers)
+            {"url_path": "/files/downloadlink", "json": {"items": id_batch}, "params": query_params}
             for id_batch in id_batches
         ]
         tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
@@ -1101,10 +1046,6 @@ class FilesAPI(APIClient):
 
                 >>> client.files.download(directory=".", id=[1,2,3])
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
         directory = Path(directory)
@@ -1117,7 +1058,6 @@ class FilesAPI(APIClient):
         all_ids, filepaths, directories = self._get_ids_filepaths_directories(
             directory, id_to_metadata, keep_directory_structure
         )
-
         if keep_directory_structure:
             for file_folder in set(directories):
                 file_folder.mkdir(parents=True, exist_ok=True)
@@ -1127,7 +1067,7 @@ class FilesAPI(APIClient):
             filepaths = [Path(file_path) for file_path in filepaths_str]
 
         self._download_files_to_directory(
-            directory=directory, all_ids=all_ids, id_to_metadata=id_to_metadata, filepaths=filepaths, headers=headers
+            directory=directory, all_ids=all_ids, id_to_metadata=id_to_metadata, filepaths=filepaths
         )
 
     @staticmethod
@@ -1193,10 +1133,9 @@ class FilesAPI(APIClient):
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
-    def _get_download_link(self, identifier: dict[str, int | str], headers: dict | None = None) -> str:
-        return self._post(url_path="/files/downloadlink", json={"items": [identifier]}, headers=headers).json()[
-            "items"
-        ][0]["downloadUrl"]
+    def _get_download_link(self, identifier: dict[str, int | str]) -> str:
+        (item,) = self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"]
+        return item["downloadUrl"]
 
     def _process_file_download(
         self,
@@ -1209,12 +1148,12 @@ class FilesAPI(APIClient):
         file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
             raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
-        download_link = self._get_download_link(identifier, headers)
+        download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path_absolute)
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
-            "GET", download_link, accept="*/*", stream=True, timeout=self._config.file_transfer_timeout
+            "GET", download_link, headers={"accept": "*/*"}, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
@@ -1239,17 +1178,12 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
         """
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
-
         if isinstance(path, str):
             path = Path(path)
         if not path.parent.is_dir():
             raise NotADirectoryError(f"{path.parent} is not a directory")
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        download_link = self._get_download_link(identifier, headers)
+        download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
     def download_bytes(
@@ -1271,19 +1205,15 @@ class FilesAPI(APIClient):
                 >>> file_content = client.files.download_bytes(id=1)
 
         Returns:
-            bytes: No description."""
-        headers: dict | None = None
-        if instance_id is not None:
-            self._warn_alpha()
-            headers = {"cdf-version": "alpha"}
-
+            bytes: The file in binary format
+        """
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        download_link = self._get_download_link(identifier, headers)
+        download_link = self._get_download_link(identifier)
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
         res = self._http_client_with_retry.request(
-            "GET", download_link, accept="*/*", timeout=self._config.file_transfer_timeout
+            "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
         )
         return res.content
 

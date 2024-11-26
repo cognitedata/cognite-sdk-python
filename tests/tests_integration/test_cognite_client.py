@@ -3,7 +3,7 @@ import pickle
 import pytest
 
 from cognite.client.credentials import OAuthClientCertificate, Token
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteProjectAccessError
 
 
 @pytest.fixture
@@ -13,6 +13,23 @@ def cognite_client_with_wrong_base_url(cognite_client, monkeypatch):
 
 
 class TestCogniteClient:
+    def test_wrong_project(self, monkeypatch, cognite_client):
+        monkeypatch.setattr(cognite_client.config, "project", "that-looks-wrong")
+        to_match = (
+            "^You don't have access to the requested CDF project='that-looks-wrong'. "
+            "Did you intend to use one of: ['python-sdk-test']? | code: 401 |"
+        )
+        with pytest.raises(CogniteProjectAccessError, match=to_match):
+            cognite_client.assets.list()
+
+    def test_wrong_project_and_wrong_cluster(self, monkeypatch, cognite_client):
+        monkeypatch.setattr(cognite_client.config, "project", "that-looks-wrong")
+        monkeypatch.setattr(cognite_client.config, "base_url", "https://aws-dub-dev.cognitedata.com")
+        to_match = "^You don't have access to the requested CDF project='that-looks-wrong' | code: 401 |"
+
+        with pytest.raises(CogniteProjectAccessError, match=to_match):
+            cognite_client.assets.list()
+
     def test_wrong_base_url_resulting_in_301(self, cognite_client_with_wrong_base_url):
         with pytest.raises(CogniteAPIError):
             cognite_client_with_wrong_base_url.assets.list(limit=1)

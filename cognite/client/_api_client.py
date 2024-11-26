@@ -41,7 +41,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteProjectAccessError
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import (
     get_current_sdk_version,
@@ -227,18 +227,24 @@ class APIClient:
         kwargs.setdefault("allow_redirects", False)
 
         if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, accept=accept, **kwargs)
+            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
         else:
-            res = self._http_client.request(method=method, url=full_url, accept=accept, **kwargs)
+            res = self._http_client.request(method=method, url=full_url, **kwargs)
 
-        if not self._status_ok(res.status_code):
-            self._raise_api_error(res, payload=json_payload)
+        match res.status_code:
+            case 200 | 201 | 202 | 204:
+                pass
+            case 401:
+                self._raise_no_project_access_error(res)
+            case _:
+                self._raise_api_error(res, payload=json_payload)
+
         stream = kwargs.get("stream")
         self._log_request(res, payload=json_payload, stream=stream)
         return res
 
     def _configure_headers(
-        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None
+        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
     ) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
@@ -962,10 +968,10 @@ class APIClient:
         returns_items: bool = False,
         executor: TaskExecutor | None = None,
     ) -> list | None:
-        resource_path = resource_path or self._RESOURCE_PATH
+        resource_path = (resource_path or self._RESOURCE_PATH) + "/delete"
         tasks = [
             {
-                "url_path": resource_path + "/delete",
+                "url_path": resource_path,
                 "json": {
                     "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
                     **(extra_body_fields or {}),
@@ -1269,9 +1275,13 @@ class APIClient:
             cleared[to_camel_case(prop.name)] = clear_with
         return cleared
 
-    @staticmethod
-    def _status_ok(status_code: int) -> bool:
-        return status_code in {200, 201, 202, 204}
+    def _raise_no_project_access_error(self, res: Response) -> NoReturn:
+        raise CogniteProjectAccessError(
+            client=self._cognite_client,
+            project=self._cognite_client._config.project,
+            x_request_id=res.headers.get("X-Request-Id"),
+            cluster=self._config.cdf_cluster,
+        )
 
     def _raise_api_error(self, res: Response, payload: dict) -> NoReturn:
         x_request_id = res.headers.get("X-Request-Id")
