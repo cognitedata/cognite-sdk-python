@@ -332,6 +332,31 @@ def node_dumped() -> dict[str, Any]:
 
 
 @pytest.fixture
+def node_overlapping_props() -> dict[str, Any]:
+    return {
+        "space": "sp",
+        "externalId": "copy pastarino",
+        "version": 22,
+        "lastUpdatedTime": 123456789,
+        "createdTime": 17326520,
+        "instanceType": "node",
+        "properties": {
+            "my-space": {
+                "my-view/v8": {
+                    "name": "huh A NAME",
+                    "type": "numeric",
+                    "lastUpdatedTime": "not a number (🐫)",
+                    "last_updated_time": "not a number (🐍)",
+                    "unit": {"space": "cdf_cdm_units", "externalId": "temperature:deg_c"},
+                    "externalId": "overlaps-ext-id",
+                }
+            }
+        },
+        "type": {"space": "asdf", "externalId": "im-a-time-series-type"},
+    }
+
+
+@pytest.fixture
 def edge_dumped(node_dumped: dict[str, Any]) -> dict[str, Any]:
     return {
         **node_dumped,
@@ -480,6 +505,73 @@ class TestInstancesToPandas:
         )
 
         assert "properties" not in expanded_with_empty_properties.columns
+
+    def test_instances_to_pandas_expand_true_with_overlapping_props(
+        self, node_dumped: dict, node_overlapping_props: dict
+    ) -> None:
+        # We don't test Edge/EdgeList as it uses the same to_pandas implementation as NodeList
+        nodes: NodeList = NodeList.load([node_dumped, node_overlapping_props])
+        node = Node.load(node_overlapping_props)
+        # We need to test with camel_case T/F as e.g. base prop. lastUpdatedTime only overlaps when camel_case=True
+        # but user properties do not vary with camel_case
+        kw: dict = {"expand_properties": True, "convert_timestamps": False}
+        without_prefix_camel_lst = nodes.to_pandas(remove_property_prefix=True, camel_case=True, **kw)
+        without_prefix_snake_lst = nodes.to_pandas(remove_property_prefix=True, camel_case=False, **kw)
+        with_prefix_camel_lst = nodes.to_pandas(remove_property_prefix=False, camel_case=True, **kw)
+        with_prefix_snake_lst = nodes.to_pandas(remove_property_prefix=False, camel_case=False, **kw)
+
+        without_prefix_camel = node.to_pandas(remove_property_prefix=True, camel_case=True, **kw)
+        without_prefix_snake = node.to_pandas(remove_property_prefix=True, camel_case=False, **kw)
+        with_prefix_camel = node.to_pandas(remove_property_prefix=False, camel_case=True, **kw)
+        with_prefix_snake = node.to_pandas(remove_property_prefix=False, camel_case=False, **kw)
+
+        # Base property should never be affected:
+        prefix = "my-space.my-view/v8"
+        for df in without_prefix_camel_lst, without_prefix_snake_lst, with_prefix_camel_lst, with_prefix_snake_lst:
+            base_type = df.at[1, "type"]
+            assert isinstance(base_type, dict) and base_type["space"] == "asdf"
+            assert df.at[1, f"{prefix}.type"] == "numeric"
+
+        for df in without_prefix_camel, without_prefix_snake, with_prefix_camel, with_prefix_snake:
+            base_type = df.at["type", "value"]
+            assert isinstance(base_type, dict) and base_type["space"] == "asdf"
+            assert df.at[f"{prefix}.type", "value"] == "numeric"
+
+        # Check a base property that varies with camel_case:
+        assert without_prefix_camel_lst.at[1, "lastUpdatedTime"] == 123456789
+        assert without_prefix_snake_lst.at[1, "last_updated_time"] == 123456789
+        assert with_prefix_camel_lst.at[1, "lastUpdatedTime"] == 123456789
+        assert with_prefix_snake_lst.at[1, "last_updated_time"] == 123456789
+
+        assert without_prefix_camel.at["lastUpdatedTime", "value"] == 123456789
+        assert without_prefix_snake.at["last_updated_time", "value"] == 123456789
+        assert with_prefix_camel.at["lastUpdatedTime", "value"] == 123456789
+        assert with_prefix_snake.at["last_updated_time", "value"] == 123456789
+
+        # Check the overlapping user property
+        assert without_prefix_camel_lst.at[1, "last_updated_time"] == "not a number (🐍)"
+        assert without_prefix_snake_lst.at[1, "lastUpdatedTime"] == "not a number (🐫)"
+        assert without_prefix_camel_lst.at[1, f"{prefix}.lastUpdatedTime"] == "not a number (🐫)"
+        assert without_prefix_snake_lst.at[1, f"{prefix}.last_updated_time"] == "not a number (🐍)"
+
+        assert without_prefix_camel.at["last_updated_time", "value"] == "not a number (🐍)"
+        assert without_prefix_snake.at["lastUpdatedTime", "value"] == "not a number (🐫)"
+        assert without_prefix_camel.at[f"{prefix}.lastUpdatedTime", "value"] == "not a number (🐫)"
+        assert without_prefix_snake.at[f"{prefix}.last_updated_time", "value"] == "not a number (🐍)"
+
+        for df in with_prefix_camel_lst, with_prefix_snake_lst:
+            for prop_name, case in zip(("last_updated_time", "lastUpdatedTime"), ("🐍", "🐫")):
+                assert df.at[1, f"{prefix}.{prop_name}"] == f"not a number ({case})"
+                # Ensure the property doesn't exist without prefix - or that it's the base
+                # property when camel_case aligns with base prop.
+                assert prop_name not in df.columns or df.at[1, prop_name] == 123456789
+
+        for df in with_prefix_camel, with_prefix_snake:
+            for prop_name, case in zip(("last_updated_time", "lastUpdatedTime"), ("🐍", "🐫")):
+                assert df.at[f"{prefix}.{prop_name}", "value"] == f"not a number ({case})"
+                # Ensure the property doesn't exist without prefix - or that it's the base
+                # property when camel_case aligns with base prop.
+                assert prop_name not in df.index or df.at[prop_name, "value"] == 123456789
 
     def test_node_with_single_property_to_pandas_with_expand_props(self) -> None:
         # Bug prior to 7.62.6 made to_pandas(expand_properties=True) fail on nodes with a single property
