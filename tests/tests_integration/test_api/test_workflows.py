@@ -13,6 +13,7 @@ from cognite.client.data_classes.data_modeling.query import NodeResultSetExpress
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
+    SimulationTaskParameters,
     SubworkflowReferenceParameters,
     SubworkflowTaskParameters,
     TransformationTaskParameters,
@@ -325,6 +326,43 @@ class TestWorkflows:
 
 
 class TestWorkflowVersions:
+    def test_upsert_delete_with_simulation_task(
+        self,
+        cognite_client: CogniteClient,
+    ):
+        workflow_id = "integration_test-workflow_for_simulator_integration" + random_string(5)
+
+        version = WorkflowVersionUpsert(
+            workflow_external_id=workflow_id,
+            version="1",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id=f"{workflow_id}-1-task1" + random_string(5),
+                        parameters=SimulationTaskParameters(
+                            routine_external_id="integration_tests_workflow",
+                        ),
+                    )
+                ],
+                description=None,
+            ),
+        )
+
+        cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
+        created_version: WorkflowVersion | None = None
+
+        try:
+            created_version = cognite_client.workflows.versions.upsert(version)
+            assert created_version.workflow_external_id == workflow_id
+            assert created_version.workflow_definition.tasks[0].type == "simulation"
+            assert len(created_version.workflow_definition.tasks) > 0
+        finally:
+            if created_version is not None:
+                cognite_client.workflows.versions.delete(
+                    created_version.as_id(),
+                )
+                cognite_client.workflows.delete(created_version.workflow_external_id)
+
     def test_upsert_preexisting(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
         new_workflow_version.workflow_definition.description = "Updated description for testing purposes"
         updated_version = cognite_client.workflows.versions.upsert(new_workflow_version.as_write())
