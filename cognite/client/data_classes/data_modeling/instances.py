@@ -428,7 +428,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
             expand_properties (bool): Expand the properties into separate rows. Note: Will change default to True in the next major version.
-            remove_property_prefix (bool): Remove view ID prefix from row names of expanded properties (in index). Requires data to be from a single view.
+            remove_property_prefix (bool): Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
             **kwargs (Any): For backwards compatibility.
 
         Returns:
@@ -455,7 +455,16 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             view_id, *extra = self.properties.keys()
             # We only do/allow this if we have a single source:
             if not extra:
-                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+                prefix = "{}.{}/{}.".format(*view_id.as_tuple())
+                prop_df.columns = prop_df.columns.str.removeprefix(prefix)
+                if any(overlapping := col.index.intersection(prop_df.columns)):
+                    warnings.warn(
+                        "One or more expanded property names overlapped with base properties. "
+                        f"These rows (index) will not have their view ID prefix removed: {sorted(overlapping)}",
+                        RuntimeWarning,
+                    )
+                    prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
+
                 if isinstance(self, TypedInstance):
                     attr_name_mapping = self._get_descriptor_property_name_mapping()
                     prop_df = prop_df.rename(columns=attr_name_mapping)
@@ -1089,7 +1098,7 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`). Does not apply to properties.
             convert_timestamps (bool): Convert known columns storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
             expand_properties (bool): Expand the properties into separate columns. Note: Will change default to True in the next major version.
-            remove_property_prefix (bool): Remove view ID prefix from columns names of expanded properties. Requires data to be from a single view.
+            remove_property_prefix (bool): Attempt to remove the view ID prefix from columns names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
             **kwargs (Any): For backwards compatibility.
 
         Returns:
@@ -1107,13 +1116,23 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
         if not expand_properties or "properties" not in df.columns:
             return df
 
-        prop_df = local_import("pandas").json_normalize(df.pop("properties"), max_level=2)
+        pd = local_import("pandas")
+        prop_df = pd.json_normalize(df.pop("properties"), max_level=2)
         if remove_property_prefix and not prop_df.empty:
             typed_view_ids = {item.get_source() for item in self if isinstance(item, TypedInstance)}  # type: ignore [attr-defined]
             view_id, *extra = typed_view_ids | set(vid for item in self for vid in item.properties)
             # We only do/allow this if we have a single source:
             if not extra:
-                prop_df.columns = prop_df.columns.str.removeprefix("{}.{}/{}.".format(*view_id.as_tuple()))
+                prefix = "{}.{}/{}.".format(*view_id.as_tuple())
+                prop_df.columns = prop_df.columns.str.removeprefix(prefix)
+                if any(overlapping := df.columns.intersection(prop_df.columns)):
+                    warnings.warn(
+                        "One or more expanded property names overlapped with base properties. "
+                        f"These columns will not have their view ID prefix removed: {sorted(overlapping)}",
+                        RuntimeWarning,
+                    )
+                    prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
+
                 if len(self) > 0 and isinstance(self[0], TypedInstance):
                     attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
                     prop_df = prop_df.rename(columns=attr_name_mapping)
