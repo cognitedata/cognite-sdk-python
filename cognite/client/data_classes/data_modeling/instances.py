@@ -457,6 +457,11 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             if not extra:
                 prefix = "{}.{}/{}.".format(*view_id.as_tuple())
                 prop_df.columns = prop_df.columns.str.removeprefix(prefix)
+
+                if isinstance(self, TypedInstance):
+                    attr_name_mapping = self._get_descriptor_property_name_mapping()
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
+
                 if any(overlapping := col.index.intersection(prop_df.columns)):
                     warnings.warn(
                         "One or more expanded property names overlapped with base properties. "
@@ -464,10 +469,6 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
                         RuntimeWarning,
                     )
                     prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
-
-                if isinstance(self, TypedInstance):
-                    attr_name_mapping = self._get_descriptor_property_name_mapping()
-                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property rows as source was not unique",
@@ -1125,6 +1126,11 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
             if not extra:
                 prefix = "{}.{}/{}.".format(*view_id.as_tuple())
                 prop_df.columns = prop_df.columns.str.removeprefix(prefix)
+
+                if len(self) > 0 and isinstance(self[0], TypedInstance):
+                    attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
+                    prop_df = prop_df.rename(columns=attr_name_mapping)
+
                 if any(overlapping := df.columns.intersection(prop_df.columns)):
                     warnings.warn(
                         "One or more expanded property names overlapped with base properties. "
@@ -1132,10 +1138,6 @@ class DataModelingInstancesList(WriteableCogniteResourceList[T_WriteClass, T_Ins
                         RuntimeWarning,
                     )
                     prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
-
-                if len(self) > 0 and isinstance(self[0], TypedInstance):
-                    attr_name_mapping = self[0]._get_descriptor_property_name_mapping()
-                    prop_df = prop_df.rename(columns=attr_name_mapping)
             else:
                 warnings.warn(
                     "Can't remove view ID prefix from expanded property columns as multiple sources exist",
