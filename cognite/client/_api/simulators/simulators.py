@@ -28,7 +28,9 @@ class SimulatorsAPI(APIClient):
         self.runs = SimulatorRunsAPI(config, api_version, cognite_client)
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.routines = SimulatorRoutinesAPI(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
