@@ -111,8 +111,6 @@ class DestinationsAPI(APIClient):
 
             Get multiple destinations by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.destinations.retrieve(["myDestination", "myDestination2"], ignore_unknown_ids=True)
 
         """
@@ -137,7 +135,7 @@ class DestinationsAPI(APIClient):
 
         Examples:
 
-            Delete destinations by id::
+            Delete destinations by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -260,17 +258,13 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
-            Iterate over destinations::
+            Iterate over destinations:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for destination in client.hosted_extractors.destinations:
                 ...     destination # do something with the destination
 
-            Iterate over chunks of destinations to reduce memory load::
+            Iterate over chunks of destinations to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for destination_list in client.hosted_extractors.destinations(chunk_size=25):
                 ...     destination_list # do something with the destinationss
         """

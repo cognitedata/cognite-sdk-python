@@ -88,16 +88,14 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            Get extraction pipeline by id::
+            Get extraction pipeline by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve(id=1)
 
-            Get extraction pipeline by external id::
+            Get extraction pipeline by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve(external_id="1")
         """
 
@@ -124,16 +122,14 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            Get ExtractionPipelines by id::
+            Get ExtractionPipelines by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve_multiple(ids=[1, 2, 3])
 
-            Get assets by external id::
+            Get assets by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -155,7 +151,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            List ExtractionPipelines::
+            List ExtractionPipelines:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -191,7 +187,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            Create new extraction pipeline::
+            Create new extraction pipeline:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineWrite
@@ -219,7 +215,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            Delete extraction pipelines by id or external id::
+            Delete extraction pipelines by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -256,7 +252,7 @@ class ExtractionPipelinesAPI(APIClient):
 
         Examples:
 
-            Update an extraction pipeline that you have fetched. This will perform a full update of the extraction pipeline::
+            Update an extraction pipeline that you have fetched. This will perform a full update of the extraction pipeline:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineUpdate
@@ -305,23 +301,19 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Examples:
 
-            List extraction pipeline runs::
+            List extraction pipeline runs:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> runsList = client.extraction_pipelines.runs.list(external_id="test ext id", limit=5)
 
-            Filter extraction pipeline runs on a given status::
+            Filter extraction pipeline runs on a given status:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
         """
         if isinstance(created_time, str):
@@ -377,7 +369,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Examples:
 
-            Report a new extraction pipeline run::
+            Report a new extraction pipeline run:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
@@ -414,7 +406,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
         Examples:
 
-            Retrieve latest config revision::
+            Retrieve latest config revision:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -437,7 +429,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
         Examples:
 
-            Retrieve a list of config revisions::
+            Retrieve a list of config revisions:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -457,7 +449,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
         Examples:
 
-            Create a config revision::
+            Create a config revision:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
@@ -481,7 +473,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
         Examples:
 
-            Revert a config revision::
+            Revert a config revision:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

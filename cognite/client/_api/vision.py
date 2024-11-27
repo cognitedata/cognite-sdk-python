@@ -77,7 +77,7 @@ class VisionAPI(APIClient):
             VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
-            Start a job, wait for completion and then get the parsed results::
+            Start a job, wait for completion and then get the parsed results:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
@@ -126,7 +126,7 @@ class VisionAPI(APIClient):
             VisionExtractJob: Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 
         Examples:
-            Retrieve a vision extract job by ID::
+            Retrieve a vision extract job by ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
