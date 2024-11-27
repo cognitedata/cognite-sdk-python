@@ -130,8 +130,6 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedule by transformation external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.transformations.schedules.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -165,8 +163,6 @@ class TransformationSchedulesAPI(APIClient):
 
             Get transformation schedules by transformation external ids:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -220,7 +216,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Examples:
 
-            Delete schedules by id or external id::
+            Delete schedules by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -265,7 +261,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Examples:
 
-            Update a transformation schedule that you have fetched. This will perform a full update of the schedule::
+            Update a transformation schedule that you have fetched. This will perform a full update of the schedule:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -273,11 +269,9 @@ class TransformationSchedulesAPI(APIClient):
                 >>> transformation_schedule.is_paused = True
                 >>> res = client.transformations.schedules.update(transformation_schedule)
 
-            Perform a partial update on a transformation schedule, updating the interval and unpausing it::
+            Perform a partial update on a transformation schedule, updating the interval and unpausing it:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate
-                >>> client = CogniteClient()
                 >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
                 >>> res = client.transformations.schedules.update(my_update)
         """

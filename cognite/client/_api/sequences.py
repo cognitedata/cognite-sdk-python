@@ -196,16 +196,14 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Get sequence by id::
+            Get sequence by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve(id=1)
 
-            Get sequence by external id::
+            Get sequence by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve()
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -229,16 +227,14 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Get sequences by id::
+            Get sequences by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve_multiple(ids=[1, 2, 3])
 
-            Get sequences by external id::
+            Get sequences by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -257,7 +253,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Aggregate sequences::
+            Aggregate sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -292,10 +288,8 @@ class SequencesAPI(APIClient):
 
             Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
-                >>> client = CogniteClient()
                 >>> is_mapping = filters.Prefix(SequenceProperty.external_id, "mapping:")
                 >>> count = client.sequences.aggregate_count(advanced_filter=is_mapping)
 
@@ -338,10 +332,8 @@ class SequencesAPI(APIClient):
             Count the number of timezones (metadata key) for sequences with the word "critical" in the description
             in your CDF project, but exclude timezones from america:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters, aggregations as aggs
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
-                >>> client = CogniteClient()
                 >>> not_america = aggs.Not(aggs.Prefix("america"))
                 >>> is_critical = filters.Search(SequenceProperty.description, "critical")
                 >>> timezone_count = client.sequences.aggregate_cardinality_values(
@@ -426,12 +418,10 @@ class SequencesAPI(APIClient):
 
             Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> from datetime import datetime
-                >>> client = CogniteClient()
                 >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020)
                 >>> print(result.unique)
@@ -439,10 +429,8 @@ class SequencesAPI(APIClient):
             Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
             starts with "test":
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> from cognite.client.data_classes import aggregations as aggs, filters
-                >>> client = CogniteClient()
                 >>> not_test = aggs.Not(aggs.Prefix("test"))
                 >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
                 >>> result = client.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
@@ -523,7 +511,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Create a new sequence::
+            Create a new sequence:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
@@ -534,7 +522,7 @@ class SequencesAPI(APIClient):
                 ... ]
                 >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
-            Create a new sequence with the same column specifications as an existing sequence::
+            Create a new sequence with the same column specifications as an existing sequence:
 
                 >>> seq2 = client.sequences.create(SequenceWrite(external_id="my_copied_sequence", columns=column_def))
 
@@ -560,7 +548,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Delete sequences by id or external id::
+            Delete sequences by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -602,7 +590,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Update a sequence that you have fetched. This will perform a full update of the sequences::
+            Update a sequence that you have fetched. This will perform a full update of the sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -610,11 +598,9 @@ class SequencesAPI(APIClient):
                 >>> res.description = "New description"
                 >>> res = client.sequences.update(res)
 
-            Perform a partial update on a sequence, updating the description and adding a new field to metadata::
+            Perform a partial update on a sequence, updating the description and adding a new field to metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
-                >>> client = CogniteClient()
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.sequences.update(my_update)
 
@@ -622,20 +608,16 @@ class SequencesAPI(APIClient):
 
             Currently, updating the column definitions of a sequence is only supported through partial update, using `add`, `remove` and `modify` methods on the `columns` property.
 
-            Add a single new column::
+            Add a single new column:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
-                >>> client = CogniteClient()
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
                 >>> res = client.sequences.update(my_update)
 
-            Add multiple new columns::
+            Add multiple new columns:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
-                >>> client = CogniteClient()
                 >>>
                 >>> column_def = [
                 ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
@@ -643,29 +625,23 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
-            Remove a single column::
+            Remove a single column:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
-                >>> client = CogniteClient()
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.remove("col_external_id1")
                 >>> res = client.sequences.update(my_update)
 
-            Remove multiple columns::
+            Remove multiple columns:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate
-                >>> client = CogniteClient()
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.remove(["col_external_id1","col_external_id2"])
                 >>> res = client.sequences.update(my_update)
 
-            Update existing columns::
+            Update existing columns:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
-                >>> client = CogniteClient()
                 >>>
                 >>> column_updates = [
                 ...     SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),
@@ -748,7 +724,7 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            Search for a sequence::
+            Search for a sequence:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -799,10 +775,8 @@ class SequencesAPI(APIClient):
             To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
-                >>> client = CogniteClient()
                 >>> asset_filter = filters.Equals(SequenceProperty.asset_id, 123)
                 >>> is_efficiency = filters.Equals(SequenceProperty.metadata_key("type"), "efficiency")
                 >>> res = client.sequences.filter(
@@ -876,32 +850,26 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-            List sequences::
+            List sequences:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.sequences.list(limit=5)
 
-            Iterate over sequences::
+            Iterate over sequences:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for seq in client.sequences:
                 ...     seq # do something with the sequence
 
-            Iterate over chunks of sequences to reduce memory load::
+            Iterate over chunks of sequences to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for seq_list in client.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
 
             Using advanced filter, find all sequences that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
                 >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = client.sequences.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
 
@@ -911,10 +879,8 @@ class SequencesAPI(APIClient):
             To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` Enums.
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
-                >>> client = CogniteClient()
                 >>> in_timezone = filters.Prefix(SequenceProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.sequences.list(
                 ...     advanced_filter=in_timezone,
@@ -922,9 +888,7 @@ class SequencesAPI(APIClient):
 
             Combine filter and advanced filter:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
                 >>> not_instrument_lvl5 = filters.And(
                 ...    filters.ContainsAny("labels", ["Level5"]),
                 ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
@@ -991,7 +955,7 @@ class SequencesDataAPI(APIClient):
             **kwargs (Any): To support deprecated argument 'column_external_ids', will be removed in the next major version. Use 'columns' instead.
 
         Examples:
-            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
+            Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Sequence, SequenceColumn
@@ -1001,24 +965,18 @@ class SequencesDataAPI(APIClient):
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
-            They can also be provided as a list of API-style objects with a rowNumber and values field::
+            They can also be provided as a list of API-style objects with a rowNumber and values field:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> data = [{"rowNumber": 123, "values": ['str',3]}, {"rowNumber": 456, "values": ["bar",42]} ]
                 >>> client.sequences.data.insert(data, id=1, columns=["col_a","col_b"]) # implicit columns are retrieved from metadata
 
-            Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row::
+            Or they can be a given as a dictionary with row number as the key, and the value is the data to be inserted at that row:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> data = {123 : ['str',3], 456 : ['bar',42] }
                 >>> client.sequences.data.insert(columns=['stringColumn','intColumn'], rows=data, id=1)
 
             Finally, they can be a SequenceData object retrieved from another request. In this case columns from this object are used as well.
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> data = client.sequences.data.retrieve(id=2,start=0,end=10)
                 >>> client.sequences.data.insert(rows=data, id=1,columns=None)
         """
