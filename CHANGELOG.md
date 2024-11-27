@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.69.1] - 2024-11-25
+### Fixed
+- Convenience methods for `TimeSeries` (defined through Data Modeling with `instance_id`) now works as
+  intended: `count`, `latest` and `first`.
+
 ## [7.69.0] - 2024-11-23
 ### Added
 - Synthetic Datapoints API has better support for `instance_id`. Previously you had to specify these directly
