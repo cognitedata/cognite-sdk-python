@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from contextlib import suppress
 
 import pytest
@@ -76,7 +77,7 @@ def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
 
 
 @pytest.fixture
-def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tuple[str, str]) -> Table:
+def one_table(cognite_client: CogniteClient, one_user: User, one_raw_table: tuple[str, str]) -> Iterator[Table]:
     my_table = RawTableWrite(
         tablename=f"my_table-{random_string(10)}",
         options=RawTableOptions(
