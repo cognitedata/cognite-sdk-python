@@ -57,7 +57,6 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/list",
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorRoutinesFilter)
             else filter
@@ -95,7 +94,6 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/revisions/list",
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionsList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorRoutineRevisionsFilter)
             else filter
@@ -132,5 +130,4 @@ class SimulatorRoutinesAPI(APIClient):
             list_cls=SimulatorRoutineRevisionsList,
             identifiers=identifiers,
             resource_path="/simulators/routines/revisions",
-            headers={"cdf-version": "beta"},
         )

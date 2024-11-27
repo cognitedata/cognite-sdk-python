@@ -57,7 +57,6 @@ class SimulatorIntegrationsAPI(APIClient):
             url_path="/simulators/integrations/list",
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorIntegrationFilter)
             else filter

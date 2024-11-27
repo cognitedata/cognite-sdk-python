@@ -53,6 +53,4 @@ class SimulatorsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._list(
-            method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList, headers={"cdf-version": "beta"}
-        )
+        return self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)

@@ -23,10 +23,6 @@ from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
-from cognite.client._api.simulators.simulation_runs import SimulatorRunsAPI
-from cognite.client._api.simulators.simulator_integrations import SimulatorIntegrationsAPI
-from cognite.client._api.simulators.simulator_models import SimulatorModelsAPI
-from cognite.client._api.simulators.simulator_routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.simulators import SimulatorsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
@@ -89,10 +85,6 @@ class CogniteClient:
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
-        self.simulators.models = SimulatorModelsAPI(self._config, self._API_VERSION, self)
-        self.simulators.runs = SimulatorRunsAPI(self._config, self._API_VERSION, self)
-        self.simulators.integrations = SimulatorIntegrationsAPI(self._config, self._API_VERSION, self)
-        self.simulators.routines = SimulatorRoutinesAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
