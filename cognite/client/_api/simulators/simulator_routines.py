@@ -76,7 +76,7 @@ class SimulatorRoutinesAPI(APIClient):
             filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator routine revisions.
 
         Returns:
-            SimulatorRoutineRevisionsList: List of simulator routines
+            SimulatorRoutineRevisionsList: List of simulator routine revisions
 
         Examples:
 
