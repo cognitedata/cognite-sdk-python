@@ -69,7 +69,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulatorRoutineRevisionsList:
         """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
-        List simulators
+        List simulator routine revisions
 
         Args:
             limit (int): The maximum number of simulator routine revisions to return. Defaults to 10.
