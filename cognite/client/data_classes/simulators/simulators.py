@@ -769,22 +769,6 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
     ) -> T_SimulatorModel:
         instance = super()._load(resource, cognite_client)
         return instance
-        # return cls(
-        #     id=resource["id"],
-        #     external_id=resource["externalId"],
-        #     simulator_external_id=resource["simulatorExternalId"],
-        #     model_external_id=resource["modelExternalId"],
-        #     data_set_id=resource["dataSetId"],
-        #     file_id=resource["fileId"],
-        #     created_by_user_id=resource["createdByUserId"],
-        #     status=resource["status"],
-        #     created_time=resource["createdTime"],
-        #     last_updated_time=resource["lastUpdatedTime"],
-        #     version_number=resource["versionNumber"],
-        #     log_id=resource["logId"],
-        #     description=resource.get("description"),
-        #     status_message=resource.get("statusMessage"),
-        # )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -1038,7 +1022,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         )
 
 
-class SimulatorModel(CogniteResource):
+class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     """
     The simulator model resource represents an asset modeled in a simulator.
     This asset could range from a pump or well to a complete processing facility or refinery.
@@ -1200,6 +1184,27 @@ class SimulatorModel(SimulatorModelCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case)
+
+
+class SimulatorModelUpdate(CogniteUpdate):
+    class _PrimitiveModelUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> None:
+            self._set(value)
+
+    @property
+    def name(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "name")
+
+    @property
+    def description(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "description")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("name"),
+            PropertySpec("description"),
+        ]
 
 
 class SimulationRunCore(WriteableCogniteResource["SimulationRunWrite"], ABC):
@@ -1493,28 +1498,101 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         return super().dump(camel_case=camel_case)
 
 
-class SimulatorModelUpdate(CogniteUpdate):
-    class _PrimitiveModelUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> None:
-            self._set(value)
+class SimulatorRoutineWrite(SimulatorRoutineCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        model_external_id: str,
+        simulator_integration_external_id: str,
+        name: str,
+        data_set_id: int,
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            model_external_id=model_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            name=name,
+            data_set_id=data_set_id,
+            description=description,
+        )
 
-    @property
-    def name(self) -> _PrimitiveModelUpdate:
-        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "name")
+    def as_write(self) -> SimulatorRoutineWrite:
+        """Returns a writeable version of this resource"""
+        return self
 
-    @property
-    def description(self) -> _PrimitiveModelUpdate:
-        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "description")
+
+class SimulatorRoutine(SimulatorRoutineCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        model_external_id: str,
+        simulator_integration_external_id: str,
+        name: str,
+        data_set_id: int,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        id: int | None = None,
+        description: str | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.model_external_id = model_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.name = name
+        self.data_set_id = data_set_id
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int | None = id
+        self.created_time: int | None = created_time
+        self.last_updated_time: int | None = last_updated_time
 
     @classmethod
-    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        return [
-            PropertySpec("name"),
-            PropertySpec("description"),
-        ]
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorRoutineWrite:
+        """Returns a writeable version of this resource"""
+        return SimulatorRoutineWrite(
+            external_id=self.external_id,
+            simulator_external_id=self.simulator_external_id,
+            model_external_id=self.model_external_id,
+            simulator_integration_external_id=self.simulator_integration_external_id,
+            name=self.name,
+            data_set_id=self.data_set_id,
+            description=self.description,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
 
 
-class SimulatorRoutineList(CogniteResourceList[SimulatorRoutine]):
+class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevisionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorRoutineRevisionWrite
+
+
+class SimulatorRoutineRevisionList(
+    WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
+):
+    _RESOURCE = SimulatorRoutineRevision
+
+    def as_write(self) -> SimulatorRoutineRevisionWriteList:
+        return SimulatorRoutineRevisionWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
+
+
+class SimulatorRoutineWriteList(CogniteResourceList[SimulatorRoutineWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorRoutineWrite
+
+
+class SimulatorRoutineList(WriteableCogniteResourceList[SimulatorRoutineWrite, SimulatorRoutine], IdTransformerMixin):
     _RESOURCE = SimulatorRoutine
 
     def as_write(self) -> SimulatorRoutineWriteList:
