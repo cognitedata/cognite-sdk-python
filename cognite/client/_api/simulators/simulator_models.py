@@ -18,11 +18,90 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+
+class SimulatorModelRevisionsAPI(APIClient):
+    _RESOURCE_PATH = "/simulators/models/revisions"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
+
+    def list(
+        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
+    ) -> SimulatorModelRevisionList:
+        """`Filter simulator model revisions <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+
+        List all simulation model revisions
+
+        Args:
+            limit (int): The maximum number of model revisions to return. Defaults to 100.
+            filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator model revisions.
+
+        Returns:
+            SimulatorModelRevisionList: List all simulation model revisions
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.models.list()
+
+        """
+        self._warning.warn()
+        return self._list(
+            method="POST",
+            limit=limit,
+            url_path="/simulators/models/revisions/list",
+            resource_cls=SimulatorModelRevision,
+            list_cls=SimulatorModelRevisionList,
+            filter=filter.dump()
+            if isinstance(filter, SimulatorModelRevisionsFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,  # fix this
+        )
+
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModelRevision | None:
+        """`Retrieve Simulator Model Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+
+        Retrieve simulator model revisions by IDs or external IDs
+
+        Args:
+            id (int | None): The id of the simulator model revision.
+            external_id (str | None): The external id of the simulator model revision.
+
+        Returns:
+            SimulatorModelRevision | None: Requested simulator model revision
+
+        Examples:
+
+            List simulators:
+
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.models.revisions.retrieve(external_id="1")
+
+        """
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
+            identifiers=identifiers,
+            resource_path="/simulators/models/revisions",
+        )
+
+
+
 class SimulatorModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
@@ -101,70 +180,4 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             identifiers=identifiers,
             resource_path="/simulators/models",
-        )
-
-    def list_revisions(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
-    ) -> SimulatorModelRevisionList:
-        """`Filter simulator model revisions <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
-
-        List all simulation model revisions
-
-        Args:
-            limit (int): The maximum number of model revisions to return. Defaults to 100.
-            filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator model revisions.
-
-        Returns:
-            SimulatorModelRevisionList: List all simulation model revisions
-
-        Examples:
-
-            List simulators:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.list_revisions()
-
-        """
-        self._warning.warn()
-        return self._list(
-            method="POST",
-            limit=limit,
-            url_path="/simulators/models/revisions/list",
-            resource_cls=SimulatorModelRevision,
-            list_cls=SimulatorModelRevisionList,
-            filter=filter.dump()
-            if isinstance(filter, SimulatorModelRevisionsFilter)
-            else filter
-            if isinstance(filter, dict)
-            else None,  # fix this
-        )
-
-    def retrieve_revision(self, id: int | None = None, external_id: str | None = None) -> SimulatorModelRevision | None:
-        """`Retrieve Simulator Model Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
-
-        Retrieve simulator model revisions by IDs or external IDs
-
-        Args:
-            id (int | None): The id of the simulator model revision.
-            external_id (str | None): The external id of the simulator model revision.
-
-        Returns:
-            SimulatorModelRevision | None: Requested simulator model revision
-
-        Examples:
-
-            List simulators:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.retrieve_revision()
-
-        """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
-            list_cls=SimulatorModelRevisionList,
-            resource_cls=SimulatorModelRevision,
-            identifiers=identifiers,
-            resource_path="/simulators/models/revisions",
         )

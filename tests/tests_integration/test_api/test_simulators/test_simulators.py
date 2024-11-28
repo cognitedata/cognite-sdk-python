@@ -102,11 +102,11 @@ class TestSimulatorModels:
         assert model.external_id == "TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL"
 
     def test_list_model_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.models.list_revisions(limit=5)
+        revisions = cognite_client.simulators.models.revisions.list(limit=5)
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient) -> None:
-        model = cognite_client.simulators.models.retrieve_revision(external_id="Shower_mixer-1")
+        model = cognite_client.simulators.models.revisions.retrieve(external_id="Shower_mixer-1")
         assert model is not None
         assert model.external_id == "Shower_mixer-1"
 
@@ -117,13 +117,13 @@ class TestSimulatorRoutines:
         assert len(routines) > 0
 
     def test_list_routine_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.routines.list_revisions(limit=5)
+        revisions = cognite_client.simulators.routines.revisions.list(limit=5)
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
 
     def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
-        revision = cognite_client.simulators.routines.retrieve_revision(external_id="ShowerMixerForTests-1")
+        revision = cognite_client.simulators.routines.revisions.retrieve(external_id="ShowerMixerForTests-1")
         assert revision is not None
         assert revision.external_id == "ShowerMixerForTests-1"
 
