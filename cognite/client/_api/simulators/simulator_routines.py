@@ -64,9 +64,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             else None,  # fix this
         )
 
-    def retrieve(
-        self, id: int | None = None, external_id: str | None = None
-    ) -> SimulatorRoutineRevision | None:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
         """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
         Retrieve multiple simulator routine revisions by IDs or external IDs
@@ -94,6 +92,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             identifiers=identifiers,
             resource_path="/simulators/routines/revisions",
         )
+
 
 class SimulatorRoutinesAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines"
@@ -141,4 +140,3 @@ class SimulatorRoutinesAPI(APIClient):
             if isinstance(filter, dict)
             else None,  # fix this
         )
-

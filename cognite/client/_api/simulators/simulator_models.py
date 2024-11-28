@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-
 class SimulatorModelRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models/revisions"
 
@@ -93,7 +92,6 @@ class SimulatorModelRevisionsAPI(APIClient):
             identifiers=identifiers,
             resource_path="/simulators/models/revisions",
         )
-
 
 
 class SimulatorModelsAPI(APIClient):
