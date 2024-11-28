@@ -37,11 +37,11 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            List simulation runs:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list()
+                    >>> res = client.simulators.runs.list()
 
         """
         self._warning.warn()
@@ -55,5 +55,5 @@ class SimulatorRunsAPI(APIClient):
             if isinstance(filter, SimulationRunsFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )

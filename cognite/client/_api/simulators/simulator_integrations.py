@@ -38,15 +38,15 @@ class SimulatorIntegrationsAPI(APIClient):
             filter (SimulatorIntegrationFilter | dict[str, Any] | None): The filter to narrow down simulator integrations.
 
         Returns:
-            SimulatorIntegrationList: List of simulators
+            SimulatorIntegrationList: List of simulator integrations
 
         Examples:
 
-            List simulators:
+            List simulator integrations:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_integrations()
+                    >>> res = client.simulators.integrations.list()
 
         """
 

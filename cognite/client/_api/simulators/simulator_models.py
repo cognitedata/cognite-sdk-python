@@ -32,7 +32,7 @@ class SimulatorModelsAPI(APIClient):
     ) -> SimulatorModelList:
         """`Filter Simulator Models <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
-        List all simulation models
+        List simulator models
 
         Args:
             limit (int): The maximum number of simulator models to return. Defaults to 100.
@@ -43,11 +43,11 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            List simulator models:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_models()
+                    >>> res = client.simulators.models.list()
 
         """
         self._warning.warn()
@@ -78,11 +78,21 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            List simulator models:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.retrieve_model()
+                    >>> res = client.simulators.models.list()
+
+            Get simulator model by id:
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.models.retrieve(id=1)
+
+            Get simulator model by external id:
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.models.retrieve(external_id="1")
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
