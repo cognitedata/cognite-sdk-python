@@ -31,7 +31,9 @@ class SimulatorModelsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
 
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelsFilter | dict[str, Any] | None = None
@@ -63,7 +65,6 @@ class SimulatorModelsAPI(APIClient):
             url_path="/simulators/models/list",
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorModelsFilter)
             else filter
@@ -98,7 +99,6 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             identifiers=identifiers,
             resource_path="/simulators/models",
-            headers={"cdf-version": "beta"},
         )
 
     def list_revisions(
@@ -131,7 +131,6 @@ class SimulatorModelsAPI(APIClient):
             url_path="/simulators/models/revisions/list",
             resource_cls=SimulatorModelRevision,
             list_cls=SimulatorModelRevisionList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorModelRevisionsFilter)
             else filter
@@ -166,7 +165,6 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             identifiers=identifiers,
             resource_path="/simulators/models/revisions",
-            headers={"cdf-version": "beta"},
         )
 
     @overload

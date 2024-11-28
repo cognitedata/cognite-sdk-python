@@ -907,32 +907,24 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         return super().dump(camel_case)
 
 
-class SimulatorRoutineRevision(CogniteResource):
+class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
     def __init__(
         self,
-        id: int,
         external_id: str,
         simulator_external_id: str,
         routine_external_id: str,
         simulator_integration_external_id: str,
         model_external_id: str,
         data_set_id: int,
-        created_by_user_id: str,
-        version_number: int,
-        created_time: int,
         configuration: SimulatorRoutineConfiguration,
         script: list[SimulatorRoutineStage],
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.routine_external_id = routine_external_id
         self.simulator_integration_external_id = simulator_integration_external_id
         self.model_external_id = model_external_id
         self.data_set_id = data_set_id
-        self.created_by_user_id = created_by_user_id
-        self.version_number = version_number
-        self.created_time = created_time
         self.configuration = configuration
         self.script = script
 
@@ -943,16 +935,12 @@ class SimulatorRoutineRevision(CogniteResource):
         if resource.get("script", None) is not None:
             script = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource["script"]]
         return cls(
-            id=resource["id"],
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             routine_external_id=resource["routineExternalId"],
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             model_external_id=resource["modelExternalId"],
             data_set_id=resource["dataSetId"],
-            created_by_user_id=resource["createdByUserId"],
-            version_number=resource["versionNumber"],
-            created_time=resource["createdTime"],
             configuration=SimulatorRoutineConfiguration._load(resource["configuration"], cognite_client),
             script=script,
         )
@@ -965,7 +953,92 @@ class SimulatorRoutineRevision(CogniteResource):
         return output
 
 
-class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
+class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        routine_external_id: str,
+        simulator_integration_external_id: str,
+        model_external_id: str,
+        data_set_id: int,
+        configuration: SimulatorRoutineConfiguration,
+        script: list[SimulatorRoutineStage],
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            routine_external_id=routine_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            model_external_id=model_external_id,
+            data_set_id=data_set_id,
+            configuration=configuration,
+            script=script,
+        )
+
+    def as_write(self) -> SimulatorRoutineRevisionWrite:
+        """Returns a writeable version of this resource"""
+        return self
+
+
+class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
+    def __init__(
+        self,
+        external_id: str,
+        simulator_external_id: str,
+        routine_external_id: str,
+        simulator_integration_external_id: str,
+        model_external_id: str,
+        data_set_id: int,
+        configuration: SimulatorRoutineConfiguration,
+        script: list[SimulatorRoutineStage],
+        id: int | None = None,
+        created_by_user_id: str | None = None,
+        last_updated_time: int | None = None,
+        version_number: int | None = None,
+        created_time: int | None = None,
+        log_id: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.routine_external_id = routine_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.data_set_id = data_set_id
+        self.created_by_user_id = created_by_user_id
+        self.configuration = configuration
+        self.script = script
+
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int | None = id
+        self.created_time: int | None = created_time
+        self.last_updated_time: int | None = last_updated_time
+        self.version_number = version_number
+        self.log_id = log_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorRoutineRevisionWrite:
+        """Returns a writeable version of this resource"""
+        return SimulatorRoutineRevisionWrite(
+            external_id=self.external_id,
+            simulator_external_id=self.simulator_external_id,
+            routine_external_id=self.routine_external_id,
+            simulator_integration_external_id=self.simulator_integration_external_id,
+            model_external_id=self.model_external_id,
+            data_set_id=self.data_set_id,
+            configuration=self.configuration,
+            script=self.script,
+        )
+
+
+class SimulatorModel(CogniteResource):
     """
     The simulator model resource represents an asset modeled in a simulator.
     This asset could range from a pump or well to a complete processing facility or refinery.
@@ -1357,7 +1430,7 @@ class SimulationRun(SimulationRunCore):
         return hash(self.external_id)
 
 
-class SimulatorRoutine(CogniteResource):
+class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
     """
     The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
 
@@ -1377,54 +1450,42 @@ class SimulatorRoutine(CogniteResource):
     This is the read/response format of a simulator routine.
 
     Args:
-        id (int): A unique id of a simulator routine
         external_id (str): External id of the simulator routine
         simulator_external_id (str): External id of the associated simulator
         model_external_id (str): External id of the associated simulator model
         simulator_integration_external_id (str): External id of the associated simulator integration
         name (str): The name of the simulator routine
         data_set_id (int): The id of the dataset associated with the simulator routine
-        created_time (int): The time when the simulator routine was created
-        last_updated_time (int): The time when the simulator routine was last updated
         description (str | None): The description of the simulator routine
     """
 
     def __init__(
         self,
-        id: int,
         external_id: str,
         simulator_external_id: str,
         model_external_id: str,
         simulator_integration_external_id: str,
         name: str,
         data_set_id: int,
-        created_time: int,
-        last_updated_time: int,
         description: str | None = None,
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.model_external_id = model_external_id
         self.simulator_integration_external_id = simulator_integration_external_id
         self.name = name
         self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self.description = description
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            id=resource["id"],
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             model_external_id=resource["modelExternalId"],
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             name=resource["name"],
             data_set_id=resource["dataSetId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
             description=resource.get("description"),
         )
 
@@ -1456,9 +1517,19 @@ class SimulatorModelUpdate(CogniteUpdate):
 class SimulatorRoutineList(CogniteResourceList[SimulatorRoutine]):
     _RESOURCE = SimulatorRoutine
 
+    def as_write(self) -> SimulatorRoutineWriteList:
+        return SimulatorRoutineWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-class SimulatorRoutineRevisionsList(CogniteResourceList[SimulatorRoutineRevision]):
+
+class SimulatorRoutineRevisionsList(
+    WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
+):
     _RESOURCE = SimulatorRoutineRevision
+
+    def as_write(self) -> SimulatorRoutineRevisionWriteList:
+        return SimulatorRoutineRevisionWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class SimulatorWriteList(CogniteResourceList[SimulatorWrite], ExternalIDTransformerMixin):
