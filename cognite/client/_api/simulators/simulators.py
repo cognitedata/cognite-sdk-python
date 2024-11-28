@@ -33,7 +33,7 @@ class SimulatorsAPI(APIClient):
         )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
 
