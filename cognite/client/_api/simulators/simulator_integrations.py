@@ -29,7 +29,7 @@ class SimulatorIntegrationsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         filter: SimulatorIntegrationFilter | dict[str, Any] | None = None,
     ) -> SimulatorIntegrationList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
 
         List simulators
 
