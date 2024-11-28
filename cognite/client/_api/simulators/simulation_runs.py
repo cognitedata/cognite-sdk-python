@@ -24,7 +24,7 @@ class SimulatorRunsAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulationRunsFilter | dict[str, Any] | None = None
     ) -> SimulationRunsList:
-        """`Filter simulation runs <https://api-docs.cogheim.net/redoc/#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         List simulation runs
 
