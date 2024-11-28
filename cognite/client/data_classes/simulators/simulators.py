@@ -9,10 +9,13 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
+    CogniteUpdate,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -733,16 +736,16 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
     def __init__(
         self,
         external_id: str | None = None,
-        simulator_external_id: str| None = None,
-        model_external_id: str| None = None,
-        data_set_id: int| None = None,
-        file_id: int| None = None,
-        created_by_user_id: str| None = None,
-        status: str| None = None,
-        created_time: int| None = None,
-        last_updated_time: int| None = None,
-        version_number: int| None = None,
-        log_id: int| None = None,
+        simulator_external_id: str | None = None,
+        model_external_id: str | None = None,
+        data_set_id: int | None = None,
+        file_id: int | None = None,
+        created_by_user_id: str | None = None,
+        status: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        version_number: int | None = None,
+        log_id: int | None = None,
         description: str | None = None,
         status_message: str | None = None,
     ) -> None:
@@ -762,9 +765,7 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
     @classmethod
     def _load(
-        cls: type[T_SimulatorModel], 
-        resource: dict[str, Any], 
-        cognite_client: CogniteClient | None = None
+        cls: type[T_SimulatorModel], resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> T_SimulatorModel:
         instance = super()._load(resource, cognite_client)
         return instance
@@ -785,16 +786,16 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         #     status_message=resource.get("statusMessage"),
         # )
 
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
-    
+
+
 class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
     def __init__(
         self,
         external_id: str | None = None,
-        model_external_id: str| None = None,
-        file_id: int| None = None,
+        model_external_id: str | None = None,
+        file_id: int | None = None,
         description: str | None = None,
     ) -> None:
         super().__init__(
@@ -807,12 +808,10 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
     def as_write(self) -> SimulatorModelRevisionWrite:
         """Returns a writeable version of this resource"""
         return self
-    
+
     @classmethod
     def _load(
-        cls, 
-        resource: dict[str, Any], 
-        cognite_client: CogniteClient | None = None
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> SimulatorModelRevisionWrite:
         return cls(
             external_id=resource["externalId"],
@@ -832,40 +831,38 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
     Args:
-        external_id (str): External id of the simulator model revision
-        file_id (int): The id of the file associated with the simulator model revision
-        model_external_id (str): External id of the associated simulator model
-        data_set_id (int): The id of the dataset associated with the simulator model revision
-        created_by_user_id (str): The id of the user who created the simulator model revision
-        status (str): The status of the simulator model revision
-        created_time (int): The time when the simulator model revision was created
-        last_updated_time (int): The time when the simulator model revision was last updated
-        version_number (int): The version number of the simulator model revision
-        log_id (int): The id of the log associated with the simulator model revision
+        external_id (str | None): External id of the simulator model revision
+        simulator_external_id (str | None): No description.
+        model_external_id (str | None): External id of the associated simulator model
+        data_set_id (int | None): The id of the dataset associated with the simulator model revision
+        file_id (int | None): The id of the file associated with the simulator model revision
+        created_by_user_id (str | None): The id of the user who created the simulator model revision
+        status (str | None): The status of the simulator model revision
+        created_time (int | None): The time when the simulator model revision was created
+        last_updated_time (int | None): The time when the simulator model revision was last updated
+        version_number (int | None): The version number of the simulator model revision
+        log_id (int | None): The id of the log associated with the simulator model revision
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status of the model revision
 
-
-    Returns:
-        SimulatorModelRevision: The simulator model revision resource
     """
 
     def __init__(
-            self,
-            external_id: str | None = None,
-            simulator_external_id: str| None = None,
-            model_external_id: str| None = None,
-            data_set_id: int| None = None,
-            file_id: int| None = None,
-            created_by_user_id: str| None = None,
-            status: str| None = None,
-            created_time: int| None = None,
-            last_updated_time: int| None = None,
-            version_number: int| None = None,
-            log_id: int| None = None,
-            description: str | None = None,
-            status_message: str | None = None,
-        ) -> None:
+        self,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        model_external_id: str | None = None,
+        data_set_id: int | None = None,
+        file_id: int | None = None,
+        created_by_user_id: str | None = None,
+        status: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        version_number: int | None = None,
+        log_id: int | None = None,
+        description: str | None = None,
+        status_message: str | None = None,
+    ) -> None:
         super().__init__(
             external_id=external_id,
             simulator_external_id=simulator_external_id,
@@ -893,7 +890,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
         return instance
-    
+
     def as_write(self) -> SimulatorModelRevisionWrite:
         """Returns this SimulatorModelRevision in its writing version."""
         return SimulatorModelRevisionWrite(
@@ -908,6 +905,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case)
+
 
 class SimulatorRoutineRevision(CogniteResource):
     def __init__(
@@ -1131,7 +1129,123 @@ class SimulatorModel(SimulatorModelCore):
         return super().dump(camel_case)
 
 
-class SimulationRun(CogniteResource):
+class SimulationRunCore(WriteableCogniteResource["SimulationRunWrite"], ABC):
+    """"""
+
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+
+    def __init__(
+        self,
+        simulator_external_id: str | None = None,
+        simulator_integration_external_id: str | None = None,
+        model_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        run_time: int | None = None,
+        simulation_time: int | None = None,
+        status: str | None = None,
+        status_message: str | None = None,
+        data_set_id: int | None = None,
+        run_type: str | None = None,
+        user_id: str | None = None,
+        log_id: int | None = None,
+    ) -> None:
+        self.simulator_external_id = simulator_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.model_revision_external_id = model_revision_external_id
+        self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.run_time = run_time
+        self.simulation_time = simulation_time
+        self.status = status
+        self.status_message = status_message
+        self.data_set_id = data_set_id
+        self.run_type = run_type
+        self.user_id = user_id
+        self.log_id = log_id
+
+    @classmethod
+    def _load(
+        cls: type[T_SimulationRun], resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> T_SimulationRun:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def dump(self, camel_case):
+        return super().dump(camel_case)
+
+
+T_SimulationRun = TypeVar("T_SimulationRun", bound=SimulationRunCore)
+
+
+class SimulationRunWrite(SimulationRunCore):
+    def __init__(
+        self,
+        simulator_external_id: str | None = None,
+        simulator_integration_external_id: str | None = None,
+        model_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        run_time: int | None = None,
+        simulation_time: int | None = None,
+        status: str | None = None,
+        status_message: str | None = None,
+        data_set_id: int | None = None,
+        run_type: str | None = None,
+        user_id: str | None = None,
+        log_id: int | None = None,
+    ) -> None:
+        super().__init__(
+            simulator_external_id=simulator_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            model_external_id=model_external_id,
+            model_revision_external_id=model_revision_external_id,
+            routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            run_time=run_time,
+            simulation_time=simulation_time,
+            status=status,
+            status_message=status_message,
+            data_set_id=data_set_id,
+            run_type=run_type,
+            user_id=user_id,
+            log_id=log_id,
+        )
+
+    @classmethod
+    def _load(
+        cls: type[T_SimulationRun], resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> T_SimulationRun:
+        return cls(
+            simulator_external_id=resource["simulatorExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            model_external_id=resource["modelExternalId"],
+            model_revision_external_id=resource["modelRevisionExternalId"],
+            routine_external_id=resource["routineExternalId"],
+            routine_revision_external_id=resource["routineRevisionExternalId"],
+            run_time=resource["runTime"],
+            simulation_time=resource["simulationTime"],
+            status=resource["status"],
+            status_message=resource.get("statusMessage"),
+            data_set_id=resource["dataSetId"],
+            run_type=resource["runType"],
+            user_id=resource["userId"],
+            log_id=resource["logId"],
+        )
+
+    def as_write(self) -> SimulationRunWrite:
+        """Returns self."""
+        return self
+
+
+class SimulationRun(SimulationRunCore):
     """
     Every time a simulation routine executes, a simulation run object is created.
     This object ensures that each execution of a routine is documented and traceable.
@@ -1149,88 +1263,98 @@ class SimulationRun(CogniteResource):
     This is the read/response format of a simulation run.
 
     Args:
-        id (int): A unique id of a simulation run
-        simulator_external_id (str): External id of the associated simulator
-        simulator_integration_external_id (str): External id of the associated simulator integration
-        model_external_id (str): External id of the associated simulator model
-        model_revision_external_id (str): External id of the associated simulator model revision
-        routine_external_id (str): External id of the associated simulator routine
-        routine_revision_external_id (str): External id of the associated simulator routine revision
+        simulator_external_id (str | None): External id of the associated simulator
+        simulator_integration_external_id (str | None): External id of the associated simulator integration
+        model_external_id (str | None): External id of the associated simulator model
+        model_revision_external_id (str | None): External id of the associated simulator model revision
+        routine_external_id (str | None): External id of the associated simulator routine
+        routine_revision_external_id (str | None): External id of the associated simulator routine revision
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
-        status (str): The status of the simulation run
+        status (str | None): The status of the simulation run
         status_message (str | None): The status message of the simulation run
-        data_set_id (int): The id of the dataset associated with the simulation run
-        run_type (str): The type of the simulation run
-        user_id (str): The id of the user who executed the simulation run
-        log_id (int): The id of the log associated with the simulation run
-        created_time (int): The number of milliseconds since epoch
-        last_updated_time (int): The number of milliseconds since epoch
+        data_set_id (int | None): The id of the dataset associated with the simulation run
+        run_type (str | None): The type of the simulation run
+        user_id (str | None): The id of the user who executed the simulation run
+        log_id (int | None): The id of the log associated with the simulation run
+        id (int | None): A unique id of a simulation run
+        created_time (int | None): The number of milliseconds since epoch
+        last_updated_time (int | None): The number of milliseconds since epoch
 
     """
 
     def __init__(
         self,
-        id: int,
-        simulator_external_id: str,
-        simulator_integration_external_id: str,
-        model_external_id: str,
-        model_revision_external_id: str,
-        routine_external_id: str,
-        routine_revision_external_id: str,
-        run_time: int | None,
-        simulation_time: int | None,
-        status: str,
-        status_message: str | None,
-        data_set_id: int,
-        run_type: str,
-        user_id: str,
-        log_id: int,
-        created_time: int,
-        last_updated_time: int,
+        simulator_external_id: str | None = None,
+        simulator_integration_external_id: str | None = None,
+        model_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        run_time: int | None = None,
+        simulation_time: int | None = None,
+        status: str | None = None,
+        status_message: str | None = None,
+        data_set_id: int | None = None,
+        run_type: str | None = None,
+        user_id: str | None = None,
+        log_id: int | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
     ) -> None:
-        self.id = id
-        self.simulator_external_id = simulator_external_id
-        self.simulator_integration_external_id = simulator_integration_external_id
-        self.model_external_id = model_external_id
-        self.model_revision_external_id = model_revision_external_id
-        self.routine_external_id = routine_external_id
-        self.routine_revision_external_id = routine_revision_external_id
-        self.run_time = run_time
-        self.simulation_time = simulation_time
-        self.status = status
-        self.status_message = status_message
-        self.data_set_id = data_set_id
-        self.run_type = run_type
-        self.user_id = user_id
-        self.log_id = log_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        super().__init__(
+            simulator_external_id=simulator_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            model_external_id=model_external_id,
+            model_revision_external_id=model_revision_external_id,
+            routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            run_time=run_time,
+            simulation_time=simulation_time,
+            status=status,
+            status_message=status_message,
+            data_set_id=data_set_id,
+            run_type=run_type,
+            user_id=user_id,
+            log_id=log_id,
+        )
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        # TODO: In the next major version we can make these properties required in the constructor
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            id=resource["id"],
-            simulator_external_id=resource["simulatorExternalId"],
-            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
-            model_external_id=resource["modelExternalId"],
-            model_revision_external_id=resource["modelRevisionExternalId"],
-            routine_external_id=resource["routineExternalId"],
-            routine_revision_external_id=resource["routineRevisionExternalId"],
-            run_time=resource.get("runTime"),
-            simulation_time=resource.get("simulationTime"),
-            status=resource["status"],
-            status_message=resource.get("statusMessage"),
-            data_set_id=resource["dataSetId"],
-            run_type=resource["runType"],
-            user_id=resource["userId"],
-            log_id=resource["logId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
-        )
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationRun:
+        return super()._load(resource, cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
+
+    def as_write(self):
+        return SimulationRunWrite(
+            simulator_external_id=self.simulator_external_id,
+            simulator_integration_external_id=self.simulator_integration_external_id,
+            model_external_id=self.model_external_id,
+            model_revision_external_id=self.model_revision_external_id,
+            routine_external_id=self.routine_external_id,
+            routine_revision_external_id=self.routine_revision_external_id,
+            run_time=self.run_time,
+            simulation_time=self.simulation_time,
+            status=self.status,
+            status_message=self.status_message,
+            data_set_id=self.data_set_id,
+            run_type=self.run_type,
+            user_id=self.user_id,
+            log_id=self.log_id,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
 
 
 class SimulatorRoutine(CogniteResource):
@@ -1306,6 +1430,27 @@ class SimulatorRoutine(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
+
+
+class SimulatorModelUpdate(CogniteUpdate):
+    class _PrimitiveModelUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> None:
+            self._set(value)
+
+    @property
+    def name(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "name")
+
+    @property
+    def description(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "description")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("name"),
+            PropertySpec("description"),
+        ]
 
 
 class SimulatorRoutineList(CogniteResourceList[SimulatorRoutine]):

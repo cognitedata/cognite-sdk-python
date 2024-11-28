@@ -3,6 +3,7 @@ import datetime
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 from cognite.client.data_classes.simulators.simulators import SimulatorModel, SimulatorModelRevision
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -16,7 +17,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
 
 
 @pytest.fixture
-def add_simulator_resoures(cognite_client: CogniteClient) -> None:
+def add_simulator_resoures(cognite_client: CogniteClient) -> FileMetadata | None:
     simulator_external_id = "integration_tests_workflow"
     simulator_model_file_external_id = "ShowerMixer_simulator_model_file"
 
@@ -49,15 +50,14 @@ def add_simulator_resoures(cognite_client: CogniteClient) -> None:
         cognite_client.post(
             resource["url"],
             json={"items": [resource["seed"]]},
-            headers={"cdf-version": "alpha"},
         )
 
-    yield None
+    if isinstance(file, FileMetadata):
+        yield file
 
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
         json={"items": [{"externalId": simulator_external_id}]},
-        headers={"cdf-version": "alpha"},
     )
 
     cognite_client.files.delete(external_id=simulator_model_file_external_id)
@@ -94,6 +94,7 @@ class TestSimulatorIntegrations:
         assert len(all_integrations) != len(dwsim_integrations)
 
 
+@pytest.mark.usefixtures("add_simulator_resoures")
 class TestSimulatorModels:
     TEST_DATA_SET_ID = 97552494921583
     TEST_FILE_ID = 1951667411909355
@@ -116,33 +117,58 @@ class TestSimulatorModels:
         assert model is not None
         assert model.external_id == "Shower_mixer-1"
 
-    def test_create_model(self, cognite_client: CogniteClient) -> None:
-        current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        model_external_id = current_time
-        models_to_create = SimulatorModel(
-            name="model1",
-            simulator_external_id="DWSIM",
-            external_id=model_external_id,
-            data_set_id=self.TEST_DATA_SET_ID,
-            type="SteadyState",
-        )
+    def test_create_model(self, cognite_client: CogniteClient, file: FileMetadata) -> None:
+        model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        try:
+            models_to_create = SimulatorModel(
+                name="sdk-test-model1",
+                simulator_external_id="DWSIM",
+                external_id=model_external_id,
+                data_set_id=self.TEST_DATA_SET_ID,
+                type="SteadyState",
+            )
 
-        models_created = cognite_client.simulators.models.create(models_to_create)
-        assert models_created is not None
-        assert models_created.external_id == model_external_id
+            models_created = cognite_client.simulators.models.create(models_to_create)
+            assert models_created is not None
+            assert models_created.external_id == model_external_id
 
-        model_revision_to_create = SimulatorModelRevision(
-            external_id=model_external_id + "-revision-1",
-            model_external_id=model_external_id,
-            file_id=self.TEST_FILE_ID,
-            description="Test revision",
-        )
+            model_revision_to_create = SimulatorModelRevision(
+                external_id=model_external_id + "-revision-1",
+                model_external_id=model_external_id,
+                file_id=file.id,
+                description="Test revision",
+            )
 
-        model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
-        assert model_revision_created is not None
-        assert model_revision_created.external_id == model_external_id + "-revision-1"
-        # delete created model
-        cognite_client.simulators.models.delete(id=models_created.id)
+            model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
+            assert model_revision_created is not None
+            assert model_revision_created.external_id == model_external_id + "-revision-1"
+        finally:
+            # delete created model
+            cognite_client.simulators.models.delete(id=models_created.id)
+
+    def test_update_model(self, cognite_client: CogniteClient) -> None:
+        model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        try:
+            models_to_create = SimulatorModel(
+                name="sdk-test-model1",
+                simulator_external_id="DWSIM",
+                external_id=model_external_id,
+                data_set_id=self.TEST_DATA_SET_ID,
+                type="SteadyState",
+            )
+
+            models_created = cognite_client.simulators.models.create(models_to_create)
+            assert models_created is not None
+            assert models_created.external_id == model_external_id  # Validate external ID
+            models_created.description = "updated description"  # Update the description
+            models_created.name = "updated name"  # Update the name
+            model_updated = cognite_client.simulators.models.update(models_created)
+            assert model_updated is not None
+            assert model_updated.description == "updated description"
+            assert model_updated.name == "updated name"
+        finally:
+            # delete created model
+            cognite_client.simulators.models.delete(external_ids=[model_external_id])
 
 
 class TestSimulatorRoutines:
@@ -166,3 +192,13 @@ class TestSimulationRuns:
     def test_list_runs(self, cognite_client: CogniteClient) -> None:
         routines = cognite_client.simulators.runs.list(limit=5)
         assert len(routines) > 0
+
+    # def test_create_runs(self, cognite_client: CogniteClient) -> None:
+
+    #     run = cognite_client.simulators.runs.create(
+    #         simulator_external_id="DWSIM",
+    #         model_external_id="TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL",
+    #         routine_external_id="ShowerMixerForTests",
+    #         configuration={"test": "test"},
+    #     )
+    #     assert run is not None
