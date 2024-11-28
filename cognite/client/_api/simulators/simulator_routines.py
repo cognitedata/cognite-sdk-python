@@ -106,7 +106,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulatorRoutineRevision | None:
         """`Retrieve Simulator Routine Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
-        Retrieve Simulator Routine Revisions
+        Retrieve multiple simulator routine revisions by IDs or external IDs
 
         Args:
             id (int | None): The id of the simulator routine revision.
