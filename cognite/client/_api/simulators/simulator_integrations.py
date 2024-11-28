@@ -29,24 +29,24 @@ class SimulatorIntegrationsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
         filter: SimulatorIntegrationFilter | dict[str, Any] | None = None,
     ) -> SimulatorIntegrationList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
 
-        List simulators
+        List simulator integrations
 
         Args:
-            limit (int): The maximum number of simulators to return. Defaults to 100.
+            limit (int): The maximum number of simulator integrations to return. Defaults to 100.
             filter (SimulatorIntegrationFilter | dict[str, Any] | None): The filter to narrow down simulator integrations.
 
         Returns:
-            SimulatorIntegrationList: List of simulators
+            SimulatorIntegrationList: List of simulator integrations
 
         Examples:
 
-            List simulators:
+            List simulator integrations:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_integrations()
+                    >>> res = client.simulators.integrations.list()
 
         """
 
