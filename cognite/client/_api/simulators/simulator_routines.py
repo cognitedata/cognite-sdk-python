@@ -23,7 +23,9 @@ class SimulatorRoutinesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
 
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
@@ -55,7 +57,6 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/list",
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorRoutinesFilter)
             else filter
@@ -93,7 +94,6 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/revisions/list",
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionsList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulatorRoutineRevisionsFilter)
             else filter
@@ -130,5 +130,4 @@ class SimulatorRoutinesAPI(APIClient):
             list_cls=SimulatorRoutineRevisionsList,
             identifiers=identifiers,
             resource_path="/simulators/routines/revisions",
-            headers={"cdf-version": "beta"},
         )

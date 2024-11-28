@@ -17,21 +17,23 @@ class SimulatorRunsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Simulators")
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
 
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulationRunsFilter | dict[str, Any] | None = None
     ) -> SimulationRunsList:
         """`Filter simulation runs <https://api-docs.cogheim.net/redoc/#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
-        List all simulation runs
+        List simulation runs
 
         Args:
             limit (int): The maximum number of simulation runs to return. Defaults to 100.
-            filter (SimulationRunsFilter | dict[str, Any] | None): The filter to narrow down simulator models.
+            filter (SimulationRunsFilter | dict[str, Any] | None): The filter to narrow down simulation run.
 
         Returns:
-            SimulationRunsList: List of simulator models
+            SimulationRunsList: List of simulation runs
 
         Examples:
 
@@ -49,7 +51,6 @@ class SimulatorRunsAPI(APIClient):
             url_path="/simulators/runs/list",
             resource_cls=SimulationRun,
             list_cls=SimulationRunsList,
-            headers={"cdf-version": "beta"},
             filter=filter.dump()
             if isinstance(filter, SimulationRunsFilter)
             else filter
