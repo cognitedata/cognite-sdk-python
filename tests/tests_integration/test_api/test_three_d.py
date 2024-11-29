@@ -7,6 +7,12 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import ThreeDModel, ThreeDModelRevisionUpdate, ThreeDModelUpdate, ThreeDModelWrite
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._text import random_string
+
+
+@pytest.fixture(scope="class")
+def test_model_name():
+    return f"NewTestModel-{random_string(6)}"
 
 
 @pytest.fixture(scope="class")
@@ -17,8 +23,8 @@ def test_revision(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def new_model(cognite_client: CogniteClient) -> ThreeDModel:
-    res = cognite_client.three_d.models.create(name="NewTestModel")
+def new_model(cognite_client: CogniteClient, test_model_name: str) -> ThreeDModel:
+    res = cognite_client.three_d.models.create(name=test_model_name)
     yield res
     cognite_client.three_d.models.delete(id=res.id)
     assert cognite_client.three_d.models.retrieve(id=res.id) is None
@@ -30,11 +36,12 @@ def test_nodes_tree_index_order(cognite_client):
     return cognite_client.three_d.list_nodes(model_id=model_id, revision_id=revision.id)
 
 
+@pytest.mark.usefixtures("new_model")
 class TestThreeDModelsAPI:
-    def test_list_and_retrieve(self, cognite_client):
+    def test_list_and_retrieve(self, cognite_client, test_model_name):
         res = cognite_client.three_d.models.list(limit=1)
         assert 1 == len(res)
-        res = next(r for r in cognite_client.three_d.models(limit=None) if r.name == "MyModel775")
+        res = next(r for r in cognite_client.three_d.models(limit=None) if r.name == test_model_name)
         assert res == cognite_client.three_d.models.retrieve(res.id)
 
     def test_create_update_delete(self, cognite_client) -> None:
