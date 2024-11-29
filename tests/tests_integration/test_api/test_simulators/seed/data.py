@@ -1,6 +1,13 @@
+
+resource_names = {
+    "simulator_external_id": "integration_tests_workflow",
+    "simulator_model_external_id": "integration_tests_workflow_model_1",
+    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
+}
+
 simulator = {
     "name": "DWSIM",
-    "externalId": "integration_tests_workflow",
+    "externalId": resource_names["simulator_external_id"],
     "fileExtensionTypes": ["dwxmz"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "stepFields": [
@@ -544,9 +551,10 @@ simulator = {
 }
 
 
+
 simulator_integration = {
     "externalId": "integration_tests_workflow_connector",
-    "simulatorExternalId": "integration_tests_workflow",
+    "simulatorExternalId": resource_names["simulator_external_id"],
     "heartbeat": 1706396950969,
     "dataSetId": 97552494921583,
     "connectorVersion": "1.0.0",
@@ -559,26 +567,25 @@ simulator_integration = {
 
 
 simulator_model = {
-    "externalId": "integration_tests_workflow_model",
-    "simulatorExternalId": "integration_tests_workflow",
+    "externalId": resource_names["simulator_model_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
     "name": "Test Simulator Model",
     "description": "Test Simulator Model Desc",
     "dataSetId": 97552494921583,
-    "labels": [{"externalId": "simconfig-labels-PROSPER"}],
     "type": "SteadyState",
 }
 
 simulator_model_revision = {
     "externalId": "integration_tests_workflow_model_revision",
-    "modelExternalId": "integration_tests_workflow_model",
+    "modelExternalId": resource_names["simulator_model_external_id"],
     "description": "test sim model revision description",
     "fileId": 00000000000000,
 }
 
 simulator_routine = {
     "externalId": "integration_tests_workflow_routine",
-    "modelExternalId": "integration_tests_workflow_model",
-    "simulatorIntegrationExternalId": "integration_tests_workflow_connector",
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "simulatorIntegrationExternalId": resource_names["simulator_integration_external_id"],
     "name": "Routine test",
     "description": "test",
 }
