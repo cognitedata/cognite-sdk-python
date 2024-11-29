@@ -77,7 +77,7 @@ class DataModelingGraphQLAPI(APIClient):
 
         Examples:
 
-            Apply DML::
+            Apply DML:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -148,7 +148,7 @@ class DataModelingGraphQLAPI(APIClient):
 
         Examples:
 
-            Execute a graphql query against a given data model::
+            Execute a graphql query against a given data model:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

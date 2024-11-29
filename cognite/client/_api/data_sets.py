@@ -119,7 +119,7 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Create new data sets::
+            Create new data sets:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataSetWrite
@@ -143,16 +143,14 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Get data set by id::
+            Get data set by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve(id=1)
 
-            Get data set by external id::
+            Get data set by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -176,16 +174,14 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Get data sets by id::
+            Get data sets by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve_multiple(ids=[1, 2, 3])
 
-            Get data sets by external id::
+            Get data sets by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.data_sets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -243,7 +239,7 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            Update a data set that you have fetched. This will perform a full update of the data set::
+            Update a data set that you have fetched. This will perform a full update of the data set:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -251,11 +247,9 @@ class DataSetsAPI(APIClient):
                 >>> data_set.description = "New description"
                 >>> res = client.data_sets.update(data_set)
 
-            Perform a partial update on a data set, updating the description and removing a field from metadata::
+            Perform a partial update on a data set, updating the description and removing a field from metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataSetUpdate
-                >>> client = CogniteClient()
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = client.data_sets.update(my_update)
         """
@@ -287,23 +281,19 @@ class DataSetsAPI(APIClient):
 
         Examples:
 
-            List data sets and filter on write_protected::
+            List data sets and filter on write_protected:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> data_sets_list = client.data_sets.list(limit=5, write_protected=False)
 
-            Iterate over data sets::
+            Iterate over data sets:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_set in client.data_sets:
                 ...     data_set # do something with the data_set
 
-            Iterate over chunks of data sets to reduce memory load::
+            Iterate over chunks of data sets to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for data_set_list in client.data_sets(chunk_size=2500):
                 ...     data_set_list # do something with the list
         """

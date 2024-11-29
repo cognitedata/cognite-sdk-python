@@ -208,7 +208,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Create a file::
+            Create a file:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataWrite
@@ -242,16 +242,14 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Get file metadata by id::
+            Get file metadata by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve(id=1)
 
-            Get file metadata by external id::
+            Get file metadata by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
@@ -277,16 +275,14 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Get file metadatas by id::
+            Get file metadatas by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.files.retrieve_multiple(ids=[1, 2, 3])
 
-            Get file_metadatas by external id::
+            Get file_metadatas by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
@@ -308,7 +304,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            List files metadata and filter on external id prefix::
+            List files metadata and filter on external id prefix:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -332,7 +328,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Delete files by id or external id::
+            Delete files by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -378,7 +374,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Update file metadata that you have fetched. This will perform a full update of the file metadata::
+            Update file metadata that you have fetched. This will perform a full update of the file metadata:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -386,27 +382,21 @@ class FilesAPI(APIClient):
                 >>> file_metadata.description = "New description"
                 >>> res = client.files.update(file_metadata)
 
-            Perform a partial update on file metadata, updating the source and adding a new field to metadata::
+            Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
                 >>> res = client.files.update(my_update)
 
-            Attach labels to a files::
+            Attach labels to a files:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
                 >>> res = client.files.update(my_update)
 
-            Detach a single label from a file::
+            Detach a single label from a file:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import FileMetadataUpdate
-                >>> client = CogniteClient()
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.files.update(my_update)
         """
@@ -438,7 +428,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Search for a file::
+            Search for a file:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -446,8 +436,6 @@ class FilesAPI(APIClient):
 
             Search for an asset with an attached label:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
@@ -523,7 +511,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Upload a file in a given path::
+            Upload a file in a given path:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -531,28 +519,20 @@ class FilesAPI(APIClient):
 
             If name is omitted, this method will use the name of the file
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/file")
 
-            You can also upload all files in a directory by setting path to the path of a directory::
+            You can also upload all files in a directory by setting path to the path of a directory:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/my/directory")
 
-            Upload a file with a label::
+            Upload a file with a label:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Label
-                >>> client = CogniteClient()
                 >>> res = client.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
-            Upload a file with a geo_location::
+            Upload a file with a geo_location:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
-                >>> client = CogniteClient()
                 >>> geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
                 >>> res = client.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
 
@@ -627,7 +607,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Upload a file from memory::
+            Upload a file from memory:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -711,7 +691,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Upload a file from memory::
+            Upload a file from memory:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1036,13 +1016,13 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Download files by id and external id into directory 'my_directory'::
+            Download files by id and external id into directory 'my_directory':
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
 
-            Download files by id to the current directory::
+            Download files by id to the current directory:
 
                 >>> client.files.download(directory=".", id=[1,2,3])
         """
@@ -1198,7 +1178,7 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Download a file's content into memory::
+            Download a file's content into memory:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1273,39 +1253,31 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            List files metadata and filter on external id prefix::
+            List files metadata and filter on external id prefix:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
 
-            Iterate over files metadata::
+            Iterate over files metadata:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for file_metadata in client.files:
                 ...     file_metadata # do something with the file metadata
 
-            Iterate over chunks of files metadata to reduce memory load::
+            Iterate over chunks of files metadata to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for file_list in client.files(chunk_size=2500):
                 ...     file_list # do something with the files
 
-            Filter files based on labels::
+            Filter files based on labels:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelFilter
-                >>> client = CogniteClient()
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
                 >>> file_list = client.files.list(labels=my_label_filter)
 
-            Filter files based on geoLocation::
+            Filter files based on geoLocation:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> client = CogniteClient()
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
                 >>> file_list = client.files.list(geo_location=my_geo_location_filter)
         """

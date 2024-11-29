@@ -118,7 +118,7 @@ class TransformationJobsAPI(APIClient):
 
         Examples:
 
-            Get jobs by id::
+            Get jobs by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

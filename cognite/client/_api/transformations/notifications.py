@@ -177,7 +177,7 @@ class TransformationNotificationsAPI(APIClient):
 
         Examples:
 
-            Delete schedules by id or external id::
+            Delete schedules by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
