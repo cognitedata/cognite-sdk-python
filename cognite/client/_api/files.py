@@ -589,7 +589,7 @@ class FilesAPI(APIClient):
 
     def upload_content_bytes(
         self,
-        content: str | bytes | TextIO | BinaryIO,
+        content: str | bytes | BinaryIO,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
@@ -598,7 +598,7 @@ class FilesAPI(APIClient):
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_content_session`.
 
         Args:
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | None): Instance ID of the file.
 
@@ -654,7 +654,7 @@ class FilesAPI(APIClient):
 
     def upload_bytes(
         self,
-        content: str | bytes | TextIO | BinaryIO,
+        content: str | bytes | BinaryIO,
         name: str,
         external_id: str | None = None,
         source: str | None = None,
@@ -677,7 +677,7 @@ class FilesAPI(APIClient):
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
 
         Args:
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
             name (str): Name of the file.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             source (str | None): The source of the file.
