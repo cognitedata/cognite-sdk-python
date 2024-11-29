@@ -268,13 +268,13 @@ class TestSimulatorRoutines:
         assert len(routines) > 0
 
     def test_list_routine_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.routines.list_revisions(limit=5)
+        revisions = cognite_client.simulators.routines.revisions.list(limit=5)
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
 
     def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
-        revision = cognite_client.simulators.routines.retrieve_revision(external_id="ShowerMixerForTests-1")
+        revision = cognite_client.simulators.routines.revisions.retrieve(external_id="ShowerMixerForTests-1")
         assert revision is not None
         assert revision.external_id == "ShowerMixerForTests-1"
 
