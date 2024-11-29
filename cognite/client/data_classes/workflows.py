@@ -271,7 +271,9 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         return cls(
             routine_external_id=simulation["routineExternalId"],
             run_time=simulation.get("runTime"),
-            inputs=[SimulationInputOverride._load(item) for item in simulation.get("inputs", [])] if simulation.get("inputs") else None,
+            inputs=[SimulationInputOverride._load(item) for item in simulation.get("inputs", [])]
+            if simulation.get("inputs")
+            else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -653,7 +655,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
-            logId=output.get("logId"),
+            log_id=output.get("logId"),
             status_message=output.get("statusMessage"),
         )
 

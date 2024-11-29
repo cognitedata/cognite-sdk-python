@@ -26,6 +26,7 @@ class SimulationValueUnitName(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
 
+
 @dataclass
 class SimulationInputOverride(CogniteObject):
     reference_id: str
@@ -46,4 +47,3 @@ class SimulationInputOverride(CogniteObject):
             output["unit"] = self.unit.dump(camel_case=camel_case)
 
         return output
-
