@@ -616,7 +616,7 @@ class FilesAPI(APIClient):
 
             ...or by using instance_id:
 
-                >>> from cognite.client.data_classes import NodeId
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
                 ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
         """
