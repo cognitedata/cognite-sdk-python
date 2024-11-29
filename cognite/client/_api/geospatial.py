@@ -208,8 +208,6 @@ class GeospatialAPI(APIClient):
             Add an additional index to an existing property
 
                 >>> from cognite.client.data_classes.geospatial import Patches
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.geospatial.patch_feature_types(
                 ...    patch=FeatureTypePatch(
                 ...         external_id="wells",
