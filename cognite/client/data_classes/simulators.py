@@ -14,67 +14,30 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class SimulationValueUnitInput(CogniteObject):
+class SimulationValueUnitName(CogniteObject):
     name: str
-    quantity: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
-            quantity=resource.get("quantity"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
 
-
 @dataclass
-class SimulatorRoutineInputTimeseries(CogniteObject):
-    name: str
+class SimulationInputOverride(CogniteObject):
     reference_id: str
-    source_external_id: str
-    aggregate: str | None = None
-    save_timeseries_external_id: str | None = None
-    unit: SimulationValueUnitInput | None = None
+    value: str | int | float
+    unit: SimulationValueUnitName | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            name=resource["name"],
-            reference_id=resource["referenceId"],
-            source_external_id=resource["sourceExternalId"],
-            aggregate=resource.get("aggregate"),
-            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
-            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if self.unit is not None:
-            output["unit"] = self.unit.dump(camel_case=camel_case)
-
-        return output
-
-
-@dataclass
-class SimulatorRoutineInputConstant(CogniteObject):
-    name: str
-    reference_id: str
-    value: str
-    value_type: str
-    unit: SimulationValueUnitInput | None = None
-    save_timeseries_external_id: str | None = None
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            name=resource["name"],
             reference_id=resource["referenceId"],
             value=resource["value"],
-            value_type=resource["valueType"],
-            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
-            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
+            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if "unit" in resource else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -84,28 +47,3 @@ class SimulatorRoutineInputConstant(CogniteObject):
 
         return output
 
-
-@dataclass
-class SimulatorRoutineOutput(CogniteObject):
-    name: str
-    reference_id: str
-    value_type: str
-    unit: SimulationValueUnitInput | None = None
-    save_timeseries_external_id: str | None = None
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            name=resource["name"],
-            reference_id=resource["referenceId"],
-            value_type=resource["valueType"],
-            unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
-            save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if self.unit is not None:
-            output["unit"] = self.unit.dump(camel_case=camel_case)
-
-        return output

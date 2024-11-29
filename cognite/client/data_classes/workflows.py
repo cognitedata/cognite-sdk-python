@@ -21,9 +21,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
 from cognite.client.data_classes.simulators import (
-    SimulatorRoutineInputConstant,
-    SimulatorRoutineInputTimeseries,
-    SimulatorRoutineOutput,
+    SimulationInputOverride,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
@@ -251,7 +249,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
     Args:
         routine_external_id (str): The external ID of the simulation routine to be executed.
         run_time (int | None): Reference timestamp used for data pre-processing and data sampling.
-        inputs (list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None): List of input overrides
+        inputs (list[SimulationInputOverride] | None): List of input overrides.
     """
 
     task_type = "simulation"
@@ -260,7 +258,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         self,
         routine_external_id: str,
         run_time: int | None = None,
-        inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None = None,
+        inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
         self.routine_external_id = routine_external_id
         self.run_time = run_time
@@ -273,14 +271,14 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         return cls(
             routine_external_id=simulation["routineExternalId"],
             run_time=simulation.get("runTime"),
-            inputs=simulation.get("inputs"),
+            inputs=[SimulationInputOverride._load(item) for item in simulation.get("inputs", [])] if simulation.get("inputs") else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         simulation = {
             "routineExternalId" if camel_case else "routine_external_id": self.routine_external_id,
             "runTime" if camel_case else "run_time": self.run_time,
-            "inputs": self.inputs,
+            "inputs": [item.dump(camel_case) for item in self.inputs] if self.inputs else None,
         }
 
         return {"simulation": simulation}
@@ -633,10 +631,9 @@ class SimulationTaskOutput(WorkflowTaskOutput):
     """
     The class represent the output of Simulation execution.
     Args:
-        run_id (int | None): The run id of the simulation execution in the SimInt API.
-        logs (list[dict[str, Any]] | None): Logs from the simulation execution.
-        status_message (str | None): Status of the current simulation execution.
-        outputs (list[SimulatorRoutineOutput] | None): Outputs results from the simulation execution
+        run_id (int | None): The run ID of the simulation run.
+        log_id (int | None): The log ID of the simulation run.
+        status_message (str | None): Status message of the simulation execution.
     """
 
     task_type: ClassVar[str] = "simulation"
@@ -644,31 +641,27 @@ class SimulationTaskOutput(WorkflowTaskOutput):
     def __init__(
         self,
         run_id: int | None,
-        logs: list[dict[str, Any]] | None,
+        log_id: int | None,
         status_message: str | None,
-        outputs: list[SimulatorRoutineOutput] | None,
     ) -> None:
         self.run_id = run_id
-        self.logs = logs
+        self.log_id = log_id
         self.status_message = status_message
-        self.outputs = outputs
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
-            logs=output.get("logs"),
+            logId=output.get("logId"),
             status_message=output.get("statusMessage"),
-            outputs=output.get("outputs"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "runId" if camel_case else "run_id": self.run_id,
-            "logs": self.logs,
+            "logId" if camel_case else "log_id": self.log_id,
             "statusMessage" if camel_case else "status_message": self.status_message,
-            "outputs": self.outputs,
         }
 
 
