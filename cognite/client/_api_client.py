@@ -967,8 +967,9 @@ class APIClient:
         extra_body_fields: dict[str, Any] | None = None,
         returns_items: bool = False,
         executor: TaskExecutor | None = None,
+        delete_endpoint: str = "/delete",
     ) -> list | None:
-        resource_path = (resource_path or self._RESOURCE_PATH) + "/delete"
+        resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
         tasks = [
             {
                 "url_path": resource_path,
