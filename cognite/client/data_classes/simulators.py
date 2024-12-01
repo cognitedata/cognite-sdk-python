@@ -30,7 +30,7 @@ class SimulationValueUnitName(CogniteObject):
 @dataclass
 class SimulationInputOverride(CogniteObject):
     reference_id: str
-    value: str | int | float
+    value: str | int | float | list[str] | list[int] | list[float]
     unit: SimulationValueUnitName | None = None
 
     @classmethod
