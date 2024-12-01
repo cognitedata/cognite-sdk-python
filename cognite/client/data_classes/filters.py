@@ -895,7 +895,7 @@ class SpaceFilter(FilterWithProperty):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> NoReturn:
-        raise NotImplementedError("Custom filter 'SpaceFilter' can not be loaded")
+        raise NotImplementedError("Custom filter 'SpaceFilter' cannot be loaded")
 
     def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {
@@ -905,3 +905,42 @@ class SpaceFilter(FilterWithProperty):
 
     def _involved_filter_types(self) -> set[type[Filter]]:
         return self._involved_filter
+
+
+class IsNull(Not):  # type: ignore [misc]
+    """Data modeling filter for instances whose property is null, effectively a negated Exists-filter.
+
+    Args:
+        property (SequenceNotStr[str]): The property to filter on.
+
+    Example:
+        Filter than can be used to retrieve instances where the property value is not set:
+
+        - A filter using a tuple to reference the property:
+
+            >>> from cognite.client.data_classes.filters import IsNull
+            >>> flt = IsNull(("space", "view_xid/version", "some_property"))
+
+        - Composing the property reference using the ``View.as_property_ref`` method:
+
+            >>> flt = IsNull(my_view.as_property_ref("some_property"))
+
+    """
+
+    _filter_name = "__is_null"
+
+    def __init__(self, property: SequenceNotStr[str]) -> None:
+        if not isinstance(property, SequenceNotStr):
+            raise TypeError(
+                "The IsNull filter is a Data Modeling filter and expected a sequence of str to describe the property, "
+                f"like ['node', 'space'] or ['my-space', 'my-view/version', 'my-property'], got: {property}"
+            )
+        super().__init__(Exists(list(property)))
+        self._filter_name = Not._filter_name
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> NoReturn:
+        raise NotImplementedError("Custom filter 'IsNull' cannot be loaded")
+
+    def _involved_filter_types(self) -> set[type[Filter]]:
+        return {Not, Exists}
