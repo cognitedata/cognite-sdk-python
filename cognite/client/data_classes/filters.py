@@ -9,13 +9,13 @@ from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils.useful_types import SequenceNotStr
+from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference: TypeAlias = str | tuple[str, ...] | list[str] | EnumProperty
+PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty
 
 RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId
 
@@ -930,12 +930,12 @@ class IsNull(Not):  # type: ignore [misc]
     _filter_name = "__is_null"
 
     def __init__(self, property: SequenceNotStr[str]) -> None:
-        if not isinstance(property, SequenceNotStr):
+        if not is_sequence_not_str(property):
             raise TypeError(
                 "The IsNull filter is a Data Modeling filter and expected a sequence of str to describe the property, "
                 f"like ['node', 'space'] or ['my-space', 'my-view/version', 'my-property'], got: {property}"
             )
-        super().__init__(Exists(list(property)))
+        super().__init__(Exists(property))
         self._filter_name = Not._filter_name
 
     @classmethod
