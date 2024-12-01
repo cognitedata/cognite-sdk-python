@@ -532,7 +532,9 @@ class SessionsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
-        self._DELETE_LIMIT = 100
+        self._DELETE_LIMIT = (
+            100  # There isn't an API limit so this is a self-inflicted limit due to no support for large payloads
+        )
 
     def create(
         self,
@@ -599,29 +601,20 @@ class SessionsAPI(APIClient):
             Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
 
-        revoked_sessions = cast(
+        ident_sequence = IdentifierSequence.load(ids=id, external_ids=None)
+
+        revoked_sessions_res = cast(
             list,
             self._delete_multiple(
-                identifiers=IdentifierSequence.load(ids=id, external_ids=None),
+                identifiers=ident_sequence,
                 wrap_ids=True,
                 returns_items=True,
                 delete_endpoint="/revoke",
             ),
         )
 
-        parsed_sessions = []
-        for session in revoked_sessions:
-            parsed_sessions.append(
-                Session(
-                    id=session["id"],
-                    type=session.get("type"),
-                    status=session.get("status"),
-                    creation_time=session.get("creationTime"),
-                    expiration_time=session.get("expirationTime"),
-                    client_id=session.get("clientId"),
-                )
-            )
-        return SessionList(parsed_sessions) if len(parsed_sessions) > 1 else parsed_sessions[0]
+        revoked_sessions = SessionList._load(revoked_sessions_res)
+        return revoked_sessions[0] if ident_sequence.is_singleton() else revoked_sessions
 
     @overload
     def retrieve(self, id: int) -> Session: ...
