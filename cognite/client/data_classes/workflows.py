@@ -277,7 +277,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        simulation = {
+        simulation: dict[str, Any] = {
             "routineExternalId" if camel_case else "routine_external_id": self.routine_external_id,
         }
         if self.run_time:
