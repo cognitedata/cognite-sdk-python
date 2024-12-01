@@ -19,8 +19,9 @@ Changes are grouped as follows
 
 ## [7.69.3] - 2024-12-02
 ### Added
-- Support for future time shift strings in `timestamp_to_ms` and all resources using the function to process time input, eg. `2w-ahead`
-- Support for chunking `client.iam.sessions.revoke` requests
+- API endpoints currently accepting relative time strings like `2d-ago` now support a forward-looking syntax, e.g. `2w-ahead` or `15m-ahead`.
+### Fixed
+- Revoking sessions through `client.iam.sessions.revoke` no longer raises an API error for very large payloads
 
 ## [7.69.2] - 2024-11-28
 ### Improved
