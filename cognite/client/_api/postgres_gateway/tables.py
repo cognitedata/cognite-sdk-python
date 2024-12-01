@@ -154,8 +154,6 @@ class TablesAPI(APIClient):
 
             Get multiple custom tables by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
 
         """
@@ -227,15 +225,11 @@ class TablesAPI(APIClient):
 
             Iterate over tables:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table in client.postgres_gateway.tables:
                 ...     table # do something with the custom table
 
             Iterate over chunks of tables to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table_list in client.postgres_gateway.tables(chunk_size=25):
                 ...     table_list # do something with the custom tables
 

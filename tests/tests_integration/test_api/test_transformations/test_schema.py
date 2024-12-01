@@ -1,3 +1,5 @@
+import pytest
+
 from cognite.client.data_classes import TransformationDestination
 
 
@@ -10,6 +12,7 @@ class TestTransformationSchemaAPI:
         assert next(col for col in asset_columns if col.name == "metadata").type.type == "map"
         assert next(col for col in asset_columns if col.name == "metadata").type.key_type == "string"
 
+    @pytest.mark.xfail(reason="Nullable changed to False in a recent refactor, fix/revert underway")
     def test_assets_delete(self, cognite_client):
         asset_columns = cognite_client.transformations.schema.retrieve(
             destination=TransformationDestination.assets(), conflict_mode="delete"

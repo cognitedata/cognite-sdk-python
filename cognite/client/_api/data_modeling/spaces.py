@@ -95,8 +95,6 @@ class SpacesAPI(APIClient):
 
             Get multiple spaces by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
@@ -117,7 +115,7 @@ class SpacesAPI(APIClient):
             list[str]: The space(s) which has been deleted.
         Examples:
 
-            Delete spaces by id::
+            Delete spaces by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -150,23 +148,19 @@ class SpacesAPI(APIClient):
 
         Examples:
 
-            List spaces and filter on max start time::
+            List spaces and filter on max start time:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> space_list = client.data_modeling.spaces.list(limit=5)
 
-            Iterate over spaces::
+            Iterate over spaces:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for space in client.data_modeling.spaces:
                 ...     space # do something with the space
 
-            Iterate over chunks of spaces to reduce memory load::
+            Iterate over chunks of spaces to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for space_list in client.data_modeling.spaces(chunk_size=2500):
                 ...     space_list # do something with the spaces
         """

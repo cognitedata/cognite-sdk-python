@@ -162,8 +162,6 @@ class TransformationJob(CogniteResource):
 
             wait transformation for 5 minutes and do something if still running:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> job = client.transformations.run(id = 1, wait = False)
                 >>> job.wait(timeout = 5.0*60)
@@ -220,8 +218,6 @@ class TransformationJob(CogniteResource):
             wait transformation for 5 minutes and do something if still running:
 
                 >>> from asyncio import ensure_future
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> async def run_successive_transformations():
                 >>>     job = client.transformations.run(id = 1, wait = False)

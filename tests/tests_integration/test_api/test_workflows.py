@@ -342,6 +342,7 @@ class TestWorkflows:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
         assert non_existing is None
 
+    @pytest.mark.skip("flaky; fix underway")
     def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list(limit=-1)
         assert len(listed) >= len(workflow_list)

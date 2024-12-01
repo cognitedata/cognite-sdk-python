@@ -17,10 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.69.1] - 2024-11-25
+## [7.69.3] - 2024-12-02
 ### Added
 - Support for future time shift strings in `timestamp_to_ms` and all resources using the function to process time input, eg. `2w-ahead`
 - Support for chunking `client.iam.sessions.revoke` requests
+
+## [7.69.2] - 2024-11-28
+### Improved
+- Handle conversion of instance lists like NodeList to pandas DataFrame in scenarios where: a) properties are expanded
+  into columns, b) the view ID prefix has be removed and c) one or more user properties have a naming conflict with
+  base properties. This no longer raises a documented error by pandas, but gives a warning instead.
+
+## [7.69.1] - 2024-11-27
+### Fixed
+- Convenience methods for `TimeSeries` (defined through Data Modeling with `instance_id`) now works as
+  intended: `count`, `latest` and `first`.
 
 ## [7.69.0] - 2024-11-23
 ### Added

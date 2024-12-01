@@ -434,5 +434,5 @@ def find_all_classes_and_funcs(files: list[Path]):
     }
 
 
-def format_docstrings(files: list[Path]) -> list[str]:
+def format_docstrings(files: list[Path]) -> str:
     return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs(files))))
