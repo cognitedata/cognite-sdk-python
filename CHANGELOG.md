@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.69.4] - 2024-12-02
+### Added
+- An IsNull filter has been added for use in Data Modeling.
+
 ## [7.69.3] - 2024-12-02
 ### Added
 - API endpoints currently accepting relative time strings like `2d-ago` now support a forward-looking syntax, e.g. `2w-ahead` or `15m-ahead`.
