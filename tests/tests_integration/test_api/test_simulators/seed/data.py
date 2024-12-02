@@ -1,4 +1,3 @@
-
 resource_names = {
     "simulator_external_id": "integration_tests_workflow",
     "simulator_integration_external_id": "integration_tests_workflow_connector",
@@ -550,7 +549,6 @@ simulator = {
         },
     ],
 }
-
 
 
 simulator_integration = {
