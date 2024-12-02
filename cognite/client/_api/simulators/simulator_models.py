@@ -196,20 +196,20 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
 
-            List simulator models::
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.list()
+            List simulator models:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.list()
 
-            Get simulator model by id::
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.retrieve(id=1)
+            Get simulator model by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.retrieve(id=1)
 
-            Get simulator model by external id::
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.retrieve(external_id="1")
+            Get simulator model by external id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.retrieve(external_id="1")
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
