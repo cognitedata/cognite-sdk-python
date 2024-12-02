@@ -34,7 +34,31 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
+
+
+@pytest.fixture(autouse=True, scope="module")
+def wf_setup_module(cognite_client: CogniteClient) -> None:
+    """setup any state specific to the execution of the given module."""
+    resource_age = timestamp_to_ms("30m-ago")
+
+    wf_triggers = cognite_client.workflows.triggers.list(limit=None)
+    wf_triggers_to_delete = [wf.external_id for wf in wf_triggers if wf.created_time < resource_age]
+    if wf_triggers_to_delete:
+        cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
+
+    wf_versions = cognite_client.workflows.versions.list(limit=None)
+    wf_versions_to_delete = [
+        (wf.workflow_external_id, wf.version) for wf in wf_versions if wf.created_time < resource_age
+    ]
+    if wf_versions_to_delete:
+        cognite_client.workflows.versions.delete(wf_versions_to_delete)
+
+    wfs = cognite_client.workflows.list(limit=None)
+    wfs_to_delete = [wf.external_id for wf in wfs if wf.created_time < resource_age]
+    if wfs_to_delete:
+        cognite_client.workflows.delete(wfs_to_delete)
 
 
 @pytest.fixture(scope="session")

@@ -771,7 +771,8 @@ class DatapointsAPI(APIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            we are using the time-ago format, ``"2w-ago"`` to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -821,7 +822,7 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         DatapointsQuery(id=42, end="1d-ago", aggregates="average"),
-                ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
+                ...         DatapointsQuery(id=69, end="2d-ahead", aggregates=["average"]),
                 ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
                 ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
@@ -1417,6 +1418,10 @@ class DatapointsAPI(APIClient):
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
+            You can also get the first datapoint before a specific time in the future e.g. forecast data:
+
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")[0]
+
             You can also retrieve the datapoint in a different unit or unit system:
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
@@ -1661,6 +1666,10 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+
+            Deleting the data from now until 2 days in the future from a time series containing e.g. forecasted data:
+
+                >>> client.time_series.data.delete_range(start="now", end="2d-ahead", id=1)
         """
         start_ms = timestamp_to_ms(start)
         end_ms = timestamp_to_ms(end)
@@ -1684,7 +1693,7 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
-                ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
+                ...           {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"}]
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
