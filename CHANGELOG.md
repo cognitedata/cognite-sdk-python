@@ -18,7 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [7.70.0] - 2024-11-29
+## [7.70.0] - 2024-12-02
 ### Added
 - Workflow support for "simulation" task type. 
 
