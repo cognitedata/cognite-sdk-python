@@ -79,12 +79,12 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Examples:
 
-            Get simulator model revision by id::
+            Get simulator model revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve(id=123)
 
-            Get simulator model revision by external id::
+            Get simulator model revision by external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve(external_id="abcdef")
