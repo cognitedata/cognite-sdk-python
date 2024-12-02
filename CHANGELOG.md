@@ -17,6 +17,53 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.69.4] - 2024-12-02
+### Added
+- An IsNull filter has been added for use in Data Modeling.
+
+## [7.69.3] - 2024-12-02
+### Added
+- API endpoints currently accepting relative time strings like `2d-ago` now support a forward-looking syntax, e.g. `2w-ahead` or `15m-ahead`.
+### Fixed
+- Revoking sessions through `client.iam.sessions.revoke` no longer raises an API error for very large payloads
+
+## [7.69.2] - 2024-11-28
+### Improved
+- Handle conversion of instance lists like NodeList to pandas DataFrame in scenarios where: a) properties are expanded
+  into columns, b) the view ID prefix has be removed and c) one or more user properties have a naming conflict with
+  base properties. This no longer raises a documented error by pandas, but gives a warning instead.
+
+## [7.69.1] - 2024-11-27
+### Fixed
+- Convenience methods for `TimeSeries` (defined through Data Modeling with `instance_id`) now works as
+  intended: `count`, `latest` and `first`.
+
+## [7.69.0] - 2024-11-23
+### Added
+- Synthetic Datapoints API has better support for `instance_id`. Previously you had to specify these directly
+  in the expression(s), but now you can use the `variables` parameter to more easily substitute the time series
+  identifiers directly into the expression(s).
+
+## [7.68.0] - 2024-11-22
+### Added
+- New methods: `WorkflowTriggerAPI.[list, list_runs]`
+- `WorkflowAPI.upsert` now supports upserting multiple.
+- `WorkflowAPI.retrieve` now supports retrieving multiple.
+- `WorkflowVersionAPI.upsert` now supports upserting multiple.
+- `WorkflowVersionAPI.retrieve` now supports retrieving multiple.
+- `WorkflowTriggerAPI.delete` now supports deleting multiple.
+- Missing field `last_updated_time` for `Workflow`.
+- Missing fields `last_updated_time` and `created_time` for `WorkflowVersion`.
+### Deprecated
+- `WorkflowTriggerAPI.get_triggers` is now deprecated in favor of `WorkflowTriggerAPI.list`
+- `WorkflowTriggerAPI.get_trigger_run_history` is now deprecated in favor of `WorkflowTriggerAPI.list_runs`
+### Fixed
+- Listing the history of (workflow trigger) runs now work as expected for all external_ids (properly URL encoded).
+
+## [7.67.4] - 2024-11-21
+### Fixed
+- Creating a `CogniteClient` no longer gives a `UserWarning` for private link projects.
+
 ## [7.67.3] - 2024-11-20
 ### Fixed
 - Fixed wrong url paths for `client.hosted_extractors.jobs.[list_logs, list_metrics]`

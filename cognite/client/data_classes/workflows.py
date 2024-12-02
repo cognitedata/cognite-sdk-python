@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
@@ -75,11 +76,12 @@ class WorkflowUpsert(WorkflowCore):
 
 class Workflow(WorkflowCore):
     """
-    This class represents a workflow. This is the reading version, used when reading or listing a workflows.
+    This class represents a workflow. This is the reading version, used when reading or listing workflows.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         created_time (int): The time when the workflow was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
         data_set_id (int | None): The id of the data set this workflow belongs to.
     """
@@ -88,11 +90,13 @@ class Workflow(WorkflowCore):
         self,
         external_id: str,
         created_time: int,
+        last_updated_time: int,
         description: str | None = None,
         data_set_id: int | None = None,
     ) -> None:
         super().__init__(external_id, description, data_set_id)
         self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
@@ -100,6 +104,7 @@ class Workflow(WorkflowCore):
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource.get("dataSetId"),
         )
 
@@ -214,7 +219,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return cls(
             external_id=function["externalId"],
             data=function.get("data"),
-            # API uses isAsyncComplete and asyncComplete inconsistently:
+            # TODO: Fix: API uses isAsyncComplete and asyncComplete inconsistently:
             is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
         )
 
@@ -229,7 +234,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             "function": function,
         }
         if self.is_async_complete is not None:
-            output[("isAsyncComplete" if camel_case else "is_async_complete")] = self.is_async_complete
+            output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
 
 
@@ -915,6 +920,8 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_external_id (str): The external ID of the workflow.
         version (str): The version of the workflow.
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
@@ -922,12 +929,13 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_external_id: str,
         version: str,
         workflow_definition: WorkflowDefinition,
+        created_time: int,
+        last_updated_time: int,
     ) -> None:
-        super().__init__(
-            workflow_external_id=workflow_external_id,
-            version=version,
-        )
+        super().__init__(workflow_external_id=workflow_external_id, version=version)
         self.workflow_definition = workflow_definition
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
@@ -936,13 +944,17 @@ class WorkflowVersion(WorkflowVersionCore):
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
             workflow_definition=WorkflowDefinition._load(workflow_definition),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            "workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id,
             "version": self.version,
-            ("workflowDefinition" if camel_case else "workflow_definition"): self.workflow_definition.dump(camel_case),
+            "workflowDefinition" if camel_case else "workflow_definition": self.workflow_definition.dump(camel_case),
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
         }
 
     def as_write(self) -> WorkflowVersionUpsert:
@@ -1019,10 +1031,7 @@ class WorkflowExecution(CogniteResource):
         self.metadata = metadata
 
     def as_workflow_id(self) -> WorkflowVersionId:
-        return WorkflowVersionId(
-            workflow_external_id=self.workflow_external_id,
-            version=self.version,
-        )
+        return WorkflowVersionId(workflow_external_id=self.workflow_external_id, version=self.version)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
@@ -1156,11 +1165,18 @@ class WorkflowVersionId:
     workflow_external_id: str
     version: str | None = None
 
-    def as_primitive(self) -> tuple[str, str | None]:
+    def as_tuple(self) -> tuple[str, str | None]:
         return self.workflow_external_id, self.version
 
+    def as_primitive(self) -> tuple[str, str | None]:
+        warnings.warn(
+            "as_primitive() is deprecated, use as_tuple instead. Will be removed in the next major release.",
+            DeprecationWarning,
+        )
+        return self.as_tuple()
+
     @classmethod
-    def load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersionId:
+    def load(cls, resource: dict) -> Self:
         if "workflowExternalId" in resource:
             workflow_external_id = resource["workflowExternalId"]
         elif "externalId" in resource:
@@ -1168,25 +1184,20 @@ class WorkflowVersionId:
         else:
             raise ValueError("Invalid input to WorkflowVersionId.load")
 
-        return cls(
-            workflow_external_id=workflow_external_id,
-            version=resource.get("version"),
-        )
+        return cls(workflow_external_id=workflow_external_id, version=resource.get("version"))
 
     def dump(self, camel_case: bool = True, as_external_id_key: bool = False) -> dict[str, Any]:
         if as_external_id_key:
-            output: dict[str, Any] = {("externalId" if camel_case else "external_id"): self.workflow_external_id}
+            output: dict[str, Any] = {"externalId" if camel_case else "external_id": self.workflow_external_id}
         else:
-            output = {("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id}
+            output = {"workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id}
         if self.version:
             output["version"] = self.version
         return output
 
 
 class WorkflowIds(UserList):
-    """
-    This class represents a list of Workflow Version Identifiers.
-    """
+    """This class represents a list of Workflow Version Identifiers."""
 
     def __init__(self, workflow_ids: Collection[WorkflowVersionId]) -> None:
         for workflow_id in workflow_ids:
@@ -1197,8 +1208,11 @@ class WorkflowIds(UserList):
                 )
         super().__init__(workflow_ids)
 
+    def as_tuples(self) -> list[tuple[str, str | None]]:
+        return [wid.as_tuple() for wid in self]
+
     @classmethod
-    def load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
+    def load(cls, resource: Any) -> Self:
         workflow_ids: Sequence[WorkflowVersionId]
         if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
             workflow_ids = [WorkflowVersionId(*resource)]
@@ -1208,14 +1222,18 @@ class WorkflowIds(UserList):
             workflow_ids = [WorkflowVersionId(workflow_external_id=resource)]
         elif isinstance(resource, dict):
             workflow_ids = [WorkflowVersionId.load(resource)]
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], tuple):
-            workflow_ids = [WorkflowVersionId(*x) for x in resource]
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], WorkflowVersionId):
-            workflow_ids = resource
-        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], str):
-            workflow_ids = [WorkflowVersionId(workflow_external_id=x) for x in resource]
+        elif isinstance(resource, Sequence) and resource:
+            workflow_ids = []
+            for wf in resource:
+                match wf:
+                    case tuple():
+                        workflow_ids.append(WorkflowVersionId(*wf))
+                    case str():
+                        workflow_ids.append(WorkflowVersionId(workflow_external_id=wf))
+                    case _:
+                        workflow_ids.append(wf)
         else:
-            raise ValueError("Invalid input to WorkflowIds")
+            raise ValueError("Invalid input to WorkflowIds.load")
         return cls(workflow_ids)
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
@@ -1572,8 +1590,6 @@ class WorkflowTriggerRun(CogniteResource):
 
 
 class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun], ExternalIDTransformerMixin):
-    """
-    This class represents a list of workflow trigger runs.
-    """
+    """This class represents a list of workflow trigger runs."""
 
     _RESOURCE = WorkflowTriggerRun

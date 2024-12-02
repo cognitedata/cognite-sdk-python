@@ -61,5 +61,5 @@ class SimulatorIntegrationsAPI(APIClient):
             if isinstance(filter, SimulatorIntegrationFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )

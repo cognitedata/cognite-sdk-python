@@ -209,7 +209,7 @@ class RelationshipsAPI(APIClient):
 
         Examples:
 
-            Get relationships by external id::
+            Get relationships by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -268,16 +268,14 @@ class RelationshipsAPI(APIClient):
 
         Examples:
 
-            List relationships::
+            List relationships:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> relationship_list = client.relationships.list(limit=5)
 
-            Iterate over relationships::
+            Iterate over relationships:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for relationship in client.relationships:
                 ...     relationship # do something with the relationship
         """
@@ -372,7 +370,7 @@ class RelationshipsAPI(APIClient):
 
         Examples:
 
-            Create a new relationship specifying object type and external id for source and target::
+            Create a new relationship specifying object type and external id for source and target:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
@@ -435,7 +433,7 @@ class RelationshipsAPI(APIClient):
             Relationship | RelationshipList: Updated relationship(s)
 
         Examples:
-            Update a data set that you have fetched. This will perform a full update of the data set::
+            Update a data set that you have fetched. This will perform a full update of the data set:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -443,30 +441,24 @@ class RelationshipsAPI(APIClient):
                 >>> rel.confidence = 0.75
                 >>> res = client.relationships.update(rel)
 
-            Perform a partial update on a relationship, setting a source_external_id and a confidence::
+            Perform a partial update on a relationship, setting a source_external_id and a confidence:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").source_external_id.set("alternate_source").confidence.set(0.97)
                 >>> res1 = client.relationships.update(my_update)
                 >>> # Remove an already set optional field like so
                 >>> another_update = RelationshipUpdate(external_id="flow_1").confidence.set(None)
                 >>> res2 = client.relationships.update(another_update)
 
-            Attach labels to a relationship::
+            Attach labels to a relationship:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.add(["PUMP", "VERIFIED"])
                 >>> res = client.relationships.update(my_update)
 
-            Detach a single label from a relationship::
+            Detach a single label from a relationship:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RelationshipUpdate
-                >>> client = CogniteClient()
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
@@ -531,7 +523,7 @@ class RelationshipsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
         Examples:
 
-            Delete relationships by external id::
+            Delete relationships by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

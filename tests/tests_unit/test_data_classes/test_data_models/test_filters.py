@@ -406,3 +406,31 @@ class TestSpaceFilter:
     def test_space_filter_passes_verification(self, cognite_client: CogniteClient, space_filter: f.SpaceFilter) -> None:
         cognite_client.data_modeling.instances._validate_filter(space_filter)
         assert True
+
+
+class TestIsNullFilter:
+    @pytest.mark.parametrize("prop", (("prop",), ["prop", "more"], tuple("abcd")))
+    def test_filter(self, prop: list[str] | tuple[str]) -> None:
+        flt = f.IsNull(prop).dump()
+        not_exists = f.Not(f.Exists(prop)).dump()
+        assert flt == not_exists
+        assert flt == {"not": {"exists": {"property": prop}}}
+
+    def test_str_not_allowed(self) -> None:
+        exp_msg = "^The IsNull filter is a Data Modeling filter and expec.*'my-property'], got: prop$"
+        with pytest.raises(TypeError, match=exp_msg):
+            f.IsNull("prop")  # type: ignore [arg-type]
+
+    def test_is_null_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
+        cognite_client.data_modeling.instances._validate_filter(f.IsNull(["node", "space"]))
+        assert True
+
+    def test_is_null_filter_passes_isinstance_checks(self) -> None:
+        flt = f.IsNull(["node", "space"])
+        assert isinstance(flt, Filter)
+
+    def test_is_null_filter_loads_as_unknown(self) -> None:
+        # IsNull filter is an SDK concept, so it should load as an UnknownFilter:
+        dumped = {f.IsNull._filter_name: {"not": {"exists": {"property": ["node", "space"]}}}}
+        loaded_flt = Filter.load(dumped)
+        assert isinstance(loaded_flt, UnknownFilter)

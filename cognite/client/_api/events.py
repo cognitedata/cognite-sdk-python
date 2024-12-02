@@ -200,16 +200,14 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Get event by id::
+            Get event by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.events.retrieve(id=1)
 
-            Get event by external id::
+            Get event by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.events.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -233,16 +231,14 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Get events by id::
+            Get events by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.events.retrieve_multiple(ids=[1, 2, 3])
 
-            Get events by external id::
+            Get events by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.events.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -303,12 +299,10 @@ class EventsAPI(APIClient):
 
         Get the unique types of events after 2020-01-01 in your CDF project:
 
-            >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> client = CogniteClient()
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
             >>> print(result.unique)
@@ -316,10 +310,8 @@ class EventsAPI(APIClient):
         Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
         "planned":
 
-            >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.data_classes import aggregations
-            >>> client = CogniteClient()
             >>> agg = aggregations
             >>> not_planned = agg.Not(agg.Prefix("planned"))
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
@@ -363,10 +355,8 @@ class EventsAPI(APIClient):
 
             Count the number of workorder events in your CDF project:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty
-                >>> client = CogniteClient()
                 >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
                 >>> workorder_count = client.events.aggregate_count(advanced_filter=is_workorder)
         """
@@ -406,10 +396,8 @@ class EventsAPI(APIClient):
 
         Count the number of types of events linked to asset 123 in your CDF project:
 
-            >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.events import EventProperty
-            >>> client = CogniteClient()
             >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
             >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
 
@@ -516,7 +504,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Create new events::
+            Create new events:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventWrite
@@ -541,7 +529,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Delete events by id or external id::
+            Delete events by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -583,7 +571,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Update an event that you have fetched. This will perform a full update of the event::
+            Update an event that you have fetched. This will perform a full update of the event:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -591,11 +579,9 @@ class EventsAPI(APIClient):
                 >>> event.description = "New description"
                 >>> res = client.events.update(event)
 
-            Perform a partial update on a event, updating the description and adding a new field to metadata::
+            Perform a partial update on a event, updating the description and adding a new field to metadata:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import EventUpdate
-                >>> client = CogniteClient()
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
@@ -622,7 +608,7 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            Search for events::
+            Search for events:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -712,10 +698,8 @@ class EventsAPI(APIClient):
             To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
-                >>> client = CogniteClient()
                 >>> is_workorder = filters.Prefix(EventProperty.external_id, "workorder")
                 >>> has_failure = filters.Search(EventProperty.description, "failure")
                 >>> res = client.events.filter(
@@ -799,32 +783,26 @@ class EventsAPI(APIClient):
 
         Examples:
 
-            List events and filter on max start time::
+            List events and filter on max start time:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
 
-            Iterate over events::
+            Iterate over events:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for event in client.events:
                 ...     event # do something with the event
 
-            Iterate over chunks of events to reduce memory load::
+            Iterate over chunks of events to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for event_list in client.events(chunk_size=2500):
                 ...     event_list # do something with the events
 
             Using advanced filter, find all events that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
                 >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = client.events.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
 
@@ -834,10 +812,8 @@ class EventsAPI(APIClient):
             To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` Enums.
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
-                >>> client = CogniteClient()
                 >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.events.list(
                 ...     advanced_filter=in_timezone,
@@ -845,9 +821,7 @@ class EventsAPI(APIClient):
 
             Combine filter and advanced filter:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
                 >>> not_instrument_lvl5 = filters.And(
                 ...    filters.ContainsAny("labels", ["Level5"]),
                 ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
