@@ -22,6 +22,10 @@ Changes are grouped as follows
 ### Added
 - Workflow support for "simulation" task type. 
 
+## [7.69.4] - 2024-12-02
+### Added
+- An IsNull filter has been added for use in Data Modeling.
+
 ## [7.69.3] - 2024-12-02
 ### Added
 - API endpoints currently accepting relative time strings like `2d-ago` now support a forward-looking syntax, e.g. `2w-ahead` or `15m-ahead`.
