@@ -1,6 +1,7 @@
 
 resource_names = {
     "simulator_external_id": "integration_tests_workflow",
+    "simulator_integration_external_id": "integration_tests_workflow_connector",
     "simulator_model_external_id": "integration_tests_workflow_model_1",
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
 }
