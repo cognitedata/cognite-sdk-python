@@ -85,8 +85,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.retrieve(id=123)
 
             Get simulator model revision by external id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve(external_id="abcdef")
 
         """
@@ -122,8 +120,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.retrieve_multiple(ids=[1, 2, 3])
 
             Get simulator model revisions by external ids:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -202,13 +198,9 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.list()
 
             Get simulator model by id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.models.retrieve(id=1)
 
             Get simulator model by external id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.models.retrieve(external_id="1")
 
         """

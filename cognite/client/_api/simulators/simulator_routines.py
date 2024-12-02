@@ -85,8 +85,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
             Get simulator routine revision by external id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.routines.revisions.retrieve(external_ids="abcdef")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -121,8 +119,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
 
             Get simulator routine revisions by external id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
