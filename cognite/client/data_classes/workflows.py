@@ -635,8 +635,8 @@ class SimulationTaskOutput(WorkflowTaskOutput):
     """
     The class represent the output of Simulation execution.
     Args:
-        run_id (int | None): The run ID of the simulation run.
-        log_id (int | None): The log ID of the simulation run.
+        run_id (int): The run ID of the simulation run.
+        log_id (int): The log ID of the simulation run.
         status_message (str | None): Status message of the simulation execution.
     """
 
@@ -644,8 +644,8 @@ class SimulationTaskOutput(WorkflowTaskOutput):
 
     def __init__(
         self,
-        run_id: int | None,
-        log_id: int | None,
+        run_id: int,
+        log_id: int,
         status_message: str | None,
     ) -> None:
         self.run_id = run_id
