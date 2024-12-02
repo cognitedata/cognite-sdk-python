@@ -10,9 +10,11 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+from cognite.client.data_classes.simulators import SimulationInputOverride, SimulationValueUnitName
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,
+    SimulationTaskOutput,
     SimulationTaskParameters,
     SubworkflowReferenceParameters,
     SubworkflowTaskParameters,
@@ -36,6 +38,9 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_simulators.seed_sim_data import (
+    finish_simulation_runs,
+)
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -351,9 +356,10 @@ class TestWorkflows:
 
 
 class TestWorkflowVersions:
-    def test_upsert_delete_with_simulation_task(
+    def test_upsert_run_delete_with_simulation_task(
         self,
         cognite_client: CogniteClient,
+        workflow_simint_routine: str,
     ):
         workflow_id = "integration_test-workflow_for_simulator_integration" + random_string(5)
 
@@ -365,8 +371,14 @@ class TestWorkflowVersions:
                     WorkflowTask(
                         external_id=f"{workflow_id}-1-task1" + random_string(5),
                         parameters=SimulationTaskParameters(
-                            routine_external_id="integration_tests_workflow",
+                            routine_external_id=workflow_simint_routine,
+                            inputs=[
+                                SimulationInputOverride(
+                                    reference_id="CWT", value=11, unit=SimulationValueUnitName(name="F")
+                                )
+                            ],
                         ),
+                        timeout=100,
                     )
                 ],
                 description=None,
@@ -381,6 +393,28 @@ class TestWorkflowVersions:
             assert created_version.workflow_external_id == workflow_id
             assert created_version.workflow_definition.tasks[0].type == "simulation"
             assert len(created_version.workflow_definition.tasks) > 0
+
+            execution = cognite_client.workflows.executions.run(workflow_id, version.version)
+            execution_detailed = None
+            simulation_task = None
+
+            for _ in range(20):
+                execution_detailed = cognite_client.workflows.executions.retrieve_detailed(execution.id)
+                simulation_task = execution_detailed.executed_tasks[0]
+
+                if simulation_task.status == "in_progress":
+                    finish_simulation_runs(cognite_client, workflow_simint_routine)
+
+                if execution_detailed.status == "completed" or execution_detailed.status == "failed":
+                    break
+
+                time.sleep(1.5)
+
+            assert isinstance(simulation_task.output, SimulationTaskOutput)
+            assert simulation_task.status == "completed"
+            assert simulation_task.output.run_id is not None
+            assert simulation_task.output.log_id is not None
+
         finally:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(
