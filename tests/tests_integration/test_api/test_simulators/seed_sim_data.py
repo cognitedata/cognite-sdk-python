@@ -1,10 +1,11 @@
-
-from cognite.client.data_classes.data_sets import DataSet
-from cognite.client.exceptions import CogniteAPIError
-import pytest
 import time
 
+import pytest
+
 from cognite.client._cognite_client import CogniteClient
+from cognite.client.data_classes.data_sets import DataSet
+from cognite.client.exceptions import CogniteAPIError
+
 
 def get_workflow_seed_data(data_set_id: int, file_id: int):
     timestamp = int(time.time() * 1000)
@@ -86,7 +87,7 @@ def get_workflow_seed_data(data_set_id: int, file_id: int):
         "externalId": "integration_tests_workflow_routine_revision",
         "routineExternalId": simulator_routine["externalId"],
         "configuration": {
-            "schedule": {"enabled": False },
+            "schedule": {"enabled": False},
             "dataSampling": {"enabled": False},
             "logicalCheck": [],
             "steadyStateDetection": [],
@@ -148,17 +149,13 @@ def get_workflow_seed_data(data_set_id: int, file_id: int):
         "/routines/revisions": simulator_routine_revision,
     }
 
+
 def update_seed_integration(integration_id: int, cognite_client: CogniteClient):
-    cognite_client.post(f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update", json={
-        "items": [{
-            "id": integration_id,
-            "update": {
-                "heartbeat": {
-                    "set": int(time.time() * 1000)
-                }
-            }
-        }]
-    })
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
+        json={"items": [{"id": integration_id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
+    )
+
 
 def get_seed_simulator_integration(cognite_client: CogniteClient):
     integrations_list = cognite_client.post(
@@ -170,10 +167,10 @@ def get_seed_simulator_integration(cognite_client: CogniteClient):
         return None
     return integrations[0]
 
+
 @pytest.fixture
 def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     data_set = cognite_client.data_sets.retrieve(external_id="integration_tests_workflow")
-
 
     if data_set is None:
         data_set = cognite_client.data_sets.create(
@@ -204,7 +201,7 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
                     f"/api/v1/projects/{cognite_client.config.project}/simulators{path}",
                     json={"items": [item]},
                 )
-            except CogniteAPIError as e:
+            except CogniteAPIError:
                 pass
 
     integration = get_seed_simulator_integration(cognite_client)
@@ -212,24 +209,25 @@ def workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
     return seed_data["/routines"]["externalId"]
 
+
 def finish_simulation_runs(cognite_client: CogniteClient, routine_external_id: str):
     list_runs = cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/runs/list",
-        json={ 
+        json={
             "filter": {
                 "routineExternalIds": [routine_external_id],
                 "status": "ready",
-                "createdTime": { "min": int(time.time() * 1000) - 1000 * 60 }
+                "createdTime": {"min": int(time.time() * 1000) - 1000 * 60},
             },
-            "limit": 10
-        }
+            "limit": 10,
+        },
     ).json()["items"]
 
     for run in list_runs:
         try:
             cognite_client.post(
                 f"/api/v1/projects/{cognite_client.config.project}/simulators/run/callback",
-                json={ "items": [{ "id": run["id"], "status": "success" }] }
+                json={"items": [{"id": run["id"], "status": "success"}]},
             )
-        except CogniteAPIError as e:
+        except CogniteAPIError:
             pass
