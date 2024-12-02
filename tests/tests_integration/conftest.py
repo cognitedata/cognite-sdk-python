@@ -9,12 +9,24 @@ from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
 from cognite.client.data_classes import DataSet, DataSetWrite
 from cognite.client.data_classes.data_modeling import SpaceApply
+from cognite.client.utils import timestamp_to_ms
 from tests.utils import REPO_ROOT
 
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
     return make_cognite_client(beta=False)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def session_cleanup(cognite_client: CogniteClient):
+    resource_age = timestamp_to_ms("30m-ago")
+
+    active_sessions = cognite_client.iam.sessions.list(status="ACTIVE", limit=-1)
+    sessions_to_revoke = [session.id for session in active_sessions if session.creation_time < resource_age]
+
+    if sessions_to_revoke:
+        cognite_client.iam.sessions.revoke(sessions_to_revoke)
 
 
 @pytest.fixture(scope="session")

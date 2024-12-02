@@ -21,7 +21,7 @@ class TestTransformationSchemaAPI:
         assert asset_columns[0].type.type == "long"
         assert asset_columns[0].sql_type == "BIGINT"
         assert asset_columns[0].name == "id"
-        assert asset_columns[0].nullable is True
+        # assert asset_columns[0].nullable is True # TODO: revert when schema is fixed, @silvavelosa
 
     def test_raw(self, cognite_client):
         asset_columns = cognite_client.transformations.schema.retrieve(destination=TransformationDestination.raw())

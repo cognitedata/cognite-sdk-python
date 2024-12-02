@@ -191,7 +191,7 @@ class TestTimestampToMs:
 
     @mock.patch("cognite.client.utils._time.time.time")
     @pytest.mark.parametrize(
-        "time_ago_string, expected_timestamp",
+        "time_shift_string, expected_timestamp",
         [
             ("now", 10**12),
             ("1s-ago", 10**12 - 1 * 1000),
@@ -204,19 +204,29 @@ class TestTimestampToMs:
             ("13d-ago", 10**12 - 13 * 24 * 60 * 60 * 1000),
             ("1w-ago", 10**12 - 1 * 7 * 24 * 60 * 60 * 1000),
             ("13w-ago", 10**12 - 13 * 7 * 24 * 60 * 60 * 1000),
+            ("1s-ahead", 10**12 + 1 * 1000),
+            ("13s-ahead", 10**12 + 13 * 1000),
+            ("1m-ahead", 10**12 + 1 * 60 * 1000),
+            ("13m-ahead", 10**12 + 13 * 60 * 1000),
+            ("1h-ahead", 10**12 + 1 * 60 * 60 * 1000),
+            ("13h-ahead", 10**12 + 13 * 60 * 60 * 1000),
+            ("1d-ahead", 10**12 + 1 * 24 * 60 * 60 * 1000),
+            ("13d-ahead", 10**12 + 13 * 24 * 60 * 60 * 1000),
+            ("1w-ahead", 10**12 + 1 * 7 * 24 * 60 * 60 * 1000),
+            ("13w-ahead", 10**12 + 13 * 7 * 24 * 60 * 60 * 1000),
         ],
     )
-    def test_time_ago(self, time_mock, time_ago_string, expected_timestamp):
+    def test_time_shift(self, time_mock, time_shift_string, expected_timestamp):
         time_mock.return_value = 10**9
 
-        assert timestamp_to_ms(time_ago_string) == expected_timestamp
+        assert timestamp_to_ms(time_shift_string) == expected_timestamp
 
-    @pytest.mark.parametrize("time_ago_string", ["1s", "4h", "13m-ag", "13m ago", "bla"])
-    def test_invalid(self, time_ago_string):
-        with pytest.raises(ValueError, match=time_ago_string):
-            timestamp_to_ms(time_ago_string)
+    @pytest.mark.parametrize("time_shift_string", ["1s", "4h", "13m-ag", "13m-ahe", "13m ago", "13m ahead", "bla"])
+    def test_invalid(self, time_shift_string):
+        with pytest.raises(ValueError, match=time_shift_string):
+            timestamp_to_ms(time_shift_string)
 
-    def test_time_ago_real_time(self):
+    def test_time_shift_real_time(self):
         expected_time_now = datetime.now().timestamp() * 1000
         time_now = timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) < 15
