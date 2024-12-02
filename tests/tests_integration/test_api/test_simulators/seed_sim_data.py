@@ -1,7 +1,5 @@
 import time
 
-import pytest
-
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSet
 from cognite.client.exceptions import CogniteAPIError
@@ -168,8 +166,7 @@ def get_seed_simulator_integration(cognite_client: CogniteClient):
     return integrations[0]
 
 
-@pytest.fixture
-def workflow_simint_routine(cognite_client: CogniteClient) -> str:
+def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
     data_set = cognite_client.data_sets.retrieve(external_id="integration_tests_workflow")
 
     if data_set is None:

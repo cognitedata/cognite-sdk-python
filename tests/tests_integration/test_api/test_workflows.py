@@ -39,8 +39,14 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed_sim_data import (
+    ensure_workflow_simint_routine,
     finish_simulation_runs,
 )
+
+
+@pytest.fixture
+def workflow_simint_routine(cognite_client: CogniteClient) -> str:
+    ensure_workflow_simint_routine(cognite_client)
 
 
 @pytest.fixture(autouse=True, scope="module")
