@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
@@ -13,6 +14,7 @@ from cognite.client.data_classes.simulators.simulators import (
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -60,7 +62,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             if isinstance(filter, SimulatorRoutineRevisionsFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
@@ -77,15 +79,15 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
 
-            Get simulator routine revisions by id:
+            Get simulator routine revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.retrieve(ids=[1, 2, 3])
+                >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
-            Get simulator routine revisions by external id:
+            Get simulator routine revision by external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.retrieve(external_ids=["abc", "def"])
+                >>> res = client.simulators.routines.revisions.retrieve(external_ids="abcdef")
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -94,6 +96,42 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             list_cls=SimulatorRoutineRevisionsList,
             identifiers=identifiers,
             resource_path="/simulators/routines/revisions",
+        )
+
+    def retrieve_multiple(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> SimulatorRoutineRevisionsList:
+        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+
+        Args:
+            ids (Sequence[int] | None): IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            SimulatorRoutineRevisionsList: Requested simulator routine revisions
+
+        Examples:
+
+            Get simulator routine revisions by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
+
+            Get simulator routine revisions by external id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=SimulatorRoutineRevisionsList,
+            resource_cls=SimulatorRoutineRevision,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
 
@@ -141,5 +179,5 @@ class SimulatorRoutinesAPI(APIClient):
             if isinstance(filter, SimulatorRoutinesFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
