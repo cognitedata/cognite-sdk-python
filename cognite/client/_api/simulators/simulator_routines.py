@@ -43,11 +43,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
 
-            List simulators:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routines.revisions.list()
+            List simulator routine revisions:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.list()
 
         """
         self._warning.warn()
@@ -111,7 +110,7 @@ class SimulatorRoutinesAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineList:
-        """`Filter simulator routines <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
         List simulator routines
 

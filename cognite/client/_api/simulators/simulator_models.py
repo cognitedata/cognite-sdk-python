@@ -35,19 +35,18 @@ class SimulatorModelRevisionsAPI(APIClient):
         List simulator model revisions
 
         Args:
-            limit (int): The maximum number of model revisions to return. Defaults to 100.
+            limit (int): The maximum number of simulator model revisions to return. Defaults to 100.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator model revisions.
 
         Returns:
-            SimulatorModelRevisionList: List all simulator model revisions
+            SimulatorModelRevisionList: List of simulator model revisions
 
         Examples:
 
-            List simulators model revisions:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.routines.list()
+            List simulator model revisions:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.list()
 
         """
         self._warning.warn()
@@ -78,11 +77,15 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Examples:
 
-            Retrieve simulator model revisions:
+            Get simulator model revisions by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve(ids=[1, 2, 3])
 
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.revisions.retrieve(external_id="1")
+            Get simulator model revisions by external id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve(external_ids=["abc", "def"])
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
