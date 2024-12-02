@@ -46,7 +46,7 @@ from tests.tests_integration.test_api.test_simulators.seed_sim_data import (
 
 @pytest.fixture
 def workflow_simint_routine(cognite_client: CogniteClient) -> str:
-    ensure_workflow_simint_routine(cognite_client)
+    return ensure_workflow_simint_routine(cognite_client)
 
 
 @pytest.fixture(autouse=True, scope="module")
