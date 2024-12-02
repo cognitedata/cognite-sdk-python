@@ -709,25 +709,23 @@ class SimulatorIntegration(SimulatorIntegrationCore):
         return hash(self.external_id)
 
 
-class SimulatorModelRevision(CogniteResource):
+class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisionWrite"], ABC):
     def __init__(
         self,
-        id: int,
-        external_id: str,
-        simulator_external_id: str,
-        model_external_id: str,
-        data_set_id: int,
-        file_id: int,
-        created_by_user_id: str,
-        status: str,
-        created_time: int,
-        last_updated_time: int,
-        version_number: int,
-        log_id: int,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        model_external_id: str | None = None,
+        data_set_id: int | None = None,
+        file_id: int | None = None,
+        created_by_user_id: str | None = None,
+        status: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        version_number: int | None = None,
+        log_id: int | None = None,
         description: str | None = None,
         status_message: str | None = None,
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.model_external_id = model_external_id
@@ -744,25 +742,125 @@ class SimulatorModelRevision(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            id=resource["id"],
-            external_id=resource["externalId"],
-            simulator_external_id=resource["simulatorExternalId"],
-            model_external_id=resource["modelExternalId"],
-            data_set_id=resource["dataSetId"],
-            file_id=resource["fileId"],
-            created_by_user_id=resource["createdByUserId"],
-            status=resource["status"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
-            version_number=resource["versionNumber"],
-            log_id=resource["logId"],
-            description=resource.get("description"),
-            status_message=resource.get("statusMessage"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
+
+
+class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
+    def __init__(
+        self,
+        external_id: str | None = None,
+        model_external_id: str | None = None,
+        file_id: int | None = None,
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            model_external_id=model_external_id,
+            file_id=file_id,
+            description=description,
+        )
+
+    def as_write(self) -> SimulatorModelRevisionWrite:
+        """Returns a writeable version of this resource"""
+        return self
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> SimulatorModelRevisionWrite:
+        return cls(
+            external_id=resource["externalId"],
+            model_external_id=resource["modelExternalId"],
+            file_id=resource["fileId"],
+            description=resource.get("description"),
+        )
+
+
+class SimulatorModelRevision(SimulatorModelRevisionCore):
+    """
+
+    Simulator model revisions track changes and updates to a simulator model over time.
+    Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
+    Args:
+        external_id (str | None): External id of the simulator model revision
+        simulator_external_id (str | None): No description.
+        model_external_id (str | None): External id of the associated simulator model
+        data_set_id (int | None): The id of the dataset associated with the simulator model revision
+        file_id (int | None): The id of the file associated with the simulator model revision
+        created_by_user_id (str | None): The id of the user who created the simulator model revision
+        status (str | None): The status of the simulator model revision
+        created_time (int | None): The time when the simulator model revision was created
+        last_updated_time (int | None): The time when the simulator model revision was last updated
+        version_number (int | None): The version number of the simulator model revision
+        log_id (int | None): The id of the log associated with the simulator model revision
+        description (str | None): The description of the simulator model revision
+        status_message (str | None): The current status of the model revision
+
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        model_external_id: str | None = None,
+        data_set_id: int | None = None,
+        file_id: int | None = None,
+        created_by_user_id: str | None = None,
+        status: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        version_number: int | None = None,
+        log_id: int | None = None,
+        description: str | None = None,
+        status_message: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            model_external_id=model_external_id,
+            data_set_id=data_set_id,
+            file_id=file_id,
+            created_by_user_id=created_by_user_id,
+            status=status,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            version_number=version_number,
+            log_id=log_id,
+            description=description,
+            status_message=status_message,
+        )
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorModelRevisionWrite:
+        """Returns this SimulatorModelRevision in its writing version."""
+        return SimulatorModelRevisionWrite(
+            external_id=self.external_id,
+            model_external_id=self.model_external_id,
+            file_id=self.file_id,
+            description=self.description,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case)
 
 
 class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
@@ -896,7 +994,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         )
 
 
-class SimulatorModel(CogniteResource):
+class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     """
     The simulator model resource represents an asset modeled in a simulator.
     This asset could range from a pump or well to a complete processing facility or refinery.
@@ -907,63 +1005,152 @@ class SimulatorModel(CogniteResource):
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
-    Limitations:
-        - A project can have a maximum of 1000 simulator models
-        - Each simulator model can have a maximum of 200 revisions
-
-
     This is the read/response format of a simulator model.
 
     Args:
-        id (int): A unique id of a simulator model
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        created_time (int): The time when the simulator model was created
-        last_updated_time (int): The time when the simulator model was last updated
-        name (str): The name of the simulator model
-        type_key (str | None): The type key of the simulator model
+        external_id (str | None): External id of the simulator model
+        simulator_external_id (str | None): External id of the associated simulator
+        data_set_id (int | None): The id of the dataset associated with the simulator model
+        name (str | None): The name of the simulator model
+        type (str | None): The type key of the simulator model
         description (str | None): The description of the simulator model
     """
 
     def __init__(
         self,
-        id: int,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        created_time: int,
-        last_updated_time: int,
-        name: str,
-        type_key: str | None = None,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        type: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.id = id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.data_set_id = data_set_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
         self.name = name
-        self.type_key = type_key
+        self.type = type
         self.description = description
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            id=resource["id"],
-            external_id=resource["externalId"],
-            simulator_external_id=resource["simulatorExternalId"],
-            name=resource["name"],
-            data_set_id=resource["dataSetId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
-            type_key=resource.get("typeKey"),
-            description=resource.get("description"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
+
+
+class SimulatorModelWrite(SimulatorModelCore):
+    def __init__(
+        self,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        type: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            data_set_id=data_set_id,
+            name=name,
+            type=type,
+            description=description,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorModelWrite:
+        return cls(
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            data_set_id=resource["dataSetId"],
+            name=resource["name"],
+            type=resource.get("typeKey"),
+            description=resource.get("description"),
+        )
+
+    def as_write(self) -> SimulatorModelWrite:
+        """Returns self."""
+        return self
+
+
+class SimulatorModel(SimulatorModelCore):
+    """
+    The simulator model resource represents an asset modeled in a simulator.
+    This asset could range from a pump or well to a complete processing facility or refinery.
+    The simulator model is the root of its associated revisions, routines, runs, and results.
+    The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
+    maintaining the integrity and hierarchy of the simulation data.
+
+    Simulator model revisions track changes and updates to a simulator model over time.
+    Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
+
+    This is the read/response format of a simulator model.
+
+    Args:
+        external_id (str | None): External id of the simulator model
+        simulator_external_id (str | None): External id of the associated simulator
+        data_set_id (int | None): The id of the dataset associated with the simulator model
+        name (str | None): The name of the simulator model
+        id (int | None): A unique id of a simulator model
+        type (str | None): The type key of the simulator model
+        description (str | None): The description of the simulator model
+        created_time (int | None): The time when the simulator model was created
+        last_updated_time (int | None): The time when the simulator model was last updated
+    """
+
+    def __init__(
+        self,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        id: int | None = None,
+        type: str | None = None,
+        description: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            simulator_external_id=simulator_external_id,
+            data_set_id=data_set_id,
+            name=name,
+            type=type,
+            description=description,
+        )
+        # id/created_time/last_updated_time are required when using the class to read,
+        # but don't make sense passing in when creating a new object. So in order to make the typing
+        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
+        # Optional[int].
+        self.id: int = id  # type: ignore
+        self.created_time: int = created_time  # type: ignore
+        self.last_updated_time: int = last_updated_time  # type: ignore
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        instance = super()._load(resource, cognite_client)
+        return instance
+
+    def as_write(self) -> SimulatorModelWrite:
+        """Returns this SimulatorModel in its writing version."""
+        return SimulatorModelWrite(
+            external_id=self.external_id,
+            simulator_external_id=self.simulator_external_id,
+            data_set_id=self.data_set_id,
+            name=self.name,
+            type=self.type,
+            description=self.description,
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.external_id)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return super().dump(camel_case)
 
 
 class SimulationRun(CogniteResource):
@@ -1269,12 +1456,30 @@ class SimulatorIntegrationList(
         )
 
 
-class SimulatorModelList(CogniteResourceList[SimulatorModel]):
+class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorModelWrite
+
+
+class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, SimulatorModel], IdTransformerMixin):
     _RESOURCE = SimulatorModel
 
+    def as_write(self) -> SimulatorModelWriteList:
+        return SimulatorModelWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
-class SimulatorModelRevisionList(CogniteResourceList[SimulatorModelRevision]):
+
+class SimulatorModelRevisionWriteList(CogniteResourceList[SimulatorModelRevisionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorModelRevisionWrite
+
+
+class SimulatorModelRevisionList(
+    WriteableCogniteResourceList[SimulatorModelRevisionWrite, SimulatorModelRevision], IdTransformerMixin
+):
     _RESOURCE = SimulatorModelRevision
+
+    def as_write(self) -> SimulatorModelRevisionWriteList:
+        return SimulatorModelRevisionWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class SimulationRunsList(CogniteResourceList[SimulationRun]):
