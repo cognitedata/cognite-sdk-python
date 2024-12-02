@@ -30,7 +30,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineRevisionsList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         List simulator routine revisions
 
@@ -47,7 +47,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.routines.list()
+                    >>> res = client.simulators.routines.revisions.list()
 
         """
         self._warning.warn()
@@ -78,11 +78,15 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            Get simulator routine revisions by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve(ids=[1, 2, 3])
 
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routine.retrieve(external_id="1")
+            Get simulator routine revisions by external id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve(external_ids=["abc", "def"])
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -107,12 +111,12 @@ class SimulatorRoutinesAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator routines <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
-        List simulators
+        List simulator routines
 
         Args:
-            limit (int): The maximum number of simulators to return. Defaults to 100.
+            limit (int): The maximum number of simulator routines to return. Defaults to 100.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
 
         Returns:
@@ -120,11 +124,11 @@ class SimulatorRoutinesAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            List simulator routines:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_routines()
+                    >>> res = client.simulators.routines.list()
 
         """
         self._warning.warn()
