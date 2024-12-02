@@ -1,3 +1,4 @@
+import math
 import random
 import time
 
@@ -7,6 +8,9 @@ import pandas as pd
 from cognite.client import CogniteClient
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client.data_classes import DatapointsList, TimeSeries, TimeSeriesList
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
+from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.datapoints import DatapointsQuery
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
 NAMES = [
@@ -41,6 +45,52 @@ SPARSE_NAMES = [
     "PYSDK integration test 117: single dp at 1900-01-01 00:00:00, numeric",
     "PYSDK integration test 118: single dp at 2099-12-31 23:59:59.999, numeric",
 ]
+
+NAMES_USING_INSTANCE_ID = [
+    NodeId(space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 125: clone of 109"),
+    NodeId(space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 126: clone of 114"),
+    NodeId(space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 127: clone of 121"),
+]
+
+
+def create_instance_id_ts(client):
+    client.dm.instances.apply(
+        [
+            CogniteTimeSeriesApply(
+                space="PySDK-DMS-time-series-integration-test",
+                external_id=NAMES_USING_INSTANCE_ID[0].external_id,
+                name=NAMES_USING_INSTANCE_ID[0].external_id,
+                is_step=True,
+                time_series_type="numeric",
+            ),
+            CogniteTimeSeriesApply(
+                space="PySDK-DMS-time-series-integration-test",
+                external_id=NAMES_USING_INSTANCE_ID[1].external_id,
+                name=NAMES_USING_INSTANCE_ID[1].external_id,
+                is_step=False,
+                time_series_type="numeric",
+            ),
+            CogniteTimeSeriesApply(
+                space="PySDK-DMS-time-series-integration-test",
+                external_id=NAMES_USING_INSTANCE_ID[2].external_id,
+                name=NAMES_USING_INSTANCE_ID[2].external_id,
+                is_step=False,
+                time_series_type="numeric",
+            ),
+        ]
+    )
+
+
+def clone_datapoints_to_dms_ts(client):
+    dps_lst = client.time_series.data.retrieve(
+        instance_id=[DatapointsQuery(instance_id=node_id) for node_id in NAMES_USING_INSTANCE_ID],
+        include_status=True,
+        ignore_bad_datapoints=False,
+        start=MIN_TIMESTAMP_MS,
+        end=MAX_TIMESTAMP_MS,
+    )
+    to_insert = [{"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(dps_lst, NAMES_USING_INSTANCE_ID)]
+    client.time_series.data.insert_multiple(to_insert)
 
 
 def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
@@ -279,8 +329,7 @@ def create_status_code_ts(client: CogniteClient) -> None:
 
     def get_bad():
         options = [None, "NaN", "Infinity", "-Infinity", -1e100, 2.71, 3.14, 420, 1e100]
-        # TODO: Need PY39 for math.nextafter
-        options.extend((np.nextafter(0, -np.inf).item(), np.nextafter(0, np.inf).item()))
+        options.extend((math.nextafter(0, -math.inf), math.nextafter(0, math.inf)))
         v = random.choice(options)
         c = random.choice(BAD_STATUS_CODES_COMPRESSED)
         return v, c << 16
@@ -310,18 +359,13 @@ def create_status_code_ts(client: CogniteClient) -> None:
             TimeSeries(name=bad_ts_str, external_id=bad_ts_str, is_string=True, metadata={"delta": UNIT_IN_MS["d"]}),
         ]
     )
-    # TODO: Insert normally when supported by SDK
-    client.post(
-        f"/api/v1/projects/{client.config.project}/timeseries/data",
-        json={
-            "items": [
-                {"externalId": mixed_ts, "datapoints": dps},
-                {"externalId": mixed_ts_str, "datapoints": dps_str},
-                {"externalId": bad_ts, "datapoints": dps_all_bad},
-                {"externalId": bad_ts_str, "datapoints": dps_all_bad_str},
-            ]
-        },
-        headers={"cdf-version": "20230101-beta"},
+    client.time_series.data.insert_multiple(
+        [
+            {"externalId": mixed_ts, "datapoints": dps},
+            {"externalId": mixed_ts_str, "datapoints": dps_str},
+            {"externalId": bad_ts, "datapoints": dps_all_bad},
+            {"externalId": bad_ts_str, "datapoints": dps_all_bad_str},
+        ]
     )
 
 
@@ -376,3 +420,5 @@ if __name__ == "__main__":
     create_if_not_exists(client.time_series, ts_lst, df_lst)
     create_edge_case_if_not_exists(client.time_series)
     create_status_code_ts(client)
+    create_instance_id_ts(client)
+    clone_datapoints_to_dms_ts(client)

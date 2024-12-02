@@ -40,11 +40,7 @@ from cognite.client.data_classes.functions import (
     FunctionWrite,
     RunTime,
 )
-from cognite.client.utils._auxiliary import (
-    at_most_one_is_not_none,
-    is_unlimited,
-    split_into_chunks,
-)
+from cognite.client.utils._auxiliary import at_most_one_is_not_none, is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
@@ -251,7 +247,7 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Create function with source code in folder::
+            Create function with source code in folder:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -260,20 +256,16 @@ class FunctionsAPI(APIClient):
                 ...     folder="path/to/code",
                 ...     function_path="path/to/function.py")
 
-            Create function with file_id from already uploaded source code::
+            Create function with file_id from already uploaded source code:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> function = client.functions.create(
                 ...     name="myfunction", file_id=123, function_path="path/to/function.py")
 
-            Create function with predefined function object named `handle`::
+            Create function with predefined function object named `handle`:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
 
-            Create function with predefined function object named `handle` with dependencies::
+            Create function with predefined function object named `handle` with dependencies:
 
                 >>> def handle(client, data):
                 >>>     """
@@ -285,7 +277,7 @@ class FunctionsAPI(APIClient):
                 >>>
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
 
-            .. note::
+            .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
         '''
@@ -462,16 +454,14 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Get function by id::
+            Get function by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.functions.retrieve(id=1)
 
-            Get function by external id::
+            Get function by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.functions.retrieve(external_id="abc")
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -495,16 +485,14 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Get function by id::
+            Get function by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.functions.retrieve_multiple(ids=[1, 2, 3])
 
-            Get functions by external id::
+            Get functions by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.functions.retrieve_multiple(external_ids=["func1", "func2"])
         """
         assert_type(ids, "id", [Sequence], allow_none=True)
@@ -541,16 +529,14 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Call a function by id::
+            Call a function by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> call = client.functions.call(id=1)
 
-            Call a function directly on the `Function` object::
+            Call a function directly on the `Function` object:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
                 >>> call = func.call()
         """
@@ -576,7 +562,7 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Call a function by id::
+            Call a function by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -678,7 +664,7 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Call activate::
+            Call activate:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -695,7 +681,7 @@ class FunctionsAPI(APIClient):
 
         Examples:
 
-            Call status::
+            Call status:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -912,16 +898,14 @@ class FunctionCallsAPI(APIClient):
 
         Examples:
 
-            List function calls::
+            List function calls:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> calls = client.functions.calls.list(function_id=1)
 
-            List function calls directly on a function object::
+            List function calls directly on a function object:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
                 >>> calls = func.list_calls()
 
@@ -956,16 +940,14 @@ class FunctionCallsAPI(APIClient):
 
         Examples:
 
-            Retrieve single function call by id::
+            Retrieve single function call by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
 
-            Retrieve function call directly on a function object::
+            Retrieve function call directly on a function object:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
                 >>> call = func.retrieve_call(id=2)
         """
@@ -996,16 +978,14 @@ class FunctionCallsAPI(APIClient):
 
         Examples:
 
-            Retrieve function call response by call ID::
+            Retrieve function call response by call ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> response = client.functions.calls.get_response(call_id=2, function_id=1)
 
-            Retrieve function call response directly on a call object::
+            Retrieve function call response directly on a call object:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
                 >>> response = call.get_response()
 
@@ -1031,16 +1011,14 @@ class FunctionCallsAPI(APIClient):
 
         Examples:
 
-            Retrieve function call logs by call ID::
+            Retrieve function call logs by call ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> logs = client.functions.calls.get_logs(call_id=2, function_id=1)
 
-            Retrieve function call logs directly on a call object::
+            Retrieve function call logs directly on a call object:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
                 >>> logs = call.get_logs()
 
@@ -1106,22 +1084,20 @@ class FunctionSchedulesAPI(APIClient):
         """
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
-        filter_ = FunctionSchedulesFilter(
+        schedules = self.list(
             name=name,
             function_id=function_id,
             function_external_id=function_external_id,
             created_time=created_time,
             cron_expression=cron_expression,
-        ).dump(camel_case=True)
-
-        return self._list_generator(
-            method="POST",
-            url_path=f"{self._RESOURCE_PATH}/list",
-            filter=filter_,
-            resource_cls=FunctionSchedule,
-            list_cls=FunctionSchedulesList,
-            chunk_size=chunk_size,
             limit=limit,
+        )
+
+        if chunk_size is None:
+            return iter(schedules)
+        return (
+            FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
+            for chunk in split_into_chunks(schedules.data, chunk_size)
         )
 
     def __iter__(self) -> Iterator[FunctionSchedule]:
@@ -1148,7 +1124,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Examples:
 
-            Get function schedule by id::
+            Get function schedule by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1187,7 +1163,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Examples:
 
-            List function schedules::
+            List function schedules:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1195,8 +1171,6 @@ class FunctionSchedulesAPI(APIClient):
 
             List schedules directly on a function object to get only schedules associated with this particular function:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> func = client.functions.retrieve(id=1)
                 >>> schedules = func.list_schedules(limit=None)
 
@@ -1251,7 +1225,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Examples:
 
-            Create a function schedule that runs using specified client credentials (**recommended**)::
+            Create a function schedule that runs using specified client credentials (**recommended**):
 
                 >>> import os
                 >>> from cognite.client import CogniteClient
@@ -1269,7 +1243,7 @@ class FunctionSchedulesAPI(APIClient):
             You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
             to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
             client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
-            on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed)::
+            on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed):
 
                 >>> schedule = client.functions.schedules.create(
                 ...     name="My schedule",
@@ -1311,7 +1285,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Examples:
 
-            Delete function schedule::
+            Delete function schedule:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -1331,7 +1305,7 @@ class FunctionSchedulesAPI(APIClient):
 
         Examples:
 
-            Get schedule input data::
+            Get schedule input data:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

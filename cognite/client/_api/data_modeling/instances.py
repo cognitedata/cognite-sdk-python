@@ -531,9 +531,7 @@ class InstancesAPI(APIClient):
 
             Retrieve nodes an edges using the built in data class
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
-                >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
@@ -541,9 +539,7 @@ class InstancesAPI(APIClient):
 
             Retrieve nodes an edges using the the view object as source
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.retrieve(
                 ...     NodeId("mySpace", "myNode"),
                 ...     EdgeId("mySpace", "myEdge"),
@@ -683,16 +679,12 @@ class InstancesAPI(APIClient):
 
             Delete nodes and edges using the built in data class
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> client = CogniteClient()
                 >>> client.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
 
             Delete all nodes from a NodeList
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> client = CogniteClient()
                 >>> my_view = client.data_modeling.views.retrieve(('mySpace', 'myView'))
                 >>> my_nodes = client.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
                 >>> client.data_modeling.instances.delete(nodes=my_nodes.as_ids())
@@ -930,7 +922,6 @@ class InstancesAPI(APIClient):
 
             Create two nodes with data with a one-to-many edge
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
                 >>> actor = NodeApply(
                 ...     space="actors",
@@ -968,9 +959,7 @@ class InstancesAPI(APIClient):
 
             Create new edge and automatically create end nodes.
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
-                >>> client = CogniteClient()
                 >>> actor_to_movie = EdgeApply(
                 ...     space="actors",
                 ...     external_id="relation:arnold_schwarzenegger:terminator",
@@ -995,7 +984,6 @@ class InstancesAPI(APIClient):
             `my_node.birth_year` to return the data for property `birthYear`, must use the PropertyOptions as shown below.
             We strongly suggest you use snake_cased attribute names, as is done here:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import TypedNodeApply, PropertyOptions
                 >>> class PersonApply(TypedNodeApply):
                 ...     birth_year = PropertyOptions(identifier="birthYear")
@@ -1144,10 +1132,8 @@ class InstancesAPI(APIClient):
 
             Search for Quentin in the person view in the name property, but only born after 1970:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes import filters
-                >>> client = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = client.data_modeling.instances.search(
                 ...     ViewId("mySpace", "PersonView", "v1"),
@@ -1458,6 +1444,26 @@ class InstancesAPI(APIClient):
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.query(query)
+
+            To convert units, specify what your target units are in the SourceSelector. You can either use
+            a UnitReference or a UnitSystemReference. Note that in order for a property to be converted, they
+            need to have a unit defined in the underlying container.
+
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
+                >>> selected_source = SourceSelector(
+                ...     source=ViewId("my-space", "my-xid", "v1"),
+                ...     properties=["f32_prop1", "f32_prop2", "f64_prop1", "f64_prop2"],
+                ...     target_units=[
+                ...         TargetUnit("f32_prop1", UnitReference("pressure:kilopa")),
+                ...         TargetUnit("f32_prop2", UnitReference("pressure:barg")),
+                ...         TargetUnit("f64_prop1", UnitSystemReference("SI")),
+                ...         TargetUnit("f64_prop2", UnitSystemReference("Imperial")),
+                ...     ],
+                ... )
+
+            To select all properties, use '[*]' in your SourceSelector:
+
+                >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
         """
         return self._query_or_sync(query, "query", include_typing)
 

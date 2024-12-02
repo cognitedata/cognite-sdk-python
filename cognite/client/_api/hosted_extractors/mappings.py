@@ -27,11 +27,11 @@ class MappingsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
-        self._CREATE_LIMIT = 100
+        self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
@@ -135,7 +135,7 @@ class MappingsAPI(APIClient):
 
         Examples:
 
-            Delete mappings by id::
+            Delete mappings by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -245,17 +245,13 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
-            Iterate over mappings::
+            Iterate over mappings:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for mapping in client.hosted_extractors.mappings:
                 ...     mapping # do something with the mapping
 
-            Iterate over chunks of mappings to reduce memory load::
+            Iterate over chunks of mappings to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for mapping_list in client.hosted_extractors.mappings(chunk_size=25):
                 ...     mapping_list # do something with the mappings
         """

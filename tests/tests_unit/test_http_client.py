@@ -98,7 +98,7 @@ class TestHTTPClient:
         )
 
         with pytest.raises(CogniteReadTimeout):
-            c.request("GET", "bla", accept="application/json")
+            c.request("GET", "bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
         assert retry_tracker.read == DEFAULT_CONFIG.max_retries_read
@@ -122,7 +122,7 @@ class TestHTTPClient:
         )
 
         with pytest.raises(CogniteConnectionError):
-            c.request("GET", "bla", accept="application/json")
+            c.request("GET", "bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.read == 0
@@ -147,7 +147,7 @@ class TestHTTPClient:
         )
 
         with pytest.raises(CogniteConnectionRefused):
-            c.request("GET", "bla", accept="application/json")
+            c.request("GET", "bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
@@ -162,7 +162,7 @@ class TestHTTPClient:
             session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
         )
 
-        res = c.request("GET", "bla", accept="application/json")
+        res = c.request("GET", "bla", headers={"accept": "application/json"})
         assert res.status_code == 429
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_status

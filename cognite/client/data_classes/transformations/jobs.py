@@ -5,7 +5,12 @@ import time
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    InternalIdTransformerMixin,
+)
 from cognite.client.data_classes.transformations.common import TransformationDestination
 
 if TYPE_CHECKING:
@@ -44,7 +49,7 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric]):
+class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric], InternalIdTransformerMixin):
     _RESOURCE = TransformationJobMetric
 
 
@@ -157,8 +162,6 @@ class TransformationJob(CogniteResource):
 
             wait transformation for 5 minutes and do something if still running:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> job = client.transformations.run(id = 1, wait = False)
                 >>> job.wait(timeout = 5.0*60)
@@ -215,8 +218,6 @@ class TransformationJob(CogniteResource):
             wait transformation for 5 minutes and do something if still running:
 
                 >>> from asyncio import ensure_future
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> async def run_successive_transformations():
                 >>>     job = client.transformations.run(id = 1, wait = False)
@@ -268,7 +269,7 @@ class TransformationJob(CogniteResource):
         return hash(self.id)
 
 
-class TransformationJobList(CogniteResourceList[TransformationJob]):
+class TransformationJobList(CogniteResourceList[TransformationJob], InternalIdTransformerMixin):
     _RESOURCE = TransformationJob
 
 

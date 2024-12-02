@@ -37,7 +37,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
-from cognite.client.data_classes.postgres_gateway import User, UserList
+from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -197,7 +197,7 @@ class TestCogniteObject:
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
-            if cls not in {Destination, User} and not issubclass(cls, Source)
+            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
@@ -215,7 +215,16 @@ class TestCogniteObject:
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             for cls in all_concrete_subclasses(WriteableCogniteResourceList)
-            if cls not in {EdgeListWithCursor, NodeListWithCursor, SourceList, DestinationList, UserList}
+            if cls
+            not in {
+                EdgeListWithCursor,
+                NodeListWithCursor,
+                SourceList,
+                DestinationList,
+                UserList,
+                UserCreatedList,
+                TableList,
+            }
         ],
     )
     def test_writable_list_as_write(

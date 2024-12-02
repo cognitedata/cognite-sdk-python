@@ -51,9 +51,11 @@ def changelog_entry_date() -> str | None:
         return f"Date given in the newest entry in 'CHANGELOG.md', {date!r}, is not valid/parsable (YYYY-MM-DD)"
 
 
-def version_number_is_increasing() -> str | None:
-    versions = [Version(match.group(1)) for match in _parse_changelog()]
-    for new, old in pairwise(versions):
-        if new < old:
-            return f"Versions must be strictly increasing: {new} is not higher than the previous, {old}."
+def version_number_and_date_is_increasing() -> str | None:
+    versions_and_dates = [(Version(m.group(1)), datetime.strptime(m.group(2), "%Y-%m-%d")) for m in _parse_changelog()]
+    for (new_v, new_d), (old_v, old_d) in pairwise(versions_and_dates):
+        if new_v < old_v:
+            return f"Versions must be strictly increasing: {new_v} is not higher than the previous, {old_v}."
+        if new_d < old_d:
+            return f"Dates must be strictly increasing: {new_d.date()} is not after than the previous, {old_d.date()}."
     return None

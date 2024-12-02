@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.postgres_gateway.users import User, UserList, UserUpdate, UserWrite
+from cognite.client.data_classes.postgres_gateway.users import (
+    User,
+    UserCreated,
+    UserCreatedList,
+    UserList,
+    UserUpdate,
+    UserWrite,
+)
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import UsernameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -75,12 +82,12 @@ class UsersAPI(APIClient):
         return self()
 
     @overload
-    def create(self, user: UserWrite) -> User: ...
+    def create(self, user: UserWrite) -> UserCreated: ...
 
     @overload
-    def create(self, user: Sequence[UserWrite]) -> UserList: ...
+    def create(self, user: Sequence[UserWrite]) -> UserCreatedList: ...
 
-    def create(self, user: UserWrite | Sequence[UserWrite]) -> User | UserList:
+    def create(self, user: UserWrite | Sequence[UserWrite]) -> UserCreated | UserCreatedList:
         """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
 
         Create postgres users.
@@ -89,7 +96,7 @@ class UsersAPI(APIClient):
             user (UserWrite | Sequence[UserWrite]): The user(s) to create.
 
         Returns:
-            User | UserList: The created user(s)
+            UserCreated | UserCreatedList: The created user(s)
 
         Examples:
 
@@ -110,8 +117,8 @@ class UsersAPI(APIClient):
         """
         self._warning.warn()
         return self._create_multiple(
-            list_cls=UserList,
-            resource_cls=User,
+            list_cls=UserCreatedList,
+            resource_cls=UserCreated,
             items=user,
             input_resource_cls=UserWrite,
             headers={"cdf-version": "beta"},
@@ -247,17 +254,13 @@ class UsersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> user_list = client.postgres_gateway.users.list(limit=5)
 
-            Iterate over users::
+            Iterate over users:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for user in client.postgres_gateway.users:
                 ...     user # do something with the user
 
-            Iterate over chunks of users to reduce memory load::
+            Iterate over chunks of users to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for user_list in client.postgres_gateway.users(chunk_size=25):
                 ...     user_list # do something with the users
 

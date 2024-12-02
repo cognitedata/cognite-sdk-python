@@ -228,32 +228,45 @@ def granularity_to_ms(granularity: str, as_unit: bool = False) -> int:
     return ms
 
 
-def time_ago_to_ms(time_ago_string: str) -> int:
-    """Returns millisecond representation of time-ago string"""
+def time_shift_to_ms(time_ago_string: str) -> int:
+    """Returns millisecond representation of time-shift string"""
     if time_ago_string == "now":
         return 0
-    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, UNIT_IN_MS)
+    ms = time_string_to_ms(r"(\d+)({})-(?:ago|ahead)", time_ago_string, UNIT_IN_MS)
     if ms is None:
         raise ValueError(
-            f"Invalid time-ago format: `{time_ago_string}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. "
-            "E.g. '3d-ago' or '1w-ago'."
+            f"Invalid time-shift format: `{time_ago_string}`. Must be on format <integer>(s|m|h|d|w)-(ago|ahead) or 'now'. "
+            "E.g. '3d-ago' or '1w-ahead'."
         )
+    if "ahead" in time_ago_string:
+        return -ms
     return ms
 
 
 def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
-    """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
+    """Returns the ms representation of some timestamp given by milliseconds, time-shift format or datetime object
 
     Args:
         timestamp (int | float | str | datetime): Convert this timestamp to ms.
 
     Returns:
         int: Milliseconds since epoch representation of timestamp
+
+    Examples:
+
+        Gets the millisecond representation of a timestamp:
+
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> from datetime import datetime
+            >>> timestamp_to_ms(datetime(2021, 1, 7, 12, 0, 0))
+            >>> timestamp_to_ms("now")
+            >>> timestamp_to_ms("2w-ago") # 2 weeks ago
+            >>> timestamp_to_ms("3d-ahead") # 3 days ahead from now
     """
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)  # type: ignore[arg-type]
     elif isinstance(timestamp, str):
-        ms = int(round(time.time() * 1000)) - time_ago_to_ms(timestamp)
+        ms = int(round(time.time() * 1000)) - time_shift_to_ms(timestamp)
     elif isinstance(timestamp, datetime):
         ms = datetime_to_ms(timestamp)
     else:

@@ -6,7 +6,7 @@ import operator as op
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import chain, pairwise
@@ -38,7 +38,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     _DatapointsPayloadItem,
 )
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
     ZoneInfo,
@@ -48,7 +48,7 @@ from cognite.client.utils._time import (
     parse_str_timezone,
     split_granularity_into_quantity_and_normalized_unit,
     split_time_range,
-    time_ago_to_ms,
+    time_shift_to_ms,
     timestamp_to_ms,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -194,7 +194,13 @@ class _FullDatapointsQuery:
             f"{exp_type}, {DatapointsQuery}, or a (mixed) list of these, but got `{identifier}`."
         )
 
-    def validate(self, queries: list[DatapointsQuery], dps_limit_raw: int, dps_limit_agg: int) -> list[DatapointsQuery]:
+
+@dataclass(kw_only=True)
+class _DpsQueryValidator:
+    dps_limit_raw: int
+    dps_limit_agg: int
+
+    def __call__(self, queries: Iterable[DatapointsQuery]) -> Iterable[DatapointsQuery]:
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
@@ -210,9 +216,9 @@ class _FullDatapointsQuery:
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
-                query.max_query_limit = dps_limit_raw
+                query.max_query_limit = self.dps_limit_raw
             else:
-                query.max_query_limit = dps_limit_agg
+                query.max_query_limit = self.dps_limit_agg
                 if isinstance(query.aggregates, str):
                     query.aggregates = [query.aggregates]
         return queries
@@ -284,7 +290,7 @@ class _FullDatapointsQuery:
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
-        elif isinstance(limit, int) and limit >= 0:  # limit=0 is accepted by the API
+        elif is_finite(limit):  # limit=0 is accepted by the API
             try:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)
@@ -295,13 +301,14 @@ class _FullDatapointsQuery:
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
 
-    @staticmethod
+    @classmethod
     def _verify_time_range(
+        cls,
         query: DatapointsQuery,
         frozen_time_now: int,
     ) -> tuple[int, int]:
-        start = _FullDatapointsQuery._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
-        end = _FullDatapointsQuery._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
+        start = cls._ts_to_ms_frozen_now(query.start, frozen_time_now, default=0)  # 1970-01-01
+        end = cls._ts_to_ms_frozen_now(query.end, frozen_time_now, default=frozen_time_now)
         if end <= start:
             raise ValueError(
                 f"Invalid time range, {end=} {f'({query.end!r}) ' if end != query.end else ''}"
@@ -322,7 +329,7 @@ class _FullDatapointsQuery:
         if ts is None:
             return default
         elif isinstance(ts, str):
-            return frozen_time_now - time_ago_to_ms(ts)
+            return frozen_time_now - time_shift_to_ms(ts)
         else:
             return timestamp_to_ms(ts)
 

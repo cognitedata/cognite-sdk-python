@@ -10,7 +10,7 @@ from _pytest.mark import ParameterSet
 import cognite.client.data_classes.filters as f
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client.data_classes._base import EnumProperty
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
@@ -277,6 +277,19 @@ def dump_filter_test_data() -> Iterator[ParameterSet]:
         ]
     }
     yield pytest.param(nested_overloaded_filter, expected, id="Compound filter with nested overloaded and")
+    in_filter_with_node_id = f.In("name", [NodeId(space="space", external_id="ex_id")])
+    expected = {
+        "in": {
+            "property": ["name"],
+            "values": [
+                {
+                    "externalId": "ex_id",
+                    "space": "space",
+                },
+            ],
+        },
+    }
+    yield pytest.param(in_filter_with_node_id, expected, id="In filter with node ID")
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
@@ -393,3 +406,31 @@ class TestSpaceFilter:
     def test_space_filter_passes_verification(self, cognite_client: CogniteClient, space_filter: f.SpaceFilter) -> None:
         cognite_client.data_modeling.instances._validate_filter(space_filter)
         assert True
+
+
+class TestIsNullFilter:
+    @pytest.mark.parametrize("prop", (("prop",), ["prop", "more"], tuple("abcd")))
+    def test_filter(self, prop: list[str] | tuple[str]) -> None:
+        flt = f.IsNull(prop).dump()
+        not_exists = f.Not(f.Exists(prop)).dump()
+        assert flt == not_exists
+        assert flt == {"not": {"exists": {"property": prop}}}
+
+    def test_str_not_allowed(self) -> None:
+        exp_msg = "^The IsNull filter is a Data Modeling filter and expec.*'my-property'], got: prop$"
+        with pytest.raises(TypeError, match=exp_msg):
+            f.IsNull("prop")  # type: ignore [arg-type]
+
+    def test_is_null_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
+        cognite_client.data_modeling.instances._validate_filter(f.IsNull(["node", "space"]))
+        assert True
+
+    def test_is_null_filter_passes_isinstance_checks(self) -> None:
+        flt = f.IsNull(["node", "space"])
+        assert isinstance(flt, Filter)
+
+    def test_is_null_filter_loads_as_unknown(self) -> None:
+        # IsNull filter is an SDK concept, so it should load as an UnknownFilter:
+        dumped = {f.IsNull._filter_name: {"not": {"exists": {"property": ["node", "space"]}}}}
+        loaded_flt = Filter.load(dumped)
+        assert isinstance(loaded_flt, UnknownFilter)

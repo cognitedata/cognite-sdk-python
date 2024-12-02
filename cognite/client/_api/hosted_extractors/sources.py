@@ -23,11 +23,11 @@ class SourcesAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
-        self._CREATE_LIMIT = 100
+        self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
@@ -106,8 +106,6 @@ class SourcesAPI(APIClient):
 
             Get multiple sources by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True)
 
         """
@@ -131,7 +129,7 @@ class SourcesAPI(APIClient):
             force (bool): Delete any jobs associated with each item.
         Examples:
 
-            Delete sources by id::
+            Delete sources by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -265,17 +263,13 @@ class SourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> source_list = client.hosted_extractors.sources.list(limit=5)
 
-            Iterate over sources::
+            Iterate over sources:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for source in client.hosted_extractors.sources:
                 ...     source # do something with the source
 
-            Iterate over chunks of sources to reduce memory load::
+            Iterate over chunks of sources to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
                 ...     source_list # do something with the sources
         """

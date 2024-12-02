@@ -31,11 +31,11 @@ class JobsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
-        self._CREATE_LIMIT = 100
+        self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._DELETE_LIMIT = 100
-        self._UPDATE_LIMIT = 100
+        self._UPDATE_LIMIT = 10
 
     @overload
     def __call__(
@@ -68,7 +68,6 @@ class JobsAPI(APIClient):
             Iterator[Job] | Iterator[JobList]: yields Job one by one if chunk_size is not specified, else JobList objects.
         """
         self._warning.warn()
-
         return self._list_generator(
             list_cls=JobList,
             resource_cls=Job,
@@ -114,8 +113,6 @@ class JobsAPI(APIClient):
 
             Get multiple jobs by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.hosted_extractors.jobs.retrieve(["myJob", "myOtherJob"], ignore_unknown_ids=True)
 
         """
@@ -261,17 +258,13 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
-            Iterate over jobs::
+            Iterate over jobs:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for job in client.hosted_extractors.jobs:
                 ...     job # do something with the job
 
-            Iterate over chunks of jobs to reduce memory load::
+            Iterate over chunks of jobs to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for job_list in client.hosted_extractors.jobs(chunk_size=25):
                 ...     job_list # do something with the jobs
         """
@@ -304,7 +297,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests logs for a specific job::
+            Reqests logs for a specific job:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -320,6 +313,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/logs",
             list_cls=JobLogsList,
             resource_cls=JobLogs,
             filter=filter_ or None,
@@ -348,7 +342,7 @@ class JobsAPI(APIClient):
 
         Examples:
 
-            Reqests metrics for a specific job::
+            Reqests metrics for a specific job:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -364,6 +358,7 @@ class JobsAPI(APIClient):
             filter_["destination"] = destination
 
         return self._list(
+            url_path=self._RESOURCE_PATH + "/metrics",
             list_cls=JobMetricsList,
             resource_cls=JobMetrics,
             filter=filter_ or None,

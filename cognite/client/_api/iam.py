@@ -4,7 +4,7 @@ import warnings
 from collections.abc import Iterable, Sequence
 from itertools import groupby
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -532,6 +532,9 @@ class SessionsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
+        self._DELETE_LIMIT = (
+            100  # There isn't an API limit so this is a self-inflicted limit due to no support for large payloads
+        )
 
     def create(
         self,
@@ -597,11 +600,21 @@ class SessionsAPI(APIClient):
         Returns:
             Session | SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=None)
-        items = {"items": identifiers.as_dicts()}
 
-        result = SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
-        return result[0] if isinstance(id, int) else result
+        ident_sequence = IdentifierSequence.load(ids=id, external_ids=None)
+
+        revoked_sessions_res = cast(
+            list,
+            self._delete_multiple(
+                identifiers=ident_sequence,
+                wrap_ids=True,
+                returns_items=True,
+                delete_endpoint="/revoke",
+            ),
+        )
+
+        revoked_sessions = SessionList._load(revoked_sessions_res)
+        return revoked_sessions[0] if ident_sequence.is_singleton() else revoked_sessions
 
     @overload
     def retrieve(self, id: int) -> Session: ...
