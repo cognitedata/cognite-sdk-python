@@ -111,7 +111,7 @@ class LabelsAPI(APIClient):
 
         Examples:
 
-            Get label by external id::
+            Get label by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -153,23 +153,19 @@ class LabelsAPI(APIClient):
 
         Examples:
 
-            List Labels and filter on name::
+            List Labels and filter on name:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> label_list = client.labels.list(limit=5, name="Pump")
 
-            Iterate over label definitions::
+            Iterate over label definitions:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for label in client.labels:
                 ...     label # do something with the label definition
 
-            Iterate over chunks of label definitions to reduce memory load::
+            Iterate over chunks of label definitions to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for label_list in client.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
@@ -204,7 +200,7 @@ class LabelsAPI(APIClient):
 
         Examples:
 
-            Create new label definitions::
+            Create new label definitions:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
@@ -228,7 +224,7 @@ class LabelsAPI(APIClient):
 
         Examples:
 
-            Delete label definitions by external id::
+            Delete label definitions by external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

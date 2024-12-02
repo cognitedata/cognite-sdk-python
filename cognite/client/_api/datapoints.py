@@ -771,7 +771,8 @@ class DatapointsAPI(APIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            we are using the time-ago format, ``"2w-ago"`` to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -803,7 +804,7 @@ class DatapointsAPI(APIClient):
 
             You may also slice a ``Datapoints`` object (you get ``Datapoints`` back), or ask for "a row of data" at a single index in same way you would do with a
             built-in `list` (you get a `Datapoint` object back, note the singular name). You'll also get `Datapoint` objects when iterating through a ``Datapoints``
-            object, but this should generally be avoided (consider this a performance warning)::
+            object, but this should generally be avoided (consider this a performance warning):
 
                 >>> dps_slice = dps[-10:]  # Last ten values
                 >>> dp = dps[3]  # The third value
@@ -821,7 +822,7 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         DatapointsQuery(id=42, end="1d-ago", aggregates="average"),
-                ...         DatapointsQuery(id=69, end="2d-ago", aggregates=["average"]),
+                ...         DatapointsQuery(id=69, end="2d-ahead", aggregates=["average"]),
                 ...         DatapointsQuery(id=96, end="3d-ago", aggregates=["min", "max", "count"]),
                 ...     ],
                 ...     external_id=DatapointsQuery(external_id="foo", aggregates="max"),
@@ -858,7 +859,7 @@ class DatapointsAPI(APIClient):
             are stored as events in CDF, with both start- and end times, we can use these directly in the query.
 
             After fetching, the `.get` method will return a list of ``Datapoints`` instead, (assuming we have more than one event) in the
-            same order, similar to how slicing works with non-unique indices on Pandas DataFrames::
+            same order, similar to how slicing works with non-unique indices on Pandas DataFrames:
 
                 >>> periods = client.events.list(type="alarm", subtype="pressure")
                 >>> sensor_xid = "foo-pressure-bar"
@@ -873,7 +874,7 @@ class DatapointsAPI(APIClient):
 
             The API has an endpoint to :py:meth:`~DatapointsAPI.retrieve_latest`, i.e. "before", but not "after". Luckily, we can emulate that behaviour easily.
             Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
-            aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010)::
+            aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010):
 
                 >>> import itertools
                 >>> month_starts = [
@@ -1413,11 +1414,15 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.data.retrieve_latest(id=1)[0]
 
-            You can also get the first datapoint before a specific time::
+            You can also get the first datapoint before a specific time:
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
-            You can also retrieve the datapoint in a different unit or unit system::
+            You can also get the first datapoint before a specific time in the future e.g. forecast data:
+
+                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")[0]
+
+            You can also retrieve the datapoint in a different unit or unit system:
 
                 >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")[0]
                 >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")[0]
@@ -1428,7 +1433,7 @@ class DatapointsAPI(APIClient):
                 >>> res = client.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
-            using external ids here, but either will work::
+            using external ids here, but either will work:
 
                 >>> res = client.time_series.data.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
@@ -1525,12 +1530,13 @@ class DatapointsAPI(APIClient):
             The timestamp can be given by datetime as above, or in milliseconds since epoch. Status codes can also be
             passed as normal integers; this is necessary if a subcategory or modifier flag is needed, e.g. 3145728: 'GoodClamped':
 
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> datapoints = [
                 ...     (150000000000, 1000),
                 ...     (160000000000, 2000, 3145728),
                 ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
-                >>> client.time_series.data.insert(datapoints, id=2)
+                >>> client.time_series.data.insert(datapoints, instance_id=NodeId("my-space", "my-ts-xid"))
 
             Or they can be a list of dictionaries:
 
@@ -1595,24 +1601,32 @@ class DatapointsAPI(APIClient):
 
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> from cognite.client.data_classes import StatusCode
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> to_insert = [
                 ...     {"id": 1, "datapoints": [
                 ...         (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good),
-                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
-                ...         (datetime(2018,1,4, tzinfo=timezone.utc), None, StatusCode.Bad),
-                ... ]}]
+                ...         (datetime(2018,1,2, tzinfo=timezone.utc), 2000, StatusCode.Good)],
+                ...     },
+                ...     {"external_id": "foo", "datapoints": [
+                ...         (datetime(2018,1,3, tzinfo=timezone.utc), 3000),
+                ...         (datetime(2018,1,4, tzinfo=timezone.utc), 4000, StatusCode.Uncertain)],
+                ...     },
+                ...     {"instance_id": NodeId("my-space", "my-ts-xid"), "datapoints": [
+                ...         (datetime(2018,1,5, tzinfo=timezone.utc), 5000),
+                ...         (datetime(2018,1,6, tzinfo=timezone.utc), None, StatusCode.Bad)],
+                ...     }
+                ... ]
 
             Passing datapoints using the dictionary format with timestamp given in milliseconds since epoch:
 
                 >>> import math
                 >>> to_insert.append(
-                ...     {"external_id": "foo", "datapoints": [
-                ...         {"timestamp": 170000000, "value": 4000},
-                ...         {"timestamp": 180000000, "value": 5000, "status": {"symbol": "Uncertain"}},
+                ...     {"external_id": "bar", "datapoints": [
+                ...         {"timestamp": 170000000, "value": 7000},
+                ...         {"timestamp": 180000000, "value": 8000, "status": {"symbol": "Uncertain"}},
                 ...         {"timestamp": 190000000, "value": None, "status": {"code": StatusCode.Bad}},
                 ...         {"timestamp": 200000000, "value": math.inf, "status": {"code": StatusCode.Bad, "symbol": "Bad"}},
                 ... ]})
@@ -1625,7 +1639,7 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
         if not isinstance(datapoints, Sequence):
-            raise ValueError("Input must be a list of dictionaries")
+            raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
         DatapointsPoster(self).insert(datapoints)
 
     def delete_range(
@@ -1647,11 +1661,15 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Deleting the last week of data from a time series::
+            Deleting the last week of data from a time series:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+
+            Deleting the data from now until 2 days in the future from a time series containing e.g. forecasted data:
+
+                >>> client.time_series.data.delete_range(start="now", end="2d-ahead", id=1)
         """
         start_ms = timestamp_to_ms(start)
         end_ms = timestamp_to_ms(end)
@@ -1670,12 +1688,12 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Each element in the list ranges must be specify either id or external_id, and a range::
+            Each element in the list ranges must be specify either id or external_id, and a range:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
-                ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
+                ...           {"external_id": "abc", "start": "2d-ago", "end": "2d-ahead"}]
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []

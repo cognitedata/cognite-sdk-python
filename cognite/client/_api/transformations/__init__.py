@@ -371,8 +371,6 @@ class TransformationsAPI(APIClient):
 
             Get transformation by external id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> res = client.transformations.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -447,7 +445,7 @@ class TransformationsAPI(APIClient):
 
         Examples:
 
-            Update a transformation that you have fetched. This will perform a full update of the transformation::
+            Update a transformation that you have fetched. This will perform a full update of the transformation:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -455,7 +453,7 @@ class TransformationsAPI(APIClient):
                 >>> transformation.query = "SELECT * FROM _cdf.assets"
                 >>> res = client.transformations.update(transformation)
 
-            Perform a partial update on a transformation, updating the query and making it private::
+            Perform a partial update on a transformation, updating the query and making it private:
 
                 >>> from cognite.client.data_classes import TransformationUpdate
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
@@ -532,8 +530,6 @@ class TransformationsAPI(APIClient):
 
             Start running transformation by id:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> res = client.transformations.run(transformation_id = 1, wait = False)
         """
@@ -645,8 +641,6 @@ class TransformationsAPI(APIClient):
 
             Preview transformation results as pandas dataframe:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> df = client.transformations.preview(query="select * from _cdf.assets").to_pandas()
 
@@ -654,8 +648,6 @@ class TransformationsAPI(APIClient):
             a query that converts one source row to one result row, you may need to increase the `source_limit`.
             For example, given that you have a query that reads from a raw table with 10,903 rows
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None)
                 >>> print(result.results)
@@ -663,8 +655,6 @@ class TransformationsAPI(APIClient):
 
             To get all rows, you also need to set the `source_limit` to None:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>>
                 >>> result = client.transformations.preview(query="select * from my_raw_db.my_raw_table", limit=None, source_limit=None)
                 >>> print(result.results)

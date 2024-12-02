@@ -3,34 +3,30 @@ Data Workflows
 
 Workflows
 ------------
-Upsert Workflow
+Upsert Workflows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowAPI.upsert
 
-Delete Workflow(s)
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowAPI.delete
-
-Retrieve Workflow
-^^^^^^^^^^^^^^^^^
+Retrieve Workflows
+^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowAPI.retrieve
 
 List Workflows
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowAPI.list
 
+Delete Workflows
+^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowAPI.delete
+
 
 Workflow Versions
 ------------------
-Upsert Workflow Version
+Upsert Workflow Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.upsert
 
-Delete Workflow Version(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.delete
-
-Retrieve Workflow Version
+Retrieve Workflow Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.retrieve
 
@@ -38,24 +34,24 @@ List Workflow Versions
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.list
 
+Delete Workflow Versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowVersionAPI.delete
+
 
 Workflow Executions
 --------------------
-List Workflow Executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.list
-
-Retrieve Detailed Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
-
 Run Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.run
 
-Trigger Workflow Execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.trigger
+Retrieve detailed Workflow Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retrieve_detailed
+
+List Workflow Executions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.list
 
 Cancel Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,33 +61,32 @@ Retry Workflow Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowExecutionAPI.retry
 
+
 Workflow Tasks
 ------------------
-Update Status of Async Task
+Update status of async Task
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTaskAPI.update
 
+
 Workflow Triggers
 -------------------
-Create or update triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Upsert Trigger
+^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.upsert
 
-Create triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.create
+List Triggers
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.list
 
-Delete triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+List runs for a Trigger
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.list_runs
+
+Delete Triggers
+^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.delete
 
-Get triggers for workflow executions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_triggers
-
-Get trigger run history for a workflow trigger
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.workflows.WorkflowTriggerAPI.get_trigger_run_history
 
 Data Workflows data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
