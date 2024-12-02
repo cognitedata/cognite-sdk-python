@@ -88,10 +88,8 @@ class DatapointsSubscriptionAPI(APIClient):
             Create a subscription with explicit time series IDs given as Node IDs
             either from CogniteTimeSeries or an extension of CogniteTimeseries:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> client = CogniteClient()
                 >>> sub = DataPointSubscriptionWrite(
                 ...     external_id="my_subscription",
                 ...     name="My subscription with Data Model Ids",
@@ -101,11 +99,9 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Create a filter defined subscription for all numeric time series that are stepwise:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionWrite
                 >>> from cognite.client.data_classes import filters as flt
                 >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionProperty
-                >>> client = CogniteClient()
                 >>> is_numeric_stepwise = flt.And(
                 ...     flt.Equals(DatapointSubscriptionProperty.is_string, False),
                 ...     flt.Equals(DatapointSubscriptionProperty.is_step, True))
@@ -237,9 +233,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
             Add a time series to a preexisting subscription:
 
-                >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
-                >>> client = CogniteClient()
                 >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add(["MyNewTimeSeriesExternalId"])
                 >>> updated = client.time_series.subscriptions.update(update)
         """

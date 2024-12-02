@@ -214,7 +214,7 @@ class TimeSeries(TimeSeriesCore):
         if self.is_string:
             raise RuntimeError("String time series does not support count aggregate.")
 
-        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
@@ -228,7 +228,7 @@ class TimeSeries(TimeSeriesCore):
         Returns:
             Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
         """
-        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
             return dps[0]  # type: ignore [return-value]
         return None
@@ -239,7 +239,7 @@ class TimeSeries(TimeSeriesCore):
         Returns:
             Datapoint | None: A datapoint object containing the value and timestamp of the first datapoint.
         """
-        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )

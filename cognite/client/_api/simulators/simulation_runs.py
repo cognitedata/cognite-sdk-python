@@ -30,7 +30,7 @@ class SimulatorRunsAPI(APIClient):
 
         Args:
             limit (int): The maximum number of simulation runs to return. Defaults to 100.
-            filter (SimulationRunsFilter | dict[str, Any] | None): The filter to narrow down simulation run.
+            filter (SimulationRunsFilter | dict[str, Any] | None): The filter that helps narrow down the list of simulation runs.
 
         Returns:
             SimulationRunsList: List of simulation runs

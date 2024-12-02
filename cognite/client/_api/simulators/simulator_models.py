@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, overload
 
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
@@ -38,24 +39,23 @@ class SimulatorModelRevisionsAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorModelRevisionList:
-        """`Filter simulator model revisions <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
-        List all simulation model revisions
+        List simulator model revisions
 
         Args:
-            limit (int): The maximum number of model revisions to return. Defaults to 100.
+            limit (int): The maximum number of simulator model revisions to return. Defaults to 100.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator model revisions.
 
         Returns:
-            SimulatorModelRevisionList: List all simulation model revisions
+            SimulatorModelRevisionList: List of simulator model revisions
 
         Examples:
 
-            List simulators:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.list()
+            List simulator model revisions:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.list()
 
         """
         self._warning.warn()
@@ -69,13 +69,13 @@ class SimulatorModelRevisionsAPI(APIClient):
             if isinstance(filter, SimulatorModelRevisionsFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModelRevision | None:
-        """`Retrieve Simulator Model Revisions <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+        """`Retrieve simulator model revision <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
-        Retrieve simulator model revisions by IDs or external IDs
+        Retrieve multiple simulator model revisions by IDs or external IDs
 
         Args:
             id (int | None): The id of the simulator model revision.
@@ -86,11 +86,13 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            Get simulator model revision by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve(id=123)
 
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.revisions.retrieve(external_id="1")
+            Get simulator model revision by external id:
+                >>> res = client.simulators.models.revisions.retrieve(external_id="abcdef")
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
@@ -99,6 +101,40 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             identifiers=identifiers,
             resource_path="/simulators/models/revisions",
+        )
+
+    def retrieve_multiple(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> SimulatorModelRevisionList:
+        """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+
+        Args:
+            ids (Sequence[int] | None): IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            SimulatorModelRevisionList: Requested simulator model revisions
+
+        Examples:
+
+            Get simulator model revisions by ids:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve_multiple(ids=[1, 2, 3])
+
+            Get simulator model revisions by external ids:
+                >>> res = client.simulators.models.revisions.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
 
@@ -115,7 +151,7 @@ class SimulatorModelsAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelsFilter | dict[str, Any] | None = None
     ) -> SimulatorModelList:
-        """`Filter Simulator Models <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
+        """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
         List simulator models
 
@@ -146,13 +182,13 @@ class SimulatorModelsAPI(APIClient):
             if isinstance(filter, SimulatorModelsFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModel | None:
-        """`Retrieve Simulator Model <https://api-docs.cogheim.net/redoc/#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
+        """`Retrieve simulator model <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
 
-        Get a simulator model by id/externalId
+        Retrieve a single simulator model by id/externalId
 
         Args:
             id (int | None): The id of the simulator model.
@@ -164,20 +200,15 @@ class SimulatorModelsAPI(APIClient):
         Examples:
 
             List simulator models:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.list()
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.list()
 
             Get simulator model by id:
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.retrieve(id=1)
+                >>> res = client.simulators.models.retrieve(id=1)
 
             Get simulator model by external id:
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.retrieve(external_id="1")
+                >>> res = client.simulators.models.retrieve(external_id="1")
 
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()

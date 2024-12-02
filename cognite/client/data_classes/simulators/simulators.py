@@ -125,15 +125,13 @@ class SimulatorRoutineOutput(CogniteObject):
 
 @dataclass
 class SimulatorRoutineSchedule(CogniteObject):
-    enabled: bool
+    enabled: bool = False
     cron_expression: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            enabled=resource["enabled"],
-            cron_expression=resource.get("cronExpression"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -141,19 +139,15 @@ class SimulatorRoutineSchedule(CogniteObject):
 
 @dataclass
 class SimulatorRoutineDataSampling(CogniteObject):
-    enabled: bool
+    enabled: bool = False
     validation_window: int | None = None
     sampling_window: int | None = None
     granularity: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            enabled=resource["enabled"],
-            validation_window=resource.get("validationWindow"),
-            sampling_window=resource.get("samplingWindow"),
-            granularity=resource.get("granularity"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -161,7 +155,7 @@ class SimulatorRoutineDataSampling(CogniteObject):
 
 @dataclass
 class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
-    enabled: bool
+    enabled: bool = False
     timeseries_external_id: str | None = None
     aggregate: str | None = None
     operator: str | None = None
@@ -169,13 +163,8 @@ class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            enabled=resource["enabled"],
-            timeseries_external_id=resource.get("timeseriesExternalId"),
-            aggregate=resource.get("aggregate"),
-            operator=resource.get("operator"),
-            value=resource.get("value"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -183,7 +172,7 @@ class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
 
 @dataclass
 class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
-    enabled: bool
+    enabled: bool = False
     timeseries_external_id: str | None = None
     aggregate: str | None = None
     min_section_size: int | None = None
@@ -192,14 +181,8 @@ class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            enabled=resource["enabled"],
-            timeseries_external_id=resource.get("timeseriesExternalId"),
-            aggregate=resource.get("aggregate"),
-            min_section_size=resource.get("minSectionSize"),
-            var_threshold=resource.get("varThreshold"),
-            slope_threshold=resource.get("slopeThreshold"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -253,11 +236,8 @@ class SimulatorRoutineStepArguments(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            reference_id=resource.get("referenceId"),
-            object_name=resource.get("objectName"),
-            object_property=resource.get("objectProperty"),
-        )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -807,7 +787,6 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
 
 T_SimulatorModelRevision = TypeVar("T_SimulatorModelRevision", bound=SimulatorModelRevisionCore)
 
-
 class SimulatorModelRevision(SimulatorModelRevisionCore):
     """
 
@@ -1073,7 +1052,6 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
 
 T_SimulatorModel = TypeVar("T_SimulatorModel", bound=SimulatorModelCore)
 
-
 class SimulatorModelWrite(SimulatorModelCore):
     def __init__(
         self,
@@ -1107,7 +1085,7 @@ class SimulatorModelWrite(SimulatorModelCore):
     def as_write(self) -> SimulatorModelWrite:
         """Returns self."""
         return self
-
+   
 
 class SimulatorModel(SimulatorModelCore):
     """
@@ -1647,8 +1625,19 @@ class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, Simul
         return SimulatorModelWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
 
 
-class SimulatorModelRevisionList(CogniteResourceList[SimulatorModelRevision]):
+class SimulatorModelRevisionWriteList(CogniteResourceList[SimulatorModelRevisionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorModelRevisionWrite
+
+
+class SimulatorModelRevisionList(
+    WriteableCogniteResourceList[SimulatorModelRevisionWrite, SimulatorModelRevision], IdTransformerMixin
+):
     _RESOURCE = SimulatorModelRevision
+
+    def as_write(self) -> SimulatorModelRevisionWriteList:
+        return SimulatorModelRevisionWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class SimulationRunsList(CogniteResourceList[SimulationRun]):

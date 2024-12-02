@@ -95,7 +95,7 @@ class RawDatabasesAPI(APIClient):
 
         Examples:
 
-            Create a new database::
+            Create a new database:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -117,7 +117,7 @@ class RawDatabasesAPI(APIClient):
 
         Examples:
 
-            Delete a list of databases::
+            Delete a list of databases:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -148,23 +148,19 @@ class RawDatabasesAPI(APIClient):
 
         Examples:
 
-            List the first 5 databases::
+            List the first 5 databases:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> db_list = client.raw.databases.list(limit=5)
 
-            Iterate over databases::
+            Iterate over databases:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for db in client.raw.databases:
                 ...     db # do something with the db
 
-            Iterate over chunks of databases to reduce memory load::
+            Iterate over chunks of databases to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
@@ -223,7 +219,7 @@ class RawTablesAPI(APIClient):
 
         Examples:
 
-            Create a new table in a database::
+            Create a new table in a database:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -251,7 +247,7 @@ class RawTablesAPI(APIClient):
 
         Examples:
 
-            Delete a list of tables::
+            Delete a list of tables:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -302,23 +298,19 @@ class RawTablesAPI(APIClient):
 
         Examples:
 
-            List the first 5 tables::
+            List the first 5 tables:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
-            Iterate over tables::
+            Iterate over tables:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table in client.raw.tables(db_name="db1"):
                 ...     table # do something with the table
 
-            Iterate over chunks of tables to reduce memory load::
+            Iterate over chunks of tables to reduce memory load:
 
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
                 ...     table_list # do something with the tables
         """
@@ -651,7 +643,7 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Delete rows from table::
+            Delete rows from table:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -748,7 +740,7 @@ class RawRowsAPI(APIClient):
 
         Examples:
 
-            Get dataframe::
+            Get dataframe:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

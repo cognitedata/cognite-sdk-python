@@ -43,6 +43,10 @@ from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsers
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.simulators.simulation_runs import SimulatorRunsAPI
+from cognite.client._api.simulators.simulator_integrations import SimulatorIntegrationsAPI
+from cognite.client._api.simulators.simulator_models import SimulatorModelRevisionsAPI, SimulatorModelsAPI
+from cognite.client._api.simulators.simulator_routines import SimulatorRoutineRevisionsAPI, SimulatorRoutinesAPI
 from cognite.client._api.simulators.simulators import SimulatorsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
@@ -144,6 +148,12 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
 
         self.simulators = MagicMock(spec=SimulatorsAPI)
+        self.simulators.models = MagicMock(spec=SimulatorModelsAPI)
+        self.simulators.models.revisions = MagicMock(spec_set=SimulatorModelRevisionsAPI)
+        self.simulators.runs = MagicMock(spec=SimulatorRunsAPI)
+        self.simulators.integrations = MagicMock(spec=SimulatorIntegrationsAPI)
+        self.simulators.routines = MagicMock(spec=SimulatorRoutinesAPI)
+        self.simulators.routines.revisions = MagicMock(spec_set=SimulatorRoutineRevisionsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
@@ -13,6 +14,7 @@ from cognite.client.data_classes.simulators.simulators import (
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -30,7 +32,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineRevisionsList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         List simulator routine revisions
 
@@ -43,11 +45,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
 
-            List simulators:
-
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routines.list()
+            List simulator routine revisions:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.list()
 
         """
         self._warning.warn()
@@ -61,7 +62,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             if isinstance(filter, SimulatorRoutineRevisionsFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
@@ -78,12 +79,13 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            Get simulator routine revision by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routine.retrieve(external_id="1")
-
+            Get simulator routine revision by external id:
+                >>> res = client.simulators.routines.revisions.retrieve(external_ids="abcdef")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -91,6 +93,40 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             list_cls=SimulatorRoutineRevisionsList,
             identifiers=identifiers,
             resource_path="/simulators/routines/revisions",
+        )
+
+    def retrieve_multiple(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> SimulatorRoutineRevisionsList:
+        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+
+        Args:
+            ids (Sequence[int] | None): IDs
+            external_ids (SequenceNotStr[str] | None): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            SimulatorRoutineRevisionsList: Requested simulator routine revisions
+
+        Examples:
+
+            Get simulator routine revisions by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
+
+            Get simulator routine revisions by external id:
+                >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=SimulatorRoutineRevisionsList,
+            resource_cls=SimulatorRoutineRevision,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
 
@@ -107,12 +143,12 @@ class SimulatorRoutinesAPI(APIClient):
     def list(
         self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
     ) -> SimulatorRoutineList:
-        """`Filter Simulators <https://api-docs.cognite.com/20230101-alpha/tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
-        List simulators
+        List simulator routines
 
         Args:
-            limit (int): The maximum number of simulators to return. Defaults to 100.
+            limit (int): The maximum number of simulator routines to return. Defaults to 100.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
 
         Returns:
@@ -120,11 +156,11 @@ class SimulatorRoutinesAPI(APIClient):
 
         Examples:
 
-            List simulators:
+            List simulator routines:
 
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list_routines()
+                    >>> res = client.simulators.routines.list()
 
         """
         self._warning.warn()
@@ -138,5 +174,5 @@ class SimulatorRoutinesAPI(APIClient):
             if isinstance(filter, SimulatorRoutinesFilter)
             else filter
             if isinstance(filter, dict)
-            else None,  # fix this
+            else None,
         )
