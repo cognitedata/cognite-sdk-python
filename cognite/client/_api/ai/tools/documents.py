@@ -8,7 +8,7 @@ from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
-class DocumentsAPI(APIClient):
+class AIDocumentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/tools/documents"
 
     def summarize(
