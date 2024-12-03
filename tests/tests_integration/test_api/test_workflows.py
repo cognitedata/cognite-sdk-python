@@ -10,7 +10,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
-from cognite.client.data_classes.simulators import SimulationInputOverride, SimulationValueUnitName
+from cognite.client.data_classes.simulators.runs import SimulationInputOverride, SimulationValueUnitName
 from cognite.client.data_classes.workflows import (
     CDFTaskParameters,
     FunctionTaskParameters,

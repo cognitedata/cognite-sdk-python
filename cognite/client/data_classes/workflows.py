@@ -20,7 +20,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
-from cognite.client.data_classes.simulators import (
+from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
