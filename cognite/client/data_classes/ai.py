@@ -7,7 +7,7 @@ from typing import Any
 from cognite.client.utils._identifier import InstanceId
 
 
-class Language(Enum):
+class AnswerLanguage(Enum):
     Chinese = "Chinese"
     Dutch = "Dutch"
     English = "English"
