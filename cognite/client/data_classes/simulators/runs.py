@@ -8,9 +8,12 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import (
     CogniteObject,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+_WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
 
 
 @dataclass
@@ -22,6 +25,9 @@ class SimulationValueUnitName(CogniteObject):
         return cls(
             name=resource["name"],
         )
+
+    def __post_init__(self) -> None:
+        _WARNING.warn()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -40,6 +46,9 @@ class SimulationInputOverride(CogniteObject):
             value=resource["value"],
             unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if "unit" in resource else None,
         )
+
+    def __post_init__(self) -> None:
+        _WARNING.warn()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)

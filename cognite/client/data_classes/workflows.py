@@ -23,6 +23,7 @@ from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpr
 from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -243,6 +244,11 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         return output
 
 
+_SIMULATORS_WARNING = FeaturePreviewWarning(
+    api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+)
+
+
 class SimulationTaskParameters(WorkflowTaskParameters):
     """
     The simulation parameters are used to specify the simulation routine to be executed.
@@ -263,6 +269,9 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         self.routine_external_id = routine_external_id
         self.run_time = run_time
         self.inputs = inputs
+
+    def __post_init__(self) -> None:
+        _SIMULATORS_WARNING.warn()
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationTaskParameters:
@@ -641,6 +650,9 @@ class SimulationTaskOutput(WorkflowTaskOutput):
     """
 
     task_type: ClassVar[str] = "simulation"
+
+    def __post_init__(self) -> None:
+        _SIMULATORS_WARNING.warn()
 
     def __init__(
         self,
