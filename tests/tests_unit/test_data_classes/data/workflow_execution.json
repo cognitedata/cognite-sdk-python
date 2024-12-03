@@ -41,6 +41,30 @@
                 ]
             },
             {
+                "externalId": "testSimulation",
+                "type": "simulation",
+                "parameters": {
+                    "simulation": {
+                        "routineExternalId": "routine-1",
+                        "inputs": [
+                            {
+                                "referenceId": "some-ref",
+                                "value": 1
+                            }
+                        ],
+                        "runTime": 123
+                    }
+                },
+                "retries": 0,
+                "timeout": 3600,
+                "onFailure": "skipTask",
+                "dependsOn": [
+                    {
+                        "externalId": "testTaskDispatcher"
+                    }
+                ]
+            },
+            {
                 "externalId": "testMatrixCalculation",
                 "type": "dynamic",
                 "description": "Run a collection of test matrix calcs concurrently.",
