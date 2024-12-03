@@ -104,6 +104,7 @@ class APIClient:
                     "hostedextractors/.*",
                     "postgresgateway/.*",
                     "context/diagram/.*",
+                    "ai/tools/documents/(summarize|ask)",
                 )
             )
         ]
