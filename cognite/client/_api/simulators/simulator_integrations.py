@@ -12,7 +12,8 @@ from cognite.client.data_classes.simulators.simulators import (
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class SimulatorIntegrationsAPI(APIClient):
