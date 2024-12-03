@@ -4,6 +4,7 @@ from typing import Any
 
 from requests import Response
 
+from cognite.client._api.ai import AIAPI
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
@@ -58,6 +59,7 @@ class CogniteClient:
             self._config = client_config
 
         # APIs using base_url / resource path:
+        self.ai = AIAPI(self._config, self._API_VERSION, self)
         self.assets = AssetsAPI(self._config, self._API_VERSION, self)
         self.events = EventsAPI(self._config, self._API_VERSION, self)
         self.files = FilesAPI(self._config, self._API_VERSION, self)
