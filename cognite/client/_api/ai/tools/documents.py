@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.ai import Answer, Language, Summary
+from cognite.client.data_classes.ai import Answer, AnswerLanguage, Summary
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -71,7 +71,7 @@ class DocumentsAPI(APIClient):
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
         instance_ids: Sequence[InstanceId] | None = None,
-        language: Language = Language.English,
+        language: AnswerLanguage = AnswerLanguage.English,
         ignore_unknown_ids: bool = False,
         additional_context: str | None = None,
     ) -> Answer:
@@ -84,7 +84,7 @@ class DocumentsAPI(APIClient):
             ids (Sequence[int] | None): Internal ids of documents to find the answer in.
             external_ids (SequenceNotStr[str] | None): External ids of documents to find the answer in.
             instance_ids (Sequence[InstanceId] | None): Instance ids of documents to find the answer in.
-            language (Language): The desired language of the answer
+            language (AnswerLanguage): The desired language of the answer
             ignore_unknown_ids (bool): Whether to skip documents that can't be summarized, without throwing an error
             additional_context (str | None): Additional context that you want the LLM to take into account.
 
