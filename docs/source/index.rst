@@ -40,6 +40,7 @@ Contents
    extensions_and_optional_dependencies
    identity_and_access_management
    data_modeling
+   ai
    assets
    events
    files
