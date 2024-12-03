@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.72.0] - 2025-01-14
+### Added
+- Document Summary and Document Question Answering endpoints from the AI API.
+
 ## [7.71.4] - 2025-01-09
 ### Changed
 - Update classes accepting insance_id now raise when id/external_id are also given.
