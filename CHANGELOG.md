@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.2] - 2024-12-04
+### Fixed
+- Retrieving `ExtractionPipeline` either with `client.extraction_pipelines.retrieve` or 
+  `client.extraction_pipelines.list` no longer raises a `KeyError` if any of the pipline properties have a contact
+  with a `None` value.
+
 ## [7.70.1] - 2024-12-04
 ### Fixed
 - Fix `workflows.executions.retrieve_detailed` type for `SimulationInputOverride` to allow for `None` value for `unit`.
