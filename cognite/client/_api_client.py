@@ -72,6 +72,8 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=CogniteObject)
 
+VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
+
 
 class APIClient:
     _RESOURCE_PATH: str
@@ -787,11 +789,8 @@ class APIClient:
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
         verify_limit(limit)
-        if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
-            raise ValueError(
-                f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
-                f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
-            )
+        if aggregate not in VALID_AGGREGATIONS:
+            raise ValueError(f"Invalid aggregate {aggregate!r}. Valid aggregates are {sorted(VALID_AGGREGATIONS)}.")
 
         body: dict[str, Any] = {"aggregate": aggregate}
         if properties is not None:
@@ -799,6 +798,7 @@ class APIClient:
                 properties, property_aggregation_filter = properties
             else:
                 property_aggregation_filter = None
+
             if isinstance(properties, EnumProperty):
                 dumped_properties = properties.as_reference()
             elif isinstance(properties, str):
