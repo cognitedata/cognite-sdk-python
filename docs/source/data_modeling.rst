@@ -139,7 +139,7 @@ Query instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.query
 
-Inspect Instances
+Inspect instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.inspect
 
