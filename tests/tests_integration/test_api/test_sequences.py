@@ -1,3 +1,4 @@
+import unittest
 from unittest import mock
 
 import pytest
@@ -14,7 +15,12 @@ from cognite.client.data_classes import (
     SequenceUpdate,
     filters,
 )
-from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
+from cognite.client.data_classes.sequences import (
+    SequenceColumnWrite,
+    SequenceProperty,
+    SequenceWrite,
+    SortableSequenceProperty,
+)
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from tests.utils import set_request_limit
@@ -329,3 +335,57 @@ class TestSequencesAPI:
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []
         }
+
+    def test_upsert_sequence(self, cognite_client: CogniteClient) -> None:
+        original_sequence = SequenceWrite(
+            external_id=f"upsert_sequence_{random_string(5)}",
+            columns=[
+                SequenceColumnWrite(
+                    description="KW Description", name="KW Name", value_type="Double", external_id="kw_seq_01"
+                ),
+            ],
+            description="Description of the Test Sequence",
+            name="Test Sequence Name",
+        )
+        upsert = SequenceWrite(
+            external_id=original_sequence.external_id,
+            columns=[
+                SequenceColumnWrite(
+                    description="KW Description",
+                    name="KW Name",
+                    value_type="Double",
+                    external_id="kw_seq_01",
+                    metadata={},
+                ),
+                SequenceColumnWrite(
+                    description="PW Description",
+                    name="PW Name",
+                    value_type="Double",
+                    external_id="pw_seq_01",
+                    metadata={},
+                ),
+                SequenceColumnWrite(
+                    description="LW Description",
+                    name="LW Name",
+                    value_type="Double",
+                    external_id="lw_seq_01",
+                    metadata={},
+                ),
+            ],
+            description="Description of the Test Sequence",
+            name="Test Sequence Name",
+        )
+
+        created: Sequence | None = None
+        try:
+            created = cognite_client.sequences.create(original_sequence)
+
+            upserted = cognite_client.sequences.upsert(upsert)
+
+            retrieved = cognite_client.sequences.retrieve(external_id=upserted.external_id)
+
+            assert retrieved is not None
+            unittest.TestCase().assertCountEqual(retrieved.as_write().columns.dump(), upsert.columns.dump())
+        finally:
+            if created:
+                cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
