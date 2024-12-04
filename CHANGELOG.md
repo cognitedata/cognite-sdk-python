@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.1] - 2024-12-04
+### Fixed
+- Fix `workflows.executions.retrieve_detailed` type for `SimulationInputOverride` to allow for `None` value for `unit`.
 
 ## [7.70.0] - 2024-12-02
 ### Added
