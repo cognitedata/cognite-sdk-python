@@ -1,4 +1,3 @@
-import unittest
 from unittest import mock
 
 import pytest
@@ -353,21 +352,22 @@ class TestSequencesAPI:
                 SequenceColumnWrite(
                     description="KW Description",
                     name="KW Name",
-                    value_type="Double",
+                    # UPPER to match what the API returns
+                    value_type="DOUBLE",
                     external_id="kw_seq_01",
                     metadata={},
                 ),
                 SequenceColumnWrite(
                     description="PW Description",
                     name="PW Name",
-                    value_type="Double",
+                    value_type="DOUBLE",
                     external_id="pw_seq_01",
                     metadata={},
                 ),
                 SequenceColumnWrite(
                     description="LW Description",
                     name="LW Name",
-                    value_type="Double",
+                    value_type="DOUBLE",
                     external_id="lw_seq_01",
                     metadata={},
                 ),
@@ -385,7 +385,7 @@ class TestSequencesAPI:
             retrieved = cognite_client.sequences.retrieve(external_id=upserted.external_id)
 
             assert retrieved is not None
-            unittest.TestCase().assertCountEqual(retrieved.as_write().columns.dump(), upsert.columns.dump())
+            assert retrieved.as_write().columns.dump() == upsert.columns.dump()
         finally:
             if created:
                 cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
