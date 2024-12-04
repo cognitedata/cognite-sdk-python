@@ -382,9 +382,7 @@ class TestWorkflowVersions:
                                 SimulationInputOverride(
                                     reference_id="CWT", value=11, unit=SimulationValueUnitName(name="F")
                                 ),
-                                SimulationInputOverride(
-                                    reference_id="HWT", value=0.1
-                                )
+                                SimulationInputOverride(reference_id="HWT", value=0.1),
                             ],
                         ),
                         timeout=100,
