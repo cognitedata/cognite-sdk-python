@@ -30,26 +30,23 @@ class ExtractionPipelineContact(CogniteObject):
     """A contact for an extraction pipeline
 
     Args:
-        name (str): Name of contact
-        email (str): Email address of contact
-        role (str): Role of contact, such as Owner, Maintainer, etc.
-        send_notification (bool): Whether to send notifications to this contact or not
+        name (str | None): Name of contact
+        email (str | None): Email address of contact
+        role (str | None): Role of contact, such as Owner, Maintainer, etc.
+        send_notification (bool | None): Whether to send notifications to this contact or not
     """
 
-    def __init__(self, name: str, email: str, role: str, send_notification: bool) -> None:
+    def __init__(
+        self,
+        name: str | None = None,
+        email: str | None = None,
+        role: str | None = None,
+        send_notification: bool | None = None,
+    ) -> None:
         self.name = name
         self.email = email
         self.role = role
         self.send_notification = send_notification
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ExtractionPipelineContact:
-        return cls(
-            name=resource["name"],
-            email=resource["email"],
-            role=resource["role"],
-            send_notification=resource["sendNotification"],
-        )
 
 
 @dataclass
