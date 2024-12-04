@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from cognite.client.utils._identifier import InstanceId
+from cognite.client.data_classes.data_modeling import NodeId
 
 
 class AnswerLanguage(Enum):
@@ -32,13 +32,13 @@ class Summary:
         summary (str): The textual summary of the document
         id (int | None): The internal id of the document
         external_id (str | None): The external id of the document
-        instance_id (InstanceId | None): The instance id of the document
+        instance_id (NodeId| None): The instance id of the document
     """
 
     summary: str
     id: int | None = None
     external_id: str | None = None
-    instance_id: InstanceId | None = None
+    instance_id: NodeId | None = None
 
 
 @dataclass
@@ -86,14 +86,14 @@ class AnswerReference:
     Args:
         file_id (int): The internal id of the document
         external_id (str | None): The external id of the document
-        instance_id (InstanceId | None): The instance id of the document
+        instance_id (NodeId | None): The instance id of the document
         file_name (str): The name of the document
         locations (list[AnswerLocation]): A list of locations within the document, where the answer was found
     """
 
     file_id: int
     external_id: str | None
-    instance_id: InstanceId | None
+    instance_id: NodeId | None
     file_name: str
     locations: list[AnswerLocation]
 
@@ -102,7 +102,7 @@ class AnswerReference:
         return AnswerReference(
             file_id=data["fileId"],
             external_id=data.get("externalId"),
-            instance_id=InstanceId.load(data["instanceId"]) if "instanceId" in data else None,
+            instance_id=NodeId.load(data["instanceId"]) if "instanceId" in data else None,
             file_name=data["fileName"],
             locations=[AnswerLocation.load(d) for d in data.get("locations", [])],
         )

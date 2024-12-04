@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import Answer, AnswerLanguage, Summary
-from cognite.client.utils._identifier import InstanceId
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -15,7 +15,7 @@ class AIDocumentsAPI(APIClient):
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
-        instance_ids: Sequence[InstanceId] | None = None,
+        instance_ids: Sequence[NodeId] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> list[Summary]:
         """Summarize a document using a Large Language Model.
@@ -26,7 +26,7 @@ class AIDocumentsAPI(APIClient):
         Args:
             ids (Sequence[int] | None): Internal ids of documents to summarize.
             external_ids (SequenceNotStr[str] | None): External ids of documents to summarize.
-            instance_ids (Sequence[InstanceId] | None): Instance ids of documents to summarize.
+            instance_ids (Sequence[NodeId] | None): Instance ids of documents to summarize.
             ignore_unknown_ids (bool): Whether to skip documents that can't be summarized, without throwing an error
 
         Returns:
@@ -43,7 +43,7 @@ class AIDocumentsAPI(APIClient):
             "items": (
                 [{"id": id} for id in ids or []]
                 + [{"externalId": external_id} for external_id in external_ids or []]
-                + [{"instanceId": instance_id.dump()} for instance_id in instance_ids or []]
+                + [{"instanceId": instance_id.dump(include_instance_type=False)} for instance_id in instance_ids or []]
             ),
             "ignoreUnknownIds": ignore_unknown_ids,
         }
@@ -53,7 +53,7 @@ class AIDocumentsAPI(APIClient):
 
         summaries = []
         for item in response_json["items"]:
-            instance_id = InstanceId.load(item["instanceId"]) if "instanceId" in item else None
+            instance_id = NodeId.load(item["instanceId"]) if "instanceId" in item else None
             summaries.append(
                 Summary(
                     id=item.get("id"),
@@ -70,7 +70,7 @@ class AIDocumentsAPI(APIClient):
         question: str,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
-        instance_ids: Sequence[InstanceId] | None = None,
+        instance_ids: Sequence[NodeId] | None = None,
         language: AnswerLanguage = AnswerLanguage.English,
         ignore_unknown_ids: bool = False,
         additional_context: str | None = None,
@@ -83,7 +83,7 @@ class AIDocumentsAPI(APIClient):
             question (str): The question.
             ids (Sequence[int] | None): Internal ids of documents to find the answer in.
             external_ids (SequenceNotStr[str] | None): External ids of documents to find the answer in.
-            instance_ids (Sequence[InstanceId] | None): Instance ids of documents to find the answer in.
+            instance_ids (Sequence[NodeId] | None): Instance ids of documents to find the answer in.
             language (AnswerLanguage): The desired language of the answer
             ignore_unknown_ids (bool): Whether to skip documents that are not fully processed, without throwing an error
             additional_context (str | None): Additional context that you want the LLM to take into account.
@@ -103,7 +103,7 @@ class AIDocumentsAPI(APIClient):
             "fileIds": (
                 [{"id": id} for id in ids or []]
                 + [{"externalId": external_id} for external_id in external_ids or []]
-                + [{"instanceId": instance_id.dump()} for instance_id in instance_ids or []]
+                + [{"instanceId": instance_id.dump(include_instance_type=False)} for instance_id in instance_ids or []]
             ),
             "language": language.value,
             "ignoreUnknownIds": ignore_unknown_ids,
