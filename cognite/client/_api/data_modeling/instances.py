@@ -718,8 +718,8 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node IDs.
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge IDs.
-            involved_views (InvolvedViews | None): Whether to include involved views.
-            involved_containers (InvolvedContainers | None): Whether to include involved containers.
+            involved_views (InvolvedViews | None): Whether to include involved views. Must pass at least one of involved_views or involved_containers.
+            involved_containers (InvolvedContainers | None): Whether to include involved containers. Must pass at least one of involved_views or involved_containers.
 
         Returns:
             InstanceInspectResults: List of instance inspection results.
@@ -729,8 +729,7 @@ class InstancesAPI(APIClient):
             Look up the involved views for a given node and edge:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
-                >>> from cognite.client.data_classes.data_modeling import InvolvedViews
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, InvolvedViews
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.inspect(
                 ...     nodes=NodeId("my-space", "foo1"),
