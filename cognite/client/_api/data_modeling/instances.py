@@ -726,14 +726,24 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Look up the involved views and containers for a given node and edge:
+            Look up the involved views for a given node and edge:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
+                >>> from cognite.client.data_classes.data_modeling import InvolvedViews
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.instances.inspect(
                 ...     nodes=NodeId("my-space", "foo1"),
                 ...     edges=EdgeId("my-space", "bar2"),
+                ...     involved_views=InvolvedViews(all_versions=False),
+                ... )
+
+            Look up the involved containers:
+
+                >>> from cognite.client.data_classes.data_modeling import InvolvedContainers
+                >>> res = client.data_modeling.instances.inspect(
+                ...     nodes=[("my-space", "foo1"), ("my-space", "foo2")],
+                ...     involved_containers=InvolvedContainers(),
                 ... )
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
