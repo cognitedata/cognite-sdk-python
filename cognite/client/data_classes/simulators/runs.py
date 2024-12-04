@@ -44,7 +44,7 @@ class SimulationInputOverride(CogniteObject):
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
-            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if "unit" in resource else None,
+            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
         )
 
     def __post_init__(self) -> None:

@@ -97,6 +97,13 @@ def get_workflow_seed_data(data_set_id: int, file_id: int):
                     "valueType": "DOUBLE",
                     "unit": {"name": "C", "quantity": "temperature"},
                 },
+                {
+                    "name": "Hot Water Temperature",
+                    "referenceId": "HWT",
+                    "value": 1.0,
+                    "valueType": "DOUBLE",
+                    "unit": {"name": "C", "quantity": "temperature"},
+                },
             ],
             "outputs": [
                 {
