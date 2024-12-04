@@ -73,6 +73,9 @@ class AnswerLocation:
             bottom=data["bottom"],
         )
 
+    def __hash__(self) -> int:
+        return hash((self.page_number, self.left, self.right, self.top, self.bottom))
+
 
 @dataclass
 class AnswerReference:
@@ -106,6 +109,9 @@ class AnswerReference:
             file_name=data["fileName"],
             locations=[AnswerLocation.load(d) for d in data.get("locations", [])],
         )
+
+    def __hash__(self) -> int:
+        return hash((self.file_id, self.external_id, self.instance_id, self.file_name, tuple(self.locations)))
 
 
 @dataclass
@@ -149,6 +155,24 @@ class Answer:
     """
 
     content: list[AnswerContent]
+
+    def get_full_answer_text(self) -> str:
+        """
+        Get the full answer text. This is the concatenation of the texts from
+        all the content objects.
+        """
+        return "".join([content.text for content in self.content])
+
+    def get_all_references(self) -> list[AnswerReference]:
+        """
+        Get all the references. This is the full list of references from
+        all the content objects.
+        """
+        all_references = set()
+        for content in self.content:
+            all_references |= set(content.references)
+
+        return list(all_references)
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Answer:
