@@ -692,6 +692,22 @@ class SequencesAPI(APIClient):
                 >>> new_sequence = Sequence(external_id="new_sequence", description="New sequence")
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
+
+        if isinstance(item, SequenceWrite):
+            if item.external_id is None:
+                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
+            cdf_item = self.retrieve(external_id=item.external_id)
+            item = self._write_to_update(item, mode, {cdf_item.external_id: cdf_item})
+        elif isinstance(item, Sequence):
+            external_ids = [i.external_id for i in item if isinstance(i, SequenceWrite)]
+            if None in external_ids:
+                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
+            cdf_items = self.retrieve_multiple(external_ids=external_ids)
+            sequence_by_id = {cdf_item.external_id: cdf_item for cdf_item in cdf_items}
+            item = [
+                self._write_to_update(item, mode, sequence_by_id) if isinstance(item, SequenceWrite) else item
+                for item in item
+            ]
         return self._upsert_multiple(
             item,
             list_cls=SequenceList,
@@ -700,6 +716,20 @@ class SequencesAPI(APIClient):
             input_resource_cls=Sequence,
             mode=mode,
         )
+
+    def _write_to_update(
+        self,
+        item: SequenceWrite,
+        mode: Literal["patch", "replace"],
+        cdf_item_by_ext_id: dict[str, Sequence],
+    ) -> SequenceUpdate:
+        update_obj = self._convert_resource_to_patch_object(
+            item,
+            SequenceUpdate._get_update_properties(item),
+            mode,
+        )
+        # Todo Custom handling of columns
+        raise NotImplementedError
 
     def search(
         self,

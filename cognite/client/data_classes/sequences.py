@@ -589,7 +589,7 @@ class SequenceUpdate(CogniteUpdate):
             # Sequences do not support setting metadata to an empty array.
             PropertySpec("metadata", is_object=True, is_nullable=False),
             PropertySpec("data_set_id"),
-            # PropertySpec("columns", is_list=True),
+            # Columns are handled separately in the .upsert() method
         ]
 
 
