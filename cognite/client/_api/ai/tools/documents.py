@@ -85,7 +85,7 @@ class AIDocumentsAPI(APIClient):
             external_ids (SequenceNotStr[str] | None): External ids of documents to find the answer in.
             instance_ids (Sequence[InstanceId] | None): Instance ids of documents to find the answer in.
             language (AnswerLanguage): The desired language of the answer
-            ignore_unknown_ids (bool): Whether to skip documents that can't be summarized, without throwing an error
+            ignore_unknown_ids (bool): Whether to skip documents that are not fully processed, without throwing an error
             additional_context (str | None): Additional context that you want the LLM to take into account.
 
         Returns:
