@@ -286,12 +286,14 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def create_revisions(self, revision: Sequence[SimulatorModelRevision]) -> SimulatorModelRevisionList: ...
+    def create_revisions(
+        self, revisions: Sequence[SimulatorModelRevision]
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList: ...
 
     @overload
     def create_revisions(
-        self, revision: SimulatorModelRevision | SimulatorModelRevisionWrite
-    ) -> SimulatorModelRevisionList: ...
+        self, revisions: SimulatorModelRevision | SimulatorModelRevisionWrite
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList: ...
 
     def create_revisions(
         self,
@@ -299,7 +301,7 @@ class SimulatorModelsAPI(APIClient):
         | SimulatorModelRevisionWrite
         | Sequence[SimulatorModelRevision]
         | Sequence[SimulatorModelRevisionWrite],
-    ) -> SimulatorModelRevisionList:
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
@@ -308,7 +310,7 @@ class SimulatorModelsAPI(APIClient):
             revisions (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]): Simulator model or list of Simulator models to create.
 
         Returns:
-            SimulatorModelRevisionList: Created simulator model(s)
+            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
 
         Examples:
 
@@ -321,7 +323,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.create_revision(models)
 
         """
-        assert_type(revisions, "simulator_model_revision", [SimulatorModelRevisionCore, Sequence])
+        assert_type(revisions, "simulator_model_revision", [SimulatorModelRevisionCore, SimulatorModelRevisionWrite])
 
         return self._create_multiple(
             list_cls=SimulatorModelRevisionList,

@@ -748,8 +748,8 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
     @classmethod
     def _load(
-        cls: type[T_SimulatorModel], resource: dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> T_SimulatorModel:
+        cls: type[T_SimulatorModelRevision], resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> T_SimulatorModelRevision:
         instance = super()._load(resource, cognite_client)
         return instance
 
