@@ -52,8 +52,8 @@ def empty_file(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def new_file_with_geoLocation(mock_geo_location, cognite_client):
-    res = cognite_client.files.upload_bytes(content="blabla", name="geoLocationFile", geo_location=mock_geo_location)
+def new_file_with_geo_location(mock_geo_location, cognite_client):
+    res = cognite_client.files.upload_bytes(content="blabla", name="geo_locationFile", geo_location=mock_geo_location)
     await_file_upload(cognite_client, res.id)
     yield res
     cognite_client.files.delete(id=res.id)
@@ -95,7 +95,7 @@ class TestFilesAPI:
         assert returned_file_metadata.uploaded is False
         cognite_client.files.delete(id=returned_file_metadata.id)
 
-    def test_create_with_geoLocation(self, cognite_client, mock_geo_location):
+    def test_create_with_geo_location(self, cognite_client, mock_geo_location):
         file_metadata = FileMetadata(name="mytestfile", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert returned_file_metadata.uploaded is False
@@ -116,24 +116,30 @@ class TestFilesAPI:
         )
 
     def test_retrieve_download_urls(self, cognite_client):
-        f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
-        f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
-        time.sleep(0.5)
-        download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
-        assert len(download_links.values()) == 2
-        assert download_links[f1.id].startswith("http")
-        assert download_links[f2.external_id].startswith("http")
+        try:
+            f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
+            f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
+            time.sleep(0.5)
+            download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
+            assert len(download_links.values()) == 2
+            assert download_links[f1.id].startswith("http")
+            assert download_links[f2.external_id].startswith("http")
+        finally:
+            cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 
     def test_retrieve_download_urls_with_extended_expiration(self, cognite_client):
-        f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
-        f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
-        time.sleep(0.5)
-        download_links = cognite_client.files.retrieve_download_urls(
-            id=f1.id, external_id=f2.external_id, extended_expiration=True
-        )
-        assert len(download_links.values()) == 2
-        assert download_links[f1.id].startswith("http")
-        assert download_links[f2.external_id].startswith("http")
+        try:
+            f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
+            f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
+            time.sleep(0.5)
+            download_links = cognite_client.files.retrieve_download_urls(
+                id=f1.id, external_id=f2.external_id, extended_expiration=True
+            )
+            assert len(download_links.values()) == 2
+            assert download_links[f1.id].startswith("http")
+            assert download_links[f2.external_id].startswith("http")
+        finally:
+            cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 
     def test_list(self, cognite_client):
         res = cognite_client.files.list(limit=4)
@@ -195,17 +201,15 @@ class TestFilesAPI:
         assert len(res.labels) == 1
         assert res.labels[0].external_id == label_external_id
 
-    def test_filter_file_on_geoLocation(self, cognite_client, new_file_with_geoLocation, mock_geo_location):
-        max_retries = 10
+    def test_filter_file_on_geo_location(self, cognite_client, new_file_with_geo_location, mock_geo_location):
         geometry_filter = GeometryFilter(type="Point", coordinates=[30, 10])
         geo_location_filter = GeoLocationFilter(relation="intersects", shape=geometry_filter)
-        res = cognite_client.files.list(geo_location=geo_location_filter)
-        for _ in range(max_retries):
+        for _ in range(10):
+            res = cognite_client.files.list(geo_location=geo_location_filter)
             if len(res) > 0:
                 break
-            time.sleep(0.2)
-            res = cognite_client.files.list(geo_location=geo_location_filter)
-        assert res[0].geo_location == new_file_with_geoLocation.geo_location
+            time.sleep(0.5)
+        assert res[0].geo_location == new_file_with_geo_location.geo_location
 
     def test_upload_bytes_with_nordic_characters(self, cognite_client: CogniteClient) -> None:
         content = "æøåøøøø ååå ææææ"
