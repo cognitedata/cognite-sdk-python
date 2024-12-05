@@ -753,24 +753,21 @@ class InstancesAPI(APIClient):
             inspect_operations["involvedViews"] = {"allVersions": involved_views.all_versions}
         if involved_containers:
             inspect_operations["involvedContainers"] = {}
-        options = {"inspectionOperations": inspect_operations}
+        if not inspect_operations:
+            raise ValueError("Must pass at least one of 'involved_views' or 'involved_containers'")
+
         items = list(
             itertools.chain.from_iterable(
-                self._post(self._RESOURCE_PATH + "/inspect", json={"items": chunk.as_dicts(), **options}).json()[
-                    "items"
-                ]
+                self._post(
+                    self._RESOURCE_PATH + "/inspect",
+                    json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
+                ).json()["items"]
                 for chunk in identifiers.chunked(1000)
             )
         )
-        node_res = InstanceInspectResultList._load(
-            [node for node in items if node["instanceType"] == "node"], cognite_client=self._cognite_client
-        )
-        edge_res = InstanceInspectResultList._load(
-            [node for node in items if node["instanceType"] == "edge"], cognite_client=self._cognite_client
-        )
         return InstanceInspectResults(
-            nodes=node_res,
-            edges=edge_res,
+            nodes=InstanceInspectResultList._load([node for node in items if node["instanceType"] == "node"]),
+            edges=InstanceInspectResultList._load([edge for edge in items if edge["instanceType"] == "edge"]),
         )
 
     def subscribe(
