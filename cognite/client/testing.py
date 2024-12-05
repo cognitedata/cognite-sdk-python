@@ -148,11 +148,11 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
 
         self.simulators = MagicMock(spec=SimulatorsAPI)
+        self.simulators.runs = MagicMock(spec_set=SimulatorRunsAPI)
+        self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
         self.simulators.models = MagicMock(spec=SimulatorModelsAPI)
-        self.simulators.models.revisions = MagicMock(spec_set=SimulatorModelRevisionsAPI)
-        self.simulators.runs = MagicMock(spec=SimulatorRunsAPI)
-        self.simulators.integrations = MagicMock(spec=SimulatorIntegrationsAPI)
         self.simulators.routines = MagicMock(spec=SimulatorRoutinesAPI)
+        self.simulators.models.revisions = MagicMock(spec_set=SimulatorModelRevisionsAPI)
         self.simulators.routines.revisions = MagicMock(spec_set=SimulatorRoutineRevisionsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)

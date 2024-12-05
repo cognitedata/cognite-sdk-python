@@ -1233,9 +1233,7 @@ class SimulationRunCore(CogniteResource, ABC):
         self.log_id = log_id
 
     @classmethod
-    def _load(
-        cls: type[T_SimulationRun], resource: dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> T_SimulationRun:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -1599,7 +1597,11 @@ class SimulatorModelRevisionList(
         )
 
 
-class SimulationRunsList(CogniteResourceList[SimulationRun]):
+class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulationRunWrite
+
+
+class SimulationRunsList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
 
