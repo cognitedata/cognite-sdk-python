@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.3] - 2024-12-04
+### Fixed
+- Upserting a Sequence with columns no longer silently skips the columns, but instead updates them as intended.
+
 ## [7.70.2] - 2024-12-04
 ### Fixed
 - Retrieving `ExtractionPipeline` either with `client.extraction_pipelines.retrieve` or 
