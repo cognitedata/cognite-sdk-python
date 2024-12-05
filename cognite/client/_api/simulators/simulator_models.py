@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorModel,
+    SimulatorModelCore,
     SimulatorModelList,
     SimulatorModelRevision,
+    SimulatorModelRevisionCore,
     SimulatorModelRevisionList,
+    SimulatorModelRevisionWrite,
+    SimulatorModelUpdate,
+    SimulatorModelWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -136,6 +142,9 @@ class SimulatorModelsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
+        self._UPDATE_LIMIT = 1
         self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
@@ -168,7 +177,7 @@ class SimulatorModelsAPI(APIClient):
         return self._list(
             method="POST",
             limit=limit,
-            url_path="/simulators/models/list",
+            url_path=self._RESOURCE_PATH + "/list",
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
             filter=filter.dump()
@@ -209,5 +218,140 @@ class SimulatorModelsAPI(APIClient):
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             identifiers=identifiers,
-            resource_path="/simulators/models",
+            resource_path=self._RESOURCE_PATH,
+        )
+
+    @overload
+    def create(self, models: Sequence[SimulatorModel]) -> SimulatorModelList: ...
+
+    @overload
+    def create(self, models: SimulatorModel | SimulatorModelWrite) -> SimulatorModelList: ...
+
+    def create(
+        self, models: SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]
+    ) -> SimulatorModel | SimulatorModelList:
+        """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
+
+        You can create an arbitrary number of simulator models, and the SDK will split the request into multiple requests.
+
+        Args:
+            models (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): No description.
+
+        Returns:
+            SimulatorModel | SimulatorModelList: Created simulator model(s)
+
+        Examples:
+
+            Create new simulator models:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SimulatorModelWrite
+                >>> client = CogniteClient()
+                >>> models = [SimulatorModelWrite(name="model1"), SimulatorModelWrite(name="model2")]
+                >>> res = client.simulators.models.create(models)
+
+        """
+        assert_type(models, "simulator_model", [SimulatorModelCore, Sequence])
+
+        return self._create_multiple(
+            list_cls=SimulatorModelList,
+            resource_cls=SimulatorModel,
+            items=models,
+            input_resource_cls=SimulatorModelWrite,
+            resource_path=self._RESOURCE_PATH,
+        )
+
+    def delete(
+        self,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> None:
+        """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
+
+        Args:
+            ids (int | Sequence[int] | None): No description.
+            external_ids (str | SequenceNotStr[str] | None): External id/ids of the models to delete.
+        Examples:
+
+            Delete models by id or external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.simulators.delete(ids=[1,2,3], external_ids="3")
+        """
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
+            wrap_ids=True,
+            resource_path=self._RESOURCE_PATH,
+        )
+
+    @overload
+    def create_revisions(
+        self, revisions: Sequence[SimulatorModelRevision]
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList: ...
+
+    @overload
+    def create_revisions(
+        self, revisions: SimulatorModelRevision | SimulatorModelRevisionWrite
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList: ...
+
+    def create_revisions(
+        self,
+        revisions: SimulatorModelRevision
+        | SimulatorModelRevisionWrite
+        | Sequence[SimulatorModelRevision]
+        | Sequence[SimulatorModelRevisionWrite],
+    ) -> SimulatorModelRevision | SimulatorModelRevisionList:
+        """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
+
+        You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
+
+        Args:
+            revisions (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]): Simulator model or list of Simulator models to create.
+
+        Returns:
+            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
+
+        Examples:
+
+            Create new simulator models:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SimulatorModelRevision
+                >>> client = CogniteClient()
+                >>> models = [SimulatorModelRevision(external_id="model1"), SimulatorModelRevision(external_id="model2")]
+                >>> res = client.simulators.models.create_revision(models)
+
+        """
+        assert_type(revisions, "simulator_model_revision", [SimulatorModelRevisionCore, SimulatorModelRevisionWrite])
+
+        return self._create_multiple(
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
+            items=revisions,
+            input_resource_cls=SimulatorModelRevisionWrite,
+            resource_path=self._RESOURCE_PATH + "/revisions",
+        )
+
+    @overload
+    def update(
+        self,
+        item: Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
+    ) -> SimulatorModel: ...
+
+    @overload
+    def update(
+        self,
+        item: SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate,
+    ) -> SimulatorModel: ...
+
+    def update(
+        self,
+        item: SimulatorModel
+        | SimulatorModelWrite
+        | SimulatorModelUpdate
+        | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
+    ) -> SimulatorModel | SimulatorModelList:
+        return self._update_multiple(
+            list_cls=SimulatorModelList, resource_cls=SimulatorModel, update_cls=SimulatorModelUpdate, items=item
         )

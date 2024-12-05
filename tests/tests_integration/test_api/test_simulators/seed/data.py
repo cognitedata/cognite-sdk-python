@@ -1,6 +1,19 @@
+import time
+
+resource_names = {
+    "simulator_external_id": "integration_tests_workflow",
+    "simulator_integration_external_id": "integration_tests_workflow_connector",
+    "simulator_model_external_id": "integration_tests_workflow_model_01",
+    "simulator_model_revision_external_id": "integration_tests_workflow_model_revision_1",
+    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
+    "simulator_routine_external_id": "integration_tests_workflow_routine",
+    "simulator_routine_revision_external_id": "integration_tests_workflow_routine_revision",
+    "simulator_test_data_set_id": 97552494921583,
+}
+
 simulator = {
-    "name": "DWSIM",
-    "externalId": "integration_tests_workflow",
+    "name": resource_names["simulator_external_id"],
+    "externalId": resource_names["simulator_external_id"],
     "fileExtensionTypes": ["dwxmz"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "stepFields": [
@@ -164,14 +177,34 @@ simulator = {
                 {"label": "F", "name": "F"},
             ],
         },
+        {
+            "name": "volumetricFlow",
+            "label": "Volumetric Flow",
+            "units": [
+                {"label": "m3/h", "name": "m3/h"},
+                {"label": "cm3/s", "name": "cm3/s"},
+                {"label": "L/h", "name": "L/h"},
+                {"label": "L/min", "name": "L/min"},
+                {"label": "L/s", "name": "L/s"},
+                {"label": "ft3/h", "name": "ft3/h"},
+                {"label": "ft3/min", "name": "ft3/min"},
+                {"label": "ft3/s", "name": "ft3/s"},
+                {"label": "gal[US]/h", "name": "gal[US]/h"},
+                {"label": "gal[US]/min", "name": "gal[US]/min"},
+                {"label": "gal[US]/s", "name": "gal[US]/s"},
+                {"label": "gal[UK]/h", "name": "gal[UK]/h"},
+                {"label": "gal[UK]/min", "name": "gal[UK]/min"},
+                {"label": "gal[UK]/s", "name": "gal[UK]/s"},
+            ],
+        },
     ],
 }
 
 
 simulator_integration = {
-    "externalId": "integration_tests_workflow_connector",
-    "simulatorExternalId": "integration_tests_workflow",
-    "heartbeat": 1706396950969,
+    "externalId": resource_names["simulator_integration_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
+    "heartbeat": int(time.time() * 1000),
     "dataSetId": 97552494921583,
     "connectorVersion": "1.0.0",
     "simulatorVersion": "1.0.0",
@@ -183,33 +216,32 @@ simulator_integration = {
 
 
 simulator_model = {
-    "externalId": "integration_tests_workflow_model",
-    "simulatorExternalId": "integration_tests_workflow",
+    "externalId": resource_names["simulator_model_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
     "name": "Test Simulator Model",
     "description": "Test Simulator Model Desc",
     "dataSetId": 97552494921583,
-    "labels": [{"externalId": "simconfig-labels-PROSPER"}],
     "type": "SteadyState",
 }
 
 simulator_model_revision = {
-    "externalId": "integration_tests_workflow_model_revision",
-    "modelExternalId": "integration_tests_workflow_model",
+    "externalId": resource_names["simulator_model_revision_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
     "description": "test sim model revision description",
     "fileId": 00000000000000,
 }
 
 simulator_routine = {
-    "externalId": "integration_tests_workflow_routine",
-    "modelExternalId": "integration_tests_workflow_model",
-    "simulatorIntegrationExternalId": "integration_tests_workflow_connector",
+    "externalId": resource_names["simulator_routine_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "simulatorIntegrationExternalId": resource_names["simulator_integration_external_id"],
     "name": "Routine test",
     "description": "test",
 }
 
 simulator_routine_revision = {
-    "externalId": "integration_tests_workflow_routine_revision",
-    "routineExternalId": "integration_tests_workflow_routine",
+    "externalId": resource_names["simulator_routine_revision_external_id"],
+    "routineExternalId": resource_names["simulator_routine_external_id"],
     "configuration": {
         "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
         "dataSampling": {"enabled": True, "validationWindow": None, "samplingWindow": 15, "granularity": 1},
