@@ -1091,7 +1091,7 @@ class SimulatorModelWrite(SimulatorModelCore):
         """Returns self."""
         return self
 
-    def dump(self, camel_case=True):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case)
 
 
