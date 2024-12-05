@@ -8,6 +8,7 @@ resource_names = {
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
     "simulator_routine_external_id": "integration_tests_workflow_routine",
     "simulator_routine_revision_external_id": "integration_tests_workflow_routine_revision",
+    "simulator_test_data_set_id": 97552494921583,
 }
 
 simulator = {

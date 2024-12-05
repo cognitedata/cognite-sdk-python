@@ -88,7 +88,7 @@ class SimulatorRunsAPI(APIClient):
 
         Returns:
             SimulationRun: A simulation run object.
-            
+
         """
         url = self._RESOURCE_PATH_RUN
         try:

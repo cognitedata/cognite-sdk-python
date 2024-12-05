@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import time
 
@@ -212,9 +211,6 @@ class TestSimulatorIntegrations:
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator", "delete_simulator")
 class TestSimulatorModels:
-    TEST_DATA_SET_ID = 97552494921583
-    TEST_FILE_ID = 1951667411909355
-
     @pytest.mark.usefixtures("seed_simulator_models", "seed_simulator_model_revisions")
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         models = cognite_client.simulators.models.list(
@@ -251,7 +247,7 @@ class TestSimulatorModels:
             name="sdk-test-model1",
             simulator_external_id=seed_resource_names["simulator_external_id"],
             external_id=model_external_id,
-            data_set_id=self.TEST_DATA_SET_ID,
+            data_set_id=seed_resource_names["simulator_test_data_set_id"],
             type="SteadyState",
         )
 
@@ -277,7 +273,7 @@ class TestSimulatorModels:
             name="sdk-test-model1",
             simulator_external_id=seed_resource_names["simulator_external_id"],
             external_id=model_external_id,
-            data_set_id=self.TEST_DATA_SET_ID,
+            data_set_id=seed_resource_names["simulator_test_data_set_id"],
             type="SteadyState",
         )
 
@@ -338,7 +334,6 @@ class TestSimulationRuns:
 
     @pytest.mark.usefixtures("seed_resource_names")
     async def test_run_async(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-
         run_to_create = SimulationRunCall(
             routine_external_id=seed_resource_names["simulator_routine_external_id"],
         )

@@ -797,7 +797,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
 
     Args:
         external_id (str | None): External id of the simulator model revision
-        simulator_external_id (str | None): No description.
+        simulator_external_id (str | None): External id of the simulator.
         model_external_id (str | None): External id of the associated simulator model
         data_set_id (int | None): The id of the dataset associated with the simulator model revision
         file_id (int | None): The id of the file associated with the simulator model revision
@@ -1275,7 +1275,7 @@ class SimulationRun(SimulationRunCore):
         id (int | None): A unique id of a simulation run
         created_time (int | None): The number of milliseconds since epoch
         last_updated_time (int | None): The number of milliseconds since epoch
-        cognite_client (CogniteClient | None): No description.
+        cognite_client (CogniteClient | None): An instance of the Cognite client.
 
     """
 
