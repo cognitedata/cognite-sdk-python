@@ -128,8 +128,10 @@ class SimulatorRoutineSchedule(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+        return cls(
+            enabled=resource["enabled"],
+            cron_expression=resource.get("cronExpression"),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return super().dump(camel_case=camel_case)
@@ -212,7 +214,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
             outputs = [SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]]
 
         return cls(
-            schedule=SimulatorRoutineSchedule._load(resource["schedule"], cognite_client),
+            schedule=SimulatorRoutineSchedule.load(resource["schedule"], cognite_client),
             data_sampling=SimulatorRoutineDataSampling._load(resource["dataSampling"], cognite_client),
             logical_check=[
                 SimulatorRoutineLogicalCheckEnabled._load(check_, cognite_client) for check_ in resource["logicalCheck"]
@@ -528,8 +530,18 @@ class Simulator(SimulatorCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+        load = super()._load(resource, cognite_client)
+        return cls(
+            external_id=load.external_id,
+            name=load.name,
+            file_extension_types=load.file_extension_types,
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            id=resource.get("id"),
+            model_types=load.model_types,
+            step_fields=load.step_fields,
+            unit_quantities=load.unit_quantities,
+        )
 
     def as_write(self) -> SimulatorWrite:
         """Returns a writeable version of this resource"""
@@ -688,8 +700,24 @@ class SimulatorIntegration(SimulatorIntegrationCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+        load = super()._load(resource, cognite_client)
+        return cls(
+            external_id=load.external_id,
+            simulator_external_id=load.simulator_external_id,
+            heartbeat=load.heartbeat,
+            data_set_id=load.data_set_id,
+            connector_version=load.connector_version,
+            license_status=load.license_status,
+            simulator_version=load.simulator_version,
+            license_last_checked_time=load.license_last_checked_time,
+            connector_status=load.connector_status,
+            connector_status_updated_time=load.connector_status_updated_time,
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            id=resource.get("id"),
+            active=resource.get("active"),
+            log_id=resource.get("logId"),
+        )
 
     def as_write(self) -> SimulatorIntegrationWrite:
         """Returns a writeable version of this resource"""
@@ -774,9 +802,9 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
         cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> SimulatorModelRevisionWrite:
         return cls(
-            external_id=resource["externalId"],
-            model_external_id=resource["modelExternalId"],
-            file_id=resource["fileId"],
+            external_id=resource.get("externalId"),
+            model_external_id=resource.get("modelExternalId"),
+            file_id=resource.get("fileId"),
             description=resource.get("description"),
         )
 
@@ -978,8 +1006,23 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+        load = super()._load(resource, cognite_client)
+        return cls(
+            external_id=load.external_id,
+            simulator_external_id=load.simulator_external_id,
+            routine_external_id=load.routine_external_id,
+            simulator_integration_external_id=load.simulator_integration_external_id,
+            model_external_id=load.model_external_id,
+            data_set_id=load.data_set_id,
+            created_by_user_id=resource.get("createdByUserId"),
+            configuration=load.configuration,
+            script=load.script,
+            id=resource.get("id"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            version_number=resource.get("versionNumber"),
+            log_id=resource.get("logId"),
+        )
 
     def as_write(self) -> SimulatorRoutineRevisionWrite:
         """Returns a writeable version of this resource"""
@@ -1064,11 +1107,11 @@ class SimulatorModelWrite(SimulatorModelCore):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorModelWrite:
         return cls(
-            external_id=resource["externalId"],
-            simulator_external_id=resource["simulatorExternalId"],
-            data_set_id=resource["dataSetId"],
-            name=resource["name"],
-            type=resource.get("typeKey"),
+            external_id=resource.get("externalId"),
+            simulator_external_id=resource.get("simulatorExternalId"),
+            data_set_id=resource.get("dataSetId"),
+            name=resource.get("name"),
+            type=resource.get("type"),
             description=resource.get("description"),
         )
 
@@ -1133,8 +1176,18 @@ class SimulatorModel(SimulatorModelCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+        load = super()._load(resource, cognite_client)
+        return cls(
+            external_id=load.external_id,
+            simulator_external_id=load.simulator_external_id,
+            data_set_id=load.data_set_id,
+            name=load.name,
+            id=resource.get("id"),
+            type=resource.get("type"),
+            description=load.description,
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+        )
 
     def as_write(self) -> SimulatorModelWrite:
         """Returns this SimulatorModel in its writing version."""
@@ -1396,10 +1449,10 @@ class SimulatorRoutine(SimulatorRoutineCore):
         simulator_integration_external_id: str,
         name: str,
         data_set_id: int,
+        description: str | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
         id: int | None = None,
-        description: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
@@ -1407,6 +1460,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         self.simulator_integration_external_id = simulator_integration_external_id
         self.name = name
         self.data_set_id = data_set_id
+        self.description = description
         # id/created_time/last_updated_time are required when using the class to read,
         # but don't make sense passing in when creating a new object. So in order to make the typing
         # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
@@ -1417,7 +1471,18 @@ class SimulatorRoutine(SimulatorRoutineCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
+        instance = cls(
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            model_external_id=resource["modelExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            name=resource["name"],
+            data_set_id=resource["dataSetId"],
+            description=resource.get("description"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            id=resource.get("id"),
+        )
         return instance
 
     def as_write(self) -> SimulatorRoutineWrite:
