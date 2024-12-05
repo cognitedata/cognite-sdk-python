@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulationRunsFilter
-from cognite.client.data_classes.simulators.simulators import SimulationRun, SimulationRunsList
+from cognite.client.data_classes.simulators.simulators import SimulationRun, SimulationRunCall, SimulationRunsList
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -14,6 +16,7 @@ if TYPE_CHECKING:
 
 class SimulatorRunsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/runs"
+    _RESOURCE_PATH_RUN = "/simulators/run"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -57,3 +60,79 @@ class SimulatorRunsAPI(APIClient):
             if isinstance(filter, dict)
             else None,
         )
+
+    def retrieve(self, id: int | None = None) -> SimulationRun | None:
+        """` Retreive a simulation run
+
+        Args:
+            id (int | None): ID
+
+        Returns:
+            SimulationRun | None: The simulation run
+
+        Examples:
+
+        """
+        identifier = IdentifierSequence.load(ids=id).as_singleton()
+        return self._retrieve_multiple(list_cls=SimulationRunsList, resource_cls=SimulationRun, identifiers=identifier)
+
+    def create(self, simulation_run: Sequence[SimulationRun]) -> SimulationRunsList:
+        """`Create a simulation run <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+
+        Args:
+            simulation_run (Sequence[SimulationRun]): The simulation run to create.
+
+        Returns:
+            SimulationRunsList: The created simulation run.
+
+        Examples:
+
+            Create a simulation run:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import SimulationRun
+                >>> client = CogniteClient()
+                >>> simulation_run = SimulationRun(...)
+                >>> res = client.simulators.runs.create(simulation_run)
+
+        """
+        self._warning.warn()
+
+        return self._create_multiple(
+            list_cls=SimulationRunsList,
+            resource_cls=SimulationRun,
+            items=simulation_run,
+            resource_path="/simulators/run",
+        )
+
+    def run(
+        self,
+        run_call: SimulationRunCall | None = None,
+        wait: bool = False,
+    ) -> SimulationRun:
+        """`Run a simulation.
+
+        Args:
+            run_call (SimulationRunCall | None): No description.
+            wait (bool): No description.
+
+        Returns:
+            SimulationRun: A simulation run object.
+
+        Examples:
+
+
+        """
+        url = self._RESOURCE_PATH_RUN
+        json = run_call.dump() if run_call else None
+        print("json = ", json)
+        res = self._post(url, json={"items": [run_call.dump()]})
+        try:
+            response = res.json()
+            run_response = response["items"][0]
+        except (KeyError, IndexError, ValueError) as e:
+            raise RuntimeError("Failed to parse simulation run response") from e
+        run = SimulationRun._load(run_response, cognite_client=self._cognite_client)
+        if wait:
+            run.wait()
+        return run
