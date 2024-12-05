@@ -804,7 +804,7 @@ class APIClient:
             elif isinstance(properties, str):
                 dumped_properties = [to_camel_case(properties)]
             elif isinstance(properties, list):
-                dumped_properties = [to_camel_case(p) for p in properties]
+                dumped_properties = [to_camel_case(properties[0])] if len(properties) == 1 else properties
             else:
                 raise ValueError(f"Unknown property format: {properties}")
 
@@ -832,8 +832,6 @@ class APIClient:
                 dumped_filter = filter.dump(camel_case=True)
             elif isinstance(filter, dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
-            else:
-                raise ValueError(f"Unknown filter format: {filter}")
             body["filter"] = dumped_filter
 
         if advanced_filter is not None:
