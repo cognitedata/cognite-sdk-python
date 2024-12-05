@@ -322,8 +322,8 @@ class SimulatorModelsAPI(APIClient):
         assert_type(revisions, "simulator_model_revision", [SimulatorModelRevisionCore, Sequence])
 
         return self._create_multiple(
-            list_cls=SimulatorModelList,
-            resource_cls=SimulatorModel,
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
             items=revisions,
             input_resource_cls=SimulatorModelRevisionWrite,
             resource_path="/simulators/models/revisions",
