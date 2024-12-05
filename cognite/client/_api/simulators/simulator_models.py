@@ -264,7 +264,7 @@ class SimulatorModelsAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more models <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models>`_
+        """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
