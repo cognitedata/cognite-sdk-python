@@ -1138,6 +1138,16 @@ class TestInstancesAPI:
         )
         assert len(nodes) == 5
 
+    def test_inspecting_instances__no_involved_arg(
+        self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
+    ) -> None:
+        exp_err = "Must pass at least one of 'involved_views' or 'involved_containers'"
+        with pytest.raises(ValueError, match=exp_err):
+            cognite_client.data_modeling.instances.inspect(
+                nodes=movie_nodes[0].as_id(),
+                edges=movie_edges[:5].as_ids(),
+            )
+
     def test_inspecting_instances(
         self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
