@@ -416,7 +416,9 @@ class SimulatorCore(WriteableCogniteResource["SimulatorWrite"], ABC):
     It serves as a central contract that allows APIs, UIs, and integrations (connectors) to utilize the same definitions
     when dealing with a specific simulator.  Each simulator is uniquely identified and can be associated with various
     file extension types, model types, step fields, and unit quantities. Simulators are essential for managing data
-    flows between CDF and external simulation tools, ensuring consistency and reliability in data handling.  ####
+    flows between CDF and external simulation tools, ensuring consistency and reliability in data handling.  
+    
+    ####
     Limitations:  - A project can have a maximum of 100 simulators
 
     This is the read/response format of the simulator.
@@ -1381,11 +1383,6 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
-
-    Limitations:
-        - Each simulator model can have a maximum of 10 simulator routines
-
-    Each simulator routine can have a maximum of 10 revisions
 
     This is the read/response format of a simulator routine.
 

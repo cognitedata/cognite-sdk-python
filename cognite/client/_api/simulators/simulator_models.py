@@ -261,24 +261,24 @@ class SimulatorModelsAPI(APIClient):
 
     def delete(
         self,
-        id: int | Sequence[int] | None = None,
+        ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_ids (str | SequenceNotStr[str] | None): No description.
+            external_ids (str | SequenceNotStr[str] | None): External id/ids of the models to delete.
         Examples:
 
             Delete models by id or external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.delete_models(id=[1,2,3], external_id="3")
+                >>> client.simulators.delete(ids=[1,2,3], external_ids="3")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
             resource_path="/simulators/models",
         )
@@ -303,7 +303,7 @@ class SimulatorModelsAPI(APIClient):
         You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
 
         Args:
-            revisions (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]): No description.
+            revisions (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]): Simulator model or list of Simulator models to create.
 
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
