@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    InternalIdTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -1524,5 +1525,5 @@ class SimulatorModelRevisionList(
         )
 
 
-class SimulationRunsList(CogniteResourceList[SimulationRun], ExternalIDTransformerMixin):
+class SimulationRunsList(CogniteResourceList[SimulationRun], InternalIdTransformerMixin):
     _RESOURCE = SimulationRun
