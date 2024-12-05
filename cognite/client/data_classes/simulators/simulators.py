@@ -1597,11 +1597,7 @@ class SimulatorModelRevisionList(
         )
 
 
-class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):
-    _RESOURCE = SimulationRunWrite
-
-
-class SimulationRunsList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
+class SimulationRunsList(CogniteResourceList[SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
 

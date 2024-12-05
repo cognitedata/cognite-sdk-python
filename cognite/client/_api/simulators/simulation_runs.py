@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
@@ -62,7 +61,7 @@ class SimulatorRunsAPI(APIClient):
         )
 
     def retrieve(self, id: int | None = None) -> SimulationRun | None:
-        """` Retreive a simulation run
+        """` Retrieve a simulation run
 
         Args:
             id (int | None): ID
@@ -75,35 +74,6 @@ class SimulatorRunsAPI(APIClient):
         """
         identifier = IdentifierSequence.load(ids=id).as_singleton()
         return self._retrieve_multiple(list_cls=SimulationRunsList, resource_cls=SimulationRun, identifiers=identifier)
-
-    def create(self, simulation_run: Sequence[SimulationRun]) -> SimulationRunsList:
-        """`Create a simulation run <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
-
-        Args:
-            simulation_run (Sequence[SimulationRun]): The simulation run to create.
-
-        Returns:
-            SimulationRunsList: The created simulation run.
-
-        Examples:
-
-            Create a simulation run:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SimulationRun
-                >>> client = CogniteClient()
-                >>> simulation_run = SimulationRun(...)
-                >>> res = client.simulators.runs.create(simulation_run)
-
-        """
-        self._warning.warn()
-
-        return self._create_multiple(
-            list_cls=SimulationRunsList,
-            resource_cls=SimulationRun,
-            items=simulation_run,
-            resource_path="/simulators/run",
-        )
 
     def run(
         self,
@@ -118,16 +88,11 @@ class SimulatorRunsAPI(APIClient):
 
         Returns:
             SimulationRun: A simulation run object.
-
-        Examples:
-
-
+            
         """
         url = self._RESOURCE_PATH_RUN
-        json = run_call.dump() if run_call else None
-        print("json = ", json)
-        res = self._post(url, json={"items": [run_call.dump()]})
         try:
+            res = self._post(url, json={"items": [run_call.dump()]})
             response = res.json()
             run_response = response["items"][0]
         except (KeyError, IndexError, ValueError) as e:

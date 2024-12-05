@@ -13,7 +13,6 @@ from cognite.client.data_classes.simulators.filters import (
     SimulatorModelsFilter,
 )
 from cognite.client.data_classes.simulators.simulators import (
-    SimulationRun,
     SimulationRunCall,
     SimulatorModel,
     SimulatorModelRevision,
@@ -51,7 +50,6 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
 @pytest.fixture
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_external_id = seed_resource_names["simulator_external_id"]
-    print(f"\nSeeding simulator with external id = {simulator_external_id} \n")
     simulators = cognite_client.simulators.list()
     for sim in simulators:
         if sim.external_id == simulator_external_id:
@@ -65,8 +63,6 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
 
 @pytest.fixture
 def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) -> None:
-    print("\nSeeding simulator integration \n")
-
     def create_integration():
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
@@ -86,7 +82,6 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
 
 @pytest.fixture
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration) -> None:
-    print("\nSeeding simulator models \n")
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
         json={"items": [simulator_model]},  # Post actual simulator models here
@@ -103,7 +98,6 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 
 @pytest.fixture
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
-    print("\nSeeding simulator routines \n")
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/routines",
         json={"items": [simulator_routine]},
@@ -112,7 +106,6 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
 
 @pytest.fixture
 def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> None:
-    print("\nSeeding simulator routine revisions \n")
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
         json={"items": [simulator_routine_revision]},
@@ -180,12 +173,10 @@ def seed_simulator_resources(cognite_client: CogniteClient) -> FileMetadata | No
 @pytest.fixture(scope="class")
 def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     yield
-    print("Deleting simulator")
-    response = cognite_client.post(
+    cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
         json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
     )
-    print("Deleted simulator with external id = ", seed_resource_names["simulator_external_id"])
 
 
 class TestSimulators:
@@ -329,11 +320,11 @@ class TestSimulationRuns:
         assert integration is not None
         assert integration.heartbeat >= time.time() - 60
 
-        run_to_create = SimulationRun(
+        run_to_create = SimulationRunCall(
             routine_external_id=seed_resource_names["simulator_routine_external_id"],
         )
 
-        run = cognite_client.simulators.runs.create(run_to_create)
+        run = cognite_client.simulators.runs.run(run_to_create)
         assert run is not None
         assert run.status == "ready"
 
@@ -347,11 +338,6 @@ class TestSimulationRuns:
 
     @pytest.mark.usefixtures("seed_resource_names")
     async def test_run_async(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        async def trigger_callback_after_delay(run_id: int, delay: int):
-            await asyncio.sleep(delay)  # Wait for the specified delay
-            cognite_client.simulators._do_request(
-                "POST", "/simulators/run/callback", json={"items": [{"id": run_id, "status": "success"}]}
-            )
 
         run_to_create = SimulationRunCall(
             routine_external_id=seed_resource_names["simulator_routine_external_id"],
