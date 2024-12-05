@@ -240,7 +240,7 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
 
-            Create new simulator models::
+            Create new simulator models:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SimulatorModelWrite
