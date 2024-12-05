@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, overload
 
-
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
@@ -143,6 +142,9 @@ class SimulatorModelsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
+        self._UPDATE_LIMIT = 1
         self.revisions = SimulatorModelRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
@@ -175,7 +177,7 @@ class SimulatorModelsAPI(APIClient):
         return self._list(
             method="POST",
             limit=limit,
-            url_path="/simulators/models/list",
+            url_path=self._RESOURCE_PATH + "/list",
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
             filter=filter.dump()
@@ -216,7 +218,7 @@ class SimulatorModelsAPI(APIClient):
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             identifiers=identifiers,
-            resource_path="/simulators/models",
+            resource_path=self._RESOURCE_PATH,
         )
 
     @overload
@@ -256,7 +258,7 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             items=models,
             input_resource_cls=SimulatorModelWrite,
-            resource_path="/simulators/models",
+            resource_path=self._RESOURCE_PATH,
         )
 
     def delete(
@@ -267,11 +269,11 @@ class SimulatorModelsAPI(APIClient):
         """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
+            ids (int | Sequence[int] | None): No description.
             external_ids (str | SequenceNotStr[str] | None): External id/ids of the models to delete.
         Examples:
 
-            Delete models by id or external id::
+            Delete models by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -280,7 +282,7 @@ class SimulatorModelsAPI(APIClient):
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
-            resource_path="/simulators/models",
+            resource_path=self._RESOURCE_PATH,
         )
 
     @overload
@@ -297,7 +299,7 @@ class SimulatorModelsAPI(APIClient):
         | SimulatorModelRevisionWrite
         | Sequence[SimulatorModelRevision]
         | Sequence[SimulatorModelRevisionWrite],
-    ) -> SimulatorModel | SimulatorModelList:
+    ) -> SimulatorModelRevisionList:
         """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
@@ -306,11 +308,11 @@ class SimulatorModelsAPI(APIClient):
             revisions (SimulatorModelRevision | SimulatorModelRevisionWrite | Sequence[SimulatorModelRevision] | Sequence[SimulatorModelRevisionWrite]): Simulator model or list of Simulator models to create.
 
         Returns:
-            SimulatorModel | SimulatorModelList: Created simulator model(s)
+            SimulatorModelRevisionList: Created simulator model(s)
 
         Examples:
 
-            Create new simulator models::
+            Create new simulator models:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SimulatorModelRevision
@@ -326,7 +328,7 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             items=revisions,
             input_resource_cls=SimulatorModelRevisionWrite,
-            resource_path="/simulators/models/revisions",
+            resource_path=self._RESOURCE_PATH + "/revisions",
         )
 
     @overload

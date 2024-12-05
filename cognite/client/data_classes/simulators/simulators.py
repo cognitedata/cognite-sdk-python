@@ -416,8 +416,8 @@ class SimulatorCore(WriteableCogniteResource["SimulatorWrite"], ABC):
     It serves as a central contract that allows APIs, UIs, and integrations (connectors) to utilize the same definitions
     when dealing with a specific simulator.  Each simulator is uniquely identified and can be associated with various
     file extension types, model types, step fields, and unit quantities. Simulators are essential for managing data
-    flows between CDF and external simulation tools, ensuring consistency and reliability in data handling.  
-    
+    flows between CDF and external simulation tools, ensuring consistency and reliability in data handling.
+
     ####
     Limitations:  - A project can have a maximum of 100 simulators
 
@@ -854,7 +854,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         self.last_updated_time: int = last_updated_time  # type: ignore
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorModelRevision:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -1260,6 +1260,7 @@ class SimulationRun(SimulationRunCore):
     This is the read/response format of a simulation run.
 
     Args:
+        cognite_client (CogniteClient | None): An instance of the Cognite client.
         simulator_external_id (str | None): External id of the associated simulator
         simulator_integration_external_id (str | None): External id of the associated simulator integration
         model_external_id (str | None): External id of the associated simulator model
@@ -1277,12 +1278,12 @@ class SimulationRun(SimulationRunCore):
         id (int | None): A unique id of a simulation run
         created_time (int | None): The number of milliseconds since epoch
         last_updated_time (int | None): The number of milliseconds since epoch
-        cognite_client (CogniteClient | None): An instance of the Cognite client.
 
     """
 
     def __init__(
         self,
+        cognite_client: CogniteClient | None = None,
         simulator_external_id: str | None = None,
         simulator_integration_external_id: str | None = None,
         model_external_id: str | None = None,
@@ -1300,7 +1301,6 @@ class SimulationRun(SimulationRunCore):
         id: int | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             simulator_external_id=simulator_external_id,
@@ -1323,24 +1323,25 @@ class SimulationRun(SimulationRunCore):
         # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
         # Optional[int].
         # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
-        self.simulator_external_id: str = simulator_external_id
-        self.simulator_integration_external_id: str = simulator_integration_external_id
-        self.model_external_id: str = model_external_id
-        self.model_revision_external_id: str = model_revision_external_id
-        self.routine_external_id: str = routine_external_id
-        self.routine_revision_external_id: str = routine_revision_external_id
-        self.run_time: int = run_time
-        self.simulation_time: int = simulation_time
-        self.status: str = status
-        self.status_message: str = status_message
-        self.data_set_id: int = data_set_id
-        self.run_type: str = run_type
-        self.user_id: str = user_id
-        self.log_id: int = log_id
-        self._cognite_client = cognite_client
+        self.id = id  # type: ignore
+        self.created_time = created_time  # type: ignore
+        self.last_updated_time = last_updated_time  # type: ignore
+        self.simulator_external_id = simulator_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.model_revision_external_id = model_revision_external_id
+        self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.run_time = run_time
+        self.simulation_time = simulation_time
+        self.status = status
+        self.status_message = status_message
+        self.data_set_id = data_set_id
+        self.run_type = run_type
+        self.user_id = user_id
+        self.log_id = log_id
+        if cognite_client is not None:
+            self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationRun:
@@ -1359,7 +1360,7 @@ class SimulationRun(SimulationRunCore):
         self.status = latest.status
 
     def wait(self) -> None:
-        while self.status.lower() == "ready":
+        while self.status is not None and self.status.lower() == "ready":
             self.update()
             time.sleep(1.0)
 

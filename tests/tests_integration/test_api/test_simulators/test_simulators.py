@@ -111,64 +111,6 @@ def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulat
     )
 
 
-@pytest.fixture
-def seed_simulator_resources(cognite_client: CogniteClient) -> FileMetadata | None:
-    simulator_external_id = "integration_tests_workflow"
-    simulator_model_file_external_id = "ShowerMixer_simulator_model_file_3"
-
-    # check if file already exists
-    file = cognite_client.files.retrieve(external_id=simulator_model_file_external_id)
-    if (file is None) or (file is False):
-        file = cognite_client.files.upload(
-            path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.dwxmz",
-            external_id=simulator_model_file_external_id,
-            name="ShowerMixer.dwxmz",
-            data_set_id=97552494921583,
-        )
-
-    resources = [
-        {
-            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
-            "seed": {"externalId": simulator_external_id},
-        },
-        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators", "seed": simulator},
-        {
-            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
-            "seed": simulator_integration,
-        },
-        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models", "seed": simulator_model},
-        {
-            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
-            "seed": {**simulator_model_revision, "fileId": file.id},
-        },
-        {"url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines", "seed": simulator_routine},
-        {
-            "url": f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
-            "seed": simulator_routine_revision,
-        },
-    ]
-
-    for resource in resources:
-        try:
-            cognite_client.post(
-                resource["url"],
-                json={"items": [resource["seed"]]},
-            )
-        except Exception as e:
-            print(e)
-            pass
-
-    if isinstance(file, FileMetadata):
-        yield file
-
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
-        json={"items": [{"externalId": simulator_external_id}]},
-    )
-
-    cognite_client.files.delete(external_id=simulator_model_file_external_id)
-
-
 @pytest.fixture(scope="class")
 def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     yield
@@ -233,7 +175,7 @@ class TestSimulatorModels:
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        # TODO : this test is incorrect, it should retreive model revisions instead of model
+        # TODO : this test is incorrect, it should retrieve model revisions instead of model
         model = cognite_client.simulators.models.retrieve(
             external_id=seed_resource_names["simulator_model_external_id"]
         )
@@ -242,30 +184,41 @@ class TestSimulatorModels:
 
     @pytest.mark.usefixtures("seed_file", "seed_resource_names")
     def test_create_model(self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names) -> None:
-        model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        models_to_create = SimulatorModel(
-            name="sdk-test-model1",
-            simulator_external_id=seed_resource_names["simulator_external_id"],
-            external_id=model_external_id,
-            data_set_id=seed_resource_names["simulator_test_data_set_id"],
-            type="SteadyState",
-        )
+        model_external_id_1 = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        model_external_id_2 = datetime.datetime.now().strftime("%Y%m%d%H%M%S2")
+        models_to_create = [
+            SimulatorModel(
+                name="sdk-test-model1",
+                simulator_external_id=seed_resource_names["simulator_external_id"],
+                external_id=model_external_id_1,
+                data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                type="SteadyState",
+            ),
+            SimulatorModel(
+                name="sdk-test-model2",
+                simulator_external_id=seed_resource_names["simulator_external_id"],
+                external_id=model_external_id_2,
+                data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                type="SteadyState",
+            ),
+        ]
 
         models_created = cognite_client.simulators.models.create(models_to_create)
-        assert models_created is not None
-        assert models_created.external_id == model_external_id
 
+        assert models_created is not None
+        assert len(models_created) == 2
+        model_revision_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "revision"
         model_revision_to_create = SimulatorModelRevision(
-            external_id=model_external_id + "-revision-1",
-            model_external_id=model_external_id,
+            external_id=model_revision_external_id,
+            model_external_id=model_external_id_1,
             file_id=seed_file.id,
             description="Test revision",
         )
 
         model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
         assert model_revision_created is not None
-        assert model_revision_created.external_id == model_external_id + "-revision-1"
-        cognite_client.simulators.models.delete(external_ids=model_external_id)
+        assert model_revision_created.external_id == model_revision_external_id
+        cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")

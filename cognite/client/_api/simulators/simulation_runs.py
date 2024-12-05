@@ -92,7 +92,7 @@ class SimulatorRunsAPI(APIClient):
         """
         url = self._RESOURCE_PATH_RUN
         try:
-            res = self._post(url, json={"items": [run_call.dump()]})
+            res = self._post(url, json={"items": [run_call]})
             response = res.json()
             run_response = response["items"][0]
         except (KeyError, IndexError, ValueError) as e:
