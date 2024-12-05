@@ -45,7 +45,10 @@ Mei et possim option. An sit ipsum scaevola."""
         name=external_id,
         external_id=external_id,
         mime_type="text/plain",
-        metadata={"solver_type": "linear"},
+        metadata={
+            "solver_type": "linear",
+            "im_a_key": "t-X-t",
+        },
     )
     return created_file, content
 
@@ -63,6 +66,7 @@ def pdf_file(cognite_client: CogniteClient) -> FileMetadata:
         name=external_id,
         external_id=external_id,
         mime_type="application/pdf",
+        metadata={"im_a_key": "p-duh-f"},
     )
     return created_file
 
@@ -208,6 +212,23 @@ class TestDocumentsAPI:
 
         assert not_text_buckets
         assert len(all_buckets) > len(not_text_buckets)
+
+    @pytest.mark.usefixtures("document_list")
+    def test_aggregate_unique_types__property_is_custom(self, cognite_client: CogniteClient):
+        # Bug prior to 7.70.3 would convert user given property (list) to camelCase, which would then silently fail
+        # and not return any results from the aggregation request.
+        key_count = cognite_client.documents.aggregate_unique_values(property=SourceFileProperty.metadata_key("im_a_key"))
+        # Note that the agg. API return keys in lowercase:
+        assert {"p-duh-f", "t-x-t"} == set(res.values[0] for res in key_count)
+
+        assert SourceFileProperty.mime_type.as_reference() == ['sourceFile', 'mimeType']
+        mime_types = cognite_client.documents.aggregate_unique_values(property=SourceFileProperty.mime_type)
+        assert {"text/plain", "application/pdf"} <= set(res.values[0] for res in mime_types)
+
+        # When given in snake_case (wrong), we should ensure the agg. request fails (it means we havent converted it to camelCase)
+        with pytest.raises(CogniteAPIError, match="Invalid property for the specified aggregate:") as err:
+            cognite_client.documents.aggregate_unique_values(property=['source_file', 'mime_type'])
+        assert err.value.code == 400
 
     def test_aggregate_unique_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
         f = filters
