@@ -17,6 +17,20 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.2] - 2024-12-04
+### Fixed
+- Retrieving `ExtractionPipeline` either with `client.extraction_pipelines.retrieve` or 
+  `client.extraction_pipelines.list` no longer raises a `KeyError` if any of the pipline properties have a contact
+  with a `None` value.
+
+## [7.70.1] - 2024-12-04
+### Fixed
+- Fix `workflows.executions.retrieve_detailed` type for `SimulationInputOverride` to allow for `None` value for `unit`.
+
+## [7.70.0] - 2024-12-02
+### Added
+- Workflow support for "simulation" task type. 
+
 ## [7.69.4] - 2024-12-02
 ### Added
 - An IsNull filter has been added for use in Data Modeling.
@@ -26,6 +40,7 @@ Changes are grouped as follows
 - API endpoints currently accepting relative time strings like `2d-ago` now support a forward-looking syntax, e.g. `2w-ahead` or `15m-ahead`.
 ### Fixed
 - Revoking sessions through `client.iam.sessions.revoke` no longer raises an API error for very large payloads
+
 
 ## [7.69.2] - 2024-11-28
 ### Improved

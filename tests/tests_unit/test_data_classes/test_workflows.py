@@ -10,6 +10,8 @@ from cognite.client.data_classes.workflows import (
     DynamicTaskParameters,
     FunctionTaskOutput,
     FunctionTaskParameters,
+    SimulationInputOverride,
+    SimulationTaskParameters,
     TransformationTaskOutput,
     TransformationTaskParameters,
     WorkflowDefinition,
@@ -156,8 +158,20 @@ class TestWorkflowExecutionDetailed:
                 on_failure="skipTask",
                 depends_on=["testTaskDispatcher"],
             ),
+            WorkflowTask(
+                external_id="testSimulation",
+                parameters=SimulationTaskParameters(
+                    inputs=[SimulationInputOverride(reference_id="some-ref", value=1)],
+                    routine_external_id="routine-1",
+                    run_time=123,
+                ),
+                retries=0,
+                timeout=3600,
+                on_failure="skipTask",
+                depends_on=["testTaskDispatcher"],
+            ),
         ]
-        assert len(wf_execution.workflow_definition.tasks) == 4
+        assert len(wf_execution.workflow_definition.tasks) == 5
 
         for expected_task, actual_task in zip(expected, wf_execution.workflow_definition.tasks):
             assert actual_task.external_id == expected_task.external_id

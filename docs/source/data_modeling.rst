@@ -139,6 +139,10 @@ Query instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.query
 
+Inspect instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.inspect
+
 Sync instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.sync

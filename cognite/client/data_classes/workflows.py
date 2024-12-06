@@ -20,6 +20,10 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
+from cognite.client.data_classes.simulators.runs import (
+    SimulationInputOverride,
+)
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -131,7 +135,7 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow"]
+ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
 
 
 class WorkflowTaskParameters(CogniteObject, ABC):
@@ -159,6 +163,8 @@ class WorkflowTaskParameters(CogniteObject, ABC):
             return SubworkflowTaskParameters._load(parameters)
         elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
             return SubworkflowReferenceParameters._load(parameters)
+        elif type_ == "simulation":
+            return SimulationTaskParameters._load(parameters)
         else:
             raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
 
@@ -236,6 +242,59 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
+
+
+_SIMULATORS_WARNING = FeaturePreviewWarning(
+    api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+)
+
+
+class SimulationTaskParameters(WorkflowTaskParameters):
+    """
+    The simulation parameters are used to specify the simulation routine to be executed.
+    Args:
+        routine_external_id (str): The external ID of the simulation routine to be executed.
+        run_time (int | None): Reference timestamp used for data pre-processing and data sampling.
+        inputs (list[SimulationInputOverride] | None): List of input overrides.
+    """
+
+    task_type = "simulation"
+
+    def __init__(
+        self,
+        routine_external_id: str,
+        run_time: int | None = None,
+        inputs: list[SimulationInputOverride] | None = None,
+    ) -> None:
+        self.routine_external_id = routine_external_id
+        self.run_time = run_time
+        self.inputs = inputs
+
+    def __post_init__(self) -> None:
+        _SIMULATORS_WARNING.warn()
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationTaskParameters:
+        simulation: dict[str, Any] = resource["simulation"]
+
+        return cls(
+            routine_external_id=simulation["routineExternalId"],
+            run_time=simulation.get("runTime"),
+            inputs=[SimulationInputOverride._load(item) for item in simulation.get("inputs", [])]
+            if simulation.get("inputs")
+            else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        simulation: dict[str, Any] = {
+            "routineExternalId" if camel_case else "routine_external_id": self.routine_external_id,
+        }
+        if self.run_time:
+            simulation["runTime" if camel_case else "run_time"] = self.run_time
+        if self.inputs:
+            simulation["inputs" if camel_case else "inputs"] = [item.dump(camel_case) for item in self.inputs]
+
+        return {"simulation": simulation}
 
 
 class TransformationTaskParameters(WorkflowTaskParameters):
@@ -540,6 +599,8 @@ class WorkflowTaskOutput(ABC):
             return DynamicTaskOutput.load(data)
         elif task_type == "subworkflow":
             return SubworkflowTaskOutput.load(data)
+        elif task_type == "simulation":
+            return SimulationTaskOutput.load(data)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
 
@@ -576,6 +637,47 @@ class FunctionTaskOutput(WorkflowTaskOutput):
             "callId" if camel_case else "call_id": self.call_id,
             "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
+        }
+
+
+class SimulationTaskOutput(WorkflowTaskOutput):
+    """
+    The class represent the output of Simulation execution.
+    Args:
+        run_id (int | None): The run ID of the simulation run.
+        log_id (int | None): The log ID of the simulation run.
+        status_message (str | None): Status message of the simulation execution.
+    """
+
+    task_type: ClassVar[str] = "simulation"
+
+    def __post_init__(self) -> None:
+        _SIMULATORS_WARNING.warn()
+
+    def __init__(
+        self,
+        run_id: int | None,
+        log_id: int | None,
+        status_message: str | None,
+    ) -> None:
+        self.run_id = run_id
+        self.log_id = log_id
+        self.status_message = status_message
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
+        output = data["output"]
+        return cls(
+            run_id=output.get("runId"),
+            log_id=output.get("logId"),
+            status_message=output.get("statusMessage"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "runId" if camel_case else "run_id": self.run_id,
+            "logId" if camel_case else "log_id": self.log_id,
+            "statusMessage" if camel_case else "status_message": self.status_message,
         }
 
 
