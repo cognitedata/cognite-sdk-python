@@ -2,6 +2,14 @@ from __future__ import annotations
 
 from cognite.client.data_classes._base import Geometry, HasExternalAndInternalId, HasExternalId, HasInternalId, HasName
 from cognite.client.data_classes.aggregations import CountAggregate
+from cognite.client.data_classes.ai import (
+    Answer,
+    AnswerContent,
+    AnswerLanguage,
+    AnswerLocation,
+    AnswerReference,
+    Summary,
+)
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -592,4 +600,10 @@ __all__ = [
     "HasExternalId",
     "HasInternalId",
     "HasExternalAndInternalId",
+    "Answer",
+    "AnswerContent",
+    "AnswerLanguage",
+    "AnswerLocation",
+    "AnswerReference",
+    "Summary",
 ]
