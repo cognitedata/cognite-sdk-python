@@ -203,15 +203,25 @@ class SimulatorRoutineConfiguration(CogniteObject):
         outputs = []
 
         if resource.get("inputs", None) is not None:
-            inputs = [
-                SimulatorRoutineInputConstant._load(input_, cognite_client)
-                if "value" in input_
-                else SimulatorRoutineInputTimeseries._load(input_, cognite_client)
-                for input_ in resource["inputs"]
-            ]
+            for input_ in resource["inputs"]:
+                if isinstance(input_, SimulatorRoutineInputConstant) or isinstance(
+                    input_, SimulatorRoutineInputTimeseries
+                ):
+                    inputs.append(input_)
+
+                else:
+                    if "value" in input_:
+                        inputs.append(SimulatorRoutineInputConstant._load(input_, cognite_client))
+                    else:
+                        inputs.append(SimulatorRoutineInputTimeseries._load(input_, cognite_client))
 
         if resource.get("outputs", None) is not None:
-            outputs = [SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]]
+            for output_ in resource["outputs"]:
+                if isinstance(output_, SimulatorRoutineOutput):
+                    outputs.append(output_)
+
+                else:
+                    outputs.append(SimulatorRoutineOutput._load(output_, cognite_client))
 
         return cls(
             schedule=SimulatorRoutineSchedule.load(resource["schedule"], cognite_client),
@@ -269,7 +279,10 @@ class SimulatorRoutineStage(CogniteObject):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             order=resource["order"],
-            steps=[SimulatorRoutineStep._load(step_, cognite_client) for step_ in resource["steps"]],
+            steps=[
+                SimulatorRoutineStep._load(step_, cognite_client) if isinstance(step_, dict) else step_
+                for step_ in resource["steps"]
+            ],
             description=resource.get("description"),
         )
 
