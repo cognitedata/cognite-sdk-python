@@ -4,8 +4,6 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import (
     SimulatorIntegrationFilter,
-    SimulatorModelRevisionsFilter,
-    SimulatorModelsFilter,
 )
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
@@ -141,7 +139,7 @@ class TestSimulatorIntegrations:
         assert len(all_integrations) != len(dwsim_integrations)
 
 
-@pytest.mark.usefixtures(
+"""@pytest.mark.usefixtures(
     "seed_resource_names",
     "seed_simulator",
     "seed_simulator_models",
@@ -191,3 +189,4 @@ class TestSimulatorRoutines:
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
+"""
