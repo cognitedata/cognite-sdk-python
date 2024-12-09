@@ -100,7 +100,7 @@ def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulat
     )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture
 def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     yield
     cognite_client.post(
@@ -124,19 +124,19 @@ class TestSimulatorIntegrations:
 
         assert len(integrations) > 0
 
-    def test_filter_integrations(self, cognite_client: CogniteClient) -> None:
+    def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         all_integrations = cognite_client.simulators.integrations.list()
         active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
         )
-        dwsim_integrations = cognite_client.simulators.integrations.list(
-            filter=SimulatorIntegrationFilter(simulator_external_ids=["DWSIM"])
+        integrations = cognite_client.simulators.integrations.list(
+            filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
 
         assert len(active_integrations) > 0
         assert len(all_integrations) != len(active_integrations)
-        assert len(dwsim_integrations) > 0
-        assert len(all_integrations) != len(dwsim_integrations)
+        assert len(integrations) > 0
+        assert len(all_integrations) != len(integrations)
 
 
 """@pytest.mark.usefixtures(
