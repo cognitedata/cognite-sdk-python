@@ -126,15 +126,20 @@ class SimulatorRoutineSchedule(CogniteObject):
     enabled: bool = False
     cron_expression: str | None = None
 
+    def __init__(self, enabled: bool | None = None, cron_expression: str | None = None, **_: Any) -> None:
+        self.enabled = enabled
+        self.cron_expression = cron_expression
+
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineSchedule:
         return cls(
             enabled=resource["enabled"],
             cron_expression=resource.get("cronExpression"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+        output = super().dump(camel_case=camel_case)
+        return output
 
 
 @dataclass
@@ -237,6 +242,19 @@ class SimulatorRoutineConfiguration(CogniteObject):
             outputs=outputs,
         )
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["schedule"] = self.schedule.dump(camel_case=camel_case)
+        output["dataSampling"] = self.data_sampling.dump(camel_case=camel_case)
+        output["logicalCheck"] = [check_.dump(camel_case=camel_case) for check_ in self.logical_check]
+        output["steadyStateDetection"] = [
+            detection_.dump(camel_case=camel_case) for detection_ in self.steady_state_detection
+        ]
+        output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
+        output["outputs"] = [output_.dump(camel_case=camel_case) for output_ in self.outputs]
+
+        return output
+
 
 @dataclass
 class SimulatorRoutineStepArguments(CogniteObject):
@@ -287,7 +305,9 @@ class SimulatorRoutineStage(CogniteObject):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+        output = super().dump(camel_case=camel_case)
+        output["steps"] = [step_.dump(camel_case=camel_case) for step_ in self.steps]
+        return output
 
 
 @dataclass
@@ -829,6 +849,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
 
     Args:
+        id (int | None): No description.
         external_id (str | None): External id of the simulator model revision
         simulator_external_id (str | None): No description.
         model_external_id (str | None): External id of the associated simulator model
@@ -847,6 +868,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
 
     def __init__(
         self,
+        id: int | None = None,
         external_id: str | None = None,
         simulator_external_id: str | None = None,
         model_external_id: str | None = None,
@@ -880,9 +902,9 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         # but don't make sense passing in when creating a new object. So in order to make the typing
         # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
         # Optional[int].
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int | None = id
+        self.created_time: int | None = created_time
+        self.last_updated_time: int | None = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
