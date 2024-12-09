@@ -125,12 +125,16 @@ class TestSimulatorIntegrations:
         assert len(integrations) > 0
 
     def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        all_integrations = cognite_client.simulators.integrations.list()
         active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
         )
         filtered_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
+
+        assert all_integrations[0].external_id == "w"
+        assert len(all_integrations) == 1
 
         assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
