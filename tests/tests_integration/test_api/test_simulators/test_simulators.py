@@ -145,6 +145,8 @@ class TestSimulatorIntegrations:
 
         assert len(all_integrations) > 0
         assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
+        assert filtered_integrations[0].heartbeat == 10
+        assert filtered_integrations[0].active is True
 
         assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
