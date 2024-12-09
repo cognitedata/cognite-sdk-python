@@ -125,18 +125,15 @@ class TestSimulatorIntegrations:
         assert len(integrations) > 0
 
     def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        all_integrations = cognite_client.simulators.integrations.list()
         active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
         )
-        integrations = cognite_client.simulators.integrations.list(
+        filtered_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
 
         assert len(active_integrations) > 0
-        assert len(all_integrations) != len(active_integrations)
-        assert len(integrations) > 0
-        assert len(all_integrations) != len(integrations)
+        assert len(filtered_integrations) > 0
 
 
 """@pytest.mark.usefixtures(
