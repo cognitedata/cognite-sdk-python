@@ -126,7 +126,7 @@ class SimulatorRoutineSchedule(CogniteObject):
     enabled: bool = False
     cron_expression: str | None = None
 
-    def __init__(self, enabled: bool | None = None, cron_expression: str | None = None, **_: Any) -> None:
+    def __init__(self, enabled: bool, cron_expression: str | None = None, **_: Any) -> None:
         self.enabled = enabled
         self.cron_expression = cron_expression
 
