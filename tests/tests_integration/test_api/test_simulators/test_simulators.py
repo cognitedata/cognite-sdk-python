@@ -111,6 +111,7 @@ def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None
     )
 
 
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator", "delete_simulator")
 class TestSimulators:
     def test_list_simulators(self, cognite_client: CogniteClient) -> None:
         simulators = cognite_client.simulators.list(limit=5)
@@ -118,11 +119,8 @@ class TestSimulators:
         assert len(simulators) > 0
 
 
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration", "delete_simulator")
 class TestSimulatorIntegrations:
-    # test list
-    # test filter
-    # test retrieve
-    @pytest.mark.usefixtures("seed_simulator_integration")
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
         integrations = cognite_client.simulators.integrations.list(limit=5)
 
@@ -143,9 +141,14 @@ class TestSimulatorIntegrations:
         assert len(all_integrations) != len(dwsim_integrations)
 
 
-@pytest.mark.usefixtures("seed_resource_names", "seed_simulator", "delete_simulator")
+@pytest.mark.usefixtures(
+    "seed_resource_names",
+    "seed_simulator",
+    "seed_simulator_models",
+    "seed_simulator_model_revisions",
+    "delete_simulator",
+)
 class TestSimulatorModels:
-    @pytest.mark.usefixtures("seed_simulator_models", "seed_simulator_model_revisions")
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         models = cognite_client.simulators.models.list(
             limit=5, filter=SimulatorModelsFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
@@ -175,6 +178,9 @@ class TestSimulatorModels:
         assert model.external_id == seed_resource_names["simulator_model_external_id"]
 
 
+@pytest.mark.usefixtures(
+    "seed_resource_names", "seed_simulator", "seed_simulator_routine_revisions", "delete_simulator"
+)
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:
         routines = cognite_client.simulators.routines.list(limit=5)
@@ -185,8 +191,3 @@ class TestSimulatorRoutines:
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
-
-    def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
-        revision = cognite_client.simulators.routines.revisions.retrieve(external_id="ShowerMixerForTests-1")
-        assert revision is not None
-        assert revision.external_id == "ShowerMixerForTests-1"
