@@ -122,15 +122,8 @@ class TestSimulatorIntegrations:
     # test list
     # test filter
     # test retrieve
-    # @pytest.mark.usefixtures("seed_simulator_integration")
+    @pytest.mark.usefixtures("seed_simulator_integration")
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
-        datasets = cognite_client.data_sets.list(limit=5)
-        ds_ids = []
-        for dataset in datasets:
-            ds_ids.append(dataset.id)
-            ds_ids.append(dataset.name)
-
-        assert ds_ids == {}
         integrations = cognite_client.simulators.integrations.list(limit=5)
 
         assert len(integrations) > 0
