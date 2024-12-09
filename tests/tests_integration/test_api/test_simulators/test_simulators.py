@@ -39,13 +39,19 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list()
-    for sim in simulators:
-        if sim.external_id == simulator_external_id:
-            return
+    fl = list(filter(lambda x: x.external_id == simulator_external_id, simulators))
+    assert len(fl) == 0
 
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators",
         json={"items": [simulator]},
+    )
+
+    yield
+
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+        json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
     )
 
 
@@ -109,7 +115,7 @@ def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None
     )
 
 
-@pytest.mark.usefixtures("seed_resource_names", "seed_simulator", "delete_simulator")
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator")
 class TestSimulators:
     def test_list_simulators(self, cognite_client: CogniteClient) -> None:
         simulators = cognite_client.simulators.list(limit=5)
@@ -117,7 +123,7 @@ class TestSimulators:
         assert len(simulators) > 0
 
 
-@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration", "delete_simulator")
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration")
 class TestSimulatorIntegrations:
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
         integrations = cognite_client.simulators.integrations.list(limit=5)
@@ -134,9 +140,10 @@ class TestSimulatorIntegrations:
         )
 
         assert len(all_integrations) > 0
+        assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
 
-        # assert len(active_integrations) > 0
-        # assert len(filtered_integrations) > 0
+        assert len(active_integrations) > 0
+        assert len(filtered_integrations) > 0
 
 
 """@pytest.mark.usefixtures(
