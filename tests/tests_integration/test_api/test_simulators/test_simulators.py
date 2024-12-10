@@ -136,11 +136,11 @@ class TestSimulatorIntegrations:
         )
 
         filtered_integrations = cognite_client.simulators.integrations.list(
-            filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
+            filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_integration_external_id"]])
         )
 
         assert len(all_integrations) > 0
-        assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
+        assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_integration_external_id"]
         # check time difference
         assert filtered_integrations[0].active is True
 
