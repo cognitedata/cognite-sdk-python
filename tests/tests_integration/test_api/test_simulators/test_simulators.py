@@ -7,6 +7,7 @@ from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import (
     SimulatorIntegrationFilter,
 )
+from cognite.client.exceptions import CogniteAPIError
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
     simulator,
@@ -57,9 +58,9 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
             json={"items": [simulator_integration]},
         )
-    except Exception:
+    except CogniteAPIError:
         simulator_integrations = cognite_client.simulators.integrations.list()
-        id = list(
+        integration_id = list(
             filter(
                 lambda x: x.simulator_external_id == simulator_integration["simulatorExternalId"],
                 simulator_integrations,
@@ -68,10 +69,8 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
         # update hearbeat instead
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
-            json={"items": [{"id": id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
+            json={"items": [{"id": integration_id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
         )
-        # create_integration()
-        pass
 
 
 @pytest.fixture
