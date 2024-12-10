@@ -43,7 +43,7 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_exists = len(list(filter(lambda x: x.external_id == simulator_external_id, simulators))) > 0
     if not simulator_exists:
         cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+            f"/api/v1/projects/{cognite_client.config.project}/simulators",
             json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
         )
 
