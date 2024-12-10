@@ -1,3 +1,4 @@
+import random
 import time
 
 import pytest
@@ -11,8 +12,8 @@ from cognite.client.data_classes.simulators.filters import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_integration.test_api.test_simulators.seed.data import (
-    resource_names,
     data_set_id,
+    resource_names,
     simulator,
     simulator_integration,
     simulator_model,
@@ -20,6 +21,8 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_routine,
     simulator_routine_revision,
 )
+
+model_unique_external_id = f"{resource_names['simulator_model_external_id']}_{random.randint(100,500)}"
 
 
 @pytest.fixture(scope="class")
@@ -79,7 +82,7 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
 @pytest.fixture
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration) -> None:
     models = cognite_client.simulators.models.list()
-    model_seed = list(filter(lambda x: x.external_id == simulator_model["externalId"], models))
+    model_seed = list(filter(lambda x: x.external_id == model_unique_external_id, models))
 
     if len(model_seed) > 0:
         cognite_client.post(
@@ -89,7 +92,19 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
 
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
-        json={"items": [simulator_model]},  # Post actual simulator models here
+        json={
+            "items": [{**simulator_model, "externalId": model_unique_external_id}]
+        },  # Post actual simulator models here
+    )
+
+    yield
+
+    models = cognite_client.simulators.models.list()
+    model_seed = list(filter(lambda x: x.external_id == model_unique_external_id, models))
+
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators/models/delete",
+        json={"items": [{"id": model_seed[0].id}]},  # Post actual simulator models here
     )
 
 
@@ -97,7 +112,9 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
 def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
-        json={"items": [{**simulator_model_revision, "fileId": seed_file.id}]},  # Post actual simulator models here
+        json={
+            "items": [{**simulator_model_revision, "fileId": seed_file.id, "modelExternalId": model_unique_external_id}]
+        },  # Post actual simulator models here
     )
 
 
@@ -105,7 +122,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/routines",
-        json={"items": [simulator_routine]},
+        json={"items": [{**simulator_routine, "modelExternalId": model_unique_external_id}]},
     )
 
 
@@ -172,28 +189,22 @@ class TestSimulatorModels:
         assert len(models) > 0
 
     def test_retrieve_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        model = cognite_client.simulators.models.retrieve(
-            external_id=seed_resource_names["simulator_model_external_id"]
-        )
+        model = cognite_client.simulators.models.retrieve(external_id=model_unique_external_id)
         assert model is not None
-        assert model.external_id == seed_resource_names["simulator_model_external_id"]
+        assert model.external_id == model_unique_external_id
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         revisions = cognite_client.simulators.models.list(
             limit=5,
-            filter=SimulatorModelRevisionsFilter(
-                model_external_ids=[seed_resource_names["simulator_model_external_id"]]
-            ),
+            filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id]),
         )
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         # TODO : this test is incorrect, it should retrieve model revisions instead of model
-        model = cognite_client.simulators.models.retrieve(
-            external_id=seed_resource_names["simulator_model_external_id"]
-        )
+        model = cognite_client.simulators.models.retrieve(external_id=model_unique_external_id)
         assert model is not None
-        assert model.external_id == seed_resource_names["simulator_model_external_id"]
+        assert model.external_id == model_unique_external_id
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
