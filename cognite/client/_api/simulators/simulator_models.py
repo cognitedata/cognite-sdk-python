@@ -181,7 +181,7 @@ class SimulatorModelsAPI(APIClient):
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModel | None:
         """`Retrieve simulator model <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
 
-        Retrieve a single simulator model by id/externalId
+        Retrieve a simulator model by ID or external ID
 
         Args:
             id (int | None): The id of the simulator model.
