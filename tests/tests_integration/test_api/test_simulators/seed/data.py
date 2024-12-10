@@ -5,7 +5,7 @@ development_data_set_id = 97552494921583
 
 resource_names = {
     "simulator_external_id": "py_sdk_integration_tests",
-    "simulator_integration_external_id": "integration_tests_workflow_connector",
+    "simulator_integration_external_id": "py_sdk_integration_tests_connector",
     "simulator_model_external_id": "integration_tests_workflow_model_02",
     "simulator_model_revision_external_id": "integration_tests_workflow_model_revision_1",
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
