@@ -150,7 +150,7 @@ class SimulatorModelsAPI(APIClient):
 
         Args:
             limit (int): The maximum number of simulator models to return.
-            filter (SimulatorModelsFilter | dict[str, Any] | None): The filter to narrow down simulator models.
+            filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
             SimulatorModelList: List of simulator models
