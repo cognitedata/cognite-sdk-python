@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.70.3] - 2024-12-05
+## [7.70.3] - 2024-12-11
 ### Fixed
 - Aggregation requests with custom properties, like a metadata key, are no longer converted to camelCase
   automatically.
