@@ -146,7 +146,7 @@ class SimulatorModelsAPI(APIClient):
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
-        List simulator models
+        Retrieves a list of simulator models that match the given criteria
 
         Args:
             limit (int): The maximum number of simulator models to return.
