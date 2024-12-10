@@ -75,6 +75,15 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
 
 @pytest.fixture
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration) -> None:
+    models = cognite_client.simulators.models.list()
+    model_seed = list(filter(lambda x: x.external_id == simulator_model["externalId"], models))
+
+    if len(model_seed) > 0:
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/models/delete",
+            json={"items": [{"id": model_seed[0].id}]},  # Post actual simulator models here
+        )
+
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
         json={"items": [simulator_model]},  # Post actual simulator models here
@@ -185,10 +194,10 @@ class TestSimulatorModels:
         )
         assert model is not None
         assert model.external_id == seed_resource_names["simulator_model_external_id"]
-
+"""
 
 @pytest.mark.usefixtures(
-    "seed_resource_names", "seed_simulator", "seed_simulator_routine_revisions", "delete_simulator"
+    "seed_resource_names", "seed_simulator_routine_revisions"
 )
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:
@@ -200,4 +209,3 @@ class TestSimulatorRoutines:
         assert revisions[0].configuration is not None
         assert revisions[0].script is not None
         assert len(revisions) > 0
-"""
