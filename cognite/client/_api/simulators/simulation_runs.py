@@ -26,7 +26,7 @@ class SimulatorRunsAPI(APIClient):
     ) -> SimulationRunsList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
-        List simulation runs
+        Retrieves a list of simulation runs that match the given criteria
 
         Args:
             limit (int): The maximum number of simulation runs to return.
