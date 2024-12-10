@@ -149,7 +149,7 @@ class SimulatorModelsAPI(APIClient):
         Retrieves a list of simulator models that match the given criteria
 
         Args:
-            limit (int): The maximum number of simulator models to return.
+            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
