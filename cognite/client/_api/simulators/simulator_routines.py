@@ -38,7 +38,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Args:
             limit (int): The maximum number of simulator routine revisions to return.
-            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator routine revisions.
+            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
             SimulatorRoutineRevisionsList: List of simulator routine revisions
