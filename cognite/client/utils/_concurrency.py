@@ -183,7 +183,7 @@ class ConcurrencySettings:
     @classmethod
     def get_executor(cls, max_workers: int) -> TaskExecutor:
         if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)  # type: ignore[return-value]
+            return cls.get_thread_pool_executor(max_workers)
         elif cls.uses_mainthread():
             return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
