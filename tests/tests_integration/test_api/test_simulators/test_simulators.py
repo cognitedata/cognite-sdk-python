@@ -137,7 +137,7 @@ class TestSimulatorIntegrations:
 
         filtered_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(
-                simulator_external_ids=[seed_resource_names["simulator_integration_external_id"]]
+                simulator_external_ids=[seed_resource_names["simulator_external_id"]]
             )
         )
 
