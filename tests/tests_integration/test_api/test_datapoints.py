@@ -1240,9 +1240,9 @@ class TestRetrieveRawDatapointsAPI:
                 "GoodEntryReplaced",
                 "UncertainReferenceOutOfServer",
             ]
-            assert not b1.value and not b2.value
-            assert not b1.status_code and not b2.status_code
-            assert not b1.status_symbol and not b2.status_symbol
+            assert len(b1.value) == 0 and len(b2.value) == 0
+            assert len(b1.status_code) == 0 and len(b2.status_code) == 0
+            assert len(b1.status_symbol) == 0 and len(b2.status_symbol) == 0
 
             assert b3.value[0] == -math.inf
             if uses_numpy:
