@@ -12,6 +12,7 @@ from cognite.client.data_classes.simulators.filters import (
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
+    data_set_id,
     simulator,
     simulator_integration,
     simulator_model,
@@ -35,7 +36,7 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
             path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.dwxmz",
             external_id=seed_resource_names["simulator_model_file_external_id"],
             name="ShowerMixer.dwxmz",
-            data_set_id=97552494921583,
+            data_set_id=data_set_id,
         )
     yield file
 
