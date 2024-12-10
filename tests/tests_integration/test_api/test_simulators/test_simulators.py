@@ -201,10 +201,9 @@ class TestSimulatorModels:
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        # TODO : this test is incorrect, it should retrieve model revisions instead of model
-        model = cognite_client.simulators.models.retrieve(external_id=model_unique_external_id)
-        assert model is not None
-        assert model.external_id == model_unique_external_id
+        model_revision = cognite_client.simulators.models.revisions.retrieve(external_id=seed_resource_names["simulator_model_revision_external_id"])
+        assert model_revision is not None
+        assert model_revision.model_external_id == model_unique_external_id
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
