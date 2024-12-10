@@ -207,7 +207,7 @@ simulator = {
 simulator_integration = {
     "externalId": resource_names["simulator_integration_external_id"],
     "simulatorExternalId": resource_names["simulator_external_id"],
-    "heartbeat": int(time.time() * 1000),
+    "heartbeat": int(time.time()),
     "dataSetId": resource_names["simulator_test_data_set_id"],
     "connectorVersion": "1.0.0",
     "simulatorVersion": "1.0.0",
