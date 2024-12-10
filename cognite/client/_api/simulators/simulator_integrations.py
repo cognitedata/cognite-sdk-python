@@ -36,7 +36,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             limit (int): The maximum number of simulator integrations to return.
-            filter (SimulatorIntegrationFilter | dict[str, Any] | None): The filter to narrow down simulator integrations.
+            filter (SimulatorIntegrationFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
             SimulatorIntegrationList: List of simulator integrations
