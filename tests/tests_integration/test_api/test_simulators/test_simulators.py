@@ -47,12 +47,12 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
             json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
         )
 
-    yield
+    # yield
 
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
-        json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
-    )
+    # cognite_client.post(
+    #     f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+    #     json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
+    # )
 
 
 @pytest.fixture
