@@ -66,12 +66,12 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
         )
     except CogniteAPIError:
         simulator_integrations = cognite_client.simulators.integrations.list()
-        integration_id = list(
+        integration_id = next(
             filter(
                 lambda x: x.external_id == simulator_integration["externalId"],
                 simulator_integrations,
             )
-        )[0].id
+        ).id
         # update hearbeat instead
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
