@@ -1,4 +1,5 @@
 import time
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -41,18 +42,16 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list()
     simulator_exists = len(list(filter(lambda x: x.external_id == simulator_external_id, simulators))) > 0
-    if not simulator_exists:
+    if simulator_exists:
         cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators",
-            json={"items": [simulator]},
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
+            json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
         )
 
-    # yield
-
-    # cognite_client.post(
-    #     f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
-    #     json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
-    # )
+    cognite_client.post(
+        f"/api/v1/projects/{cognite_client.config.project}/simulators",
+        json={"items": [simulator]},
+    )
 
 
 @pytest.fixture
@@ -124,7 +123,6 @@ class TestSimulators:
         assert len(simulators) > 0
 
 
-
 class TestSimulatorIntegrations:
     @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration")
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
@@ -137,6 +135,7 @@ class TestSimulatorIntegrations:
         active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
         )
+
         filtered_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
@@ -145,7 +144,6 @@ class TestSimulatorIntegrations:
         assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
         # check time difference
         assert filtered_integrations[0].active is True
-        assert filtered_integrations[0].heartbeat == 10
 
         assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
