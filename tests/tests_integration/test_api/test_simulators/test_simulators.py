@@ -64,11 +64,16 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
         )
     except Exception:
         simulator_integrations = cognite_client.simulators.integrations.list()
-        id = list(filter(lambda x: x.simulator_external_id == simulator_integration["simulatorExternalId"], simulator_integrations))[0].id
+        id = list(
+            filter(
+                lambda x: x.simulator_external_id == simulator_integration["simulatorExternalId"],
+                simulator_integrations,
+            )
+        )[0].id
         # update hearbeat instead
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
-            json={"items": [{"id": id, "update": {"heartbeat": {"set":int(time.time() * 1000)}}}]},
+            json={"items": [{"id": id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
         )
         # create_integration()
         pass
