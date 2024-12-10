@@ -333,7 +333,7 @@ class DocumentsAPI(APIClient):
 
     def aggregate_cardinality_properties(
         self,
-        path: DocumentProperty | SourceFileProperty | list[str] | str,
+        path: SourceFileProperty | list[str] = SourceFileProperty.metadata,
         query: str | None = None,
         filter: Filter | dict[str, Any] | None = None,
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
@@ -341,7 +341,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            path (SourceFileProperty | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict[str, Any] | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict[str, Any] | None): The filter to apply to the resulting buckets.
@@ -354,9 +354,8 @@ class DocumentsAPI(APIClient):
             Count the number metadata keys for documents in your CDF project:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.documents import SourceFileProperty
                 >>> client = CogniteClient()
-                >>> count = client.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
+                >>> count = client.documents.aggregate_cardinality_properties()
         """
         self._validate_filter(filter)
 

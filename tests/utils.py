@@ -274,7 +274,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V]:
+def dict_without(input_dict: Mapping[K, V], without_keys: collections.abc.Set[str]) -> dict[K, V]:
     """Copy `input_dict`, but exclude the keys in `without_keys`.
 
     >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
