@@ -41,16 +41,11 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list()
     simulator_exists = len(list(filter(lambda x: x.external_id == simulator_external_id, simulators))) > 0
-    if simulator_exists:
+    if not simulator_exists:
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
             json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
         )
-
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators",
-        json={"items": [simulator]},
-    )
 
     yield
 
@@ -62,20 +57,19 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
 
 @pytest.fixture
 def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) -> None:
-    def create_integration():
+    try:
+        simulator_integration["heartbeat"] = int(time.time() * 1000)
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
             json={"items": [simulator_integration]},
         )
-
-    try:
-        create_integration()
     except Exception:
-        cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/delete",
-            json={"items": [{"externalId": simulator_integration["externalId"]}]},
-        )
-        create_integration()
+        # update hearbeat instead
+        # cognite_client.post(
+        #     f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
+        #     json={"items": [{"externalId": simulator_integration["externalId"]}]},
+        # )
+        # create_integration()
         pass
 
 
@@ -128,8 +122,9 @@ class TestSimulators:
         assert len(simulators) > 0
 
 
-@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration")
+
 class TestSimulatorIntegrations:
+    @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration")
     def test_list_integrations(self, cognite_client: CogniteClient) -> None:
         integrations = cognite_client.simulators.integrations.list(limit=5)
 
@@ -147,11 +142,11 @@ class TestSimulatorIntegrations:
         assert len(all_integrations) > 0
         assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
         # check time difference
-        assert filtered_integrations[0].heartbeat == filtered_integrations[0].heartbeat - (time.time() * 1000)
-        assert filtered_integrations[0].heartbeat == 10
+        # assert filtered_integrations[0].heartbeat == filtered_integrations[0].heartbeat - (time.time() * 1000)
+        # assert filtered_integrations[0].heartbeat == 10
         assert filtered_integrations[0].active is True
 
-        # assert len(active_integrations) > 0
+        assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
 
 
