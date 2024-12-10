@@ -38,7 +38,7 @@ class SimulatorsAPI(APIClient):
         List simulators
 
         Args:
-            limit (int): The maximum number of simulators to return.
+            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
             SimulatorList: List of simulators
