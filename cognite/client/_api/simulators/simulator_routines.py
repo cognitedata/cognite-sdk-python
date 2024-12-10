@@ -148,7 +148,7 @@ class SimulatorRoutinesAPI(APIClient):
         List simulator routines
 
         Args:
-            limit (int): The maximum number of simulator routines to return.
+            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
 
         Returns:
