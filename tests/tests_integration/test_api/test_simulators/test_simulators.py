@@ -44,7 +44,7 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     if not simulator_exists:
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators",
-            json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
+            json={"items": [simulator]},
         )
 
     # yield
