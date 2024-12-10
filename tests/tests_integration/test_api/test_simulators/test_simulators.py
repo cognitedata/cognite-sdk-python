@@ -144,9 +144,8 @@ class TestSimulatorIntegrations:
         assert len(all_integrations) > 0
         assert filtered_integrations[0].simulator_external_id == seed_resource_names["simulator_external_id"]
         # check time difference
-        # assert filtered_integrations[0].heartbeat == filtered_integrations[0].heartbeat - (time.time() * 1000)
-        # assert filtered_integrations[0].heartbeat == 10
         assert filtered_integrations[0].active is True
+        assert filtered_integrations[0].heartbeat == 10
 
         assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
