@@ -770,10 +770,10 @@ class DatapointsArray(CogniteResource):
             if self.timezone is None:
                 arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime.datetime).astype(str)
             else:
-                arrays[0] = np.array(
+                arrays[0] = np.array(  # type: ignore [type-var]
                     [
-                        convert_and_isoformat_timestamp(ts, self.timezone)
-                        for ts in arrays[0].astype("datetime64[ms]").astype(np.int64).tolist()
+                        convert_and_isoformat_timestamp(ts, self.timezone)  # type: ignore [arg-type]
+                        for ts in arrays[0].astype("datetime64[ms]").astype(np.int64).tolist()  # type: ignore [union-attr]
                     ],
                     dtype=str,
                 )
@@ -796,7 +796,7 @@ class DatapointsArray(CogniteResource):
             ):
                 raise ValueError("The number of status codes/symbols does not match the number of datapoints")
 
-            for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):
+            for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):  # type: ignore [arg-type]
                 dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
 
         # When we're dealing with datapoints with bad status codes, NaN might be either one of [<missing>, nan]:

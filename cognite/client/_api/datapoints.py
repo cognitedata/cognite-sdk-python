@@ -1936,11 +1936,11 @@ class DatapointsPoster:
 
         if dps.null_timestamps:
             # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
-            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]  # type: ignore [arg-type]
 
         if dps.status_code is None:
-            return list(map(_InsertDatapoint, timestamps, values))
-        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
+            return list(map(_InsertDatapoint, timestamps, values))  # type: ignore [arg-type]
+        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))  # type: ignore [arg-type]
 
 
 class RetrieveLatestDpsFetcher:
