@@ -62,7 +62,7 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
         simulator_integrations = cognite_client.simulators.integrations.list()
         integration_id = list(
             filter(
-                lambda x: x.simulator_external_id == simulator_integration["simulatorExternalId"],
+                lambda x: x.external_id == simulator_integration["externalId"],
                 simulator_integrations,
             )
         )[0].id
