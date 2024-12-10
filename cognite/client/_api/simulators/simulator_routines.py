@@ -145,7 +145,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
-        List simulator routines
+        Retrieves a list of simulator routines that match the given criteria
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
