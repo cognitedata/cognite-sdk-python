@@ -287,7 +287,7 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
-        return method in ["GET", "PUT", "PATCH"] or method == "POST" and self._url_is_retryable(path)
+        return method in ["GET", "PUT", "PATCH"] or (method == "POST" and self._url_is_retryable(path))
 
     @classmethod
     @functools.lru_cache(64)

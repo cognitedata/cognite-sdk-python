@@ -27,11 +27,11 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 __all__ = [
+    "TransformationJobsAPI",
+    "TransformationNotificationsAPI",
+    "TransformationSchedulesAPI",
     "TransformationSchemaAPI",
     "TransformationsAPI",
-    "TransformationSchedulesAPI",
-    "TransformationNotificationsAPI",
-    "TransformationJobsAPI",
 ]
 
 
