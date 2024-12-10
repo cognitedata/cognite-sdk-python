@@ -449,7 +449,6 @@ class SimulatorCore(WriteableCogniteResource["SimulatorWrite"], ABC):
     when dealing with a specific simulator.  Each simulator is uniquely identified and can be associated with various
     file extension types, model types, step fields, and unit quantities. Simulators are essential for managing data
     flows between CDF and external simulation tools, ensuring consistency and reliability in data handling.  ####
-    Limitations:  - A project can have a maximum of 100 simulators
 
     This is the read/response format of the simulator.
 
@@ -597,8 +596,6 @@ class SimulatorIntegrationCore(WriteableCogniteResource["SimulatorIntegrationWri
     It provides information about the configured connectors for a given simulator, including their status and additional
     details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential
     for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
-
-    Limitations:  - A project can have a maximum of 100 simulators
 
     This is the read/response format of the simulator integration.
 
@@ -1303,10 +1300,6 @@ class SimulationRun(SimulationRunCore):
     Simulation runs provide a historical record of the simulations performed, allowing users to analyze
     and compare different runs, track changes over time, and make informed decisions based on the simulation results.
 
-    Limitations:
-    * A retention policy is in place for simulation runs, allowing up to 100000 entries.
-    * Once this limit is reached, the oldest runs will be deleted to accommodate new runs.
-
     This is the read/response format of a simulation run.
 
     Args:
@@ -1397,9 +1390,6 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
-
-    Limitations:
-        - Each simulator model can have a maximum of 10 simulator routines
 
     Each simulator routine can have a maximum of 10 revisions
 

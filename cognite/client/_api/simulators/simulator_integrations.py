@@ -35,7 +35,7 @@ class SimulatorIntegrationsAPI(APIClient):
         List simulator integrations
 
         Args:
-            limit (int): The maximum number of simulator integrations to return. Defaults to 100.
+            limit (int): The maximum number of simulator integrations to return.
             filter (SimulatorIntegrationFilter | dict[str, Any] | None): The filter to narrow down simulator integrations.
 
         Returns:

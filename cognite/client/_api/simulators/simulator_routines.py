@@ -37,7 +37,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         List simulator routine revisions
 
         Args:
-            limit (int): The maximum number of simulator routine revisions to return. Defaults to 10.
+            limit (int): The maximum number of simulator routine revisions to return.
             filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator routine revisions.
 
         Returns:
@@ -148,7 +148,7 @@ class SimulatorRoutinesAPI(APIClient):
         List simulator routines
 
         Args:
-            limit (int): The maximum number of simulator routines to return. Defaults to 100.
+            limit (int): The maximum number of simulator routines to return.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
 
         Returns:
