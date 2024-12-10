@@ -6,6 +6,8 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import (
     SimulatorIntegrationFilter,
+    SimulatorModelRevisionsFilter,
+    SimulatorModelsFilter,
 )
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -145,9 +147,7 @@ class TestSimulatorIntegrations:
         )
 
         filtered_integrations = cognite_client.simulators.integrations.list(
-            filter=SimulatorIntegrationFilter(
-                simulator_external_ids=[seed_resource_names["simulator_external_id"]]
-            )
+            filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
 
         assert len(all_integrations) > 0
@@ -159,12 +159,9 @@ class TestSimulatorIntegrations:
         assert len(filtered_integrations) > 0
 
 
-"""@pytest.mark.usefixtures(
+@pytest.mark.usefixtures(
     "seed_resource_names",
-    "seed_simulator",
-    "seed_simulator_models",
     "seed_simulator_model_revisions",
-    "delete_simulator",
 )
 class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names) -> None:
@@ -174,9 +171,11 @@ class TestSimulatorModels:
         assert len(models) > 0
 
     def test_retrieve_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        model = cognite_client.simulators.models.retrieve(external_id="TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL")
+        model = cognite_client.simulators.models.retrieve(
+            external_id=seed_resource_names["simulator_model_external_id"]
+        )
         assert model is not None
-        assert model.external_id == "TEST_WORKFLOWS_SIMINT_INTEGRATION_MODEL"
+        assert model.external_id == seed_resource_names["simulator_model_external_id"]
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         revisions = cognite_client.simulators.models.list(
@@ -194,11 +193,9 @@ class TestSimulatorModels:
         )
         assert model is not None
         assert model.external_id == seed_resource_names["simulator_model_external_id"]
-"""
 
-@pytest.mark.usefixtures(
-    "seed_resource_names", "seed_simulator_routine_revisions"
-)
+
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient) -> None:
         routines = cognite_client.simulators.routines.list(limit=5)
