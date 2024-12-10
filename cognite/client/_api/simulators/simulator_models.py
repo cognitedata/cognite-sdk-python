@@ -38,7 +38,7 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Args:
             limit (int): The maximum number of simulator model revisions to return.
-            filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): The filter to narrow down simulator model revisions.
+            filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
