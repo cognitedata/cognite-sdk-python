@@ -68,7 +68,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
         """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
-        Retrieve multiple simulator routine revisions by IDs or external IDs
+        Retrieve a simulator routine revision by ID or external ID
 
         Args:
             id (int | None): The id of the simulator routine revision.
