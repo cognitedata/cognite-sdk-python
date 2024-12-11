@@ -611,7 +611,7 @@ class DiagramParsingAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):
+    class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
         Write = "WRITE"
 
