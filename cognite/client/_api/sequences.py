@@ -707,7 +707,7 @@ class SequencesAPI(APIClient):
             if None in external_ids:
                 raise ValueError("External ID must be set when upserting a SequenceWrite object.")
             cdf_items = self.retrieve_multiple(external_ids=typing.cast(list[str], external_ids))
-            cdf_item_by_id = {cdf_item.external_id: cdf_item for cdf_item in cdf_items if cdf_item.external_id}
+            cdf_item_by_id = cdf_items._external_id_to_item
         else:
             cdf_item_by_id = {}
         return self._upsert_multiple(
@@ -730,7 +730,7 @@ class SequencesAPI(APIClient):
         cdf_item_by_id: dict[str, Sequence] | None = None,  # type: ignore[override]
     ) -> dict[str, dict[str, dict]]:
         update_obj = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
-        if not isinstance(resource, SequenceWrite):
+        if not isinstance(resource, SequenceWrite) or not resource.columns:
             return update_obj
         # Lookup columns to check what to add, remove and modify
         cdf_item: Sequence | None = None
@@ -744,7 +744,10 @@ class SequencesAPI(APIClient):
                 column.external_id: column for column in cdf_item.columns or [] if column.external_id
             }
             columns_by_external_id = {column.external_id: column for column in resource.columns if column.external_id}
-            if to_remove := (set(cdf_columns_by_external_id.keys()) - set(columns_by_external_id.keys())):
+            if mode != "patch" and (
+                to_remove := (set(cdf_columns_by_external_id.keys()) - set(columns_by_external_id.keys()))
+            ):
+                # Replace or replace_ignore_null, remove all columns that are not in the new columns
                 update_obj["update"]["columns"]["remove"] = list(to_remove)
             if to_add := (set(columns_by_external_id.keys()) - set(cdf_columns_by_external_id.keys())):
                 update_obj["update"]["columns"]["add"] = [columns_by_external_id[ext_id].dump() for ext_id in to_add]

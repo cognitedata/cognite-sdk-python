@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.sequences import (
     SequenceColumnWrite,
+    SequenceColumnWriteList,
     SequenceProperty,
     SequenceWrite,
     SortableSequenceProperty,
@@ -335,7 +336,7 @@ class TestSequencesAPI:
             ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []
         }
 
-    def test_upsert_sequence(self, cognite_client: CogniteClient) -> None:
+    def test_upsert_sequence_replace(self, cognite_client: CogniteClient) -> None:
         original_sequence = SequenceWrite(
             external_id=f"upsert_sequence_{random_string(5)}",
             columns=[
@@ -380,12 +381,59 @@ class TestSequencesAPI:
         try:
             created = cognite_client.sequences.create(original_sequence)
 
-            upserted = cognite_client.sequences.upsert(upsert)
+            upserted = cognite_client.sequences.upsert(upsert, mode="replace")
 
             retrieved = cognite_client.sequences.retrieve(external_id=upserted.external_id)
 
             assert retrieved is not None
             assert retrieved.as_write().columns.dump() == upsert.columns.dump()
+        finally:
+            if created:
+                cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
+
+    def test_upsert_sequence_patch(self, cognite_client: CogniteClient) -> None:
+        original_sequence = SequenceWrite(
+            external_id=f"upsert_sequence_{random_string(5)}",
+            columns=[
+                SequenceColumnWrite(
+                    description="KW Description",
+                    name="KW Name",
+                    value_type="DOUBLE",
+                    external_id="kw_seq_01",
+                    metadata={},
+                ),
+            ],
+            description="Description of the Test Sequence",
+            name="Test Sequence Name",
+        )
+        upsert = SequenceWrite(
+            external_id=original_sequence.external_id,
+            columns=[
+                SequenceColumnWrite(
+                    description="PW Description",
+                    name="PW Name",
+                    value_type="DOUBLE",
+                    external_id="pw_seq_01",
+                    metadata={},
+                ),
+            ],
+            description="Description of the Test Sequence",
+            name="Test Sequence Name",
+        )
+
+        created: Sequence | None = None
+        try:
+            created = cognite_client.sequences.create(original_sequence)
+
+            upserted = cognite_client.sequences.upsert(upsert, mode="patch")
+
+            retrieved = cognite_client.sequences.retrieve(external_id=upserted.external_id)
+
+            assert retrieved is not None
+            assert (
+                retrieved.as_write().columns.dump()
+                == SequenceColumnWriteList([original_sequence.columns[0], upsert.columns[0]]).dump()
+            )
         finally:
             if created:
                 cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
