@@ -606,6 +606,20 @@ class DataSetsAcl(Capability):
 
 
 @dataclass
+class DiagramParsingAcl(Capability):
+    _capability_name = "diagramParsingAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class DigitalTwinAcl(Capability):
     _capability_name = "digitalTwinAcl"
     actions: Sequence[Action]
