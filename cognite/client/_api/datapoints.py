@@ -623,10 +623,8 @@ class DatapointsAPI(APIClient):
         # get 10k/100k datapoints per request. Thus, we round up the given chunk size to the nearest integer multiple of 100k,
         # then subdivide and yield client-side (we use the raw limit also when dealing with aggregates):
         request_limit = self._DPS_LIMIT_RAW * math.ceil(chunk_size_datapoints / self._DPS_LIMIT_RAW)
-        if (
-            not is_finite(chunk_size_datapoints)
-            or chunk_size_datapoints != request_limit
-            and request_limit % chunk_size_datapoints
+        if not is_finite(chunk_size_datapoints) or (
+            chunk_size_datapoints != request_limit and request_limit % chunk_size_datapoints
         ):
             raise ValueError(
                 "The 'chunk_size_datapoints' must be a positive integer that evenly divides 100k OR an integer multiple of 100k "
@@ -1938,11 +1936,11 @@ class DatapointsPoster:
 
         if dps.null_timestamps:
             # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
-            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]  # type: ignore [arg-type]
 
         if dps.status_code is None:
-            return list(map(_InsertDatapoint, timestamps, values))
-        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
+            return list(map(_InsertDatapoint, timestamps, values))  # type: ignore [arg-type]
+        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))  # type: ignore [arg-type]
 
 
 class RetrieveLatestDpsFetcher:
@@ -2056,23 +2054,18 @@ class RetrieveLatestDpsFetcher:
                     dct["targetUnitSystem"] = i_target_unit_system
 
                 # Careful logic: "Not given" vs "given" vs "default" with "truthy/falsy":
-                if (
-                    self.settings_include_status.get(idx) is True
-                    or self.settings_include_status.get(idx) is None
-                    and self.default_include_status is True
+                if self.settings_include_status.get(idx) is True or (
+                    self.settings_include_status.get(idx) is None and self.default_include_status is True
                 ):
                     dct["includeStatus"] = True
 
-                if (
-                    self.settings_ignore_bad_datapoints.get(idx) is False
-                    or self.settings_ignore_bad_datapoints.get(idx) is None
-                    and self.default_ignore_bad_datapoints is False
+                if self.settings_ignore_bad_datapoints.get(idx) is False or (
+                    self.settings_ignore_bad_datapoints.get(idx) is None and self.default_ignore_bad_datapoints is False
                 ):
                     dct["ignoreBadDataPoints"] = False
 
-                if (
-                    self.settings_treat_uncertain_as_bad.get(idx) is False
-                    or self.settings_treat_uncertain_as_bad.get(idx) is None
+                if self.settings_treat_uncertain_as_bad.get(idx) is False or (
+                    self.settings_treat_uncertain_as_bad.get(idx) is None
                     and self.default_treat_uncertain_as_bad is False
                 ):
                     dct["treatUncertainAsBad"] = False

@@ -775,10 +775,8 @@ class WorkflowVersionAPI(APIClient):
         if any(wf_id.version is None for wf_id in given_wf_ids):
             raise ValueError("Version must be specified for all workflow version IDs.")
 
-        is_single = (
-            isinstance(workflow_external_id, WorkflowVersionId)
-            or isinstance(workflow_external_id, tuple)
-            and len(given_wf_ids) == 1
+        is_single = isinstance(workflow_external_id, WorkflowVersionId) or (
+            isinstance(workflow_external_id, tuple) and len(given_wf_ids) == 1
         )
         if is_single:
             return get_single(given_wf_ids[0], ignore_missing=True)

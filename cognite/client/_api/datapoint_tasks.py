@@ -604,7 +604,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         return (
             not self.next_cursor
             or n < self.max_query_limit
-            or not self.uses_cursor and self.next_start == self.end
+            or (not self.uses_cursor and self.next_start == self.end)
         )  # fmt: skip
 
 
