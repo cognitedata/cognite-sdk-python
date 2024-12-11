@@ -589,16 +589,16 @@ class FilesAPI(APIClient):
 
     def upload_content_bytes(
         self,
-        content: str | bytes | TextIO | BinaryIO,
+        content: str | bytes | BinaryIO,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMetadata:
-        """Upload bytes or string.
+        """Upload bytes or string (UTF-8 assumed).
 
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_content_session`.
 
         Args:
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | None): Instance ID of the file.
 
@@ -607,11 +607,18 @@ class FilesAPI(APIClient):
 
         Examples:
 
-            Upload a file from memory:
+            Finish a file creation by uploading the content using external_id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
+                >>> res = client.files.upload_content_bytes(
+                ...     b"some content", external_id="my_file_xid")
+
+            ...or by using instance_id:
+
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> res = client.files.upload_content_bytes(
+                ...     b"some content", instance_id=NodeId("my-space", "my_file_xid"))
         """
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
 
@@ -633,7 +640,7 @@ class FilesAPI(APIClient):
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
-        file_metadata = FileMetadata.load(returned_file_metadata)
+        file_metadata = FileMetadata._load(returned_file_metadata)
         upload_response = self._http_client_with_retry.request(
             "PUT",
             full_upload_url,
@@ -647,7 +654,7 @@ class FilesAPI(APIClient):
 
     def upload_bytes(
         self,
-        content: str | bytes | TextIO | BinaryIO,
+        content: str | bytes | BinaryIO,
         name: str,
         external_id: str | None = None,
         source: str | None = None,
@@ -665,12 +672,12 @@ class FilesAPI(APIClient):
     ) -> FileMetadata:
         """Upload bytes or string.
 
-        You can also pass a file handle to content.
+        You can also pass a file handle to 'content'. The file should be opened in binary mode.
 
         Note that the maximum file size is 5GiB. In order to upload larger files use `multipart_upload_session`.
 
         Args:
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
             name (str): Name of the file.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             source (str | None): The source of the file.
@@ -753,7 +760,7 @@ class FilesAPI(APIClient):
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        This returns a context object you must enter (using the `with` keyword), then call `upload_part` on
+        This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
         for each part before exiting.
 
         Args:
@@ -774,13 +781,11 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            FileMultipartUploadSession: Object containing metadata about the created file,
-            and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once
-            all parts are uploaded.
+            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
 
         Examples:
 
-            Upload binary data in two chunks
+            Upload binary data in two chunks:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -831,14 +836,14 @@ class FilesAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> FileMultipartUploadSession:
-        """Begin uploading a file in multiple parts. This allows uploading files larger than 5GiB.
+        """Begin uploading a file in multiple parts whose metadata is already created in CDF. This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
 
         The file chunks may be uploaded in any order, and in parallel, but the client must ensure that
         the parts are stored in the correct order by uploading each chunk to the correct upload URL.
 
-        This returns a context object you must enter (using the `with` keyword), then call `upload_part` on
+        This returns a context manager you must enter (using the `with` keyword), then call `upload_part`
         for each part before exiting.
 
         Args:
@@ -847,13 +852,11 @@ class FilesAPI(APIClient):
             instance_id (NodeId | None): Instance ID of the file.
 
         Returns:
-            FileMultipartUploadSession: Object containing metadata about the created file,
-            and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once
-            all parts are uploaded.
+            FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
 
         Examples:
 
-            Upload binary data in two chunks
+            Upload binary data in two chunks:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -879,7 +882,7 @@ class FilesAPI(APIClient):
         upload_id = returned_file_metadata["uploadId"]
 
         return FileMultipartUploadSession(
-            FileMetadata.load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
+            FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
     def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
@@ -902,10 +905,7 @@ class FilesAPI(APIClient):
             headers={"accept": "*/*"},
         )
         if not upload_response.ok:
-            raise CogniteFileUploadError(
-                message=upload_response.text,
-                code=upload_response.status_code,
-            )
+            raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
 
     def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
@@ -972,7 +972,7 @@ class FilesAPI(APIClient):
 
             file_suffixes = Path(file_name).suffixes
             file_postfix = "".join(file_suffixes)
-            file_base = file_name[: file_name.index(file_postfix) or None]  # Awaiting .removesuffix in 3.9:
+            file_base = file_name.removesuffix(file_postfix)
 
             new_name = file_name
             while (new_name in unique_created) or (new_name in unique_original):
@@ -1088,14 +1088,7 @@ class FilesAPI(APIClient):
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
         instance_ids = [id["instanceId"] for id in all_ids if "instanceId" in id]
-
-        files_metadata = self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
-
-        id_to_metadata: dict[int, FileMetadata] = {}
-        for f in files_metadata:
-            id_to_metadata[f.id] = f
-
-        return id_to_metadata
+        return self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)._id_to_item
 
     def _download_files_to_directory(
         self,
@@ -1161,7 +1154,7 @@ class FilesAPI(APIClient):
         if isinstance(path, str):
             path = Path(path)
         if not path.parent.is_dir():
-            raise NotADirectoryError(f"{path.parent} is not a directory")
+            raise NotADirectoryError(str(path.parent))
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

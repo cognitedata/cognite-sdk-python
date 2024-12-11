@@ -362,10 +362,8 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
                     f"{id_name}external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}"
                 )
         if instance_ids is not None:
-            if (
-                isinstance(instance_ids, InstanceId | dict)
-                or isinstance(instance_ids, tuple)
-                and len(instance_ids) == 2
+            if isinstance(instance_ids, InstanceId | dict) or (
+                isinstance(instance_ids, tuple) and len(instance_ids) == 2
             ):
                 value_passed_as_primitive = True
                 all_identifiers.append(InstanceId.load(instance_ids))  # type: ignore[arg-type]

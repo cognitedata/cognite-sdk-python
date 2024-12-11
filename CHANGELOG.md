@@ -17,15 +17,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.70.3] - 2024-12-04
+## [7.70.4] - 2024-12-11
 ### Fixed
 - Upserting a Sequence with columns no longer silently skips the columns, but instead updates them as intended.
 
+## [7.70.3] - 2024-12-11
+### Fixed
+- Aggregation requests with custom properties, like a metadata key, are no longer converted to camelCase
+  automatically.
+
 ## [7.70.2] - 2024-12-04
 ### Fixed
-- Retrieving `ExtractionPipeline` either with `client.extraction_pipelines.retrieve` or 
-  `client.extraction_pipelines.list` no longer raises a `KeyError` if any of the pipline properties have a contact
-  with a `None` value.
+- Retrieving `ExtractionPipeline` no longer raises a `KeyError` if any of the piplines have a contact with missing fields.
 
 ## [7.70.1] - 2024-12-04
 ### Fixed
@@ -33,7 +36,7 @@ Changes are grouped as follows
 
 ## [7.70.0] - 2024-12-02
 ### Added
-- Workflow support for "simulation" task type. 
+- Workflow support for "simulation" task type.
 
 ## [7.69.4] - 2024-12-02
 ### Added

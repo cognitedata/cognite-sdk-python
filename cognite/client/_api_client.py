@@ -72,6 +72,8 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=CogniteObject)
 
+VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
+
 
 class APIClient:
     _RESOURCE_PATH: str
@@ -285,7 +287,7 @@ class APIClient:
         if method not in valid_methods:
             raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
-        return method in ["GET", "PUT", "PATCH"] or method == "POST" and self._url_is_retryable(path)
+        return method in ["GET", "PUT", "PATCH"] or (method == "POST" and self._url_is_retryable(path))
 
     @classmethod
     @functools.lru_cache(64)
@@ -787,11 +789,8 @@ class APIClient:
         api_subversion: str | None = None,
     ) -> int | UniqueResultList:
         verify_limit(limit)
-        if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
-            raise ValueError(
-                f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
-                f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
-            )
+        if aggregate not in VALID_AGGREGATIONS:
+            raise ValueError(f"Invalid aggregate {aggregate!r}. Valid aggregates are {sorted(VALID_AGGREGATIONS)}.")
 
         body: dict[str, Any] = {"aggregate": aggregate}
         if properties is not None:
@@ -799,12 +798,13 @@ class APIClient:
                 properties, property_aggregation_filter = properties
             else:
                 property_aggregation_filter = None
+
             if isinstance(properties, EnumProperty):
                 dumped_properties = properties.as_reference()
             elif isinstance(properties, str):
                 dumped_properties = [to_camel_case(properties)]
             elif isinstance(properties, list):
-                dumped_properties = [to_camel_case(p) for p in properties]
+                dumped_properties = [to_camel_case(properties[0])] if len(properties) == 1 else properties
             else:
                 raise ValueError(f"Unknown property format: {properties}")
 
@@ -832,8 +832,6 @@ class APIClient:
                 dumped_filter = filter.dump(camel_case=True)
             elif isinstance(filter, dict):
                 dumped_filter = convert_all_keys_to_camel_case(filter)
-            else:
-                raise ValueError(f"Unknown filter format: {filter}")
             body["filter"] = dumped_filter
 
         if advanced_filter is not None:

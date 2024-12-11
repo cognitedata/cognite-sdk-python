@@ -262,9 +262,11 @@ class DocstrFormatter:
             # Takes no args?
             not self.actual_annotations
             # Do the variables match? ...correct order?
-            or list(self.actual_annotations.keys()) == list(parsed_annotations.keys())
-            # Do the annotations match?
-            and list(self.actual_annotations.values()) == list(parsed_annotations.values())
+            or (
+                list(self.actual_annotations.keys()) == list(parsed_annotations.keys())
+                # Do the annotations match?
+                and list(self.actual_annotations.values()) == list(parsed_annotations.values())
+            )
         )
         return return_annot_is_correct and parameters_are_correct
 
@@ -403,7 +405,7 @@ def format_docstring_function(fn) -> list[str]:
     # of the decorator function!
     fn = inspect.unwrap(fn)
 
-    if fn in FUNC_EXCEPTIONS or TESTING and fn not in ONLY_RUN_FUNCS or not (doc := fn.__doc__):
+    if fn in FUNC_EXCEPTIONS or (TESTING and fn not in ONLY_RUN_FUNCS) or not (doc := fn.__doc__):
         return []
 
     fn_description = f"function: {fn.__name__}"

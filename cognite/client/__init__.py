@@ -6,7 +6,7 @@ from cognite.client._version import __version__
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.data_classes import data_modeling
 
-__all__ = ["ClientConfig", "CogniteClient", "__version__", "global_config", "data_modeling"]
+__all__ = ["ClientConfig", "CogniteClient", "__version__", "data_modeling", "global_config"]
 
 if _RUNNING_IN_BROWSER:
     from cognite.client.utils._pyodide_helpers import patch_sdk_for_pyodide

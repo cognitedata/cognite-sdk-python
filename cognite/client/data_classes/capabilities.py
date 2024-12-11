@@ -344,10 +344,8 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
             if isinstance(cap, LegacyCapability):
                 # Legacy capabilities are no longer in use, so they are safe to skip.
                 continue
-            if (
-                isinstance(proj_cap.project_scope, AllProjectsScope)
-                or isinstance(proj_cap.project_scope, ProjectsScope)
-                and project in proj_cap.project_scope.projects
+            if isinstance(proj_cap.project_scope, AllProjectsScope) or (
+                isinstance(proj_cap.project_scope, ProjectsScope) and project in proj_cap.project_scope.projects
             ):
                 output |= cap.as_tuples()
         return output

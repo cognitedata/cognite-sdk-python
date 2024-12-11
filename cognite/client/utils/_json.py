@@ -16,7 +16,7 @@ except ImportError:
     import json  # type: ignore [no-redef]
     from json import JSONDecodeError  # type: ignore [assignment]
 
-__all__ = ["dumps", "loads", "JSONDecodeError", "convert_to_float", "convert_nonfinite_float_to_str"]
+__all__ = ["JSONDecodeError", "convert_nonfinite_float_to_str", "convert_to_float", "dumps", "loads"]
 
 
 def _default_json_encoder(obj: Any) -> Any:

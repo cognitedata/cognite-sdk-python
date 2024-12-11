@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import difflib
 from collections import defaultdict
-from functools import cached_property
+from functools import cache
 from itertools import chain
 from typing import TYPE_CHECKING, Literal, overload
 
@@ -19,6 +19,24 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+
+
+@cache
+def _create_unit_lookups(unit_client: UnitAPI) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
+    units = unit_client.list()
+    alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
+    for unit in units:
+        dct = alias_by_quantity[unit.quantity]
+        # fun fact, for some units, alias_names has duplicates:
+        for alias in unit.alias_names:
+            dct[alias] = unit
+
+    alias_lookup = defaultdict(list)
+    for dct in alias_by_quantity.values():
+        for alias, unit in dct.items():
+            alias_lookup[alias].append(unit)
+    # we want failed lookups to raise, so we convert to dict:
+    return dict(alias_by_quantity), dict(alias_lookup)
 
 
 class UnitAPI(APIClient):
@@ -71,23 +89,6 @@ class UnitAPI(APIClient):
             resource_cls=Unit,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-
-    @cached_property
-    def _create_unit_lookups(self) -> tuple[dict[str, dict[str, Unit]], dict[str, list[Unit]]]:
-        units = self.list()
-        alias_by_quantity: defaultdict[str, dict[str, Unit]] = defaultdict(dict)
-        for unit in units:
-            dct = alias_by_quantity[unit.quantity]
-            # fun fact, for some units, alias_names has duplicates:
-            for alias in unit.alias_names:
-                dct[alias] = unit
-
-        alias_lookup = defaultdict(list)
-        for dct in alias_by_quantity.values():
-            for alias, unit in dct.items():
-                alias_lookup[alias].append(unit)
-        # we want failed lookups to raise, so we convert to dict:
-        return dict(alias_by_quantity), dict(alias_lookup)
 
     @overload
     def from_alias(
@@ -150,7 +151,7 @@ class UnitAPI(APIClient):
 
                     >>> unit_matches = client.units.from_alias("kilo watt", return_closest_matches=True)
         """
-        alias_by_quantity, alias_lookup = self._create_unit_lookups
+        alias_by_quantity, alias_lookup = _create_unit_lookups(self)
         if quantity is None:
             return self._lookup_unit_by_alias(alias, alias_lookup, return_ambiguous, return_closest_matches)
         else:
