@@ -114,6 +114,7 @@ class IAMAPI(APIClient):
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
+        self.service_accounts = ServiceAccountsAPI(config, api_version, cognite_client)
 
     @staticmethod
     def compare_capabilities(
