@@ -103,6 +103,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     ) -> SimulatorRoutineRevisionsList:
         """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
+    Retrieve one or more simulator routine revisions by IDs or external IDs
+
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (SequenceNotStr[str] | None): External IDs
