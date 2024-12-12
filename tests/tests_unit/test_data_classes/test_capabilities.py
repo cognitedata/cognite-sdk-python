@@ -52,6 +52,7 @@ def all_acls():
         },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idScope": {"ids": ["2918026428"]}}}},
+        {"diagramParsingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"digitalTwinAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"documentFeedbackAcl": {"actions": ["CREATE", "READ", "DELETE"], "scope": {"all": {}}}},
         {"documentPipelinesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
