@@ -32,7 +32,7 @@ class SimulatorIntegrationsAPI(APIClient):
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
 
-        List simulator integrations
+        Retrieves a list of simulator integrations that match the given criteria
 
         Args:
             limit (int): The maximum number of simulator integrations to return.
