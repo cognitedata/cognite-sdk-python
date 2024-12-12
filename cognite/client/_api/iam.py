@@ -695,14 +695,14 @@ class ServiceAccountsAPI(APIClient):
     ) -> Iterator[ServiceAccount] | Iterator[ServiceAccountList]:
         """Iterate over service accounts
 
-        Fetches service account dto as they are iterated over, so you keep a limited number of service accounts in memory.
+        Fetches service accounts as they are iterated over, so you keep a limited number of service accounts in memory.
 
         Args:
-            chunk_size (int | None): Number of service accounts to return in each chunk. Defaults to yielding one service account dto a time.
+            chunk_size (int | None): Number of service accounts to return in each chunk. Defaults to yielding one service account a time.
             limit (int | None): Maximum number of service accounts to return. Defaults to return all.
 
         Returns:
-            Iterator[ServiceAccountDto] | Iterator[ServiceAccountDtoList]: yields ServiceAccountDto one by one if chunk_size is not specified, else ServiceAccountDtoList objects.
+            Iterator[ServiceAccount] | Iterator[ServiceAccountList]: yields ServiceAccount one by one if chunk_size is not specified, else ServiceAccountList objects.
         """
         self._warning.warn()
 
@@ -722,7 +722,7 @@ class ServiceAccountsAPI(APIClient):
         limited number of service accounts in memory.
 
         Returns:
-            Iterator[ServiceAccountDto]: yields service account dto one by one.
+            Iterator[ServiceAccount]: yields service account one by one.
         """
         return self()
 
@@ -778,6 +778,7 @@ class ServiceAccountsAPI(APIClient):
         self,
         org: str,
         item: ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ServiceAccount | ServiceAccountList:
         """`Update service accounts <MISSING>`_
 
@@ -790,6 +791,7 @@ class ServiceAccountsAPI(APIClient):
         Args:
             org (str): ID of an organization
             item (ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate]): Service account or list of service accounts to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): The update mode to use. Defaults to 'replace_ignore_null'.
 
         Returns:
             ServiceAccount | ServiceAccountList: The updated service account or service accounts.
@@ -805,13 +807,14 @@ class ServiceAccountsAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
             list_cls=ServiceAccountList,
             resource_cls=ServiceAccount,
+            update_cls=ServiceAccountUpdate,
             items=item,
-            input_resource_cls=ServiceAccountWrite,
+            mode=mode,
             headers={"cdf-version": "alpha"},
         )
 
     def delete(
-        self, org: str, id: int | Sequence[id] | None = None, external_id: str | SequenceNotStr[str] | None = None
+        self, org: str, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """`Delete service accounts <MISSING>`_
 
@@ -823,7 +826,7 @@ class ServiceAccountsAPI(APIClient):
 
         Args:
             org (str): ID of an organization
-            id (int | Sequence[id] | NOne): ID or list of IDs of service accounts to delete.
+            id (int | Sequence[int] | None): ID or list of IDs of service accounts to delete.
             external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs of service accounts to delete.
 
         Examples:
@@ -907,14 +910,14 @@ class ServiceAccountSecretsAPI(APIClient):
     ) -> Iterator[ServiceAccountSecret] | Iterator[ServiceAccountSecretList]:
         """Iterate over service account secrets
 
-        Fetches service account secret dto as they are iterated over, so you keep a limited number of service account secrets in memory.
+        Fetches service account secret as they are iterated over, so you keep a limited number of service account secrets in memory.
 
         Args:
-            chunk_size (int | None): Number of service account secretss to return in each chunk. Defaults to yielding one service account secret dto a time.
+            chunk_size (int | None): Number of service account secretss to return in each chunk. Defaults to yielding one service account secret a time.
             limit (int | None): Maximum number of service account secrets to return. Defaults to return all.
 
         Returns:
-            Iterator[ServiceAccountSecretDto] | Iterator[ServiceAccountSecretDtoList]: yields ServiceAccountSecretDto one by one if chunk_size is not specified, else ServiceAccountSecretDtoList objects.
+            Iterator[ServiceAccountSecret] | Iterator[ServiceAccountSecretList]: yields ServiceAccountSecret one by one if chunk_size is not specified, else ServiceAccountSecretList objects.
         """
         self._warning.warn()
 
@@ -934,7 +937,7 @@ class ServiceAccountSecretsAPI(APIClient):
         limited number of service account secrets in memory.
 
         Returns:
-            Iterator[ServiceAccountSecretDto]: yields service account secret dto one by one.
+            Iterator[ServiceAccountSecret]: yields service account secret one by one.
         """
         return self()
 
