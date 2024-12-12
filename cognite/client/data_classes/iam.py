@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
@@ -14,6 +15,7 @@ from cognite.client.data_classes._base import (
     IdTransformerMixin,
     InternalIdTransformerMixin,
     NameTransformerMixin,
+    PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -566,7 +568,34 @@ class ServiceAccount(ServiceAccountCore):
         )
 
 
-class ServiceAccountUpdate(CogniteUpdate): ...
+class ServiceAccountUpdate(CogniteUpdate):
+    class _NullableStringServiceAccountUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str | None) -> ServiceAccountUpdate:
+            return self._set(value)
+
+    class _StringServiceAccountUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> ServiceAccountUpdate:
+            return self._set(value)
+
+    @property
+    def name(self) -> _StringServiceAccountUpdate:
+        return ServiceAccountUpdate._StringServiceAccountUpdate(self, "name")
+
+    @property
+    def description(self) -> _NullableStringServiceAccountUpdate:
+        return ServiceAccountUpdate._NullableStringServiceAccountUpdate(self, "description")
+
+    @property
+    def external_id(self) -> _NullableStringServiceAccountUpdate:
+        return ServiceAccountUpdate._NullableStringServiceAccountUpdate(self, "externalId")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=True),
+            PropertySpec("external_id", is_nullable=True),
+        ]
 
 
 class ServiceAccountWriteList(CogniteResourceList[ServiceAccountWrite]):
