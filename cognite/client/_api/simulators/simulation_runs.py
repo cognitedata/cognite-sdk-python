@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulationRunsFilter
-from cognite.client.data_classes.simulators.simulators import SimulationRun, SimulationRunsList
+from cognite.client.data_classes.simulators.simulators import SimulationRun, SimulationRunsList, CreatedTimeSort, SimulationTimeSort
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
@@ -22,7 +22,10 @@ class SimulatorRunsAPI(APIClient):
         )
 
     def list(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulationRunsFilter | dict[str, Any] | None = None
+        self,
+        limit: int = DEFAULT_LIMIT_READ,
+        filter: SimulationRunsFilter | dict[str, Any] | None = None,
+        sort: CreatedTimeSort | SimulationTimeSort | None = None,
     ) -> SimulationRunsList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
@@ -44,6 +47,13 @@ class SimulatorRunsAPI(APIClient):
                     >>> res = client.simulators.runs.list()
 
         """
+
+        sort_by = None
+        if isinstance(sort, CreatedTimeSort):
+            sort_by = [CreatedTimeSort.load(sort).dump()]
+        elif isinstance(sort, SimulationTimeSort):
+            sort_by = [SimulationTimeSort.load(sort).dump()]
+
         self._warning.warn()
         return self._list(
             method="POST",
@@ -51,6 +61,7 @@ class SimulatorRunsAPI(APIClient):
             url_path="/simulators/runs/list",
             resource_cls=SimulationRun,
             list_cls=SimulationRunsList,
+            sort=sort_by,
             filter=filter.dump()
             if isinstance(filter, SimulationRunsFilter)
             else filter

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -11,6 +11,7 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorRoutineList,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionsList,
+    CreatedTimeSort,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -18,7 +19,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
-
 
 class SimulatorRoutineRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines/revisions"
@@ -30,7 +30,11 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     def list(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None
+        self,
+        limit: int = 20, # the maximum number of revisions to return is limited to 20 items.
+        sort: CreatedTimeSort | None = None,
+        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        includeAllFields: bool = False,
     ) -> SimulatorRoutineRevisionsList:
         """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
@@ -63,6 +67,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             else filter
             if isinstance(filter, dict)
             else None,
+            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
+            other_params={"includeAllFields": includeAllFields},
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
@@ -143,7 +149,9 @@ class SimulatorRoutinesAPI(APIClient):
         )
 
     def list(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None
+        self,
+        limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None,
+        sort: CreatedTimeSort | None = None,
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
@@ -172,6 +180,7 @@ class SimulatorRoutinesAPI(APIClient):
             url_path="/simulators/routines/list",
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
+            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
             filter=filter.dump()
             if isinstance(filter, SimulatorRoutinesFilter)
             else filter

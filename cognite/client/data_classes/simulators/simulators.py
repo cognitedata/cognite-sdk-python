@@ -3,7 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from enum import auto
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 from typing_extensions import Self
 
@@ -16,6 +17,8 @@ from cognite.client.data_classes._base import (
     InternalIdTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
+    EnumProperty,
+    CogniteSort
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -1525,6 +1528,29 @@ class SimulatorRoutine(SimulatorRoutineCore):
     def __hash__(self) -> int:
         return hash(self.external_id)
 
+
+class PropertySort(CogniteSort):
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        dumped["property"] = self.property
+        return dumped
+
+class CreatedTimeSort(PropertySort):
+    def __init__(
+        self,
+        property: Literal["createdTime"] = "createdTime",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
+
+class SimulationTimeSort(PropertySort):
+    def __init__(
+        self,
+        property: Literal["simulationTime"] = "simulationTime",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
 
 class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevisionWrite], ExternalIDTransformerMixin):
     _RESOURCE = SimulatorRoutineRevisionWrite

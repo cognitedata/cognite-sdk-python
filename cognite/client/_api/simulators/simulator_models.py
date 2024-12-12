@@ -11,6 +11,7 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorModelList,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
+    CreatedTimeSort
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -30,7 +31,10 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     def list(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
+        self,
+        limit: int = DEFAULT_LIMIT_READ,
+        sort: CreatedTimeSort | None = None,
+        filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
@@ -58,6 +62,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             url_path="/simulators/models/revisions/list",
             resource_cls=SimulatorModelRevision,
             list_cls=SimulatorModelRevisionList,
+            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
             filter=filter.dump()
             if isinstance(filter, SimulatorModelRevisionsFilter)
             else filter
@@ -100,7 +105,6 @@ class SimulatorModelRevisionsAPI(APIClient):
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
-        ignore_unknown_ids: bool = False,
     ) -> SimulatorModelRevisionList:
         """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
@@ -129,7 +133,6 @@ class SimulatorModelRevisionsAPI(APIClient):
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             identifiers=identifiers,
-            ignore_unknown_ids=ignore_unknown_ids,
         )
 
 
@@ -144,7 +147,10 @@ class SimulatorModelsAPI(APIClient):
         )
 
     def list(
-        self, limit: int = DEFAULT_LIMIT_READ, filter: SimulatorModelsFilter | dict[str, Any] | None = None
+        self,
+        limit: int = DEFAULT_LIMIT_READ,
+        filter: SimulatorModelsFilter | dict[str, Any] | None = None,
+        sort: CreatedTimeSort | None = None,
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
 
@@ -173,6 +179,7 @@ class SimulatorModelsAPI(APIClient):
             url_path="/simulators/models/list",
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
+            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
             filter=filter.dump()
             if isinstance(filter, SimulatorModelsFilter)
             else filter
@@ -194,15 +201,12 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
 
-            List simulator models:
+            Retrieve simulator model by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.models.list()
-
-            Get simulator model by id:
                 >>> res = client.simulators.models.retrieve(id=1)
 
-            Get simulator model by external id:
+            Retrieve simulator model by external id:
                 >>> res = client.simulators.models.retrieve(external_id="1")
 
         """
