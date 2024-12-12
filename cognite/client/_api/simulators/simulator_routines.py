@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.simulators import (
+    CreatedTimeSort,
     SimulatorRoutine,
     SimulatorRoutineList,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionsList,
-    CreatedTimeSort,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -19,6 +19,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+
 
 class SimulatorRoutineRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines/revisions"
@@ -31,7 +32,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
     def list(
         self,
-        limit: int = 20, # the maximum number of revisions to return is limited to 20 items.
+        limit: int = 20,  # the maximum number of revisions to return is limited to 20 items.
         sort: CreatedTimeSort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         includeAllFields: bool = False,
@@ -109,25 +110,25 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     ) -> SimulatorRoutineRevisionsList:
         """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
-    Retrieve one or more simulator routine revisions by IDs or external IDs
+        Retrieve one or more simulator routine revisions by IDs or external IDs
 
-        Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            Args:
+                ids (Sequence[int] | None): IDs
+                external_ids (SequenceNotStr[str] | None): External IDs
+                ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
-        Returns:
-            SimulatorRoutineRevisionsList: Requested simulator routine revisions
+            Returns:
+                SimulatorRoutineRevisionsList: Requested simulator routine revisions
 
-        Examples:
+            Examples:
 
-            Get simulator routine revisions by id:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
+                Get simulator routine revisions by id:
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
 
-            Get simulator routine revisions by external id:
-                >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
+                Get simulator routine revisions by external id:
+                    >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -150,7 +151,8 @@ class SimulatorRoutinesAPI(APIClient):
 
     def list(
         self,
-        limit: int = DEFAULT_LIMIT_READ, filter: SimulatorRoutinesFilter | dict[str, Any] | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
+        filter: SimulatorRoutinesFilter | dict[str, Any] | None = None,
         sort: CreatedTimeSort | None = None,
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_

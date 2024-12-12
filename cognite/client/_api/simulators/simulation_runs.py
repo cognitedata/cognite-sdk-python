@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulationRunsFilter
-from cognite.client.data_classes.simulators.simulators import SimulationRun, SimulationRunsList, CreatedTimeSort, SimulationTimeSort
+from cognite.client.data_classes.simulators.simulators import (
+    CreatedTimeSort,
+    SimulationRun,
+    SimulationRunsList,
+    SimulationTimeSort,
+)
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:

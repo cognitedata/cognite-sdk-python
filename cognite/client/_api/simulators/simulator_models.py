@@ -7,11 +7,11 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.simulators import (
+    CreatedTimeSort,
     SimulatorModel,
     SimulatorModelList,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
-    CreatedTimeSort
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -34,7 +34,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self,
         limit: int = DEFAULT_LIMIT_READ,
         sort: CreatedTimeSort | None = None,
-        filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None
+        filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None,
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
@@ -108,25 +108,25 @@ class SimulatorModelRevisionsAPI(APIClient):
     ) -> SimulatorModelRevisionList:
         """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
-    Retrieve one or more simulator model revisions by IDs or external IDs.
+        Retrieve one or more simulator model revisions by IDs or external IDs.
 
-        Args:
-            ids (Sequence[int] | None): IDs
-            external_ids (SequenceNotStr[str] | None): External IDs
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+            Args:
+                ids (Sequence[int] | None): IDs
+                external_ids (SequenceNotStr[str] | None): External IDs
+                ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
-        Returns:
-            SimulatorModelRevisionList: Requested simulator model revisions
+            Returns:
+                SimulatorModelRevisionList: Requested simulator model revisions
 
-        Examples:
+            Examples:
 
-            Get simulator model revisions by ids:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.simulators.models.revisions.retrieve_multiple(ids=[1, 2, 3])
+                Get simulator model revisions by ids:
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.models.revisions.retrieve_multiple(ids=[1, 2, 3])
 
-            Get simulator model revisions by external ids:
-                >>> res = client.simulators.models.revisions.retrieve_multiple(external_ids=["abc", "def"])
+                Get simulator model revisions by external ids:
+                    >>> res = client.simulators.models.revisions.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(

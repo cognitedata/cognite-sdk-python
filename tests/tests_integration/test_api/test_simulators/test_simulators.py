@@ -1,5 +1,6 @@
 import random
 import time
+import uuid
 
 import pytest
 
@@ -9,7 +10,10 @@ from cognite.client.data_classes.simulators.filters import (
     SimulatorIntegrationFilter,
     SimulatorModelRevisionsFilter,
     SimulatorModelsFilter,
+    SimulatorRoutineRevisionsFilter,
+    SimulatorRoutinesFilter,
 )
+from cognite.client.data_classes.simulators.simulators import CreatedTimeSort
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     data_set_id,
@@ -22,7 +26,14 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_routine_revision,
 )
 
-model_unique_external_id = f"{resource_names['simulator_model_external_id']}_{random.randint(100,500)}"
+
+def truncated_uuid4():
+    return str(uuid.uuid4())[:8]
+
+
+model_unique_external_id = f"{resource_names['simulator_model_external_id']}_{truncated_uuid4()}"
+model_revision_unique_external_id = f"{resource_names['simulator_model_revision_external_id']}_{truncated_uuid4()}"
+simulator_routine_unique_external_id = f"{resource_names['simulator_routine_external_id']}_{truncated_uuid4()}"
 
 
 @pytest.fixture(scope="class")
@@ -82,65 +93,85 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) ->
 @pytest.fixture
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration) -> None:
     models = cognite_client.simulators.models.list()
-    model_seed = list(filter(lambda x: x.external_id == model_unique_external_id, models))
+    model_exists = len(list(filter(lambda x: x.external_id == model_unique_external_id, models))) > 0
 
-    if len(model_seed) > 0:
+    if not model_exists:
         cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators/models/delete",
-            json={"items": [{"id": model_seed[0].id}]},  # Post actual simulator models here
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
+            json={
+                "items": [{**simulator_model, "externalId": model_unique_external_id}]
+            },  # Post actual simulator models here
         )
-
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
-        json={
-            "items": [{**simulator_model, "externalId": model_unique_external_id}]
-        },  # Post actual simulator models here
-    )
-
-    yield
-
-    models = cognite_client.simulators.models.list()
-    model_seed = list(filter(lambda x: x.external_id == model_unique_external_id, models))
-
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/models/delete",
-        json={"items": [{"id": model_seed[0].id}]},  # Post actual simulator models here
-    )
 
 
 @pytest.fixture
 def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
-        json={
-            "items": [{**simulator_model_revision, "fileId": seed_file.id, "modelExternalId": model_unique_external_id}]
-        },  # Post actual simulator models here
+    model_revisions = cognite_client.simulators.models.revisions.list(
+        filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id])
     )
+    model_revision_not_exists = (
+        len(list(filter(lambda x: x.external_id == model_revision_unique_external_id, model_revisions))) == 0
+    )
+
+    if model_revision_not_exists:
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
+            json={
+                "items": [
+                    {
+                        **simulator_model_revision,
+                        "fileId": seed_file.id,
+                        "modelExternalId": model_unique_external_id,
+                        "externalId": model_revision_unique_external_id,
+                    }
+                ]
+            },
+        )
 
 
 @pytest.fixture
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/routines",
-        json={"items": [{**simulator_routine, "modelExternalId": model_unique_external_id}]},
+    routines = cognite_client.simulators.routines.list(
+        filter=SimulatorRoutinesFilter(model_external_ids=[model_unique_external_id])
     )
+    routine_not_exists = (
+        len(list(filter(lambda x: x.external_id == simulator_routine_unique_external_id, routines))) == 0
+    )
+
+    if routine_not_exists:
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/routines",
+            json={
+                "items": [
+                    {
+                        **simulator_routine,
+                        "modelExternalId": model_unique_external_id,
+                        "externalId": simulator_routine_unique_external_id,
+                    }
+                ]
+            },
+        )
 
 
 @pytest.fixture
 def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> None:
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
-        json={"items": [simulator_routine_revision]},
+    revisions_all = cognite_client.simulators.routines.revisions.list(
+        filter=SimulatorRoutineRevisionsFilter(
+            routine_external_ids=[simulator_routine_unique_external_id], all_versions=True
+        ),
     )
 
-
-@pytest.fixture
-def delete_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
-    yield
-    cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/delete",
-        json={"items": [{"externalId": seed_resource_names["simulator_external_id"]}]},
-    )
+    if len(revisions_all) == 0:
+        for _ in range(10):
+            revision = {
+                **simulator_routine_revision,
+                "externalId": f"{simulator_routine_revision['externalId']}_{truncated_uuid4()}",
+                "routineExternalId": simulator_routine_unique_external_id,
+            }
+            cognite_client.post(
+                f"/api/v1/projects/{cognite_client.config.project}/simulators/routines/revisions",
+                json={"items": [revision]},
+            )
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator")
@@ -194,7 +225,7 @@ class TestSimulatorModels:
         assert model.external_id == model_unique_external_id
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        revisions = cognite_client.simulators.models.list(
+        revisions = cognite_client.simulators.models.revisions.list(
             limit=5,
             filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id]),
         )
@@ -202,7 +233,7 @@ class TestSimulatorModels:
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_revision = cognite_client.simulators.models.revisions.retrieve(
-            external_id=seed_resource_names["simulator_model_revision_external_id"]
+            external_id=model_revision_unique_external_id
         )
         assert model_revision is not None
         assert model_revision.model_external_id == model_unique_external_id
@@ -214,8 +245,46 @@ class TestSimulatorRoutines:
         routines = cognite_client.simulators.routines.list(limit=5)
         assert len(routines) > 0
 
-    def test_list_routine_revisions(self, cognite_client: CogniteClient) -> None:
-        revisions = cognite_client.simulators.routines.revisions.list(limit=5)
-        assert revisions[0].configuration is not None
-        assert revisions[0].script is not None
-        assert len(revisions) > 0
+    def test_list_and_filtering_routine_revisions(self, cognite_client: CogniteClient) -> None:
+        revisions_all = cognite_client.simulators.routines.revisions.list(
+            filter=SimulatorRoutineRevisionsFilter(
+                routine_external_ids=[simulator_routine_unique_external_id], all_versions=True
+            ),
+        )
+        assert len(revisions_all) > 1
+        revisions_filter = cognite_client.simulators.routines.revisions.list(
+            filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_unique_external_id], all_versions=True),
+        )
+        assert len(revisions_filter) == 10
+        revisions_sort_asc = cognite_client.simulators.routines.revisions.list(
+            sort=CreatedTimeSort(order="asc", property="createdTime"),
+            filter=SimulatorRoutineRevisionsFilter(
+                routine_external_ids=[simulator_routine_unique_external_id], all_versions=True
+            ),
+        )
+        revisions_sort_desc = cognite_client.simulators.routines.revisions.list(
+            sort=CreatedTimeSort(order="desc", property="createdTime"),
+            filter=SimulatorRoutineRevisionsFilter(
+                routine_external_ids=[simulator_routine_unique_external_id], all_versions=True
+            ),
+        )
+        assert revisions_sort_asc[0].external_id == revisions_sort_desc[-1].external_id
+
+    def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
+        revisions_all = cognite_client.simulators.routines.revisions.list(
+            filter=SimulatorRoutineRevisionsFilter(
+                routine_external_ids=[simulator_routine_unique_external_id], all_versions=True
+            ),
+        )
+
+        assert len(revisions_all) > 5
+
+        rev1 = revisions_all[random.randint(0, 4)]
+        rev2 = revisions_all[random.randint(0, 4)]
+
+        rev1_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_id=rev1.external_id)
+        assert rev1_retrieve is not None
+        assert rev1_retrieve.external_id == rev1.external_id
+        rev2_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_id=rev2.external_id)
+        assert rev2_retrieve is not None
+        assert rev2_retrieve.external_id == rev2.external_id
