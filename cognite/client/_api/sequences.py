@@ -688,11 +688,15 @@ class SequencesAPI(APIClient):
             Upsert for sequences:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
-                >>> new_sequence = Sequence(external_id="new_sequence", description="New sequence")
+                >>> new_sequence = SequenceWrite(
+                ...     external_id="new_sequence",
+                ...     description="New sequence",
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="String")]
+                ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
 
