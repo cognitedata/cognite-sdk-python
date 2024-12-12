@@ -34,7 +34,7 @@ class SimulatorModelRevisionsAPI(APIClient):
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
-        List simulator model revisions
+        Retrieves a list of simulator model revisions that match the given criteria
 
         Args:
             limit (int): The maximum number of simulator model revisions to return.
