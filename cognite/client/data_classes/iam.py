@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast
 
 from typing_extensions import Self
 
@@ -489,3 +489,151 @@ class ClientCredentials(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ClientCredentials:
         return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])
+
+
+class ServiceAccountCore(WriteableCogniteResource["ServiceAccountWrite"], ABC):
+    def __init__(self, name: str | None = None, external_id: str | None = None, description: str | None = None) -> None:
+        self.name = name
+        self.external_id = external_id
+        self.description = description
+
+
+class ServiceAccountWrite(ServiceAccountCore):
+    """A service account.
+
+    This is the write/request format of the service account dto.
+
+    Args:
+        name (str | None): Human-readable name of a service account
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): Longer description of a service account
+
+    """
+
+    def __init__(self, name: str | None = None, external_id: str | None = None, description: str | None = None) -> None:
+        super().__init__(
+            name=name,
+            external_id=external_id,
+            description=description,
+        )
+
+    def as_write(self) -> ServiceAccountWrite:
+        return self
+
+
+class ServiceAccount(ServiceAccountCore):
+    """A service account.
+
+    This is the read/response format of the service account.
+
+    Args:
+        id (str | None): Unique identifier of a service account
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Human-readable name of a service account
+        description (str | None): Longer description of a service account
+        created_by (str | None): The ID of an organization user
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+
+    """
+
+    def __init__(
+        self,
+        id: str | None = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        created_by: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        super().__init__(
+            name=name,
+            external_id=external_id,
+            description=description,
+        )
+        self.id = id
+        self.created_by = created_by
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    def as_write(self) -> ServiceAccountWrite:
+        return ServiceAccountWrite(
+            external_id=self.external_id,
+            description=self.description,
+            name=self.name,
+        )
+
+
+class ServiceAccountWriteList(CogniteResourceList[ServiceAccountWrite]):
+    _RESOURCE = ServiceAccountWrite
+
+
+class ServiceAccountList(WriteableCogniteResourceList[ServiceAccountWrite, ServiceAccount]):
+    _RESOURCE = ServiceAccount
+
+    def as_write(self) -> ServiceAccountWriteList:
+        return ServiceAccountWriteList([item.as_write() for item in self.data])
+
+
+class ServiceAccountSecretCore(WriteableCogniteResource["ServiceAccountSecretWrite"], ABC): ...
+
+
+class ServiceAccountSecretWrite(ServiceAccountSecretCore):
+    """A service account secret.
+
+    This is the write/request format of the service account secret dto.
+
+    Args:
+        expires_in_seconds (int | None): The number of seconds until the secret expires. The maximum value is 180 days.
+
+    """
+
+    def __init__(self, expires_in_seconds: int | None = None) -> None:
+        self.expires_in_seconds = expires_in_seconds
+
+    def as_write(self) -> ServiceAccountSecretWrite:
+        return self
+
+
+class ServiceAccountSecret(ServiceAccountSecretCore):
+    """A service account secret.
+
+    This is the read/response format of the service account secret dto.
+
+    Args:
+        id (int | None): Unique identifier of a service account secret
+        client_id (str | None): Unique identifier of a service account
+        expiration_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_token_issuance_time (str | None): The time when this secret was last used to issue a CDF access token.
+
+    """
+
+    def __init__(
+        self,
+        id: int | None = None,
+        client_id: str | None = None,
+        expiration_time: int | None = None,
+        created_time: int | None = None,
+        last_token_issuance_time: str | None = None,
+    ) -> None:
+        self.id = id
+        self.client_id = client_id
+        self.expiration_time = expiration_time
+        self.created_time = created_time
+        self.last_token_issuance_time = last_token_issuance_time
+
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+
+class ServiceAccountSecretDtoWriteList(CogniteResourceList[ServiceAccountSecretWrite]):
+    _RESOURCE = ServiceAccountSecretWrite
+
+
+class ServiceAccountSecretDtoList(WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret]):
+    _RESOURCE = ServiceAccountSecret
+
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
