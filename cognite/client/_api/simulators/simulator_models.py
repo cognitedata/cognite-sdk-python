@@ -37,7 +37,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         Retrieves a list of simulator model revisions that match the given criteria
 
         Args:
-            limit (int): The maximum number of simulator model revisions to return.
+            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
@@ -68,7 +68,7 @@ class SimulatorModelRevisionsAPI(APIClient):
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModelRevision | None:
         """`Retrieve simulator model revision <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
-        Retrieve multiple simulator model revisions by IDs or external IDs
+        Retrieve a simulator model revision by ID or external ID
 
         Args:
             id (int | None): The id of the simulator model revision.
@@ -103,6 +103,8 @@ class SimulatorModelRevisionsAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> SimulatorModelRevisionList:
         """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+
+    Retrieve one or more simulator model revisions by IDs or external IDs.
 
         Args:
             ids (Sequence[int] | None): IDs
