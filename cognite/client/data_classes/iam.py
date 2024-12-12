@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
+    CogniteUpdate,
     IdTransformerMixin,
     InternalIdTransformerMixin,
     NameTransformerMixin,
@@ -565,6 +566,9 @@ class ServiceAccount(ServiceAccountCore):
         )
 
 
+class ServiceAccountUpdate(CogniteUpdate): ...
+
+
 class ServiceAccountWriteList(CogniteResourceList[ServiceAccountWrite]):
     _RESOURCE = ServiceAccountWrite
 
@@ -628,11 +632,11 @@ class ServiceAccountSecret(ServiceAccountSecretCore):
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
 
 
-class ServiceAccountSecretDtoWriteList(CogniteResourceList[ServiceAccountSecretWrite]):
+class ServiceAccountSecretWriteList(CogniteResourceList[ServiceAccountSecretWrite]):
     _RESOURCE = ServiceAccountSecretWrite
 
 
-class ServiceAccountSecretDtoList(WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret]):
+class ServiceAccountSecretList(WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret]):
     _RESOURCE = ServiceAccountSecret
 
     def as_write(self) -> NoReturn:
