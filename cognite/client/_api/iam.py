@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
@@ -36,11 +36,20 @@ from cognite.client.data_classes.capabilities import (
 from cognite.client.data_classes.iam import (
     GroupWrite,
     SecurityCategoryWrite,
+    ServiceAccount,
+    ServiceAccountList,
+    ServiceAccountSecret,
+    ServiceAccountSecretList,
+    ServiceAccountUpdate,
+    ServiceAccountWrite,
     SessionStatus,
     SessionType,
     TokenInspection,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -653,3 +662,383 @@ class SessionsAPI(APIClient):
         """
         filter = {"status": status.upper()} if status is not None else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
+
+
+class ServiceAccountsAPI(APIClient):
+    _RESOURCE_PATH = "/api/v1/orgs/{}/serviceaccounts"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="alpha", sdk_maturity="alpha", feature_name="ServiceAccounts"
+        )
+        self.secrets = ServiceAccountSecretsAPI(config, api_version, cognite_client, self._warning)
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccount]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccount] | Iterator[ServiceAccountList]:
+        """Iterate over service accounts
+
+        Fetches service account dto as they are iterated over, so you keep a limited number of service accounts in memory.
+
+        Args:
+            chunk_size (int | None): Number of service accounts to return in each chunk. Defaults to yielding one service account dto a time.
+            limit (int | None): Maximum number of service accounts to return. Defaults to return all.
+
+        Returns:
+            Iterator[ServiceAccountDto] | Iterator[ServiceAccountDtoList]: yields ServiceAccountDto one by one if chunk_size is not specified, else ServiceAccountDtoList objects.
+        """
+        self._warning.warn()
+
+        return self._list_generator(
+            list_cls=ServiceAccountList,
+            resource_cls=ServiceAccount,
+            method="GET",
+            chunk_size=chunk_size,
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def __iter__(self) -> Iterator[ServiceAccount]:
+        """Iterate over service accounts
+
+        Fetches service accounts as they are iterated over, so you keep a
+        limited number of service accounts in memory.
+
+        Returns:
+            Iterator[ServiceAccountDto]: yields service account dto one by one.
+        """
+        return self()
+
+    @overload
+    def create(self, org: str, item: ServiceAccountWrite) -> ServiceAccount: ...
+
+    @overload
+    def create(self, org: str, item: Sequence[ServiceAccountWrite]) -> ServiceAccountList: ...
+
+    def create(
+        self,
+        org: str,
+        item: ServiceAccountWrite | Sequence[ServiceAccountWrite],
+    ) -> ServiceAccount | ServiceAccountList:
+        """`Create service accounts <MISSING>`_
+
+        Create service accounts in an organization.
+
+        #### Access control
+        Requires the caller to be an admin in the
+        target organization.
+
+        Args:
+            org (str): ID of an organization
+            item (ServiceAccountWrite | Sequence[ServiceAccountWrite]): Service account or list of service accounts to create.
+
+        Returns:
+            ServiceAccount | ServiceAccountList: The created service account or service accounts.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._create_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=ServiceAccountList,
+            resource_cls=ServiceAccount,
+            items=item,
+            input_resource_cls=ServiceAccountWrite,
+            headers={"cdf-version": "alpha"},
+        )
+
+    @overload
+    def update(self, org: str, item: ServiceAccountWrite | ServiceAccountUpdate) -> ServiceAccount: ...
+
+    @overload
+    def update(self, org: str, item: Sequence[ServiceAccount | ServiceAccountUpdate]) -> ServiceAccountList: ...
+
+    def update(
+        self,
+        org: str,
+        item: ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate],
+    ) -> ServiceAccount | ServiceAccountList:
+        """`Update service accounts <MISSING>`_
+
+        Update service accounts in an organization.
+
+        #### Access control
+            Requires the caller to be an admin in the
+            target organization.
+
+        Args:
+            org (str): ID of an organization
+            item (ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate]): Service account or list of service accounts to update.
+
+        Returns:
+            ServiceAccount | ServiceAccountList: The updated service account or service accounts.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._update_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=ServiceAccountList,
+            resource_cls=ServiceAccount,
+            items=item,
+            input_resource_cls=ServiceAccountWrite,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def delete(
+        self, org: str, id: int | Sequence[id] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
+        """`Delete service accounts <MISSING>`_
+
+        Delete service accounts in an organization. All secrets associated with the service accounts will be deleted
+        as well.
+
+        #### Access control
+        Requires the caller to be an admin in the target organization.
+
+        Args:
+            org (str): ID of an organization
+            id (int | Sequence[id] | NOne): ID or list of IDs of service accounts to delete.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs of service accounts to delete.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        self._delete_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=False,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def list(self, org: str, limit: int | None = DEFAULT_LIMIT_READ) -> ServiceAccount | ServiceAccountList:
+        """`List service accounts <MISSING>`_
+
+        List service accounts in an organization.
+
+        #### Access control
+        Requires the caller to be logged into the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            limit (int | None): Max number of service accounts to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            ServiceAccount | ServiceAccountList: A service account or list of service accounts.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._list(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=ServiceAccountList,
+            resource_cls=ServiceAccount,
+            method="GET",
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+
+class ServiceAccountSecretsAPI(APIClient):
+    _RESOURCE_PATH = "/api/v1/orgs/{}/serviceaccounts/{}/secrets"
+
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+        warning: FeaturePreviewWarning,
+    ) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = warning
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecret]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecretList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecret] | Iterator[ServiceAccountSecretList]:
+        """Iterate over service account secrets
+
+        Fetches service account secret dto as they are iterated over, so you keep a limited number of service account secrets in memory.
+
+        Args:
+            chunk_size (int | None): Number of service account secretss to return in each chunk. Defaults to yielding one service account secret dto a time.
+            limit (int | None): Maximum number of service account secrets to return. Defaults to return all.
+
+        Returns:
+            Iterator[ServiceAccountSecretDto] | Iterator[ServiceAccountSecretDtoList]: yields ServiceAccountSecretDto one by one if chunk_size is not specified, else ServiceAccountSecretDtoList objects.
+        """
+        self._warning.warn()
+
+        return self._list_generator(
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            method="GET",
+            chunk_size=chunk_size,
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def __iter__(self) -> Iterator[ServiceAccountSecret]:
+        """Iterate over service account secretss
+
+        Fetches service account secrets as they are iterated over, so you keep a
+        limited number of service account secrets in memory.
+
+        Returns:
+            Iterator[ServiceAccountSecretDto]: yields service account secret dto one by one.
+        """
+        return self()
+
+    @overload
+    def create(self, org: str, client_id: str, item: ServiceAccountWrite) -> ServiceAccountSecret: ...
+
+    @overload
+    def create(self, org: str, client_id: str, item: Sequence[ServiceAccountWrite]) -> ServiceAccountSecretList: ...
+
+    def create(
+        self, org: str, client_id: str, item: ServiceAccountWrite | Sequence[ServiceAccountWrite]
+    ) -> ServiceAccountSecret | ServiceAccountSecretList:
+        """`Create a service account secret <MISSING>`_
+
+        Create a secret for a service account.
+
+        This is the only time when the client secret will be shown. Make sure to store it securely.
+
+        #### Access control
+        Requires the caller to be an admin in the target organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): None
+            item (ServiceAccountWrite | Sequence[ServiceAccountWrite]): Service account or list of service accounts to create.
+
+        Returns:
+            ServiceAccountSecret | ServiceAccountSecretList: The created service account secret or service account secrets.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._create_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            items=item,
+            input_resource_cls=ServiceAccountWrite,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def delete(self, org: str, client_id: str, id: int | Sequence[int]) -> None:
+        """`Delete service account secrets <MISSING>`_
+
+        Delete secrets for a service account.
+
+        #### Access control
+        Requires the caller to be an admin in the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): None
+            id (int | Sequence[int]): ID or list of IDs of service account secrets to delete.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        self._delete_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            identifiers=IdentifierSequence.load(ids=id),
+            wrap_ids=False,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def list(
+        self,
+        org: str,
+        client_id: str,
+    ) -> ServiceAccountSecretList:
+        """`List service account secrets <MISSING>`_
+
+        List secrets for a service account.
+
+        #### Access control
+        Requires the caller to be an admin in the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): Unique identifier of a service account
+
+        Returns:
+            ServiceAccountSecretList: A list of service account secrets.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._list(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            method="GET",
+            headers={"cdf-version": "alpha"},
+        )
