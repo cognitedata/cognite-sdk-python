@@ -730,7 +730,7 @@ class SequencesAPI(APIClient):
         cdf_item_by_id: dict[str, Sequence] | None = None,  # type: ignore[override]
     ) -> dict[str, dict[str, dict]]:
         update_obj = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
-        if not isinstance(resource, SequenceWrite) or not resource.columns:
+        if not isinstance(resource, SequenceWrite):
             return update_obj
         # Lookup columns to check what to add, remove and modify
         cdf_item: Sequence | None = None
