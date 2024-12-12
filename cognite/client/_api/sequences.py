@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import math
 import typing
 import warnings
@@ -17,9 +18,11 @@ from cognite.client.data_classes import (
     SequenceUpdate,
     filters,
 )
+from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.aggregations import AggregationFilter, CountAggregate, UniqueResultList
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
 from cognite.client.data_classes.sequences import (
+    SequenceColumnUpdate,
     SequenceCore,
     SequenceProperty,
     SequenceSort,
@@ -685,13 +688,32 @@ class SequencesAPI(APIClient):
             Upsert for sequences:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
                 >>> existing_sequence = client.sequences.retrieve(id=1)
                 >>> existing_sequence.description = "New description"
-                >>> new_sequence = Sequence(external_id="new_sequence", description="New sequence")
+                >>> new_sequence = SequenceWrite(
+                ...     external_id="new_sequence",
+                ...     description="New sequence",
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="String")]
+                ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
+
+        if isinstance(item, SequenceWrite):
+            if item.external_id is None:
+                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
+            cdf_item = self.retrieve(external_id=item.external_id)
+            if cdf_item and cdf_item.external_id:
+                cdf_item_by_id: dict[str, Sequence] = {cdf_item.external_id: cdf_item}
+        elif isinstance(item, collections.abc.Sequence):
+            external_ids = [i.external_id for i in item if isinstance(i, SequenceWrite)]
+            if None in external_ids:
+                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
+            cdf_items = self.retrieve_multiple(external_ids=typing.cast(list[str], external_ids))
+            cdf_item_by_id = cdf_items._external_id_to_item
+        else:
+            cdf_item_by_id = {}
         return self._upsert_multiple(
             item,
             list_cls=SequenceList,
@@ -699,7 +721,53 @@ class SequencesAPI(APIClient):
             update_cls=SequenceUpdate,
             input_resource_cls=Sequence,
             mode=mode,
+            # String is not recognized as hashable by mypy
+            cdf_item_by_id=cdf_item_by_id,  # type: ignore[arg-type]
         )
+
+    @classmethod
+    def _convert_resource_to_patch_object(
+        cls,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        cdf_item_by_id: dict[str, Sequence] | None = None,  # type: ignore[override]
+    ) -> dict[str, dict[str, dict]]:
+        update_obj = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
+        if not isinstance(resource, SequenceWrite):
+            return update_obj
+        # Lookup columns to check what to add, remove and modify
+        cdf_item: Sequence | None = None
+        if cdf_item_by_id and resource.external_id:
+            cdf_item = cdf_item_by_id.get(resource.external_id)
+        update_obj["update"]["columns"] = {}
+        if cdf_item is None:
+            update_obj["update"]["columns"]["add"] = [column.dump() for column in resource.columns]
+        else:
+            cdf_columns_by_external_id = {
+                column.external_id: column for column in cdf_item.columns or [] if column.external_id
+            }
+            columns_by_external_id = {column.external_id: column for column in resource.columns if column.external_id}
+            if mode != "patch" and (
+                to_remove := (set(cdf_columns_by_external_id.keys()) - set(columns_by_external_id.keys()))
+            ):
+                # Replace or replace_ignore_null, remove all columns that are not in the new columns
+                update_obj["update"]["columns"]["remove"] = list(to_remove)
+            if to_add := (set(columns_by_external_id.keys()) - set(cdf_columns_by_external_id.keys())):
+                update_obj["update"]["columns"]["add"] = [columns_by_external_id[ext_id].dump() for ext_id in to_add]
+            if to_modify := (set(columns_by_external_id.keys()) & set(cdf_columns_by_external_id.keys())):
+                modify_list: list[dict[str, dict[str, Any]]] = []
+                for col_ext_id in to_modify:
+                    col_write_obj = columns_by_external_id[col_ext_id]
+                    column_update = super()._convert_resource_to_patch_object(
+                        col_write_obj,
+                        SequenceColumnUpdate._get_update_properties(col_write_obj),
+                        mode,
+                    )
+                    modify_list.append(column_update)
+                update_obj["update"]["columns"]["modify"] = modify_list
+
+        return update_obj
 
     def search(
         self,

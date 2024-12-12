@@ -7,7 +7,7 @@ import logging
 import re
 import warnings
 from collections import UserList
-from collections.abc import Iterator, MutableMapping, Sequence
+from collections.abc import Hashable, Iterator, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1002,6 +1002,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
+        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
     ) -> T_CogniteResource: ...
 
     @overload
@@ -1016,6 +1017,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
+        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
     ) -> T_CogniteResourceList: ...
 
     def _update_multiple(
@@ -1029,6 +1031,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
+        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -1045,6 +1048,7 @@ class APIClient:
                         item,
                         update_cls._get_update_properties(item),
                         mode,
+                        cdf_item_by_id,
                     )
                 )
             elif isinstance(item, CogniteUpdate):
@@ -1083,6 +1087,7 @@ class APIClient:
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
+        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
     ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
@@ -1090,7 +1095,13 @@ class APIClient:
         items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
         try:
             result = self._update_multiple(
-                items, list_cls, resource_cls, update_cls, mode=mode, api_subversion=api_subversion
+                items,
+                list_cls,
+                resource_cls,
+                update_cls,
+                mode=mode,
+                api_subversion=api_subversion,
+                cdf_item_by_id=cdf_item_by_id,
             )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
@@ -1230,6 +1241,7 @@ class APIClient:
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
     ) -> dict[str, dict[str, dict]]:
         dumped = resource.dump(camel_case=True)
 

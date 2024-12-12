@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.5] - 2024-12-12
+### Fixed
+- Upserting a Sequence with columns no longer silently skips the columns, but instead updates them as intended.
+
 ## [7.70.4] - 2024-12-11
 ### Fixed
 - Added missing `diagramParsingACl` to capabilities.
