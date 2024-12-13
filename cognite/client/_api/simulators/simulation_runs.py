@@ -39,6 +39,7 @@ class SimulatorRunsAPI(APIClient):
         Args:
             limit (int): The maximum number of simulation runs to return.
             filter (SimulationRunsFilter | dict[str, Any] | None): Filter to apply.
+            sort (CreatedTimeSort | SimulationTimeSort | None): Sort simulation runs by created time or simulation time.
 
         Returns:
             SimulationRunsList: List of simulation runs

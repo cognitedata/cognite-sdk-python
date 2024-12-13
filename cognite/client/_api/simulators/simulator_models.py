@@ -42,6 +42,7 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
+            sort (CreatedTimeSort | None): Sort order for the results.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
 
         Returns:
@@ -159,6 +160,7 @@ class SimulatorModelsAPI(APIClient):
         Args:
             limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
+            sort (CreatedTimeSort | None): The criteria to sort by.
 
         Returns:
             SimulatorModelList: List of simulator models

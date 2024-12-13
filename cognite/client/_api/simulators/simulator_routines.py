@@ -35,7 +35,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         limit: int = 20,  # the maximum number of revisions to return is limited to 20 items.
         sort: CreatedTimeSort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
-        includeAllFields: bool = False,
+        include_all_fields: bool = False,
     ) -> SimulatorRoutineRevisionsList:
         """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
@@ -43,7 +43,9 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
+            sort (CreatedTimeSort | None): The criteria to sort by.
             filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
+            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
 
         Returns:
             SimulatorRoutineRevisionsList: List of simulator routine revisions
@@ -69,7 +71,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             if isinstance(filter, dict)
             else None,
             sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
-            other_params={"includeAllFields": includeAllFields},
+            other_params={"includeAllFields": include_all_fields},
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
@@ -162,6 +164,7 @@ class SimulatorRoutinesAPI(APIClient):
         Args:
             limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
+            sort (CreatedTimeSort | None): The criteria to sort by.
 
         Returns:
             SimulatorRoutineList: List of simulator routines
