@@ -35,9 +35,7 @@ def new_seq(cognite_client: CogniteClient) -> Sequence:
             SequenceColumn(value_type="Long", external_id="age"),
         ]
     )
-    seq = cognite_client.sequences.create(
-        Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}, external_id="some_seq" + random_string(5))
-    )
+    seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(id=seq.id) is None
