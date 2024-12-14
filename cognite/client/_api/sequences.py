@@ -653,8 +653,15 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = client.sequences.update(my_update)
         """
+        cdf_item_by_id = self._get_cdf_item_by_id(item, "updating")
         return self._update_multiple(
-            list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item, mode=mode
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            update_cls=SequenceUpdate,
+            items=item,  # type: ignore[arg-type]
+            mode=mode,
+            # String is not recognized as hashable by mypy
+            cdf_item_by_id=cdf_item_by_id,  # type: ignore[arg-type]
         )
 
     @overload
@@ -700,20 +707,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
 
-        if isinstance(item, SequenceWrite):
-            if item.external_id is None:
-                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
-            cdf_item = self.retrieve(external_id=item.external_id)
-            if cdf_item and cdf_item.external_id:
-                cdf_item_by_id: dict[str, Sequence] = {cdf_item.external_id: cdf_item}
-        elif isinstance(item, collections.abc.Sequence):
-            external_ids = [i.external_id for i in item if isinstance(i, SequenceWrite)]
-            if None in external_ids:
-                raise ValueError("External ID must be set when upserting a SequenceWrite object.")
-            cdf_items = self.retrieve_multiple(external_ids=typing.cast(list[str], external_ids))
-            cdf_item_by_id = cdf_items._external_id_to_item
-        else:
-            cdf_item_by_id = {}
+        cdf_item_by_id = self._get_cdf_item_by_id(item, "upserting")
         return self._upsert_multiple(
             item,
             list_cls=SequenceList,
@@ -724,6 +718,35 @@ class SequencesAPI(APIClient):
             # String is not recognized as hashable by mypy
             cdf_item_by_id=cdf_item_by_id,  # type: ignore[arg-type]
         )
+
+    def _get_cdf_item_by_id(
+        self,
+        item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
+        operation: str,
+    ) -> dict[str, Sequence]:
+        if isinstance(item, SequenceWrite):
+            if item.external_id is None:
+                raise ValueError(f"External ID must be set when {operation} a SequenceWrite object.")
+            cdf_item = self.retrieve(external_id=item.external_id)
+            if cdf_item and cdf_item.external_id:
+                return {cdf_item.external_id: cdf_item}
+        elif isinstance(item, Sequence):
+            if item.external_id is None:
+                raise ValueError(f"External ID must be set when {operation} a Sequence object.")
+            return {item.external_id: item}
+        elif isinstance(item, collections.abc.Sequence):
+            external_ids = [i.external_id for i in item if isinstance(i, SequenceWrite)]
+            if None in external_ids:
+                raise ValueError(f"External ID must be set when {operation} a SequenceWrite object.")
+            cdf_items = self.retrieve_multiple(external_ids=typing.cast(list[str], external_ids))
+            cdf_item_by_id = cdf_items._external_id_to_item
+            for i in item:
+                if isinstance(i, Sequence) and i.external_id:
+                    cdf_item_by_id[i.external_id] = i
+                elif isinstance(i, Sequence):
+                    raise ValueError(f"External ID must be set when {operation} a Sequence object.")
+            return cdf_item_by_id
+        return {}
 
     @classmethod
     def _convert_resource_to_patch_object(
