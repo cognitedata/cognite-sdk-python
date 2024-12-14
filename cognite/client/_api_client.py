@@ -1144,6 +1144,7 @@ class APIClient:
                         update_cls=update_cls,
                         mode=mode,
                         api_subversion=api_subversion,
+                        cdf_item_by_id=cdf_item_by_id,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)

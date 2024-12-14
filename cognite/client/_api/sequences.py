@@ -732,15 +732,23 @@ class SequencesAPI(APIClient):
             if cdf_item and cdf_item.external_id:
                 return {cdf_item.external_id: cdf_item}
         elif isinstance(item, Sequence):
-            cdf_item = self.retrieve(id=item.id)
-            if cdf_item and cdf_item.id:
-                return {cdf_item.id: cdf_item}
+            if item.external_id:
+                cdf_item = self.retrieve(external_id=item.external_id)
+                if cdf_item and cdf_item.external_id:
+                    return {cdf_item.external_id: cdf_item}
+            else:
+                cdf_item = self.retrieve(id=item.id)
+                if cdf_item and cdf_item.id:
+                    return {cdf_item.id: cdf_item}
         elif isinstance(item, collections.abc.Sequence):
             external_ids = [i.external_id for i in item if isinstance(i, SequenceWrite)]
+            external_ids += [i.external_id for i in item if isinstance(i, Sequence) and i.external_id]
             if None in external_ids:
                 raise ValueError(f"External ID must be set when {operation} a SequenceWrite object.")
-            internal_ids = [i.id for i in item if isinstance(i, Sequence)]
-            cdf_items = self.retrieve_multiple(ids=internal_ids, external_ids=typing.cast(list[str], external_ids))
+            internal_ids = [i.id for i in item if isinstance(i, Sequence) and not i.external_id]
+            cdf_items = self.retrieve_multiple(
+                ids=internal_ids, external_ids=typing.cast(list[str], external_ids), ignore_unknown_ids=True
+            )
             return {item.external_id if isinstance(item.external_id, str) else item.id: item for item in cdf_items}
         return {}
 
@@ -758,10 +766,12 @@ class SequencesAPI(APIClient):
         # Lookup columns to check what to add, remove and modify
         cdf_item: Sequence | None = None
         if cdf_item_by_id:
-            if isinstance(resource, SequenceWrite) and resource.external_id:
-                cdf_item = cdf_item_by_id.get(resource.external_id)
-            elif isinstance(resource, Sequence) and resource.id:
-                cdf_item = cdf_item_by_id.get(resource.id)
+            if isinstance(resource, SequenceWrite) and resource.external_id in cdf_item_by_id:
+                cdf_item = cdf_item_by_id[resource.external_id]
+            elif isinstance(resource, Sequence) and resource.id in cdf_item_by_id:
+                cdf_item = cdf_item_by_id[resource.id]
+            elif isinstance(resource, Sequence) and resource.external_id in cdf_item_by_id:
+                cdf_item = cdf_item_by_id[resource.external_id]
         if isinstance(resource, Sequence):
             if resource.columns is None:
                 resource_columns = SequenceColumnWriteList([])
