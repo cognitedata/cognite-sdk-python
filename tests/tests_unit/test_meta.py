@@ -72,6 +72,7 @@ def apis_that_should_not_have_post_retry_rule():
         [
             "groups",  # ☑️
             "securitycategories",  # ☑️
+            "simulators",
             "templategroups",  # Won't do: deprecated API
         ]
     )
