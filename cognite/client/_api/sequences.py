@@ -659,7 +659,7 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList,
             resource_cls=Sequence,
             update_cls=SequenceUpdate,
-            items=item,  # type: ignore[arg-type]
+            items=item,
             mode=mode,
             cdf_item_by_id=cdf_item_by_id,
         )
