@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.6] - 2024-12-14
+### Fixed
+- Updating a Sequence and repeating existing columns no longer raises a `CogniteDuplicatedError`.
+
 ## [7.70.5] - 2024-12-12
 ### Fixed
 - Upserting a Sequence with columns no longer silently skips the columns, but instead updates them as intended.

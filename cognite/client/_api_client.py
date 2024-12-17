@@ -7,7 +7,7 @@ import logging
 import re
 import warnings
 from collections import UserList
-from collections.abc import Hashable, Iterator, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -993,7 +993,7 @@ class APIClient:
     @overload
     def _update_multiple(
         self,
-        items: CogniteResource | CogniteUpdate,
+        items: CogniteResource | CogniteUpdate | WriteableCogniteResource,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -1002,13 +1002,13 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_CogniteResource: ...
 
     @overload
     def _update_multiple(
         self,
-        items: Sequence[CogniteResource | CogniteUpdate],
+        items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource],
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -1017,12 +1017,15 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_CogniteResourceList: ...
 
     def _update_multiple(
         self,
-        items: Sequence[CogniteResource | CogniteUpdate] | CogniteResource | CogniteUpdate,
+        items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource]
+        | CogniteResource
+        | CogniteUpdate
+        | WriteableCogniteResource,
         list_cls: type[T_CogniteResourceList],
         resource_cls: type[T_CogniteResource],
         update_cls: type[CogniteUpdate],
@@ -1031,7 +1034,7 @@ class APIClient:
         headers: dict[str, Any] | None = None,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
         api_subversion: str | None = None,
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_CogniteResourceList | T_CogniteResource:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -1045,10 +1048,7 @@ class APIClient:
             if isinstance(item, CogniteResource):
                 patch_objects.append(
                     self._convert_resource_to_patch_object(
-                        item,
-                        update_cls._get_update_properties(item),
-                        mode,
-                        cdf_item_by_id,
+                        item, update_cls._get_update_properties(item), mode, cdf_item_by_id
                     )
                 )
             elif isinstance(item, CogniteUpdate):
@@ -1087,7 +1087,7 @@ class APIClient:
         mode: Literal["patch", "replace"],
         input_resource_cls: type[CogniteResource] | None = None,
         api_subversion: str | None = None,
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> T_WritableCogniteResource | T_CogniteResourceList:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
@@ -1101,7 +1101,7 @@ class APIClient:
                 update_cls,
                 mode=mode,
                 api_subversion=api_subversion,
-                cdf_item_by_id=cdf_item_by_id,
+                cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
             )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
@@ -1144,11 +1144,12 @@ class APIClient:
                         update_cls=update_cls,
                         mode=mode,
                         api_subversion=api_subversion,
+                        cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
                     )
             except CogniteAPIError as api_error:
-                successful = list(api_error.successful)
-                unknown = list(api_error.unknown)
-                failed = list(api_error.failed)
+                successful = api_error.successful
+                unknown = api_error.unknown
+                failed = api_error.failed
 
                 successful.extend(not_found_error.successful)
                 unknown.extend(not_found_error.unknown)
@@ -1179,7 +1180,6 @@ class APIClient:
             result = list_cls(
                 (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
             )
-
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
@@ -1241,7 +1241,7 @@ class APIClient:
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> dict[str, dict[str, dict]]:
         dumped = resource.dump(camel_case=True)
 

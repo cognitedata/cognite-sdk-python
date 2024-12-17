@@ -437,3 +437,55 @@ class TestSequencesAPI:
         finally:
             if created:
                 cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
+
+    def test_update_sequence_patch(self, cognite_client: CogniteClient) -> None:
+        original_sequence = SequenceWrite(
+            external_id=f"update_sequence_{random_string(5)}",
+            columns=[
+                SequenceColumnWrite(
+                    description="KW Description",
+                    name="KW Name",
+                    value_type="DOUBLE",
+                    external_id="kw_seq_01",
+                    metadata={},
+                ),
+            ],
+            description="Description of the Test Sequence",
+            name="Test Sequence Name",
+        )
+        update = SequenceWrite(
+            external_id=original_sequence.external_id,
+            columns=[
+                SequenceColumnWrite(
+                    description="KW Description",
+                    name="KW Name",
+                    value_type="DOUBLE",
+                    external_id="kw_seq_01",
+                    metadata={},
+                ),
+                SequenceColumnWrite(
+                    description="PW Description",
+                    name="PW Name",
+                    value_type="DOUBLE",
+                    external_id="pw_seq_01",
+                    metadata={},
+                ),
+            ],
+        )
+
+        created: Sequence | None = None
+        try:
+            created = cognite_client.sequences.create(original_sequence)
+
+            updated = cognite_client.sequences.update(update)
+
+            retrieved = cognite_client.sequences.retrieve(external_id=updated.external_id)
+
+            assert retrieved is not None
+            TestCase().assertCountEqual(
+                retrieved.as_write().columns.dump(),
+                update.columns.dump(),
+            )
+        finally:
+            if created:
+                cognite_client.sequences.delete(external_id=created.external_id, ignore_unknown_ids=True)
