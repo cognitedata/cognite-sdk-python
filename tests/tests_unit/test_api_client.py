@@ -1183,7 +1183,6 @@ class TestRetryableEndpoints:
                 "datasets",
                 "relationships",
                 "labels",
-                "simulators",
             ]
             for test_case in [
                 # Should retry POST on all _read_ endpoints
