@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from tests.tests_integration.test_api.test_simulators.seed.data import resource_names, simulator
+from cognite.client.exceptions import CogniteAPIError
+from tests.tests_integration.test_api.test_simulators.seed.data import resource_names, simulator, simulator_integration
 
 
 @pytest.fixture(scope="class")
@@ -20,4 +23,27 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/simulators",
             json={"items": [simulator]},
+        )
+
+
+@pytest.fixture
+def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator) -> None:
+    try:
+        simulator_integration["heartbeat"] = int(time.time() * 1000)
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations",
+            json={"items": [simulator_integration]},
+        )
+    except CogniteAPIError:
+        simulator_integrations = cognite_client.simulators.integrations.list()
+        integration_id = next(
+            filter(
+                lambda x: x.external_id == simulator_integration["externalId"],
+                simulator_integrations,
+            )
+        ).id
+        # update hearbeat instead
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
+            json={"items": [{"id": integration_id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
         )
