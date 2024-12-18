@@ -1,3 +1,5 @@
+import time
+
 data_set_id = 97552494921583
 
 resource_names = {
@@ -198,4 +200,33 @@ simulator = {
             ],
         },
     ],
+}
+
+simulator_model = {
+    "externalId": resource_names["simulator_model_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
+    "name": "Test Simulator Model",
+    "description": "Test Simulator Model Desc",
+    "dataSetId": resource_names["simulator_test_data_set_id"],
+    "type": "SteadyState",
+}
+
+simulator_model_revision = {
+    "externalId": resource_names["simulator_model_revision_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "description": "test sim model revision description",
+    "fileId": 00000000000000,
+}
+
+simulator_integration = {
+    "externalId": resource_names["simulator_integration_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
+    "heartbeat": int(time.time() * 1000),
+    "dataSetId": resource_names["simulator_test_data_set_id"],
+    "connectorVersion": "1.0.0",
+    "simulatorVersion": "1.0.0",
+    "licenseStatus": "AVAILABLE",
+    "licenseLastCheckedTime": 0,
+    "connectorStatus": "IDLE",
+    "connectorStatusUpdatedTime": 0,
 }
