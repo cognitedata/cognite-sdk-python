@@ -1,6 +1,6 @@
 # This file contains the data used to seed the test environment for the simulator tests
 
-data_set_id = 97552494921583
+data_set_id = 1521375514069
 
 resource_names = {
     "simulator_external_id": "py_sdk_integration_tests",
