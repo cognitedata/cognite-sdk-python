@@ -74,7 +74,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Examples:
 
-            Delete assets by id or external id:
+            Delete integrations by id or external id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
