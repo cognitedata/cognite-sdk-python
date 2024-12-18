@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
@@ -11,6 +12,8 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorIntegrationList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -22,6 +25,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._DELETE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
@@ -55,4 +59,28 @@ class SimulatorIntegrationsAPI(APIClient):
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
             filter=filter.dump() if isinstance(filter, CogniteFilter) else None,
+        )
+
+    def delete(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+    ) -> None:
+        """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
+
+        Args:
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+
+        Examples:
+
+            Delete assets by id or external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.simulators.integrations.delete(id=[1,2,3], external_id="foo")
+        """
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
         )
