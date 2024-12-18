@@ -1,3 +1,5 @@
+# This file contains the data used to seed the test environment for the simulator tests
+
 data_set_id = 97552494921583
 
 resource_names = {

@@ -143,7 +143,8 @@ class CogniteClientMock(MagicMock):
         self.raw.tables = MagicMock(spec_set=RawTablesAPI)
 
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
-        self.simulators = MagicMock(spec_set=SimulatorsAPI)
+
+        self.simulators = MagicMock(spec=SimulatorsAPI)
         self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
