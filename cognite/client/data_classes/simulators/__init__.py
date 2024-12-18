@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from cognite.client.data_classes.simulators.simulators import (
     Simulator,
+    SimulatorIntegration,
+    SimulatorIntegrationList,
     SimulatorList,
     SimulatorStep,
     SimulatorStepField,
@@ -13,6 +15,8 @@ from cognite.client.data_classes.simulators.simulators import (
 
 __all__ = [
     "Simulator",
+    "SimulatorIntegration",
+    "SimulatorIntegrationList",
     "SimulatorList",
     "SimulatorStep",
     "SimulatorStepField",
