@@ -111,10 +111,10 @@ class Identifier(Generic[T_ID]):
 
     @classmethod
     def load(
-        cls, id_: int | None = None, external_id: str | None = None, instance_id: InstanceId | None = None
+        cls, id: int | None = None, external_id: str | None = None, instance_id: InstanceId | None = None
     ) -> Identifier:
-        if id_ is not None:
-            return Identifier(id_)
+        if id is not None:
+            return Identifier(id)
         if external_id is not None:
             return Identifier(external_id)
         if instance_id is not None:
