@@ -52,6 +52,7 @@ if _build_docs:
         ExtractionPipelineRunsAPI,
     )
     from cognite.client._api.functions import FunctionCallsAPI, FunctionSchedulesAPI
+    from cognite.client._api.hosted_extractors import DestinationsAPI, JobsAPI, MappingsAPI, SourcesAPI
     from cognite.client._api.iam import GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
     from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI
     from cognite.client._api.sequences import SequencesDataAPI
@@ -306,6 +307,11 @@ def _make_accessors_for_building_docs() -> None:
     CogniteClient.extraction_pipelines = ExtractionPipelinesAPI  # type: ignore
     CogniteClient.extraction_pipelines.runs = ExtractionPipelineRunsAPI  # type: ignore
     CogniteClient.extraction_pipelines.config = ExtractionPipelineConfigsAPI  # type: ignore
+    CogniteClient.hosted_extractors = HostedExtractorsAPI  # type: ignore
+    CogniteClient.hosted_extractors.sources = SourcesAPI  # type: ignore
+    CogniteClient.hosted_extractors.jobs = JobsAPI  # type: ignore
+    CogniteClient.hosted_extractors.destinations = DestinationsAPI  # type: ignore
+    CogniteClient.hosted_extractors.mappings = MappingsAPI  # type: ignore
     CogniteClient.transformations = TransformationsAPI  # type: ignore
     CogniteClient.transformations.schedules = TransformationSchedulesAPI  # type: ignore
     CogniteClient.transformations.notifications = TransformationNotificationsAPI  # type: ignore
