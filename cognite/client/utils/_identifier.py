@@ -86,16 +86,16 @@ class Identifier(Generic[T_ID]):
 
     @classmethod
     def of_either(
-        cls, id: int | None, external_id: str | None, instance_id: InstanceId | tuple[str, str] | None = None
+        cls, id_: int | None, external_id: str | None, instance_id: InstanceId | tuple[str, str] | None = None
     ) -> Identifier:
-        if id is external_id is instance_id is None:
+        if id_ is external_id is instance_id is None:
             raise ValueError("Exactly one of id, external id, or instance_id must be specified, got neither")
-        elif id is not None:
+        elif id_ is not None:
             if external_id is not None or instance_id is not None:
                 raise ValueError("Exactly one of id, external id, or instance_id must be specified, got multiple")
-            elif not isinstance(id, int):
-                raise TypeError(f"Invalid id, expected int, got {type(id)}")
-            elif not 1 <= id <= MAX_VALID_INTERNAL_ID:
+            elif not isinstance(id_, int):
+                raise TypeError(f"Invalid id, expected int, got {type(id_)}")
+            elif not 1 <= id_ <= MAX_VALID_INTERNAL_ID:
                 raise ValueError(f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}")
         elif external_id is not None:
             if instance_id is not None:
@@ -107,14 +107,14 @@ class Identifier(Generic[T_ID]):
                 instance_id = InstanceId.load(instance_id)
             if not isinstance(instance_id, InstanceId):
                 raise TypeError(f"Invalid instance_id, expected InstanceId, got {type(instance_id)}")
-        return Identifier(id or external_id or instance_id)
+        return Identifier(id_ or external_id or instance_id)
 
     @classmethod
     def load(
-        cls, id: int | None = None, external_id: str | None = None, instance_id: InstanceId | None = None
+        cls, id_: int | None = None, external_id: str | None = None, instance_id: InstanceId | None = None
     ) -> Identifier:
-        if id is not None:
-            return Identifier(id)
+        if id_ is not None:
+            return Identifier(id_)
         if external_id is not None:
             return Identifier(external_id)
         if instance_id is not None:
