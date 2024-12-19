@@ -70,7 +70,7 @@ class IdentifierCore(Protocol):
 class Identifier(Generic[T_ID]):
     def __init__(self, value: T_ID) -> None:
         if not isinstance(value, (int, str, InstanceId)):
-            raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(id)}")
+            raise TypeError(f"Expected id/external_id to be of type int or str, got {value} of type {type(value)}")
         self.__value: T_ID = value
 
     def __eq__(self, other: Any) -> bool:
