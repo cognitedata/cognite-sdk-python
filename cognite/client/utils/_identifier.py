@@ -107,7 +107,7 @@ class Identifier(Generic[T_ID]):
                 instance_id = InstanceId.load(instance_id)
             if not isinstance(instance_id, InstanceId):
                 raise TypeError(f"Invalid instance_id, expected InstanceId, got {type(instance_id)}")
-        return Identifier(id_ or external_id or instance_id)
+        return Identifier(next(idx for idx in (id_, external_id, instance_id) if idx is not None))
 
     @classmethod
     def load(
