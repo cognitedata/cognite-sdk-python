@@ -179,10 +179,10 @@ class DatapointsQuery:
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(
-        self, id_: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
+        self, id: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
     ) -> None:
         # Ensure user have just specified one of id/xid:
-        self._identifier = Identifier.of_either(id_, external_id, instance_id)
+        self._identifier = Identifier.of_either(id, external_id, instance_id)
         if instance_id is not None:
             # dump/load is used in parsing and it loses info of this being a NodeId (loads back as InstanceId). We need
             # to lookup by identifier to sort (match user queries), and then InstanceId won't compare equal to NodeId:
