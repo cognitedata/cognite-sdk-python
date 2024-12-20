@@ -8,7 +8,7 @@ from cognite.client.data_classes.data_modeling import DataModelIdentifier
 from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class DataModelingGraphQLAPI(APIClient):
