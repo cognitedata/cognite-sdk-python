@@ -1,29 +1,21 @@
 from __future__ import annotations
 
 import functools
-import gzip
 import itertools
 import logging
 import warnings
 from collections import UserList
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    NoReturn,
     TypeVar,
     cast,
     overload,
 )
 
-import requests.utils
-from requests import Response
-from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
-from requests.structures import CaseInsensitiveDict
-
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import global_config
+from cognite.client._basic_api_client import BasicAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
@@ -38,11 +30,8 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteProjectAccessError
-from cognite.client.utils import _json
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    get_current_sdk_version,
-    get_user_agent,
     interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
@@ -57,15 +46,9 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
-from cognite.client.utils._json import JSONDecodeError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
-from cognite.client.utils._url import resolve_url
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-    from cognite.client.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
@@ -74,164 +57,8 @@ T = TypeVar("T", bound=CogniteObject)
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
-class APIClient:
+class APIClient(BasicAPIClient):
     _RESOURCE_PATH: str
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        self._config = config
-        self._api_version = api_version
-        self._api_subversion = config.api_subversion
-        self._cognite_client = cognite_client
-        self._init_http_clients()
-
-        self._CREATE_LIMIT = 1000
-        self._LIST_LIMIT = 1000
-        self._RETRIEVE_LIMIT = 1000
-        self._DELETE_LIMIT = 1000
-        self._UPDATE_LIMIT = 1000
-
-    def _init_http_clients(self) -> None:
-        session = get_global_requests_session()
-        self._http_client = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry={429},
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=0,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-        self._http_client_with_retry = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry=global_config.status_forcelist,
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=global_config.max_retries,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-
-    def _delete(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _get(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _post(
-        self,
-        url_path: str,
-        json: dict[str, Any] | None = None,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-        api_subversion: str | None = None,
-    ) -> Response:
-        return self._do_request(
-            "POST",
-            url_path,
-            json=json,
-            headers=headers,
-            params=params,
-            timeout=self._config.timeout,
-            api_subversion=api_subversion,
-        )
-
-    def _put(
-        self, url_path: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
-
-    def _do_request(
-        self,
-        method: str,
-        url_path: str,
-        accept: str = "application/json",
-        api_subversion: str | None = None,
-        **kwargs: Any,
-    ) -> Response:
-        is_retryable, full_url = self._resolve_url(method, url_path)
-        json_payload = kwargs.pop("json", None)
-        headers = self._configure_headers(
-            accept,
-            additional_headers=self._config.headers.copy(),
-            api_subversion=api_subversion,
-        )
-        headers.update(kwargs.get("headers") or {})
-
-        if json_payload is not None:
-            try:
-                data = _json.dumps(json_payload, allow_nan=False)
-            except ValueError as e:
-                # A lot of work to give a more human friendly error message when nans and infs are present:
-                msg = "Out of range float values are not JSON compliant"
-                if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
-                    raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
-                        e.__traceback__
-                    ) from None
-                raise
-            kwargs["data"] = data
-            if method in ["PUT", "POST"] and not global_config.disable_gzip:
-                kwargs["data"] = gzip.compress(data.encode())
-                headers["Content-Encoding"] = "gzip"
-
-        kwargs["headers"] = headers
-
-        # requests will by default follow redirects. This can be an SSRF-hazard if
-        # the client can be tricked to request something with an open redirect, in
-        # addition to leaking the token, as requests will send the headers to the
-        # redirected-to endpoint.
-        # If redirects are to be followed in a call, this should be opted into instead.
-        kwargs.setdefault("allow_redirects", False)
-
-        if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
-        else:
-            res = self._http_client.request(method=method, url=full_url, **kwargs)
-
-        match res.status_code:
-            case 200 | 201 | 202 | 204:
-                pass
-            case 401:
-                self._raise_no_project_access_error(res)
-            case _:
-                self._raise_api_error(res, payload=json_payload)
-
-        stream = kwargs.get("stream")
-        self._log_request(res, payload=json_payload, stream=stream)
-        return res
-
-    def _configure_headers(
-        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
-    ) -> MutableMapping[str, Any]:
-        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
-        headers.update(requests.utils.default_headers())
-        self._refresh_auth_header(headers)
-        headers["content-type"] = "application/json"
-        headers["accept"] = accept
-        headers["x-cdp-sdk"] = f"CognitePythonSDK:{get_current_sdk_version()}"
-        headers["x-cdp-app"] = self._config.client_name
-        headers["cdf-version"] = api_subversion or self._api_subversion
-        if "User-Agent" in headers:
-            headers["User-Agent"] += f" {get_user_agent()}"
-        else:
-            headers["User-Agent"] = get_user_agent()
-        headers.update(additional_headers)
-        return headers
-
-    def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
-        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
-        headers[auth_header_name] = auth_header_value
 
     def _retrieve(
         self,
@@ -1221,109 +1048,3 @@ class APIClient:
                 continue
             cleared[to_camel_case(prop.name)] = clear_with
         return cleared
-
-    def _raise_no_project_access_error(self, res: Response) -> NoReturn:
-        raise CogniteProjectAccessError(
-            client=self._cognite_client,
-            project=self._cognite_client._config.project,
-            x_request_id=res.headers.get("X-Request-Id"),
-            cluster=self._config.cdf_cluster,
-        )
-
-    def _raise_api_error(self, res: Response, payload: dict) -> NoReturn:
-        x_request_id = res.headers.get("X-Request-Id")
-        code = res.status_code
-        missing = None
-        duplicated = None
-        extra = {}
-        try:
-            error = res.json()["error"]
-            if isinstance(error, str):
-                msg = error
-            elif isinstance(error, dict):
-                msg = error["message"]
-                missing = error.get("missing")
-                duplicated = error.get("duplicated")
-                for k, v in error.items():
-                    if k not in ["message", "missing", "duplicated", "code"]:
-                        extra[k] = v
-            else:
-                msg = res.content.decode()
-        except Exception:
-            msg = res.content.decode()
-
-        error_details: dict[str, Any] = {"X-Request-ID": x_request_id}
-        if payload:
-            error_details["payload"] = payload
-        if missing:
-            error_details["missing"] = missing
-        if duplicated:
-            error_details["duplicated"] = duplicated
-        error_details["headers"] = res.request.headers.copy()
-        self._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        error_details["response_headers"] = res.headers
-
-        if res.history:
-            for res_hist in res.history:
-                logger.debug(
-                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
-                )
-        logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
-        # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
-        raise CogniteAPIError(
-            msg,
-            code,
-            x_request_id,
-            missing=missing,
-            duplicated=duplicated,
-            extra=extra,
-            cluster=self._config.cdf_cluster,
-        )
-
-    def _log_request(self, res: Response, **kwargs: Any) -> None:
-        method = res.request.method
-        url = res.request.url
-        status_code = res.status_code
-
-        extra = kwargs.copy()
-        extra["headers"] = res.request.headers.copy()
-        self._sanitize_headers(extra["headers"])
-        if extra["payload"] is None:
-            del extra["payload"]
-
-        stream = kwargs.get("stream")
-        if not stream and self._config.debug is True:
-            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        extra["response_headers"] = res.headers
-
-        try:
-            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
-        except AttributeError:
-            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
-            http_protocol = "XMLHTTP"
-
-        logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
-
-    @staticmethod
-    def _get_response_content_safe(res: Response) -> str:
-        try:
-            return _json.dumps(res.json())
-        except (JSONDecodeError, RequestsJSONDecodeError):
-            pass
-
-        try:
-            return res.content.decode()
-        except UnicodeDecodeError:
-            pass
-
-        return "<binary>"
-
-    @staticmethod
-    def _sanitize_headers(headers: dict[str, Any] | None) -> None:
-        if headers is None:
-            return None
-        if "api-key" in headers:
-            headers["api-key"] = "***"
-        if "Authorization" in headers:
-            headers["Authorization"] = "***"
