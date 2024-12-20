@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.70.7] - 2024-12-20
+### Fixed
+- Passing a valid but empty string as external_id no longer raises an error for certain SDK methods
+
 ## [7.70.6] - 2024-12-14
 ### Fixed
 - Updating a Sequence and repeating existing columns no longer raises a `CogniteDuplicatedError`.
