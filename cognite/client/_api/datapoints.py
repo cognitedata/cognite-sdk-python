@@ -53,6 +53,7 @@ from cognite.client.utils._auxiliary import (
     is_positive,
     split_into_chunks,
     split_into_n_parts,
+    unpack_items,
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
@@ -2143,5 +2144,5 @@ class RetrieveLatestDpsFetcher:
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
         )
-        result = tasks_summary.joined_results(lambda res: res.json()["items"])
+        result = tasks_summary.joined_results(unpack_items)
         return self._post_fix_status_codes_and_stringified_floats(result)
