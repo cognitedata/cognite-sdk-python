@@ -75,43 +75,43 @@ T = TypeVar("T", bound=CogniteObject)
 
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
+RETRYABLE_POST_ENDPOINT_REGEX = "|".join(
+    rf"^/{path}(\?.*)?$"
+    for path in (
+        "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
+        "files/downloadlink",
+        "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
+        "sequences/data(/(list|delete))?",
+        "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
+        "context/entitymatching/(byids|list|jobs)",
+        "sessions/revoke",
+        "models/.*",
+        ".*/graphql",
+        "units/.*",
+        "annotations/(list|byids|reverselookup)",
+        r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
+        r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
+        "documents/(aggregate|list|search)",
+        "profiles/(byids|search)",
+        "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
+        "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
+        "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
+        "simulators/list",
+        "extpipes/(list|byids|runs/list)",
+        "workflows/.*",
+        "hostedextractors/.*",
+        "postgresgateway/.*",
+        "context/diagram/.*",
+        "ai/tools/documents/(summarize|ask)",
+    )
+)
+
 
 class APIClient:
     _RESOURCE_PATH: str
-    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        [
-            r"|".join(
-                rf"^/{path}(\?.*)?$"
-                for path in (
-                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-                    "files/downloadlink",
-                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
-                    "sequences/data(/(list|delete))?",
-                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
-                    "context/entitymatching/(byids|list|jobs)",
-                    "sessions/revoke",
-                    "models/.*",
-                    ".*/graphql",
-                    "units/.*",
-                    "annotations/(list|byids|reverselookup)",
-                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
-                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
-                    "documents/(aggregate|list|search)",
-                    "profiles/(byids|search)",
-                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
-                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
-                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
-                    "simulators/list",
-                    "extpipes/(list|byids|runs/list)",
-                    "workflows/.*",
-                    "hostedextractors/.*",
-                    "postgresgateway/.*",
-                    "context/diagram/.*",
-                    "ai/tools/documents/(summarize|ask)",
-                )
-            )
-        ]
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERN: ClassVar[re.Pattern[str]] = re.compile(RETRYABLE_POST_ENDPOINT_REGEX)
+    _VALID_URL_PATTERN = re.compile(  # TODO: Remove playground?
+        r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
     )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
@@ -295,12 +295,10 @@ class APIClient:
     @classmethod
     @functools.lru_cache(64)
     def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        match = re.match(valid_url_pattern, url)
-        if not match:
+        if not (match := cls._VALID_URL_PATTERN.match(url)):
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        return any(re.match(pattern, path) for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS)
+        return bool(cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERN.match(path))
 
     def _retrieve(
         self,
