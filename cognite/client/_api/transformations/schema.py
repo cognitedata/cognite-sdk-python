@@ -6,7 +6,7 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class TransformationSchemaAPI(APIClient):
