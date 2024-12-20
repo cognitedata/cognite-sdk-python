@@ -14,7 +14,6 @@ from cognite.client.data_classes import raw
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
     find_duplicates,
-    interpolate_and_url_encode,
     is_finite,
     is_unlimited,
     split_into_chunks,
@@ -23,6 +22,7 @@ from cognite.client.utils._auxiliary import (
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
