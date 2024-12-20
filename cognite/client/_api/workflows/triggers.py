@@ -13,9 +13,9 @@ from cognite.client.data_classes.workflows import (
     WorkflowTriggerRunList,
     WorkflowTriggerUpsert,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
