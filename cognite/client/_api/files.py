@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
-from cognite.client.utils._auxiliary import find_duplicates
+from cognite.client.utils._auxiliary import find_duplicates, unpack_items
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -949,7 +949,7 @@ class FilesAPI(APIClient):
         ]
         tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
+        results = tasks_summary.joined_results(unpack_items)
         return {
             result.get("id") or result.get("externalId") or NodeId.load(result["instanceId"]): result["downloadUrl"]
             for result in results
