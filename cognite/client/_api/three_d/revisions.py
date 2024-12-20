@@ -13,8 +13,8 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
