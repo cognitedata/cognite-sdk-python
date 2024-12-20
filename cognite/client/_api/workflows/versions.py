@@ -14,9 +14,10 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import WorkflowVersionIdentifierSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 
 if TYPE_CHECKING:
