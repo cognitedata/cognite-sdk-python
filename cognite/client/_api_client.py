@@ -4,7 +4,6 @@ import functools
 import gzip
 import itertools
 import logging
-import re
 import warnings
 from collections import UserList
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
@@ -12,14 +11,12 @@ from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Literal,
     NoReturn,
     TypeVar,
     cast,
     overload,
 )
-from urllib.parse import urljoin
 
 import requests.utils
 from requests import Response
@@ -63,6 +60,7 @@ from cognite.client.utils._identifier import (
 )
 from cognite.client.utils._json import JSONDecodeError
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._url import resolve_url
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -79,60 +77,6 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 class APIClient:
     _RESOURCE_PATH: str
-    __NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: ClassVar[list[str]] = [
-        "annotations",
-        "assets",
-        "context/entitymatching",
-        "datasets",
-        "documents",
-        "events",
-        "extpipes",
-        "extpipes/config",
-        "extpipes/runs",
-        "files",
-        "functions",
-        "functions/[^/]+/call",
-        "functions/schedules",
-        "geospatial",
-        "geospatial/crs",
-        "geospatial/featuretypes",
-        "geospatial/featuretypes/[^/]+/features",
-        "hostedextractors",
-        "labels",
-        "postgresgateway",
-        "profiles",
-        "raw/dbs$",
-        "raw/dbs/[^/]+/tables$",
-        "relationships",
-        "sequences",
-        "simulators",
-        "simulators/models",
-        "simulators/models/revisions",
-        "simulators/models/routines",
-        "simulators/models/routines/revisions",
-        "timeseries",
-        "transformations",
-        "transformations/schedules",
-        "3d/models",
-        "3d/models/[^/]+/revisions",
-        "3d/models/[^/]+/revisions/[^/]+/mappings",
-        "3d/models/[^/]+/revisions/[^/]+/nodes",
-    ]
-
-    _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: ClassVar[Pattern[str]] = re.compile(
-        r"|".join(
-            rf"^/{path}(\?.*)?$"
-            for path in (
-                f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
-                "ai/tools/documents/task",
-                "annotations/suggest",
-                "extpipes/config/revert",
-                "transformations/cancel",
-                "transformations/notifications",
-                "transformations/run",
-            )
-        )
-    )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         self._config = config
@@ -289,38 +233,6 @@ class APIClient:
     def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
         auth_header_name, auth_header_value = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
-
-    def _resolve_url(self, method: str, url_path: str) -> tuple[bool, str]:
-        if not url_path.startswith("/"):
-            raise ValueError("URL path must start with '/'")
-        base_url = self._get_base_url_with_base_path()
-        full_url = base_url + url_path
-        is_retryable = self._is_retryable(method, full_url)
-        return is_retryable, full_url
-
-    def _get_base_url_with_base_path(self) -> str:
-        base_path = ""
-        if self._api_version:
-            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-        return urljoin(self._config.base_url, base_path)
-
-    def _is_retryable(self, method: str, path: str) -> bool:
-        valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-
-        if method not in valid_methods:
-            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
-
-        return method in ["GET", "PUT", "PATCH"] or (method == "POST" and self._url_is_retryable(path))
-
-    @classmethod
-    @functools.lru_cache(64)
-    def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        match = re.match(valid_url_pattern, url)
-        if not match:
-            raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
-        path = match.group(1)
-        return not cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.match(path)
 
     def _retrieve(
         self,

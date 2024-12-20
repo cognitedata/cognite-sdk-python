@@ -6,8 +6,9 @@ from typing import Any, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import raw
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
