@@ -263,3 +263,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
         else:
             items.append((sep.join((*parent_keys, key)), value))
     return dict(items)
+
+
+def unpack_items(res: Response) -> list[Any]:
+    return res.json()["items"]

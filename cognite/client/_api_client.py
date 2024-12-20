@@ -49,6 +49,7 @@ from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
+    unpack_items,
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import TaskExecutor, execute_tasks
@@ -407,7 +408,7 @@ class APIClient:
             )
             return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
 
-        retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        retrieved_items = tasks_summary.joined_results(unpack_items)
 
         if identifiers.is_singleton():
             if retrieved_items:
@@ -950,7 +951,7 @@ class APIClient:
             task_list_element_unwrap_fn=unwrap_element,
             str_format_element_fn=str_format_element,
         )
-        created_resources = summary.joined_results(lambda res: res.json()["items"])
+        created_resources = summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
@@ -987,7 +988,7 @@ class APIClient:
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
-            return summary.joined_results(lambda res: res.json()["items"])
+            return summary.joined_results(unpack_items)
         else:
             return None
 
@@ -1073,7 +1074,7 @@ class APIClient:
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
-        updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        updated_items = tasks_summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
