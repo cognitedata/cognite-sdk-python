@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import math
-import platform
 import warnings
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import (
@@ -12,7 +11,6 @@ from typing import (
     TypeVar,
     overload,
 )
-from urllib.parse import quote
 
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
@@ -20,11 +18,11 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
+    import httpx
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
@@ -263,3 +261,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
         else:
             items.append((sep.join((*parent_keys, key)), value))
     return dict(items)
+
+
+def unpack_items(res: httpx.Response) -> list[Any]:
+    return res.json()["items"]
