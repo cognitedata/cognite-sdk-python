@@ -20,6 +20,9 @@ Changes are grouped as follows
 ## [7.71.2] - 2025-01-07
 ### Added
 - Instance ID is now supported for `retrieve_latest` in the datapoints API.
+### Fixed
+- Using `retrieve_latest` with `ignore_unknown_ids=True` could raise `KeyError` if at least one
+  time series were missing and any of the non-missing did not have `external_id` set.
 
 ## [7.71.1] - 2025-01-07
 ### Fixed

@@ -2098,8 +2098,8 @@ class RetrieveLatestDpsFetcher:
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
             ids_exists = (
                 {("id", r["id"]) for r in result}
-                .union({("xid", r["externalId"]) for r in result})
-                .union({("inst_id", r["instanceId"]) for r in result})
+                .union({("xid", r.get("externalId")) for r in result})
+                .union({("inst_id", r.get("instanceId")) for r in result})
                 .difference({("xid", None), ("inst_id", None)})
             )  # fmt: skip
             self._all_identifiers = [
