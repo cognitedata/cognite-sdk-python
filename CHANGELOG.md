@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.71.2] - 2025-01-07
+### Added
+- Instance ID is now supported for `retrieve_latest` in the datapoints API.
 
 ## [7.71.1] - 2025-01-07
 ### Fixed
