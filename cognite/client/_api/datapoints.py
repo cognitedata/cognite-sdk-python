@@ -8,7 +8,7 @@ import math
 import time
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
 from itertools import chain
 from operator import itemgetter
@@ -1376,6 +1376,7 @@ class DatapointsAPI(APIClient):
         self,
         id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
+        instance_id: NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery] | None = None,
         before: None | int | str | datetime.datetime = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
@@ -1392,6 +1393,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
+            instance_id (NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
             before (None | int | str | datetime.datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
@@ -1411,6 +1413,13 @@ class DatapointsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.time_series.data.retrieve_latest(id=1)[0]
+
+            You can also use external_id or instance_id; single identifier or list of identifiers:
+
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id=["foo", "bar"],
+                ...     instance_id=NodeId("my-space", "my-ts-xid"))
 
             You can also get the first datapoint before a specific time:
 
@@ -1460,6 +1469,7 @@ class DatapointsAPI(APIClient):
         fetcher = RetrieveLatestDpsFetcher(
             id=id,
             external_id=external_id,
+            instance_id=instance_id,
             before=before,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
@@ -1948,6 +1958,7 @@ class RetrieveLatestDpsFetcher:
         self,
         id: None | int | LatestDatapointQuery | list[int | LatestDatapointQuery],
         external_id: None | str | LatestDatapointQuery | list[str | LatestDatapointQuery],
+        instance_id: None | NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery],
         before: None | int | str | datetime.datetime,
         target_unit: None | str,
         target_unit_system: None | str,
@@ -1976,8 +1987,9 @@ class RetrieveLatestDpsFetcher:
 
         parsed_ids = cast(None | int | Sequence[int], self._parse_user_input(id, "id"))
         parsed_xids = cast(None | str | SequenceNotStr[str], self._parse_user_input(external_id, "external_id"))
-        self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
-        self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
+        parsed_inst_ids = cast(None | NodeId | Sequence[NodeId], self._parse_user_input(instance_id, "instance_id"))
+        self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids, parsed_inst_ids).is_singleton()
+        self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids, parsed_inst_ids)
 
     @property
     def input_is_singleton(self) -> bool:
@@ -1986,7 +1998,7 @@ class RetrieveLatestDpsFetcher:
     @staticmethod
     def _get_and_check_identifier(
         query: LatestDatapointQuery,
-        identifier_type: Literal["id", "external_id"],
+        identifier_type: Literal["id", "external_id", "instance_id"],
     ) -> int | str:
         if query.identifier.name() != identifier_type:
             raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
@@ -1995,7 +2007,7 @@ class RetrieveLatestDpsFetcher:
     def _parse_user_input(
         self,
         user_input: Any,
-        identifier_type: Literal["id", "external_id"],
+        identifier_type: Literal["id", "external_id", "instance_id"],
     ) -> int | str | list[int] | list[str] | None:
         if user_input is None:
             return None
@@ -2027,17 +2039,24 @@ class RetrieveLatestDpsFetcher:
         return user_input
 
     def _prepare_requests(
-        self, parsed_ids: None | int | Sequence[int], parsed_xids: None | str | SequenceNotStr[str]
+        self,
+        parsed_ids: None | int | Sequence[int],
+        parsed_xids: None | str | SequenceNotStr[str],
+        parsed_inst_ids: None | NodeId | Sequence[NodeId],
     ) -> list[dict]:
-        all_ids, all_xids = [], []
+        all_ids, all_xids, all_inst_ids = [], [], []
         if parsed_ids is not None:
             all_ids = IdentifierSequence.load(parsed_ids, None).as_dicts()
         if parsed_xids is not None:
             all_xids = IdentifierSequence.load(None, parsed_xids).as_dicts()
+        if parsed_inst_ids is not None:
+            all_inst_ids = IdentifierSequence.load(None, None, parsed_inst_ids).as_dicts()
 
         # In the API, missing 'before' defaults to 'now'. As we want to get the most up-to-date datapoint, we don't
         # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
-        for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
+        for identifiers, identifier_type in zip(
+            [all_ids, all_xids, all_inst_ids], ["id", "external_id", "instance_id"]
+        ):
             for i, dct in enumerate(identifiers):
                 idx = (identifier_type, i)
                 i_before = self.settings_before.get(idx) or self.default_before
@@ -2071,20 +2090,32 @@ class RetrieveLatestDpsFetcher:
                     dct["treatUncertainAsBad"] = False
 
         all_ids.extend(all_xids)
+        all_ids.extend(all_inst_ids)
         return all_ids
 
     def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
         # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
+            # Duplicates can come from different identifier types, but they will have the same 'id':
+            duplicate_check = Counter(r["id"] for r in result)
+            if dupes := [id_ for id_, count in duplicate_check.items() if count > 1]:
+                raise RuntimeError(
+                    "When using retrieve_latest (datapoint) with ignore_unknown_ids=True, identifiers must be unique! "
+                    "You cannot get around this by passing several of [id, external_id, instance_id] for the same "
+                    f"underlying time series. Duplicates: {dupes}."
+                )
             ids_exists = (
                 {("id", r["id"]) for r in result}
-                .union({("xid", r["externalId"]) for r in result})
-                .difference({("xid", None)})
+                .union({("xid", r.get("externalId")) for r in result})
+                .union({("inst_id", r.get("instanceId")) for r in result})
+                .difference({("xid", None), ("inst_id", None)})
             )  # fmt: skip
             self._all_identifiers = [
                 query
                 for query in self._all_identifiers
-                if ids_exists.intersection((("id", query.get("id")), ("xid", query.get("externalId"))))
+                if ids_exists.intersection(
+                    (("id", query.get("id")), ("xid", query.get("externalId")), ("inst_id", query.get("instanceId")))
+                )
             ]
         for query, res in zip(self._all_identifiers, result):
             if not (dps := res["datapoints"]):
