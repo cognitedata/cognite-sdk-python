@@ -8,7 +8,7 @@ import math
 import time
 import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
 from itertools import chain
 from operator import itemgetter
@@ -2096,6 +2096,14 @@ class RetrieveLatestDpsFetcher:
     def _post_fix_status_codes_and_stringified_floats(self, result: list[dict[str, Any]]) -> list[dict[str, Any]]:
         # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
         if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
+            # Duplicates can come from different identifier types, but they will have the same 'id':
+            duplicate_check = Counter(r["id"] for r in result)
+            if dupes := [id_ for id_, count in duplicate_check.items() if count > 1]:
+                raise RuntimeError(
+                    "When using retrieve_latest (datapoint) with ignore_unknown_ids=True, identifiers must be unique! "
+                    "You cannot get around this by passing several of [id, external_id, instance_id] for the same "
+                    f"underlying time series. Duplicates: {dupes}."
+                )
             ids_exists = (
                 {("id", r["id"]) for r in result}
                 .union({("xid", r.get("externalId")) for r in result})
