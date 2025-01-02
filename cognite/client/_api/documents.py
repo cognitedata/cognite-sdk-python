@@ -491,7 +491,9 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-        response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
+
+        body = {"id": id}
+        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=body)
         return response.content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
