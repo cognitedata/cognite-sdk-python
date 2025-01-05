@@ -7,8 +7,6 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

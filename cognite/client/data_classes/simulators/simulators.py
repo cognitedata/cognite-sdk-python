@@ -280,7 +280,7 @@ class SimulatorIntegration(CogniteResource):
         connector_status: str | None = None,
         connector_status_updated_time: int | None = None,
     ) -> None:
-        self.id = id  # type: ignore
+        self.id = id
         self.log_id = log_id
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
