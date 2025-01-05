@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+### Added
+- Support for the `/simulators` and `/simulators/integration` API endpoints.
+
 ## [7.70.5] - 2024-12-12
 ### Fixed
 - Upserting a Sequence with columns no longer silently skips the columns, but instead updates them as intended.

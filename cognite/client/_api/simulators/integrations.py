@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -33,13 +33,13 @@ class SimulatorIntegrationsAPI(APIClient):
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
-        filter: SimulatorIntegrationFilter | dict[str, Any] | None = None,
+        filter: SimulatorIntegrationFilter | None = None,
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
         Retrieves a list of simulator integrations that match the given criteria
         Args:
             limit (int): The maximum number of simulator integrations to return.
-            filter (SimulatorIntegrationFilter | dict[str, Any] | None): Filter to apply.
+            filter (SimulatorIntegrationFilter | None): Filter to apply.
         Returns:
             SimulatorIntegrationList: List of simulator integrations
         Examples:
@@ -49,7 +49,9 @@ class SimulatorIntegrationsAPI(APIClient):
                     >>> res = client.simulators.integrations.list()
 
             Filter integrations by active status:
-                    >>> res = client.simulators.integrations.list(filter=SimulatorIntegrationFilter(active=True))
+                    >>> from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+                    >>> res = client.simulators.integrations.list(
+                    ...     filter=SimulatorIntegrationFilter(active=True))
         """
 
         self._warning.warn()
@@ -64,13 +66,13 @@ class SimulatorIntegrationsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
+            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): No description.
 
         Examples:
 
@@ -81,6 +83,6 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> client.simulators.integrations.delete(id=[1,2,3], external_id="foo")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
             wrap_ids=True,
         )

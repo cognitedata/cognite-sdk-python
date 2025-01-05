@@ -9,8 +9,6 @@ from cognite.client.data_classes.simulators.simulators import (
     SimulatorStepField,
     SimulatorStepOption,
     SimulatorUnitEntry,
-    SimulatorWrite,
-    SimulatorWriteList,
 )
 
 __all__ = [
@@ -22,6 +20,4 @@ __all__ = [
     "SimulatorStepField",
     "SimulatorStepOption",
     "SimulatorUnitEntry",
-    "SimulatorWrite",
-    "SimulatorWriteList",
 ]
