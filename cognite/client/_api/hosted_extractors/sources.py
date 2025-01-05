@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteResource, PropertySpec, T_WritableCogniteResource
+from cognite.client.data_classes._base import CogniteResource, PropertySpec, T_CogniteResource
 from cognite.client.data_classes.hosted_extractors.sources import Source, SourceList, SourceUpdate, SourceWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -237,7 +237,7 @@ class SourcesAPI(APIClient):
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> dict[str, dict[str, dict]]:
         output = super()._convert_resource_to_patch_object(resource, update_attributes, mode)
         if hasattr(resource, "_type"):

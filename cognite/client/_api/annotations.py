@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Sequence
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
-from cognite.client.data_classes._base import CogniteResource, PropertySpec, T_WritableCogniteResource
+from cognite.client.data_classes._base import CogniteResource, PropertySpec, T_CogniteResource
 from cognite.client.data_classes.annotations import AnnotationCore, AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
@@ -102,7 +102,7 @@ class AnnotationsAPI(APIClient):
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
-        cdf_item_by_id: dict[Hashable, T_WritableCogniteResource] | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
     ) -> dict[str, dict[str, dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)

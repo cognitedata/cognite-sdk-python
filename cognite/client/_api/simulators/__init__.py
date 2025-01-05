@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cognite.client._api.simulators.simulator_models import SimulatorModelsAPI
+from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
@@ -18,18 +19,19 @@ class SimulatorsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorList:
-        """`Filter simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
+        """`List simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         List simulators
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
             SimulatorList: List of simulators
