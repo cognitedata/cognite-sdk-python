@@ -1,7 +1,4 @@
 # This file contains the data used to seed the test environment for the simulator tests
-# 97552494921583
-# data_set_id = 1521375514069
-# data_set_id = 97552494921583
 data_set_external_id = "sdk_tests_dwsim1"
 
 resource_names = {
