@@ -1368,6 +1368,7 @@ class TestRetryableEndpoints:
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/context/diagram/detect/456", True),
                 # Simulators
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/simulators/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/simulators/delete", False),
             ]
         ),
     )

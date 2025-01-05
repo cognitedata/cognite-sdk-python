@@ -10,19 +10,21 @@ from cognite.client.data_classes.simulators.models import (
 )
 from cognite.client.data_classes.simulators.simulators import (
     Simulator,
+    SimulatorIntegration,
+    SimulatorIntegrationList,
     SimulatorList,
     SimulatorStep,
     SimulatorStepField,
     SimulatorStepOption,
     SimulatorUnitEntry,
-    SimulatorWrite,
-    SimulatorWriteList,
 )
 
 __all__ = [
     "CreatedTimeSort",
     "PropertySort",
     "Simulator",
+    "SimulatorIntegration",
+    "SimulatorIntegrationList",
     "SimulatorList",
     "SimulatorModel",
     "SimulatorModelList",
@@ -32,6 +34,4 @@ __all__ = [
     "SimulatorStepField",
     "SimulatorStepOption",
     "SimulatorUnitEntry",
-    "SimulatorWrite",
-    "SimulatorWriteList",
 ]

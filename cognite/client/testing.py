@@ -44,7 +44,9 @@ from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTabl
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.simulators import SimulatorsAPI
+
 from cognite.client._api.simulators.simulator_models import SimulatorModelsAPI
+from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
     TemplateGroupsAPI,
@@ -143,7 +145,9 @@ class CogniteClientMock(MagicMock):
         self.raw.tables = MagicMock(spec_set=RawTablesAPI)
 
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
-        self.simulators = MagicMock(spec_set=SimulatorsAPI)
+
+        self.simulators = MagicMock(spec=SimulatorsAPI)
+        self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
         self.simulators.models = MagicMock(spec_set=SimulatorModelsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
