@@ -23,6 +23,8 @@ class TestIdentifier:
             (1, None, None, ("id", 1)),
             (MAX_VALID_INTERNAL_ID, None, None, ("id", MAX_VALID_INTERNAL_ID)),
             (None, "foo", None, ("external_id", "foo")),
+            # Bug prior to 7.70.7, empty string external ID would fail with wrong error message
+            (None, "", None, ("external_id", "")),
             (None, None, InstanceId("s", "extid"), ("instance_id", InstanceId("s", "extid"))),
         ),
     )
