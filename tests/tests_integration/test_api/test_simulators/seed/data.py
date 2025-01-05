@@ -2,7 +2,7 @@
 # 97552494921583
 # data_set_id = 1521375514069
 # data_set_id = 97552494921583
-data_set_external_id = "dwsim_test"
+data_set_external_id = "sdk_tests_dwsim1"
 
 resource_names = {
     "simulator_external_id": "py_sdk_integration_tests",

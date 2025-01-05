@@ -7,6 +7,8 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -45,3 +47,13 @@ class SimulatorsAPI(APIClient):
         """
         self._warning.warn()
         return self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)
+
+    # Temporary method, remove this when the API is ready
+    def delete(
+        self,
+        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+    ) -> None:
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_ids),
+            wrap_ids=True,
+        )
