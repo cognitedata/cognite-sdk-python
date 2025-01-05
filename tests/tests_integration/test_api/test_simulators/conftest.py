@@ -27,7 +27,6 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
-        simulator["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
     yield
     # print("Deleting simulator")
