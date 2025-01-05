@@ -6,10 +6,14 @@ from typing import TYPE_CHECKING, Any, Literal
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CognitePrimitiveUpdate,
+    CogniteResource,
     CogniteResourceList,
     CogniteSort,
+    CogniteUpdate,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    PropertySpec,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -270,12 +274,12 @@ class SimulatorModel(SimulatorModelCore):
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
     This is the read/response format of a simulator model.
     Args:
-        external_id (str): External id of the simulator model
-        simulator_external_id (str): External id of the associated simulator
-        data_set_id (int): The id of the dataset associated with the simulator model
-        name (str): The name of the simulator model
-        id (int): A unique id of a simulator model
-        type (str): The type key of the simulator model
+        id (int | None): A unique id of a simulator model
+        external_id (str | None): External id of the simulator model
+        simulator_external_id (str | None): External id of the associated simulator
+        data_set_id (int | None): The id of the dataset associated with the simulator model
+        name (str | None): The name of the simulator model
+        type (str | None): The type key of the simulator model
         description (str | None): The description of the simulator model
         created_time (int | None): The time when the simulator model was created
         last_updated_time (int | None): The time when the simulator model was last updated
@@ -283,12 +287,12 @@ class SimulatorModel(SimulatorModelCore):
 
     def __init__(
         self,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        name: str,
-        id: int,
-        type: str,
+        id: int | None = None,
+        external_id: str | None = None,
+        simulator_external_id: str | None = None,
+        data_set_id: int | None = None,
+        name: str | None = None,
+        type: str | None = None,
         description: str | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
@@ -312,6 +316,7 @@ class SimulatorModel(SimulatorModelCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         load = super()._load(resource, cognite_client)
+
         return cls(
             external_id=load.external_id,
             simulator_external_id=load.simulator_external_id,
@@ -363,3 +368,24 @@ class SimulatorModelRevisionList(
         return SimulatorModelRevisionWriteList(
             [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
         )
+
+
+class SimulatorModelUpdate(CogniteUpdate):
+    class _PrimitiveModelUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> None:
+            self._set(value)
+
+    @property
+    def name(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "name")
+
+    @property
+    def description(self) -> _PrimitiveModelUpdate:
+        return SimulatorModelUpdate._PrimitiveModelUpdate(self, "description")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("name"),
+            PropertySpec("description"),
+        ]

@@ -1,5 +1,3 @@
-import time
-
 # This file contains the data used to seed the test environment for the simulator tests
 data_set_external_id = "sdk_tests_dwsim1"
 
@@ -8,7 +6,7 @@ resource_names = {
     "simulator_integration_external_id": "py_sdk_integration_tests_connector",
     "simulator_model_external_id": "py_sdk_integration_tests_model",
     "simulator_model_revision_external_id": "pysdk_model_revision",
-    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_3",
+    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_4",
     "simulator_routine_external_id": "pysdk_routine",
     "simulator_routine_revision_external_id": "pysdk_routine_revision",
     "simulator_test_data_set_id": None,

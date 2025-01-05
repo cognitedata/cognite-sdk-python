@@ -1,7 +1,11 @@
+import datetime
+
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
+from cognite.client.data_classes.simulators.models import SimulatorModel, SimulatorModelRevision
 
 
 @pytest.mark.usefixtures(
@@ -34,4 +38,62 @@ class TestSimulatorModels:
         model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
         model_revision = cognite_client.simulators.models.revisions.retrieve(external_id=model_revision_external_id)
         assert model_revision is not None
-        assert model_revision.model_external_id == model_revision_external_id
+        assert model_revision.model_external_id == seed_resource_names["simulator_model_external_id"]
+
+    @pytest.mark.usefixtures("seed_file", "seed_resource_names")
+    def test_create_model(self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names) -> None:
+        model_external_id_1 = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        model_external_id_2 = datetime.datetime.now().strftime("%Y%m%d%H%M%S2")
+        models_to_create = [
+            SimulatorModel(
+                name="sdk-test-model1",
+                simulator_external_id=seed_resource_names["simulator_external_id"],
+                external_id=model_external_id_1,
+                data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                type="SteadyState",
+            ),
+            SimulatorModel(
+                name="sdk-test-model2",
+                simulator_external_id=seed_resource_names["simulator_external_id"],
+                external_id=model_external_id_2,
+                data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                type="SteadyState",
+            ),
+        ]
+
+        models_created = cognite_client.simulators.models.create(models_to_create)
+
+        assert models_created is not None
+        assert len(models_created) == 2
+        model_revision_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "revision"
+        model_revision_to_create = SimulatorModelRevision(
+            external_id=model_revision_external_id,
+            model_external_id=model_external_id_1,
+            file_id=seed_file.id,
+            description="Test revision",
+        )
+
+        model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
+        assert model_revision_created is not None
+        assert model_revision_created.external_id == model_revision_external_id
+        cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
+
+    def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        models_to_create = SimulatorModel(
+            name="sdk-test-model1",
+            simulator_external_id=seed_resource_names["simulator_external_id"],
+            external_id=model_external_id,
+            data_set_id=seed_resource_names["simulator_test_data_set_id"],
+            type="SteadyState",
+        )
+
+        models_created = cognite_client.simulators.models.create(models_to_create)
+        assert models_created is not None
+        assert models_created.external_id == model_external_id  # Validate external ID
+        models_created.description = "updated description"  # Update the description
+        models_created.name = "updated name"  # Update the name
+        model_updated = cognite_client.simulators.models.update(models_created)
+        assert model_updated is not None
+        assert model_updated.description == "updated description"
+        assert model_updated.name == "updated name"
