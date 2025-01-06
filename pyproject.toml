@@ -26,7 +26,7 @@ requests = "^2.27"
 requests_oauthlib = "^1"
 msal = "^1.31"
 protobuf = ">=4"
-packaging = ">=24"
+packaging = ">=20"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
 typing_extensions = ">= 4"
 # Windows does not have a ANSI database and need tzdata... pyodide also needs it:
