@@ -100,17 +100,14 @@ def all_mock_children(mock, parent_name=()):
     return dct
 
 
-def get_api_class_by_attribute(client: CogniteClient) -> dict[str, type[APIClient]]:
+def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[APIClient]]:
     available_apis: dict[str, type[APIClient]] = {}
-    to_check = [("", client)]
-    while to_check:
-        attr_path, cls_ = to_check.pop()
-        for attr, obj in cls_.__dict__.items():
-            if attr.startswith("_") or not isinstance(obj, APIClient):
-                continue
-            obj_attr = ".".join([attr_path, attr]) if attr_path else attr
-            available_apis[obj_attr] = obj.__class__
-            to_check.append((obj_attr, obj))
+    for attr, obj in cls_.__dict__.items():
+        if attr.startswith("_") or not isinstance(obj, APIClient):
+            continue
+        obj_attr = (*parent_name, attr)
+        available_apis[".".join(obj_attr)] = obj.__class__
+        available_apis.update(get_api_class_by_attribute(obj, parent_name=obj_attr))
     return available_apis
 
 
