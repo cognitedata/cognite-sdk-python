@@ -949,7 +949,7 @@ class IsNull(Not):  # type: ignore [misc]
 
 
 class InstanceReferences(Filter):
-    """Data modeling filter which matches filters with these fully qualified instance refs.
+    """Data modeling filter which matches instances with these fully qualified references.
 
     Args:
         references (Sequence[InstanceId] | Sequence[tuple[str, str]]): The instance references.
@@ -959,7 +959,7 @@ class InstanceReferences(Filter):
 
         - A filter using a tuple as instance reference:
 
-            >>> from cognite.client.data_classes.filters import IsNull, InstanceId
+            >>> from cognite.client.data_classes.filters import InstanceReferences, InstanceId
             >>> flt = InstanceReferences([("someSpace", "someExternalId")])
 
         - Composing the instance references using the InstanceId class:
