@@ -27,7 +27,7 @@ def get_all_versions(package_name: str) -> list[str]:
 
     verify_ssl = not global_config.disable_ssl
     res = requests.get(f"https://pypi.python.org/simple/{package_name}/#history", verify=verify_ssl, timeout=5)
-    return re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
+    return re.findall(r"cognite[_-]sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
 
 
 def _is_newer_major(version_a: str, version_b: str) -> bool:
