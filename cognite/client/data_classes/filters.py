@@ -193,7 +193,7 @@ class Filter(ABC):
                 filter_type=filter_body["filterType"],
             )
         elif (filter_body := filter_.get(InstanceReferences._filter_name)) is not None:
-            return InstanceReferences(references=filter_body["references"])
+            return InstanceReferences(references=filter_body)
         else:
             filter_name, filter_body = next(iter(filter_.items()))
             return UnknownFilter(filter_name, filter_body)
@@ -952,7 +952,7 @@ class InstanceReferences(Filter):
     """Data modeling filter which matches filters with these fully qualified instance refs.
 
     Args:
-        references (Sequence[tuple[str, str]] | Sequence[InstanceId]): The instance references.
+        references (Sequence[InstanceId] | Sequence[tuple[str, str]]): The instance references.
 
     Example:
         Filter than can be used to retrieve instances where their space/externalId matches any of the provided values:
@@ -969,7 +969,7 @@ class InstanceReferences(Filter):
 
     _filter_name = "instanceReferences"
 
-    def __init__(self, references: Sequence[tuple[str, str]] | Sequence[InstanceId]) -> None:
+    def __init__(self, references: Sequence[InstanceId] | Sequence[tuple[str, str]]) -> None:
         self.__references = [InstanceId.load(ref) for ref in references]
 
     def _filter_body(self, camel_case_property: bool) -> list:
