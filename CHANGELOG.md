@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.71.1] - 2025-01-07
+### Fixed
+- Version checker (stopped working after 5.3.1 due to subtle package naming change)
+
 ## [7.71.0] - 2025-01-06
 ### Added
 - Support for InstanceReferences filter for Data Modeling

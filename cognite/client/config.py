@@ -4,7 +4,6 @@ import getpass
 import pprint
 import re
 import warnings
-from contextlib import suppress
 from typing import Any
 
 from cognite.client._version import __api_subversion__
@@ -142,16 +141,14 @@ class ClientConfig:
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
-
         if debug:
             self.debug = True
+        self._validate_config()
 
         if not global_config.disable_pypi_version_check:
-            with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
-                from cognite.client.utils._auxiliary import _check_client_has_newest_major_version
+            from cognite.client.utils._version_checker import check_client_is_running_latest_version
 
-                _check_client_has_newest_major_version()
-        self._validate_config()
+            check_client_is_running_latest_version()
 
     @property
     def max_workers(self) -> int:
