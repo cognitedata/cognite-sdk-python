@@ -32,9 +32,9 @@ class Simulator(CogniteResource):
         id (int): No description.
         name (str): Name of the simulator
         file_extension_types (str | Sequence[str]): File extension types supported by the simulator
-        model_types (SimulatorModelType | Sequence[SimulatorModelType] | None): Model types supported by the simulator
-        step_fields (SimulatorStep | Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
-        unit_quantities (SimulatorQuantity | Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
+        model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
+        step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
+        unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
 
     """
 
