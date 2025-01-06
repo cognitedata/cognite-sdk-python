@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
-    _NOT_STARTED: None = None
+    _NOT_STARTED = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
