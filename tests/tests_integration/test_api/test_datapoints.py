@@ -2703,12 +2703,23 @@ class TestRetrieveLatestDatapointsAPI:
 
         assert 4 == cognite_client.time_series.data._post.call_count
 
-        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
-        assert len(res) == 4  # Only 2 real identifiers (duplicated twice)
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "When using retrieve_latest (datapoint) with ignore_unknown_ids=True, identifiers must be unique! "
+                "You cannot get around this by passing several of [id, external_id, instance_id] for the same "
+                "underlying time series. Duplicates: ["
+            ),
+        ):
+            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
 
-        m1, b1, m2, b2 = res
-        assert m1.id == m2.id == mixed_ts.id
-        assert b1.id == b2.id == bad_ts.id
+        kwargs.pop("external_id")  # only fetch by id
+        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+        assert len(res) == 2
+
+        m1, b1 = res
+        assert m1.id == mixed_ts.id
+        assert b1.id == bad_ts.id
         assert m1.is_string is test_is_string
         assert b1.is_string is test_is_string
 
