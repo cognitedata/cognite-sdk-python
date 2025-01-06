@@ -44,9 +44,9 @@ class Simulator(CogniteResource):
         id: int,
         name: str,
         file_extension_types: Sequence[str],
-        model_types: SimulatorModelType | Sequence[SimulatorModelType] | None = None,
-        step_fields: SimulatorStep | Sequence[SimulatorStep] | None = None,
-        unit_quantities: SimulatorQuantity | Sequence[SimulatorQuantity] | None = None,
+        model_types: Sequence[SimulatorModelType] | None = None,
+        step_fields: Sequence[SimulatorStep] | None = None,
+        unit_quantities: Sequence[SimulatorQuantity] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
