@@ -62,6 +62,7 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import random_string
 
 
@@ -1218,6 +1219,25 @@ class TestInstancesAPI:
             )
             expected = set(node.external_id.removeprefix(random_prefix) for node in res.as_ids())
             assert expected == {"testnode_empty", "testnode_non_empty"}
+        finally:
+            cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
+
+    def test_instance_references_filter(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        random_prefix = random_string(10)
+        nodes = [NodeApply(integration_test_space.space, random_prefix + str(i)) for i in range(3)]
+        try:
+            cognite_client.data_modeling.instances.apply(nodes)
+            res = cognite_client.data_modeling.instances.list(
+                filter=filters.InstanceReferences(
+                    [
+                        InstanceId(integration_test_space.space, random_prefix + "0"),
+                        InstanceId(integration_test_space.space, random_prefix + "1"),
+                    ]
+                ),
+                instance_type="node",
+            )
+            expected = set(node.external_id.removeprefix(random_prefix) for node in res.as_ids())
+            assert expected == {"0", "1"}
         finally:
             cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
 
