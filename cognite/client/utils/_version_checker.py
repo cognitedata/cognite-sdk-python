@@ -26,7 +26,7 @@ def get_all_versions(package_name: str) -> list[str]:
     from cognite.client.config import global_config
 
     verify_ssl = not global_config.disable_ssl
-    res = requests.get(f"https://pypi.python.org/simple/{package_name}/#history", verify=verify_ssl, timeout=5)
+    res = requests.get(f"https://pypi.org/simple/{package_name}/", verify=verify_ssl, timeout=5)
     return re.findall(r"cognite[_-]sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
 
 
