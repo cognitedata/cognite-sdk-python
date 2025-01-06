@@ -20,6 +20,7 @@ from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
 
 from cognite.client import CogniteClient
+from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
@@ -97,6 +98,20 @@ def all_mock_children(mock, parent_name=()):
     for name, child in dct.copy().items():
         dct.update(all_mock_children(child, parent_name=(name,)))
     return dct
+
+
+def get_api_class_by_attribute(client: CogniteClient) -> dict[str, type[APIClient]]:
+    available_apis: dict[str, type[APIClient]] = {}
+    to_check = [("", client)]
+    while to_check:
+        attr_path, cls_ = to_check.pop()
+        for attr, obj in cls_.__dict__.items():
+            if attr.startswith("_") or not isinstance(obj, APIClient):
+                continue
+            obj_attr = ".".join([attr_path, attr]) if attr_path else attr
+            available_apis[obj_attr] = obj.__class__
+            to_check.append((obj_attr, obj))
+    return available_apis
 
 
 @contextmanager
