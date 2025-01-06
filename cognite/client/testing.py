@@ -143,6 +143,7 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
+        self.sequences.rows = MagicMock(spec_set=SequencesDataAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
         self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)
