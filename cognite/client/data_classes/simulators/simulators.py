@@ -31,7 +31,7 @@ class Simulator(CogniteResource):
         external_id (str): External id of the simulator
         id (int): No description.
         name (str): Name of the simulator
-        file_extension_types (str | Sequence[str]): File extension types supported by the simulator
+        file_extension_types (Sequence[str]): File extension types supported by the simulator
         model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
         step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
         unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
@@ -43,7 +43,7 @@ class Simulator(CogniteResource):
         external_id: str,
         id: int,
         name: str,
-        file_extension_types: str | Sequence[str],
+        file_extension_types: Sequence[str],
         model_types: Sequence[SimulatorModelType] | None = None,
         step_fields: Sequence[SimulatorStep] | None = None,
         unit_quantities: Sequence[SimulatorQuantity] | None = None,
