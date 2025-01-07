@@ -192,6 +192,8 @@ class Filter(ABC):
                 previously_referenced_properties=filter_body["previouslyReferencedProperties"],
                 filter_type=filter_body["filterType"],
             )
+        elif (filter_body := filter_.get(InstanceReferences._filter_name)) is not None:
+            return InstanceReferences(references=filter_body)
         else:
             filter_name, filter_body = next(iter(filter_.items()))
             return UnknownFilter(filter_name, filter_body)
@@ -944,3 +946,31 @@ class IsNull(Not):  # type: ignore [misc]
 
     def _involved_filter_types(self) -> set[type[Filter]]:
         return {Not, Exists}
+
+
+class InstanceReferences(Filter):
+    """Data modeling filter which matches instances with these fully qualified references.
+
+    Args:
+        references (Sequence[InstanceId] | Sequence[tuple[str, str]]): The instance references.
+
+    Example:
+        Filter than can be used to retrieve instances where their space/externalId matches any of the provided values:
+
+        - A filter using a tuple as instance reference:
+
+            >>> from cognite.client.data_classes.filters import InstanceReferences, InstanceId
+            >>> flt = InstanceReferences([("someSpace", "someExternalId")])
+
+        - Composing the instance references using the InstanceId class:
+
+            >>> flt = InstanceReferences([InstanceId("someSpace", "someExternalId")])
+    """
+
+    _filter_name = "instanceReferences"
+
+    def __init__(self, references: Sequence[InstanceId] | Sequence[tuple[str, str]]) -> None:
+        self.__references = [InstanceId.load(ref) for ref in references]
+
+    def _filter_body(self, camel_case_property: bool) -> list:
+        return [ref.dump(camel_case=True, include_instance_type=False) for ref in self.__references]

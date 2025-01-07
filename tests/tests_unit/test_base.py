@@ -231,7 +231,7 @@ class TestCogniteObject:
         self, writable_list: type[WriteableCogniteResourceList], cognite_mock_client_placeholder
     ):
         resource_cls = writable_list._RESOURCE
-        instance_generator = FakeCogniteResourceGenerator(seed=53, cognite_client=cognite_mock_client_placeholder)
+        instance_generator = FakeCogniteResourceGenerator(seed=52, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(resource_cls)
         # Setting the cognite_client to None as the `as_write` should not fail if the client is not set.
         instance_list = writable_list([instance], cognite_client=None)

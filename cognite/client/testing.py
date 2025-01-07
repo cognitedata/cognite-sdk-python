@@ -148,6 +148,7 @@ class CogniteClientMock(MagicMock):
         self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
 
         self.sequences = MagicMock(spec=SequencesAPI)
+        self.sequences.rows = MagicMock(spec_set=SequencesDataAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
 
         self.hosted_extractors = MagicMock(spec=HostedExtractorsAPI)

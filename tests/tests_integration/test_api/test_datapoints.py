@@ -15,7 +15,7 @@ import unittest
 from collections import UserList
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 from unittest.mock import patch
 
@@ -52,6 +52,7 @@ from cognite.client.utils._time import (
     ZoneInfo,
     align_start_and_end_for_granularity,
     granularity_to_ms,
+    ms_to_datetime,
     timestamp_to_ms,
 )
 from tests.utils import (
@@ -202,6 +203,29 @@ def instance_ts_id(cognite_client: CogniteClient, instance_id_test_space: str, o
     )
     created_ts = cognite_client.data_modeling.instances.apply(my_ts).nodes[0]
     return created_ts.as_id()
+
+
+@pytest.fixture(scope="session")
+def instance_ts_latest(cognite_client: CogniteClient, instance_id_test_space: str, os_and_py_version: str) -> NodeId:
+    ts = NodeApply(
+        space=instance_id_test_space,
+        external_id=f"ts_python_sdk_instance_id_latest-{os_and_py_version}",
+        sources=[
+            NodeOrEdgeData(
+                source=CogniteTimeSeries.get_source(),
+                properties={
+                    "name": "ts_python_sdk_instance_id_latest",
+                    "isStep": False,
+                    "type": "numeric",
+                },
+            )
+        ],
+    )
+    instance_id = cognite_client.data_modeling.instances.apply(ts).nodes[0].as_id()
+    # Add a datapoint at "now" equal to with value equal to its timestamp:
+    now = datetime.now(timezone.utc)
+    cognite_client.time_series.data.insert([(now, now.timestamp())], instance_id=instance_id)
+    return instance_id
 
 
 def ts_to_ms(ts, tz=None):
@@ -2679,12 +2703,23 @@ class TestRetrieveLatestDatapointsAPI:
 
         assert 4 == cognite_client.time_series.data._post.call_count
 
-        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
-        assert len(res) == 4  # Only 2 real identifiers (duplicated twice)
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "When using retrieve_latest (datapoint) with ignore_unknown_ids=True, identifiers must be unique! "
+                "You cannot get around this by passing several of [id, external_id, instance_id] for the same "
+                "underlying time series. Duplicates: ["
+            ),
+        ):
+            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
 
-        m1, b1, m2, b2 = res
-        assert m1.id == m2.id == mixed_ts.id
-        assert b1.id == b2.id == bad_ts.id
+        kwargs.pop("external_id")  # only fetch by id
+        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+        assert len(res) == 2
+
+        m1, b1 = res
+        assert m1.id == mixed_ts.id
+        assert b1.id == bad_ts.id
         assert m1.is_string is test_is_string
         assert b1.is_string is test_is_string
 
@@ -2761,6 +2796,26 @@ class TestRetrieveLatestDatapointsAPI:
             assert math.isnan(dps_lst[4].value[0])
             assert dps_lst[1].value[0] == -math.inf
             assert dps_lst[5].value[0] == math.inf
+
+    def test_instance_id_usage(self, cognite_client, instance_ts_id, instance_ts_latest):
+        single = random.choice([instance_ts_latest, LatestDatapointQuery(instance_id=instance_ts_latest)])
+        dps1 = cognite_client.time_series.data.retrieve_latest(instance_id=single)
+        assert type(dps1) is Datapoints
+
+        dps_lst = cognite_client.time_series.data.retrieve_latest(instance_id=[instance_ts_id, single])
+        assert type(dps_lst) is DatapointsList
+        assert len(dps_lst) == 2
+
+        dps2, dps3 = dps_lst
+        for dps in (dps1, dps_lst[-1]):  # 'instance_ts_id' may not have any last dp
+            assert dps.instance_id == instance_ts_latest
+            dp = dps[0]
+            now = datetime.now(timezone.utc)
+            ts = ms_to_datetime(dp.timestamp)
+            assert now - timedelta(minutes=2) < ts < now
+
+            assert isinstance(dp.value, float)
+            assert int(dp.timestamp / 1000) == int(dp.value)
 
 
 class TestInsertDatapointsAPI:

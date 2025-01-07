@@ -5,7 +5,6 @@ import math
 import platform
 import warnings
 from collections.abc import Hashable, Iterable, Iterator, Sequence
-from threading import Thread
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,7 +22,6 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-from cognite.client.utils._version_checker import get_newest_version_in_major_release
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -156,24 +154,6 @@ def get_user_agent() -> str:
     operating_system = f"{platform.system()}/{os_version_info_str}"
 
     return f"{sdk_version} {python_version} {operating_system}"
-
-
-# Wrap in a cache to ensure we only ever run the version check once.
-@functools.lru_cache(1)
-def _check_client_has_newest_major_version() -> None:
-    def run() -> None:
-        version = get_current_sdk_version()
-        newest_version = get_newest_version_in_major_release("cognite-sdk", version)
-        if newest_version != version:
-            warnings.warn(
-                f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
-                "To suppress this warning, either upgrade or do the following:\n"
-                ">>> from cognite.client.config import global_config\n"
-                ">>> global_config.disable_pypi_version_check = True",
-                stacklevel=3,
-            )
-
-    Thread(target=run, daemon=True).start()
 
 
 @overload
