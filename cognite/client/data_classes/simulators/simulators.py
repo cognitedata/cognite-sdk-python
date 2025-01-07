@@ -12,8 +12,6 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     IdTransformerMixin,
 )
-from cognite.client.data_classes.data_modeling.instances import _PropertyValueSerializer
-from cognite.client.utils import _json
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -34,9 +32,9 @@ class Simulator(CogniteResource):
         id (int): No description.
         name (str): Name of the simulator
         file_extension_types (str | Sequence[str]): File extension types supported by the simulator
-        model_types (SimulatorModelType | Sequence[SimulatorModelType] | None): Model types supported by the simulator
-        step_fields (SimulatorStep | Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
-        unit_quantities (SimulatorQuantity | Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
+        model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
+        step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
+        unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
 
     """
 
@@ -47,8 +45,8 @@ class Simulator(CogniteResource):
         name: str,
         file_extension_types: str | Sequence[str],
         model_types: Sequence[SimulatorModelType] | None = None,
-        step_fields:  Sequence[SimulatorStep] | None = None,
-        unit_quantities:  Sequence[SimulatorQuantity] | None = None,
+        step_fields: Sequence[SimulatorStep] | None = None,
+        unit_quantities: Sequence[SimulatorQuantity] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -78,12 +76,22 @@ class Simulator(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        if isinstance(self.model_types, list) and all(isinstance(item, SimulatorModelType) for item in self.model_types):
-            output["modelTypes" if camel_case else "model_types"] = [item.dump(camel_case=camel_case) for item in self.model_types]
+        if isinstance(self.model_types, list) and all(
+            isinstance(item, SimulatorModelType) for item in self.model_types
+        ):
+            output["modelTypes" if camel_case else "model_types"] = [
+                item.dump(camel_case=camel_case) for item in self.model_types
+            ]
         if isinstance(self.step_fields, list) and all(isinstance(item, SimulatorStep) for item in self.step_fields):
-            output["stepFields" if camel_case else "step_fields"] = [item.dump(camel_case=camel_case) for item in self.step_fields]
-        if isinstance(self.unit_quantities, list) and all(isinstance(item, SimulatorQuantity) for item in self.unit_quantities):
-            output["unitQuantities" if camel_case else "unit_quantities"] = [item.dump(camel_case=camel_case) for item in self.unit_quantities]
+            output["stepFields" if camel_case else "step_fields"] = [
+                item.dump(camel_case=camel_case) for item in self.step_fields
+            ]
+        if isinstance(self.unit_quantities, list) and all(
+            isinstance(item, SimulatorQuantity) for item in self.unit_quantities
+        ):
+            output["unitQuantities" if camel_case else "unit_quantities"] = [
+                item.dump(camel_case=camel_case) for item in self.unit_quantities
+            ]
 
         return output
 
@@ -142,12 +150,13 @@ class SimulatorModelType(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> SimulatorModelType | list[SimulatorModelType]:
-        if isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource]
-
-        return cls._load(resource, cognite_client)
-
+    ) -> list[SimulatorModelType]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
 
 
 @dataclass
@@ -167,11 +176,13 @@ class SimulatorQuantity(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> SimulatorQuantity | list[SimulatorQuantity]:
-        if isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource]
-
-        return cls._load(resource, cognite_client)
+    ) -> list[SimulatorQuantity]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -221,11 +232,13 @@ class SimulatorStep(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> SimulatorStep | list[SimulatorStep]:
-        if isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource]
-
-        return cls._load(resource, cognite_client)
+    ) -> list[SimulatorStep]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
