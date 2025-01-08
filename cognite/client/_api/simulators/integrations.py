@@ -42,24 +42,24 @@ class SimulatorIntegrationsAPI(APIClient):
 
     @overload
     def __call__(
-        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: None = None, limit: int | None = None
+        self, chunk_size: int, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
     ) -> Iterator[SimulatorIntegration]: ...
 
     @overload
     def __call__(
-        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: int | None = None, limit: int | None = None
+        self, chunk_size: None = None, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
     ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
-        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: int | None = None, limit: int | None = None
+        self, chunk_size: int | None = None, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
     ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
 
         Args:
-            filter (SimulatorIntegrationFilter | None): No description.
             chunk_size (int | None): No description.
+            filter (SimulatorIntegrationFilter | None): No description.
             limit (int | None): Maximum number of simulator integrations to return. Defaults to return all items.
 
         Returns:
