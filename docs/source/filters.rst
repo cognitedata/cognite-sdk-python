@@ -156,6 +156,15 @@ The `HasData` filter checks if an instance has data for a given property.
     :members:
     :member-order: bysource
 
+InstanceReferences
+^^^^^^^^^^^^^^^^^^
+The `InstanceReferences` filter matches instances with fully qualified references
+(space + externalId) equal to _any_ of the provided references.
+
+.. autoclass:: cognite.client.data_classes.filters.InstanceReferences
+    :members:
+    :member-order: bysource
+
 MatchAll
 ^^^^^^^^
 The `MatchAll` filter matches all instances.

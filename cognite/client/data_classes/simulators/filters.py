@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from collections.abc import Sequence
+
 from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.utils.useful_types import SequenceNotStr
+
 
 class SimulatorIntegrationFilter(CogniteFilter):
     def __init__(
@@ -11,6 +14,7 @@ class SimulatorIntegrationFilter(CogniteFilter):
     ) -> None:
         self.simulator_external_ids = simulator_external_ids
         self.active = active
+
 
 class SimulatorModelsFilter(CogniteFilter):
     def __init__(

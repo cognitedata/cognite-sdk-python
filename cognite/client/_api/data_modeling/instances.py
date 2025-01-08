@@ -82,7 +82,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
-    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps}
+    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
 )
 
 logger = logging.getLogger(__name__)

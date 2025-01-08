@@ -87,7 +87,6 @@ class CogniteClient:
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
         self.simulators.models = SimulatorModelsAPI(self._config, self._API_VERSION, self)
-
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
