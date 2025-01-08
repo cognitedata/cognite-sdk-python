@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -196,41 +196,13 @@ class ResultSetExpression(CogniteObject, ABC):
     def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "sort" in resource:
-            sort = [InstanceSort.load(sort) for sort in resource["sort"]]
-        else:
-            sort = []
-
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> NodeResultSetExpression | EdgeResultSetExpression:
         if "nodes" in resource:
-            query_node = resource["nodes"]
-            node = {
-                "from_": query_node.get("from"),
-                "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
-                "chain_to": query_node.get("chainTo"),
-                "direction": query_node.get("direction"),
-            }
-            if (through := query_node.get("through")) is not None:
-                node["through"] = PropertyId.load(through)
-            return cast(Self, NodeResultSetExpression(sort=sort, limit=resource.get("limit"), **node))
+            return NodeResultSetExpression._load(resource, cognite_client)
         elif "edges" in resource:
-            query_edge = resource["edges"]
-            edge = {
-                "from_": query_edge.get("from"),
-                "max_distance": query_edge.get("maxDistance"),
-                "direction": query_edge.get("direction"),
-                "filter": Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-                "node_filter": Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-                "termination_filter": Filter.load(query_edge["terminationFilter"])
-                if "terminationFilter" in query_edge
-                else None,
-                "limit_each": query_edge.get("limitEach"),
-                "chain_to": query_edge.get("chainTo"),
-            }
-            post_sort = [InstanceSort.load(sort) for sort in resource["postSort"]] if "postSort" in resource else []
-            return cast(
-                Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
-            )
+            return EdgeResultSetExpression._load(resource, cognite_client)
         else:
             return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
@@ -291,8 +263,23 @@ class NodeResultSetExpression(ResultSetExpression):
             return PropertyId(source=source, property=through[2])
         return None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        query_node = resource["nodes"]
+        through = query_node.get("through")
+        return cls(
+            from_=query_node.get("from"),
+            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            chain_to=query_node.get("chainTo"),
+            direction=query_node.get("direction"),
+            through=PropertyId.load(through) if through is not None else None,
+            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
+            limit=resource.get("limit"),
+            skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        nodes = {}
+        nodes: dict[str, Any] = {}
         if self.from_:
             nodes["from"] = self.from_
         if self.filter:
@@ -363,8 +350,27 @@ class EdgeResultSetExpression(ResultSetExpression):
         self.limit_each = limit_each
         self.post_sort = post_sort
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        query_edge = resource["edges"]
+        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
+        return cls(
+            from_=query_edge.get("from"),
+            max_distance=query_edge.get("maxDistance"),
+            direction=query_edge.get("direction"),
+            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
+            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
+            termination_filter=term_flt,
+            limit_each=query_edge.get("limitEach"),
+            chain_to=query_edge.get("chainTo"),
+            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
+            post_sort=[InstanceSort.load(sort) for sort in resource.get("postSort", [])],
+            limit=resource.get("limit"),
+            skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        edges = {}
+        edges: dict[str, Any] = {}
         if self.from_:
             edges["from"] = self.from_
         if self.max_distance:
