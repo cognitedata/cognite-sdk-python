@@ -48,7 +48,7 @@ class SimulatorsAPI(APIClient):
         Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
 
         Args:
-            chunk_size (int | None): No description.
+            chunk_size (int | None): Number of simulators to return in each chunk. Defaults to yielding one simulator a time.
             limit (int | None): Maximum number of simulators to return. Defaults to return all items.
 
         Returns:

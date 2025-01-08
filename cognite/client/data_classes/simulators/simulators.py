@@ -29,7 +29,7 @@ class Simulator(CogniteResource):
 
     Args:
         external_id (str): External id of the simulator
-        id (int): No description.
+        id (int): Id of the simulator.
         name (str): Name of the simulator
         file_extension_types (Sequence[str]): File extension types supported by the simulator
         model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
@@ -259,16 +259,16 @@ class SimulatorIntegration(CogniteResource):
     for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
     This is the read/response format of the simulator integration.
     Args:
-        id (int): No description.
+        id (int): Id of the simulator integration.
         external_id (str): External id of the simulator integration
         simulator_external_id (str): External id of the associated simulator
         heartbeat (int): The interval in seconds between the last heartbeat and the current time
         data_set_id (int): The id of the dataset associated with the simulator integration
         connector_version (str): The version of the connector
-        log_id (int): No description.
-        active (bool): No description.
-        created_time (int): No description.
-        last_updated_time (int): No description.
+        log_id (int): Id of the log associated with this simulator integration.
+        active (bool): Indicates if the simulator integration is active (i.e., a connector is linked to CDF for this integration).
+        created_time (int): The time when this simulator integration resource was created.
+        last_updated_time (int): The last time the simulator integration resource was updated.
         license_status (str | None): The status of the license
         simulator_version (str | None): The version of the simulator
         license_last_checked_time (int | None): The time when the license was last checked

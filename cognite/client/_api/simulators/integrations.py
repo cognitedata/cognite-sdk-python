@@ -58,8 +58,8 @@ class SimulatorIntegrationsAPI(APIClient):
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
 
         Args:
-            chunk_size (int | None): No description.
-            filter (SimulatorIntegrationFilter | None): No description.
+            chunk_size (int | None): Number of simulator integrations to return in each chunk. Defaults to yielding one simulator integration a time.
+            filter (SimulatorIntegrationFilter | None): Filter to apply on the integrations list.
             limit (int | None): Maximum number of simulator integrations to return. Defaults to return all items.
 
         Returns:
@@ -116,7 +116,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): No description.
+            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external_ids of simulator integrations to delete.
 
         Examples:
 
