@@ -88,14 +88,14 @@ class SimulatorIntegrationsAPI(APIClient):
             SimulatorIntegrationList: List of simulator integrations
         Examples:
             List simulator integrations:
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.integrations.list()
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.integrations.list()
 
             Filter integrations by active status:
-                    >>> from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
-                    >>> res = client.simulators.integrations.list(
-                    ...     filter=SimulatorIntegrationFilter(active=True))
+                >>> from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+                >>> res = client.simulators.integrations.list(
+                ...     filter=SimulatorIntegrationFilter(active=True))
         """
 
         self._warning.warn()
