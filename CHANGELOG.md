@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+### Added
+- Support for the `/simulators` and `/simulators/integration` API endpoints.
+
 ## [7.71.2] - 2025-01-07
 ### Added
 - Instance ID is now supported for `retrieve_latest` in the datapoints API.
@@ -33,6 +37,7 @@ Changes are grouped as follows
 ## [7.71.0] - 2025-01-06
 ### Added
 - Support for InstanceReferences filter for Data Modeling
+
 
 ## [7.70.7] - 2024-12-20
 ### Fixed

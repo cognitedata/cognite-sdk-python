@@ -23,6 +23,7 @@ from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
+from cognite.client._api.simulators import SimulatorsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
@@ -83,6 +84,8 @@ class CogniteClient:
         self.documents = DocumentsAPI(self._config, self._API_VERSION, self)
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
         self.units = UnitAPI(self._config, self._API_VERSION, self)
+        self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
+
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 

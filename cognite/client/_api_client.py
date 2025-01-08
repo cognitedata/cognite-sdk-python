@@ -101,6 +101,7 @@ class APIClient:
                     "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
                     "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
                     "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
+                    "simulators/list",
                     "extpipes/(list|byids|runs/list)",
                     "workflows/.*",
                     "hostedextractors/.*",
