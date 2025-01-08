@@ -41,19 +41,24 @@ class SimulatorIntegrationsAPI(APIClient):
         return self()
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[SimulatorIntegration]: ...
+    def __call__(
+        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: None = None, limit: int | None = None
+    ) -> Iterator[SimulatorIntegration]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorIntegration]: ...
+    def __call__(
+        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
-        self, chunk_size: int | None = None, limit: int | None = None
+        self, filter: SimulatorIntegrationFilter | None = None, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
 
         Args:
+            filter (SimulatorIntegrationFilter | None): No description.
             chunk_size (int | None): No description.
             limit (int | None): Maximum number of simulator integrations to return. Defaults to return all items.
 
@@ -64,6 +69,7 @@ class SimulatorIntegrationsAPI(APIClient):
             list_cls=SimulatorIntegrationList,
             resource_cls=SimulatorIntegration,
             method="POST",
+            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
             chunk_size=chunk_size,
             limit=limit,
         )
@@ -98,7 +104,7 @@ class SimulatorIntegrationsAPI(APIClient):
             limit=limit,
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else None,
+            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
         )
 
     def delete(
