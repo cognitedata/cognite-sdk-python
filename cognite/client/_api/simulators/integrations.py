@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -28,6 +28,44 @@ class SimulatorIntegrationsAPI(APIClient):
         self._DELETE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
+
+    def __iter__(self) -> Iterator[SimulatorIntegration]:
+        """Iterate over simulator integrations
+
+        Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
+
+        Returns:
+            Iterator[SimulatorIntegration]: yields Simulator integrations one by one.
+        """
+        return self()
+
+    @overload
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[SimulatorIntegration]: ...
+
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorIntegration]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
+        """Iterate over simulator integrations
+
+        Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
+
+        Args:
+            chunk_size (int | None): No description.
+            limit (int | None): Maximum number of simulator integrations to return. Defaults to return all items.
+
+        Returns:
+            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+        """
+        return self._list_generator(
+            list_cls=SimulatorIntegrationList,
+            resource_cls=SimulatorIntegration,
+            method="POST",
+            chunk_size=chunk_size,
+            limit=limit,
         )
 
     def list(

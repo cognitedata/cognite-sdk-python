@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+from cognite.client.data_classes.simulators.simulators import SimulatorIntegration
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import simulator_integration
 
@@ -16,6 +17,10 @@ class TestSimulatorIntegrations:
         assert len(integrations) > 0
 
     def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        # quick test of the iterator
+        for integration in cognite_client.simulators.integrations:
+            assert isinstance(integration, SimulatorIntegration)
+
         all_integrations = cognite_client.simulators.integrations.list()
         active_integrations = cognite_client.simulators.integrations.list(
             filter=SimulatorIntegrationFilter(active=True)
