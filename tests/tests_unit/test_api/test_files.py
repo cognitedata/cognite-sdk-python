@@ -20,6 +20,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.utils import jsgz_load, set_request_limit
 
@@ -363,6 +364,20 @@ class TestFilesAPI:
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
+
+    def test_update_with_update_class_using_instance_id(self, cognite_client, mock_files_response):
+        res = cognite_client.files.update(FileMetadataUpdate(instance_id=NodeId("foo", "bar")).source.set("bla"))
+        assert isinstance(res, FileMetadata)
+        assert {
+            "items": [{"instanceId": {"space": "foo", "externalId": "bar"}, "update": {"source": {"set": "bla"}}}]
+        } == jsgz_load(mock_files_response.calls[0].request.body)
+
+    @pytest.mark.parametrize("extra_identifiers", (dict(id=1), dict(external_id="a"), dict(id=1, external_id="a")))
+    def test_update_with_update_class_using_instance_id_and_other_identifier(
+        self, extra_identifiers, cognite_client, mock_files_response
+    ):
+        with pytest.raises(ValueError, match="Exactly one of 'id', 'external_id' or 'instance_id' must be provided."):
+            FileMetadataUpdate(instance_id=NodeId("foo", "bar"), **extra_identifiers)
 
     def test_update_labels_single(self, cognite_client, mock_files_response):
         cognite_client.files.update([FileMetadataUpdate(id=1).labels.add("PUMP").labels.remove("WELL LOG")])
