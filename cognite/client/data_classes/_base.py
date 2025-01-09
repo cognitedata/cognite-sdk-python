@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Iterable, Iterator, Sequence
@@ -25,7 +26,12 @@ from typing_extensions import Self
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
+from cognite.client.utils._auxiliary import (
+    exactly_one_is_not_none,
+    fast_dict_load,
+    load_resource_to_dict,
+    load_yaml_or_json,
+)
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -456,6 +462,13 @@ class CogniteUpdate:
         self._id = id
         self._external_id = external_id
         self._update_object: dict[str, Any] = {}
+
+        if not exactly_one_is_not_none(id, external_id):
+            warnings.warn(
+                "Update object got both of 'id' and 'external_id', 'external_id' will be ignored.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
