@@ -26,12 +26,7 @@ from typing_extensions import Self
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import (
-    exactly_one_is_not_none,
-    fast_dict_load,
-    load_resource_to_dict,
-    load_yaml_or_json,
-)
+from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -463,7 +458,7 @@ class CogniteUpdate:
         self._external_id = external_id
         self._update_object: dict[str, Any] = {}
 
-        if not exactly_one_is_not_none(id, external_id):
+        if id is not None and external_id is not None:
             warnings.warn(
                 "Update object got both of 'id' and 'external_id', 'external_id' will be ignored.",
                 UserWarning,
