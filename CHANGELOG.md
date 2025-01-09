@@ -21,6 +21,12 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.71.4] - 2025-01-09
+### Changed
+- Update classes accepting insance_id now raise when id/external_id are also given.
+### Added
+- All update classes warn when external_id is ignored (when id is also given, it takes precedence)
+
 ## [7.71.3] - 2025-01-09
 ### Added
 - `ResultSetExpression` now support the `skip_already_deleted` flag.
