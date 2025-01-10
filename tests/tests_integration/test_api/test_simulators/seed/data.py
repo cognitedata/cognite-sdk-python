@@ -214,3 +214,19 @@ simulator_integration = {
     "connectorStatus": "IDLE",
     "connectorStatusUpdatedTime": 0,
 }
+
+simulator_model = {
+    "externalId": resource_names["simulator_model_external_id"],
+    "simulatorExternalId": resource_names["simulator_external_id"],
+    "name": "Test Simulator Model",
+    "description": "Test Simulator Model Desc",
+    "dataSetId": resource_names["simulator_test_data_set_id"],
+    "type": "SteadyState",
+}
+
+simulator_model_revision = {
+    "externalId": resource_names["simulator_model_revision_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "description": "test sim model revision description",
+    "fileId": 00000000000000,
+}

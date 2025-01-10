@@ -6,7 +6,15 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
-from tests.tests_integration.test_api.test_simulators.seed.data import resource_names, simulator, simulator_integration
+from cognite.client.data_classes.files import FileMetadata
+from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from tests.tests_integration.test_api.test_simulators.seed.data import (
+    resource_names,
+    simulator,
+    simulator_integration,
+    simulator_model,
+    simulator_model_revision,
+)
 
 
 @pytest.fixture(scope="session")
@@ -20,6 +28,21 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
         data_set = data_sets[0]
     resource_names["simulator_test_data_set_id"] = data_set.id
     return resource_names.copy()
+
+
+@pytest.fixture
+def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadata | None:
+    # check if file already exists
+    data_set_id = seed_resource_names["simulator_test_data_set_id"]
+    file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
+    if (file is None) or (file is False):
+        file = cognite_client.files.upload(
+            path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.dwxmz",
+            external_id=seed_resource_names["simulator_model_file_external_id"],
+            name="ShowerMixer.dwxmz",
+            data_set_id=data_set_id,
+        )
+    yield file
 
 
 @pytest.fixture(scope="session")
@@ -46,4 +69,47 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
         cognite_client.simulators.integrations._post(
             "/simulators/integrations/update",
             json={"items": [{"id": integration.id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
+        )
+
+
+@pytest.fixture
+def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names) -> None:
+    model_unique_external_id = seed_resource_names["simulator_model_external_id"]
+    models = cognite_client.simulators.models.list()
+    model_exists = len(list(filter(lambda x: x.external_id == model_unique_external_id, models))) > 0
+
+    if not model_exists:
+        simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
+            json={
+                "items": [{**simulator_model, "externalId": model_unique_external_id}]
+            },  # Post actual simulator models here
+        )
+
+
+@pytest.fixture
+def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
+    model_unique_external_id = resource_names["simulator_model_external_id"]
+    model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
+    model_revisions = cognite_client.simulators.models.revisions.list(
+        filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id])
+    )
+    model_revision_not_exists = (
+        len(list(filter(lambda x: x.external_id == model_revision_unique_external_id, model_revisions))) == 0
+    )
+
+    if model_revision_not_exists:
+        cognite_client.post(
+            f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
+            json={
+                "items": [
+                    {
+                        **simulator_model_revision,
+                        "fileId": seed_file.id,
+                        "modelExternalId": model_unique_external_id,
+                        "externalId": model_revision_unique_external_id,
+                    }
+                ]
+            },
         )
