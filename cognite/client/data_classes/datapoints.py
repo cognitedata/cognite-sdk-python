@@ -78,7 +78,9 @@ Aggregate = Literal[
     "duration_uncertain",
     "interpolation",
     "max",
+    "maxDataPoint",
     "min",
+    "minDataPoint",
     "step_interpolation",
     "sum",
     "total_variation",
@@ -92,6 +94,12 @@ _INT_AGGREGATES = frozenset(
         "durationBad",
         "durationGood",
         "durationUncertain",
+    }
+)
+_OBJECT_AGGREGATES = frozenset(
+    {
+        "maxDataPoint",
+        "minDataPoint",
     }
 )
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
