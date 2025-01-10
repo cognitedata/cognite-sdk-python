@@ -700,7 +700,8 @@ class TestCogniteUpdate:
         assert {"externalId": "1", "update": {}} == MyUpdate(external_id="1").dump()
 
     def test_dump_both_ids_set(self):
-        assert {"id": 1, "update": {}} == MyUpdate(id=1, external_id="1").dump()
+        with pytest.warns(UserWarning, match="'external_id' will be ignored"):
+            assert {"id": 1, "update": {}} == MyUpdate(id=1, external_id="1").dump()
 
     def test_eq(self):
         assert MyUpdate() == MyUpdate()
