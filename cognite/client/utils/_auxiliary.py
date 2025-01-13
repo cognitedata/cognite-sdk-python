@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import math
-import platform
 import warnings
 from collections.abc import Hashable, Iterable, Iterator, Sequence
 from typing import (
@@ -12,7 +11,8 @@ from typing import (
     TypeVar,
     overload,
 )
-from urllib.parse import quote
+
+from requests import Response
 
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
@@ -20,7 +20,6 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -124,36 +123,6 @@ def handle_renamed_argument(
     if new_arg is not None:
         raise TypeError(f"Pass either {new_arg_name!r} or {old_arg_name!r} (deprecated), not both")
     return old_arg
-
-
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: dict[str, Any]) -> T:
-    new_arg_name = to_snake_case(old_arg_name)
-    return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
-
-
-def interpolate_and_url_encode(path: str, *args: Any) -> str:
-    return path.format(*[quote(str(arg), safe="") for arg in args])
-
-
-def get_current_sdk_version() -> str:
-    from cognite.client import __version__
-
-    return __version__
-
-
-@functools.lru_cache(maxsize=1)
-def get_user_agent() -> str:
-    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
-    python_version = (
-        f"{platform.python_implementation()}/{platform.python_version()} "
-        f"({platform.python_build()};{platform.python_compiler()})"
-    )
-    os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
-    os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
-    os_version_info_str = "-".join(os_version_info)
-    operating_system = f"{platform.system()}/{os_version_info_str}"
-
-    return f"{sdk_version} {python_version} {operating_system}"
 
 
 @overload

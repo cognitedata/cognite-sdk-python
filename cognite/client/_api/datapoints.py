@@ -119,12 +119,10 @@ class DpsFetchStrategy(ABC):
 
     def _request_datapoints(self, payload: _DatapointsPayload) -> Sequence[DataPointListItem]:
         (res := DataPointListResponse()).MergeFromString(
-            self.dps_client._do_request(
-                json=payload,
-                method="POST",
-                url_path=f"{self.dps_client._RESOURCE_PATH}/list",
-                accept="application/protobuf",
-                timeout=self.dps_client._config.timeout,
+            self.dps_client._post(
+                f"{self.dps_client._RESOURCE_PATH}/list",
+                json=payload,  # type: ignore [arg-type]
+                headers={"accept": "application/protobuf"},
             ).content
         )
         return res.items

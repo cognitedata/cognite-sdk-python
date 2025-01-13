@@ -32,6 +32,7 @@ class GlobalConfig:
         max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
+        allow_redirects (bool): Whether or not to allow redirects. Defaults to False.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -58,6 +59,7 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
+        self.allow_redirects: bool = False
 
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
         """Apply settings to the global configuration object from a YAML/JSON string or dict.

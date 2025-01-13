@@ -1,7 +1,12 @@
-import re
-from urllib.parse import urljoin
+from __future__ import annotations
 
-from cognite.client.config import ClientConfig
+import re
+from typing import TYPE_CHECKING, Any
+from urllib.parse import quote, urljoin
+
+if TYPE_CHECKING:
+    from cognite.client.config import ClientConfig
+
 
 RETRYABLE_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
     "|".join(
@@ -69,3 +74,7 @@ def can_be_retried(method: str, path: str) -> bool:
             return True
         case _:
             return False
+
+
+def interpolate_and_url_encode(path: str, *args: Any) -> str:
+    return path.format(*[quote(str(arg), safe="") for arg in args])
