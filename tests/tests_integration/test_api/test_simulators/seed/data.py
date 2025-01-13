@@ -230,3 +230,11 @@ simulator_model_revision = {
     "description": "test sim model revision description",
     "fileId": 00000000000000,
 }
+
+simulator_routine = {
+    "externalId": resource_names["simulator_routine_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "simulatorIntegrationExternalId": resource_names["simulator_integration_external_id"],
+    "name": "Simulator Routine - Test",
+    "description": "Simulator Routine - Description Test",
+}
