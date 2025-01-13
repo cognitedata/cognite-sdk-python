@@ -7,7 +7,6 @@ import warnings
 from collections import UserList
 from collections.abc import Iterator, Mapping, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     TypeVar,
@@ -32,7 +31,6 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
     unpack_items,
@@ -47,6 +45,7 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -866,7 +865,7 @@ class APIClient(BasicAPIClient):
             )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
-            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
+            items_by_id = {item.id: item for item in items if getattr(item, "id", None) is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
                 missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
@@ -944,7 +943,7 @@ class APIClient(BasicAPIClient):
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                    **Identifier.load(getattr(item, "id", None), item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )

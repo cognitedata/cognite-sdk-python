@@ -204,6 +204,7 @@ class ConcurrencySettings:
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
+        # TODO: Warning if max_workers != executor._max_workers?
         return executor
 
     @classmethod

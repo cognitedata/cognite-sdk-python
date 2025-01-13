@@ -708,6 +708,7 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
+        # TODO: TODO: Needs an httpx checkup due to stream=True
         res = self._do_request("POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True)
 
         try:

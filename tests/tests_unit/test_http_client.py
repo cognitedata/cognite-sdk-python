@@ -4,10 +4,10 @@ import pytest
 import requests.exceptions
 import urllib3.exceptions
 
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, _RetryTracker
+from cognite.client._http_client import HTTPClientWithRetry, HTTPClientWithRetryConfig, RetryTracker
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
 
-DEFAULT_CONFIG = HTTPClientConfig(
+DEFAULT_CONFIG = HTTPClientWithRetryConfig(
     status_codes_to_retry={429},
     backoff_factor=0.5,
     max_backoff_seconds=30,
@@ -20,7 +20,7 @@ DEFAULT_CONFIG = HTTPClientConfig(
 
 class TestRetryTracker:
     def test_total_retries_exceeded(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         rt.config.max_retries_total = 10
         rt.status = 4
         rt.connect = 4
@@ -30,40 +30,40 @@ class TestRetryTracker:
         assert rt.should_retry(200) is False
 
     def test_status_retries_exceeded(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         rt.config.max_retries_status = 1
         assert rt.should_retry(None) is True
         rt.status = 1
         assert rt.should_retry(None) is False
 
     def test_read_retries_exceeded(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         rt.config.max_retries_read = 1
         assert rt.should_retry(None) is True
         rt.read = 1
         assert rt.should_retry(None) is False
 
     def test_connect_retries_exceeded(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         rt.config.max_retries_connect = 1
         assert rt.should_retry(None) is True
         rt.connect = 1
         assert rt.should_retry(None) is False
 
     def test_correct_retry_of_status(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         assert rt.should_retry(500) is False
         rt.config.status_codes_to_retry = {500, 429}
         assert rt.should_retry(500) is True
 
     def test_get_backoff_time(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         for i in range(1000):
             rt.read += 1
             assert 0 <= rt.get_backoff_time() <= DEFAULT_CONFIG.max_backoff_seconds
 
     def test_is_auto_retryable(self):
-        rt = _RetryTracker(config=DEFAULT_CONFIG)
+        rt = RetryTracker(config=DEFAULT_CONFIG)
         rt.config.max_retries_status = 1
 
         # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
@@ -85,8 +85,8 @@ class TestHTTPClient:
     def test_read_timeout_errors(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
-        retry_tracker = _RetryTracker(cnf)
-        c = HTTPClient(
+        retry_tracker = RetryTracker(cnf)
+        c = HTTPClientWithRetry(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
@@ -109,8 +109,8 @@ class TestHTTPClient:
     def test_connect_errors(self, exc_type):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
-        retry_tracker = _RetryTracker(cnf)
-        c = HTTPClient(
+        retry_tracker = RetryTracker(cnf)
+        c = HTTPClientWithRetry(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
@@ -132,8 +132,8 @@ class TestHTTPClient:
     def test_connection_refused_retried(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
-        retry_tracker = _RetryTracker(cnf)
-        c = HTTPClient(
+        retry_tracker = RetryTracker(cnf)
+        c = HTTPClientWithRetry(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
@@ -154,8 +154,8 @@ class TestHTTPClient:
     def test_status_errors(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
-        retry_tracker = _RetryTracker(cnf)
-        c = HTTPClient(
+        retry_tracker = RetryTracker(cnf)
+        c = HTTPClientWithRetry(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
@@ -180,13 +180,13 @@ class TestGetUnderlyingException:
         try:
             raise Exception
         except Exception as e:
-            assert not HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+            assert not HTTPClientWithRetry._any_exception_in_context_isinstance(e, UnderlyingException)
 
     def test_get_underlying_exception_no_context(self):
         try:
             raise UnderlyingException
         except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, (UnderlyingException, Exception))
+            assert HTTPClientWithRetry._any_exception_in_context_isinstance(e, (UnderlyingException, Exception))
 
     def test_get_underlying_exception_nested_1_layer(self):
         def testcase():
@@ -198,7 +198,7 @@ class TestGetUnderlyingException:
         try:
             testcase()
         except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+            assert HTTPClientWithRetry._any_exception_in_context_isinstance(e, UnderlyingException)
 
     def test_get_underlying_exception_nested_2_layers(self):
         def testcase():
@@ -213,4 +213,4 @@ class TestGetUnderlyingException:
         try:
             testcase()
         except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+            assert HTTPClientWithRetry._any_exception_in_context_isinstance(e, UnderlyingException)

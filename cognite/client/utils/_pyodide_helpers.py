@@ -1,28 +1,28 @@
 from __future__ import annotations
 
 import os
-import warnings
-from collections.abc import Callable, MutableMapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import cognite.client as cc  # Do not import individual entities
-from cognite.client._http_client import _RetryTracker
+
+# from cognite.client._http_client import RetryTracker
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
-    from requests import Session
+    pass
 
-    from cognite.client._http_client import HTTPClient, HTTPClientConfig
+
+# TODO: Make pyodide work with httpx
 
 
 def patch_sdk_for_pyodide() -> None:
     # -------------------
     # Patch Pyodide related issues
     # - Patch 'requests' as it does not work in pyodide (socket not implemented):
-    from pyodide_http import patch_all
+    # from pyodide_http import patch_all
 
-    patch_all()
+    # patch_all()
 
     # -----------------
     # Patch Cognite SDK
@@ -33,21 +33,14 @@ def patch_sdk_for_pyodide() -> None:
     global_config.disable_gzip = True
 
     # - Use another HTTP adapter:
-    cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
+    # cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
+    # cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [method-assign]
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
 
     # - Set all usage of thread pool executors to use dummy/serial-implementations:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-
-    # - Auto-ignore protobuf warning for the user (as they can't fix this):
-    warnings.filterwarnings(
-        action="ignore",
-        category=UserWarning,
-        message="Your installation of 'protobuf' is missing compiled C binaries",
-    )
 
     # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
     #   the default config to FusionNotebookConfig(). This allows the user to:
@@ -57,18 +50,18 @@ def patch_sdk_for_pyodide() -> None:
         global_config.default_client_config = FusionNotebookConfig()
 
 
-def http_client__init__(
-    self: HTTPClient,
-    config: HTTPClientConfig,
-    session: Session,
-    refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
-    retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
-) -> None:
-    import pyodide_http
+# def http_client__init__(
+#     self: HTTPClientWithRetry,
+#     config: HTTPClientWithRetryConfig,
+#     session: Session,
+#     refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
+#     retry_tracker_factory: Callable[[HTTPClientWithRetryConfig], RetryTracker] = RetryTracker,
+# ) -> None:
+#     import pyodide_http
 
-    self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
-    self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
-    self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
+#     self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
+#     self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
+#     self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
 
 
 class EnvVarToken(CredentialProvider):

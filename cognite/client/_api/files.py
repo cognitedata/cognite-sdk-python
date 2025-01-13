@@ -634,21 +634,20 @@ class FilesAPI(APIClient):
 
         return self._upload_bytes(content, res.json()["items"][0])
 
-    def _upload_bytes(self, content: bytes | TextIO | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
+    def _upload_bytes(self, content: bytes | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
         file_metadata = FileMetadata._load(returned_file_metadata)
-        upload_response = self._http_client_with_retry.request(
-            "PUT",
+        upload_response = self._put(
             full_upload_url,
-            data=content,
-            timeout=self._config.file_transfer_timeout,
+            content=content,
             headers={"Content-Type": file_metadata.mime_type, "accept": "*/*"},
+            timeout=self._config.file_transfer_timeout,
         )
-        if not upload_response.ok:
+        if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
         return file_metadata
 
@@ -1125,8 +1124,9 @@ class FilesAPI(APIClient):
         self._download_file_to_path(download_link, file_path_absolute)
 
     def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
-        with self._http_client_with_retry.request(
-            "GET", download_link, headers={"accept": "*/*"}, stream=True, timeout=self._config.file_transfer_timeout
+        # TODO: Needs an httpx checkup, stream, iter_content, etc.
+        with self._stream(
+            "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
         ) as r:
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
@@ -1185,10 +1185,9 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request(
-            "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
-        )
-        return res.content
+        return self._request(
+            "GET", full_url=download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
+        ).content
 
     def list(
         self,

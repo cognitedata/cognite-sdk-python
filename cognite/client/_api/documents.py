@@ -506,7 +506,6 @@ class DocumentsAPI(APIClient):
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
 
-
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
             buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retrieving large documents.
@@ -521,6 +520,7 @@ class DocumentsAPI(APIClient):
                 >>> with Path("my_file.txt").open("wb") as buffer:
                 ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
+        # TODO: Needs an httpx checkup, stream, iter_content, etc.
         with self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
         ) as response:

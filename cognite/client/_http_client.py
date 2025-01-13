@@ -2,225 +2,266 @@ from __future__ import annotations
 
 import functools
 import random
-import socket
 import time
-from collections.abc import Callable, Iterable, MutableMapping
-from http import cookiejar
-from typing import Any, Literal
+from collections.abc import AsyncIterable, Callable, Iterable, Iterator, Mapping, MutableMapping
+from contextlib import suppress
+from http.cookiejar import Cookie, CookieJar
+from json import JSONDecodeError
+from typing import (
+    Any,
+    Literal,
+    TypeVar,
+)
+from venv import logger
 
-import requests
-import requests.adapters
-import urllib3
+import httpx
 
 from cognite.client.config import global_config
-from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
-from cognite.client.utils.useful_types import SupportsRead
+from cognite.client.exceptions import (
+    CogniteConnectionError,
+    CogniteConnectionRefused,
+    CogniteReadTimeout,
+    CogniteRequestError,
+)
+
+_T = TypeVar("_T")
 
 
-class BlockAll(cookiejar.CookiePolicy):
-    def no(*args: Any, **kwargs: Any) -> Literal[False]:
-        return False
-
-    return_ok = set_ok = domain_return_ok = path_return_ok = no
-    netscape = True
-    rfc2965 = hide_cookie2 = False
+class NoCookiesPlease(CookieJar):
+    def set_cookie(self, cookie: Cookie) -> None:
+        pass
 
 
-@functools.lru_cache(1)
-def get_global_requests_session() -> requests.Session:
-    session = requests.Session()
-    session.cookies.set_policy(BlockAll())
-    adapter = requests.adapters.HTTPAdapter(
-        pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+@functools.cache
+def get_global_httpx_client() -> httpx.Client:
+    client = httpx.Client(
+        transport=httpx.HTTPTransport(
+            retries=0,
+            limits=httpx.Limits(max_connections=global_config.max_connection_pool_size),
+        ),
+        timeout=None,  # httpx has strict-ish defaults, as opposed to requests. We want to specify per request
+        follow_redirects=global_config.allow_redirects,
+        cookies=NoCookiesPlease(),
+        verify=not global_config.disable_ssl,
+        proxies=global_config.proxies,  # TODO: httpx has deprecated 'proxies'
     )
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
     if global_config.disable_ssl:
-        urllib3.disable_warnings()
-        session.verify = False
-    if global_config.proxies is not None:
-        session.proxies.update(global_config.proxies)
-    return session
+        # TODO: httpx uses httpcore, not urllib3 -> figure out how to disable warnings (if any?)
+        pass
+    return client
 
 
-class HTTPClientConfig:
+class HTTPClientWithRetryConfig:
     def __init__(
         self,
-        status_codes_to_retry: set[int],
-        backoff_factor: float,
-        max_backoff_seconds: int,
-        max_retries_total: int,
-        max_retries_status: int,
-        max_retries_read: int,
-        max_retries_connect: int,
+        status_codes_to_retry: set[int] | None = None,
+        backoff_factor: float = 0.5,
+        max_backoff_seconds: int | None = None,
+        max_retries_total: int | None = None,
+        max_retries_status: int | None = None,
+        max_retries_read: int | None = None,
+        max_retries_connect: int | None = None,
     ) -> None:
-        self.status_codes_to_retry = status_codes_to_retry
+        self._status_codes_to_retry = status_codes_to_retry
         self.backoff_factor = backoff_factor
-        self.max_backoff_seconds = max_backoff_seconds
-        self.max_retries_total = max_retries_total
-        self.max_retries_status = max_retries_status
-        self.max_retries_read = max_retries_read
-        self.max_retries_connect = max_retries_connect
+        self._max_backoff_seconds = max_backoff_seconds
+        self._max_retries_total = max_retries_total
+        self._max_retries_status = max_retries_status
+        self._max_retries_read = max_retries_read
+        self._max_retries_connect = max_retries_connect
+
+    @property
+    def status_codes_to_retry(self) -> set[int]:
+        if self._status_codes_to_retry is None:
+            # Changes to the global config need to take effect immediately
+            return global_config.status_forcelist
+        return self._status_codes_to_retry
+
+    @property
+    def max_backoff_seconds(self) -> int:
+        if self._max_backoff_seconds is None:
+            return global_config.max_retry_backoff
+        return self._max_backoff_seconds
+
+    @property
+    def max_retries_total(self) -> int:
+        if self._max_retries_total is None:
+            return global_config.max_retries
+        return self._max_retries_total
+
+    @property
+    def max_retries_status(self) -> int:
+        if self._max_retries_status is None:
+            return global_config.max_retries
+        return self._max_retries_status
+
+    @property
+    def max_retries_read(self) -> int:
+        if self._max_retries_read is None:
+            return global_config.max_retries
+        return self._max_retries_read
+
+    @property
+    def max_retries_connect(self) -> int:
+        if self._max_retries_connect is None:
+            return global_config.max_retries_connect
+        return self._max_retries_connect
 
 
-class _RetryTracker:
-    def __init__(self, config: HTTPClientConfig) -> None:
+class RetryTracker:
+    def __init__(self, config: HTTPClientWithRetryConfig) -> None:
         self.config = config
-        self.status = 0
-        self.read = 0
-        self.connect = 0
+        self.status = self.read = self.connect = 0
+        self.last_failed_reason = ""
 
     @property
     def total(self) -> int:
         return self.status + self.read + self.connect
 
-    def _max_backoff_and_jitter(self, t: int) -> int:
-        return int(min(t, self.config.max_backoff_seconds) * random.uniform(0, 1.0))
+    def get_backoff_time(self) -> float:
+        backoff_time = self.config.backoff_factor * 2**self.total
+        return random.random() * min(backoff_time, self.config.max_backoff_seconds)
 
-    def get_backoff_time(self) -> int:
-        backoff_time = self.config.backoff_factor * (2**self.total)
-        backoff_time_adjusted = self._max_backoff_and_jitter(backoff_time)
-        return backoff_time_adjusted
+    def back_off(self, url: str) -> None:
+        backoff_time = self.get_backoff_time()
+        logger.debug(
+            f"Retrying failed request, attempt #{self.total}, backoff time: {backoff_time=:.4f} sec, "
+            f"reason: {self.last_failed_reason!r}, url: {url}"
+        )
+        time.sleep(backoff_time)
 
-    def should_retry(self, status_code: int | None, is_auto_retryable: bool = False) -> bool:
-        if self.total >= self.config.max_retries_total:
-            return False
-        if self.status > 0 and self.status >= self.config.max_retries_status:
-            return False
-        if self.read > 0 and self.read >= self.config.max_retries_read:
-            return False
-        if self.connect > 0 and self.connect >= self.config.max_retries_connect:
-            return False
-        if status_code and status_code not in self.config.status_codes_to_retry and not is_auto_retryable:
-            return False
-        return True
+    @property
+    def should_retry_total(self) -> bool:
+        return self.total < self.config.max_retries_total
+
+    def should_retry_status_code(self, status_code: int, is_auto_retryable: bool) -> bool:
+        self._last_failed_reason = f"{status_code=}"
+        return (
+            self.should_retry_total
+            and self.status < self.config.max_retries_status
+            and (is_auto_retryable or status_code in self.config.status_codes_to_retry)
+        )
+
+    def should_retry_connect_error(self, error: httpx.RequestError) -> bool:
+        self._last_failed_reason = type(error).__name__
+        return self.should_retry_total and self.connect < self.config.max_retries_connect
+
+    def should_retry_timeout(self, error: httpx.RequestError) -> bool:
+        self._last_failed_reason = type(error).__name__
+        return self.should_retry_total and self.read < self.config.max_retries_read
 
 
-class HTTPClient:
+class HTTPClientWithRetry:
     def __init__(
         self,
-        config: HTTPClientConfig,
-        session: requests.Session,
-        refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
-        retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
+        config: HTTPClientWithRetryConfig,
+        refresh_auth_header: Callable[[MutableMapping[str, str]], None],
+        httpx_client: httpx.Client | None = None,
     ) -> None:
-        self.session = session
         self.config = config
         self.refresh_auth_header = refresh_auth_header
-        self.retry_tracker_factory = retry_tracker_factory  # needed for tests
+        self.httpx_client = httpx_client or get_global_httpx_client()
 
-    def request(
+    def __call__(
         self,
-        method: str,
+        method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+        /,
         url: str,
-        data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
-        headers: MutableMapping[str, Any] | None = None,
+        *,
+        content: str | bytes | Iterable[bytes] | AsyncIterable[bytes] | None = None,
+        data: Mapping[str, Any] | None = None,
+        json: Any = None,
+        params: Mapping[str, str] | None = None,
+        headers: MutableMapping[str, str] | None = None,
+        follow_redirects: bool = False,
         timeout: float | None = None,
-        params: dict[str, Any] | str | bytes | None = None,
-        stream: bool | None = None,
-        allow_redirects: bool = False,
-    ) -> requests.Response:
-        retry_tracker = self.retry_tracker_factory(self.config)
+    ) -> httpx.Response:
+        fn: Callable[..., httpx.Response] = functools.partial(
+            self.httpx_client.request,
+            method,
+            url,
+            content=content,
+            data=data,
+            json=json,
+            params=params,
+            headers=headers,
+            follow_redirects=follow_redirects,
+            timeout=timeout,
+        )
+        return self._with_retry(fn, url=url, headers=headers)
+
+    def stream(
+        self,
+        method: Literal["GET", "POST"],
+        /,
+        url: str,
+        *,
+        json: Any = None,
+        headers: MutableMapping[str, str] | None = None,
+        timeout: float | None = None,
+    ) -> Iterator[httpx.Response]:
+        fn: Callable[..., Iterator[httpx.Response]] = functools.partial(
+            self.httpx_client.stream,
+            method,
+            url,
+            content=content,
+            json=json,
+            headers=headers,
+            timeout=timeout,
+        )
+        return self._with_retry(fn, url=url, headers=headers)
+
+    def _with_retry(
+        self,
+        fn: Callable[..., _T],
+        *,
+        url: str,
+        headers: MutableMapping[str, str] | None,
+        is_auto_retryable: bool = False,
+    ) -> _T:
+        retry_tracker = RetryTracker(self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
-        is_auto_retryable = False
         while True:
             try:
-                res = self._do_request(
-                    method=method,
-                    url=url,
-                    data=data,
-                    headers=headers,
-                    timeout=timeout,
-                    params=params,
-                    stream=stream,
-                    allow_redirects=allow_redirects,
-                )
+                res = fn()
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
-                    try:
-                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
-                    except Exception:
-                        # if the response is not JSON or it doesn't conform to the api design guide,
+                    res.json = functools.cache(res.json)  # type: ignore[assignment]
+                return res.raise_for_status()
+
+            except httpx.HTTPStatusError:  # only raised from raise_for_status() -> status code is guaranteed
+                if accepts_json:
+                    with suppress(JSONDecodeError, AttributeError):
+                        # If the response is not JSON or it doesn't conform to the api design guide,
                         # we assume it's not auto-retryable
-                        pass
+                        # TODO: Can we just check the header now? 'cdf-is-auto-retryable'
+                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
 
                 retry_tracker.status += 1
-                if not retry_tracker.should_retry(status_code=res.status_code, is_auto_retryable=is_auto_retryable):
-                    return res
+                if not retry_tracker.should_retry_status_code(res.status_code, is_auto_retryable):
+                    raise
 
-            except CogniteReadTimeout as e:
-                retry_tracker.read += 1
-                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
-                    raise e
-            except CogniteConnectionError as e:
+            except httpx.ConnectError as err:
                 retry_tracker.connect += 1
-                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
-                    raise e
+                if not retry_tracker.should_retry_connect_error(err):
+                    raise CogniteConnectionRefused from err
 
+            except (httpx.NetworkError, httpx.ConnectTimeout) as err:
+                retry_tracker.connect += 1
+                if not retry_tracker.should_retry_connect_error(err):
+                    raise CogniteConnectionError from err
+
+            except httpx.TimeoutException as err:
+                retry_tracker.read += 1
+                if not retry_tracker.should_retry_timeout(err):
+                    raise CogniteReadTimeout from err
+
+            except httpx.RequestError as err:
+                # We want to avoid raising a non-Cognite error (from the underlying library). httpx.RequestError is the
+                # base class for all exceptions that can be raised during a request, so we use it here as a fallback.
+                raise CogniteRequestError from err
+
+            retry_tracker.back_off(url)
             # During a backoff loop, our credentials might expire, so we check and maybe refresh:
-            time.sleep(retry_tracker.get_backoff_time())
             if headers is not None:
-                # TODO: Refactoring needed to make this "prettier"
-                self.refresh_auth_header(headers)
-
-    def _do_request(
-        self,
-        method: str,
-        url: str,
-        data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
-        headers: MutableMapping[str, Any] | None = None,
-        timeout: float | None = None,
-        params: dict[str, Any] | str | bytes | None = None,
-        stream: bool | None = None,
-        allow_redirects: bool = False,
-    ) -> requests.Response:
-        """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
-
-        Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
-        exception is not in the context, so we need to check for the appropriate built-in exceptions,
-        urllib3 exceptions, and requests exceptions.
-        """
-        try:
-            res = self.session.request(
-                method=method,
-                url=url,
-                data=data,
-                headers=headers,
-                timeout=timeout,
-                params=params,
-                stream=stream,
-                allow_redirects=allow_redirects,
-            )
-            return res
-        except Exception as e:
-            if self._any_exception_in_context_isinstance(
-                e, (socket.timeout, urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout)
-            ):
-                raise CogniteReadTimeout from e
-            if self._any_exception_in_context_isinstance(
-                e,
-                (
-                    ConnectionError,
-                    urllib3.exceptions.ConnectionError,
-                    urllib3.exceptions.ConnectTimeoutError,
-                    requests.exceptions.ConnectionError,
-                ),
-            ):
-                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
-                    raise CogniteConnectionRefused from e
-                raise CogniteConnectionError from e
-            raise e
-
-    @classmethod
-    def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, exc_types: tuple[type[BaseException], ...] | type[BaseException]
-    ) -> bool:
-        """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
-        the __context__ attribute.
-        """
-        if isinstance(exc, exc_types):
-            return True
-        if exc.__context__ is None:
-            return False
-        return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)
+                self.refresh_auth_header(headers)  # TODO: Refactoring needed to make this "prettier"
