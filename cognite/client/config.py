@@ -30,6 +30,7 @@ class GlobalConfig:
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
         proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
         max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
+        file_download_chunk_size (int | None): Override the chunk size for streaming file downloads. Defaults to None (auto).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
         allow_redirects (bool): Whether or not to allow redirects. Defaults to False.
@@ -58,6 +59,7 @@ class GlobalConfig:
         self.disable_ssl: bool = False
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
+        self.file_download_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
         self.allow_redirects: bool = False
 

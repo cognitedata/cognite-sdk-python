@@ -209,7 +209,10 @@ class APIClient(BasicAPIClient):
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params.update(limit=current_limit, cursor=next_cursor)
+            params["limit"] = current_limit
+            if next_cursor is not None:
+                params["cursor"] = next_cursor
+
             if method == "GET":
                 res = self._get(url_path=url_path, params=params, headers=headers)
             else:
@@ -865,7 +868,7 @@ class APIClient(BasicAPIClient):
             )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
-            items_by_id = {item.id: item for item in items if getattr(item, "id", None) is not None}
+            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
                 missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}

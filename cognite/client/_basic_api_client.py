@@ -5,6 +5,7 @@ import gzip
 import logging
 import platform
 from collections.abc import Iterable, Iterator, MutableMapping
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 import httpx
@@ -85,39 +86,41 @@ class BasicAPIClient:
 
     def _request(
         self,
-        method: str,
+        method: Literal["GET", "PUT", "HEAD"],
         /,
         full_url: str,
+        content: str | bytes | Iterable[bytes] | None = None,
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> httpx.Response:
         """Make a request to something that is outside Cognite Data Fusion"""
         client = self.select_http_client(method in {"GET", "PUT", "HEAD"})
         try:
-            res = client("GET", full_url, headers=headers, timeout=timeout or self._config.timeout)
+            res = client(method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout)
         except httpx.HTTPStatusError as err:
             self._handle_status_error(err)
 
         self._log_successful_request(res)
         return res
 
+    @contextmanager
     def _stream(
         self,
         method: Literal["GET", "POST"],
         /,
         full_url: str,
+        json: Any = None,
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> Iterator[httpx.Response]:
         try:
-            res = self._http_client_with_retry.stream(
-                method, full_url, headers=headers, timeout=timeout or self._config.timeout
-            )
+            with self._http_client_with_retry.stream(
+                method, full_url, json=json, headers=headers, timeout=timeout or self._config.timeout
+            ) as resp:
+                self._log_successful_request(resp, stream=True)
+                yield resp
         except httpx.HTTPStatusError as err:
             self._handle_status_error(err)
-
-        self._log_successful_request(res, stream=True)
-        return res
 
     def _get(
         self,
@@ -186,7 +189,7 @@ class BasicAPIClient:
         api_subversion: str | None = None,
         timeout: float | None = None,
     ) -> httpx.Response:
-        is_retryable, full_url = resolve_url("PUT", url_path, self._api_version, self._config)
+        _, full_url = resolve_url("PUT", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
             content = handle_json_dump(json, full_headers)
@@ -214,7 +217,7 @@ class BasicAPIClient:
 
         headers = {
             "content-type": "application/json",
-            "accept": "*/*",
+            "accept": "application/json",
             "x-cdp-sdk": "CognitePythonSDK:" + __version__,
             "x-cdp-app": self._config.client_name,
             "cdf-version": api_subversion or self._api_subversion,
@@ -283,7 +286,7 @@ class BasicAPIClient:
             "x-request-id": response.headers.get("x-request-id"),
             "headers": self._sanitize_headers(request.headers),
             "response_payload": shorten(self._get_response_content_safe(response), 1000),
-            "response_headers": response.headers,
+            "response_headers": dict(response.headers),
         }
         return msg, error_details, missing, duplicated
 
@@ -316,8 +319,8 @@ class BasicAPIClient:
         self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
         extra: dict[str, Any] = {
-            "headers": self._sanitize_headers(res.request.headers.copy()),
-            "response_headers": res.headers,
+            "headers": self._sanitize_headers(res.request.headers),
+            "response_headers": dict(res.headers),
         }
         if payload:
             extra["payload"] = payload
@@ -342,7 +345,12 @@ class BasicAPIClient:
                 return "<binary>"
 
     @staticmethod
-    def _sanitize_headers(headers: httpx.Headers | None) -> httpx.Headers | None:
-        if headers and "Authorization" in headers:
-            headers["Authorization"] = "***"
-        return headers
+    def _sanitize_headers(headers: httpx.Headers | None) -> dict[str, str] | None:
+        if headers is None:
+            return None
+
+        sanitized = dict(headers)
+        for k, v in sanitized.items():
+            if k.lower() in {"authorization", "proxy-authorization"}:
+                sanitized[k] = "***"
+        return sanitized

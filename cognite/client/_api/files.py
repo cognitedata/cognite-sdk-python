@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, TextIO, cast, overload
+from typing import Any, BinaryIO, Literal, cast, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -641,7 +641,8 @@ class FilesAPI(APIClient):
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
         file_metadata = FileMetadata._load(returned_file_metadata)
-        upload_response = self._put(
+        upload_response = self._request(
+            "PUT",
             full_upload_url,
             content=content,
             headers={"Content-Type": file_metadata.mime_type, "accept": "*/*"},
@@ -884,26 +885,26 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
+    def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
         Note that if `content` does not somehow expose its length, this method may not work
         on Azure. See `requests.utils.super_len`.
 
         Args:
             upload_url (str): URL to upload file chunk to.
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
         """
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        upload_response = self._http_client_with_retry.request(
+        upload_response = self._request(
             "PUT",
-            upload_url,
-            data=content,
-            timeout=self._config.file_transfer_timeout,
+            full_url=upload_url,
+            content=content,
             headers={"accept": "*/*"},
+            timeout=self._config.file_transfer_timeout,
         )
-        if not upload_response.ok:
+        if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
 
     def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
@@ -1123,15 +1124,15 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path_absolute)
 
-    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
-        # TODO: Needs an httpx checkup, stream, iter_content, etc.
-        with self._stream(
+    def _download_file_to_path(self, download_link: str, path: Path) -> None:
+        from cognite.client import global_config
+
+        stream = self._stream(
             "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
-        ) as r:
-            with path.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
-                    if chunk:  # filter out keep-alive new chunks
-                        f.write(chunk)
+        )
+        with stream as r, path.open("wb") as f:
+            for chunk in r.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+                f.write(chunk)
 
     def download_to_path(
         self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
