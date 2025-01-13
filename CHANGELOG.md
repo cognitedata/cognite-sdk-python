@@ -19,6 +19,10 @@ Changes are grouped as follows
 
 ## [Unreleased]
 ### Added
+- Support for the `/simulators/routines` API endpoints.
+
+## [Unreleased]
+### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
 ## [7.71.2] - 2025-01-07
