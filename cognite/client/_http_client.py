@@ -3,15 +3,11 @@ from __future__ import annotations
 import functools
 import random
 import time
-from collections.abc import AsyncIterable, Callable, Iterable, Iterator, Mapping, MutableMapping
-from contextlib import suppress
+from collections.abc import AsyncIterable, Callable, Iterable, Mapping, MutableMapping
+from contextlib import AbstractContextManager, suppress
 from http.cookiejar import Cookie, CookieJar
 from json import JSONDecodeError
-from typing import (
-    Any,
-    Literal,
-    TypeVar,
-)
+from typing import Any, Literal, TypeVar
 from venv import logger
 
 import httpx
@@ -24,7 +20,7 @@ from cognite.client.exceptions import (
     CogniteRequestError,
 )
 
-_T = TypeVar("_T")
+_T = TypeVar("_T", httpx.Response, AbstractContextManager[httpx.Response])
 
 
 class NoCookiesPlease(CookieJar):
@@ -43,7 +39,8 @@ def get_global_httpx_client() -> httpx.Client:
         follow_redirects=global_config.allow_redirects,
         cookies=NoCookiesPlease(),
         verify=not global_config.disable_ssl,
-        proxies=global_config.proxies,  # TODO: httpx has deprecated 'proxies'
+        # TODO: httpx has deprecated 'proxies'
+        proxies=global_config.proxies,  # type: ignore
     )
     if global_config.disable_ssl:
         # TODO: httpx uses httpcore, not urllib3 -> figure out how to disable warnings (if any?)
@@ -199,17 +196,11 @@ class HTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
-    ) -> Iterator[httpx.Response]:
-        fn: Callable[..., Iterator[httpx.Response]] = functools.partial(
-            self.httpx_client.stream,
-            method,
-            url,
-            content=content,
-            json=json,
-            headers=headers,
-            timeout=timeout,
+    ) -> AbstractContextManager[httpx.Response]:
+        fn: Callable[..., AbstractContextManager[httpx.Response]] = functools.partial(
+            self.httpx_client.stream, method, url, json=json, headers=headers, timeout=timeout
         )
-        return self._with_retry(fn, url=url, headers=headers)
+        return self._with_retry(fn, url=url, headers=headers, stream=True)
 
     def _with_retry(
         self,
@@ -218,16 +209,19 @@ class HTTPClientWithRetry:
         url: str,
         headers: MutableMapping[str, str] | None,
         is_auto_retryable: bool = False,
+        stream: bool = False,
     ) -> _T:
         retry_tracker = RetryTracker(self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
-                res = fn()
+                if stream:
+                    return fn()
+                res: httpx.Response = fn()  # type: ignore
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    res.json = functools.cache(res.json)  # type: ignore[assignment]
-                return res.raise_for_status()
+                    res.json = functools.cache(res.json)  # type: ignore [assignment]
+                return res.raise_for_status()  # type: ignore [return-value]
 
             except httpx.HTTPStatusError:  # only raised from raise_for_status() -> status code is guaranteed
                 if accepts_json:

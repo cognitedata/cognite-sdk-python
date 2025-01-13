@@ -1324,10 +1324,8 @@ class SequencesDataAPI(APIClient):
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         identifier = Identifier.of_either(id, external_id).as_dict()
-        res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
-        ).json()
-        return SequenceRows._load(res)
+        res = self._post(self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns})
+        return SequenceRows._load(res.json())
 
     def retrieve_dataframe(
         self,

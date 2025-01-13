@@ -30,6 +30,7 @@ from cognite.client.data_classes.geospatial import (
 from cognite.client.exceptions import CogniteConnectionError
 from cognite.client.utils import _json
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._url import resolve_url
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -708,14 +709,13 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        # TODO: TODO: Needs an httpx checkup due to stream=True
-        res = self._do_request("POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True)
-
-        try:
-            for line in res.iter_lines():
-                yield Feature._load(_json.loads(line))
-        except (ChunkedEncodingError, ConnectionError) as e:
-            raise CogniteConnectionError(e)
+        _, full_url = resolve_url("POST", resource_path, self._api_version, self._config)
+        with self._stream("POST", full_url=full_url, json=payload) as resp:
+            try:
+                for line in resp.iter_lines():
+                    yield Feature._load(_json.loads(line))
+            except (ChunkedEncodingError, ConnectionError) as e:
+                raise CogniteConnectionError(e)
 
     def aggregate_features(
         self,
@@ -969,13 +969,7 @@ class GeospatialAPI(APIClient):
         )
         with open(file, "rb") as fh:
             data = fh.read()
-        res = self._do_request(
-            "PUT",
-            url_path,
-            data=data,
-            headers={"Content-Type": "application/binary"},
-            timeout=self._config.timeout,
-        )
+        res = self._put(url_path, content=data, headers={"Content-Type": "application/binary"})
         return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
     def delete_raster(
@@ -1002,13 +996,8 @@ class GeospatialAPI(APIClient):
                 >>> raster_property_name = ...
                 >>> client.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
         """
-        url_path = (
+        self._post(
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete"
-        )
-        self._do_request(
-            "POST",
-            url_path,
-            timeout=self._config.timeout,
         )
 
     def get_raster(
@@ -1052,10 +1041,8 @@ class GeospatialAPI(APIClient):
                 ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
         """
         url_path = self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
-        res = self._do_request(
-            "POST",
+        return self._post(
             url_path,
-            timeout=self._config.timeout,
             json={
                 "format": raster_format,
                 "options": raster_options,
@@ -1064,8 +1051,7 @@ class GeospatialAPI(APIClient):
                 "scaleX": raster_scale_x,
                 "scaleY": raster_scale_y,
             },
-        )
-        return res.content
+        ).content
 
     def compute(
         self,
@@ -1089,10 +1075,8 @@ class GeospatialAPI(APIClient):
                 >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
                 >>> compute_result = client.geospatial.compute(output = {"output": compute_function})
         """
-        res = self._do_request(
-            "POST",
+        res = self._post(
             f"{GeospatialAPI._RESOURCE_PATH}/compute",
-            timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
         return GeospatialComputedResponse._load(res.json(), cognite_client=self._cognite_client)

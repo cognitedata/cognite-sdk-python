@@ -19,6 +19,7 @@ from cognite.client.data_classes.documents import (
     TemporaryLink,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
+from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -55,10 +56,9 @@ class DocumentPreviewAPI(APIClient):
                 >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
                 >>> Image(binary_png)
         """
-        res = self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", accept="image/png"
-        )
-        return res.content
+        return self._get(
+            f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", headers={"accept": "image/png"}
+        ).content
 
     def download_page_as_png(
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
@@ -112,8 +112,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.previews.download_document_as_pdf_bytes(id=123)
         """
-        res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
-        return res.content
+        return self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf", headers={"accept": "application/pdf"}).content
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
@@ -134,6 +133,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> client.documents.previews.download_document_as_pdf("previews", id=123)
         """
         if isinstance(path, IO):
+            # TODO(doctrino): This seems impossible to trigger
             content = self.download_document_as_pdf_bytes(id)
             path.write(content)
             return
@@ -476,7 +476,6 @@ class DocumentsAPI(APIClient):
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
 
-
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
 
@@ -491,10 +490,7 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-
-        body = {"id": id}
-        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=body)
-        return response.content
+        return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
@@ -520,13 +516,15 @@ class DocumentsAPI(APIClient):
                 >>> with Path("my_file.txt").open("wb") as buffer:
                 ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
-        # TODO: Needs an httpx checkup, stream, iter_content, etc.
-        with self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
-        ) as response:
-            for chunk in response.iter_content(chunk_size=2**21):
-                if chunk:  # filter out keep-alive new chunks
-                    buffer.write(chunk)
+        from cognite.client import global_config
+
+        _, full_url = resolve_url("GET", f"{self._RESOURCE_PATH}/{id}/content", self._api_version, self._config)
+        stream = self._stream(
+            "GET", full_url=full_url, headers={"accept": "text/plain"}, timeout=self._config.file_transfer_timeout
+        )
+        with stream as resp:
+            for chunk in resp.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+                buffer.write(chunk)
 
     @overload
     def search(

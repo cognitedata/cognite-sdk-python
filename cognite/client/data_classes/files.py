@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TextIO, TypeVar, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -544,14 +544,14 @@ class FileMultipartUploadSession:
         self._in_context = False
         self._cognite_client = cognite_client
 
-    def upload_part(self, part_no: int, content: str | bytes | TextIO | BinaryIO) -> None:
+    def upload_part(self, part_no: int, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file.
         Note that if `content` does not somehow expose its length, this method may not work
         on Azure. See `requests.utils.super_len`.
 
         Args:
             part_no (int): Which part number this is, must be between 0 and `parts` given to `multipart_upload_session`
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
         """
         if part_no < 0 or part_no > len(self._uploaded_urls):
             raise ValueError(f"Index out of range: {part_no}, must be between 0 and {len(self._uploaded_urls)}")
