@@ -19,16 +19,16 @@ class AIDocumentsAPI(APIClient):
         external_id: str | None = None,
         instance_id: NodeId | None = None,
     ) -> Summary | None:
-        """Summarize a document using a Large Language Model.
+        """`Summarize a document using a Large Language Model. <https://developer.cognite.com/api#tag/Document-AI/operation/document_questioning_api_v1_projects__projectName__ai_tools_documents_ask_post>`_
 
         Note:
             Currently only supports summarizing a single document at a time, but
             this may be extended in the future.
 
         Args:
-            id (int | None): No description.
-            external_id (str | None): No description.
-            instance_id (NodeId | None): No description.
+            id (int | None): The ID of the document
+            external_id (str | None): The external ID of the document
+            instance_id (NodeId | None): The instance ID of the document
 
         Returns:
             Summary | None: A summary of the document if the document exists else None.
@@ -83,15 +83,15 @@ class AIDocumentsAPI(APIClient):
         additional_context: str | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Answer:
-        """Ask a question about one or more documents using a Large Language Model.
+        """`Ask a question about one or more documents using a Large Language Model. <https://developer.cognite.com/api#tag/Document-AI/operation/documents_summary_api_v1_projects__projectName__ai_tools_documents_summarize_post>`_
 
         Supports up to 100 documents at a time.
 
         Args:
             question (str): The question.
-            id (int | None): No description.
-            external_id (str | Sequence[str] | None): No description.
-            instance_id (NodeId | Sequence[NodeId] | None): No description.
+            id (int | None): The ID(s) of the document(s)
+            external_id (str | Sequence[str] | None): The external ID(s) of the document(s)
+            instance_id (NodeId | Sequence[NodeId] | None): The instance ID(s) of the document(s)
             language (AnswerLanguage | Literal['Chinese', 'Dutch', 'English', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Latvian', 'Norwegian', 'Portuguese', 'Spanish', 'Swedish']): The desired language of the answer, defaults to English.
             additional_context (str | None): Additional context that you want the LLM to take into account.
             ignore_unknown_ids (bool): Whether to skip documents that do not exists or that are not fully processed, instead of throwing an error
