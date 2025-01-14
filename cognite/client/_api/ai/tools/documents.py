@@ -6,7 +6,6 @@ from typing import Literal
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import Answer, AnswerLanguage, Summary
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequenceWithInstanceId
 
 
@@ -18,7 +17,7 @@ class AIDocumentsAPI(APIClient):
         id: int | None = None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-    ) -> Summary | None:
+    ) -> Summary:
         """`Summarize a document using a Large Language Model. <https://developer.cognite.com/api#tag/Document-AI/operation/document_questioning_api_v1_projects__projectName__ai_tools_documents_ask_post>`_
 
         Note:
@@ -31,11 +30,11 @@ class AIDocumentsAPI(APIClient):
             instance_id (NodeId | None): The instance ID of the document
 
         Returns:
-            Summary | None: A summary of the document if the document exists else None.
+            Summary: A summary of the document.
 
         Examples:
 
-            Summarize a single document with id:
+            Summarize a single document using ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -49,13 +48,8 @@ class AIDocumentsAPI(APIClient):
                 ... )
         """
         ident = IdentifierSequenceWithInstanceId.load(id, external_id, instance_id).as_singleton()
-        try:
-            res = self._post(self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()})
-            return Summary._load(res.json()["items"][0])
-        except CogniteAPIError as e:
-            if e.code != 404:
-                raise
-            return None
+        res = self._post(self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()})
+        return Summary._load(res.json()["items"][0])
 
     def ask_question(
         self,
@@ -94,7 +88,7 @@ class AIDocumentsAPI(APIClient):
             instance_id (NodeId | Sequence[NodeId] | None): The instance ID(s) of the document(s)
             language (AnswerLanguage | Literal['Chinese', 'Dutch', 'English', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Latvian', 'Norwegian', 'Portuguese', 'Spanish', 'Swedish']): The desired language of the answer, defaults to English.
             additional_context (str | None): Additional context that you want the LLM to take into account.
-            ignore_unknown_ids (bool): Whether to skip documents that do not exists or that are not fully processed, instead of throwing an error
+            ignore_unknown_ids (bool): Whether to skip documents that do not exist or that are not fully processed, instead of throwing an error. If no valid documents are found, an error will always be raised.
 
         Returns:
             Answer: The answer to the question in the form of a list of multiple content objects, each consisting of a chunk of text along with a set of references.
@@ -105,9 +99,9 @@ class AIDocumentsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.ai.tools.documents.ask(
+                >>> client.ai.tools.documents.ask_question(
                 ...     question="What model pump was used?",
-                ...     ids=123,
+                ...     id=123,
                 ... )
 
             Ask a question about multiple documents referenced using external IDs, and instance ID
@@ -117,7 +111,7 @@ class AIDocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes.ai import AnswerLanguage
                 >>> client.ai.tools.documents.ask_question(
                 ...     question="What other pumps are available?",
-                ...     external_ids=["foo", "bar"],
+                ...     external_id=["foo", "bar"],
                 ...     instance_id=NodeId("my-space", "my-xid"),
                 ...     language=AnswerLanguage.German,
                 ... )
