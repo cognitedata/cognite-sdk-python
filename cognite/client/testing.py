@@ -103,6 +103,7 @@ class CogniteClientMock(MagicMock):
         self.ai = MagicMock(spec=AIAPI)
         self.ai.tools = MagicMock(spec=AIToolsAPI)
         self.ai.tools.documents = MagicMock(spec_set=AIDocumentsAPI)
+
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
 

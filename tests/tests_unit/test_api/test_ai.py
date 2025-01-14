@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import AnswerContent, AnswerLocation, AnswerReference, Summary
+from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
 
 
 @pytest.fixture
@@ -89,16 +89,16 @@ def mock_ask_response(rsps, cognite_client):
 
 
 class TestAIAPI:
-    def test_summarize(self, cognite_client, mock_summarize_response):
-        summaries = cognite_client.ai.tools.documents.summarize(ids=[1234])
-        assert len(summaries) == 1
-        summary = summaries[0]
+    @pytest.mark.usefixtures("mock_summarize_response")
+    def test_summarize(self, cognite_client):
+        summary = cognite_client.ai.tools.documents.summarize(id=1234)
         assert isinstance(summary, Summary)
         assert summary.id == 1234
         assert summary.summary == "Summary"
 
-    def test_ask_question(self, cognite_client, mock_ask_response):
-        answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", ids=[1234, 2345])
+    @pytest.mark.usefixtures("mock_ask_response")
+    def test_ask_question(self, cognite_client):
+        answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert len(answer.content) == 2
         content = answer.content[0]
         assert isinstance(content, AnswerContent)
@@ -116,11 +116,10 @@ class TestAIAPI:
         assert location.top == 0.0
         assert location.bottom == 1.0
 
-    def test_answer_methods(self, cognite_client, mock_ask_response):
-        answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", ids=[1234, 2345])
-        assert answer.get_full_answer_text() == "This is the answer."
-        all_references = answer.get_all_references()
-        assert len(all_references) == 2
-        assert all_references[0].file_name != all_references[1].file_name
-        assert all_references[0].file_name in {"foo.pdf", "bar.pdf"}
-        assert all_references[1].file_name in {"foo.pdf", "bar.pdf"}
+    @pytest.mark.usefixtures("mock_ask_response")
+    def test_answer_methods(self, cognite_client):
+        answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
+        assert answer.full_answer == "This is the answer."
+        all_refs = answer.all_references
+        assert len(all_refs) == 2
+        assert {ref.file_name for ref in all_refs} == {"foo.pdf", "bar.pdf"}
