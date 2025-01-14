@@ -289,7 +289,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
     )
     # have to sleep until workflow is triggered because it's the only way to properly test get_trigger_run_history
     now = datetime.now()
-    seconds_til_next_minute = 60 - now.second + 5
+    seconds_til_next_minute = 60 - now.second + 30  # 30 seconds buffer, needed from experience...
     time.sleep(seconds_til_next_minute)
 
     yield trigger
