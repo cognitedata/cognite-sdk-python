@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.72.1] - 2025-01-14
+### Fixed
+- Data Modeling container type Enum now dumps correctly and no longer camelCases the user-defined values.
+
 ## [7.72.0] - 2025-01-14
 ### Added
 - Document Summary and Document Question Answering endpoints from the AI API.
