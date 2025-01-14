@@ -20,7 +20,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     PropertyType,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -276,8 +276,8 @@ class ContainerProperty(CogniteObject):
         output["immutable"] = self.immutable
         for key in ["nullable", "auto_increment", "name", "default_value", "description"]:
             if (value := getattr(self, key)) is not None:
-                output[key] = value
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+                output[to_camel_case(key) if camel_case else key] = value
+        return output
 
 
 @dataclass(frozen=True)

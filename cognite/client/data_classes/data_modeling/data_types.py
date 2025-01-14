@@ -250,3 +250,12 @@ class Enum(PropertyType):
     _type = "enum"
     values: dict[str, EnumValue]
     unknown_value: str | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = {
+            "type": self._type,
+            "values": {k: v.dump(camel_case) for k, v in self.values.items()},
+        }
+        if self.unknown_value is not None:
+            output["unknownValue" if camel_case else "unknown_value"] = self.unknown_value
+        return output
