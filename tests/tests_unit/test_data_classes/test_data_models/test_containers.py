@@ -1,6 +1,7 @@
 import pytest
 
 from cognite.client.data_classes._base import UnknownCogniteObject
+from cognite.client.data_classes.data_modeling import data_types
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
@@ -42,6 +43,18 @@ class TestContainerProperty:
     def test_load_dump__only_required(self, data: dict) -> None:
         actual = ContainerProperty.load(data).dump(camel_case=True)
         assert data == actual
+
+    def test_dump_no_longer_camelCases_everything_when_used(self) -> None:
+        cp = ContainerProperty(
+            data_types.Enum(
+                {
+                    "Closed_I_think": data_types.EnumValue("Valve_is_closed"),
+                    "Opened or not": data_types.EnumValue("Valve is opened"),
+                }
+            )
+        )
+        assert ContainerProperty._load(cp.dump()) == cp
+        assert sorted(cp.dump(camel_case=True)["type"]["values"]) == ["Closed_I_think", "Opened or not"]  # type: ignore [index]
 
 
 class TestConstraint:
