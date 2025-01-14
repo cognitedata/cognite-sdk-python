@@ -5,7 +5,7 @@ import json
 import pytest
 
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationUpdate
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 
 @pytest.fixture
