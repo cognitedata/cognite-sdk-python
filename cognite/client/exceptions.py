@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import reprlib
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -139,8 +138,8 @@ class CogniteMultiException(CogniteException):
 
     def _truncate_elements(self, lst: list) -> str:
         truncate_at = 10
-        elements = ",".join([str(element) for element in lst[:truncate_at]])
-        if len(elements) > truncate_at:
+        elements = ",".join(str(element) for element in lst[:truncate_at])
+        if len(lst) > truncate_at:
             elements += ", ..."
         return f"[{elements}]"
 
@@ -150,9 +149,9 @@ class CogniteMultiException(CogniteException):
         summary = [
             "",  # start string with newline
             "The API Failed to process some items.",
-            f"Successful (2xx): {self._truncate_elements(self._unwrap_list(self.successful))}",
-            f"Unknown (5xx): {self._truncate_elements(self._unwrap_list(self.unknown))}",
-            f"Failed (4xx): {self._truncate_elements(self._unwrap_list(self.failed))}",
+            f"- Successful (2xx): {self._truncate_elements(self._unwrap_list(self.successful))}",
+            f"- Unknown (5xx): {self._truncate_elements(self._unwrap_list(self.unknown))}",
+            f"- Failed (4xx): {self._truncate_elements(self._unwrap_list(self.failed))}",
         ]
         # Only show 'skipped' when tasks were skipped to avoid confusion:
         if skipped := self._unwrap_list(self.skipped):
@@ -180,25 +179,6 @@ class CogniteAPIError(CogniteMultiException):
         unwrap_fn (Callable): Function to extract identifier from the Cognite resource.
         cluster (str | None): Which Cognite cluster the user's project is on.
         extra (dict | None): A dict of any additional information.
-
-    Examples:
-        Catching an API-error and handling it based on the error code::
-
-            from cognite.client import CogniteClient
-            from cognite.client.exceptions import CogniteAPIError
-
-            client = CogniteClient()
-
-            try:
-                client.iam.token.inspect()
-            except CogniteAPIError as e:
-                if e.code == 401:
-                    print("You are not authorized")
-                elif e.code == 400:
-                    print("Something is wrong with your request")
-                elif e.code == 500:
-                    print(f"Something went terribly wrong. Here is the request-id: {e.x_request_id}"
-                print(f"The message returned from the API: {e.message}")
     """
 
     def __init__(
@@ -226,13 +206,15 @@ class CogniteAPIError(CogniteMultiException):
         super().__init__(successful, failed, unknown, skipped, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
+        msg = self.message
+        if self.missing:
+            msg += f", missing: {self._truncate_elements(self.missing)}"
+        elif self.duplicated:
+            msg += f", duplicated: {self._truncate_elements(self.duplicated)}"
+
+        msg += f" | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.cluster:
             msg += f" | cluster: {self.cluster}"
-        if self.missing:
-            msg += f"\nMissing: {self._truncate_elements(self.missing)}"
-        if self.duplicated:
-            msg += f"\nDuplicated: {self._truncate_elements(self.duplicated)}"
         msg += self._get_multi_exception_summary()
         if self.extra:
             pretty_extra = _json.dumps(self.extra, indent=4, sort_keys=True)
@@ -240,68 +222,38 @@ class CogniteAPIError(CogniteMultiException):
         return msg
 
 
-class CogniteNotFoundError(CogniteMultiException):
+class CogniteNotFoundError(CogniteAPIError):
     """Cognite Not Found Error
 
     Raised if one or more of the referenced ids/external ids are not found.
-
-    Args:
-        not_found (list): The ids not found.
-        successful (list | None): List of items which were successfully processed.
-        failed (list | None): List of items which failed.
-        unknown (list | None): List of items which may or may not have been successfully processed.
-        skipped (list | None): List of items that were skipped due to "fail fast" mode.
-        unwrap_fn (Callable): No description.
     """
 
     def __init__(
         self,
-        not_found: list,
-        successful: list | None = None,
-        failed: list | None = None,
-        unknown: list | None = None,
-        skipped: list | None = None,
-        unwrap_fn: Callable = no_op,
+        message: str,
+        code: int,
+        missing: list,
+        **kwargs: Any,
     ) -> None:
-        self.not_found = not_found
-        super().__init__(successful, failed, unknown, skipped, unwrap_fn)
-
-    def __str__(self) -> str:
-        if len(not_found := self.not_found) > 200:
-            not_found = reprlib.repr(self.not_found)  # type: ignore [assignment]
-        return f"Not found: {not_found}{self._get_multi_exception_summary()}"
+        super().__init__(message, code, **kwargs)
+        self.missing = missing
 
 
-class CogniteDuplicatedError(CogniteMultiException):
+class CogniteDuplicatedError(CogniteAPIError):
     """Cognite Duplicated Error
 
     Raised if one or more of the referenced ids/external ids have been duplicated in the request.
-
-    Args:
-        duplicated (list): The duplicated ids.
-        successful (list | None): List of items which were successfully processed.
-        failed (list | None): List of items which failed.
-        unknown (list | None): List of items which may or may not have been successfully processed.
-        skipped (list | None): List of items that were skipped due to "fail fast" mode.
-        unwrap_fn (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
         self,
+        message: str,
+        code: int,
         duplicated: list,
-        successful: list | None = None,
-        failed: list | None = None,
-        unknown: list | None = None,
-        skipped: list | None = None,
-        unwrap_fn: Callable = no_op,
+        **kwargs: Any,
     ) -> None:
+        super().__init__(message, code, **kwargs)
         self.duplicated = duplicated
-        super().__init__(successful, failed, unknown, skipped, unwrap_fn)
-
-    def __str__(self) -> str:
-        msg = f"Duplicated: {self.duplicated}"
-        msg += self._get_multi_exception_summary()
-        return msg
 
 
 class CogniteImportError(CogniteException, ImportError):

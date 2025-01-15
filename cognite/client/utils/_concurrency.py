@@ -33,8 +33,8 @@ class TasksSummary:
         self.skipped_tasks = skipped_tasks
         self.results = results
 
-        self.not_found_error: Exception | None = None
-        self.duplicated_error: Exception | None = None
+        self.not_found_error: CogniteNotFoundError | None = None
+        self.duplicated_error: CogniteDuplicatedError | None = None
         self.unknown_error: Exception | None = None
         self.missing, self.duplicated, self.cluster = self._inspect_exceptions(exceptions)
 
@@ -76,9 +76,9 @@ class TasksSummary:
         if self.unknown_error:
             self._raise_basic_api_error(str_format_element_fn, **task_lists)
         if self.not_found_error:
-            self._raise_not_found_error(str_format_element_fn, **task_lists)
+            self._raise_specific_error(self.not_found_error, CogniteNotFoundError, str_format_element_fn, **task_lists)
         if self.duplicated_error:
-            self._raise_duplicated_error(str_format_element_fn, **task_lists)
+            self._raise_specific_error(self.duplicated_error, CogniteNotFoundError, str_format_element_fn, **task_lists)
 
     def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None]:
         cluster, missing, duplicated = None, [], []
@@ -88,11 +88,10 @@ class TasksSummary:
                 continue
 
             cluster = cluster or exc.cluster
-            if exc.code in (400, 422) and exc.missing is not None:
+            if isinstance(exc, CogniteNotFoundError):
                 missing.extend(exc.missing)
                 self.not_found_error = exc
-
-            elif exc.code == 409 and exc.duplicated is not None:
+            elif isinstance(exc, CogniteDuplicatedError):
                 duplicated.extend(exc.duplicated)
                 self.duplicated_error = exc
             else:
@@ -114,11 +113,24 @@ class TasksSummary:
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
-        raise CogniteNotFoundError(self.missing, unwrap_fn=unwrap_fn, **task_lists) from self.not_found_error
-
-    def _raise_duplicated_error(self, unwrap_fn: Callable, **task_lists: list) -> NoReturn:
-        raise CogniteDuplicatedError(self.duplicated, unwrap_fn=unwrap_fn, **task_lists) from self.duplicated_error
+    def _raise_specific_error(
+        self,
+        cause: CogniteAPIError,
+        error: type[CogniteNotFoundError | CogniteDuplicatedError],
+        unwrap_fn: Callable,
+        **task_lists: list,
+    ) -> NoReturn:
+        raise error(
+            message=cause.message,
+            code=cause.code,
+            x_request_id=cause.x_request_id,
+            missing=self.missing,
+            duplicated=self.duplicated,
+            extra=cause.extra,
+            unwrap_fn=unwrap_fn,
+            cluster=self.cluster,
+            **task_lists,
+        ) from cause
 
 
 T_Result = TypeVar("T_Result", covariant=True)

@@ -770,7 +770,7 @@ class TestRetrieveRawDatapointsAPI:
         missing_xid = "nope-doesnt-exist " * 3
 
         with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
-            with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+            with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'") as err:
                 cognite_client.time_series.data.retrieve(
                     id=[
                         ts_exists1.id,
@@ -942,13 +942,33 @@ class TestRetrieveRawDatapointsAPI:
         "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
         [
             (1, True, "ChunkingDpsFetcher", does_not_raise()),
-            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                1,
+                False,
+                "ChunkingDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (3, True, "ChunkingDpsFetcher", does_not_raise()),
-            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                3,
+                False,
+                "ChunkingDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (10, True, "EagerDpsFetcher", does_not_raise()),
-            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                10,
+                False,
+                "EagerDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (50, True, "EagerDpsFetcher", does_not_raise()),
-            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                50,
+                False,
+                "EagerDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
         ],
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
@@ -2707,7 +2727,7 @@ class TestRetrieveLatestDatapointsAPI:
             include_status=True,
             ignore_bad_datapoints=False,
         )
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[\{"):
             cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=False)
 
         assert 4 == cognite_client.time_series.data._post.call_count
@@ -2873,7 +2893,7 @@ class TestInsertDatapointsAPI:
         ]
         # Let's make sure these two go in separate requests:
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 1)
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{") as err:
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{") as err:
             cognite_client.time_series.data.insert_multiple(dps)
 
         assert isinstance(err.value, CogniteNotFoundError)

@@ -871,7 +871,7 @@ class APIClient(BasicAPIClient):
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
-                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.missing}
             except KeyError:
                 # There is a not found internal id, which means we cannot identify it.
                 raise not_found_error

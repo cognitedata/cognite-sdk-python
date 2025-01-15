@@ -6,13 +6,20 @@ import logging
 import platform
 from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 import httpx
+from typing_extensions import Self
 
 from cognite.client._http_client import HTTPClientWithRetry, HTTPClientWithRetryConfig
 from cognite.client.config import global_config
-from cognite.client.exceptions import CogniteAPIError, CogniteProjectAccessError
+from cognite.client.exceptions import (
+    CogniteAPIError,
+    CogniteDuplicatedError,
+    CogniteNotFoundError,
+    CogniteProjectAccessError,
+)
 from cognite.client.utils import _json
 from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
@@ -25,16 +32,80 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def handle_json_dump(json: dict[str, Any] | None, full_headers: MutableMapping[str, str]) -> bytes | str | None:
-    if json is None:
-        return None
+@dataclass
+class FailedRequestDetails:
+    message: str
+    status_code: int
+    missing: list[str] | None
+    duplicated: list[str] | None
+    x_request_id: str | None
+    headers: dict[str, str]
+    response_payload: str
+    response_headers: dict[str, str]
+    extra: dict[str, Any]
+    cause: httpx.HTTPStatusError
 
-    content = _json.dumps_no_nan_or_inf(json)
-    if global_config.disable_gzip:
-        return content
+    @classmethod
+    def from_status_error(cls, err: httpx.HTTPStatusError) -> Self:
+        response, extra, missing, duplicated = err.response, {}, None, None
+        try:
+            match error := response.json()["error"]:
+                case str():
+                    msg = error
+                case dict():
+                    extra = error.copy()
+                    extra.pop("code", None)  # some APIs also return status code here
+                    msg = extra.pop("message")
+                    missing = extra.pop("missing", None) or None  # if empty list, make it None
+                    duplicated = extra.pop("duplicated", None) or None
+                case _:
+                    msg = response.text
+        except (KeyError, _json.JSONDecodeError):
+            msg = response.text
 
-    full_headers["Content-Encoding"] = "gzip"
-    return gzip.compress(content.encode())
+        return cls(
+            message=msg,
+            status_code=response.status_code,
+            missing=missing,
+            duplicated=duplicated,
+            x_request_id=response.headers.get("x-request-id"),
+            headers=BasicAPIClient._sanitize_headers(err.request.headers),
+            response_payload=shorten(BasicAPIClient._get_response_content_safe(response), 1000),
+            response_headers=dict(response.headers),
+            extra=extra,
+            cause=err,
+        )
+
+    def raise_api_error(self, cognite_client: CogniteClient) -> NoReturn:
+        cluster = cognite_client._config.cdf_cluster
+        match self.status_code, self.duplicated, self.missing:
+            case 401, *_:
+                self._raise_no_project_access_error(cognite_client)
+            case 409, list(), None:
+                self._raise_api_error(CogniteDuplicatedError, cluster)
+            case 400 | 422, None, list():
+                self._raise_api_error(CogniteNotFoundError, cluster)
+            case _:
+                self._raise_api_error(CogniteAPIError, cluster)
+
+    def _raise_no_project_access_error(self, cognite_client: CogniteClient) -> NoReturn:
+        raise CogniteProjectAccessError(
+            client=cognite_client,
+            project=cognite_client._config.project,
+            x_request_id=self.x_request_id,
+            cluster=cognite_client._config.cdf_cluster,
+        ) from None  # hide httpx.HTTPStatusError from SDK users
+
+    def _raise_api_error(self, err_type: type[CogniteAPIError], cluster: str | None) -> NoReturn:
+        raise err_type(
+            self.message,
+            code=self.status_code,
+            x_request_id=self.x_request_id,
+            missing=self.missing,
+            duplicated=self.duplicated,
+            extra=self.extra,
+            cluster=cluster,
+        ) from None
 
 
 @functools.cache
@@ -81,7 +152,7 @@ class BasicAPIClient:
             refresh_auth_header=self._refresh_auth_header,
         )
 
-    def select_http_client(self, is_retryable: bool) -> HTTPClientWithRetry:
+    def _select_http_client(self, is_retryable: bool) -> HTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
     def _request(
@@ -94,7 +165,7 @@ class BasicAPIClient:
         timeout: float | None = None,
     ) -> httpx.Response:
         """Make a request to something that is outside Cognite Data Fusion"""
-        client = self.select_http_client(method in {"GET", "PUT", "HEAD"})
+        client = self._select_http_client(method in {"GET", "PUT", "HEAD"})
         try:
             res = client(method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout)
         except httpx.HTTPStatusError as err:
@@ -113,6 +184,7 @@ class BasicAPIClient:
         headers: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> Iterator[httpx.Response]:
+        """Make a request to something that is outside Cognite Data Fusion and stream response content"""
         try:
             with self._http_client_with_retry.stream(
                 method, full_url, json=json, headers=headers, timeout=timeout or self._config.timeout
@@ -159,9 +231,9 @@ class BasicAPIClient:
         is_retryable, full_url = resolve_url("POST", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
-        content = handle_json_dump(json, full_headers)
+        content = self._handle_json_dump(json, full_headers)
 
-        http_client = self.select_http_client(is_retryable)
+        http_client = self._select_http_client(is_retryable)
         try:
             res = http_client(
                 "POST",
@@ -192,7 +264,7 @@ class BasicAPIClient:
         _, full_url = resolve_url("PUT", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
-            content = handle_json_dump(json, full_headers)
+            content = self._handle_json_dump(json, full_headers)
 
         try:
             res = self._http_client_with_retry(
@@ -232,88 +304,31 @@ class BasicAPIClient:
         auth_header_name, auth_header_value = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
 
-    def _handle_status_error(self, error: httpx.HTTPStatusError, payload: dict | None = None) -> NoReturn:
-        # The response had an error HTTP status of 4xx or 5xx:
-        match error.response.status_code:
-            case 401:
-                self._raise_no_project_access_error(error, payload)
-            case _:
-                self._raise_api_error(error, payload)
-
-    def _raise_no_project_access_error(self, err: httpx.HTTPStatusError, payload: dict | None = None) -> NoReturn:
-        self._log_failed_request(err, *self._extract_error_details(err), payload)
-        raise CogniteProjectAccessError(
-            client=self._cognite_client,
-            project=self._cognite_client._config.project,
-            x_request_id=err.response.headers.get("x-request-id"),
-            cluster=self._config.cdf_cluster,
-        )
-
-    def _raise_api_error(self, err: httpx.HTTPStatusError, payload: dict | None = None) -> NoReturn:
-        msg, error_details, missing, duplicated = self._extract_error_details(err)
-        self._log_failed_request(err, msg, error_details, missing, duplicated, payload)
-        # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
-        raise CogniteAPIError(
-            msg,
-            code=err.response.status_code,
-            x_request_id=error_details.get("x-request-id"),
-            missing=missing,
-            duplicated=duplicated,
-            extra=error_details,
-            cluster=self._config.cdf_cluster,
-        ) from err
-
-    def _extract_error_details(
-        self, err: httpx.HTTPStatusError
-    ) -> tuple[str, dict[str, Any], list[str] | None, list[str] | None]:
-        response, request = err.response, err.request
-        extra, missing, duplicated = {}, None, None
-        try:
-            match error := response.json()["error"]:
-                case str():
-                    msg = error
-                case dict():
-                    extra = error.copy()
-                    msg = extra.pop("message")
-                    missing = extra.pop("missing", None)
-                    duplicated = extra.pop("duplicated", None)
-                case _:
-                    msg = response.text
-        except (KeyError, _json.JSONDecodeError):
-            msg = response.text
-
-        error_details: dict[str, Any] = {
-            "x-request-id": response.headers.get("x-request-id"),
-            "headers": self._sanitize_headers(request.headers),
-            "response_payload": shorten(self._get_response_content_safe(response), 1000),
-            "response_headers": dict(response.headers),
-        }
-        return msg, error_details, missing, duplicated
+    def _handle_status_error(self, err: httpx.HTTPStatusError, payload: dict | None = None) -> NoReturn:
+        """The response had an err HTTP status of 4xx or 5xx"""
+        error_details = FailedRequestDetails.from_status_error(err)
+        self._log_failed_request(error_details, payload)
+        error_details.raise_api_error(self._cognite_client)
 
     @staticmethod
-    def _log_failed_request(
-        err: httpx.HTTPStatusError,
-        msg: str,
-        error_details: dict[str, Any],
-        missing: list[str] | None,
-        duplicated: list[str] | None,
-        payload: dict | None = None,
-    ) -> None:
+    def _log_failed_request(error_details: FailedRequestDetails, payload: dict | None = None) -> None:
+        extra = {}
         if payload:
-            error_details["payload"] = payload
-        if missing:
-            error_details["missing"] = missing
-        if duplicated:
-            error_details["duplicated"] = duplicated
+            extra["payload"] = payload
+        if error_details.missing:
+            extra["missing"] = error_details.missing
+        if error_details.duplicated:
+            extra["duplicated"] = error_details.duplicated
 
-        response, request = err.response, err.request
+        response = (error := error_details.cause).response
         if response.history:
             for res_hist in response.history:
                 logger.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} "
                     f"{res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        logger.debug(f"HTTP Error {response.status_code} {request.method} {request.url}: {msg}", extra=error_details)
+        request, message = error.request, error_details.message
+        logger.debug(f"HTTP Error {response.status_code} {request.method} {request.url}: {message}", extra=extra)
 
     def _log_successful_request(
         self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
@@ -335,6 +350,18 @@ class BasicAPIClient:
         logger.debug(f"{http_protocol} {res.request.method} {res.url} {res.status_code}", extra=extra)
 
     @staticmethod
+    def _handle_json_dump(json: dict[str, Any] | None, full_headers: MutableMapping[str, str]) -> bytes | str | None:
+        if json is None:
+            return None
+
+        content = _json.dumps_no_nan_or_inf(json)
+        if global_config.disable_gzip:
+            return content
+
+        full_headers["Content-Encoding"] = "gzip"
+        return gzip.compress(content.encode())
+
+    @staticmethod
     def _get_response_content_safe(res: httpx.Response) -> str:
         try:
             return _json.dumps(res.json())
@@ -345,10 +372,7 @@ class BasicAPIClient:
                 return "<binary>"
 
     @staticmethod
-    def _sanitize_headers(headers: httpx.Headers | None) -> dict[str, str] | None:
-        if headers is None:
-            return None
-
+    def _sanitize_headers(headers: httpx.Headers) -> dict[str, str]:
         sanitized = dict(headers)
         for k, v in sanitized.items():
             if k.lower() in {"authorization", "proxy-authorization"}:

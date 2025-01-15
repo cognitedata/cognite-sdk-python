@@ -130,7 +130,12 @@ class DpsFetchStrategy(ABC):
     @staticmethod
     def _raise_if_missing(to_raise: set[DatapointsQuery]) -> None:
         if to_raise:
-            raise CogniteNotFoundError(not_found=[q.identifier.as_dict(camel_case=False) for q in to_raise])
+            raise CogniteNotFoundError(
+                "Time series not found",
+                code=400,
+                missing=[q.identifier.as_dict(camel_case=False) for q in to_raise],
+                x_request_id="<no failing request was made>",
+            )
 
     @abstractmethod
     def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> Iterator[BaseTaskOrchestrator]:
