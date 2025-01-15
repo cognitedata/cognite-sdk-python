@@ -7,6 +7,7 @@ import pytest
 
 from cognite.client import _cognite_client, config, credentials
 from cognite.client._api import (
+    ai,
     assets,
     data_sets,
     datapoints,
@@ -135,3 +136,8 @@ class TestDocstringExamples:
     def test_postgres_gateway(self):
         run_docstring_tests(postgres_gateway_users)
         run_docstring_tests(postgres_gateway_tables)
+
+    def test_ai(self):
+        run_docstring_tests(ai)
+        run_docstring_tests(ai.tools)
+        run_docstring_tests(ai.tools.documents)
