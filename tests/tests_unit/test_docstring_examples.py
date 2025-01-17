@@ -25,7 +25,7 @@ from cognite.client._api import (
     units,
     workflows,
 )
-from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
+from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, statistics, views
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
 from cognite.client._api.postgres_gateway import tables as postgres_gateway_tables
 from cognite.client._api.postgres_gateway import users as postgres_gateway_users
@@ -114,6 +114,7 @@ class TestDocstringExamples:
         run_docstring_tests(data_models)
         run_docstring_tests(spaces)
         run_docstring_tests(graphql)
+        run_docstring_tests(statistics)
 
     def test_datapoint_subscriptions(self):
         run_docstring_tests(datapoints_subscriptions)
