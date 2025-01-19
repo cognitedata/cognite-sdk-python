@@ -45,7 +45,7 @@ from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.simulators import SimulatorsAPI
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
-from cognite.client._api.simulators.simulator_models import SimulatorModelsAPI
+from cognite.client._api.simulators.models import SimulatorModelsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
     TemplateGroupsAPI,

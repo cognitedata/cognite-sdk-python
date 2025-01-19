@@ -5,7 +5,10 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
-from cognite.client.data_classes.simulators.models import SimulatorModel, SimulatorModelRevision
+from cognite.client.data_classes.simulators.models import (
+    SimulatorModelRevisionWrite,
+    SimulatorModelWrite,
+)
 
 
 @pytest.mark.usefixtures(
@@ -24,6 +27,11 @@ class TestSimulatorModels:
         model = cognite_client.simulators.models.retrieve(external_id=model_external_id)
         assert model is not None
         assert model.external_id == model_external_id
+        assert model.created_time is not None
+        assert model.last_updated_time is not None
+        assert model.type is not None
+        assert model.data_set_id is not None
+        assert model.name is not None
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = seed_resource_names["simulator_model_external_id"]
@@ -45,14 +53,14 @@ class TestSimulatorModels:
         model_external_id_1 = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         model_external_id_2 = datetime.datetime.now().strftime("%Y%m%d%H%M%S2")
         models_to_create = [
-            SimulatorModel(
+            SimulatorModelWrite(
                 name="sdk-test-model1",
                 simulator_external_id=seed_resource_names["simulator_external_id"],
                 external_id=model_external_id_1,
                 data_set_id=seed_resource_names["simulator_test_data_set_id"],
                 type="SteadyState",
             ),
-            SimulatorModel(
+            SimulatorModelWrite(
                 name="sdk-test-model2",
                 simulator_external_id=seed_resource_names["simulator_external_id"],
                 external_id=model_external_id_2,
@@ -66,7 +74,7 @@ class TestSimulatorModels:
         assert models_created is not None
         assert len(models_created) == 2
         model_revision_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "revision"
-        model_revision_to_create = SimulatorModelRevision(
+        model_revision_to_create = SimulatorModelRevisionWrite(
             external_id=model_revision_external_id,
             model_external_id=model_external_id_1,
             file_id=seed_file.id,
@@ -80,7 +88,7 @@ class TestSimulatorModels:
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        models_to_create = SimulatorModel(
+        models_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
             simulator_external_id=seed_resource_names["simulator_external_id"],
             external_id=model_external_id,

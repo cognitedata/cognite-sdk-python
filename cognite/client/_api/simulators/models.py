@@ -133,12 +133,12 @@ class SimulatorModelsAPI(APIClient):
 
         Examples:
             List simulator models:
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.models.list()
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.list()
 
             Specify filter and sort order:
-                    >>> res = client.simulators.models.list(
+                >>> res = client.simulators.models.list(
                     ...     filter={"name": "my_simulator_model"},
                     ...     sort=("created_time")
                     ... )
@@ -167,6 +167,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.retrieve(id=1)
+
             Retrieve simulator model by external id:
                 >>> res = client.simulators.models.retrieve(external_id="foo")
         """

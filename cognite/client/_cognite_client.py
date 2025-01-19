@@ -24,7 +24,7 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
-from cognite.client._api.simulators.simulator_models import SimulatorModelsAPI
+from cognite.client._api.simulators.models import SimulatorModelsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI

@@ -75,17 +75,17 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
 @pytest.fixture
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names) -> None:
     model_unique_external_id = seed_resource_names["simulator_model_external_id"]
-    models = cognite_client.simulators.models.list()
-    model_exists = len(list(filter(lambda x: x.external_id == model_unique_external_id, models))) > 0
+    models = cognite_client.simulators.models.list(limit=None)
+    model_exists = any(model.external_id == model_unique_external_id for model in models)
 
-    if not model_exists:
-        simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
-        cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators/models",
-            json={
-                "items": [{**simulator_model, "externalId": model_unique_external_id}]
-            },  # Post actual simulator models here
-        )
+    if model_exists:
+        return
+
+    # Only create if model doesn't exist
+    simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
+    cognite_client.simulators.models._post(
+        "/simulators/models", json={"items": [{**simulator_model, "externalId": model_unique_external_id}]}
+    )
 
 
 @pytest.fixture

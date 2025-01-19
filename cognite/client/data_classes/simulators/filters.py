@@ -32,3 +32,16 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
     ) -> None:
         self.model_external_ids = model_external_ids
         self.all_versions = all_versions
+
+
+# class SimulationRunsFilter(CogniteFilter):
+#     def __init__(
+#         self,
+#         model_external_ids: Sequence[str] | None = None,
+#         all_versions: bool | None = None,
+#     ) -> None:
+#         self.model_external_ids = model_external_ids
+#         self.all_versions = all_versions
+
+#     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+#         return super().dump(camel_case=camel_case)
