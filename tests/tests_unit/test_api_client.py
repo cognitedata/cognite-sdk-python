@@ -1466,10 +1466,12 @@ class TestHelpers:
                     "externalId": {"set": "my-source-mqtt"},
                     "host": {"set": "mqtt.hsl.fi"},
                     "port": {"set": 1883},
+                    "useTls": {"set": False},
                     "authentication": {"setNull": True},
                     "caCertificate": {"setNull": True},
                     "authCertificate": {"setNull": True},
                 },
+                id="replace with setNull key",
             ),
         ],
     )
