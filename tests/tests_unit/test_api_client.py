@@ -25,6 +25,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
+from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQTT5SourceWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from tests.utils import jsgz_load, set_request_limit
@@ -1418,10 +1419,11 @@ class TestHelpers:
         assert APIClient._get_response_content_safe(res) == expected
 
     @pytest.mark.parametrize(
-        "resource, mode, expected_update_object",
+        "resource, update_obj, mode, expected_update_object",
         [
             pytest.param(
                 TimeSeries(id=42, name="bla", metadata={"myNew": "metadataValue"}),
+                TimeSeriesUpdate,
                 "replace_ignore_null",
                 {
                     "name": {"set": "bla"},
@@ -1432,6 +1434,7 @@ class TestHelpers:
             pytest.param(
                 # is_string is ignored as it cannot be updated.
                 TimeSeries(id=42, name="bla", is_string=False, metadata={"myNew": "metadataValue"}),
+                TimeSeriesUpdate,
                 "patch",
                 {
                     "name": {"set": "bla"},
@@ -1441,6 +1444,7 @@ class TestHelpers:
             ),
             pytest.param(
                 TimeSeries(id=42, name="bla"),
+                TimeSeriesUpdate,
                 "replace",
                 {
                     "assetId": {"setNull": True},
@@ -1454,15 +1458,29 @@ class TestHelpers:
                 },
                 id="replace",
             ),
+            pytest.param(
+                MQTT5SourceWrite(external_id="my-source-mqtt", host="mqtt.hsl.fi", port=1883),
+                MQTT5SourceUpdate,
+                "replace",
+                {
+                    "externalId": {"set": "my-source-mqtt"},
+                    "host": {"set": "mqtt.hsl.fi"},
+                    "port": {"set": 1883},
+                    "authentication": {"setNull": True},
+                    "caCertificate": {"setNull": True},
+                    "authCertificate": {"setNull": True},
+                },
+            ),
         ],
     )
     def test_convert_resource_to_patch_object(
         self,
         resource: CogniteResource,
+        update_obj: type[CogniteUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"],
         expected_update_object: dict[str, dict[str, dict]],
     ):
-        update_attributes = TimeSeriesUpdate._get_update_properties()
+        update_attributes = update_obj._get_update_properties()
         actual = APIClient._convert_resource_to_patch_object(resource, update_attributes, mode)
         assert actual["update"] == expected_update_object
 
