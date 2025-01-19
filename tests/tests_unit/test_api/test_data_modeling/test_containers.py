@@ -6,6 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerProperty, Text
 from cognite.client.data_classes.data_modeling.containers import BTreeIndex, RequiresConstraint
+from tests.utils import get_url
 
 EXAMPLE_CONTAINER = {
     "space": "testspace",
@@ -38,18 +39,17 @@ EXAMPLE_CONTAINER = {
 
 
 @pytest.fixture
-def mock_containers_response(rsps: Any, cognite_client: CogniteClient):
+def mock_containers_response(httpx_mock: Any, cognite_client: CogniteClient):
     response_body = {"items": [EXAMPLE_CONTAINER]}
     url_pattern = re.compile(
-        re.escape(cognite_client.data_modeling.containers._get_base_url_with_base_path())
-        + "/models/containers(/byids)?$"
+        re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers(/byids)?$"
     )
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_delete_index_response(rsps: Any, cognite_client: CogniteClient):
+def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient):
     response_body = {
         "items": [
             {
@@ -60,11 +60,10 @@ def mock_delete_index_response(rsps: Any, cognite_client: CogniteClient):
         ]
     }
     url_pattern = re.compile(
-        re.escape(cognite_client.data_modeling.containers._get_base_url_with_base_path())
-        + "/models/containers/indexes/delete$"
+        re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/indexes/delete$"
     )
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestContainersApi:

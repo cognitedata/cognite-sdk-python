@@ -238,6 +238,10 @@ class CogniteNotFoundError(CogniteAPIError):
         super().__init__(message, code, **kwargs)
         self.missing = missing
 
+    @property
+    def not_found(self) -> list:
+        return self.missing
+
 
 class CogniteDuplicatedError(CogniteAPIError):
     """Cognite Duplicated Error

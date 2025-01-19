@@ -6,7 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def function(cognite_mock_client_placeholder: CogniteClient):
 
 
 @pytest.fixture
-def mock_function_call_resp(rsps, cognite_client):
+def mock_function_call_resp(httpx_mock, cognite_client):
     response_body = {
         "items": [
             {
@@ -44,9 +44,9 @@ def mock_function_call_resp(rsps, cognite_client):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(cognite_client.functions._get_base_url_with_base_path()) + "/.+")
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = re.compile(re.escape(get_url(cognite_client.functions)) + "/.+")
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestFunction:
@@ -64,18 +64,18 @@ class TestFunction:
 class TestFunctionCall:
     def test_get_function_call_no_filter(self, cognite_client, mock_function_call_resp):
         cognite_client.functions.calls.list(function_id=2586071956285058)
-        calls = mock_function_call_resp.calls
+        calls = mock_function_call_resp.get_requests()
         assert 1 == len(calls)
         assert {
             "cursor": None,
             "limit": 25,
-        } == jsgz_load(calls[0].request.body)
+        } == jsgz_load(calls[0].content)
 
     def test_get_function_call_with_filter(self, cognite_client, mock_function_call_resp):
         cognite_client.functions.calls.list(
             function_id=2586071956285058, status="Completed", schedule_id=395335920687780
         )
-        calls = mock_function_call_resp.calls
+        calls = mock_function_call_resp.get_requests()
         assert 1 == len(calls)
         assert {
             "cursor": None,
@@ -84,7 +84,7 @@ class TestFunctionCall:
                 "scheduleId": 395335920687780,
                 "status": "Completed",
             },
-        } == jsgz_load(calls[0].request.body)
+        } == jsgz_load(calls[0].content)
 
 
 class TestFunctionCallLog:

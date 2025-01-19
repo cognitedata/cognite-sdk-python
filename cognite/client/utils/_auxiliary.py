@@ -236,3 +236,7 @@ def flatten_dict(d: dict[str, Any], parent_keys: tuple[str, ...], sep: str = "."
 
 def unpack_items(res: Response) -> list[Any]:
     return res.json()["items"]
+
+
+def drop_none_values(dct: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in dct.items() if v is not None}

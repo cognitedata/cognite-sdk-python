@@ -55,6 +55,7 @@ from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import random_string, to_snake_case
+from cognite.client.utils._url import get_base_url_with_base_path
 
 if TYPE_CHECKING:
     import pandas
@@ -63,7 +64,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 T_Type = TypeVar("T_Type", bound=type)
 
-UNION_TYPES = {typing.Union, UnionType}
+UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now that 3.8 is dropped?
+
+
+def get_url(api: APIClient, path: str = "") -> str:
+    """Test helper to get the full URL for a given API + path"""
+    return get_base_url_with_base_path(api._api_version, api._config) + path
 
 
 def all_subclasses(base: T_Type) -> list[T_Type]:

@@ -27,6 +27,7 @@ from cognite.client.data_classes.capabilities import (
     UnknownAcl,
     UnknownScope,
 )
+from tests.utils import get_url
 
 
 def all_acls():
@@ -415,7 +416,7 @@ def unknown_acls_items():
 
 
 @pytest.fixture
-def mock_groups_resp(rsps, cognite_client, unknown_acls_items):
+def mock_groups_resp(httpx_mock, cognite_client, unknown_acls_items):
     response_body = {
         "items": [
             {
@@ -427,21 +428,21 @@ def mock_groups_resp(rsps, cognite_client, unknown_acls_items):
             for unknown in unknown_acls_items
         ]
     }
-    url_pattern = cognite_client.iam.groups._get_base_url_with_base_path() + "/groups?all=False"
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = get_url(cognite_client.iam.groups) + "/groups?all=False"
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_token_inspect_resp(rsps, cognite_client, unknown_acls_items):
+def mock_token_inspect_resp(httpx_mock, cognite_client, unknown_acls_items):
     response_body = {
         "subject": "a49ba849-c0d7-abcd-dcba-8a1f0366aaaf",
         "projects": [{"projectUrlName": "my-sandbox", "groups": [229705, 863871]}],
         "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
     }
-    url_pattern = cognite_client.iam.token._get_base_url_with_base_path() + "/api/v1/token/inspect"
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = get_url(cognite_client.iam.token) + "/api/v1/token/inspect"
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestCogniteClientDoesntRaiseOnUnknownAcls:

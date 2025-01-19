@@ -2,7 +2,6 @@ import platform
 
 import dotenv
 import pytest
-import responses
 
 from cognite.client import global_config
 
@@ -12,17 +11,9 @@ global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture
-def rsps():
-    with responses.RequestsMock() as rsps:
-        yield rsps
-
-
-@pytest.fixture
-def disable_gzip():
-    old = global_config.disable_gzip
-    global_config.disable_gzip = True
+def disable_gzip(monkeypatch):
+    monkeypatch.setattr(global_config, "disable_gzip", True)
     yield
-    global_config.disable_gzip = old
 
 
 @pytest.fixture(scope="session")

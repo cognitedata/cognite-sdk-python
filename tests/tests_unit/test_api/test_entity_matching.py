@@ -4,79 +4,77 @@ import pytest
 
 from cognite.client.data_classes import Asset, EntityMatchingModel, TimeSeries
 from cognite.client.exceptions import ModelFailedException
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 
 @pytest.fixture
-def mock_fit(rsps, cognite_client):
+def mock_fit(httpx_mock, cognite_client):
     response_body = {"id": 123, "status": "Queued", "createdTime": 42}
-    rsps.add(
-        rsps.POST,
-        cognite_client.entity_matching._get_base_url_with_base_path()
-        + cognite_client.entity_matching._RESOURCE_PATH
-        + "/",
-        status=200,
+    httpx_mock.add_response(
+        method="POST",
+        url=get_url(cognite_client.entity_matching) + cognite_client.entity_matching._RESOURCE_PATH + "/",
+        status_code=200,
         json=response_body,
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_status_ok(rsps, cognite_client):
+def mock_status_ok(httpx_mock, cognite_client):
     response_body = {"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}
-    rsps.add(
-        rsps.GET,
-        re.compile(
-            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
+    httpx_mock.add_response(
+        method="GET",
+        url=re.compile(
+            f"{get_url(cognite_client.entity_matching)}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
         ),
-        status=200,
+        status_code=200,
         json=response_body,
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_retrieve(rsps, cognite_client):
+def mock_retrieve(httpx_mock, cognite_client):
     response_body = {
         "items": [{"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}]
     }
-    rsps.add(
-        rsps.POST,
-        re.compile(
-            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/byids"
+    httpx_mock.add_response(
+        method="POST",
+        url=re.compile(
+            f"{get_url(cognite_client.entity_matching)}{cognite_client.entity_matching._RESOURCE_PATH}/byids"
         ),
-        status=200,
+        status_code=200,
         json=response_body,
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_status_failed(rsps, cognite_client):
+def mock_status_failed(httpx_mock, cognite_client):
     response_body = {"id": 123, "status": "Failed", "errorMessage": "error message"}
-    rsps.add(
-        rsps.GET,
-        re.compile(
-            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
+    httpx_mock.add_response(
+        method="GET",
+        url=re.compile(
+            f"{get_url(cognite_client.entity_matching)}{cognite_client.entity_matching._RESOURCE_PATH}/\\d+"
         ),
-        status=200,
+        status_code=200,
         json=response_body,
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_status_rules_ok(rsps, cognite_client):
+def mock_status_rules_ok(httpx_mock, cognite_client):
     response_body = {"jobId": 456, "status": "Completed", "items": [1]}
-    rsps.add(
-        rsps.GET,
-        re.compile(
-            f"{cognite_client.entity_matching._get_base_url_with_base_path()}{cognite_client.entity_matching._RESOURCE_PATH}/rules/\\d+"
+    httpx_mock.add_response(
+        method="GET",
+        url=re.compile(
+            f"{get_url(cognite_client.entity_matching)}{cognite_client.entity_matching._RESOURCE_PATH}/rules/\\d+"
         ),
-        status=200,
+        status_code=200,
         json=response_body,
     )
-    yield rsps
+    yield httpx_mock
 
 
 class TestEntityMatching:
@@ -98,8 +96,8 @@ class TestEntityMatching:
 
         n_fit_calls = 0
         n_status_calls = 0
-        for call in mock_fit.calls:
-            if call.request.method == "POST":
+        for call in mock_fit.get_requests():
+            if call.method == "POST":
                 n_fit_calls += 1
                 assert {
                     "sources": entities_from,
@@ -112,10 +110,10 @@ class TestEntityMatching:
                     "description": None,
                     "externalId": None,
                     "classifier": None,
-                } == jsgz_load(call.request.body)
+                } == jsgz_load(call.content)
             else:
                 n_status_calls += 1
-                assert "/123" in call.request.url
+                assert "/123" in call.url
         assert 1 == n_fit_calls
         assert 1 == n_status_calls
 
@@ -150,7 +148,7 @@ class TestEntityMatching:
             "description": None,
             "externalId": None,
             "classifier": None,
-        } == jsgz_load(mock_fit.calls[0].request.body)
+        } == jsgz_load(mock_fit.get_requests()[0].content)
 
     def test_fit_fails(self, cognite_client, mock_fit, mock_status_failed):
         entities_from = [{"id": 1, "name": "xx"}]

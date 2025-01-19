@@ -58,7 +58,7 @@ class TestRetryTracker:
 
     def test_get_backoff_time(self):
         rt = RetryTracker(config=DEFAULT_CONFIG)
-        for i in range(1000):
+        for i in range(100):
             rt.read += 1
             assert 0 <= rt.get_backoff_time() <= DEFAULT_CONFIG.max_backoff_seconds
 

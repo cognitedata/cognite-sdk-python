@@ -22,7 +22,7 @@ from cognite.client.data_classes import (
     ThreeDNodeList,
 )
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._auxiliary import drop_none_values, split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -141,7 +141,7 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
@@ -525,7 +525,7 @@ class ThreeDRevisionsAPI(APIClient):
             resource_path=resource_path,
             method="GET",
             limit=limit,
-            filter={"depth": depth, "nodeId": node_id},
+            filter=drop_none_values({"depth": depth, "nodeId": node_id}),
             partitions=partitions,
             other_params={"sortByNodeId": sort_by_node_id},
         )

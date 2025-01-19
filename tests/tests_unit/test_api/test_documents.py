@@ -5,10 +5,11 @@ import re
 import pytest
 
 from cognite.client.data_classes import Document
+from tests.utils import get_url
 
 
 @pytest.fixture
-def mock_documents_response(rsps, cognite_client):
+def mock_documents_response(httpx_mock, cognite_client):
     response_body = {
         "items": [
             {
@@ -53,12 +54,12 @@ def mock_documents_response(rsps, cognite_client):
         ]
     }
 
-    url_pattern = re.compile(re.escape(cognite_client.documents._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
+    url_pattern = re.compile(re.escape(get_url(cognite_client.documents)) + "/.+")
+    # ....assert_all_requests_are_fired = False  # TODO
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestDocumentsAPI:
@@ -67,4 +68,4 @@ class TestDocumentsAPI:
         assert len(documents) == 1
         document = documents[0]
         assert isinstance(document, Document)
-        assert mock_documents_response.calls[0].response.json()["items"][0] == document.dump(camel_case=True)
+        assert mock_documents_response.get_requests()[0].response.json()["items"][0] == document.dump(camel_case=True)
