@@ -447,7 +447,7 @@ class PropertySpec:
     is_nullable: bool = True
     # Used to skip replace when the value is None
     is_beta: bool = False
-    # Objects that are nullable and support setNull. This is hosted extractor source and destination
+    # Objects that are nullable and support setNull. This is hosted extractor mqtt/kafka sources
     is_explicit_nullable_object: bool = False
 
     def __post_init__(self) -> None:
