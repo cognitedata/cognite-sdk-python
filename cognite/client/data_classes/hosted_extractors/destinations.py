@@ -145,7 +145,10 @@ class DestinationUpdate(CogniteUpdate):
 
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
-        return [PropertySpec("credentials", is_nullable=True), PropertySpec("target_data_set_id", is_nullable=True)]
+        return [
+            PropertySpec("credentials", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
+            PropertySpec("target_data_set_id", is_nullable=True),
+        ]
 
 
 class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTransformerMixin):

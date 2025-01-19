@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [7.73.0] - 2025-01-19
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+
+### Fixed
+- Updating a Kafka or MQTT source with a write object in `mode="replace"` no longer raises a `CogniteAPIError` with
+  422 status code.
 
 ## [7.72.1] - 2025-01-14
 ### Fixed

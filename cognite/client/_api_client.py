@@ -1277,8 +1277,10 @@ class APIClient:
         for prop in update_attributes:
             if prop.is_beta:
                 continue
+            elif prop.is_explicit_nullable_object:
+                clear_with: dict = {"setNull": True}
             elif prop.is_object:
-                clear_with: dict = {"set": {}}
+                clear_with = {"set": {}}
             elif prop.is_list:
                 clear_with = {"set": []}
             elif prop.is_nullable:

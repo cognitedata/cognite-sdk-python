@@ -1463,7 +1463,6 @@ class TestHelpers:
                 MQTT5SourceUpdate,
                 "replace",
                 {
-                    "externalId": {"set": "my-source-mqtt"},
                     "host": {"set": "mqtt.hsl.fi"},
                     "port": {"set": 1883},
                     "useTls": {"set": False},
