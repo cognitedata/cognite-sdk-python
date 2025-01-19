@@ -59,7 +59,6 @@ pytest-asyncio = ">=0.23.5a0"
 pytest-xdist = ">=2"
 twine = ">=4.0.1"
 pre-commit = "^3"
-responses = "^0, <0.25.5"
 toml = "^0"
 python-dotenv = "^1"
 mypy = "^1"
@@ -76,6 +75,7 @@ pytest-icdiff = "*"  # Used for better diffs in pytest
 types-simplejson = "^3.19.0.20240801"
 types-pytz = "^2025.2.0.20250516"
 tenacity = "^9.1.2"
+pytest-httpx = ">=0.35"
 
 [build-system]
 requires = ["poetry-core"]
