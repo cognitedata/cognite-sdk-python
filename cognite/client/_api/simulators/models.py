@@ -47,7 +47,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         Retrieves a list of simulator model revisions that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items. sort (CreatedTimeSort | None): Sort order for the results.
-            sort (CreatedTimeSort | None): No description.
+            sort (CreatedTimeSort | None): The criteria to sort by.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
@@ -64,7 +64,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             list_cls=SimulatorModelRevisionList,
             sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
-            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else None,
+            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
         )
 
     @overload
@@ -152,7 +152,7 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
             sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
-            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else None,
+            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
         )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModel | None:
@@ -191,7 +191,7 @@ class SimulatorModelsAPI(APIClient):
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
         You can create an arbitrary number of simulator models, and the SDK will split the request into multiple requests.
         Args:
-            models (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): No description.
+            models (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): Models to create.
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
         Examples:
@@ -219,8 +219,8 @@ class SimulatorModelsAPI(APIClient):
     ) -> None:
         """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
         Args:
-            ids (int | Sequence[int] | None): No description.
-            external_ids (str | SequenceNotStr[str] | None): External id/ids of the models to delete.
+            ids (int | Sequence[int] | None): Ids of the models to delete.
+            external_ids (str | SequenceNotStr[str] | None): External External ids of the models to delete.
         Examples:
             Delete models by id or external id:
                 >>> from cognite.client import CogniteClient

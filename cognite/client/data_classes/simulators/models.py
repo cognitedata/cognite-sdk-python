@@ -87,9 +87,6 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
             status_message=resource["statusMessage"],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
     def __init__(
@@ -254,9 +251,6 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
             description=resource.get("description"),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 class SimulatorModelWrite(SimulatorModelCore):
     def __init__(
@@ -363,9 +357,6 @@ class SimulatorModel(SimulatorModelCore):
             type=self.type,
             description=self.description,
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case)
 
 
 class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite], ExternalIDTransformerMixin):
