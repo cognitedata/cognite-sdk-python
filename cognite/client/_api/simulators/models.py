@@ -285,7 +285,7 @@ class SimulatorModelsAPI(APIClient):
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
         You can create an arbitrary number of simulator models, and the SDK will split the request into multiple requests.
         Args:
-            models (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): Models to create.
+            models (SimulatorModel | SimulatorModelWrite | Sequence[SimulatorModel] | Sequence[SimulatorModelWrite]): Model(s) to create.
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
         Examples:

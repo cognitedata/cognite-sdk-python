@@ -124,20 +124,20 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
     Args:
-        id (int): No description.
+        id (int): Internal id of the simulator model revision
         external_id (str): External id of the simulator model revision
         model_external_id (str): External id of the associated simulator model
         file_id (int): The id of the file associated with the simulator model revision
         created_time (int): The time when the simulator model revision was created
         last_updated_time (int): The time when the simulator model revision was last updated
-        simulator_external_id (str): No description.
+        simulator_external_id (str): External id of the simulator associated with the simulator model revision
         data_set_id (int): The id of the dataset associated with the simulator model revision
         created_by_user_id (str): The id of the user who created the simulator model revision
         status (str): The status of the simulator model revision
         version_number (int): The version number of the simulator model revision
         log_id (int): The id of the log associated with the simulator model revision
         description (str | None): The description of the simulator model revision
-        status_message (str | None): The current status of the model revision
+        status_message (str | None): The current status message of the simulator model revision
     """
 
     def __init__(
