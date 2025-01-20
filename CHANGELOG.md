@@ -20,6 +20,7 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+- Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 
 ## [7.72.1] - 2025-01-14
 ### Fixed
