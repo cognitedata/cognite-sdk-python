@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## TBD
+## [Unreleased]
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
