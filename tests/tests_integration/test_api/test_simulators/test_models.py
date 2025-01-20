@@ -20,6 +20,11 @@ class TestSimulatorModels:
         models = cognite_client.simulators.models.list(
             limit=5, filter=SimulatorModelsFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
+
+        # quick test of the iterator
+        for revision in cognite_client.simulators.models(limit=2):
+            assert revision.created_time is not None
+
         assert len(models) > 0
 
     def test_retrieve_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
@@ -40,6 +45,11 @@ class TestSimulatorModels:
             limit=5,
             filter=SimulatorModelRevisionsFilter(model_external_ids=[model_external_id]),
         )
+
+        # quick test of the iterator
+        for revision in cognite_client.simulators.models.revisions(limit=2):
+            assert revision.created_time is not None
+
         assert len(revisions) > 0
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:

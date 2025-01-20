@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -103,6 +103,53 @@ class SimulatorModelRevisionsAPI(APIClient):
             identifiers=identifiers,
         )
 
+    def __iter__(self) -> Iterator[SimulatorModelRevision]:
+        """Iterate over simulator model revisions
+
+        Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
+
+        Returns:
+            Iterator[SimulatorModelRevision]: yields Simulator model revisions one by one.
+        """
+        return self()
+
+    @overload
+    def __call__(
+        self, chunk_size: int, filter: SimulatorModelRevisionsFilter | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorModelRevision]: ...
+
+    @overload
+    def __call__(
+        self, chunk_size: None = None, filter: SimulatorModelRevisionsFilter | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorModelRevision]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        filter: SimulatorModelRevisionsFilter | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]:
+        """Iterate over simulator simulator model revisions
+
+        Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
+
+        Args:
+            chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
+            filter (SimulatorModelRevisionsFilter | None): Filter to apply on the model revisions list.
+            limit (int | None): Maximum number of simulator model revisions to return. Defaults to return all items.
+
+        Returns:
+            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+        """
+        return self._list_generator(
+            list_cls=SimulatorModelRevisionList,
+            resource_cls=SimulatorModelRevision,
+            method="POST",
+            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            chunk_size=chunk_size,
+            limit=limit,
+        )
+
 
 class SimulatorModelsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models"
@@ -177,6 +224,50 @@ class SimulatorModelsAPI(APIClient):
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             identifiers=identifiers,
+        )
+
+    def __iter__(self) -> Iterator[SimulatorModel]:
+        """Iterate over simulator models
+
+        Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
+
+        Returns:
+            Iterator[SimulatorModel]: yields Simulator model one by one.
+        """
+        return self()
+
+    @overload
+    def __call__(
+        self, chunk_size: int, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorModel]: ...
+
+    @overload
+    def __call__(
+        self, chunk_size: None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorModel]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+    ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
+        """Iterate over simulator simulator models
+
+        Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
+
+        Args:
+            chunk_size (int | None): Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
+            filter (SimulatorModelsFilter | None): Filter to apply on the model revisions list.
+            limit (int | None): Maximum number of simulator models to return. Defaults to return all items.
+
+        Returns:
+            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+        """
+        return self._list_generator(
+            list_cls=SimulatorModelList,
+            resource_cls=SimulatorModel,
+            method="POST",
+            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            chunk_size=chunk_size,
+            limit=limit,
         )
 
     @overload
