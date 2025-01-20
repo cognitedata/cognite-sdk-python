@@ -46,14 +46,14 @@ class SimulatorModelRevisionsAPI(APIClient):
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
         Retrieves a list of simulator model revisions that match the given criteria
         Args:
-            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items. sort (CreatedTimeSort | None): Sort order for the results.
+            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
             sort (CreatedTimeSort | None): The criteria to sort by.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
         Examples:
             List simulator model revisions:
-                            >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.list()
         """
@@ -83,10 +83,10 @@ class SimulatorModelRevisionsAPI(APIClient):
         """`Retrieve simulator model revision <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
         Retrieve a simulator model revision by ID or external ID
         Args:
-            external_id (str | SequenceNotStr[str]): The external id of the simulator model revision.
-            id (int | None): The id of the simulator model revision.
+            external_id (str | SequenceNotStr[str]): external id (or sequence of external ids) for a simulator model revision.
+            id (int | None): id of the simulator model revision.
         Returns:
-            SimulatorModelRevision | SimulatorModelRevisionList | None: Requested simulator model revision
+            SimulatorModelRevision | SimulatorModelRevisionList | None: Requested simulator model revision(s).
         Examples:
             Get simulator model revision by id:
                 >>> from cognite.client import CogniteClient
@@ -95,6 +95,9 @@ class SimulatorModelRevisionsAPI(APIClient):
 
             Get simulator model revision by external id:
                 >>> res = client.simulators.models.revisions.retrieve(external_id="model_external_id")
+
+            Get multiple simulator model revisions by external ids:
+                >>> res = client.simulators.models.revisions.retrieve(external_id=["a", "b"])
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -310,8 +313,8 @@ class SimulatorModelsAPI(APIClient):
     ) -> None:
         """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
         Args:
-            ids (int | Sequence[int] | None): Ids of the models to delete.
-            external_ids (str | SequenceNotStr[str] | None): External External ids of the models to delete.
+            ids (int | Sequence[int] | None): ids (or sequence of ids) for the model(s) to delete.
+            external_ids (str | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the model(s) to delete.
         Examples:
             Delete models by id or external id:
                 >>> from cognite.client import CogniteClient
