@@ -6,6 +6,9 @@ from typing import Any
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
+from cognite.client._api.ai import AIAPI
+from cognite.client._api.ai.tools import AIToolsAPI
+from cognite.client._api.ai.tools.documents import AIDocumentsAPI
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
@@ -98,6 +101,10 @@ class CogniteClientMock(MagicMock):
         #   - Add spacing above and below
         #   - Use `spec=MyAPI` only for "top level"
         #   - Use `spec_set=MyNestedAPI` for all nested APIs
+        self.ai = MagicMock(spec=AIAPI)
+        self.ai.tools = MagicMock(spec=AIToolsAPI)
+        self.ai.tools.documents = MagicMock(spec_set=AIDocumentsAPI)
+
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
 

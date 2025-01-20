@@ -3,6 +3,7 @@ import pytest
 from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
+    Enum,
     PropertyType,
     PropertyTypeWithUnit,
     Text,
@@ -66,7 +67,7 @@ class TestPropertyType:
         data.pop("unknownProperty")
         assert data == actual
 
-    def test_load_dump_unkown_property(self) -> None:
+    def test_load_dump_unknown_property(self) -> None:
         data = {"type": "unknowngibberish", "list": True, "unit": {"externalId": "known"}}
         obj = PropertyType.load(data)
         assert isinstance(obj, UnknownCogniteObject)
@@ -81,6 +82,29 @@ class TestPropertyType:
         # Default collation is "ucs_basic"
         data["collation"] = "ucs_basic"
         assert data == actual
+
+    def test_dump_enum_no_camel_casing_of_user_values(self) -> None:
+        obj = PropertyType.load(
+            {
+                "type": "enum",
+                "values": {
+                    "string_valWe ird_Case": {
+                        "name": "string_valWe ird_Case",
+                        "description": "Time series with string data points.",
+                    },
+                    "numeric_valWe ird_Case": {
+                        "name": "numeric_valWe ird_Case",
+                        "description": "Time series with double floating point data points.",
+                    },
+                },
+            }
+        )
+        assert isinstance(obj, Enum)
+
+        expected_values = ["numeric_valWe ird_Case", "string_valWe ird_Case"]
+        assert sorted(obj.values) == expected_values
+        assert sorted(obj.dump(camel_case=False)["values"]) == expected_values
+        assert sorted(obj.dump(camel_case=True)["values"]) == expected_values
 
 
 class TestUnitSupport:

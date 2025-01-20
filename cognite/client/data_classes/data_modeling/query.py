@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -182,6 +182,7 @@ class ResultSetExpression(CogniteObject, ABC):
         sort: list[InstanceSort] | None,
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
+        skip_already_deleted: bool = True,
     ):
         self.from_ = from_
         self.filter = filter
@@ -189,46 +190,19 @@ class ResultSetExpression(CogniteObject, ABC):
         self.sort = sort
         self.direction = direction
         self.chain_to = chain_to
+        self.skip_already_deleted = skip_already_deleted
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        if "sort" in resource:
-            sort = [InstanceSort.load(sort) for sort in resource["sort"]]
-        else:
-            sort = []
-
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> NodeResultSetExpression | EdgeResultSetExpression:
         if "nodes" in resource:
-            query_node = resource["nodes"]
-            node = {
-                "from_": query_node.get("from"),
-                "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
-                "chain_to": query_node.get("chainTo"),
-                "direction": query_node.get("direction"),
-            }
-            if (through := query_node.get("through")) is not None:
-                node["through"] = PropertyId.load(through)
-            return cast(Self, NodeResultSetExpression(sort=sort, limit=resource.get("limit"), **node))
+            return NodeResultSetExpression._load(resource, cognite_client)
         elif "edges" in resource:
-            query_edge = resource["edges"]
-            edge = {
-                "from_": query_edge.get("from"),
-                "max_distance": query_edge.get("maxDistance"),
-                "direction": query_edge.get("direction"),
-                "filter": Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
-                "node_filter": Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
-                "termination_filter": Filter.load(query_edge["terminationFilter"])
-                if "terminationFilter" in query_edge
-                else None,
-                "limit_each": query_edge.get("limitEach"),
-                "chain_to": query_edge.get("chainTo"),
-            }
-            post_sort = [InstanceSort.load(sort) for sort in resource["postSort"]] if "postSort" in resource else []
-            return cast(
-                Self, EdgeResultSetExpression(**edge, sort=sort, post_sort=post_sort, limit=resource.get("limit"))
-            )
+            return EdgeResultSetExpression._load(resource, cognite_client)
         else:
             return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
@@ -247,6 +221,7 @@ class NodeResultSetExpression(ResultSetExpression):
         through (list[str] | tuple[str, str, str] | PropertyId | None): Chain your result-expression through this container or view. The property must be a reference to a direct relation property. `from_` must be defined. The tuple must be on the form (space, container, property) or (space, view/version, property).
         direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
+        skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
     """
 
     def __init__(
@@ -258,8 +233,17 @@ class NodeResultSetExpression(ResultSetExpression):
         through: list[str] | tuple[str, str, str] | PropertyId | None = None,
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
+        skip_already_deleted: bool = True,
     ) -> None:
-        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
+        super().__init__(
+            from_=from_,
+            filter=filter,
+            limit=limit,
+            sort=sort,
+            direction=direction,
+            chain_to=chain_to,
+            skip_already_deleted=skip_already_deleted,
+        )
         self.through: PropertyId | None = self._init_through(through)
 
     def _init_through(self, through: list[str] | tuple[str, str, str] | PropertyId | None) -> PropertyId | None:
@@ -279,9 +263,23 @@ class NodeResultSetExpression(ResultSetExpression):
             return PropertyId(source=source, property=through[2])
         return None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        query_node = resource["nodes"]
+        through = query_node.get("through")
+        return cls(
+            from_=query_node.get("from"),
+            filter=Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            chain_to=query_node.get("chainTo"),
+            direction=query_node.get("direction"),
+            through=PropertyId.load(through) if through is not None else None,
+            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
+            limit=resource.get("limit"),
+            skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"nodes": {}}
-        nodes = output["nodes"]
+        nodes: dict[str, Any] = {}
         if self.from_:
             nodes["from"] = self.from_
         if self.filter:
@@ -293,10 +291,13 @@ class NodeResultSetExpression(ResultSetExpression):
         if self.direction:
             nodes["direction"] = self.direction
 
+        output: dict[str, Any] = {"nodes": nodes}
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
         if self.limit:
             output["limit"] = self.limit
+        if not self.skip_already_deleted:
+            output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
 
         return output
 
@@ -316,7 +317,7 @@ class EdgeResultSetExpression(ResultSetExpression):
         post_sort (list[InstanceSort] | None): Sort the result set based on this list of sort criteria.
         limit (int | None): Limit the result set to this number of instances.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
-
+        skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
     """
 
     def __init__(
@@ -332,17 +333,44 @@ class EdgeResultSetExpression(ResultSetExpression):
         post_sort: list[InstanceSort] | None = None,
         limit: int | None = None,
         chain_to: Literal["destination", "source"] = "destination",
+        skip_already_deleted: bool = True,
     ) -> None:
-        super().__init__(from_=from_, filter=filter, limit=limit, sort=sort, direction=direction, chain_to=chain_to)
+        super().__init__(
+            from_=from_,
+            filter=filter,
+            limit=limit,
+            sort=sort,
+            direction=direction,
+            chain_to=chain_to,
+            skip_already_deleted=skip_already_deleted,
+        )
         self.max_distance = max_distance
         self.node_filter = node_filter
         self.termination_filter = termination_filter
         self.limit_each = limit_each
         self.post_sort = post_sort
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        query_edge = resource["edges"]
+        term_flt = Filter.load(query_edge["terminationFilter"]) if "terminationFilter" in query_edge else None
+        return cls(
+            from_=query_edge.get("from"),
+            max_distance=query_edge.get("maxDistance"),
+            direction=query_edge.get("direction"),
+            filter=Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
+            node_filter=Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
+            termination_filter=term_flt,
+            limit_each=query_edge.get("limitEach"),
+            chain_to=query_edge.get("chainTo"),
+            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
+            post_sort=[InstanceSort.load(sort) for sort in resource.get("postSort", [])],
+            limit=resource.get("limit"),
+            skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+        )
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"edges": {}}
-        edges = output["edges"]
+        edges: dict[str, Any] = {}
         if self.from_:
             edges["from"] = self.from_
         if self.max_distance:
@@ -360,13 +388,15 @@ class EdgeResultSetExpression(ResultSetExpression):
         if self.chain_to:
             edges["chainTo" if camel_case else "chain_to"] = self.chain_to
 
+        output: dict[str, Any] = {"edges": edges}
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
         if self.post_sort:
             output["postSort" if camel_case else "post_sort"] = [s.dump(camel_case=camel_case) for s in self.post_sort]
         if self.limit:
             output["limit"] = self.limit
-
+        if not self.skip_already_deleted:
+            output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
         return output
 
 

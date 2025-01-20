@@ -1369,6 +1369,11 @@ class TestRetryableEndpoints:
                 # Simulators
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/simulators/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/simulators/delete", False),
+                # AI API
+                # "ai/tools/documents/(summarize|ask)",
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/summarize", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/ask", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/task", False),
             ]
         ),
     )

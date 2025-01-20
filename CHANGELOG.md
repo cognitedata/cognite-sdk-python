@@ -21,6 +21,24 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.72.1] - 2025-01-14
+### Fixed
+- Data Modeling container type Enum now dumps correctly and no longer camelCases the user-defined values.
+
+## [7.72.0] - 2025-01-14
+### Added
+- Document Summary and Document Question Answering endpoints from the AI API.
+
+## [7.71.4] - 2025-01-09
+### Changed
+- Update classes accepting insance_id now raise when id/external_id are also given.
+### Added
+- All update classes warn when external_id is ignored (when id is also given, it takes precedence)
+
+## [7.71.3] - 2025-01-09
+### Added
+- `ResultSetExpression` now support the `skip_already_deleted` flag.
+
 ## [7.71.2] - 2025-01-07
 ### Added
 - Instance ID is now supported for `retrieve_latest` in the datapoints API.
@@ -37,7 +55,6 @@ Changes are grouped as follows
 ## [7.71.0] - 2025-01-06
 ### Added
 - Support for InstanceReferences filter for Data Modeling
-
 
 ## [7.70.7] - 2024-12-20
 ### Fixed

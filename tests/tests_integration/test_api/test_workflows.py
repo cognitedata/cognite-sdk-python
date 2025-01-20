@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import unittest
-from datetime import datetime
 
 import pytest
 
@@ -287,10 +286,10 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
             metadata={"test": "integration_schedule"},
         )
     )
-    # have to sleep until workflow is triggered because it's the only way to properly test get_trigger_run_history
-    now = datetime.now()
-    seconds_til_next_minute = 60 - now.second + 5
-    time.sleep(seconds_til_next_minute)
+    # Have to sleep until workflow is triggered because it's the only way to properly test get_trigger_run_history
+    # ...and as of Jan 14, 2025, there's "an artificial delay of 90 sec to scheduled triggers to prevent a stampede
+    # effect on downstream services for overlapping triggers (up to two minutes, stable per trigger)".
+    time.sleep(90 + 60)
 
     yield trigger
     cognite_client.workflows.triggers.delete(trigger.external_id)

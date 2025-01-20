@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Iterable, Iterator, Sequence
@@ -456,6 +457,13 @@ class CogniteUpdate:
         self._id = id
         self._external_id = external_id
         self._update_object: dict[str, Any] = {}
+
+        if id is not None and external_id is not None:
+            warnings.warn(
+                "Update object got both of 'id' and 'external_id', 'external_id' will be ignored.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()

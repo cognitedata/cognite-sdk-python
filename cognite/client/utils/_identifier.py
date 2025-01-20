@@ -328,7 +328,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     def load(
         cls,
         ids: int | Sequence[int] | None = None,
-        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
         instance_ids: InstanceId
         | Sequence[InstanceId | tuple[str, str] | dict[str, str]]
         | tuple[str, str]
@@ -376,6 +376,16 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
+
+
+class IdentifierSequenceWithInstanceId(IdentifierSequence):
+    # TODO: Remove 'instanceId' above and move here instead (and update usage where appropriate...)
+    #       to avoid error messages mentioning instance ID where it's not relevant, and be more
+    #       helpful where needed.
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one of id or external_id or instance_id must be specified")
 
 
 class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]): ...

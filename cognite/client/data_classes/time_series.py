@@ -349,6 +349,9 @@ class TimeSeriesUpdate(CogniteUpdate):
     def __init__(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> None:
+        if instance_id is not None and (id is not None or external_id is not None):
+            raise ValueError("Exactly one of 'id', 'external_id' or 'instance_id' must be provided.")
+
         super().__init__(id=id, external_id=external_id)
         self.instance_id = instance_id
 
