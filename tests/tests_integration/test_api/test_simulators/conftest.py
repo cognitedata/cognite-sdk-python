@@ -76,7 +76,7 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names) -> None:
     model_unique_external_id = seed_resource_names["simulator_model_external_id"]
     models = cognite_client.simulators.models.list(limit=None)
-    model_exists = any(model.external_id == model_unique_external_id for model in models)
+    model_exists = models.get(external_id=model_unique_external_id)
 
     if model_exists:
         return
@@ -95,9 +95,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
     model_revisions = cognite_client.simulators.models.revisions.list(
         filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id])
     )
-    model_revision_not_exists = (
-        len(list(filter(lambda x: x.external_id == model_revision_unique_external_id, model_revisions))) == 0
-    )
+    model_revision_not_exists = not model_revisions.get(external_id=model_revision_unique_external_id)
 
     if model_revision_not_exists:
         cognite_client.post(
