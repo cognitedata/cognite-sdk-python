@@ -46,7 +46,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
         Retrieves a list of simulator model revisions that match the given criteria
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items. sort (CreatedTimeSort | None): Sort order for the results.
+            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items. sort (CreatedTimeSort | None): Sort order for the results.
             sort (CreatedTimeSort | None): No description.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
         Returns:
@@ -92,8 +92,9 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve(id=123)
+
             Get simulator model revision by external id:
-                >>> res = client.simulators.models.revisions.retrieve(external_id="abcdef")
+                >>> res = client.simulators.models.revisions.retrieve(external_id="model_external_id")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -125,7 +126,7 @@ class SimulatorModelsAPI(APIClient):
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
         Retrieves a list of simulator models that match the given criteria
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
             sort (CreatedTimeSort | None): The criteria to sort by.
         Returns:
@@ -138,9 +139,9 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.list()
 
             Specify filter and sort order:
+                >>> from cognite.client.data_classes.simulators.filters import SimulatorModelsFilter
                 >>> res = client.simulators.models.list(
-                    ...     filter={"name": "my_simulator_model"},
-                    ...     sort=("created_time")
+                    ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"])
                     ... )
 
         """
@@ -169,7 +170,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.retrieve(id=1)
 
             Retrieve simulator model by external id:
-                >>> res = client.simulators.models.retrieve(external_id="foo")
+                >>> res = client.simulators.models.retrieve(external_id="model_external_id")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
