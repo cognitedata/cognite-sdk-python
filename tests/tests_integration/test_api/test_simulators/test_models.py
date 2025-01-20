@@ -22,8 +22,8 @@ class TestSimulatorModels:
         )
 
         # quick test of the iterator
-        for revision in cognite_client.simulators.models(limit=2):
-            assert revision.created_time is not None
+        for model in cognite_client.simulators.models(limit=2):
+            assert model.created_time is not None
 
         assert len(models) > 0
 
