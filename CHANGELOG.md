@@ -21,6 +21,11 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.72.2] - 2025-01-20
+### Fixed
+- Updating a Kafka or MQTT source with a write object in `mode="replace"` no longer raises a `CogniteAPIError` with
+  422 status code.
+
 ## [7.72.1] - 2025-01-14
 ### Fixed
 - Data Modeling container type Enum now dumps correctly and no longer camelCases the user-defined values.

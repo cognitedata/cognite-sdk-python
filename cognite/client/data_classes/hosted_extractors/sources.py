@@ -391,10 +391,10 @@ class _MQTTUpdate(SourceUpdate, ABC):
         return [
             PropertySpec("host", is_nullable=False),
             PropertySpec("port", is_nullable=True),
-            PropertySpec("authentication", is_nullable=True, is_object=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
             PropertySpec("use_tls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
         ]
 
 
@@ -662,10 +662,10 @@ class KafkaSourceUpdate(SourceUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("bootstrap_brokers", is_nullable=False),
-            PropertySpec("authentication", is_nullable=True, is_object=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
             PropertySpec("use_tls", is_nullable=False),
-            PropertySpec("ca_certificate", is_nullable=True, is_object=True),
-            PropertySpec("auth_certificate", is_nullable=True, is_object=True),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
+            PropertySpec("auth_certificate", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
         ]
 
 
