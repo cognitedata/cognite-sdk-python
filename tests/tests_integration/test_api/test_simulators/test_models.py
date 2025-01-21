@@ -70,7 +70,9 @@ class TestSimulatorModels:
         assert model_revision.model_external_id == seed_resource_names["simulator_model_external_id"]
 
     @pytest.mark.usefixtures("seed_file", "seed_resource_names")
-    def test_create_model(self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names) -> None:
+    def test_create_model_and_revisions(
+        self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names
+    ) -> None:
         model_external_id_1 = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         model_external_id_2 = datetime.datetime.now().strftime("%Y%m%d%H%M%S2")
         models_to_create = [
@@ -102,7 +104,7 @@ class TestSimulatorModels:
             description="Test revision",
         )
 
-        model_revision_created = cognite_client.simulators.models.create_revisions(model_revision_to_create)
+        model_revision_created = cognite_client.simulators.models.revisions.create(model_revision_to_create)
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
         cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
