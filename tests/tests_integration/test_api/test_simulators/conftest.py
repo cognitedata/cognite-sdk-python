@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Generator
 
 import pytest
 
@@ -37,20 +38,23 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
     file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
     if (file is None) or (file is False):
         file = cognite_client.files.upload(
-            path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.dwxmz",
+            path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.txt",
             external_id=seed_resource_names["simulator_model_file_external_id"],
-            name="ShowerMixer.dwxmz",
+            name="ShowerMixer.txt",
             data_set_id=data_set_id,
         )
     yield file
 
 
 @pytest.fixture(scope="session")
-def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> None:
+def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Generator[None, None, None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
+
+    yield
+    cognite_client.simulators._post("/simulators/delete", json={"items": [{"externalId": simulator_external_id}]})
 
 
 @pytest.fixture(scope="session")

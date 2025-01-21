@@ -25,7 +25,6 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
-from cognite.client._api.simulators.models import SimulatorModelsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
@@ -88,7 +87,6 @@ class CogniteClient:
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
-        self.simulators.models = SimulatorModelsAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 

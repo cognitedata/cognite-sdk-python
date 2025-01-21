@@ -6,7 +6,7 @@ resource_names = {
     "simulator_integration_external_id": "py_sdk_integration_tests_connector",
     "simulator_model_external_id": "py_sdk_integration_tests_model",
     "simulator_model_revision_external_id": "pysdk_model_revision",
-    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_4",
+    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
     "simulator_routine_external_id": "pysdk_routine",
     "simulator_routine_revision_external_id": "pysdk_routine_revision",
     "simulator_test_data_set_id": None,
@@ -16,7 +16,7 @@ resource_names = {
 simulator = {
     "name": resource_names["simulator_external_id"],
     "externalId": resource_names["simulator_external_id"],
-    "fileExtensionTypes": ["dwxmz"],
+    "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "stepFields": [
         {
