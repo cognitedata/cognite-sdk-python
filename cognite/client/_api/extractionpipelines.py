@@ -25,6 +25,7 @@ from cognite.client.data_classes.extractionpipelines import (
     StringFilter,
 )
 from cognite.client.utils import timestamp_to_ms
+from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -414,7 +415,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         """
         response = self._get(
             self._RESOURCE_PATH,
-            params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision},
+            params=drop_none_values({"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}),
         )
         return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
