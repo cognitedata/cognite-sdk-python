@@ -7,6 +7,8 @@ from cognite.client.data_classes.hosted_extractors import (
     EventHubSource,
     EventHubSourceUpdate,
     EventHubSourceWrite,
+    MQTT5SourceWrite,
+    Source,
     SourceList,
 )
 from cognite.client.exceptions import CogniteAPIError
@@ -56,6 +58,32 @@ class TestSources:
 
             cognite_client.hosted_extractors.sources.retrieve(created.external_id, ignore_unknown_ids=True)
 
+        finally:
+            if created:
+                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+
+    def test_create_update_replace_retrieve(self, cognite_client: CogniteClient) -> None:
+        original = MQTT5SourceWrite(
+            external_id=f"myMqttSource-{random_string(10)}",
+            host="mqtt.hsl.fi",
+            port=1883,
+        )
+
+        created: Source | None = None
+        try:
+            created = cognite_client.hosted_extractors.sources.create(original)
+
+            update = MQTT5SourceWrite(original.external_id, host="mqtt.hsl.fi", port=1884)
+
+            updated = cognite_client.hosted_extractors.sources.update(update, mode="replace")
+
+            assert updated.port == 1884
+
+            retrieved = cognite_client.hosted_extractors.sources.retrieve(created.external_id)
+
+            assert retrieved is not None
+            assert retrieved.external_id == created.external_id
+            assert retrieved.port == 1884
         finally:
             if created:
                 cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
