@@ -14,7 +14,6 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator,
     simulator_integration,
     simulator_model,
-    simulator_model_revision,
 )
 
 
@@ -104,7 +103,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
             json={
                 "items": [
                     {
-                        **simulator_model_revision,
+                        "description": "test sim model revision description",
                         "fileId": seed_file.id,
                         "modelExternalId": model_unique_external_id,
                         "externalId": model_revision_unique_external_id,

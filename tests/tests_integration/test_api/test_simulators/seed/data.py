@@ -223,10 +223,3 @@ simulator_model = {
     "dataSetId": resource_names["simulator_test_data_set_id"],
     "type": "SteadyState",
 }
-
-simulator_model_revision = {
-    "externalId": resource_names["simulator_model_revision_external_id"],
-    "modelExternalId": resource_names["simulator_model_external_id"],
-    "description": "test sim model revision description",
-    "fileId": 00000000000000,
-}
