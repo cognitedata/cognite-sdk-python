@@ -53,9 +53,6 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Genera
     if not simulators.get(external_id=simulator_external_id):
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
 
-    yield
-    cognite_client.simulators._post("/simulators/delete", json={"items": [{"externalId": simulator_external_id}]})
-
 
 @pytest.fixture(scope="session")
 def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, seed_resource_names) -> None:
