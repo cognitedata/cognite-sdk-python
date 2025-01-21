@@ -21,9 +21,15 @@ class TestSimulatorModels:
             limit=5, filter=SimulatorModelsFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
         )
 
+        model_ids = []
         # quick test of the iterator
         for model in cognite_client.simulators.models(limit=2):
             assert model.created_time is not None
+            model_ids.append(model.id)
+
+        found_models = cognite_client.simulators.models.retrieve_multiple(ids=model_ids)
+
+        assert len(found_models) == len(model_ids)
 
         assert len(models) > 0
 
@@ -46,9 +52,14 @@ class TestSimulatorModels:
             filter=SimulatorModelRevisionsFilter(model_external_ids=[model_external_id]),
         )
 
+        model_revision_ids = []
         # quick test of the iterator
         for revision in cognite_client.simulators.models.revisions(limit=2):
             assert revision.created_time is not None
+            model_revision_ids.append(revision.id)
+
+        found_revisions = cognite_client.simulators.models.revisions.retrieve_multiple(ids=model_revision_ids)
+        assert len(found_revisions) == len(model_revision_ids)
 
         assert len(revisions) > 0
 
