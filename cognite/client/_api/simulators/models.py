@@ -67,12 +67,12 @@ class SimulatorModelRevisionsAPI(APIClient):
             filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
         )
 
-    def retrieve(self, external_id: str | None = None, id: int | None = None) -> SimulatorModelRevision | None:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorModelRevision | None:
         """`Retrieve a simulator model revision <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
         Retrieve a simulator model revision by ID or external ID
         Args:
-            external_id (str | None): external id for a simulator model revision.
             id (int | None): id of the simulator model revision.
+            external_id (str | None): external id for a simulator model revision.
         Returns:
             SimulatorModelRevision | None: Requested simulator model revision.
         Examples:
@@ -93,14 +93,16 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, external_ids: SequenceNotStr[str] | None = None, ids: Sequence[int] | None = None
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevisionList:
         """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
         Retrieve simulator model revisions by IDs or external IDs
         Args:
-            external_ids (SequenceNotStr[str] | None): No description.
-            ids (Sequence[int] | None): No description.
+            ids (Sequence[int] | None): IDs.
+            external_ids (SequenceNotStr[str] | None): External Ids.
         Returns:
             SimulatorModelRevisionList: Requested simulator model revision(s).
         Examples:
@@ -251,8 +253,8 @@ class SimulatorModelsAPI(APIClient):
         """`Retrieve simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
         Retrieve multiple simulator models by IDs or external IDs
         Args:
-            ids (Sequence[int] | None): No description.
-            external_ids (SequenceNotStr[str] | None): No description.
+            ids (Sequence[int] | None): IDs.
+            external_ids (SequenceNotStr[str] | None): External Ids.
         Returns:
             SimulatorModelList: Requested simulator model
         Examples:
