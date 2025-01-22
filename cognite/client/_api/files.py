@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
-from cognite.client.utils._auxiliary import find_duplicates, unpack_items
+from cognite.client.utils._auxiliary import drop_none_values, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -645,7 +645,8 @@ class FilesAPI(APIClient):
             "PUT",
             full_upload_url,
             content=content,
-            headers={"Content-Type": file_metadata.mime_type, "accept": "*/*"},
+            # If content-type is not set, we need to drop it from the headers or httpx will complain:
+            headers=drop_none_values({"Content-Type": file_metadata.mime_type, "accept": "*/*"}),
             timeout=self._config.file_transfer_timeout,
         )
         if not upload_response.is_success:

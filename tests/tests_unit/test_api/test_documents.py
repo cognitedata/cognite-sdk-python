@@ -50,9 +50,10 @@ def example_document():
         },
     }
 
+
 @pytest.fixture
 def mock_documents_response(httpx_mock, cognite_client, example_document):
-    response_body = {"items":[example_document]}
+    response_body = {"items": [example_document]}
     url_pattern = re.compile(re.escape(get_url(cognite_client.documents)) + "/.+")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)

@@ -30,8 +30,8 @@ class CogniteProjectAccessError(CogniteException):
         self.project = project
         self.maybe_projects = self._attempt_to_get_projects(client)
 
-    @timed_cache(ttl=5)  # Don't spam requests when using concurrency
     @staticmethod
+    @timed_cache(ttl=5)  # Don't spam requests when using concurrency
     def _attempt_to_get_projects(client: CogniteClient) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token

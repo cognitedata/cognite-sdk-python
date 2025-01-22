@@ -67,7 +67,6 @@ class TestFunctionCall:
         calls = mock_function_call_resp.get_requests()
         assert 1 == len(calls)
         assert {
-            "cursor": None,
             "limit": 25,
         } == jsgz_load(calls[0].content)
 
@@ -78,7 +77,6 @@ class TestFunctionCall:
         calls = mock_function_call_resp.get_requests()
         assert 1 == len(calls)
         assert {
-            "cursor": None,
             "limit": 25,
             "filter": {
                 "scheduleId": 395335920687780,
