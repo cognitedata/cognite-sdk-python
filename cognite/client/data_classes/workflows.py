@@ -331,7 +331,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         transformation = {
             "externalId" if camel_case else "external_id": self.external_id,
             "concurrencyPolicy" if camel_case else "concurrency_policy": self.concurrency_policy,
-            "useWithTransformationCredentials"
+            "useTransformationCredentials"
             if camel_case
             else "use_transformation_credentials": self.use_transformation_credentials,
         }
