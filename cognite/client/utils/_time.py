@@ -5,10 +5,13 @@ import functools
 import math
 import numbers
 import re
+import threading
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from itertools import pairwise
 from typing import TYPE_CHECKING, cast, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -750,6 +753,30 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
         floored = QuarterAligner.floor(start)
         unit += {1: "-JAN", 4: "-APR", 7: "-JUL", 10: "-OCT"}[floored.month]
     return f"{multiplier}{unit}"
+
+
+def timed_cache(ttl: int = 5) -> Callable:
+    """
+    A thread-safe timed cache decorator for a function (that ignores arguments), accepting a custom
+    time-to-live (ttl) for the cached value (seconds).
+    """
+
+    def decorator(func):
+        lock = threading.Lock()
+        value, start_time = None, 0
+
+        @wraps(func)
+        def wrapper(*a, **kw):
+            with lock:
+                nonlocal value, start_time
+                if (current_time := time.time()) - start_time < ttl:
+                    return value
+                value, start_time = func(*a, **kw), current_time
+                return value
+
+        return wrapper
+
+    return decorator
 
 
 __all__ = ["ZoneInfo", "ZoneInfoNotFoundError"]  # Fix: Module does not explicitly export attribute "ZoneInfo
