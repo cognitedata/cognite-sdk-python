@@ -29,29 +29,30 @@ def mock_ts_response(httpx_mock, cognite_client):
     url_pattern = re.compile(
         re.escape(get_url(cognite_client.time_series)) + r"/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
-    # ....assert_all_requests_are_fired = False  # TODO
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx_mock.add_response(
+        method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True, is_reusable=True
+    )
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    yield response_body
 
 
 class TestTimeSeries:
     def test_retrieve_single(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.retrieve(id=1)
         assert isinstance(res, TimeSeries)
-        assert mock_ts_response.get_requests()[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.retrieve_multiple(ids=[1])
         assert isinstance(res, TimeSeriesList)
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
 
     def test_list(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.list()
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
 
-    def test_list_with_filters(self, cognite_client, mock_ts_response):
+    def test_list_with_filters(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.list(
             is_step=True,
             is_string=False,
@@ -65,7 +66,7 @@ class TestTimeSeries:
             asset_subtree_ids=[1],
             asset_subtree_external_ids=["a"],
         )
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
         assert {
             "isString": False,
             "isStep": True,
@@ -76,68 +77,64 @@ class TestTimeSeries:
             "dataSetIds": [{"id": 1}, {"id": 2}, {"externalId": "x"}],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
-        } == jsgz_load(mock_ts_response.get_requests()[0].content)["filter"]
+        } == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]
 
     @pytest.mark.dsl
-    def test_list_with_asset_ids(self, cognite_client, mock_ts_response):
+    def test_list_with_asset_ids(self, cognite_client, mock_ts_response, httpx_mock):
         import numpy
 
         cognite_client.time_series.list(asset_ids=[1])
         cognite_client.time_series.list(asset_ids=[numpy.int64(1)])
-        for i in range(len(mock_ts_response.get_requests())):
-            assert [1] == jsgz_load(mock_ts_response.get_requests()[i].content)["filter"]["assetIds"]
+        for i in range(len(httpx_mock.get_requests())):
+            assert [1] == jsgz_load(httpx_mock.get_requests()[i].content)["filter"]["assetIds"]
 
     def test_create_single(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.create(TimeSeries(external_id="1", name="blabla"))
         assert isinstance(res, TimeSeries)
-        assert mock_ts_response.get_requests()[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.create([TimeSeries(external_id="1", name="blabla")])
         assert isinstance(res, TimeSeriesList)
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, cognite_client, mock_ts_response):
         for asset in cognite_client.time_series:
-            assert mock_ts_response.get_requests()[0].response.json()["items"][0] == asset.dump(camel_case=True)
+            assert mock_ts_response["items"][0] == asset.dump(camel_case=True)
 
     def test_iter_chunk(self, cognite_client, mock_ts_response):
         for assets in cognite_client.time_series(chunk_size=1):
-            assert mock_ts_response.get_requests()[0].response.json()["items"] == assets.dump(camel_case=True)
+            assert mock_ts_response["items"] == assets.dump(camel_case=True)
 
-    def test_delete_single(self, cognite_client, mock_ts_response):
+    def test_delete_single(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.delete(id=1)
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(
-            mock_ts_response.get_requests()[0].content
-        )
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_single_ignore_unknown(self, cognite_client, mock_ts_response):
+    def test_delete_single_ignore_unknown(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.delete(id=1, ignore_unknown_ids=True)
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": True} == jsgz_load(mock_ts_response.get_requests()[0].content)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": True} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_ts_response):
+    def test_delete_multiple(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.delete(id=[1])
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(
-            mock_ts_response.get_requests()[0].content
-        )
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.update(TimeSeries(id=1))
         assert isinstance(res, TimeSeries)
-        assert mock_ts_response.get_requests()[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.update(TimeSeriesUpdate(id=1).description.set("blabla"))
         assert isinstance(res, TimeSeries)
-        assert mock_ts_response.get_requests()[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, cognite_client, mock_ts_response):
         res = cognite_client.time_series.update([TimeSeriesUpdate(id=1).description.set("blabla")])
         assert isinstance(res, TimeSeriesList)
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
 
     def test_update_multiple_list(self, cognite_client, mock_ts_response):
         tsl = cognite_client.time_series.retrieve_multiple(ids=[0])
@@ -145,31 +142,31 @@ class TestTimeSeries:
         assert isinstance(res, TimeSeriesList)
         assert 1 == len(res)
 
-    def test_search(self, cognite_client, mock_ts_response):
+    def test_search(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.search(filter=TimeSeriesFilter(is_string=True))
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(mock_ts_response.get_requests()[0].content)
+        } == jsgz_load(httpx_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
-    def test_search_dict_filter(self, cognite_client, mock_ts_response, filter_field):
+    def test_search_dict_filter(self, cognite_client, mock_ts_response, filter_field, httpx_mock):
         res = cognite_client.time_series.search(filter={filter_field: True})
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(mock_ts_response.get_requests()[0].content)
+        } == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_search_with_filter(self, cognite_client, mock_ts_response):
+    def test_search_with_filter(self, cognite_client, mock_ts_response, httpx_mock):
         res = cognite_client.time_series.search(
             name="n", description="d", query="q", filter=TimeSeriesFilter(unit="bla")
         )
-        assert mock_ts_response.get_requests()[0].response.json()["items"] == res.dump(camel_case=True)
-        req_body = jsgz_load(mock_ts_response.get_requests()[0].content)
+        assert mock_ts_response["items"] == res.dump(camel_case=True)
+        req_body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert "bla" == req_body["filter"]["unit"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
@@ -203,9 +200,8 @@ class TestTimeSeries:
 @pytest.fixture
 def mock_time_series_empty(httpx_mock, cognite_client):
     url_pattern = re.compile(re.escape(get_url(cognite_client.time_series)) + "/.+")
-    # ....assert_all_requests_are_fired = False  # TODO
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json={"items": []})
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
     yield httpx_mock
 
 
