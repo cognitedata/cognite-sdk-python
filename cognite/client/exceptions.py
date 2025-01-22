@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import no_op
+from cognite.client.utils._time import timed_cache
 
 if TYPE_CHECKING:
     from cognite.client._cognite_client import CogniteClient
@@ -30,6 +31,7 @@ class CogniteProjectAccessError(CogniteException):
         self.maybe_projects = self._attempt_to_get_projects(client, project)
 
     @staticmethod
+    @timed_cache(ttl=5)  # Don't spam requests when using concurrency
     def _attempt_to_get_projects(client: CogniteClient, current_project: str) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
