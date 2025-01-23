@@ -323,8 +323,8 @@ class TransformationTaskParameters(WorkflowTaskParameters):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
         return cls(
             resource[cls.task_type]["externalId"],
-            resource[cls.task_type]["concurrencyPolicy"],
-            resource[cls.task_type].get("useTransformationCredentials"),
+            resource[cls.task_type].get("concurrencyPolicy", "fail"),
+            resource[cls.task_type].get("useTransformationCredentials", False),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
