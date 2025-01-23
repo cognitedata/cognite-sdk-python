@@ -324,7 +324,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         return cls(
             resource[cls.task_type]["externalId"],
             resource[cls.task_type]["concurrencyPolicy"],
-            resource[cls.task_type]["useTransformationCredentials"],
+            resource[cls.task_type].get("useTransformationCredentials"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
