@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.73.1] - 2025-01-23
+### Fixed
+- Data Workflows hotfix: mark `useTransformationCredentials` as optional.
+
 ## [7.73.0] - 2025-01-22
 ### Added
 - Data Workflows: Support for `useTransformationCredentials` for the transformations task. This allows running 
