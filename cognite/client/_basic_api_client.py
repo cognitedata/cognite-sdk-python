@@ -70,7 +70,7 @@ class FailedRequestDetails:
             duplicated=duplicated,
             x_request_id=response.headers.get("x-request-id"),
             headers=BasicAPIClient._sanitize_headers(err.request.headers),
-            response_payload=shorten(BasicAPIClient._get_response_content_safe(response), 1000),
+            response_payload=shorten(response.text, 1000),
             response_headers=dict(response.headers),
             extra=extra,
             cause=err,
@@ -340,7 +340,7 @@ class BasicAPIClient:
         if payload:
             extra["payload"] = payload
         if not stream and self._config.debug:
-            extra["response_payload"] = shorten(self._get_response_content_safe(res), 1_000)
+            extra["response_payload"] = shorten(res.text, 1_000)
         try:
             http_protocol = res.http_version
         except AttributeError:
@@ -360,16 +360,6 @@ class BasicAPIClient:
 
         full_headers["Content-Encoding"] = "gzip"
         return gzip.compress(content.encode())
-
-    @staticmethod
-    def _get_response_content_safe(res: httpx.Response) -> str:
-        try:
-            return _json.dumps(res.json())
-        except _json.JSONDecodeError:
-            try:
-                return res.text
-            except UnicodeDecodeError:
-                return "<binary>"
 
     @staticmethod
     def _sanitize_headers(headers: httpx.Headers) -> dict[str, str]:

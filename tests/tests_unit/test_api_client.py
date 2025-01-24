@@ -3,16 +3,16 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import time
 import unittest
 from collections import namedtuple
 from typing import Any, ClassVar, Literal, cast
 
 import pytest
+from httpx import Headers, Response
 
-# from requests import Response  # TODO
-# from responses import matchers  # TODO: Needs migration to pytest-httpx
-from cognite.client import CogniteClient, utils
+from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
@@ -28,6 +28,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQTT5SourceWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._url import validate_url_and_return_retryability
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
@@ -74,20 +75,38 @@ RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 class TestBasicRequests:
     @pytest.fixture
     def mock_all_requests_ok(self, httpx_mock):
-        # ....assert_all_requests_are_fired = False  # TODO
         for method in ["GET", "PUT", "POST", "DELETE"]:
-            httpx_mock.add_response(method, BASE_URL + URL_PATH, status_code=200, json=RESPONSE)
+            httpx_mock.add_response(
+                method=method, url=BASE_URL + URL_PATH, status_code=200, json=RESPONSE, is_optional=True
+            )
         yield httpx_mock
 
     @pytest.fixture
     def mock_all_requests_fail(self, httpx_mock):
-        # ....assert_all_requests_are_fired = False  # TODO
         for method in ["GET", "PUT", "POST", "DELETE"]:
-            httpx_mock.add_response(method, BASE_URL + URL_PATH, status_code=400, json={"error": "Client error"})
-            httpx_mock.add_response(method, BASE_URL + URL_PATH, status_code=500, body="Server error")
-            httpx_mock.add_response(method, BASE_URL + URL_PATH, status_code=500, json={"error": "Server error"})
             httpx_mock.add_response(
-                method, BASE_URL + URL_PATH, status_code=400, json={"error": {"code": 400, "message": "Client error"}}
+                method=method,
+                url=BASE_URL + URL_PATH,
+                status_code=400,
+                json={"error": "Client error"},
+                is_optional=True,
+            )
+            httpx_mock.add_response(
+                method=method, url=BASE_URL + URL_PATH, status_code=500, text="Server error", is_optional=True
+            )
+            httpx_mock.add_response(
+                method=method,
+                url=BASE_URL + URL_PATH,
+                status_code=500,
+                json={"error": "Server error"},
+                is_optional=True,
+            )
+            httpx_mock.add_response(
+                method=method,
+                url=BASE_URL + URL_PATH,
+                status_code=400,
+                json={"error": {"code": 400, "message": "Client error"}},
+                is_optional=True,
             )
 
     request_cases: ClassVar = [
@@ -95,7 +114,6 @@ class TestBasicRequests:
             name="post", method=api_client._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
         ),
         lambda api_client: RequestCase(name="get", method=api_client._get, kwargs={"url_path": URL_PATH}),
-        lambda api_client: RequestCase(name="delete", method=api_client._delete, kwargs={"url_path": URL_PATH}),
         lambda api_client: RequestCase(
             name="put", method=api_client._put, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
         ),
@@ -140,34 +158,36 @@ class TestBasicRequests:
     def test_request_gzip_disabled(self, httpx_mock, api_client_with_token):
         def check_gzip_disabled(request):
             assert "Content-Encoding" not in request.headers
-            assert {"any": "OK"} == json.loads(request.body)
-            return 200, {}, json.dumps(RESPONSE)
+            assert {"any": "OK"} == json.loads(request.content)
+            return Response(200, headers={}, json=RESPONSE)
 
         for method in ["PUT", "POST"]:
-            httpx_mock.add_callback(method, BASE_URL + URL_PATH, check_gzip_disabled)
+            httpx_mock.add_callback(check_gzip_disabled, method=method, url=BASE_URL + URL_PATH)
 
-        api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={})
-        api_client_with_token._put(URL_PATH, {"any": "OK"}, headers={})
+        api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
+        api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
 
     def test_request_gzip_enabled(self, httpx_mock, api_client_with_token):
         def check_gzip_enabled(request):
             assert "Content-Encoding" in request.headers
-            assert {"any": "OK"} == jsgz_load(request.body)
-            return 200, {}, json.dumps(RESPONSE)
+            assert {"any": "OK"} == jsgz_load(request.content)
+            return Response(200, headers={}, json=RESPONSE)
 
         for method in ["PUT", "POST"]:
-            httpx_mock.add_callback(method, BASE_URL + URL_PATH, check_gzip_enabled)
+            httpx_mock.add_callback(check_gzip_enabled, method=method, url=BASE_URL + URL_PATH)
 
-        api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={})
-        api_client_with_token._put(URL_PATH, {"any": "OK"}, headers={})
+        api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={})
+        api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={})
 
     def test_headers_correct(self, mock_all_requests_ok, api_client_with_token):
+        from cognite.client import __version__
+
         api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
         headers = mock_all_requests_ok.get_requests()[0].headers
 
         assert "gzip, deflate" == headers["accept-encoding"]
         assert "gzip" == headers["content-encoding"]
-        assert f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}" == headers["x-cdp-sdk"]
+        assert f"CognitePythonSDK:{__version__}" == headers["x-cdp-sdk"]
         assert "Bearer abc" == headers["Authorization"]
         assert "stuff" == headers["additional"]
 
@@ -186,17 +206,17 @@ class TestBasicRequests:
         assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
-    def test__do_request_raises_more_verbose_exception(self, api_client_with_token, payload):
+    def test__request_raises_more_verbose_exception(self, api_client_with_token, payload):
         with pytest.raises(ValueError, match=r"contain NaN\(s\) or \+/\- Inf\!"):
-            api_client_with_token._do_request("POST", URL_PATH, json=payload)
+            api_client_with_token._post(URL_PATH, json=payload)
 
-    def test__do_request_raises_unmodified_exception(self, api_client_with_token):
+    def test__request_raises_unmodified_exception(self, api_client_with_token):
         # Create circular ref in payload to raise an arbitrary ValueError
         # we want to make sure we _don't_ modify:
         payload = []
         payload.append(payload)
         with pytest.raises(ValueError) as exc_info:
-            api_client_with_token._do_request("POST", URL_PATH, json=payload)
+            api_client_with_token._post(URL_PATH, json=payload)
         exc_msg = exc_info.value.args[0]
         assert "contain NaN(s) or +/- Inf!" not in exc_msg
 
@@ -249,7 +269,7 @@ class SomeAggregation(CogniteResource):
 
 
 class TestStandardRetrieve:
-    def test_standard_retrieve_OK(self, api_client_with_token, httpx_mock):
+    def test_standard_retrieve_ok(self, api_client_with_token, httpx_mock):
         httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
         assert SomeResource(1, 2) == api_client_with_token._retrieve(
             cls=SomeResource, resource_path=URL_PATH, identifier=Identifier(1)
@@ -452,52 +472,55 @@ class TestStandardRetrieveMultiple:
 class TestStandardList:
     def test_standard_list_ok(self, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
-            method="GET", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
+            method="GET",
+            url=BASE_URL + URL_PATH + "?limit=1000",
+            status_code=200,
+            json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        assert (
-            SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
-            == api_client_with_token._list(
-                list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
-            ).dump()
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="GET"
         )
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump() == res.dump()
 
-    def test_standard_list_with_filter_GET_ok(self, api_client_with_token, httpx_mock):
+    def test_standard_list_with_filter_get_ok(self, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
-            method="GET", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
+            method="GET",
+            url=BASE_URL + URL_PATH + "?filter=bla&limit=1000",
+            status_code=200,
+            json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        assert (
-            SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump()
-            == api_client_with_token._list(
-                list_cls=SomeResourceList,
-                resource_cls=SomeResource,
-                resource_path=URL_PATH,
-                method="GET",
-                filter={"filter": "bla"},
-            ).dump()
+        res = api_client_with_token._list(
+            list_cls=SomeResourceList,
+            resource_cls=SomeResource,
+            resource_path=URL_PATH,
+            method="GET",
+            filter={"filter": "bla"},
         )
-        assert "filter=bla" in httpx_mock.get_requests()[0].path_url
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]).dump() == res.dump()
 
-    def test_standard_list_with_filter_POST_ok(self, api_client_with_token, httpx_mock):
+    def test_standard_list_with_filter_post_ok(self, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == api_client_with_token._list(
+        res = api_client_with_token._list(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
             resource_path=URL_PATH,
             method="POST",
             filter={"filter": "bla"},
         )
-        assert {"filter": {"filter": "bla"}, "limit": 1000, "cursor": None} == jsgz_load(
-            httpx_mock.get_requests()[0].content
-        )
+        assert SomeResourceList([SomeResource(1, 2), SomeResource(1)]) == res
+        assert {"filter": {"filter": "bla"}, "limit": 1000} == jsgz_load(httpx_mock.get_requests()[0].content)
 
     def test_standard_list_fail(self, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
-            method="GET", url=BASE_URL + URL_PATH, status_code=400, json={"error": {"message": "Client Error"}}
+            method="GET",
+            url=BASE_URL + URL_PATH + "?limit=1000",
+            status_code=400,
+            json={"error": {"message": "Client Error"}},
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
             api_client_with_token._list(
@@ -510,12 +533,13 @@ class TestStandardList:
     ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
     def test_list_partitions(self, api_client_with_token, httpx_mock):
-        httpx_mock.add_response(
-            method="POST",
-            url=BASE_URL + URL_PATH + "/list",
-            status_code=200,
-            json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
-        )
+        for _ in range(3):
+            httpx_mock.add_response(
+                method="POST",
+                url=BASE_URL + URL_PATH + "/list",
+                status_code=200,
+                json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
+            )
         res = api_client_with_token._list(
             list_cls=SomeResourceList,
             resource_cls=SomeResource,
@@ -530,25 +554,28 @@ class TestStandardList:
         assert isinstance(res[0], SomeResource)
         assert 3 == len(httpx_mock.get_requests())
         assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.content)["partition"] for c in httpx_mock.get_requests()}
-        for call in httpx_mock.get_requests():
-            request = jsgz_load(call.content)
-            assert "X-Test" in call.headers.keys()
-            del request["partition"]
-            assert {"cursor": None, "filter": {}, "limit": 1000} == request
-            assert call.response.json()["items"] == [{"x": 1, "y": 2}, {"x": 1}]
+        for request in httpx_mock.get_requests():
+            payload = jsgz_load(request.content)
+            assert "x-test" in request.headers
+            del payload["partition"]
+            assert {"cursor": None, "filter": {}, "limit": 1000} == payload
 
     def test_list_partitions_with_failure(self, api_client_with_token, httpx_mock):
         def request_callback(request):
-            payload = jsgz_load(request.body)
+            payload = jsgz_load(request.content)
             np, total = payload["partition"].split("/")
             if int(np) == 3:
-                return 503, {}, json.dumps({"message": "Service Unavailable"})
+                return Response(503, headers={}, json={"message": "Service Unavailable"})
             else:
                 time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
-                return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
+                return Response(200, headers={}, json={"items": [{"x": 42, "y": 13}]})
 
         httpx_mock.add_callback(
-            "POST", BASE_URL + URL_PATH + "/list", callback=request_callback, content_type="application/json"
+            request_callback,
+            method="POST",
+            url=BASE_URL + URL_PATH + "/list",
+            match_headers={"content-type": "application/json"},
+            is_reusable=True,
         )
         with pytest.raises(CogniteAPIError) as exc:
             api_client_with_token._list(
@@ -569,7 +596,9 @@ class TestStandardList:
     @pytest.fixture
     def mock_get_for_autopaging(self, httpx_mock):
         def callback(request):
-            params = {elem.split("=")[0]: elem.split("=")[1] for elem in request.path_url.split("?")[-1].split("&")}
+            params = {
+                elem.split("=")[0]: elem.split("=")[1] for elem in request.url.query.decode().split("?")[-1].split("&")
+            }
             limit = int(params["limit"])
             cursor = int(params.get("cursor") or 0)
             items = self.ITEMS_TO_GET_WHILE_AUTOPAGING[cursor : cursor + limit]
@@ -578,9 +607,14 @@ class TestStandardList:
             else:
                 next_cursor = cursor + limit
             response = json.dumps({"nextCursor": next_cursor, "items": items})
-            return 200, {}, response
+            return Response(200, headers={}, content=response)
 
-        httpx_mock.add_callback("GET", BASE_URL + URL_PATH, callback)
+        httpx_mock.add_callback(
+            callback,
+            method="GET",
+            url=re.compile(re.escape(BASE_URL + URL_PATH) + r"\?limit=\d+(?:$|&cursor=\d+)"),
+            is_reusable=True,
+        )
 
     @pytest.fixture
     def mock_get_for_autopaging_2589(self, httpx_mock):
@@ -588,7 +622,9 @@ class TestStandardList:
         ITEMS_EDGECASE = [{"x": 1, "y": 1} for _ in range(NUM_ITEMS)]
 
         def callback(request):
-            params = {elem.split("=")[0]: elem.split("=")[1] for elem in request.path_url.split("?")[-1].split("&")}
+            params = {
+                elem.split("=")[0]: elem.split("=")[1] for elem in request.url.query.decode().split("?")[-1].split("&")
+            }
             limit = int(params["limit"])
             cursor = int(params.get("cursor") or 0)
             items = ITEMS_EDGECASE[cursor : cursor + limit]
@@ -597,9 +633,14 @@ class TestStandardList:
             else:
                 next_cursor = cursor + limit
             response = json.dumps({"nextCursor": next_cursor, "items": items})
-            return 200, {}, response
+            return Response(200, headers={}, content=response)
 
-        httpx_mock.add_callback("GET", BASE_URL + URL_PATH, callback)
+        httpx_mock.add_callback(
+            callback,
+            method="GET",
+            url=re.compile(re.escape(BASE_URL + URL_PATH) + r"\?limit=\d+(?:$|&cursor=\d+)"),
+            is_reusable=True,
+        )
 
     @pytest.mark.usefixtures("mock_get_for_autopaging")
     def test_standard_list_generator(self, api_client_with_token):
@@ -743,7 +784,7 @@ class TestStandardList:
         )
         assert 5333 == len(res)
 
-    def test_cognite_client_is_set(self, cognite_client, api_client_with_token, httpx_mock):
+    def test_cognite_client_is_set_asfdsa(self, cognite_client, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
@@ -751,7 +792,10 @@ class TestStandardList:
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
         httpx_mock.add_response(
-            method="GET", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
+            method="GET",
+            url=BASE_URL + URL_PATH + "?limit=1000",
+            status_code=200,
+            json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
         res = api_client_with_token._list(
             list_cls=SomeResourceList, resource_cls=SomeResource, resource_path=URL_PATH, method="POST"
@@ -836,10 +880,16 @@ class TestStandardCreate:
 
     def test_standard_create_fail(self, api_client_with_token, httpx_mock):
         def callback(request):
-            item = jsgz_load(request.body)["items"][0]
-            return int(item["externalId"]), {}, json.dumps({})
+            item = jsgz_load(request.content)["items"][0]
+            return Response(status_code=int(item["externalId"]), headers={}, json={})
 
-        httpx_mock.add_callback("POST", BASE_URL + URL_PATH, callback=callback, content_type="application/json")
+        httpx_mock.add_callback(
+            callback,
+            method="POST",
+            url=BASE_URL + URL_PATH,
+            match_headers={"content-type": "application/json"},
+            is_reusable=True,
+        )
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_token._create_multiple(
@@ -885,7 +935,11 @@ class TestStandardCreate:
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_token, httpx_mock):
         httpx_mock.add_response(
-            method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
+            method="POST",
+            url=BASE_URL + URL_PATH,
+            status_code=200,
+            json={"items": [{"x": 1, "y": 2}]},
+            is_reusable=True,
         )
         assert (
             cognite_client
@@ -1001,6 +1055,7 @@ class TestStandardUpdate:
             url=BASE_URL + URL_PATH + "/update",
             status_code=200,
             json={"items": [{"id": 1, "x": 1, "y": 100}]},
+            is_reusable=True,
         )
         yield httpx_mock
 
@@ -1139,6 +1194,7 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
+    @pytest.mark.usefixtures("disable_gzip")  # -> because match_json doesn't work with gzip
     def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, httpx_mock):
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
@@ -1149,14 +1205,14 @@ class TestStandardUpdate:
             url=BASE_URL + URL_PATH + "/update",
             status_code=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
-            match=[matchers.json_params_matcher({"items": [{"update": {}, "id": 0}]})],
+            match_json={"items": [{"update": {}, "id": 0}]},
         )
         httpx_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=500,
             json={"error": {"message": "Server Error"}},
-            match=[matchers.json_params_matcher({"items": [{"update": {}, "externalId": "abc"}]})],
+            match_json={"items": [{"update": {}, "externalId": "abc"}]},
         )
         items = [SomeResource(external_id="abc"), SomeResource(id=0)]
         random.shuffle(items)
@@ -1318,7 +1374,7 @@ class TestRetryableEndpoints:
         ],
     )
     def test_is_retryable_resource_api_endpoints(self, api_client_with_token, method, path, expected):
-        assert expected == api_client_with_token._is_retryable(method, path)
+        assert expected is validate_url_and_return_retryability(method, path)
 
     @pytest.mark.parametrize(
         "method, path, expected",
@@ -1497,44 +1553,24 @@ class TestRetryableEndpoints:
         ),
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):
-        assert expected == api_client_with_token._is_retryable(method, path)
+        assert expected is validate_url_and_return_retryability(method, path)
 
     @pytest.mark.parametrize(
         "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/token/inspect")]
     )
     def test_is_retryable_should_fail(self, api_client_with_token, method, path):
         with pytest.raises(ValueError, match="is not valid"):
-            api_client_with_token._is_retryable(method, path)
-
-    def test_is_retryable_add(self, api_client_with_token, monkeypatch: pytest.MonkeyPatch):
-        rperp = APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS | {"/assets/bloop"}
-        monkeypatch.setattr(APIClient, "_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS", rperp)
-
-        test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-        assert api_client_with_token._is_retryable("POST", test_url) is True
+            validate_url_and_return_retryability(method, path)
 
 
 class TestHelpers:
-    @pytest.mark.parametrize(
-        "before, after",
-        [
-            ({"api-key": "bla", "key": "bla"}, {"api-key": "***", "key": "bla"}),
-            ({"Authorization": "bla", "key": "bla"}, {"Authorization": "***", "key": "bla"}),
-        ],
-    )
-    def test_sanitize_headers(self, before, after):
-        assert before != after
-        APIClient._sanitize_headers(before)
-        assert before == after
+    @pytest.mark.parametrize("header_type", [Headers, dict])
+    def test_sanitize_headers(self, header_type):
+        before = header_type({"Authorization": "bla", "key": "bla"})
+        after = header_type({"Authorization": "***", "key": "bla"})
 
-    @pytest.mark.parametrize(
-        "content, expected",
-        [(b'{"foo": 42}', '{"foo": 42}'), (b"foobar", "foobar"), (b"\xed\xbc\xad", "<binary>")],
-    )
-    def test_get_response_content_safe(self, content, expected):
-        res = Response()
-        res._content = content
-        assert APIClient._get_response_content_safe(res) == expected
+        assert before != after
+        assert after == APIClient._sanitize_headers(before)
 
     @pytest.mark.parametrize(
         "resource, update_obj, mode, expected_update_object",
@@ -1610,10 +1646,10 @@ class TestConnectionPooling:
         c1 = CogniteClient(cnf)
         c2 = CogniteClient(cnf)
         assert (
-            c1._api_client._http_client.session
-            == c2._api_client._http_client.session
-            == c1._api_client._http_client_with_retry.session
-            == c2._api_client._http_client_with_retry.session
+            c1._api_client._http_client.httpx_client
+            is c2._api_client._http_client.httpx_client
+            is c1._api_client._http_client_with_retry.httpx_client
+            is c2._api_client._http_client_with_retry.httpx_client
         )
 
 

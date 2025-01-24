@@ -49,13 +49,19 @@ VALID_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 def resolve_url(method: str, url_path: str, api_version: str | None, config: ClientConfig) -> tuple[bool, str]:
     if not url_path.startswith("/"):
         raise ValueError("URL path must start with '/'")
-    elif method not in VALID_METHODS:
-        raise ValueError(f"Method {method} is not valid. Must be one of {VALID_METHODS}")
 
     full_url = get_base_url_with_base_path(api_version, config) + url_path
+    is_retryable = validate_url_and_return_retryability(method, full_url)
+    return is_retryable, full_url
+
+
+def validate_url_and_return_retryability(method: str, full_url: str) -> bool:
+    if method not in VALID_METHODS:
+        raise ValueError(f"Method {method} is not valid. Must be one of {VALID_METHODS}")
+
     if valid_url := VALID_URL_PATTERN.match(full_url):
         is_retryable = can_be_retried(method, valid_url.group(1))
-        return is_retryable, full_url
+        return is_retryable
 
     raise ValueError(f"URL {full_url} is not valid. Cannot resolve whether or not it is retryable")
 
@@ -77,4 +83,4 @@ def can_be_retried(method: str, path: str) -> bool:
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
-    return path.format(*[quote(str(arg), safe="") for arg in args])
+    return path.format(*(quote(str(arg), safe="") for arg in args))
