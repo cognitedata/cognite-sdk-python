@@ -1,4 +1,5 @@
 import logging
+import ssl
 
 import pytest
 
@@ -94,13 +95,16 @@ class TestCogniteClient:
         client.iam.token.inspect()
         assert httpx_mock.get_requests()[0].headers["cdf-version"] == "beta"
 
-    def test_verify_ssl_enabled_by_default(self, httpx_mock, client_config_w_token_factory, mock_token_inspect):
+    def test_verify_ssl_enabled_by_default(self, httpx_mock, client_config_w_token_factory):
         client = CogniteClient(client_config_w_token_factory)
-        client.iam.token.inspect()
 
-        assert httpx_mock.get_requests()[0][0].req_kwargs["verify"] is True
-        assert client._api_client._http_client_with_retry.session.verify is True
-        assert client._api_client._http_client.session.verify is True
+        assert (
+            ssl.CERT_REQUIRED is client._api_client._http_client.httpx_client._transport._pool._ssl_context.verify_mode
+        )
+        assert (
+            ssl.CERT_REQUIRED
+            is client._api_client._http_client_with_retry.httpx_client._transport._pool._ssl_context.verify_mode
+        )
 
     def test_client_load(self):
         config = {

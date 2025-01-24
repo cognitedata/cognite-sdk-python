@@ -31,22 +31,29 @@ class NoCookiesPlease(CookieJar):
 @functools.cache
 def get_global_httpx_client() -> httpx.Client:
     client = httpx.Client(
-        # TODO: We may want additional client with bulit-in retries e.g. for streaming file downloads
-        #       where we actually only have our own retry logic on the initial request
         transport=httpx.HTTPTransport(
+            # 'retries': The maximum number of retries when trying to establish a connection.
             retries=0,
-            limits=httpx.Limits(max_connections=global_config.max_connection_pool_size),
+            verify=not global_config.disable_ssl,
+            limits=httpx.Limits(
+                # max_connections: The maximum number of concurrent HTTP connections that
+                #     the pool should allow. Any attempt to send a request on a pool that
+                #     would exceed this amount will block until a connection is available.
+                max_connections=global_config.max_connection_pool_size,
+                # max_keepalive_connections: The maximum number of idle HTTP connections
+                #     that will be maintained in the pool.
+                max_keepalive_connections=None,  # defaults to match max_connections
+                # keepalive_expiry: The duration in seconds that an idle HTTP connection
+                #     may be maintained for before being expired from the pool.
+                keepalive_expiry=5,  # copy httpx default
+            ),
         ),
-        timeout=None,  # httpx has strict-ish defaults, as opposed to requests. We want to specify per request
         follow_redirects=global_config.allow_redirects,
         cookies=NoCookiesPlease(),
-        verify=not global_config.disable_ssl,
+        verify=not global_config.disable_ssl,  # ...not be needed when we pass transport, but... :)
         # TODO: httpx has deprecated 'proxies'; pass single proxy or dict of proxies as 'mounts' instead
         # proxies=global_config.proxies,
     )
-    if global_config.disable_ssl:
-        # TODO: httpx uses httpcore, not urllib3 -> figure out how to disable warnings (if any?)
-        pass
     return client
 
 
@@ -175,6 +182,7 @@ class HTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
     ) -> httpx.Response:
+        print(f"--> In HTTPClientWithRetry.__call__: {method=}, {url=}")
         fn: Callable[..., httpx.Response] = functools.partial(
             self.httpx_client.request,
             method,
