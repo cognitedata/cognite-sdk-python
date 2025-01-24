@@ -79,6 +79,7 @@ def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, 
         url=re.compile(".*?/context/vision/extract"),
         status_code=200,
         json=mock_post_response_body,
+        is_optional=True,
     )
     yield httpx_mock
 
@@ -90,6 +91,7 @@ def mock_get_extract(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str,
         url=re.compile(".*?/context/vision/extract/\\d+"),
         status_code=200,
         json=mock_get_response_body_ok,
+        is_optional=True,
     )
     yield httpx_mock
 
@@ -169,21 +171,20 @@ class TestVisionExtract:
         error_message: str | None,
         cognite_client: CogniteClient,
     ) -> None:
-        VAPI = cognite_client.vision
+        vapi = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
         if error_message is not None:
             with pytest.raises(TypeError, match=error_message):
                 # GET request will not be executed due to invalid parameters in POST
                 # thus relax the assertion requirements
-                mock_post_extract.assert_all_requests_are_fired = False
-                VAPI.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
+                vapi.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
         else:
             is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
             error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
             with error_handling:
-                job = VAPI.extract(
+                job = vapi.extract(
                     features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
                 )
             assert isinstance(job, VisionExtractJob)
@@ -205,7 +206,7 @@ class TestVisionExtract:
 
             num_post_requests, num_get_requests = 0, 0
             for call in mock_post_extract.get_requests():
-                if "extract" in call.url and call.method == "POST":
+                if "extract" in str(call.url) and call.method == "POST":
                     num_post_requests += 1
 
                     expected_features_and_items = {
@@ -222,32 +223,32 @@ class TestVisionExtract:
                     assert expected_request_body == jsgz_load(call.content)
                 else:
                     num_get_requests += 1
-                    assert f"/{expected_job_id}" in call.url
+                    assert f"/{expected_job_id}" in str(call.url)
             assert 1 == num_post_requests
             assert 1 == num_get_requests
 
     def test_get_extract(
         self, mock_post_extract: HTTPXMock, mock_get_extract: HTTPXMock, cognite_client: CogniteClient
     ) -> None:
-        VAPI = cognite_client.vision
+        vapi = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
 
-        job = VAPI.extract(
+        job = vapi.extract(
             features=VisionFeature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
         )
 
         # retrieved job should correspond to the started job:
-        retrieved_job = VAPI.get_extract_job(job_id=job.job_id)
+        retrieved_job = vapi.get_extract_job(job_id=job.job_id)
 
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
 
         num_get_requests = 0
         for call in mock_get_extract.get_requests():
-            if "extract" in call.url and call.method == "GET":
+            if "extract" in str(call.url) and call.method == "GET":
                 num_get_requests += 1
-                assert f"/{job.job_id}" in call.url
+                assert f"/{job.job_id}" in str(call.url)
         assert 1 == num_get_requests
 
     def test_save_empty_predictions(
@@ -256,16 +257,15 @@ class TestVisionExtract:
         mock_get_extract_empty_predictions: HTTPXMock,
         cognite_client: CogniteClient,
     ) -> None:
-        VAPI = cognite_client.vision
+        vapi = cognite_client.vision
         file_ids = [1]
         file_external_ids = []
 
-        job = VAPI.extract(
+        job = vapi.extract(
             features=VisionFeature.ASSET_TAG_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
         )
-
         # retrieved job should correspond to the started job:
-        retrieved_job = VAPI.get_extract_job(job_id=job.job_id)
+        retrieved_job = vapi.get_extract_job(job_id=job.job_id)
 
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
