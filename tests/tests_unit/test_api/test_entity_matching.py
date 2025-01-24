@@ -113,7 +113,7 @@ class TestEntityMatching:
                 } == jsgz_load(call.content)
             else:
                 n_status_calls += 1
-                assert "/123" in call.url
+                assert "/123" in str(call.url)
         assert 1 == n_fit_calls
         assert 1 == n_status_calls
 
