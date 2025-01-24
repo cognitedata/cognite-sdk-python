@@ -8,13 +8,13 @@ from datetime import datetime, timezone
 from random import randint, random, shuffle
 
 import pytest
+from httpx import Response
 
 import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils import _json
 from cognite.client.utils._time import ZoneInfo, granularity_to_ms
 from tests.utils import get_url, jsgz_load, random_gamma_dist_integer
 
@@ -42,7 +42,7 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
 @pytest.fixture
 def mock_retrieve_latest(httpx_mock, cognite_client):
     def request_callback(request):
-        payload = jsgz_load(request.body)
+        payload = jsgz_load(request.content)
 
         items = []
         for latest_query in payload["items"]:
@@ -58,13 +58,13 @@ def mock_retrieve_latest(httpx_mock, cognite_client):
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
-        return 200, {}, _json.dumps({"items": items})
+        return Response(200, headers={}, json={"items": items})
 
     httpx_mock.add_callback(
-        "POST",
+        request_callback,
+        method="POST",
         url=get_url(cognite_client.time_series.data) + "/timeseries/data/latest",
-        callback=request_callback,
-        content_type="application/json",
+        match_headers={"content-type": "application/json"},
     )
     yield httpx_mock
 
@@ -197,6 +197,7 @@ def mock_post_datapoints(httpx_mock, cognite_client):
         url=get_url(cognite_client.time_series.data) + "/timeseries/data",
         status_code=200,
         json={},
+        is_reusable=True,
     )
     yield httpx_mock
 
