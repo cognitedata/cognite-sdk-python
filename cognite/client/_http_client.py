@@ -140,21 +140,24 @@ class RetryTracker:
     def should_retry_total(self) -> bool:
         return self.total < self.config.max_retries_total
 
-    def should_retry_status_code(self, status_code: int, is_auto_retryable: bool) -> bool:
-        self._last_failed_reason = f"{status_code=}"
+    def should_retry_status_code(self, status_code: int, is_auto_retryable: bool = False) -> bool:
+        self.status += 1
+        self.last_failed_reason = f"{status_code=}"
         return (
             self.should_retry_total
-            and self.status < self.config.max_retries_status
+            and self.status <= self.config.max_retries_status
             and (is_auto_retryable or status_code in self.config.status_codes_to_retry)
         )
 
     def should_retry_connect_error(self, error: httpx.RequestError) -> bool:
-        self._last_failed_reason = type(error).__name__
-        return self.should_retry_total and self.connect < self.config.max_retries_connect
+        self.connect += 1
+        self.last_failed_reason = type(error).__name__
+        return self.should_retry_total and self.connect <= self.config.max_retries_connect
 
     def should_retry_timeout(self, error: httpx.RequestError) -> bool:
-        self._last_failed_reason = type(error).__name__
-        return self.should_retry_total and self.read < self.config.max_retries_read
+        self.read += 1
+        self.last_failed_reason = type(error).__name__
+        return self.should_retry_total and self.read <= self.config.max_retries_read
 
 
 class HTTPClientWithRetry:
@@ -182,7 +185,6 @@ class HTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
     ) -> httpx.Response:
-        print(f"--> In HTTPClientWithRetry.__call__: {method=}, {url=}")
         fn: Callable[..., httpx.Response] = functools.partial(
             self.httpx_client.request,
             method,
@@ -230,6 +232,7 @@ class HTTPClientWithRetry:
                 res: httpx.Response = fn()  # type: ignore
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                    # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?
                     res.json = functools.cache(res.json)  # type: ignore [assignment]
                 return res.raise_for_status()  # type: ignore [return-value]
 
@@ -241,22 +244,18 @@ class HTTPClientWithRetry:
                         # TODO: Can we just check the header now? 'cdf-is-auto-retryable'
                         is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
 
-                retry_tracker.status += 1
                 if not retry_tracker.should_retry_status_code(res.status_code, is_auto_retryable):
                     raise
 
             except httpx.ConnectError as err:
-                retry_tracker.connect += 1
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionRefused from err
 
             except (httpx.NetworkError, httpx.ConnectTimeout) as err:
-                retry_tracker.connect += 1
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionError from err
 
             except httpx.TimeoutException as err:
-                retry_tracker.read += 1
                 if not retry_tracker.should_retry_timeout(err):
                     raise CogniteReadTimeout from err
 
