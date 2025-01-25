@@ -53,8 +53,8 @@ NAMES_USING_INSTANCE_ID = [
 ]
 
 
-def create_instance_id_ts(client):
-    client.dm.instances.apply(
+def create_instance_id_ts(client: CogniteClient):
+    client.data_modeling.instances.apply(
         [
             CogniteTimeSeriesApply(
                 space="PySDK-DMS-time-series-integration-test",
@@ -413,7 +413,7 @@ if __name__ == "__main__":
     # # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
-    client = local_client.get_interactive()
+    client = local_client.get_production()
 
     delete_all_time_series(client.time_series)
     ts_lst, df_lst = create_dense_time_series()
