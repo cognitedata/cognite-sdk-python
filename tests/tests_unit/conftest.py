@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from unittest.mock import MagicMock
 
 import pytest
 
-from cognite.client import ClientConfig, CogniteClient
+from cognite.client import ClientConfig, CogniteClient, global_config
 from cognite.client.credentials import Token
 
 # Files to exclude test directories or modules
@@ -13,9 +14,20 @@ collect_ignore = ["test_api/function_test_resources"]
 
 # TODO: This class-scoped client causes side-effects between tests...
 @pytest.fixture(scope="class")
-def cognite_client():
-    cnf = ClientConfig(client_name="any", project="dummy", credentials=Token("bla"))
-    yield CogniteClient(cnf)
+def cognite_client() -> Iterator[CogniteClient]:
+    with pytest.MonkeyPatch.context() as mp:
+        # When writing unit tests, typcally with mocked responses, we don't want to wait unnecessarily:
+        mp.setattr(global_config, "max_retries", 0)
+        mp.setattr(global_config, "max_retries_connect", 0)
+        mp.setattr(global_config, "max_retry_backoff", 0)
+
+        cnf = ClientConfig(
+            client_name="any",
+            project="dummy",
+            credentials=Token("bla"),
+            timeout=1,
+        )
+        yield CogniteClient(cnf)
 
 
 @pytest.fixture(scope="session")

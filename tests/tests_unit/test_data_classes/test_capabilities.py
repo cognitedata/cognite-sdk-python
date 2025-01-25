@@ -428,7 +428,7 @@ def mock_groups_resp(httpx_mock, cognite_client, unknown_acls_items):
             for unknown in unknown_acls_items
         ]
     }
-    url_pattern = get_url(cognite_client.iam.groups) + "/groups?all=False"
+    url_pattern = get_url(cognite_client.iam.groups) + "/groups?all=false"
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 
