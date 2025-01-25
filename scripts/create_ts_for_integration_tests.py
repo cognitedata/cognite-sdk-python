@@ -167,7 +167,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
     ts_add(TimeSeries(name=NAMES[1], external_id=NAMES[1], is_string=True, metadata={"offset": 2, "delta": 10}))
     df_add(pd.DataFrame({NAMES[1]: (arr + 2).astype(str)}, index=pd.to_datetime(arr, unit="ms")))
 
-    weekly_idx = pd.date_range(start="1950", end="2000", freq="1w")
+    weekly_idx = pd.date_range(start="1950", end="2000", freq="1W")
     arr = weekly_idx.to_numpy("datetime64[ms]").astype(np.int64)
     for i, name in enumerate(NAMES[2:53], 3):
         ts_add(
@@ -209,7 +209,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
         )
         df_add(pd.DataFrame({NAMES[i + 1]: arr + i + 2}, index=hourly_idx))
 
-        minute_idx = pd.date_range(start="1969-12-31", end="1970-01-02", freq="1T")
+        minute_idx = pd.date_range(start="1969-12-31", end="1970-01-02", freq="1min")
         arr = minute_idx.to_numpy("datetime64[ms]").astype(np.int64)
         ts_add(
             TimeSeries(
@@ -282,7 +282,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
     ts_add(
         TimeSeries(name=NAMES[116], external_id=NAMES[116], is_string=False, metadata={"offset": "n/a", "delta": "1H"})
     )
-    hourly_idx = pd.date_range(start="2020-01-01", end="2024-12-31 23:59:59", freq="1H", tz="UTC")
+    hourly_idx = pd.date_range(start="2020-01-01", end="2024-12-31 23:59:59", freq="1h", tz="UTC")
     df_add(pd.DataFrame(index=hourly_idx, data=np.random.normal(0, 1, len(hourly_idx)), columns=[NAMES[116]]))
 
     ts_add(
