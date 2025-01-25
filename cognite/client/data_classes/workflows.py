@@ -292,7 +292,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         if self.run_time:
             simulation["runTime" if camel_case else "run_time"] = self.run_time
         if self.inputs:
-            simulation["inputs" if camel_case else "inputs"] = [item.dump(camel_case) for item in self.inputs]
+            simulation["inputs"] = [item.dump(camel_case) for item in self.inputs]
 
         return {"simulation": simulation}
 

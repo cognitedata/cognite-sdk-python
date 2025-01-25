@@ -12,7 +12,7 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeId, NodeOrEdgeData, Space, SpaceApply, ViewId
 
-PNID_FILE_EXTERNAL_ID = "mypnid.pdf" ""
+PNID_FILE_EXTERNAL_ID = "mypnid.pdf"
 DIAGRAM_SPACE = "diagram_space"
 
 CDM_SPACE = "cdf_cdm"

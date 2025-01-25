@@ -63,7 +63,7 @@ def parse_example_section(lines, ex_idx) -> tuple[bool, set[int]]:
 def fix_single_file(path: Path) -> str | None:
     was_fixed = []
     dotted = path_to_importable(path)
-    full_text = path.read_text()
+    full_text = path.read_text(encoding="utf-8")
     module = importlib.import_module(dotted)
     for cls_name, cls in get_valid_members(module, dotted):
         for method_name, ex_idx, docstr, lines in get_info_on_valid_methods(cls, full_text):

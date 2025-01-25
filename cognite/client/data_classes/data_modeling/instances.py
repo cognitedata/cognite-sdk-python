@@ -233,8 +233,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
                 view_tuple = tuple(view_id_str.split("/", 1))
                 if len(view_tuple) != 2:
                     warnings.warn(
-                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. "
-                        "Skipping...",
+                        f"Unknown type of view id: {view_id_str}, expected format <external_id>/<version>. Skipping...",
                         stacklevel=2,
                     )
                     continue
