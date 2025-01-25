@@ -18,7 +18,7 @@ from cognite.client.data_classes import (
     GeometryFilter,
 )
 from cognite.client.data_classes import filters as flt
-from cognite.client.data_classes.assets import AssetProperty
+from cognite.client.data_classes.assets import AssetProperty, AssetWrite, AssetWriteList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
@@ -54,9 +54,27 @@ def post_spy(cognite_client):
         yield
 
 
+@pytest.fixture(scope="session")
+def twenty_assets(cognite_client: CogniteClient) -> AssetList:
+    prefix = "twenty_assets:"
+    root = AssetWrite(external_id=f"{prefix}root", name="root")
+    assets = AssetWriteList(
+        [root]
+        + [
+            AssetWrite(
+                external_id=f"{prefix}asset{i}",
+                name=f"asset{i}",
+                parent_external_id=root.external_id,
+            )
+            for i in range(19)
+        ]
+    )
+    return cognite_client.assets.upsert(assets, mode="replace")
+
+
 @pytest.fixture(scope="module")
-def root_test_asset(cognite_client):
-    return cognite_client.assets.retrieve(external_id="test__asset_0")
+def root_test_asset(cognite_client, twenty_assets: AssetList):
+    return twenty_assets[0]
 
 
 @pytest.fixture(scope="module")
@@ -75,7 +93,7 @@ def root_test_asset_subtree(cognite_client, root_test_asset):
         pass
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def asset_list(cognite_client: CogniteClient) -> AssetList:
     prefix = "integration_test:"
     assets = AssetList(
@@ -100,9 +118,6 @@ def asset_list(cognite_client: CogniteClient) -> AssetList:
             ),
         ]
     )
-    retrieved = cognite_client.assets.retrieve_multiple(external_ids=assets.as_external_ids(), ignore_unknown_ids=True)
-    if len(retrieved) == len(assets):
-        return retrieved
     return cognite_client.assets.upsert(assets, mode="replace")
 
 
@@ -125,6 +140,7 @@ class TestAssetsAPI:
         )
         assert 1 == len(retr)
 
+    @pytest.mark.usefixtures("twenty_assets")
     def test_list(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.assets, 10):
             res = cognite_client.assets.list(limit=20)
@@ -132,6 +148,7 @@ class TestAssetsAPI:
         assert 20 == len(res)
         assert 2 == cognite_client.assets._post.call_count
 
+    @pytest.mark.usefixtures("twenty_assets")
     def test_partitioned_list(self, cognite_client, post_spy):
         # stop race conditions by cutting off max created time
         maxtime = int(time.time() - 3600) * 1000
@@ -154,12 +171,13 @@ class TestAssetsAPI:
             assert {"childCount"} == asset.aggregates.dump(camel_case=True).keys()
             assert isinstance(asset.aggregates.child_count, int)
 
-    def test_aggregate(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
+    def test_aggregate(self, cognite_client, twenty_assets: AssetList):
+        res = cognite_client.assets.aggregate(filter=AssetFilter(name=twenty_assets[0].name))
         assert res[0].count > 0
 
-    def test_search(self, cognite_client):
-        res = cognite_client.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
+    def test_search(self, cognite_client, twenty_assets: AssetList):
+        name = twenty_assets[0].name
+        res = cognite_client.assets.search(name, filter=AssetFilter(name=name))
         assert len(res) > 0
 
     def test_search_query(self, cognite_client):
