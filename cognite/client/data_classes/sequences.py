@@ -663,7 +663,7 @@ class SequenceRows(CogniteResource):
         col_length = len(columns)
         if wrong_length := [r for r in rows if len(r.values) != col_length]:
             raise ValueError(
-                f"Rows { [r.row_number for r in wrong_length] } have wrong number of values, expected {col_length}"
+                f"Rows {[r.row_number for r in wrong_length]} have wrong number of values, expected {col_length}"
             )
         self.rows = rows
         self.columns: SequenceColumnList = columns

@@ -89,4 +89,4 @@ def shorten(obj: Any, width: int = 20, placeholder: str = "...") -> str:
     s = obj if isinstance(obj, str) else repr(obj)
     if len(s) <= width:
         return s
-    return f"{s[:width-n]}{placeholder}"
+    return f"{s[: width - n]}{placeholder}"

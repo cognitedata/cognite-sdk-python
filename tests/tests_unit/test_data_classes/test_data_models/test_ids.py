@@ -59,9 +59,9 @@ class TestLoadIdentifier:
         identifier = _load_identifier(ids, id_type)
 
         assert identifier.as_dicts() == expected_dict
-        assert (
-            identifier.is_singleton() == expected_is_singleton
-        ), f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
+        assert identifier.is_singleton() == expected_is_singleton, (
+            f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
+        )
 
     @pytest.mark.parametrize(
         "ids, expected_dict, expected_is_singleton",
@@ -76,6 +76,6 @@ class TestLoadIdentifier:
         identifier = _load_space_identifier(ids)
 
         assert identifier.as_dicts() == expected_dict
-        assert (
-            identifier.is_singleton() == expected_is_singleton
-        ), f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
+        assert identifier.is_singleton() == expected_is_singleton, (
+            f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
+        )
