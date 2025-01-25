@@ -1,8 +1,8 @@
-import json
 import re
 from random import random
 
 import pytest
+from httpx import Response
 
 from cognite.client.data_classes import Datapoints
 from tests.utils import get_url, jsgz_load
@@ -15,7 +15,7 @@ def generate_datapoints(start: int, end: int, granularity=1):
 @pytest.fixture
 def mock_get_datapoints(httpx_mock, cognite_client):
     def request_callback(request):
-        payload = jsgz_load(request.body)
+        payload = jsgz_load(request.content)
 
         items = []
         for dps_query in payload["items"]:
@@ -33,14 +33,14 @@ def mock_get_datapoints(httpx_mock, cognite_client):
             dps = generate_datapoints(start, end)
             dps = dps[:limit]
             items.append({"isString": False, "datapoints": dps})
-        response = {"items": items}
-        return 200, {}, json.dumps(response)
+        return Response(200, headers={}, json={"items": items})
 
     httpx_mock.add_callback(
+        request_callback,
         method="POST",
         url=get_url(cognite_client.time_series.data.synthetic) + "/timeseries/synthetic/query",
-        callback=request_callback,
-        content_type="application/json",
+        match_headers={"content-type": "application/json"},
+        is_reusable=True,
     )
     yield httpx_mock
 
