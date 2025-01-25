@@ -41,9 +41,9 @@ EXAMPLE_CONTAINER = {
 @pytest.fixture
 def mock_containers_response(httpx_mock: Any, cognite_client: CogniteClient):
     response_body = {"items": [EXAMPLE_CONTAINER]}
-    url_pattern = re.compile(
-        re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers(/byids)?$"
-    )
+    url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers$")
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/byids$")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     yield httpx_mock
 
