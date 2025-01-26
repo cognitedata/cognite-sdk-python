@@ -1129,7 +1129,7 @@ class FilesAPI(APIClient):
         from cognite.client import global_config
 
         stream = self._stream(
-            "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
+            "GET", full_url=download_link, full_headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
         )
         with stream as r, path.open("wb") as f:
             for chunk in r.iter_bytes(chunk_size=global_config.file_download_chunk_size):

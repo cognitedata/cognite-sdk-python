@@ -2597,13 +2597,6 @@ def post_spy(cognite_client):
         yield
 
 
-@pytest.fixture
-def do_request_spy(cognite_client):
-    dps_api = cognite_client.time_series.data
-    with patch.object(dps_api, "_do_request", wraps=dps_api._do_request):
-        yield
-
-
 class TestRetrieveLatestDatapointsAPI:
     def test_retrieve_latest(self, cognite_client, all_test_time_series):
         ids = [all_test_time_series[0].id, all_test_time_series[1].id]
@@ -2868,13 +2861,12 @@ class TestInsertDatapointsAPI:
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_copy(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts, do_request_spy):
+    def test_insert_copy(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts):
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
-        assert 1 == cognite_client.time_series.data._do_request.call_count  # needs do_request_spy
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 1 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     def test_insert_copy_fails_at_aggregate(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts):

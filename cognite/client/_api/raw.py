@@ -771,11 +771,13 @@ class RawRowsAPI(APIClient):
     ) -> list[str]:
         return self._get(
             url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
-            params={
-                "minLastUpdatedTime": min_last_updated_time,
-                "maxLastUpdatedTime": max_last_updated_time,
-                "numberOfCursors": n_cursors,
-            },
+            params=drop_none_values(
+                {
+                    "minLastUpdatedTime": min_last_updated_time,
+                    "maxLastUpdatedTime": max_last_updated_time,
+                    "numberOfCursors": n_cursors,
+                }
+            ),
         ).json()["items"]
 
     def list(

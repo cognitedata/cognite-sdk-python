@@ -5,8 +5,6 @@ import urllib.parse
 from collections.abc import Iterator, Sequence
 from typing import Any, cast, overload
 
-from requests.exceptions import ChunkedEncodingError
-
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.geospatial import (
@@ -27,10 +25,8 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     RasterMetadata,
 )
-from cognite.client.exceptions import CogniteConnectionError
 from cognite.client.utils import _json
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._url import resolve_url
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -709,13 +705,8 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        _, full_url = resolve_url("POST", resource_path, self._api_version, self._config)
-        with self._stream("POST", full_url=full_url, json=payload) as resp:
-            try:
-                for line in resp.iter_lines():
-                    yield Feature._load(_json.loads(line))
-            except (ChunkedEncodingError, ConnectionError) as e:
-                raise CogniteConnectionError(e)
+        with self._stream("POST", url_path=resource_path, json=payload) as resp:
+            yield from (Feature._load(_json.loads(line)) for line in resp.iter_lines())
 
     def aggregate_features(
         self,

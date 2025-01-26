@@ -7,7 +7,7 @@ import platform
 from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NoReturn
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
 import httpx
 from typing_extensions import Self
@@ -16,11 +16,14 @@ from cognite.client._http_client import HTTPClientWithRetry, HTTPClientWithRetry
 from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteAPIError,
+    CogniteConnectionError,
     CogniteDuplicatedError,
     CogniteNotFoundError,
     CogniteProjectAccessError,
+    CogniteRequestError,
 )
 from cognite.client.utils import _json
+from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._text import shorten
 from cognite.client.utils._url import resolve_url
 
@@ -33,47 +36,79 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FailedRequestDetails:
+class FailedRequestHandler:
     message: str
     status_code: int
     missing: list[str] | None
     duplicated: list[str] | None
     x_request_id: str | None
-    headers: dict[str, str]
-    response_payload: str
-    response_headers: dict[str, str]
+    headers: dict[str, str] | httpx.Headers
+    response_headers: dict[str, str] | httpx.Headers
     extra: dict[str, Any]
     cause: httpx.HTTPStatusError
+    stream: bool
+
+    def __post_init__(self):
+        self.headers = BasicAPIClient._sanitize_headers(self.headers)
+        self.response_headers = BasicAPIClient._sanitize_headers(self.response_headers)
 
     @classmethod
-    def from_status_error(cls, err: httpx.HTTPStatusError) -> Self:
-        response, extra, missing, duplicated = err.response, {}, None, None
+    def from_status_error(cls, err: httpx.HTTPStatusError, stream: bool) -> Self:
+        response = err.response
+        error, missing, duplicated = {}, None, None
+
+        if stream:
+            response.read()
         try:
-            match error := response.json()["error"]:
+            error = response.json()["error"]
+        except (_json.JSONDecodeError, KeyError):
+            message = response.text
+        else:
+            match error:
                 case str():
-                    msg = error
+                    message = error
                 case dict():
-                    extra = error.copy()
-                    extra.pop("code", None)  # some APIs also return status code here
-                    msg = extra.pop("message")
-                    missing = extra.pop("missing", None) or None  # if empty list, make it None
-                    duplicated = extra.pop("duplicated", None) or None
+                    error.pop("code", None)  # some APIs also return status code here
+                    message = error.pop("message")
+                    missing = error.pop("missing", None) or None  # no empty lists wanted
+                    duplicated = error.pop("duplicated", None) or None
                 case _:
-                    msg = response.text
-        except (KeyError, _json.JSONDecodeError):
-            msg = response.text
+                    message = response.text
 
         return cls(
-            message=msg,
+            message=message,
             status_code=response.status_code,
             missing=missing,
             duplicated=duplicated,
             x_request_id=response.headers.get("x-request-id"),
-            headers=BasicAPIClient._sanitize_headers(err.request.headers),
-            response_payload=shorten(response.text, 1000),
-            response_headers=dict(response.headers),
-            extra=extra,
+            headers=err.request.headers,
+            response_headers=response.headers,
+            extra=error,
             cause=err,
+            stream=stream,
+        )
+
+    def log_failed_request(self, payload: dict | None = None) -> None:
+        response, request = self.cause.response, self.cause.request
+        extra = {
+            "payload": payload,
+            "missing": self.missing,
+            "duplicated": self.duplicated,
+            "headers": self.headers,
+            "response_headers": self.response_headers,
+        }
+        if not self.stream:
+            extra["response_payload"] = shorten(response.text, 1_000)
+
+        if response.history:
+            for res_hist in response.history:
+                logger.debug(
+                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} "
+                    f"{res_hist.request.url}: {res_hist.text}"
+                )
+        logger.debug(
+            f"HTTP Error {self.status_code} {request.method} {request.url}: {self.message}",
+            extra=drop_none_values(extra),
         )
 
     def raise_api_error(self, cognite_client: CogniteClient) -> NoReturn:
@@ -179,20 +214,34 @@ class BasicAPIClient:
         self,
         method: Literal["GET", "POST"],
         /,
-        full_url: str,
+        *,
+        url_path: str | None = None,
+        full_url: str | None = None,
         json: Any = None,
         headers: dict[str, Any] | None = None,
+        full_headers: dict[str, Any] | None = None,
         timeout: float | None = None,
+        api_subversion: str | None = None,
     ) -> Iterator[httpx.Response]:
-        """Make a request to something that is outside Cognite Data Fusion and stream response content"""
+        assert url_path or full_url
+        full_url = full_url or resolve_url("GET", cast(str, url_path), self._api_version, self._config)[1]
+        if full_headers is None:
+            full_headers = self._configure_headers(headers, api_subversion)
         try:
             with self._http_client_with_retry.stream(
-                method, full_url, json=json, headers=headers, timeout=timeout or self._config.timeout
+                method, full_url, json=json, headers=full_headers, timeout=timeout or self._config.timeout
             ) as resp:
-                self._log_successful_request(resp, stream=True)
-                yield resp
-        except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+                try:
+                    resp.raise_for_status()
+                except httpx.HTTPStatusError as err:
+                    self._handle_status_error(err, stream=True)
+                else:
+                    self._log_successful_request(resp, stream=True)
+                    yield resp
+        except (httpx.NetworkError, httpx.DecodingError) as err:
+            raise CogniteConnectionError(err)
+        except httpx.RequestError as err:
+            raise CogniteRequestError from err
 
     def _get(
         self,
@@ -304,31 +353,13 @@ class BasicAPIClient:
         auth_header_name, auth_header_value = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
 
-    def _handle_status_error(self, err: httpx.HTTPStatusError, payload: dict | None = None) -> NoReturn:
+    def _handle_status_error(
+        self, err: httpx.HTTPStatusError, payload: dict | None = None, stream: bool = False
+    ) -> NoReturn:
         """The response had an err HTTP status of 4xx or 5xx"""
-        error_details = FailedRequestDetails.from_status_error(err)
-        self._log_failed_request(error_details, payload)
-        error_details.raise_api_error(self._cognite_client)
-
-    @staticmethod
-    def _log_failed_request(error_details: FailedRequestDetails, payload: dict | None = None) -> None:
-        extra = {}
-        if payload:
-            extra["payload"] = payload
-        if error_details.missing:
-            extra["missing"] = error_details.missing
-        if error_details.duplicated:
-            extra["duplicated"] = error_details.duplicated
-
-        response = (error := error_details.cause).response
-        if response.history:
-            for res_hist in response.history:
-                logger.debug(
-                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} "
-                    f"{res_hist.request.url}: {res_hist.content.decode()}"
-                )
-        request, message = error.request, error_details.message
-        logger.debug(f"HTTP Error {response.status_code} {request.method} {request.url}: {message}", extra=extra)
+        handler = FailedRequestHandler.from_status_error(err, stream=stream)
+        handler.log_failed_request(payload)
+        handler.raise_api_error(self._cognite_client)
 
     def _log_successful_request(
         self, res: httpx.Response, payload: dict[str, Any] | None = None, stream: bool = False
@@ -336,9 +367,8 @@ class BasicAPIClient:
         extra: dict[str, Any] = {
             "headers": self._sanitize_headers(res.request.headers),
             "response_headers": dict(res.headers),
+            "payload": payload,
         }
-        if payload:
-            extra["payload"] = payload
         if not stream and self._config.debug:
             extra["response_payload"] = shorten(res.text, 1_000)
         try:
@@ -347,7 +377,10 @@ class BasicAPIClient:
             # If this fails, it prob. means we are running in a browser (pyodide) with patched httpx package:
             http_protocol = "XMLHTTP"
 
-        logger.debug(f"{http_protocol} {res.request.method} {res.url} {res.status_code}", extra=extra)
+        logger.debug(
+            f"{http_protocol} {res.request.method} {res.url} {res.status_code}",
+            extra=drop_none_values(extra),
+        )
 
     @staticmethod
     def _handle_json_dump(json: dict[str, Any] | None, full_headers: MutableMapping[str, str]) -> bytes | str | None:
@@ -362,7 +395,7 @@ class BasicAPIClient:
         return gzip.compress(content.encode())
 
     @staticmethod
-    def _sanitize_headers(headers: httpx.Headers) -> dict[str, str]:
+    def _sanitize_headers(headers: httpx.Headers | dict[str, str]) -> dict[str, str]:
         sanitized = dict(headers)
         for k, v in sanitized.items():
             if k.lower() in {"authorization", "proxy-authorization"}:

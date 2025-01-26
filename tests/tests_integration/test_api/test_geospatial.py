@@ -485,7 +485,7 @@ class TestGeospatialAPI:
                 feature_type_external_id=test_feature_type.external_id,
                 filter={"stWithin": {"property": "position", "value": {"wkt": polygon_z}}},
             )
-            _ = [x for x in stream_res]
+            next(stream_res)
 
     def test_stream_features_dimensionality_mismatch_flag_set(self, cognite_client, test_feature_type, test_feature):
         polygon_z = "POLYGONZ((2.276 48.858 3,2.278 48.859 3,2.2759 48.859 3,2.276 48.858 3))"

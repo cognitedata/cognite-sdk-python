@@ -251,7 +251,7 @@ class HTTPClientWithRetry:
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionRefused from err
 
-            except (httpx.NetworkError, httpx.ConnectTimeout) as err:
+            except (httpx.NetworkError, httpx.ConnectTimeout, httpx.DecodingError) as err:
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionError from err
 

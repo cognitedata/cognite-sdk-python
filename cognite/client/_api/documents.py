@@ -19,7 +19,6 @@ from cognite.client.data_classes.documents import (
     TemporaryLink,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
-from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -518,11 +517,12 @@ class DocumentsAPI(APIClient):
         """
         from cognite.client import global_config
 
-        _, full_url = resolve_url("GET", f"{self._RESOURCE_PATH}/{id}/content", self._api_version, self._config)
-        stream = self._stream(
-            "GET", full_url=full_url, headers={"accept": "text/plain"}, timeout=self._config.file_transfer_timeout
-        )
-        with stream as resp:
+        with self._stream(
+            "GET",
+            url_path=f"{self._RESOURCE_PATH}/{id}/content",
+            headers={"accept": "text/plain"},
+            timeout=self._config.file_transfer_timeout,
+        ) as resp:
             for chunk in resp.iter_bytes(chunk_size=global_config.file_download_chunk_size):
                 buffer.write(chunk)
 
