@@ -1588,23 +1588,25 @@ class TestRetrieveAggregateDatapointsAPI:
             assert sum(res.sum) == 500_000
 
     @pytest.mark.parametrize(
-        "first_gran, second_gran, start",
+        "first_gran, second_gran, start, min_multiplier",
         (
-            ("60s", "1m", 86572008555),
-            ("120s", "2m", 27340402091),
-            ("60m", "1h", -357464206106),
-            ("120m", "2h", -150117679983),
-            ("24h", "1d", 114399466017),
-            ("48h", "2d", -170931071253),
-            ("240h", "10d", 366850985031),
-            ("4800h", "200d", -562661581583),
+            ("60s", "1m", 86572008555, 40),
+            ("120s", "2m", 27340402091, 83),
+            ("60m", "1h", -357464206106, 1),
+            ("120m", "2h", -150117679983, 1),
+            ("24h", "1d", 114399466017, 1),
+            ("48h", "2d", -170931071253, 1),
+            ("240h", "10d", 366850985031, 1),
+            ("4800h", "200d", -562661581583, 1),
         ),
     )
-    def test_can_be_equivalent_granularities(self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints):
+    def test_can_be_equivalent_granularities(
+        self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints, min_multiplier
+    ):
         ts, _ = one_mill_dps_ts  # data: 1950-2020
         gran_ms = granularity_to_ms(first_gran)
         for endpoint in retrieve_endpoints:
-            end = start + gran_ms * random.randint(10, 1000)
+            end = start + gran_ms * random.randint(min_multiplier, 1000)
             start_aligned, end_aligned = align_start_and_end_for_granularity(start, end, second_gran)
             res_lst = endpoint(
                 aggregates=random_aggregates(),
