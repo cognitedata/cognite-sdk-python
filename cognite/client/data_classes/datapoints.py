@@ -5,16 +5,18 @@ import datetime
 import json
 import typing
 import warnings
+from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Collection, Iterator, Sequence
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
-from functools import cached_property
+from functools import cached_property, partial
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
+    NoReturn,
     TypedDict,
     overload,
 )
@@ -37,6 +39,7 @@ from cognite.client.utils._pandas_helpers import (
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
+    iterable_to_case,
     to_camel_case,
     to_snake_case,
 )
@@ -78,11 +81,14 @@ Aggregate = Literal[
     "duration_uncertain",
     "interpolation",
     "max",
+    "max_datapoint",
     "min",
+    "min_datapoint",
     "step_interpolation",
     "sum",
     "total_variation",
 ]
+_OBJECT_AGGREGATES: frozenset[Literal["maxDatapoint", "minDatapoint"]] = frozenset({"maxDatapoint", "minDatapoint"})
 _INT_AGGREGATES = frozenset(
     {
         "count",
@@ -95,9 +101,12 @@ _INT_AGGREGATES = frozenset(
     }
 )
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
+ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
 
 
-def numpy_dtype_fix(element: np.float64 | str) -> float | str:
+def numpy_dtype_fix(
+    element: np.float64 | str | MaxOrMinDatapoint, camel_case: bool = False
+) -> float | str | dict[str, int | float | str]:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
@@ -105,6 +114,8 @@ def numpy_dtype_fix(element: np.float64 | str) -> float | str:
         # Return no-op as array contains just references to vanilla python objects:
         if isinstance(element, str):
             return element
+        elif isinstance(element, MaxOrMinDatapoint):
+            return element.dump(camel_case=camel_case)
         raise
 
 
@@ -114,6 +125,120 @@ class StatusCode(IntEnum):
     Good = 0x0
     Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
     Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
+
+@dataclass(slots=True, frozen=True)
+class MaxOrMinDatapoint:
+    @abstractmethod
+    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
+
+
+@dataclass(slots=True, frozen=True)
+class MinDatapoint(MaxOrMinDatapoint):
+    timestamp: int
+    value: float
+
+    @property
+    def status_code(self) -> NoReturn:
+        raise AttributeError(
+            "'MinDatapoint' object has no attribute 'status_code'. Tip: fetch using `include_status=True`."
+        )
+
+    @property
+    def status_symbol(self) -> NoReturn:
+        raise AttributeError(
+            "'MinDatapoint' object has no attribute 'status_symbol'. Tip: fetch using `include_status=True`."
+        )
+
+    @classmethod
+    def load(cls, dct: dict[str, Any]) -> Self:
+        assert "statusCode" not in dct
+        return cls(dct["timestamp"], dct["value"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"timestamp": self.timestamp, "value": self.value}
+
+
+@dataclass(slots=True, frozen=True)
+class MinDatapointWithStatus(MaxOrMinDatapoint):
+    timestamp: int
+    value: float
+    status_code: int
+    status_symbol: str
+
+    @classmethod
+    def load(cls, dct: dict[str, Any]) -> Self:
+        return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "timestamp": self.timestamp,
+            "value": self.value,
+            "statusCode" if camel_case else "status_code": self.status_code,
+            "statusSymbol" if camel_case else "status_symbol": self.status_symbol,
+        }
+
+
+@dataclass(slots=True, frozen=True)
+class MaxDatapoint(MaxOrMinDatapoint):
+    timestamp: int
+    value: float
+
+    @property
+    def status_code(self) -> NoReturn:
+        raise AttributeError(
+            "'MaxDatapoint' object has no attribute 'status_code'. Tip: fetch using `include_status=True`."
+        )
+
+    @property
+    def status_symbol(self) -> NoReturn:
+        raise AttributeError(
+            "'MaxDatapoint' object has no attribute 'status_symbol'. Tip: fetch using `include_status=True`."
+        )
+
+    @classmethod
+    def load(cls, dct: dict[str, Any]) -> Self:
+        assert "statusCode" not in dct
+        return cls(dct["timestamp"], dct["value"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"timestamp": self.timestamp, "value": self.value}
+
+
+@dataclass(slots=True, frozen=True)
+class MaxDatapointWithStatus(MaxOrMinDatapoint):
+    timestamp: int
+    value: float
+    status_code: int
+    status_symbol: str
+
+    @classmethod
+    def load(cls, dct: dict[str, Any]) -> Self:
+        return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "timestamp": self.timestamp,
+            "value": self.value,
+            "statusCode" if camel_case else "status_code": self.status_code,
+            "statusSymbol" if camel_case else "status_symbol": self.status_symbol,
+        }
+
+
+def load_min_or_max_datapoint(
+    dct: dict[str, Any], is_minimum: bool
+) -> MinDatapoint | MinDatapointWithStatus | MaxDatapoint | MaxDatapointWithStatus:
+    match is_minimum, "statusCode" in dct:
+        case True, True:
+            return MinDatapointWithStatus.load(dct)
+        case True, False:
+            return MinDatapoint.load(dct)
+        case False, True:
+            return MaxDatapointWithStatus.load(dct)
+        case False, False:
+            return MaxDatapoint.load(dct)
+        case _:
+            assert False
 
 
 class _DatapointsPayloadItem(TypedDict, total=False):
@@ -386,7 +511,9 @@ class Datapoint(CogniteResource):
         value (str | float | None): The raw data value. Can be string or numeric.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
+        max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): No description.
         min (float | None): The minimum value in the aggregate interval.
+        min_datapoint (MinDatapoint | MinDatapointWithStatus | None): No description.
         count (int | None): The number of raw datapoints in the aggregate interval.
         sum (float | None): The sum of the raw datapoints in the aggregate interval.
         interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
@@ -411,7 +538,9 @@ class Datapoint(CogniteResource):
         value: str | float | None = None,
         average: float | None = None,
         max: float | None = None,
+        max_datapoint: MaxDatapoint | MaxDatapointWithStatus | None = None,
         min: float | None = None,
+        min_datapoint: MinDatapoint | MinDatapointWithStatus | None = None,
         count: int | None = None,
         sum: float | None = None,
         interpolation: float | None = None,
@@ -433,7 +562,9 @@ class Datapoint(CogniteResource):
         self.value = value
         self.average = average
         self.max = max
+        self.max_datapoint = max_datapoint
         self.min = min
+        self.min_datapoint = min_datapoint
         self.count = count
         self.sum = sum
         self.interpolation = interpolation
@@ -468,6 +599,10 @@ class Datapoint(CogniteResource):
         pd = local_import("pandas")
 
         dumped = self.dump(camel_case=camel_case)
+        for key in iterable_to_case(["min_datapoint", "max_datapoint"], camel_case):
+            if dp := dumped.get(key):
+                dumped[key] = [dp]  # make pandas treat this dict as a scalar value
+
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
         return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
@@ -475,6 +610,10 @@ class Datapoint(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client=cognite_client)
+        if isinstance(instance.max_datapoint, dict):
+            instance.max_datapoint = load_min_or_max_datapoint(instance.max_datapoint, is_minimum=False)
+        if isinstance(instance.min_datapoint, dict):
+            instance.min_datapoint = load_min_or_max_datapoint(instance.min_datapoint, is_minimum=True)
         if isinstance(instance.timezone, str):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid
                 instance.timezone = parse_str_timezone(instance.timezone)
@@ -484,6 +623,10 @@ class Datapoint(CogniteResource):
         dumped = super().dump(camel_case=camel_case)
         # Keep value even if None (bad status codes support missing):
         dumped["value"] = self.value  # TODO: What if Datapoint represents one or more aggregates?
+        if self.max_datapoint:
+            dumped["maxDatapoint" if camel_case else "max_datapoint"] = self.max_datapoint.dump(camel_case)
+        if self.min_datapoint:
+            dumped["minDatapoint" if camel_case else "min_datapoint"] = self.min_datapoint.dump(camel_case)
         if include_timezone:
             if self.timezone is not None:
                 dumped["timezone"] = convert_timezone_to_str(self.timezone)
@@ -509,7 +652,9 @@ class DatapointsArray(CogniteResource):
         value: NumpyFloat64Array | NumpyObjArray | None = None,
         average: NumpyFloat64Array | None = None,
         max: NumpyFloat64Array | None = None,
+        max_datapoint: NumpyObjArray | None = None,
         min: NumpyFloat64Array | None = None,
+        min_datapoint: NumpyObjArray | None = None,
         count: NumpyInt64Array | None = None,
         sum: NumpyFloat64Array | None = None,
         interpolation: NumpyFloat64Array | None = None,
@@ -542,7 +687,9 @@ class DatapointsArray(CogniteResource):
         self.value = value
         self.average = average
         self.max = max
+        self.max_datapoint = max_datapoint
         self.min = min
+        self.min_datapoint = min_datapoint
         self.count = count
         self.sum = sum
         self.interpolation = interpolation
@@ -695,9 +842,12 @@ class DatapointsArray(CogniteResource):
             return self._slice(item)
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
-        data: dict[str, float | str | None] = {
+        data: dict[str, float | str | dict | None] = {
             attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
         }
+        for key in ("min_datapoint", "max_datapoint"):
+            if key in data:
+                data[key] = getattr(self, key)[item]
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
         if self.null_timestamps and timestamp in self.null_timestamps:
@@ -735,7 +885,7 @@ class DatapointsArray(CogniteResource):
         # Let's not create a single Datapoint more than we have too:
         for i, row in enumerate(zip(*arrays)):
             timestamp = row[0].item() // 1_000_000
-            data: dict[str, float | str | None] = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            data: dict[str, float | str | dict | None] = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
             if self.status_code is not None:
                 data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
             if self.null_timestamps and timestamp in self.null_timestamps:
@@ -788,7 +938,9 @@ class DatapointsArray(CogniteResource):
             dumped["timezone"] = str(self.timezone)
         if self.instance_id:
             dumped["instance_id"] = self.instance_id.dump(camel_case=camel_case, include_instance_type=False)
-        datapoints = [dict(zip(attrs, map(numpy_dtype_fix, row))) for row in zip(*arrays)]
+
+        convert_fn = partial(numpy_dtype_fix, camel_case=camel_case)
+        datapoints = [dict(zip(attrs, map(convert_fn, row))) for row in zip(*arrays)]
 
         if self.status_code is not None or self.status_symbol is not None:
             if (
@@ -799,7 +951,7 @@ class DatapointsArray(CogniteResource):
                 raise ValueError("The number of status codes/symbols does not match the number of datapoints")
 
             for dp, code, symbol in zip(datapoints, map(numpy_dtype_fix, self.status_code), self.status_symbol):  # type: ignore [arg-type]
-                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [assignment]
+                dp["status"] = {"code": code, "symbol": symbol}  # type: ignore [dict-item]
 
         # When we're dealing with datapoints with bad status codes, NaN might be either one of [<missing>, nan]:
         if self.null_timestamps:
@@ -850,6 +1002,11 @@ class DatapointsArray(CogniteResource):
             identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
             for agg in agg_names
         ]
+        # We need special handling for object aggregates:
+        for i, agg in enumerate(agg_names):
+            if agg in ("min_datapoint", "max_datapoint"):
+                arrays[i] = np.array([dp.dump(camel_case=False) for dp in arrays[i]], dtype=np.object_)
+
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
         (df := pd.DataFrame(dict(enumerate(arrays)), index=idx, copy=False)).columns = aggregate_columns
@@ -872,7 +1029,9 @@ class Datapoints(CogniteResource):
         value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
+        max_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): No description.
         min (list[float] | None): The minimum values per aggregate interval.
+        min_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): No description.
         count (list[int] | None): The number of raw datapoints per aggregate interval.
         sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
         interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
@@ -906,7 +1065,9 @@ class Datapoints(CogniteResource):
         value: SequenceNotStr[str] | Sequence[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
+        max_datapoint: list[MinDatapoint] | list[MinDatapointWithStatus] | None = None,
         min: list[float] | None = None,
+        min_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
         count: list[int] | None = None,
         sum: list[float] | None = None,
         interpolation: list[float] | None = None,
@@ -937,7 +1098,9 @@ class Datapoints(CogniteResource):
         self.value = value
         self.average = average
         self.max = max
+        self.max_datapoint = max_datapoint
         self.min = min
+        self.min_datapoint = min_datapoint
         self.count = count
         self.sum = sum
         self.interpolation = interpolation
@@ -1090,7 +1253,10 @@ class Datapoints(CogniteResource):
                 data_lists.append(data)
                 continue  # Keep string (object) column non-numeric
 
-            data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
+            if to_camel_case(attr) in _OBJECT_AGGREGATES:
+                data_lists.append([v.dump(camel_case=False) for v in data])
+                continue
+            data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing agg values
             if to_camel_case(attr) in _INT_AGGREGATES:
                 data_lists.append(data.astype("int64"))
             else:
@@ -1154,6 +1320,12 @@ class Datapoints(CogniteResource):
         if (status := data_lists.pop("status", None)) is not None:
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
+        if min_dp := data_lists.get("minDatapoint"):
+            min_load_cls = MinDatapointWithStatus if "statusCode" in min_dp[0] else MinDatapoint
+            data_lists["minDatapoint"] = list(map(min_load_cls.load, min_dp))
+        if max_dp := data_lists.get("maxDatapoint"):
+            max_load_cls = MaxDatapointWithStatus if "statusCode" in max_dp[0] else MaxDatapoint
+            data_lists["maxDatapoint"] = list(map(max_load_cls.load, max_dp))
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
@@ -1210,7 +1382,7 @@ class Datapoints(CogniteResource):
         for i in range(len(self)):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
             for attr, value in fields:
-                dp_args[attr] = value[i]
+                dp_args[to_camel_case(attr)] = value[i]
             if self.status_code is not None:
                 dp_args.update(
                     statusCode=self.status_code[i],
