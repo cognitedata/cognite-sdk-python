@@ -12,6 +12,7 @@ import math
 import random
 import re
 import unittest
+import warnings
 from collections import UserList
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext as does_not_raise
@@ -42,7 +43,15 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
-from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
+from cognite.client.data_classes.datapoints import (
+    _OBJECT_AGGREGATES,
+    ALL_SORTED_DP_AGGS,
+    ALL_SORTED_NUMERIC_DP_AGGS,
+    MaxDatapoint,
+    MaxDatapointWithStatus,
+    MinDatapoint,
+    MinDatapointWithStatus,
+)
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
@@ -113,6 +122,11 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 124: only bad status codes, daily values, 2023-2024, string",
         ]
     )
+
+
+@pytest.fixture
+def all_numeric_test_time_series(all_test_time_series):
+    return TimeSeriesList([ts for ts in all_test_time_series if ts.is_string is False])
 
 
 @pytest.fixture
@@ -1343,13 +1357,12 @@ class TestRetrieveAggregateDatapointsAPI:
         (
             "min",
             "step_interpolation",
-            "stepInterpolation",
-            ["step_interpolation"],
             ["stepInterpolation"],
             ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation"],
-            ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation", "min"],
             list(map(to_camel_case, ALL_SORTED_DP_AGGS)),
             list(map(to_snake_case, ALL_SORTED_DP_AGGS)),
+            list(map(to_snake_case, ALL_SORTED_NUMERIC_DP_AGGS)),
+            list(_OBJECT_AGGREGATES),
             # Give a mix:
             ["continuousVariance", "discrete_variance", "step_interpolation", "totalVariation"],
             ["continuous_variance", "discreteVariance", "stepInterpolation", "total_variation", "min"],
@@ -1969,6 +1982,36 @@ class TestRetrieveAggregateDatapointsAPI:
             assert_equal(exp_days_per_quarter, q_utc.count[: 4 * 4])
             assert_equal(exp_days_per_month, mo_utc.count[: 12 * 4])
 
+    @pytest.mark.parametrize("include_status", (True, False))
+    def test_object_aggregates(self, retrieve_endpoints, all_numeric_test_time_series, include_status):
+        ts1, ts2 = random.sample(all_numeric_test_time_series, k=2)
+        for endpoint in retrieve_endpoints:
+            dps_lst = endpoint(
+                id=ts1.id,
+                external_id=ts2.external_id,
+                start=MIN_TIMESTAMP_MS,
+                end=MAX_TIMESTAMP_MS,
+                aggregates=list(_OBJECT_AGGREGATES),
+                granularity="1mo",
+                include_status=include_status,
+                limit=2,
+            )
+            for dps in dps_lst:
+                assert 1 <= len(dps.min_datapoint) <= 2
+                assert 1 <= len(dps.max_datapoint) <= 2
+                dp = dps[0]
+                assert isinstance(dp, Datapoint)
+                if include_status:
+                    assert isinstance(dps.min_datapoint[0], MinDatapointWithStatus)
+                    assert isinstance(dps.max_datapoint[0], MaxDatapointWithStatus)
+                    assert isinstance(dp.min_datapoint, MinDatapointWithStatus)
+                    assert isinstance(dp.max_datapoint, MaxDatapointWithStatus)
+                else:
+                    assert isinstance(dps.min_datapoint[0], MinDatapoint)
+                    assert isinstance(dps.max_datapoint[0], MaxDatapoint)
+                    assert isinstance(dp.min_datapoint, MinDatapoint)
+                    assert isinstance(dp.max_datapoint, MaxDatapoint)
+
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
     # "start, end, granularity, expected_df"
@@ -2495,6 +2538,7 @@ class TestRetrieveDataFrameAPI:
                 "aggregates": random_aggregates(
                     exclude={"interpolation", "step_interpolation"},
                     exclude_integer_aggregates=True,
+                    exclude_object_aggregates=True,
                 ),
             },
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
