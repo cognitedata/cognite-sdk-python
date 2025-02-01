@@ -303,10 +303,11 @@ def make_dps_tests_reproducible(testrun_uid, request):
 
     # To make this show up in the logs, it must be run here as part of teardown (post-yield):
     if request.session.testsfailed:
-        print(  # noqa: T201
+        warnings.warn(  # not using print as stdout typically gets hidden by xdist even upon failure
             f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints "
             "test failed - and you weren't the cause, please create a new (GitHub) issue: "
-            "https://github.com/cognitedata/cognite-sdk-python/issues"
+            "https://github.com/cognitedata/cognite-sdk-python/issues",
+            UserWarning,
         )
 
 
