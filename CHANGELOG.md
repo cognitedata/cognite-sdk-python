@@ -49,6 +49,10 @@ Changes are grouped as follows
 ### Changed
 - Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
 
+## [7.74.0] - 2025-02-03
+### Added
+- Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
+
 ## [7.73.1] - 2025-01-23
 ### Fixed
 - Data Workflows hotfix: mark `useTransformationCredentials` as optional.
