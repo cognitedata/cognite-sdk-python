@@ -132,6 +132,10 @@ class MaxOrMinDatapoint:
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
+    @classmethod
+    @abstractmethod
+    def load(cls, dct: dict[str, Any]) -> Self: ...
+
 
 @dataclass(slots=True, frozen=True)
 class MinDatapoint(MaxOrMinDatapoint):
@@ -225,18 +229,16 @@ class MaxDatapointWithStatus(MaxOrMinDatapoint):
         }
 
 
-def load_min_or_max_datapoint(
-    dct: dict[str, Any], is_minimum: bool
-) -> MinDatapoint | MinDatapointWithStatus | MaxDatapoint | MaxDatapointWithStatus:
+def select_min_or_max_datapoint_cls(dct: dict[str, Any], is_minimum: bool) -> type[MaxOrMinDatapoint]:
     match is_minimum, "statusCode" in dct:
         case True, True:
-            return MinDatapointWithStatus.load(dct)
+            return MinDatapointWithStatus
         case True, False:
-            return MinDatapoint.load(dct)
+            return MinDatapoint
         case False, True:
-            return MaxDatapointWithStatus.load(dct)
+            return MaxDatapointWithStatus
         case False, False:
-            return MaxDatapoint.load(dct)
+            return MaxDatapoint
         case _:
             assert False
 
@@ -511,9 +513,9 @@ class Datapoint(CogniteResource):
         value (str | float | None): The raw data value. Can be string or numeric.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
-        max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): No description.
+        max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         min (float | None): The minimum value in the aggregate interval.
-        min_datapoint (MinDatapoint | MinDatapointWithStatus | None): No description.
+        min_datapoint (MinDatapoint | MinDatapointWithStatus | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         count (int | None): The number of raw datapoints in the aggregate interval.
         sum (float | None): The sum of the raw datapoints in the aggregate interval.
         interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
@@ -610,10 +612,10 @@ class Datapoint(CogniteResource):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client=cognite_client)
-        if isinstance(instance.max_datapoint, dict):
-            instance.max_datapoint = load_min_or_max_datapoint(instance.max_datapoint, is_minimum=False)
-        if isinstance(instance.min_datapoint, dict):
-            instance.min_datapoint = load_min_or_max_datapoint(instance.min_datapoint, is_minimum=True)
+        if isinstance(max_dp := instance.max_datapoint, dict):
+            instance.max_datapoint = select_min_or_max_datapoint_cls(max_dp, is_minimum=False).load(max_dp)
+        if isinstance(min_dp := instance.min_datapoint, dict):
+            instance.min_datapoint = select_min_or_max_datapoint_cls(min_dp, is_minimum=True).load(min_dp)
         if isinstance(instance.timezone, str):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid
                 instance.timezone = parse_str_timezone(instance.timezone)
@@ -1029,9 +1031,9 @@ class Datapoints(CogniteResource):
         value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
-        max_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): No description.
+        max_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         min (list[float] | None): The minimum values per aggregate interval.
-        min_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): No description.
+        min_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         count (list[int] | None): The number of raw datapoints per aggregate interval.
         sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
         interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
@@ -1321,10 +1323,10 @@ class Datapoints(CogniteResource):
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
         if min_dp := data_lists.get("minDatapoint"):
-            min_load_cls = MinDatapointWithStatus if "statusCode" in min_dp[0] else MinDatapoint
+            min_load_cls = select_min_or_max_datapoint_cls(min_dp[0], is_minimum=True)
             data_lists["minDatapoint"] = list(map(min_load_cls.load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
-            max_load_cls = MaxDatapointWithStatus if "statusCode" in max_dp[0] else MaxDatapoint
+            max_load_cls = select_min_or_max_datapoint_cls(max_dp[0], is_minimum=False)
             data_lists["maxDatapoint"] = list(map(max_load_cls.load, max_dp))
 
         for key, data in data_lists.items():
