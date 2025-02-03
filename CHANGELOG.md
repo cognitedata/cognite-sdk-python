@@ -20,6 +20,8 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+### Changed
+- Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
 
 ## [7.73.1] - 2025-01-23
 ### Fixed
