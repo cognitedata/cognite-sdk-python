@@ -1880,6 +1880,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 [349079144838.96564, 512343998481.7162, 159180999248.7119, 529224146671.5178],
             )
 
+    @pytest.mark.skip(
+        reason="TODO(doctrino): Skipped while awaiting https://github.com/cognitedata/cognite-sdk-python/pull/2102"
+    )
     def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
         expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
