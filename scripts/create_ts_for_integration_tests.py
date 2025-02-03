@@ -90,9 +90,14 @@ def clone_datapoints_to_dms_ts(client):
         start=MIN_TIMESTAMP_MS,
         end=MAX_TIMESTAMP_MS,
     )
-    to_insert = [{"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(NAMES_USING_INSTANCE_ID, dps_lst)]
-    client.time_series.data.insert_multiple(to_insert)
-    print("Inserted (cloned) datapoints to 3 time series using instance id")
+    to_insert = [
+        {"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(NAMES_USING_INSTANCE_ID, dps_lst) if dps
+    ]
+    if to_insert:
+        client.time_series.data.insert_multiple(to_insert)
+        print("Inserted (cloned) datapoints to 3 time series using instance id")
+    else:
+        print("No datapoints to clone")
 
 
 def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
