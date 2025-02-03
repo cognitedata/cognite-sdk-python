@@ -480,7 +480,7 @@ class TestTimeSeriesCreatedInDMS:
 
 
 @pytest.fixture
-def queries_for_iteration():
+def queries_for_iteration(all_test_time_series):
     # Mix of ids, external_ids, and instance_ids
     return [
         DatapointsQuery(
@@ -495,7 +495,7 @@ def queries_for_iteration():
             start=132710400000,
         ),
         DatapointsQuery(
-            id=1162585250935723,  # 'PYSDK integration test 089: weekly values, 1950-2000, string,
+            id=all_test_time_series.get(external_id="PYSDK integration test 089: weekly values, 1950-2000, string").id,
             start=-334195200000,
             end=270000000000 + 1,
         ),
@@ -504,11 +504,15 @@ def queries_for_iteration():
             start=1166400000,
         ),
         DatapointsQuery(
-            id=7134564432527017,  # 'PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric,
+            id=all_test_time_series.get(
+                external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric"
+            ).id,
             start=-1118,
         ),
         DatapointsQuery(
-            id=8856777097037888,  # 'PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric,
+            id=all_test_time_series.get(
+                external_id="PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric"
+            ).id,
             start=-111360848336,
         ),
         DatapointsQuery(
@@ -529,7 +533,9 @@ def queries_for_iteration():
             start=1702252800000,
         ),
         DatapointsQuery(
-            id=6236123831652881,  # 'PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric,
+            id=all_test_time_series.get(
+                external_id="PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric"
+            ).id,
             start=1678924800000,
         ),
         DatapointsQuery(
