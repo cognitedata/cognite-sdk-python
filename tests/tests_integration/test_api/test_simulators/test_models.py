@@ -9,6 +9,7 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
+from cognite.client.utils._text import random_string
 
 
 @pytest.mark.usefixtures(
@@ -22,12 +23,11 @@ class TestSimulatorModels:
         )
 
         model_ids = []
-        # quick test of the iterator
         for model in cognite_client.simulators.models(limit=2):
             assert model.created_time is not None
             model_ids.append(model.id)
 
-        found_models = cognite_client.simulators.models.retrieve_multiple(ids=model_ids)
+        found_models = cognite_client.simulators.models.retrieve(id=model_ids)
 
         assert len(found_models) == len(model_ids)
 
@@ -53,12 +53,11 @@ class TestSimulatorModels:
         )
 
         model_revision_ids = []
-        # quick test of the iterator
         for revision in cognite_client.simulators.models.revisions(limit=2):
             assert revision.created_time is not None
             model_revision_ids.append(revision.id)
 
-        found_revisions = cognite_client.simulators.models.revisions.retrieve_multiple(ids=model_revision_ids)
+        found_revisions = cognite_client.simulators.models.revisions.retrieve(id=model_revision_ids)
         assert len(found_revisions) == len(model_revision_ids)
 
         assert len(revisions) > 0
@@ -73,8 +72,8 @@ class TestSimulatorModels:
     def test_create_model_and_revisions(
         self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names
     ) -> None:
-        model_external_id_1 = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        model_external_id_2 = datetime.datetime.now().strftime("%Y%m%d%H%M%S2")
+        model_external_id_1 = random_string(10)
+        model_external_id_2 = random_string(10)
         models_to_create = [
             SimulatorModelWrite(
                 name="sdk-test-model1",
@@ -103,11 +102,30 @@ class TestSimulatorModels:
             file_id=seed_file.id,
             description="Test revision",
         )
+        multiple_model_revisions_to_create = [
+            SimulatorModelRevisionWrite(
+                external_id=model_revision_external_id + "1",
+                model_external_id=model_external_id_1,
+                file_id=seed_file.id,
+                description="Test revision",
+            ),
+            SimulatorModelRevisionWrite(
+                external_id=model_revision_external_id + "2",
+                model_external_id=model_external_id_2,
+                file_id=seed_file.id,
+                description="Test revision",
+            ),
+        ]
 
+        multiple_model_revisions_created = cognite_client.simulators.models.revisions.create(
+            multiple_model_revisions_to_create
+        )
         model_revision_created = cognite_client.simulators.models.revisions.create(model_revision_to_create)
+
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
-        cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
+        assert len(multiple_model_revisions_created) == 2
+        cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -121,9 +139,9 @@ class TestSimulatorModels:
 
         models_created = cognite_client.simulators.models.create(models_to_create)
         assert models_created is not None
-        assert models_created.external_id == model_external_id  # Validate external ID
-        models_created.description = "updated description"  # Update the description
-        models_created.name = "updated name"  # Update the name
+        assert models_created.external_id == model_external_id
+        models_created.description = "updated description"
+        models_created.name = "updated name"
         model_updated = cognite_client.simulators.models.update(models_created)
         assert model_updated is not None
         assert model_updated.description == "updated description"

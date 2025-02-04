@@ -45,29 +45,13 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         model_external_id: str,
         file_id: int,
         simulator_external_id: str | None = None,
-        data_set_id: int | None = None,
-        created_by_user_id: str | None = None,
-        status: str | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        version_number: int | None = None,
-        log_id: int | None = None,
         description: str | None = None,
-        status_message: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.simulator_external_id = simulator_external_id
         self.model_external_id = model_external_id
-        self.data_set_id = data_set_id
         self.file_id = file_id
-        self.created_by_user_id = created_by_user_id
-        self.status = status
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
-        self.version_number = version_number
-        self.log_id = log_id
         self.description = description
-        self.status_message = status_message
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -75,16 +59,8 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             model_external_id=resource["modelExternalId"],
-            data_set_id=resource["dataSetId"],
             file_id=resource["fileId"],
-            created_by_user_id=resource["createdByUserId"],
-            status=resource["status"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
-            version_number=resource["versionNumber"],
-            log_id=resource["logId"],
-            description=resource["description"],
-            status_message=resource["statusMessage"],
+            description=resource.get("description"),
         )
 
 
@@ -161,20 +137,18 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             external_id=external_id,
             simulator_external_id=simulator_external_id,
             model_external_id=model_external_id,
-            data_set_id=data_set_id,
             file_id=file_id,
-            created_by_user_id=created_by_user_id,
-            status=status,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            version_number=version_number,
-            log_id=log_id,
             description=description,
-            status_message=status_message,
         )
         self.id: int = id
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
+        self.data_set_id: int = data_set_id
+        self.created_by_user_id: str = created_by_user_id
+        self.status: str = status
+        self.version_number: int = version_number
+        self.log_id: int = log_id
+        self.status_message: str | None = status_message
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -269,17 +243,6 @@ class SimulatorModelWrite(SimulatorModelCore):
             name=name,
             type=type,
             description=description,
-        )
-
-    @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorModelWrite:
-        return cls(
-            external_id=resource["externalId"],
-            simulator_external_id=resource["simulatorExternalId"],
-            data_set_id=resource["dataSetId"],
-            name=resource["name"],
-            type=resource["type"],
-            description=resource.get("description"),
         )
 
     def as_write(self) -> SimulatorModelWrite:

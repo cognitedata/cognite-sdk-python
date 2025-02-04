@@ -20,6 +20,7 @@ Changes are grouped as follows
 ## [7.72.2] - 2025-01-21
 ### Added
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
+- Support for the `/simulators` and `/simulators/integration` API endpoints.
 
 ## [7.72.1] - 2025-01-14
 ### Fixed
@@ -38,8 +39,6 @@ Changes are grouped as follows
 ## [7.71.3] - 2025-01-09
 ### Added
 - `ResultSetExpression` now support the `skip_already_deleted` flag.
-- Support for the `/simulators` and `/simulators/integration` API endpoints.
-
 ## [7.71.2] - 2025-01-07
 ### Added
 - Instance ID is now supported for `retrieve_latest` in the datapoints API.

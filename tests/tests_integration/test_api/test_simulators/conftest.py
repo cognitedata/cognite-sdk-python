@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Generator
+from collections.abc import Iterator
 
 import pytest
 
@@ -9,6 +9,7 @@ from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
     simulator,
@@ -30,12 +31,11 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
     return resource_names.copy()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadata | None:
-    # check if file already exists
     data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
-    if (file is None) or (file is False):
+    if not file:
         file = cognite_client.files.upload(
             path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.txt",
             external_id=seed_resource_names["simulator_model_file_external_id"],
@@ -46,7 +46,7 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
 
 
 @pytest.fixture(scope="session")
-def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Generator[None, None, None]:
+def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Iterator[None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
@@ -65,14 +65,13 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
         )
     else:
         integration = simulator_integrations.get(external_id=simulator_integration["externalId"])
-        # update hearbeat instead
         cognite_client.simulators.integrations._post(
             "/simulators/integrations/update",
             json={"items": [{"id": integration.id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names) -> None:
     model_unique_external_id = seed_resource_names["simulator_model_external_id"]
     models = cognite_client.simulators.models.list(limit=None)
@@ -81,14 +80,20 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
     if model_exists:
         return
 
-    # Only create if model doesn't exist
     simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
-    cognite_client.simulators.models._post(
-        "/simulators/models", json={"items": [{**simulator_model, "externalId": model_unique_external_id}]}
+    simulator_model["externalId"] = model_unique_external_id
+    model = SimulatorModelWrite(
+        external_id=simulator_model["externalId"],
+        simulator_external_id=simulator_model["simulatorExternalId"],
+        data_set_id=simulator_model["dataSetId"],
+        name=simulator_model["name"],
+        type=simulator_model["type"],
+        description=simulator_model["description"],
     )
+    cognite_client.simulators.models.create(model)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
