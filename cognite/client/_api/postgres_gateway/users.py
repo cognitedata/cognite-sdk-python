@@ -27,6 +27,11 @@ class UsersAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Users")
+        self._CREATE_LIMIT = 1
+        self._UPDATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
+        self._LIST_LIMIT = 100
+        self._RETRIEVE_LIMIT = 10
 
     @overload
     def __call__(
