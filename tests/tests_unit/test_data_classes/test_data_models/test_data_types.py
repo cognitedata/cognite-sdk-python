@@ -4,11 +4,13 @@ from cognite.client.data_classes._base import UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     Enum,
+    ListablePropertyType,
     PropertyType,
     PropertyTypeWithUnit,
     Text,
     UnitReference,
 )
+from tests.utils import all_concrete_subclasses
 
 
 class TestDirectRelationReference:
@@ -84,6 +86,7 @@ class TestPropertyType:
         assert data == actual
 
     def test_dump_enum_no_camel_casing_of_user_values(self) -> None:
+        # Before SDK version 7.72.1, the Enum property type would camelCase the user-defined enum values
         obj = PropertyType.load(
             {
                 "type": "enum",
@@ -105,6 +108,20 @@ class TestPropertyType:
         assert sorted(obj.values) == expected_values
         assert sorted(obj.dump(camel_case=False)["values"]) == expected_values
         assert sorted(obj.dump(camel_case=True)["values"]) == expected_values
+
+    @pytest.mark.parametrize("lst_cls", all_concrete_subclasses(ListablePropertyType))
+    def test_is_list_property_with_max_list_size(self, lst_cls: ListablePropertyType) -> None:
+        type_name = lst_cls._type
+        prop = PropertyType.load({"type": type_name, "list": True})
+        assert isinstance(prop, ListablePropertyType)
+        assert prop.max_list_size is None
+
+        prop = PropertyType.load({"type": type_name, "list": True, "maxListSize": 10})
+        assert isinstance(prop, ListablePropertyType)
+        assert prop.max_list_size == 10
+
+        with pytest.raises(ValueError, match="^is_list must be True if max_list_size is set$"):
+            PropertyType.load({"type": type_name, "list": False, "maxListSize": 10})
 
 
 class TestUnitSupport:
