@@ -35,6 +35,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
         self._CREATE_LIMIT = 1
+        self._RETRIEVE_LIMIT = 1
 
     def list(
         self,
@@ -182,7 +183,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self, revision: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
-        You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
+        You can create an arbitrary number of simulator model revisions.
         Args:
             revision (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): No description.
         Returns:
@@ -195,7 +196,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> models = [SimulatorModelRevision(external_id="model1"), SimulatorModelRevision(external_id="model2")]
                 >>> res = client.simulators.models.create_revision(models)
         """
-        assert_type(revision, "simulator_model_revision", [Sequence, SimulatorModelRevisionWrite])
+        assert_type(revision, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorModelRevisionList,
