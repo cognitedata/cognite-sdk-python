@@ -21,7 +21,7 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
-## [7.74.0] - 2025-02-03
+## [7.74.0] - 2025-02-05
 ### Added
 - Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
 ### Changed
