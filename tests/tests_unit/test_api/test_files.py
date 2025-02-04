@@ -485,7 +485,7 @@ class TestFilesAPI:
         assert FileMetadata.load(mock_file_upload_response) == res
         assert "https://upload.here" == str(httpx_mock.get_requests()[1].url)
         assert {"name": "bla", "directory": directory} == jsgz_load(httpx_mock.get_requests()[0].content)
-        assert b"content1\n" == httpx_mock.get_requests()[1].content
+        assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
 
     def test_upload_with_external_id(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
@@ -612,7 +612,7 @@ class TestFilesAPI:
         assert FileMetadata.load(mock_file_upload_response) == res
         assert "https://upload.here" == httpx_mock.get_requests()[1].url
         assert {"name": "bla"} == jsgz_load(httpx_mock.get_requests()[0].content)
-        assert b"content1\n" == httpx_mock.get_requests()[1].content
+        assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
 
     def test_upload_path_does_not_exist(self, cognite_client):
         with pytest.raises(ValueError, match="does not exist"):
