@@ -248,14 +248,14 @@ class TestDatapointSubscriptions:
             )
             batch = next(subscription_changes)
 
-            assert (
-                len(batch.subscription_changes.added) > 0
-            ), "The subscription used for testing datapoint subscriptions must have at least one time series"
+            assert len(batch.subscription_changes.added) > 0, (
+                "The subscription used for testing datapoint subscriptions must have at least one time series"
+            )
 
             batch = next(subscription_changes)
-            assert (
-                len(batch.subscription_changes.added) == 0
-            ), "There should be no more timeseries in the subsequent batches"
+            assert len(batch.subscription_changes.added) == 0, (
+                "There should be no more timeseries in the subsequent batches"
+            )
 
     def test_iterate_data_subscription_changed_time_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]

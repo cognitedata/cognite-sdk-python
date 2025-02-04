@@ -292,7 +292,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         if self.run_time:
             simulation["runTime" if camel_case else "run_time"] = self.run_time
         if self.inputs:
-            simulation["inputs" if camel_case else "inputs"] = [item.dump(camel_case) for item in self.inputs]
+            simulation["inputs"] = [item.dump(camel_case) for item in self.inputs]
 
         return {"simulation": simulation}
 
@@ -304,30 +304,39 @@ class TransformationTaskParameters(WorkflowTaskParameters):
     Args:
         external_id (str): The external ID of the transformation to be called.
         concurrency_policy (Literal['fail', 'restartAfterCurrent', 'waitForCurrent']): Determines the behavior of the task if the Transformation is already running. ``fail``: The task fails if another instance of the Transformation is currently running. ``waitForCurrent``: The task will pause and wait for the already running Transformation to complete. Once completed, the task is completed. This mode is useful for preventing redundant Transformation runs. ``restartAfterCurrent``: The task waits for the ongoing Transformation to finish. After completion, the task restarts the Transformation. This mode ensures that the most recent data can be used by following tasks.
+        use_transformation_credentials (bool): If set to `true`, the transformation will be run using the client credentials configured on the transformation. If set to `false`, the transformation will be run using the client credentials used to trigger the workflow.
     """
 
     task_type = "transformation"
 
     def __init__(
-        self, external_id: str, concurrency_policy: Literal["fail", "restartAfterCurrent", "waitForCurrent"] = "fail"
+        self,
+        external_id: str,
+        concurrency_policy: Literal["fail", "restartAfterCurrent", "waitForCurrent"] = "fail",
+        use_transformation_credentials: bool = False,
     ) -> None:
         self.external_id = external_id
         self.concurrency_policy = concurrency_policy
+        self.use_transformation_credentials = use_transformation_credentials
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
         return cls(
-            resource["transformation"]["externalId"],
-            resource["transformation"]["concurrencyPolicy"],
+            resource[cls.task_type]["externalId"],
+            resource[cls.task_type].get("concurrencyPolicy", "fail"),
+            resource[cls.task_type].get("useTransformationCredentials", False),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         transformation = {
             "externalId" if camel_case else "external_id": self.external_id,
             "concurrencyPolicy" if camel_case else "concurrency_policy": self.concurrency_policy,
+            "useTransformationCredentials"
+            if camel_case
+            else "use_transformation_credentials": self.use_transformation_credentials,
         }
 
-        return {"transformation": transformation}
+        return {self.task_type: transformation}
 
 
 class CDFTaskParameters(WorkflowTaskParameters):

@@ -21,6 +21,22 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+### Changed
+- Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
+
+## [7.73.1] - 2025-01-23
+### Fixed
+- Data Workflows hotfix: mark `useTransformationCredentials` as optional.
+
+## [7.73.0] - 2025-01-22
+### Added
+- Data Workflows: Support for `useTransformationCredentials` for the transformations task. This allows running 
+  transformation tasks with pre-configured client credentials.
+
+## [7.72.2] - 2025-01-20
+### Fixed
+- Updating a Kafka or MQTT source with a write object in `mode="replace"` no longer raises a `CogniteAPIError` with
+  422 status code.
 
 ## [7.72.1] - 2025-01-14
 ### Fixed
@@ -32,7 +48,7 @@ Changes are grouped as follows
 
 ## [7.71.4] - 2025-01-09
 ### Changed
-- Update classes accepting insance_id now raise when id/external_id are also given.
+- Update classes accepting instance_id now raise when id/external_id are also given.
 ### Added
 - All update classes warn when external_id is ignored (when id is also given, it takes precedence)
 
