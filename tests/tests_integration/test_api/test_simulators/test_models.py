@@ -38,11 +38,11 @@ class TestSimulatorModels:
         model = cognite_client.simulators.models.retrieve(external_id=model_external_id)
         assert model is not None
         assert model.external_id == model_external_id
-        assert model.created_time is not None
-        assert model.last_updated_time is not None
-        assert model.type is not None
-        assert model.data_set_id is not None
-        assert model.name is not None
+        assert model.created_time > 0
+        assert model.last_updated_time >= model.created_time
+        assert model.type == "SteadyState"
+        assert model.data_set_id == seed_resource_names["simulator_test_data_set_id"]
+        assert model.name == "Test Simulator Model"
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = seed_resource_names["simulator_model_external_id"]

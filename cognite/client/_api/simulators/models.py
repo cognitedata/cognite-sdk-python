@@ -60,6 +60,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
                 >>> res = client.simulators.models.revisions.list(
                     ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"])
+                    ...     sort=CreatedTimeSort(order="asc")
                     ... )
         """
         self._warning.warn()
@@ -172,18 +173,18 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, revisions: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
+    def create(self, revision: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
 
     @overload
-    def create(self, revisions: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
+    def create(self, revision: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
 
     def create(
-        self, revisions: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
+        self, revision: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
         You can create an arbitrary number of simulator model revisions, and the SDK will split the request into multiple requests.
         Args:
-            revisions (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): Simulator model or list of Simulator models to create.
+            revision (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): No description.
         Returns:
             SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
         Examples:
@@ -194,12 +195,12 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> models = [SimulatorModelRevision(external_id="model1"), SimulatorModelRevision(external_id="model2")]
                 >>> res = client.simulators.models.create_revision(models)
         """
-        assert_type(revisions, "simulator_model_revision", [Sequence, SimulatorModelRevisionWrite])
+        assert_type(revision, "simulator_model_revision", [Sequence, SimulatorModelRevisionWrite])
 
         return self._create_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
-            items=revisions,
+            items=revision,
             input_resource_cls=SimulatorModelRevisionWrite,
         )
 
@@ -241,7 +242,8 @@ class SimulatorModelsAPI(APIClient):
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorModelsFilter
                 >>> res = client.simulators.models.list(
-                    ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"])
+                    ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
+                    ...     sort=CreatedTimeSort(order="asc")
                     ... )
 
         """
@@ -273,7 +275,7 @@ class SimulatorModelsAPI(APIClient):
         """`Retrieve simulator model(s) <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
         Retrieve one or more simulator models by ID(s) or external ID(s)
         Args:
-            id (int | Sequence[int] | None): No description.
+            id (int | Sequence[int] | None): The id of the simulator model.
             external_id (str | SequenceNotStr[str] | None): The external id of the simulator model.
         Returns:
             SimulatorModel | SimulatorModelList | None: Requested simulator model(s)
@@ -294,7 +296,6 @@ class SimulatorModelsAPI(APIClient):
         """
         self._warning.warn()
 
-        # For single item retrieval
         if isinstance(id, int) or isinstance(external_id, str):
             identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
             return self._retrieve_multiple(
@@ -303,7 +304,6 @@ class SimulatorModelsAPI(APIClient):
                 identifiers=identifiers,
             )
 
-        # For multiple items retrieval
         return self._retrieve_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
@@ -322,12 +322,12 @@ class SimulatorModelsAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self, chunk_size: None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
     ) -> Iterator[SimulatorModel]: ...
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self, chunk_size: int, filter: SimulatorModelsFilter | None = None, limit: int | None = None
     ) -> Iterator[SimulatorModel]: ...
 
     def __call__(
@@ -355,17 +355,15 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def create(self, models: SimulatorModelWrite) -> SimulatorModel: ...
+    def create(self, model: SimulatorModelWrite) -> SimulatorModel: ...
 
     @overload
-    def create(self, models: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
+    def create(self, model: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
 
-    def create(
-        self, models: SimulatorModelWrite | Sequence[SimulatorModelWrite]
-    ) -> SimulatorModel | SimulatorModelList:
+    def create(self, model: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
         Args:
-            models (SimulatorModelWrite | Sequence[SimulatorModelWrite]): Model(s) to create.
+            model (SimulatorModelWrite | Sequence[SimulatorModelWrite]): No description.
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
         Examples:
@@ -376,12 +374,12 @@ class SimulatorModelsAPI(APIClient):
                 >>> models = [SimulatorModelWrite(name="model1"), SimulatorModelWrite(name="model2")]
                 >>> res = client.simulators.models.create(models)
         """
-        assert_type(models, "simulator_model", [SimulatorModelWrite, Sequence])
+        assert_type(model, "simulator_model", [SimulatorModelWrite, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
-            items=models,
+            items=model,
             input_resource_cls=SimulatorModelWrite,
             resource_path=self._RESOURCE_PATH,
         )
