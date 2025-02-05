@@ -23,13 +23,18 @@ Changes are grouped as follows
 ### Changed
 - Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
 
+## [7.73.2] - 2025-02-05
+### Fixed
+- An edge case where instance IDs in failing requests would not be reported in the error attributes `unknown`
+  or `failed`.
+
 ## [7.73.1] - 2025-01-23
 ### Fixed
 - Data Workflows hotfix: mark `useTransformationCredentials` as optional.
 
 ## [7.73.0] - 2025-01-22
 ### Added
-- Data Workflows: Support for `useTransformationCredentials` for the transformations task. This allows running 
+- Data Workflows: Support for `useTransformationCredentials` for the transformations task. This allows running
   transformation tasks with pre-configured client credentials.
 
 ## [7.72.2] - 2025-01-20
