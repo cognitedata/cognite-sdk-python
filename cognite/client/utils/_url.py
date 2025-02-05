@@ -41,9 +41,7 @@ RETRYABLE_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
         )
     )
 )
-VALID_URL_PATTERN = re.compile(
-    r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-)
+VALID_URL_PATTERN = re.compile(r"^https?://[a-z\d.:\-]+(?:/api/v1/projects/[^/]+)?((/[^\?]+)?(\?.+)?)")
 VALID_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
 
