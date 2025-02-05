@@ -143,7 +143,6 @@ class TestPNIDParsingIntegration:
         assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
         assert set(pages_with_annotations_per_subjob[2]) == {50, 55}
 
-    @pytest.mark.skip(reason="Skip for now, raises 400: {'patternMode': ['Unknown field.']}")
     def test_run_diagram_detect_in_pattern_mode(self, cognite_client):
         entities = [
             {"sample": "[PH]-ME-P-0156-001", "resourceType": "file_reference"},
