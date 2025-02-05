@@ -20,13 +20,13 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
-### Changed
-- Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
 
 ## [7.73.2] - 2025-02-05
 ### Fixed
 - An edge case where instance IDs in failing requests would not be reported in the error attributes `unknown`
   or `failed`.
+### Changed
+- Set the limit for create, update, and delete endpoints for postgres gateway users to 1.
 
 ## [7.73.1] - 2025-01-23
 ### Fixed
