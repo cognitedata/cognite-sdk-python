@@ -134,7 +134,7 @@ class MaxOrMinDatapoint:
 
     @classmethod
     @abstractmethod
-    def load(cls, dct: dict[str, Any]) -> Self: ...
+    def _load(cls, dct: dict[str, Any]) -> Self: ...
 
 
 @dataclass(slots=True, frozen=True)
@@ -155,7 +155,7 @@ class MinDatapoint(MaxOrMinDatapoint):
         )
 
     @classmethod
-    def load(cls, dct: dict[str, Any]) -> Self:
+    def _load(cls, dct: dict[str, Any]) -> Self:
         assert "statusCode" not in dct
         return cls(dct["timestamp"], dct["value"])
 
@@ -164,14 +164,12 @@ class MinDatapoint(MaxOrMinDatapoint):
 
 
 @dataclass(slots=True, frozen=True)
-class MinDatapointWithStatus(MaxOrMinDatapoint):
-    timestamp: int
-    value: float
-    status_code: int
-    status_symbol: str
+class MinDatapointWithStatus(MinDatapoint):
+    status_code: int  # type: ignore [assignment]
+    status_symbol: str  # type: ignore [assignment]
 
     @classmethod
-    def load(cls, dct: dict[str, Any]) -> Self:
+    def _load(cls, dct: dict[str, Any]) -> Self:
         return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -201,7 +199,7 @@ class MaxDatapoint(MaxOrMinDatapoint):
         )
 
     @classmethod
-    def load(cls, dct: dict[str, Any]) -> Self:
+    def _load(cls, dct: dict[str, Any]) -> Self:
         assert "statusCode" not in dct
         return cls(dct["timestamp"], dct["value"])
 
@@ -210,14 +208,12 @@ class MaxDatapoint(MaxOrMinDatapoint):
 
 
 @dataclass(slots=True, frozen=True)
-class MaxDatapointWithStatus(MaxOrMinDatapoint):
-    timestamp: int
-    value: float
-    status_code: int
-    status_symbol: str
+class MaxDatapointWithStatus(MaxDatapoint):
+    status_code: int  # type: ignore [assignment]
+    status_symbol: str  # type: ignore [assignment]
 
     @classmethod
-    def load(cls, dct: dict[str, Any]) -> Self:
+    def _load(cls, dct: dict[str, Any]) -> Self:
         return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -229,7 +225,7 @@ class MaxDatapointWithStatus(MaxOrMinDatapoint):
         }
 
 
-def select_min_or_max_datapoint_cls(dct: dict[str, Any], is_minimum: bool) -> type[MaxOrMinDatapoint]:
+def _select_min_or_max_datapoint_cls(dct: dict[str, Any], is_minimum: bool) -> type[MaxOrMinDatapoint]:
     match is_minimum, "statusCode" in dct:
         case True, True:
             return MinDatapointWithStatus
@@ -613,9 +609,9 @@ class Datapoint(CogniteResource):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client=cognite_client)
         if isinstance(max_dp := instance.max_datapoint, dict):
-            instance.max_datapoint = select_min_or_max_datapoint_cls(max_dp, is_minimum=False).load(max_dp)
+            instance.max_datapoint = _select_min_or_max_datapoint_cls(max_dp, is_minimum=False).load(max_dp)
         if isinstance(min_dp := instance.min_datapoint, dict):
-            instance.min_datapoint = select_min_or_max_datapoint_cls(min_dp, is_minimum=True).load(min_dp)
+            instance.min_datapoint = _select_min_or_max_datapoint_cls(min_dp, is_minimum=True).load(min_dp)
         if isinstance(instance.timezone, str):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid
                 instance.timezone = parse_str_timezone(instance.timezone)
@@ -1323,11 +1319,11 @@ class Datapoints(CogniteResource):
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
         if min_dp := data_lists.get("minDatapoint"):
-            min_load_cls = select_min_or_max_datapoint_cls(min_dp[0], is_minimum=True)
-            data_lists["minDatapoint"] = list(map(min_load_cls.load, min_dp))
+            min_load_cls = _select_min_or_max_datapoint_cls(min_dp[0], is_minimum=True)
+            data_lists["minDatapoint"] = list(map(min_load_cls._load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
-            max_load_cls = select_min_or_max_datapoint_cls(max_dp[0], is_minimum=False)
-            data_lists["maxDatapoint"] = list(map(max_load_cls.load, max_dp))
+            max_load_cls = _select_min_or_max_datapoint_cls(max_dp[0], is_minimum=False)
+            data_lists["maxDatapoint"] = list(map(max_load_cls._load, max_dp))
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
