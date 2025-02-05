@@ -6,6 +6,7 @@ from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._identifier import (
     Identifier,
     IdentifierSequence,
+    IdentifierSequenceCore,
     InstanceId,
     Tablename,
     TablenameSequence,
@@ -120,6 +121,18 @@ class TestIdentifierSequence:
 
         seq = IdentifierSequence.of(external_ids)
         assert seq.is_singleton() is is_singleton
+
+    @pytest.mark.parametrize(
+        "payload, expected",
+        [
+            ({"idk": None, "i_d": 123, "foo": "bar"}, {}),
+            ({"idk": None, "id": 123, "foo": "bar"}, {"id": 123}),
+            ({"externalId": "x", "spæice": [1, 2]}, {"externalId": "x"}),
+            ({"instanceId": {"space": "s", "externalId": "x"}}, {"instanceId": {"space": "s", "externalId": "x"}}),
+        ],
+    )
+    def test_extract_identifiers(self, payload, expected) -> None:
+        assert expected == IdentifierSequenceCore.extract_identifiers(payload)
 
 
 class TestUserIdentifier:
