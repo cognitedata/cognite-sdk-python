@@ -38,6 +38,7 @@ from cognite.client.data_classes._base import CogniteResourceList, Geometry
 from cognite.client.data_classes.aggregations import Buckets
 from cognite.client.data_classes.capabilities import Capability, LegacyCapability, UnknownAcl
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
+from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
@@ -447,6 +448,9 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["incremental_load"] = BodyLoad(
                 value=self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
             )
+        elif issubclass(resource_cls, ListablePropertyType):
+            if not keyword_arguments.get("is_list"):
+                keyword_arguments.pop("max_list_size", None)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
