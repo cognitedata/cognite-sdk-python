@@ -609,9 +609,9 @@ class Datapoint(CogniteResource):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client=cognite_client)
         if isinstance(max_dp := instance.max_datapoint, dict):
-            instance.max_datapoint = _select_min_or_max_datapoint_cls(max_dp, is_minimum=False).load(max_dp)
+            instance.max_datapoint = _select_min_or_max_datapoint_cls(max_dp, is_minimum=False)._load(max_dp)
         if isinstance(min_dp := instance.min_datapoint, dict):
-            instance.min_datapoint = _select_min_or_max_datapoint_cls(min_dp, is_minimum=True).load(min_dp)
+            instance.min_datapoint = _select_min_or_max_datapoint_cls(min_dp, is_minimum=True)._load(min_dp)
         if isinstance(instance.timezone, str):
             with contextlib.suppress(ValueError):  # Dont fail load if invalid
                 instance.timezone = parse_str_timezone(instance.timezone)
