@@ -1206,12 +1206,9 @@ class TestRetryableEndpoints:
         "method, path, expected",
         sorted(
             [
-                # Versions
-                *(
-                    # Should work on all api version
-                    ("POST", f"https://api.cognitedata.com/api/{version}/projects/bla/assets/list", True)
-                    for version in ["v1", "playground"]
-                ),
+                # Versions, only v1 is currently recognized:
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
+                ("POST", "https://api.cognitedata.com/api/playground/projects/bla/assets/list", False),
                 # Hosts
                 *(
                     # Should work on all hosts
