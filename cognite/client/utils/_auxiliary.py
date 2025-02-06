@@ -18,12 +18,12 @@ from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
     to_camel_case,
-    to_snake_case,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import httpx
+
     from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 

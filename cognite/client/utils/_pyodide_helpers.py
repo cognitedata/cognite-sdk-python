@@ -110,5 +110,4 @@ class FusionNotebookConfig(ClientConfig):
             project=os.environ["COGNITE_PROJECT"],
             credentials=EnvVarToken(),  # Magic!
             base_url=os.environ["COGNITE_BASE_URL"],
-            max_workers=1,
         )
