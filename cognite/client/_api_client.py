@@ -31,7 +31,6 @@ from cognite.client.data_classes.aggregations import AggregationFilter, UniqueRe
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
     unpack_items,
@@ -46,6 +45,7 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -208,7 +208,10 @@ class APIClient(BasicAPIClient):
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params.update(limit=current_limit, cursor=next_cursor)
+            params["limit"] = current_limit
+            if next_cursor is not None:
+                params["cursor"] = next_cursor
+
             if method == "GET":
                 res = self._get(url_path=url_path, params=params, headers=headers)
             else:
@@ -848,7 +851,7 @@ class APIClient(BasicAPIClient):
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
-                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.missing}
             except KeyError:
                 # There is a not found internal id, which means we cannot identify it.
                 raise not_found_error
@@ -924,7 +927,7 @@ class APIClient(BasicAPIClient):
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                    **Identifier.load(getattr(item, "id", None), item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )
