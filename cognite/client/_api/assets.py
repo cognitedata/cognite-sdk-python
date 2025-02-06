@@ -994,7 +994,7 @@ class AssetsAPI(APIClient):
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self.list, tasks=tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
         children = []
@@ -1162,13 +1162,15 @@ class _TaskResult(NamedTuple):
 
 class _AssetHierarchyCreator:
     def __init__(self, hierarchy: AssetHierarchy, assets_api: AssetsAPI) -> None:
+        from cognite.client import global_config
+
         hierarchy.is_valid(on_error="raise")
         self.hierarchy = hierarchy
         self.n_assets = len(hierarchy)
         self.assets_api = assets_api
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
-        self.max_workers = assets_api._config.max_workers
+        self.max_workers = global_config.max_workers
         self.failed: list[Asset] = []
         self.unknown: list[Asset] = []
         # Each thread needs to store its latest exception:
@@ -1181,7 +1183,7 @@ class _AssetHierarchyCreator:
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor()
         created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
