@@ -85,3 +85,16 @@ def convert_nonfinite_float_to_str(value: float | str | None) -> float | str | N
         if math.isnan(value):  # type: ignore [arg-type]
             return "NaN"
         raise
+
+
+def dumps_no_nan_or_inf(obj: Any) -> str:
+    try:
+        return dumps(obj, allow_nan=False)
+    except ValueError as e:
+        # A lot of work to give a more human friendly error message when nans and infs are present:
+        msg = "Out of range float values are not JSON compliant"
+        if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
+            raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
+                e.__traceback__
+            ) from None
+        raise
