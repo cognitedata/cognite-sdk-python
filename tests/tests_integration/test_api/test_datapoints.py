@@ -134,8 +134,8 @@ def all_test_time_series(cognite_client: CogniteClient) -> TimeSeriesList:
 
 
 @pytest.fixture
-def all_numeric_test_time_series(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
-    return TimeSeriesList([ts for ts in all_test_time_series if ts.is_string is False])
+def all_numeric_test_time_series_with_xid(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
+    return TimeSeriesList([ts for ts in all_test_time_series if ts.is_string is False and ts.external_id is not None])
 
 
 @pytest.fixture
@@ -918,7 +918,7 @@ class TestRetrieveRawDatapointsAPI:
         missing_xid = "nope-doesnt-exist " * 3
 
         with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
-            with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+            with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'") as err:
                 ids: list[int | DatapointsQuery] = [
                     ts_exists1.id,
                     # Only id=456 should be raised from 'id':
@@ -931,11 +931,7 @@ class TestRetrieveRawDatapointsAPI:
                     cast(str, ts_exists2.external_id),
                     f"{missing_xid}2",
                 ]
-                cognite_client.time_series.data.retrieve(
-                    id=ids,
-                    external_id=external_ids,
-                    ignore_unknown_ids=True,
-                )
+                cognite_client.time_series.data.retrieve(id=ids, external_id=external_ids, ignore_unknown_ids=True)
             assert len(err.value.not_found) == 2
             unittest.TestCase().assertCountEqual(  # Asserts equal, but ignores ordering
                 err.value.not_found,
@@ -1131,13 +1127,33 @@ class TestRetrieveRawDatapointsAPI:
         "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
         [
             (1, True, "ChunkingDpsFetcher", does_not_raise()),
-            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                1,
+                False,
+                "ChunkingDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (3, True, "ChunkingDpsFetcher", does_not_raise()),
-            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                3,
+                False,
+                "ChunkingDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (10, True, "EagerDpsFetcher", does_not_raise()),
-            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                10,
+                False,
+                "EagerDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
             (50, True, "EagerDpsFetcher", does_not_raise()),
-            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'")),
+            (
+                50,
+                False,
+                "EagerDpsFetcher",
+                pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"),
+            ),
         ],
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
@@ -2223,9 +2239,12 @@ class TestRetrieveAggregateDatapointsAPI:
 
     @pytest.mark.parametrize("include_status", (True, False))
     def test_object_aggregates(
-        self, retrieve_endpoints: list[Callable], all_numeric_test_time_series: TimeSeriesList, include_status: bool
+        self,
+        retrieve_endpoints: list[Callable],
+        all_numeric_test_time_series_with_xid: TimeSeriesList,
+        include_status: bool,
     ) -> None:
-        ts1, ts2 = random.sample(all_numeric_test_time_series, k=2)
+        ts1, ts2 = random.sample(all_numeric_test_time_series_with_xid, k=2)
         for endpoint in retrieve_endpoints:
             dps_lst = endpoint(
                 id=ts1.id,
@@ -2237,7 +2256,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 include_status=include_status,
                 limit=2,
             )
+            assert isinstance(dps_lst, DatapointsList | DatapointsArrayList)
             for dps in dps_lst:
+                assert dps.min_datapoint is not None and dps.max_datapoint is not None
                 assert 1 <= len(dps.min_datapoint) <= 2
                 assert 1 <= len(dps.max_datapoint) <= 2
                 dp = dps[0]
@@ -2253,6 +2274,7 @@ class TestRetrieveAggregateDatapointsAPI:
                     assert isinstance(dp.min_datapoint, MinDatapoint)
                     assert isinstance(dp.max_datapoint, MaxDatapoint)
                 for dp in dps:
+                    assert dp.min_datapoint is not None and dp.max_datapoint is not None
                     dp_min, dp_max = dp.min_datapoint.value, dp.max_datapoint.value
                     assert math.isfinite(dp_min)
                     assert math.isfinite(dp_max)
@@ -2943,13 +2965,6 @@ def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
         yield
 
 
-@pytest.fixture
-def do_request_spy(cognite_client: CogniteClient) -> Iterator[None]:
-    dps_api = cognite_client.time_series.data
-    with patch.object(dps_api, "_do_request", wraps=dps_api._do_request):
-        yield
-
-
 class TestRetrieveLatestDatapointsAPI:
     def test_retrieve_latest(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         ids = [all_test_time_series[0].id, all_test_time_series[1].id]
@@ -3095,18 +3110,14 @@ class TestRetrieveLatestDatapointsAPI:
             mixed_ts, _, bad_ts, _ = ts_status_codes
 
         ts_id: list[int] = [mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)]
-        ts_external_id: list[str] = [
-            cast(str, mixed_ts.external_id),
-            *random_cognite_external_ids(4),
-            cast(str, bad_ts.external_id),
-        ]
+        ts_external_id = cast(list[str], [mixed_ts.external_id, *random_cognite_external_ids(4), bad_ts.external_id])
         ts_before = 1698537600000 + 1  # 2023-10-29
         ts_include_status = True
         ts_ignore_bad_datapoints = False
 
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[\{"):
             cognite_client.time_series.data.retrieve_latest(
-                id=ts_id,
+                id=[mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)],
                 external_id=ts_external_id,
                 before=ts_before,
                 include_status=ts_include_status,
@@ -3263,9 +3274,9 @@ class TestRetrieveLatestDatapointsAPI:
         assert res[0].instance_id == instance_ts_id
 
         # ...and just to ensure this still works as expected:
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"):
             cognite_client.time_series.data.retrieve_latest(id=1, ignore_unknown_ids=False)
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"):
             cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
 
 
@@ -3293,19 +3304,13 @@ class TestInsertDatapointsAPI:
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     @pytest.mark.usefixtures("post_spy")
     def test_insert_copy(
-        self,
-        cognite_client: CogniteClient,
-        endpoint_attr: str,
-        ms_bursty_ts: TimeSeries,
-        new_ts: TimeSeries,
-        do_request_spy: None,
+        self, cognite_client: CogniteClient, endpoint_attr: str, ms_bursty_ts: TimeSeries, new_ts: TimeSeries
     ) -> None:
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
-        assert 1 == cognite_client.time_series.data._do_request.call_count  # type: ignore[attr-defined]
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 1 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     def test_insert_copy_fails_at_aggregate(
@@ -3328,7 +3333,7 @@ class TestInsertDatapointsAPI:
         ]
         # Let's make sure these two go in separate requests:
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 1)
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{") as err:
+        with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{") as err:
             cognite_client.time_series.data.insert_multiple(dps)
 
         assert isinstance(err.value, CogniteNotFoundError)
