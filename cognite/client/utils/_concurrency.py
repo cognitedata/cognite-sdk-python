@@ -195,9 +195,9 @@ class ConcurrencySettings:
         return cls.executor_type == "mainthread"
 
     @classmethod
-    def get_executor(cls, max_workers: int) -> TaskExecutor:
+    def get_executor(cls) -> TaskExecutor:
         if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
+            return cls.get_thread_pool_executor()
         elif cls.uses_mainthread():
             return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
@@ -207,11 +207,13 @@ class ConcurrencySettings:
         return _MAIN_THREAD_EXECUTOR_SINGLETON
 
     @classmethod
-    def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
+    def get_thread_pool_executor(cls) -> ThreadPoolExecutor:
+        from cognite.client import global_config
+
         assert cls.uses_threadpool(), "use get_executor instead"
         global _THREAD_POOL_EXECUTOR_SINGLETON
 
-        if max_workers < 1:
+        if (max_workers := global_config.max_workers) < 1:
             raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
         try:
             executor = _THREAD_POOL_EXECUTOR_SINGLETON
@@ -230,9 +232,9 @@ class ConcurrencySettings:
         return executor
 
     @classmethod
-    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
+    def get_thread_pool_executor_or_raise(cls) -> ThreadPoolExecutor:
         if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
+            return cls.get_thread_pool_executor()
 
         if _RUNNING_IN_BROWSER:
             raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
@@ -296,7 +298,6 @@ def execute_tasks_serially(
 def execute_tasks(
     func: Callable[..., T_Result],
     tasks: Sequence[tuple | dict],
-    max_workers: int,
     fail_fast: bool = False,
     executor: TaskExecutor | None = None,
 ) -> TasksSummary:
@@ -313,7 +314,7 @@ def execute_tasks(
     else:
         raise TypeError("executor must be a ThreadPoolExecutor or MainThreadExecutor")
 
-    executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
+    executor = executor or ConcurrencySettings.get_thread_pool_executor()
     task_order = [id(task) for task in tasks]
 
     futures_dct: dict[Future, tuple | dict] = {}

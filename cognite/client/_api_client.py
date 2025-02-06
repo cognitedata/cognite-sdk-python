@@ -7,7 +7,6 @@ import warnings
 from collections import UserList
 from collections.abc import Iterator, Mapping, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     TypeVar,
@@ -146,7 +145,6 @@ class APIClient(BasicAPIClient):
         tasks_summary = execute_tasks(
             functools.partial(self._post, api_subversion=api_subversion),
             tasks,
-            max_workers=self._config.max_workers,
             fail_fast=True,
             executor=executor,
         )
@@ -463,7 +461,7 @@ class APIClient(BasicAPIClient):
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary = execute_tasks(get_partition, tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
@@ -681,7 +679,6 @@ class APIClient(BasicAPIClient):
         summary = execute_tasks(
             functools.partial(self._post, api_subversion=api_subversion),
             tasks,
-            max_workers=self._config.max_workers,
             executor=executor,
         )
 
@@ -725,7 +722,7 @@ class APIClient(BasicAPIClient):
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary = execute_tasks(self._post, tasks, executor=executor)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
@@ -810,9 +807,7 @@ class APIClient(BasicAPIClient):
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = execute_tasks(functools.partial(self._post, api_subversion=api_subversion), tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
