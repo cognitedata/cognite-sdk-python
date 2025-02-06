@@ -110,7 +110,7 @@ class SimulatorIntegrationsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
