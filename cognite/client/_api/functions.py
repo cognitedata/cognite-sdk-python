@@ -1317,6 +1317,7 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
+        # TODO: Add a warning to encourage CRONs that are not exactly at 00, 15, 30, 45 mins?
         if isinstance(name, str):
             if cron_expression is None:
                 raise ValueError("cron_expression must be specified when creating a new schedule.")
@@ -1331,6 +1332,7 @@ class FunctionSchedulesAPI(APIClient):
         else:
             # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
             item = FunctionScheduleWrite._load(name.dump())
+
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_external_id is not None:
             warnings.warn(
