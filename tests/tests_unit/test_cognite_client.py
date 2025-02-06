@@ -1,4 +1,5 @@
 import logging
+import ssl
 
 import pytest
 
@@ -20,7 +21,6 @@ def client_config_w_token_factory():
         client_name="test-client",
         project="test-project",
         base_url=BASE_URL,
-        max_workers=1,
         timeout=10,
         credentials=Token(lambda: "abc"),
     )
@@ -32,7 +32,6 @@ def client_config_w_client_credentials():
         client_name="test-client",
         project="test-project",
         base_url=BASE_URL,
-        max_workers=1,
         timeout=10,
         credentials=OAuthClientCredentials(
             client_id="test-client-id",
@@ -44,11 +43,11 @@ def client_config_w_client_credentials():
 
 
 @pytest.fixture
-def mock_token_inspect(rsps) -> None:
-    rsps.add(
-        rsps.GET,
-        BASE_URL + "/api/v1/token/inspect",
-        status=200,
+def mock_token_inspect(httpx_mock) -> None:
+    httpx_mock.add_response(
+        method="GET",
+        url=BASE_URL + "/api/v1/token/inspect",
+        status_code=200,
         json={"subject": "bla", "capabilities": [], "projects": []},
     )
     yield
@@ -56,9 +55,9 @@ def mock_token_inspect(rsps) -> None:
 
 class TestCogniteClient:
     def test_project_is_empty(self):
-        with pytest.raises(ValueError, match=r"Invalid value for ClientConfig\.project: <>"):
+        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: ''"):
             CogniteClient(ClientConfig(client_name="", project="", credentials=Token("bla")))
-        with pytest.raises(ValueError, match=r"Invalid value for ClientConfig\.project: <None>"):
+        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: None"):
             CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))
 
     def test_project_is_correct(self, client_config_w_token_factory):
@@ -82,25 +81,28 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    def test_api_version_present_in_header(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_api_version_present_in_header(self, httpx_mock, client_config_w_token_factory, mock_token_inspect):
         client = CogniteClient(client_config_w_token_factory)
         client.iam.token.inspect()
-        assert rsps.calls[0].request.headers["cdf-version"] == client.config.api_subversion
+        assert httpx_mock.get_requests()[0].headers["cdf-version"] == client.config.api_subversion
 
-    def test_beta_header_for_beta_client(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_beta_header_for_beta_client(self, httpx_mock, client_config_w_token_factory, mock_token_inspect):
         from cognite.client.beta import CogniteClient as BetaClient
 
         client = BetaClient(client_config_w_token_factory)
         client.iam.token.inspect()
-        assert rsps.calls[0].request.headers["cdf-version"] == "beta"
+        assert httpx_mock.get_requests()[0].headers["cdf-version"] == "beta"
 
-    def test_verify_ssl_enabled_by_default(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_verify_ssl_enabled_by_default(self, httpx_mock, client_config_w_token_factory):
         client = CogniteClient(client_config_w_token_factory)
-        client.iam.token.inspect()
 
-        assert rsps.calls[0][0].req_kwargs["verify"] is True
-        assert client._api_client._http_client_with_retry.session.verify is True
-        assert client._api_client._http_client.session.verify is True
+        assert (
+            ssl.CERT_REQUIRED is client._api_client._http_client.httpx_client._transport._pool._ssl_context.verify_mode
+        )
+        assert (
+            ssl.CERT_REQUIRED
+            is client._api_client._http_client_with_retry.httpx_client._transport._pool._ssl_context.verify_mode
+        )
 
     def test_client_load(self):
         config = {
