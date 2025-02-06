@@ -116,7 +116,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | SequenceNotStr[str] | None): No description.
+            external_id (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
 
         Examples:
 
