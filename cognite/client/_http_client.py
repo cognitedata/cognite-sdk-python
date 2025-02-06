@@ -48,7 +48,7 @@ def get_global_httpx_client() -> httpx.Client:
             max_connections=global_config.max_connection_pool_size,
             max_keepalive_connections=None,  # defaults to match max_connections
             keepalive_expiry=5,  # copy httpx default
-        )
+        ),
     )
     return httpx.Client(
         transport=transport,

@@ -104,7 +104,7 @@ class SequencesDataAPI(APIClient):
 
         row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]
-        summary = execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._insert_data, tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(
@@ -279,7 +279,7 @@ class SequencesDataAPI(APIClient):
 
             return SequenceRows._load(sequence_rows)
 
-        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)))
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_list_element_unwrap_fn=ident_sequence.extract_identifiers
         )
