@@ -20,6 +20,7 @@ from cognite.client._api import (
     raw,
     relationships,
     sequences,
+    simulators,
     three_d,
     time_series,
     units,
@@ -141,3 +142,8 @@ class TestDocstringExamples:
         run_docstring_tests(ai)
         run_docstring_tests(ai.tools)
         run_docstring_tests(ai.tools.documents)
+
+    def test_simulators(self):
+        run_docstring_tests(simulators)
+        run_docstring_tests(simulators.models)
+        run_docstring_tests(simulators.integrations)

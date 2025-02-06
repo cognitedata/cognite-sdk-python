@@ -59,10 +59,11 @@ class SimulatorModelRevisionsAPI(APIClient):
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+                >>> from cognite.client.data_classes.simulators.models import CreatedTimeSort
                 >>> res = client.simulators.models.revisions.list(
-                    ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"])
-                    ...     sort=CreatedTimeSort(order="asc")
-                    ... )
+                ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"]),
+                ...     sort=CreatedTimeSort(order="asc")
+                ... )
         """
         self._warning.warn()
         return self._list(
@@ -106,10 +107,10 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.retrieve(external_id="revision_external_id")
 
             Get multiple simulator model revisions by ids:
-                >>> res = client.simulators.models.revisions.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.revisions.retrieve(id=[1,2])
 
             Get multiple simulator model revisions by external ids:
-                >>> res = client.simulators.models.revisions.retrieve(external_ids=["revision1", "revision2"])
+                >>> res = client.simulators.models.revisions.retrieve(external_id=["revision1", "revision2"])
         """
         self._warning.warn()
 
@@ -191,10 +192,13 @@ class SimulatorModelRevisionsAPI(APIClient):
         Examples:
             Create new simulator models:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SimulatorModelRevision
+                >>> from cognite.client.data_classes.simulators.models import SimulatorModelRevisionWrite
                 >>> client = CogniteClient()
-                >>> models = [SimulatorModelRevision(external_id="model1"), SimulatorModelRevision(external_id="model2")]
-                >>> res = client.simulators.models.create_revision(models)
+                >>> models = [
+                ...     SimulatorModelRevisionWrite(external_id="model1", file_id=1, model_external_id="a_1"),
+                ...     SimulatorModelRevisionWrite(external_id="model2", file_id=2, model_external_id="a_2")
+                ... ]
+                >>> res = client.simulators.models.revisions.create(models)
         """
         assert_type(revision, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
@@ -242,10 +246,11 @@ class SimulatorModelsAPI(APIClient):
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorModelsFilter
+                >>> from cognite.client.data_classes.simulators.models import CreatedTimeSort
                 >>> res = client.simulators.models.list(
-                    ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
-                    ...     sort=CreatedTimeSort(order="asc")
-                    ... )
+                ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
+                ...     sort=CreatedTimeSort(order="asc")
+                ... )
 
         """
         self._warning.warn()
@@ -290,10 +295,10 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.retrieve(external_id="model_external_id")
 
             Get multiple simulator models by ids:
-                >>> res = client.simulators.models.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.retrieve(id=[1,2])
 
             Get multiple simulator models by external ids:
-                >>> res = client.simulators.models.retrieve(external_ids=["model_external_id", "model_external_id2"])
+                >>> res = client.simulators.models.retrieve(external_id=["model_external_id", "model_external_id2"])
         """
         self._warning.warn()
 
@@ -370,9 +375,18 @@ class SimulatorModelsAPI(APIClient):
         Examples:
             Create new simulator models:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SimulatorModelWrite
+                >>> from cognite.client.data_classes.simulators.models import SimulatorModelWrite
                 >>> client = CogniteClient()
-                >>> models = [SimulatorModelWrite(name="model1"), SimulatorModelWrite(name="model2")]
+                >>> models = [
+                ...     SimulatorModelWrite(
+                ...         name="model1", simulator_external_id="sim1", type="SteadyState",
+                ...         data_set_id=1, external_id="model_external_id"
+                ...     ),
+                ...     SimulatorModelWrite(
+                ...         name="model2", simulator_external_id="sim2", type="SteadyState",
+                ...         data_set_id=2, external_id="model_external_id2"
+                ...     )
+                ... ]
                 >>> res = client.simulators.models.create(models)
         """
         assert_type(model, "simulator_model", [SimulatorModelWrite, Sequence])
@@ -398,7 +412,7 @@ class SimulatorModelsAPI(APIClient):
             Delete models by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.delete(ids=[1,2,3], external_ids="model_external_id")
+                >>> client.simulators.models.delete(id=[1,2,3], external_id="model_external_id")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),

@@ -55,6 +55,7 @@ Changes are grouped as follows
 ## [7.71.3] - 2025-01-09
 ### Added
 - `ResultSetExpression` now support the `skip_already_deleted` flag.
+
 ## [7.71.2] - 2025-01-07
 ### Added
 - Instance ID is now supported for `retrieve_latest` in the datapoints API.
