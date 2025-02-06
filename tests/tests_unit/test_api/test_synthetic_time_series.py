@@ -1,11 +1,11 @@
-import json
 import re
 from random import random
 
 import pytest
+from httpx import Response
 
 from cognite.client.data_classes import Datapoints
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 
 def generate_datapoints(start: int, end: int, granularity=1):
@@ -13,9 +13,9 @@ def generate_datapoints(start: int, end: int, granularity=1):
 
 
 @pytest.fixture
-def mock_get_datapoints(rsps, cognite_client):
+def mock_get_datapoints(httpx_mock, cognite_client):
     def request_callback(request):
-        payload = jsgz_load(request.body)
+        payload = jsgz_load(request.content)
 
         items = []
         for dps_query in payload["items"]:
@@ -33,30 +33,27 @@ def mock_get_datapoints(rsps, cognite_client):
             dps = generate_datapoints(start, end)
             dps = dps[:limit]
             items.append({"isString": False, "datapoints": dps})
-        response = {"items": items}
-        return 200, {}, json.dumps(response)
+        return Response(200, headers={}, json={"items": items})
 
-    rsps.add_callback(
-        rsps.POST,
-        cognite_client.time_series.data.synthetic._get_base_url_with_base_path() + "/timeseries/synthetic/query",
-        callback=request_callback,
-        content_type="application/json",
+    httpx_mock.add_callback(
+        request_callback,
+        method="POST",
+        url=get_url(cognite_client.time_series.data.synthetic) + "/timeseries/synthetic/query",
+        match_headers={"content-type": "application/json"},
+        is_reusable=True,
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_get_datapoints_empty(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        re.compile(
-            re.escape(cognite_client.time_series.data.synthetic._get_base_url_with_base_path())
-            + "/timeseries/synthetic/.*"
-        ),
-        status=200,
+def mock_get_datapoints_empty(httpx_mock, cognite_client):
+    httpx_mock.add_response(
+        method="POST",
+        url=re.compile(re.escape(get_url(cognite_client.time_series.data.synthetic)) + "/timeseries/synthetic/.*"),
+        status_code=200,
         json={"items": [{"isString": False, "datapoints": []}]},
     )
-    yield rsps
+    yield httpx_mock
 
 
 class TestSyntheticQuery:
@@ -66,7 +63,7 @@ class TestSyntheticQuery:
         )
         assert isinstance(dps_res, Datapoints)
         assert 100001 == len(dps_res)
-        assert 11 == len(mock_get_datapoints.calls)
+        assert 11 == len(mock_get_datapoints.get_requests())
 
     def test_query_limit(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.synthetic.query(
@@ -74,7 +71,7 @@ class TestSyntheticQuery:
         )
         assert 20000 == len(dps_res[0])
         assert 20000 == len(dps_res[1])
-        assert 4 == len(mock_get_datapoints.calls)
+        assert 4 == len(mock_get_datapoints.get_requests())
 
     def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
         dps_res = cognite_client.time_series.data.synthetic.query(
@@ -82,7 +79,7 @@ class TestSyntheticQuery:
         )
         assert isinstance(dps_res[0], Datapoints)
         assert 0 == len(dps_res[0])
-        assert 1 == len(mock_get_datapoints_empty.calls)
+        assert 1 == len(mock_get_datapoints_empty.get_requests())
 
     @pytest.mark.dsl
     def test_expression_builder(self, cognite_client):
