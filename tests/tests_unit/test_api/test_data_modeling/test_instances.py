@@ -5,7 +5,7 @@ import math
 import re
 
 import pytest
-from responses import RequestsMock
+from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.aggregations import Count
@@ -49,7 +49,7 @@ class TestAggregate:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
     def test_aggregate_maximum(
-        self, limit: int | float | None, rsps: RequestsMock, cognite_client: CogniteClient
+        self, limit: int | float | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient
     ) -> None:
         url = re.compile(r".*/models/instances/aggregate$")
         response = {
@@ -67,14 +67,14 @@ class TestAggregate:
                 },
             ]
         }
-        rsps.add(rsps.POST, url, status=200, json=response)
+        httpx_mock.add_response(method="POST", url=url, status_code=200, json=response)
 
-        _ = cognite_client.data_modeling.instances.aggregate(
+        cognite_client.data_modeling.instances.aggregate(
             ViewId("my_space", "MyView", "v1"), Count("externalId"), group_by="site", limit=limit
         )
-        assert len(rsps.calls) == 1
-        call = rsps.calls[0]
-        body = json.loads(call.request.body)
+        assert len(httpx_mock.get_requests()) == 1
+        req = httpx_mock.get_requests()[0]
+        body = json.loads(req.content)
         assert "limit" in body
         assert body["limit"] == cognite_client.data_modeling.instances._AGGREGATE_LIMIT
 
@@ -82,7 +82,9 @@ class TestAggregate:
 class TestSearch:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
-    def test_search_maximum(self, limit: int | float | None, rsps: RequestsMock, cognite_client: CogniteClient) -> None:
+    def test_search_maximum(
+        self, limit: int | float | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         url = re.compile(r".*/models/instances/search$")
         response = {
             "items": [
@@ -96,11 +98,11 @@ class TestSearch:
                 },
             ]
         }
-        rsps.add(rsps.POST, url, status=200, json=response)
+        httpx_mock.add_response(method="POST", url=url, status_code=200, json=response)
 
         _ = cognite_client.data_modeling.instances.search(ViewId("my_space", "MyView", "v1"), "dummy text", limit=limit)
-        assert len(rsps.calls) == 1
-        call = rsps.calls[0]
-        body = json.loads(call.request.body)
+        assert len(httpx_mock.get_requests()) == 1
+        req = httpx_mock.get_requests()[0]
+        body = json.loads(req.content)
         assert "limit" in body
         assert body["limit"] == cognite_client.data_modeling.instances._SEARCH_LIMIT
