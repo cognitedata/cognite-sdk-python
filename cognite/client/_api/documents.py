@@ -335,7 +335,6 @@ class DocumentsAPI(APIClient):
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
 
-
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
 
@@ -350,10 +349,7 @@ class DocumentsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> content = client.documents.retrieve_content(id=123)
         """
-
-        body = {"id": id}
-        response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=body)
-        return response.content
+        return self._post(f"{self._RESOURCE_PATH}/content", headers={"accept": "text/plain"}, json={"id": id}).content
 
     def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
@@ -364,7 +360,6 @@ class DocumentsAPI(APIClient):
         The search and list endpoints truncate the textual content of each document,
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
-
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
@@ -380,12 +375,16 @@ class DocumentsAPI(APIClient):
                 >>> with Path("my_file.txt").open("wb") as buffer:
                 ...     client.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
-        with self._do_request(
-            "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
-        ) as response:
-            for chunk in response.iter_content(chunk_size=2**21):
-                if chunk:  # filter out keep-alive new chunks
-                    buffer.write(chunk)
+        from cognite.client import global_config
+
+        with self._stream(
+            "GET",
+            url_path=f"{self._RESOURCE_PATH}/{id}/content",
+            headers={"accept": "text/plain"},
+            timeout=self._config.file_transfer_timeout,
+        ) as resp:
+            for chunk in resp.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+                buffer.write(chunk)
 
     @overload
     def search(
