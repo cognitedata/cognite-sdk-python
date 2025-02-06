@@ -574,7 +574,7 @@ class FilesAPI(APIClient):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = execute_tasks(self._upload_file_from_path, tasks, self._config.max_workers)
+            tasks_summary = execute_tasks(self._upload_file_from_path, tasks)
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
@@ -972,7 +972,7 @@ class FilesAPI(APIClient):
             {"url_path": "/files/downloadlink", "json": {"items": id_batch}, "params": query_params}
             for id_batch in id_batches
         ]
-        tasks_summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self._post, tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unpack_items)
         return {
@@ -1125,7 +1125,7 @@ class FilesAPI(APIClient):
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
         tasks = [(directory, {"id": id}, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
-        tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self._process_file_download, tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]]
         )
