@@ -6,7 +6,7 @@ import warnings
 from contextlib import suppress
 from threading import Thread
 
-import requests
+import httpx
 from packaging import version
 
 
@@ -14,7 +14,7 @@ def get_all_sdk_versions() -> list[version.Version]:
     from cognite.client.config import global_config
 
     verify_ssl = not global_config.disable_ssl
-    res = requests.get("https://pypi.org/simple/cognite-sdk/", verify=verify_ssl, timeout=5)
+    res = httpx.get("https://pypi.org/simple/cognite-sdk/", verify=verify_ssl, timeout=5)
     return list(map(version.parse, re.findall(r"cognite[_-]sdk-(\d+\.\d+.[\dabrc]+)", res.text)))
 
 

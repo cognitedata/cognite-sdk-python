@@ -310,6 +310,7 @@ class FunctionSchedulesAPI(APIClient):
         else:
             # We serialize the object as we mutate `item` using the result from _get_function_internal_id.
             item = FunctionScheduleWrite._load(name.dump())
+
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_external_id is not None:
             warnings.warn(
