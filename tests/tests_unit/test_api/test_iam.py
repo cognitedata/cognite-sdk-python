@@ -5,11 +5,11 @@ import pytest
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
 from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
 from cognite.client.data_classes.iam import GroupAttributes, ProjectSpec, TokenInspection
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
 
 
 @pytest.fixture
-def mock_groups(rsps, cognite_client):
+def mock_groups_response(httpx_mock, cognite_client):
     response_body = {
         "items": [
             {
@@ -22,58 +22,57 @@ def mock_groups(rsps, cognite_client):
             }
         ]
     }
-    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups.*")
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/groups.*")
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    yield response_body
 
 
 @pytest.fixture
-def mock_groups_with_attributes(rsps, cognite_client):
-    response_body = {
-        "items": [
-            {
-                "name": "Production Engineers",
-                "sourceId": "b7c9a5a4-99c2-4785-bed3-5e6ad9a78603",
-                "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
-                "id": 0,
-                "isDeleted": False,
-                "deletedTime": 0,
-                "attributes": {
-                    "token": {
-                        "appIds": ["app1", "app2"],
-                    },
-                    "unknownProperty": "unknownValue",
-                },
-            }
-        ]
-    }
-    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups.*")
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
-
-
-class TestGroups:
-    def test_list(self, cognite_client, mock_groups):
-        res = cognite_client.iam.groups.list()
-        assert isinstance(res, GroupList)
-        assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
-
-    def test_list_groups_with_attributes(self, cognite_client, mock_groups_with_attributes):
-        res = cognite_client.iam.groups.list()
-        assert isinstance(res, GroupList)
-        assert mock_groups_with_attributes.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert mock_groups_with_attributes.calls[0].response.json()["items"][0]["attributes"] == {
+def group_with_attributes():
+     return {
+        "name": "Production Engineers",
+        "sourceId": "b7c9a5a4-99c2-4785-bed3-5e6ad9a78603",
+        "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+        "id": 0,
+        "isDeleted": False,
+        "deletedTime": 0,
+        "attributes": {
             "token": {
                 "appIds": ["app1", "app2"],
             },
             "unknownProperty": "unknownValue",
-        }
+        },
+    }
 
-    def test_create(self, cognite_client, mock_groups):
+
+@pytest.fixture
+def mock_groups_with_attributes(group_with_attributes, httpx_mock, cognite_client):
+    response_body = {"items": [group_with_attributes]}
+
+    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/groups.*")
+    httpx_mock.add_response(
+        method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True
+    )
+    httpx_mock.add_response(
+        method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True
+    )
+    yield httpx_mock
+
+
+class TestGroups:
+    def test_list(self, cognite_client, mock_groups_response):
+        res = cognite_client.iam.groups.list()
+        assert isinstance(res, GroupList)
+        assert mock_groups_response["items"] == res.dump(camel_case=True)
+
+    @pytest.mark.usefixtures("mock_groups_with_attributes")
+    def test_list_groups_with_attributes(self, cognite_client, group_with_attributes):
+        res = cognite_client.iam.groups.list()
+        assert isinstance(res, GroupList)
+        assert res.dump(camel_case=True) == [group_with_attributes]
+
+    def test_create(self, cognite_client, mock_groups_response, httpx_mock):
         my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
@@ -81,8 +80,8 @@ class TestGroups:
             "items": [
                 {"name": "My Group", "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}]}
             ]
-        } == jsgz_load(mock_groups.calls[0].request.body)
-        assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert mock_groups_response["items"][0] == res.dump(camel_case=True)
 
     def test_create_with_attributes(self, cognite_client, mock_groups_with_attributes):
         # Construct attributes via loader to include unknown properties for pass-through
@@ -99,74 +98,74 @@ class TestGroups:
         )
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
-        assert {
-            "items": [
-                {
-                    "name": "My Group",
-                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
-                    "attributes": {"token": {"appIds": ["app1", "app2"]}, "unknownProperty": "unknownValue"},
-                }
-            ]
-        } == jsgz_load(mock_groups_with_attributes.calls[0].request.body)
+        expected = [
+            {
+                "name": "My Group",
+                "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+                "attributes": {"token": {"appIds": ["app1", "app2"]}, "unknownProperty": "unknownValue"},
+            }
+        ]
+        assert expected == jsgz_load(mock_groups_with_attributes.get_requests()[0].content)["items"]
 
-    def test_create_multiple(self, cognite_client, mock_groups):
+    def test_create_multiple(self, cognite_client, mock_groups_response, httpx_mock):
         res = cognite_client.iam.groups.create([1])
         assert isinstance(res, GroupList)
-        assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
-        assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert mock_groups_response["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_groups):
+    @pytest.mark.usefixtures("mock_groups_response")
+    def test_delete(self, cognite_client, httpx_mock):
         res = cognite_client.iam.groups.delete(1)
-        assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_groups):
+    @pytest.mark.usefixtures("mock_groups_response")
+    def test_delete_multiple(self, cognite_client, httpx_mock):
         res = cognite_client.iam.groups.delete([1])
-        assert {"items": [1]} == jsgz_load(mock_groups.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
 
 @pytest.fixture
-def mock_security_categories(rsps, cognite_client):
+def mock_security_cats_response(httpx_mock, cognite_client):
     response_body = {"items": [{"name": "bla", "id": 1}]}
-    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/securitycategories.*")
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/securitycategories.*")
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    yield response_body
 
 
 class TestSecurityCategories:
-    def test_list(self, cognite_client, mock_security_categories):
+    def test_list(self, cognite_client, mock_security_cats_response):
         res = cognite_client.iam.security_categories.list()
         assert isinstance(res, SecurityCategoryList)
-        assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_security_cats_response["items"] == res.dump(camel_case=True)
 
-    def test_create(self, cognite_client, mock_security_categories):
+    def test_create(self, cognite_client, mock_security_cats_response, httpx_mock):
         res = cognite_client.iam.security_categories.create(SecurityCategory(name="My Category"))
         assert isinstance(res, SecurityCategory)
-        assert {"items": [{"name": "My Category"}]} == jsgz_load(mock_security_categories.calls[0].request.body)
-        assert mock_security_categories.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert {"items": [{"name": "My Category"}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert mock_security_cats_response["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_security_categories):
+    def test_create_multiple(self, cognite_client, mock_security_cats_response, httpx_mock):
         res = cognite_client.iam.security_categories.create([1])
         assert isinstance(res, SecurityCategoryList)
-        assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
-        assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert mock_security_cats_response["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_security_categories):
+    def test_delete(self, cognite_client, mock_security_cats_response, httpx_mock):
         res = cognite_client.iam.security_categories.delete(1)
-        assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_security_categories):
+    def test_delete_multiple(self, cognite_client, mock_security_cats_response, httpx_mock):
         res = cognite_client.iam.security_categories.delete([1])
-        assert {"items": [1]} == jsgz_load(mock_security_categories.calls[0].request.body)
+        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
 
 @pytest.fixture
-def mock_token_inspect(rsps, cognite_client):
+def mock_token_inspect(httpx_mock, cognite_client):
     response_body = {
         "subject": "someSubject",
         "projects": [{"projectUrlName": "veryGoodUrlName", "groups": [1, 2, 3]}],
@@ -174,12 +173,9 @@ def mock_token_inspect(rsps, cognite_client):
             {"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}, "projectScope": {"allProjects": {}}}
         ],
     }
-    url_pattern = re.compile(
-        re.escape(cognite_client.iam.token._get_base_url_with_base_path()) + "/api/v1/token/inspect"
-    )
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    url_pattern = re.compile(re.escape(get_url(cognite_client.iam.token)) + "/api/v1/token/inspect")
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx_mock
 
 
 class TestTokenAPI:
