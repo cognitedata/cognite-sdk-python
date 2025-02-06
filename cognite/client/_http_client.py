@@ -243,7 +243,7 @@ class HTTPClientWithRetry:
 
             except httpx.HTTPStatusError:
                 if accepts_json:
-                    with suppress(JSONDecodeError, AttributeError):
+                    with suppress(JSONDecodeError, AttributeError, httpx.ResponseNotRead):
                         # If the response is not JSON or it doesn't conform to the api design guide,
                         # we assume it's not auto-retryable
                         # TODO: Can we just check the header now? 'cdf-is-auto-retryable'
