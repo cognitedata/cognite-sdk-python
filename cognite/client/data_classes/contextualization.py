@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import time
 import warnings
-from collections.abc import Sequence
+from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from requests.utils import CaseInsensitiveDict
 from typing_extensions import Self
 
 from cognite.client.data_classes import Annotation
@@ -164,7 +163,7 @@ class ContextualizationJob(CogniteResource):
         cls: type[T_ContextualizationJob],
         *,
         data: dict[str, Any],
-        headers: CaseInsensitiveDict[str],
+        headers: MutableMapping[str, str],
         status_path: str,
         cognite_client: Any,
     ) -> T_ContextualizationJob:
