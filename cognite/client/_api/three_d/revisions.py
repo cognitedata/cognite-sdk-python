@@ -53,7 +53,7 @@ class ThreeDRevisionsAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
@@ -142,7 +142,7 @@ class ThreeDRevisionsAPI(APIClient):
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 

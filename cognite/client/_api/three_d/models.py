@@ -48,7 +48,7 @@ class ThreeDModelsAPI(APIClient):
             resource_cls=ThreeDModel,
             method="GET",
             chunk_size=chunk_size,
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
@@ -113,7 +113,7 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
