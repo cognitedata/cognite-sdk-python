@@ -605,7 +605,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
                 return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
         tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(set(ids), chunk_size)]
-        res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
+        res_list = execute_tasks(retrieve_and_deduplicate, tasks).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
 
