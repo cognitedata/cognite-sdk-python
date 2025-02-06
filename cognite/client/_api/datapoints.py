@@ -90,11 +90,13 @@ _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
 
 
 class DpsFetchStrategy(ABC):
-    def __init__(self, dps_client: DatapointsAPI, all_queries: list[DatapointsQuery], max_workers: int) -> None:
+    def __init__(self, dps_client: DatapointsAPI, all_queries: list[DatapointsQuery]) -> None:
+        from cognite.client import global_config
+
         self.dps_client = dps_client
         self.all_queries = all_queries
         self.agg_queries, self.raw_queries = self.split_queries(all_queries)
-        self.max_workers = max_workers
+        self.max_workers = global_config.max_workers
         self.n_queries = len(all_queries)
 
     @staticmethod
@@ -105,14 +107,14 @@ class DpsFetchStrategy(ABC):
         return split_qs
 
     def fetch_all_datapoints(self) -> DatapointsList:
-        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor()
         return DatapointsList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=False)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
         )
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
-        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor()
         return DatapointsArrayList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=True)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
@@ -672,9 +674,7 @@ class DatapointsAPI(APIClient):
 
         while alive_queries:
             to_fetch_queries = list(itertools.islice(alive_queries.values(), chunk_size_time_series))
-            fetcher = self._select_dps_fetch_strategy(to_fetch_queries)(
-                self, to_fetch_queries, self._config.max_workers
-            )
+            fetcher = self._select_dps_fetch_strategy(to_fetch_queries)(self, to_fetch_queries)
             dps_lst: DatapointsArrayList | DatapointsList = (
                 fetcher.fetch_all_datapoints_numpy() if return_arrays else fetcher.fetch_all_datapoints()
             )
@@ -1158,9 +1158,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
-        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(
-            self, parsed_queries, self._config.max_workers
-        ).fetch_all_datapoints()
+        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries).fetch_all_datapoints()
 
         if not query.is_single_identifier:
             return dps_lst
@@ -1408,9 +1406,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
-        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(
-            self, parsed_queries, self._config.max_workers
-        ).fetch_all_datapoints_numpy()
+        dps_lst = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries).fetch_all_datapoints_numpy()
 
         if not query.is_single_identifier:
             return dps_lst
@@ -1546,7 +1542,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
-        fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries, self._config.max_workers)
+        fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries)
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
@@ -2302,8 +2298,10 @@ class DatapointsAPI(APIClient):
         self.insert_multiple(dps)
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
+        from cognite.client import global_config
+
         # Running mode is decided based on how many time series are requested VS. number of workers:
-        if len(queries) <= self._config.max_workers:
+        if len(queries) <= global_config.max_workers:
             # Start shooting requests from the hip immediately:
             return EagerDpsFetcher
         # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
@@ -2339,7 +2337,6 @@ class DatapointsPoster:
         self.dps_client = dps_client
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
-        self.max_workers = self.dps_client._config.max_workers
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
@@ -2350,7 +2347,7 @@ class DatapointsPoster:
             for chunk in split_into_chunks(to_insert, self.ts_limit)
             for task in self._create_payload_tasks(chunk)
         ]
-        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.max_workers)
+        summary = execute_tasks(self._insert_datapoints, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=itemgetter(0),
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
@@ -2672,7 +2669,7 @@ class RetrieveLatestDpsFetcher:
             }
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
-        tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
+        tasks_summary = execute_tasks(self.dps_client._post, tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
