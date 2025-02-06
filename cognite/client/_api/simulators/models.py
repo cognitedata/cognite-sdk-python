@@ -186,7 +186,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
         You can create an arbitrary number of simulator model revisions.
         Args:
-            revision (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): No description.
+            revision (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision to create.
         Returns:
             SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
         Examples:
@@ -369,7 +369,7 @@ class SimulatorModelsAPI(APIClient):
     def create(self, model: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
         Args:
-            model (SimulatorModelWrite | Sequence[SimulatorModelWrite]): No description.
+            model (SimulatorModelWrite | Sequence[SimulatorModelWrite]): The model to create.
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
         Examples:
