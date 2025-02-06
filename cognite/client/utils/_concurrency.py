@@ -34,8 +34,8 @@ class TasksSummary:
         self.skipped_tasks = skipped_tasks
         self.results = results
 
-        self.not_found_error: Exception | None = None
-        self.duplicated_error: Exception | None = None
+        self.not_found_error: CogniteNotFoundError | None = None
+        self.duplicated_error: CogniteDuplicatedError | None = None
         self.unknown_error: Exception | None = None
         self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
 
@@ -72,37 +72,49 @@ class TasksSummary:
 
         if self.unknown_error:
             self._raise_basic_api_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.not_found_error:
-            self._raise_not_found_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.duplicated_error:
-            self._raise_duplicated_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None, str | None]:
+        if self.not_found_error:
+            self._raise_specific_error(
+                cause=self.not_found_error,
+                error=CogniteNotFoundError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+        if self.duplicated_error:
+            self._raise_specific_error(
+                cause=self.duplicated_error,
+                error=CogniteDuplicatedError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None, str | None]:
         cluster = None
         project = None
         missing: list[dict] = []
         duplicated: list[dict] = []
         for exc in exceptions:
-            if not isinstance(exc, CogniteAPIError):
-                self.unknown_error = exc
-                continue
+            match exc:
+                case CogniteNotFoundError():
+                    missing.extend(exc.missing)
+                    self.not_found_error = exc
+                case CogniteDuplicatedError():
+                    duplicated.extend(exc.duplicated)
+                    self.duplicated_error = exc
+                case _:
+                    self.unknown_error = exc
+                    continue
 
             cluster = cluster or exc.cluster
             project = project or exc.project
-            if exc.code in (400, 422) and exc.missing is not None:
-                missing.extend(exc.missing)
-                self.not_found_error = exc
 
-            elif exc.code == 409 and exc.duplicated is not None:
-                duplicated.extend(exc.duplicated)
-                self.duplicated_error = exc
-            else:
-                self.unknown_error = exc
         return missing, duplicated, cluster, project
 
-    def _raise_basic_api_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
-    ) -> NoReturn:
+    def _raise_basic_api_error(self, successful: list, failed: list, unknown: list, skipped: list) -> NoReturn:
         if isinstance(self.unknown_error, CogniteAPIError) and (failed or unknown):
             raise CogniteAPIError(
                 message=self.unknown_error.message,
@@ -120,19 +132,28 @@ class TasksSummary:
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    def _raise_specific_error(
+        self,
+        cause: CogniteAPIError,
+        error: type[CogniteNotFoundError | CogniteDuplicatedError],
+        successful: list,
+        failed: list,
+        unknown: list,
+        skipped: list,
     ) -> NoReturn:
-        raise CogniteNotFoundError(
-            self.missing, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.not_found_error
-
-    def _raise_duplicated_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
-    ) -> NoReturn:
-        raise CogniteDuplicatedError(
-            self.duplicated, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.duplicated_error
+        raise error(
+            message=cause.message,
+            code=cause.code,
+            x_request_id=cause.x_request_id,
+            missing=self.missing,
+            duplicated=self.duplicated,
+            extra=cause.extra,
+            cluster=self.cluster,
+            successful=successful,
+            failed=failed,
+            unknown=unknown,
+            skipped=skipped,
+        ) from cause
 
 
 T_Result = TypeVar("T_Result", covariant=True)
