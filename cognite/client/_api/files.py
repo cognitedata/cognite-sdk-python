@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, TextIO, cast, overload
+from typing import Any, BinaryIO, Literal, cast, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
-from cognite.client.utils._auxiliary import find_duplicates, unpack_items
+from cognite.client.utils._auxiliary import drop_none_values, find_duplicates, unpack_items
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
@@ -641,21 +641,22 @@ class FilesAPI(APIClient):
 
         return self._upload_bytes(content, res.json()["items"][0])
 
-    def _upload_bytes(self, content: bytes | TextIO | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
+    def _upload_bytes(self, content: bytes | BinaryIO, returned_file_metadata: dict) -> FileMetadata:
         upload_url = returned_file_metadata["uploadUrl"]
         if urlparse(upload_url).netloc:
             full_upload_url = upload_url
         else:
             full_upload_url = urljoin(self._config.base_url, upload_url)
         file_metadata = FileMetadata._load(returned_file_metadata)
-        upload_response = self._http_client_with_retry.request(
+        upload_response = self._request(
             "PUT",
             full_upload_url,
-            data=content,
+            content=content,
+            # If content-type is not set, we need to drop it from the headers or httpx will complain:
+            headers=drop_none_values({"Content-Type": file_metadata.mime_type, "accept": "*/*"}),
             timeout=self._config.file_transfer_timeout,
-            headers={"Content-Type": file_metadata.mime_type, "accept": "*/*"},
         )
-        if not upload_response.ok:
+        if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
         return file_metadata
 
@@ -910,26 +911,26 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def _upload_multipart_part(self, upload_url: str, content: str | bytes | TextIO | BinaryIO) -> None:
+    def _upload_multipart_part(self, upload_url: str, content: str | bytes | BinaryIO) -> None:
         """Upload part of a file to an upload URL returned from `multipart_upload_session`.
         Note that if `content` does not somehow expose its length, this method may not work
         on Azure. See `requests.utils.super_len`.
 
         Args:
             upload_url (str): URL to upload file chunk to.
-            content (str | bytes | TextIO | BinaryIO): The content to upload.
+            content (str | bytes | BinaryIO): The content to upload.
         """
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        upload_response = self._http_client_with_retry.request(
+        upload_response = self._request(
             "PUT",
-            upload_url,
-            data=content,
-            timeout=self._config.file_transfer_timeout,
+            full_url=upload_url,
+            content=content,
             headers={"accept": "*/*"},
+            timeout=self._config.file_transfer_timeout,
         )
-        if not upload_response.ok:
+        if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
 
     def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
@@ -1148,14 +1149,15 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path_absolute)
 
-    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
-        with self._http_client_with_retry.request(
-            "GET", download_link, headers={"accept": "*/*"}, stream=True, timeout=self._config.file_transfer_timeout
-        ) as r:
-            with path.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
-                    if chunk:  # filter out keep-alive new chunks
-                        f.write(chunk)
+    def _download_file_to_path(self, download_link: str, path: Path) -> None:
+        from cognite.client import global_config
+
+        stream = self._stream(
+            "GET", full_url=download_link, full_headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
+        )
+        with stream as r, path.open("wb") as f:
+            for chunk in r.iter_bytes(chunk_size=global_config.file_download_chunk_size):
+                f.write(chunk)
 
     def download_to_path(
         self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
@@ -1209,10 +1211,9 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request(
-            "GET", download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
-        )
-        return res.content
+        return self._request(
+            "GET", full_url=download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
+        ).content
 
     def list(
         self,
