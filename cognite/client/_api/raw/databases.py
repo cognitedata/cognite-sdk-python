@@ -101,7 +101,7 @@ class RawDatabasesAPI(APIClient):
             {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
             for chunk in chunks
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
