@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     InternalIdTransformerMixin,
 )
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from cognite.client.utils._url import RETRYABLE_POST_ENDPOINT_REGEX_PATTERN
 from tests.utils import all_concrete_subclasses, all_subclasses
 
 ALL_FILEPATHS = Path("cognite/client/").rglob("*.py")
@@ -54,8 +55,7 @@ def test_ensure_all_to_pandas_methods_use_snake_case(cls):
 @pytest.fixture(scope="session")
 def apis_with_post_method_retry_set():
     all_paths = set()
-    (single_regex,) = APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS
-    for api in filter(None, single_regex.split("^/")):
+    for api in filter(None, RETRYABLE_POST_ENDPOINT_REGEX_PATTERN.pattern.split("^/")):
         base_path = api.split("/")[0]
         if base_path[0] == "]":
             continue
@@ -89,7 +89,7 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     # So you've added a new API to the SDK, but suddenly this test is failing - what's the deal?!
     # Answer the following:
     # Does this new API have POST methods that should be retried automatically?
-    # if yes -> look up 'APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS' and add a regex for the url path
+    # if yes -> look up 'RETRYABLE_POST_ENDPOINT_REGEX_PATTERN' and add a regex for the url path
     # if no  -> add the url base path to the "okey-without-list" above: 'apis_that_should_not_have_post_retry_rule'
     # ...but always(!): add tests to TestRetryableEndpoints!
     has_retry = api in apis_with_post_method_retry_set
