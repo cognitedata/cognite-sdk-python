@@ -278,7 +278,7 @@ class WorkflowVersionAPI(APIClient):
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
         tasks = list(map(tuple, split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)))
-        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary = execute_tasks(get_single, tasks=tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 

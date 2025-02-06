@@ -4,11 +4,15 @@ import getpass
 import pprint
 import re
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
 from cognite.client.utils._auxiliary import load_resource_to_dict
+from cognite.client.utils._importing import local_import
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class GlobalConfig:
@@ -16,7 +20,7 @@ class GlobalConfig:
 
     Attributes:
         default_client_config (Optional[ClientConfig]): A default instance of a client configuration. This will be used
-            by the CogniteClient constructor if no config is passed directly. Defaults to None.
+            by the AsyncCogniteClient or CogniteClient constructor if no config is passed directly. Defaults to None.
         disable_gzip (bool): Whether or not to disable gzipping of json bodies. Defaults to False.
         disable_pypi_version_check (bool): Whether or not to check for newer SDK versions when instantiating a new client.
             Defaults to False.
@@ -24,12 +28,16 @@ class GlobalConfig:
         max_retries (int): Max number of retries on a given http request. Defaults to 10.
         max_retries_connect (int): Max number of retries on connection errors. Defaults to 3.
         max_retry_backoff (int): Retry strategy employs exponential backoff. This parameter sets a max on the amount of
-            backoff after any request failure. Defaults to 30.
+            backoff after any request failure. Defaults to 60.
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
-            Defaults to 50.
+            Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        proxies (Dict[str, str]): Dictionary mapping from protocol to url. e.g. {"https": "http://10.10.1.10:1080"}
-        max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
+        proxy (str | httpx.Proxy | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030" (or httpx.Proxy). Default: None,
+            meaning no proxy.
+        max_workers (int | None): Maximum number of concurrent API calls. Defaults to 5. Note that certain APIs have
+            overrides which comes in addition to this limit.
+        follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
+        file_download_chunk_size (int | None): Override the chunk size for streaming file downloads. Defaults to None (auto).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
     """
@@ -39,9 +47,8 @@ class GlobalConfig:
             raise TypeError(
                 "GlobalConfig is a singleton and cannot be instantiated directly. Use `global_config` instead, "
                 "`from cognite.client import global_config`, then apply the wanted settings, e.g. `global_config.max_workers = 5`. "
-                "Settings are only guaranteed to take effect if applied before instantiating a CogniteClient."
+                "Settings are only guaranteed to take effect if applied before instantiating an AsyncCogniteClient or CogniteClient."
             )
-
         cls._instance = super().__new__(cls)
         return cls._instance
 
@@ -52,11 +59,13 @@ class GlobalConfig:
         self.status_forcelist: set[int] = {429, 502, 503, 504}
         self.max_retries: int = 10
         self.max_retries_connect: int = 3
-        self.max_retry_backoff: int = 30
-        self.max_connection_pool_size: int = 50
+        self.max_retry_backoff: int = 60
+        self.max_connection_pool_size: int = 20
         self.disable_ssl: bool = False
-        self.proxies: dict[str, str] | None = {}
+        self.proxy: str | httpx.Proxy | None = None
         self.max_workers: int = 5
+        self.follow_redirects: bool = False
+        self.file_download_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
 
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
@@ -109,10 +118,8 @@ class ClientConfig:
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
         base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int | None): DEPRECATED. Use global_config.max_workers instead.
-            Max number of workers to spawn when parallelizing data fetching. Defaults to 5.
         headers (dict[str, str] | None): Additional headers to add to all requests.
-        timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
+        timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
     """
@@ -124,7 +131,6 @@ class ClientConfig:
         credentials: CredentialProvider,
         api_subversion: str | None = None,
         base_url: str | None = None,
-        max_workers: int | None = None,
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
         file_transfer_timeout: int | None = None,
@@ -135,11 +141,8 @@ class ClientConfig:
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
-        if max_workers is not None:
-            # TODO: Remove max_workers from ClientConfig in next major version
-            self.max_workers = max_workers  # Will trigger a deprecation warning
         self.headers = headers or {}
-        self.timeout = timeout or 30
+        self.timeout = timeout or 60
         self.file_transfer_timeout = file_transfer_timeout or 600
         if debug:
             self.debug = True
@@ -149,18 +152,6 @@ class ClientConfig:
             from cognite.client.utils._version_checker import check_client_is_running_latest_version
 
             check_client_is_running_latest_version()
-
-    @property
-    def max_workers(self) -> int:
-        return global_config.max_workers
-
-    @max_workers.setter
-    def max_workers(self, value: int) -> None:
-        global_config.max_workers = value
-        warnings.warn(
-            "Passing (or setting) max_workers to ClientConfig is deprecated. Please use global_config.max_workers instead",
-            DeprecationWarning,
-        )
 
     @property
     def debug(self) -> bool:
@@ -179,17 +170,18 @@ class ClientConfig:
 
     def _validate_config(self) -> None:
         if not self.project:
-            raise ValueError(f"Invalid value for ClientConfig.project: <{self.project}>")
+            raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
         if not self.base_url:
-            raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
+            raise ValueError(f"Invalid value for ClientConfig.base_url: {self.base_url!r}")
         elif self.cdf_cluster is None:
             warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
 
     def __str__(self) -> str:
-        return pprint.pformat({"max_workers": self.max_workers, **self.__dict__}, indent=4)
+        return pprint.pformat(vars(self), indent=4)
 
     def _repr_html_(self) -> str:
-        return str(self)
+        pd = local_import("pandas")
+        return pd.Series(vars(self)).to_frame("ClientConfig").sort_index()._repr_html_()
 
     @classmethod
     def default(
@@ -258,7 +250,6 @@ class ClientConfig:
             credentials=credentials,
             api_subversion=loaded.get("api_subversion"),
             base_url=loaded.get("base_url"),
-            max_workers=loaded.get("max_workers"),
             headers=loaded.get("headers"),
             timeout=loaded.get("timeout"),
             file_transfer_timeout=loaded.get("file_transfer_timeout"),
