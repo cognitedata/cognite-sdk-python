@@ -1,3 +1,5 @@
+import random
+
 import pytest
 
 from cognite.client.data_classes._base import UnknownCogniteObject
@@ -110,7 +112,7 @@ class TestPropertyType:
         assert sorted(obj.dump(camel_case=True)["values"]) == expected_values
 
     @pytest.mark.parametrize("lst_cls", all_concrete_subclasses(ListablePropertyType))
-    def test_is_list_property_with_max_list_size(self, lst_cls: ListablePropertyType) -> None:
+    def test_is_list_property_with_max_list_size(self, lst_cls: type[ListablePropertyType]) -> None:
         type_name = lst_cls._type
         prop = PropertyType.load({"type": type_name, "list": True})
         assert isinstance(prop, ListablePropertyType)
@@ -122,6 +124,21 @@ class TestPropertyType:
 
         with pytest.raises(ValueError, match="^is_list must be True if max_list_size is set$"):
             PropertyType.load({"type": type_name, "list": False, "maxListSize": 10})
+
+    @pytest.mark.parametrize("lst_cls_with_unit", all_concrete_subclasses(PropertyTypeWithUnit))
+    def test_property_with_unit(self, lst_cls_with_unit: type[PropertyTypeWithUnit]) -> None:
+        coinflip = random.choice([True, False])
+        instance = lst_cls_with_unit(
+            is_list=coinflip,
+            max_list_size=200 if coinflip else None,
+            unit=UnitReference(external_id="temperature:deg_c", source_unit="I name thee sir Celsi-Us"),
+        )
+        payload = instance.dump()
+        loaded = PropertyType.load(payload)
+        assert type(loaded) is lst_cls_with_unit
+        assert isinstance(loaded.unit, UnitReference)
+        assert loaded.unit.external_id == "temperature:deg_c"
+        assert loaded.unit.source_unit == "I name thee sir Celsi-Us"
 
 
 class TestUnitSupport:
