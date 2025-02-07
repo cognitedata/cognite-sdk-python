@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
     LabelDefinition,
 )
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
+from cognite.client.data_classes.files import FileMetadataWrite
 from cognite.client.utils._text import random_string
 
 
@@ -86,6 +87,67 @@ def test_files(cognite_client):
 
 
 A_WHILE_AGO = {"max": int(time.time() - 1800) * 1000}
+
+
+def generate_test_file(size_mb: int, chunk_size_mb: int = 100) -> bytes:
+    import random
+
+    """Generate a large bytes object efficiently in chunks to prevent overflow."""
+    return b"".join(
+        random.randbytes(min(chunk_size_mb, size_mb - i) * 1024 * 1024) for i in range(0, size_mb, chunk_size_mb)
+    )
+
+
+import random
+import time
+
+
+@pytest.fixture
+def upload_test_file_for_dl_speed_comp(cognite_client, os_and_py_version):
+    test_bytes = generate_test_file(500)
+    print(f"Created random file in memory: {len(test_bytes)} bytes")
+    xid = f"speed-test-500MB-{os_and_py_version}"
+    if fm := cognite_client.files.retrieve(external_id=xid):
+        print(f"File already exists in CDF: {fm.external_id}, deleting...")
+        cognite_client.files.delete(id=fm.id)
+        time.sleep(150 * random.random())
+
+    fm, _ = cognite_client.files.create(FileMetadataWrite(name=xid.replace("-", " "), external_id=xid))
+
+    print(f"Created file metadata in CDF: {fm.external_id}")
+    start = time.perf_counter()
+    cognite_client.files.upload_content_bytes(test_bytes, fm.external_id)
+    end = time.perf_counter()
+
+    file_size_mb = len(test_bytes) / (1024 * 1024)  # Convert bytes to MB
+    duration = end - start
+    speed = file_size_mb / duration  # MB/s
+    print(f"Upload completed in {duration:.4f} seconds")
+    print(f"File size: {file_size_mb:.4f} MB")
+    print(f"Speed: {speed:.4f} MB/s")
+    time.sleep(15)
+
+    assert cognite_client.files.retrieve(fm.id).uploaded is True
+    print("Uploaded file is ready!")
+    return fm
+
+
+def test_download_speed_QQQQQQQ(cognite_client, upload_test_file_for_dl_speed_comp):
+    import time
+
+    print(f"Downloading 500MB file from CDF ({upload_test_file_for_dl_speed_comp.name})")
+    time.sleep(150 * random.random())
+    start = time.perf_counter()
+    file_bytes = cognite_client.files.download_bytes(external_id=upload_test_file_for_dl_speed_comp.external_id)
+    end = time.perf_counter()
+
+    file_size_mb = len(file_bytes) / (1024 * 1024)  # Convert bytes to MB
+    duration = end - start
+    speed = file_size_mb / duration  # MB/s
+
+    print(f"Download completed in {duration:.4f} seconds")
+    print(f"File size: {file_size_mb:.4f} MB")
+    print(f"Speed: {speed:.4f} MB/s")
 
 
 class TestFilesAPI:
