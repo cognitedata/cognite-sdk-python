@@ -82,13 +82,16 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
 
     simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
     simulator_model["externalId"] = model_unique_external_id
-    model = SimulatorModelWrite(
-        external_id=simulator_model["externalId"],
-        simulator_external_id=simulator_model["simulatorExternalId"],
-        data_set_id=simulator_model["dataSetId"],
-        name=simulator_model["name"],
-        type=simulator_model["type"],
-        description=simulator_model["description"],
+
+    model = SimulatorModelWrite._load(
+        {
+            "externalId": simulator_model["externalId"],
+            "simulatorExternalId": simulator_model["simulatorExternalId"],
+            "dataSetId": simulator_model["dataSetId"],
+            "name": simulator_model["name"],
+            "type": simulator_model["type"],
+            "description": simulator_model["description"],
+        }
     )
     cognite_client.simulators.models.create(model)
 

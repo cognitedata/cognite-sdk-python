@@ -1,5 +1,3 @@
-import datetime
-
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
@@ -95,7 +93,7 @@ class TestSimulatorModels:
 
         assert models_created is not None
         assert len(models_created) == 2
-        model_revision_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "revision"
+        model_revision_external_id = model_external_id_1 + "revision"
         model_revision_to_create = SimulatorModelRevisionWrite(
             external_id=model_revision_external_id,
             model_external_id=model_external_id_1,
@@ -128,7 +126,7 @@ class TestSimulatorModels:
         cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        model_external_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        model_external_id = random_string(10)
         models_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
             simulator_external_id=seed_resource_names["simulator_external_id"],

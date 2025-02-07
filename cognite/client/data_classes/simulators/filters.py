@@ -21,7 +21,9 @@ class SimulatorModelsFilter(CogniteFilter):
         self,
         simulator_external_ids: Sequence[str] | None = None,
     ) -> None:
-        self.simulator_external_ids = simulator_external_ids
+        self.simulator_external_ids = (
+            [simulator_external_ids] if isinstance(simulator_external_ids, str) else simulator_external_ids
+        )
 
 
 class SimulatorModelRevisionsFilter(CogniteFilter):
@@ -30,5 +32,4 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
         model_external_ids: Sequence[str] | None = None,
         all_versions: bool | None = None,
     ) -> None:
-        self.model_external_ids = model_external_ids
-        self.all_versions = all_versions
+        self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids

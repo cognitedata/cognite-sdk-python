@@ -44,11 +44,9 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         external_id: str,
         model_external_id: str,
         file_id: int,
-        simulator_external_id: str | None = None,
         description: str | None = None,
     ) -> None:
         self.external_id = external_id
-        self.simulator_external_id = simulator_external_id
         self.model_external_id = model_external_id
         self.file_id = file_id
         self.description = description
@@ -57,7 +55,6 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
-            simulator_external_id=resource["simulatorExternalId"],
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
@@ -65,20 +62,6 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
 
 class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
-    def __init__(
-        self,
-        external_id: str,
-        model_external_id: str,
-        file_id: int,
-        description: str | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            model_external_id=model_external_id,
-            file_id=file_id,
-            description=description,
-        )
-
     def as_write(self) -> SimulatorModelRevisionWrite:
         """Returns a writeable version of this resource"""
         return self
@@ -135,20 +118,20 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
     ) -> None:
         super().__init__(
             external_id=external_id,
-            simulator_external_id=simulator_external_id,
             model_external_id=model_external_id,
             file_id=file_id,
             description=description,
         )
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
-        self.data_set_id: int = data_set_id
-        self.created_by_user_id: str = created_by_user_id
-        self.status: str = status
-        self.version_number: int = version_number
-        self.log_id: int = log_id
-        self.status_message: str | None = status_message
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.data_set_id = data_set_id
+        self.created_by_user_id = created_by_user_id
+        self.status = status
+        self.version_number = version_number
+        self.log_id = log_id
+        self.status_message = (status_message,)
+        self.simulator_external_id = simulator_external_id
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -227,24 +210,6 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
 
 
 class SimulatorModelWrite(SimulatorModelCore):
-    def __init__(
-        self,
-        external_id: str,
-        simulator_external_id: str,
-        data_set_id: int,
-        name: str,
-        type: str,
-        description: str | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            simulator_external_id=simulator_external_id,
-            data_set_id=data_set_id,
-            name=name,
-            type=type,
-            description=description,
-        )
-
     def as_write(self) -> SimulatorModelWrite:
         return self
 
@@ -292,9 +257,9 @@ class SimulatorModel(SimulatorModelCore):
             description=description,
         )
 
-        self.id: int = id
-        self.created_time: int = created_time
-        self.last_updated_time: int = last_updated_time
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:

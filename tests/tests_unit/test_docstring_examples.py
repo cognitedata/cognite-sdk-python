@@ -146,4 +146,5 @@ class TestDocstringExamples:
     def test_simulators(self):
         run_docstring_tests(simulators)
         run_docstring_tests(simulators.models)
+        run_docstring_tests(simulators.models_revisions)
         run_docstring_tests(simulators.integrations)
