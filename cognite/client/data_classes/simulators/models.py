@@ -130,7 +130,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         self.status = status
         self.version_number = version_number
         self.log_id = log_id
-        self.status_message = (status_message,)
+        self.status_message = status_message
         self.simulator_external_id = simulator_external_id
 
     @classmethod
