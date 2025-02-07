@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Added
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.73.3] - 2025-02-07
+### Added
+- Listable property types for containers in Data Modeling now accept `max_list_size`.
+
 ## [7.73.2] - 2025-02-05
 ### Fixed
 - An edge case where instance IDs in failing requests would not be reported in the error attributes `unknown`
