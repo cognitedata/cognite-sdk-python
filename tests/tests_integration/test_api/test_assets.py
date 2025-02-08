@@ -86,6 +86,7 @@ def root_test_asset(cognite_client) -> Asset:
 
 def generate_asset_tree(root: AssetWrite, first_level_size: int, size: int, depth: int) -> list[AssetWrite]:
     np.random.seed(0)
+    # A power law distribution describes the real shape of an asset hierarchy, i.e., few roots, many leaves.
     count_per_level = np.random.power(0.2, depth)
     count_per_level.sort()
     total = count_per_level.sum()
