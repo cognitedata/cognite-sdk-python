@@ -1,22 +1,54 @@
 import random
-import re
 from datetime import datetime, timezone
 from unittest import mock
 
+import numpy as np
 import pytest
 
-from cognite.client.data_classes import Datapoints, DatapointsList
+from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWriteList
 from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.utils._time import datetime_to_ms
 
 
 @pytest.fixture(scope="session")
-def test_time_series(cognite_client):
+def test_time_series(cognite_client) -> dict[int, TimeSeries]:
     time_series_names = [f"test__constant_{i}_with_noise" for i in range(10)]
-    time_series = {}
-    for ts in cognite_client.time_series.retrieve_multiple(external_ids=time_series_names):
-        value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))
-        time_series[value] = ts
-    yield time_series
+    retrieved = cognite_client.time_series.retrieve_multiple(external_ids=time_series_names, ignore_unknown_ids=True)
+    if missing := set(time_series_names) - set(retrieved.as_external_ids()):
+        to_create = TimeSeriesWriteList([])
+        datapoints: list[dict] = []
+        size = 100_000
+        start = datetime_to_ms(datetime(2025, 1, 1, tzinfo=timezone.utc))
+        step = 100  # every 100 ms
+        stop = start + size * step
+        timestamps = np.arange(start, stop, step).tolist()
+        for name in missing:
+            number = int(name.removeprefix("test__constant_").removesuffix("_with_noise"))
+            to_create.append(
+                TimeSeries(
+                    name=name,
+                    external_id=name,
+                    description=f"Constant {number} with ±0.1 uniform noise",
+                    is_step=False,
+                    is_string=False,
+                )
+            )
+            datapoints.append(
+                {
+                    "external_id": name,
+                    "datapoints": Datapoints(
+                        external_id=name,
+                        timestamp=timestamps,
+                        value=np.random.uniform(number - 0.1, number + 0.1, size).tolist(),
+                    ),
+                }
+            )
+
+        created = cognite_client.time_series.create(to_create)
+        retrieved.extend(created)
+        cognite_client.time_series.data.insert_multiple(datapoints)
+
+    return {int(ts.name.removeprefix("test__constant_").removesuffix("_with_noise")): ts for ts in retrieved}
 
 
 @pytest.fixture
