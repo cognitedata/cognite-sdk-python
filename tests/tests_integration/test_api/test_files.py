@@ -103,51 +103,64 @@ import time
 
 
 @pytest.fixture
-def upload_test_file_for_dl_speed_comp(cognite_client, os_and_py_version):
+def upload_test_file_for_dl_speed_comp(cognite_client, os_and_py_version, tmp_path):
     test_bytes = generate_test_file(500)
-    print(f"Created random file in memory: {len(test_bytes)} bytes")
+    n_bytes = len(test_bytes)
+    file_path = tmp_path / "walk500miles.bin"
+    file_path.write_bytes(test_bytes)
+    print(f"Created random file {n_bytes} bytes, wrote to disk {file_path}")
+
     xid = f"speed-test-500MB-{os_and_py_version}"
     if fm := cognite_client.files.retrieve(external_id=xid):
         print(f"File already exists in CDF: {fm.external_id}, deleting...")
         cognite_client.files.delete(id=fm.id)
         time.sleep(150 * random.random())
 
-    fm, _ = cognite_client.files.create(FileMetadataWrite(name=xid.replace("-", " "), external_id=xid))
-
+    fm, _ = cognite_client.files.create(FileMetadataWrite(external_id=xid, name=xid.replace("-", " ")))
     print(f"Created file metadata in CDF: {fm.external_id}")
     start = time.perf_counter()
-    cognite_client.files.upload_content_bytes(test_bytes, fm.external_id)
+    cognite_client.files.upload_content(str(file_path), external_id=xid)
     end = time.perf_counter()
 
-    file_size_mb = len(test_bytes) / (1024 * 1024)  # Convert bytes to MB
+    file_size_mb = n_bytes / (1024 * 1024)  # Convert bytes to MB
     duration = end - start
     speed = file_size_mb / duration  # MB/s
     print(f"Upload completed in {duration:.4f} seconds")
-    print(f"File size: {file_size_mb:.4f} MB")
+    # print(f"File size: {file_size_mb:.4f} MB")
     print(f"Speed: {speed:.4f} MB/s")
-    time.sleep(15)
+
+    time.sleep(10)
+    file_path.unlink()
+    time.sleep(10)
 
     assert cognite_client.files.retrieve(fm.id).uploaded is True
     print("Uploaded file is ready!")
     return fm
 
 
-def test_download_speed_QQQQQQQ(cognite_client, upload_test_file_for_dl_speed_comp):
+def test_download_speed_QQQQQQQ(cognite_client, upload_test_file_for_dl_speed_comp, tmp_path):
     import time
 
-    print(f"Downloading 500MB file from CDF ({upload_test_file_for_dl_speed_comp.name})")
-    time.sleep(150 * random.random())
+    assert not (tmp_path / "walk500miles.bin").is_file()
+
+    print(f"Downloading 500MB file from CDF to disk ({upload_test_file_for_dl_speed_comp.name})")
+    time.sleep(60 * random.random())
     start = time.perf_counter()
-    file_bytes = cognite_client.files.download_bytes(external_id=upload_test_file_for_dl_speed_comp.external_id)
+    cognite_client.files.download(
+        tmp_path,
+        external_id=upload_test_file_for_dl_speed_comp.external_id,
+    )
     end = time.perf_counter()
 
-    file_size_mb = len(file_bytes) / (1024 * 1024)  # Convert bytes to MB
+    print(list(tmp_path.glob("*")))
+    # n_bytes = len(Path(tmp_path / "walk500miles.bin").read_bytes())
+    # file_size_mb = n_bytes / (1024 * 1024)  # Convert bytes to MB
     duration = end - start
-    speed = file_size_mb / duration  # MB/s
+    speed = 500 / duration  # MB/s
 
     print(f"Download completed in {duration:.4f} seconds")
-    print(f"File size: {file_size_mb:.4f} MB")
     print(f"Speed: {speed:.4f} MB/s")
+    # print(f"\nFile DL size: {file_size_mb:.4f} MB")
 
 
 class TestFilesAPI:

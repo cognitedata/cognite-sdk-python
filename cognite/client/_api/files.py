@@ -1121,6 +1121,7 @@ class FilesAPI(APIClient):
         file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
             raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
+        print(f"...starting DL file: {file_path_absolute}")
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path_absolute)
 
