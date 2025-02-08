@@ -4,51 +4,129 @@ import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Sequence, SequenceRows, SequenceRowsList
+from cognite.client.data_classes import (
+    Sequence,
+    SequenceColumnWrite,
+    SequenceRow,
+    SequenceRows,
+    SequenceRowsList,
+    SequenceWrite,
+)
 
 
 @pytest.fixture(scope="session")
-def named_long_str(cognite_client):
+def named_long_str(cognite_client) -> Sequence:
     seq = cognite_client.sequences.retrieve(external_id="named_long_str")
-    assert isinstance(seq, Sequence)
-    yield seq
+    if seq is None:
+        seq = cognite_client.sequences.create(
+            SequenceWrite(
+                external_id="named_long_str",
+                columns=[
+                    SequenceColumnWrite(external_id="longcol", value_type="Long"),
+                    SequenceColumnWrite(external_id="strcol", value_type="String"),
+                ],
+            )
+        )
+    if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
+        cognite_client.sequences.data.insert(
+            SequenceRows(
+                [SequenceRow(i, [i, f"str{i}"]) for i in range(1000)],
+                columns=seq.columns,
+                external_id=seq.external_id,
+            ),
+            external_id=seq.external_id,
+        )
+    return seq
 
 
 @pytest.fixture(scope="session")
-def string200(cognite_client):
+def string200(cognite_client) -> Sequence:
     seq = cognite_client.sequences.retrieve(external_id="string200")
-    assert isinstance(seq, Sequence)
-    yield seq
+    if seq is None:
+        seq = cognite_client.sequences.create(
+            SequenceWrite(
+                external_id="string200",
+                columns=[SequenceColumnWrite(external_id=f"col{i}", value_type="String") for i in range(200)],
+            )
+        )
+
+    if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
+        cognite_client.sequences.data.insert(
+            SequenceRows(
+                [SequenceRow(i, [f"str{i}"] * 200) for i in range(1000)],
+                columns=seq.columns,
+                external_id=seq.external_id,
+            ),
+            external_id=seq.external_id,
+        )
+    return seq
 
 
 @pytest.fixture(scope="session")
 def small_sequence(cognite_client: CogniteClient) -> Sequence:
     seq = cognite_client.sequences.retrieve(external_id="small")
-    assert isinstance(seq, Sequence)
-    yield seq
+    if seq is None:
+        seq = cognite_client.sequences.create(
+            SequenceWrite(
+                external_id="small",
+                columns=[
+                    SequenceColumnWrite(external_id="col0", value_type="String"),
+                    SequenceColumnWrite(external_id="col1", value_type="Long"),
+                ],
+            )
+        )
+    if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
+        cognite_client.sequences.data.insert(
+            SequenceRows(
+                [
+                    SequenceRow(0, ["str1", 678]),
+                    SequenceRow(1, ["str2", 679]),
+                    SequenceRow(2, ["str3", 680]),
+                    SequenceRow(3, ["str4", 681]),
+                ],
+                columns=seq.columns,
+                external_id=seq.external_id,
+            ),
+            external_id=seq.external_id,
+        )
+    return seq
 
 
 @pytest.fixture(scope="session")
-def pretend_timeseries(cognite_client):
+def pretend_timeseries(cognite_client: CogniteClient) -> Sequence:
     seq = cognite_client.sequences.retrieve(external_id="pretend_timeseries")
-    assert isinstance(seq, Sequence)
-    yield seq
+    if seq is None:
+        seq = cognite_client.sequences.create(
+            SequenceWrite(
+                external_id="pretend_timeseries",
+                columns=[
+                    SequenceColumnWrite(external_id="value", value_type="Double"),
+                ],
+            )
+        )
+    if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
+        cognite_client.sequences.data.insert(
+            SequenceRows(
+                [SequenceRow(row_no, [value]) for row_no, value in enumerate(np.random.rand(54321).tolist())],
+                columns=seq.columns,
+                external_id=seq.external_id,
+            ),
+            external_id=seq.external_id,
+        )
+    return seq
 
 
 @pytest.fixture(scope="session")
-def new_seq(cognite_client) -> Sequence:
-    seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "STRING", "externalId": "col0"}]))
-    yield seq
-    cognite_client.sequences.delete(id=seq.id)
-    assert cognite_client.sequences.retrieve(id=seq.id) is None
+def new_seq(cognite_client: CogniteClient) -> Sequence:
+    created = cognite_client.sequences.create(SequenceWrite(columns=[SequenceColumnWrite("col0", value_type="String")]))
+    yield created
+    cognite_client.sequences.delete(id=created.id)
+    assert cognite_client.sequences.retrieve(id=created.id) is None
 
 
 @pytest.fixture(scope="session")
 def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence) -> Sequence:
-    for col in small_sequence.columns:
-        col.last_updated_time = None
-        col.created_time = None
-    seq = cognite_client.sequences.create(Sequence(columns=small_sequence.columns))
+    seq = cognite_client.sequences.create(SequenceWrite(columns=small_sequence.columns.as_write()))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(id=seq.id) is None
@@ -65,10 +143,10 @@ def new_seq_long(cognite_client):
 @pytest.fixture(scope="session")
 def new_seq_mixed(cognite_client):
     seq = cognite_client.sequences.create(
-        Sequence(
+        SequenceWrite(
             columns=[
-                {"valueType": "DOUBLE", "externalId": "column0"},
-                {"valueType": "STRING", "externalId": "column1"},
+                SequenceColumnWrite(external_id="column0", value_type="Long"),
+                SequenceColumnWrite(external_id="column1", value_type="String"),
             ],
         )
     )
@@ -84,7 +162,7 @@ def post_spy(cognite_client):
 
 
 class TestSequencesDataAPI:
-    def test_retrieve(self, cognite_client, small_sequence):
+    def test_retrieve(self, cognite_client, small_sequence: Sequence) -> None:
         dps = cognite_client.sequences.data.retrieve(id=small_sequence.id)
 
         assert isinstance(dps, SequenceRows)
@@ -104,7 +182,9 @@ class TestSequencesDataAPI:
         assert small_sequence.id == dps[0].id
         assert pretend_timeseries.external_id == dps[1].external_id
 
-    def test_retrieve_multi_dataframe(self, cognite_client, small_sequence, pretend_timeseries):
+    def test_retrieve_multi_dataframe(
+        self, cognite_client: CogniteClient, small_sequence: Sequence, pretend_timeseries: Sequence
+    ) -> None:
         df = cognite_client.sequences.data.retrieve(
             id=[small_sequence.id, pretend_timeseries.id], start=0, end=None
         ).to_pandas(column_names="id", concat=True)
@@ -145,7 +225,7 @@ class TestSequencesDataAPI:
     def test_delete_multiple(self, cognite_client, new_seq):
         cognite_client.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
-    def test_retrieve_paginate(self, cognite_client, string200, post_spy):
+    def test_retrieve_paginate(self, cognite_client: CogniteClient, string200: Sequence, post_spy):
         data = cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=996)
         assert 200 == len(data.values[0])
         assert 995 == len(data)
@@ -171,7 +251,7 @@ class TestSequencesDataAPI:
         assert 40023 == data.shape[0]
         assert 5 == cognite_client.sequences.data._post.call_count
 
-    def test_retrieve_one_column(self, cognite_client, named_long_str):
+    def test_retrieve_one_column(self, cognite_client, named_long_str: Sequence) -> None:
         dps = cognite_client.sequences.data.retrieve(id=named_long_str.id, start=42, end=43, columns=["strcol"])
         assert 1 == len(dps)
         assert 1 == len(dps.column_external_ids)
