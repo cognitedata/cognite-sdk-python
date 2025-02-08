@@ -3,6 +3,7 @@ import time
 from contextlib import contextmanager
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
@@ -73,8 +74,39 @@ def twenty_assets(cognite_client: CogniteClient) -> AssetList:
 
 
 @pytest.fixture(scope="module")
-def root_test_asset(cognite_client, twenty_assets: AssetList):
-    return twenty_assets[0]
+def root_test_asset(cognite_client) -> Asset:
+    root = AssetWrite(external_id="test__asset_root", name="test__asset_root")
+    retrieved = cognite_client.assets.retrieve(external_id=root.external_id)
+    if retrieved is not None:
+        return retrieved
+    hierarchy = generate_asset_tree(root, first_level_size=5, size=1000, depth=8)
+    cognite_client.assets.create_hierarchy(hierarchy, upsert=True, upsert_mode="replace")
+    return cognite_client.assets.retrieve(external_id=root.external_id)
+
+
+def generate_asset_tree(root: AssetWrite, first_level_size: int, size: int, depth: int) -> list[AssetWrite]:
+    np.random.seed(0)
+    count_per_level = np.random.power(0.2, depth)
+    count_per_level.sort()
+    total = count_per_level.sum()
+    count_per_level = (count_per_level / total) * size
+    count_per_level = np.ceil(count_per_level).astype(np.int64)
+    count_per_level[0] = first_level_size
+    count_per_level[-1] = size - count_per_level[:-1].sum() - 1
+    last_level = [root]
+    hierarchy = [root]
+    for level, count in enumerate(count_per_level, 1):
+        this_level = []
+        for asset_no in range(count):
+            parent = random.choice(last_level)
+            identifier = f"test__asset_depth_{level}_asset_{asset_no}"
+            asset = AssetWrite(
+                name=f"Asset {asset_no} depth@{level}", external_id=identifier, parent_external_id=parent.external_id
+            )
+            this_level.append(asset)
+        last_level = this_level
+        hierarchy.extend(this_level)
+    return hierarchy
 
 
 @pytest.fixture(scope="module")
@@ -225,7 +257,7 @@ class TestAssetsAPI:
         cognite_client.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
 
-    def test_get_subtree(self, cognite_client, root_test_asset):
+    def test_get_subtree(self, cognite_client, root_test_asset: Asset) -> None:
         assert isinstance(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
         assert 0 == len(cognite_client.assets.retrieve_subtree(external_id="non_existing_asset"))
         assert 0 == len(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)))
