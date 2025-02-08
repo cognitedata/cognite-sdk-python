@@ -1,3 +1,5 @@
+import random
+import string
 from unittest import mock
 
 import numpy as np
@@ -51,9 +53,13 @@ def string200(cognite_client) -> Sequence:
         )
 
     if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
+        random.seed(42)
         cognite_client.sequences.data.insert(
             SequenceRows(
-                [SequenceRow(i, [f"str{i}"] * 200) for i in range(1000)],
+                [
+                    SequenceRow(i, ["".join(random.choices(string.ascii_letters, k=100)) for _ in range(200)])
+                    for i in range(1000)
+                ],
                 columns=seq.columns,
                 external_id=seq.external_id,
             ),
