@@ -5,6 +5,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
+    DataSetWrite,
     Label,
     LabelDefinition,
     LabelFilter,
@@ -22,6 +23,11 @@ def new_relationship(new_label, cognite_client):
     external_id = uuid.uuid4().hex[:20]
 
     pre_existing_data_set = cognite_client.data_sets.retrieve(external_id="pre_existing_data_set")
+    if not pre_existing_data_set:
+        pre_existing_data_set = cognite_client.data_sets.create(
+            data_set=DataSetWrite(external_id="pre_existing_data_set", description="random description")
+        )
+
     relationship = cognite_client.relationships.create(
         Relationship(
             external_id=external_id,
