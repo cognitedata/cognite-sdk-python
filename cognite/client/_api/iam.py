@@ -672,7 +672,7 @@ class OrgAPI(APIClient):
         base_path = ""
         if self._api_version:
             base_path = f"/api/{self._api_version}/orgs"
-        return urljoin(self._config.base_url, base_path)
+        return urljoin(self._config.auth_url, base_path)
 
 
 class PrincipalsAPI(OrgAPI):
