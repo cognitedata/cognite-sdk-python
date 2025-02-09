@@ -1,5 +1,6 @@
 import math
 import random
+import re
 import time
 
 import numpy as np
@@ -10,7 +11,7 @@ from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client.data_classes import DatapointsList, TimeSeries, TimeSeriesList
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import Datapoints, DatapointsQuery
+from cognite.client.data_classes.datapoints import Datapoints
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
 NAMES = [
@@ -52,6 +53,11 @@ NAMES_USING_INSTANCE_ID = [
     NodeId(space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 127: clone of 121"),
 ]
 
+NAMES_BY_NUMBER = {
+    int(name.split(":", maxsplit=1)[0].removeprefix("PYSDK integration test ")): name
+    for name in NAMES + SPARSE_NAMES + [node_id.external_id for node_id in NAMES_USING_INSTANCE_ID]
+}
+
 
 def create_instance_id_ts(client: CogniteClient):
     client.data_modeling.instances.apply(
@@ -83,8 +89,15 @@ def create_instance_id_ts(client: CogniteClient):
 
 
 def clone_datapoints_to_dms_ts(client):
+    external_ids: list[str] = []
+    for node_id in NAMES_USING_INSTANCE_ID:
+        match = re.findall(r"clone of (\d+)", node_id.external_id)
+        if not match:
+            raise ValueError(f"Could not find clone number in {node_id.external_id}")
+        external_ids.append(NAMES_BY_NUMBER[int(match[0])])
+
     dps_lst = client.time_series.data.retrieve(
-        instance_id=[DatapointsQuery(instance_id=node_id) for node_id in NAMES_USING_INSTANCE_ID],
+        external_id=external_ids,
         include_status=True,
         ignore_bad_datapoints=False,
         start=MIN_TIMESTAMP_MS,
@@ -95,7 +108,7 @@ def clone_datapoints_to_dms_ts(client):
     ]
     if to_insert:
         client.time_series.data.insert_multiple(to_insert)
-        print("Inserted (cloned) datapoints to 3 time series using instance id")
+        print(f"Inserted (cloned) datapoints to {len(NAMES_USING_INSTANCE_ID)} time series using instance id")
     else:
         print("No datapoints to clone")
 
