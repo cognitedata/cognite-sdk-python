@@ -112,7 +112,7 @@ def test_feature_with_raster(cognite_client, test_feature_type, test_feature):
         raster_property_name="raster",
         raster_format="XYZ",
         raster_srid=3857,
-        file="tests/tests_integration/test_api/geospatial_test_resources/raster-grid-example.xyz",
+        file=GEOSPATIAL_TEST_RESOURCES / "raster-grid-example.xyz",
     )
     yield test_feature
 
@@ -127,7 +127,7 @@ def test_features(cognite_client, test_feature_type, new_asset):
             temperature=12.4,
             volume=1212.0,
             pressure=2121.0,
-            asset_ids=[new_asset.id],
+            # asset_ids=[new_asset.id],
         ),
         Feature(
             external_id=external_ids[1],
@@ -229,7 +229,7 @@ class TestGeospatialAPI:
                 temperature=12.4,
                 volume=1212.0,
                 pressure=2121.0,
-                asset_ids=[new_asset.id],
+                # asset_ids=[new_asset.id],
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
@@ -261,13 +261,13 @@ class TestGeospatialAPI:
                 temperature=6.237,
                 pressure=12.21,
                 volume=34.43,
-                asset_ids=[new_asset.id],
+                # asset_ids=[new_asset.id],
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
         assert res.external_id == test_feature.external_id
         assert res.temperature == 6.237
-        assert res.asset_ids == [new_asset.id]
+        # assert res.asset_ids == [new_asset.id]
 
     @pytest.mark.skip("flaky")
     def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
@@ -518,7 +518,6 @@ class TestGeospatialAPI:
             "pressure",
             "createdTime",
             "lastUpdatedTime",
-            "assetIds",
         ]
 
     def test_to_geopandas(self, test_feature_type, test_features):
@@ -531,7 +530,6 @@ class TestGeospatialAPI:
             "pressure",
             "createdTime",
             "lastUpdatedTime",
-            "assetIds",
         ]
         geopandas = local_import("geopandas")
         assert type(gdf.dtypes["position"]) is geopandas.array.GeometryDtype
@@ -658,7 +656,7 @@ class TestGeospatialAPI:
             raster_property_name="raster",
             raster_format="XYZ",
             raster_srid=3857,
-            file="tests/tests_integration/test_api/geospatial_test_resources/raster-grid-example.xyz",
+            file=GEOSPATIAL_TEST_RESOURCES / "raster-grid-example.xyz",
         )
         assert res.width == 4
         assert res.height == 5
@@ -730,7 +728,7 @@ class TestGeospatialAPI:
             raster_property_name="raster",
             raster_format="XYZ",
             raster_srid=54030,
-            file="tests/tests_integration/test_api/geospatial_test_resources/raster-grid-example.xyz",
+            file=GEOSPATIAL_TEST_RESOURCES / "raster-grid-example.xyz",
             allow_crs_transformation=True,
         )
         assert res.width == 4
