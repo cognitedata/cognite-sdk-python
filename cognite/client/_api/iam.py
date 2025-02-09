@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from abc import ABC
 from collections.abc import Iterable, Iterator, Sequence
 from itertools import groupby
 from operator import itemgetter
@@ -667,7 +668,7 @@ class SessionsAPI(APIClient):
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
 
 
-class OrgAPI(APIClient):
+class OrgAPI(APIClient, ABC):
     def _get_base_url_with_base_path(self) -> str:
         base_path = ""
         if self._api_version:
