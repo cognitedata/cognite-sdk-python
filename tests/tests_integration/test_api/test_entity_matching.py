@@ -2,6 +2,7 @@ import random
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     ContextualizationJob,
     EntityMatchingModel,
@@ -32,6 +33,25 @@ def fitted_model(cognite_client):
     )
     yield model
     cognite_client.entity_matching.delete(id=model.id)
+
+
+@pytest.fixture(scope="session")
+def existing_model(cognite_client: CogniteClient) -> EntityMatchingModel:
+    external_id = "an_existing_model_123"
+    try:
+        return cognite_client.entity_matching.retrieve(external_id=external_id)
+    except CogniteAPIError as e:
+        if e.code != 404:
+            raise
+    model = cognite_client.entity_matching.fit(
+        sources=[{"id": 1, "name": "xx-yy"}],
+        targets=[{"id": 2, "bloop": "yy"}, {"id": 3, "bloop": "zz"}],
+        true_matches=[{"sourceId": 1, "targetId": 2}],
+        feature_type="bigram",
+        match_fields=[("name", "bloop")],
+        external_id=external_id,
+    )
+    return model
 
 
 class TestEntityMatchingIntegration:
@@ -120,7 +140,8 @@ class TestEntityMatchingIntegration:
 
         cognite_client.entity_matching.delete(id=model.id)
 
-    def test_list(self, cognite_client):
+    @pytest.mark.usefixtures("existing_model")
+    def test_list(self, cognite_client: CogniteClient) -> None:
         models_list = cognite_client.entity_matching.list()
         assert len(models_list) > 0
         assert type(models_list) is EntityMatchingModelList

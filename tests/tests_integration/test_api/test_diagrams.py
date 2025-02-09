@@ -1,8 +1,10 @@
 from collections import defaultdict
+from pathlib import Path
 
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes import FileMetadata
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
     DiagramConvertResults,
@@ -12,29 +14,62 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeId, NodeOrEdgeData, Space, SpaceApply, ViewId
 
-PNID_FILE_EXTERNAL_ID = "mypnid.pdf"
+DIAGRAM_TEST_RESOURCES = Path(__file__).parent / "diagram_parsing_docs"
+
+PNID_FILE_EXTERNAL_ID = DIAGRAM_TEST_RESOURCES / "mypnid.pdf"
 DIAGRAM_SPACE = "diagram_space"
 
 CDM_SPACE = "cdf_cdm"
 COGNITE_FILE = "CogniteFile"
 
-ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
+ELEVEN_PAGE_PNID = DIAGRAM_TEST_RESOURCES / "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
 
 
 @pytest.fixture(scope="session")
-def pnid_file_id(cognite_client: CogniteClient) -> int:
-    file = cognite_client.files.retrieve(external_id=PNID_FILE_EXTERNAL_ID)
+def mypnid(cognite_client: CogniteClient) -> FileMetadata:
+    file = cognite_client.files.retrieve(external_id=PNID_FILE_EXTERNAL_ID.name)
 
     if file is None:
         file = cognite_client.files.upload(
-            path="tests/data/mypnid.pdf",
-            external_id=PNID_FILE_EXTERNAL_ID,
+            path=PNID_FILE_EXTERNAL_ID,
+            external_id=PNID_FILE_EXTERNAL_ID.name,
             name="mypnid.pdf",
             mime_type="application/pdf",
         )
-        cognite_client.files.upload()
-    return file.id
+    return file
+
+
+@pytest.fixture(scope="session")
+def eleven_page_pnid(cognite_client: CogniteClient) -> FileMetadata:
+    file = cognite_client.files.retrieve(external_id=ELEVEN_PAGE_PNID.name)
+
+    if file is None:
+        file = cognite_client.files.upload(
+            path=ELEVEN_PAGE_PNID,
+            external_id=ELEVEN_PAGE_PNID.name,
+            name="functional_tests.pdf",
+            mime_type="application/pdf",
+            metadata={"purpose": "test diagram detect with page ranges"},
+        )
+    return file
+
+
+@pytest.fixture(scope="session")
+def fifty_five_page_pnid(cognite_client: CogniteClient) -> FileMetadata:
+    file = cognite_client.files.retrieve(external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID)
+
+    if file is None:
+        content = ELEVEN_PAGE_PNID.read_bytes()
+
+        file = cognite_client.files.upload_bytes(
+            content=5 * content,
+            external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID,
+            name="5functional_tests.pdf",
+            mime_type="application/pdf",
+            metadata={"purpose": "test diagram detect with page ranges"},
+        )
+    return file
 
 
 @pytest.fixture(scope="session")
@@ -43,15 +78,15 @@ def diagram_space(cognite_client: CogniteClient) -> Space:
 
 
 @pytest.fixture(scope="session")
-def diagram_node(cognite_client: CogniteClient, pnid_file_id: int, diagram_space: Space) -> NodeId:
-    file = cognite_client.files.retrieve(id=pnid_file_id)
+def diagram_node(cognite_client: CogniteClient, mypnid: FileMetadata, diagram_space: Space) -> NodeId:
+    file = cognite_client.files.retrieve(id=mypnid.id)
     assert file is not None
 
     diagram_node_id = (
         cognite_client.data_modeling.instances.apply(
             NodeApply(
                 space=diagram_space.space,
-                external_id=PNID_FILE_EXTERNAL_ID,
+                external_id=PNID_FILE_EXTERNAL_ID.name,
                 sources=[
                     NodeOrEdgeData(
                         source=ViewId(space=CDM_SPACE, external_id=COGNITE_FILE, version="v1"),
@@ -78,10 +113,10 @@ def diagram_node(cognite_client: CogniteClient, pnid_file_id: int, diagram_space
 
 class TestPNIDParsingIntegration:
     @pytest.mark.skip
-    def test_run_diagram_detect(self, cognite_client: CogniteClient, pnid_file_id: int):
+    def test_run_diagram_detect(self, cognite_client: CogniteClient, mypnid: FileMetadata):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
-        detect_job = cognite_client.diagrams.detect(file_ids=[pnid_file_id], entities=entities)
+        detect_job = cognite_client.diagrams.detect(file_ids=[mypnid.id], entities=entities)
         assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
             detect_job.result
@@ -90,10 +125,10 @@ class TestPNIDParsingIntegration:
         assert "Completed" == detect_job.status
         assert [] == detect_job.errors
         assert isinstance(detect_job.items[0], DiagramDetectItem)
-        assert isinstance(detect_job[pnid_file_id], DiagramDetectItem)
+        assert isinstance(detect_job[mypnid.id], DiagramDetectItem)
 
-        assert 3 == len(detect_job[pnid_file_id].annotations)
-        for annotation in detect_job[pnid_file_id].annotations:
+        assert 3 == len(detect_job[mypnid.id].annotations)
+        for annotation in detect_job[mypnid.id].annotations:
             assert 1 == annotation["region"]["page"]
 
         convert_job = detect_job.convert()
@@ -104,14 +139,14 @@ class TestPNIDParsingIntegration:
         assert {"pngUrl", "svgUrl", "page"}.issubset(convert_job.result["items"][0]["results"][0])
         assert "Completed" == convert_job.status
 
-        for res_page in convert_job[pnid_file_id].pages:
+        for res_page in convert_job[mypnid.id].pages:
             assert 1 == res_page.page
             assert ".svg" in res_page.svg_url
             assert ".png" in res_page.png_url
 
         # Enable multiple jobs
         job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-            file_ids=[pnid_file_id], entities=entities, multiple_jobs=True
+            file_ids=[mypnid.id], entities=entities, multiple_jobs=True
         )
         assert isinstance(job_bundle, DetectJobBundle)
         succeeded, failed = job_bundle.result
@@ -120,15 +155,17 @@ class TestPNIDParsingIntegration:
         assert len(failed) == 0
 
     @pytest.mark.skip
-    def test_run_diagram_detect_with_page_range(self, cognite_client):
+    def test_run_diagram_detect_with_page_range(
+        self, cognite_client: CogniteClient, eleven_page_pnid: FileMetadata, fifty_five_page_pnid: FileMetadata
+    ):
         entities = [{"name": "PH-ME-P-0156-001", "id": 1}, {"name": "PH-ME-P-0156-002", "id": 2}]
         # References to the above are expected on page 6 and page 11, and repeating every 11 pages.
 
         detected = cognite_client.diagrams.detect(
             file_references=[
-                FileReference(file_external_id=ELEVEN_PAGE_PNID_EXTERNAL_ID),
-                FileReference(file_external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID, first_page=1, last_page=11),
-                FileReference(file_external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID, first_page=45, last_page=55),
+                FileReference(file_external_id=eleven_page_pnid.external_id),
+                FileReference(file_external_id=fifty_five_page_pnid.external_id, first_page=1, last_page=11),
+                FileReference(file_external_id=fifty_five_page_pnid.external_id, first_page=45, last_page=55),
             ],
             entities=entities,
         )
@@ -143,14 +180,16 @@ class TestPNIDParsingIntegration:
         assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
         assert set(pages_with_annotations_per_subjob[2]) == {50, 55}
 
-    def test_run_diagram_detect_in_pattern_mode(self, cognite_client):
+    def test_run_diagram_detect_in_pattern_mode(
+        self, cognite_client: CogniteClient, eleven_page_pnid: FileMetadata
+    ) -> None:
         entities = [
             {"sample": "[PH]-ME-P-0156-001", "resourceType": "file_reference"},
             {"sample": "23-TI-92101-01", "resourceType": "instrument"},
         ]
         detected = cognite_client.diagrams.detect(
             file_references=[
-                FileReference(file_external_id=ELEVEN_PAGE_PNID_EXTERNAL_ID, first_page=11, last_page=11),
+                FileReference(file_external_id=eleven_page_pnid.external_id, first_page=11, last_page=11),
             ],
             entities=entities,
             pattern_mode=True,
