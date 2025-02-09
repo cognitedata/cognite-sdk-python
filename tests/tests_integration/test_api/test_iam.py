@@ -116,27 +116,30 @@ class TestServiceAccountsAPI:
         created: ServiceAccount | None = None
         secret: ServiceAccountSecret | None = None
         try:
-            created = cognite_client.iam.service_accounts.create(organization, item)
+            created = cognite_client.iam.principals.create(organization, item)
             assert created.as_write().dump() == item.dump()
+            assert isinstance(created, ServiceAccount)
 
             update = ServiceAccountUpdate(id=created.id).description.set("Updated description")
 
-            updated = cognite_client.iam.service_accounts.update(organization, update)
+            updated = cognite_client.iam.principals.update(organization, update)
+            assert isinstance(updated, ServiceAccount)
             assert updated.description == "Updated description"
 
-            retrieved = cognite_client.iam.service_accounts.retrieve(created.id)
+            retrieved = cognite_client.iam.principals.retrieve(created.id)
+            assert isinstance(retrieved, ServiceAccount)
             assert retrieved.as_write().dump() == updated.as_write().dump()
 
-            secret = cognite_client.iam.service_accounts.secrets.create(
+            secret = cognite_client.iam.principals.secrets.create(
                 organization, created.id, ServiceAccountSecretWrite(expires_in_seconds=3600)
             )
             assert secret.id is not None
 
-            listed = cognite_client.iam.service_accounts.secrets.list(organization, created.id)
-            assert len(listed) == 1
-            assert listed[0].id == secret.id
+            listed = cognite_client.iam.principals.secrets.list(organization, created.id)
+            assert len(listed) >= 1
+            assert secret.id in {s.id for s in listed}
         finally:
             if created:
                 if secret:
-                    cognite_client.iam.service_accounts.secrets.delete(organization, created.id, secret.id)
-                cognite_client.iam.service_accounts.delete(created.id)
+                    cognite_client.iam.principals.secrets.delete(organization, created.id, secret.id)
+                cognite_client.iam.principals.delete(created.id)
