@@ -50,12 +50,12 @@ def instance_id_test_space(cognite_client: CogniteClient) -> str:
 
 
 @pytest.fixture(scope="session")
-def alpha_test_dataset(cognite_client_alpha: CogniteClient) -> DataSet:
+def ts_test_dataset(cognite_client: CogniteClient) -> DataSet:
     ds = DataSetWrite(name="ds_python_sdk_instance_id_tests", external_id="ds_python_sdk_instance_id_tests")
-    retrieved = cognite_client_alpha.data_sets.retrieve(external_id=ds.external_id)
+    retrieved = cognite_client.data_sets.retrieve(external_id=ds.external_id)
     if retrieved:
         return retrieved
-    return cognite_client_alpha.data_sets.create(ds)
+    return cognite_client.data_sets.create(ds)
 
 
 @pytest.fixture(scope="session")
