@@ -5,6 +5,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
+from urllib.parse import urljoin
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -666,8 +667,16 @@ class SessionsAPI(APIClient):
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
 
 
-class PrincipalsAPI(APIClient):
-    _RESOURCE_PATH = "/api/v1/orgs/{}/principals"
+class OrgAPI(APIClient):
+    def _get_base_url_with_base_path(self) -> str:
+        base_path = ""
+        if self._api_version:
+            base_path = f"/api/{self._api_version}/orgs"
+        return urljoin(self._config.base_url, base_path)
+
+
+class PrincipalsAPI(OrgAPI):
+    _RESOURCE_PATH = "/{}/principals"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -878,8 +887,8 @@ class PrincipalsAPI(APIClient):
         )
 
 
-class ServiceAccountSecretsAPI(APIClient):
-    _RESOURCE_PATH = "/api/v1/orgs/{}/principals/{}/secrets"
+class ServiceAccountSecretsAPI(OrgAPI):
+    _RESOURCE_PATH = "/{}/principals/{}/secrets"
 
     def __init__(
         self,

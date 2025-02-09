@@ -523,7 +523,7 @@ class PrincipalWrite(CogniteResource, ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output["type"] = self._type
+        output["type"] = self._type.upper()
         return output
 
 
@@ -551,7 +551,7 @@ class Principal(WriteableCogniteResource[T_WriteClass], ABC):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output["type"] = self._type
+        output["type"] = self._type.upper()
         return output
 
 
@@ -560,7 +560,7 @@ class PrincipalUpdate(CogniteUpdate, ABC):
 
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output["type"] = self._type
+        output["type"] = self._type.upper()
         return output
 
     @classmethod
