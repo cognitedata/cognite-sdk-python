@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from cognite.client._api.iam import OrgAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -80,7 +81,12 @@ def apis_that_should_not_have_post_retry_rule():
 @pytest.mark.parametrize(
     "api",
     sorted(  # why sorted? xdist needs order to be consistent between test workers
-        set(api._RESOURCE_PATH.split("/")[1] for api in all_subclasses(APIClient) if hasattr(api, "_RESOURCE_PATH"))
+        # The OrgAPIs have a different base path, so we exclude them from this test
+        {
+            api._RESOURCE_PATH.split("/")[1]
+            for api in all_subclasses(APIClient)
+            if hasattr(api, "_RESOURCE_PATH") and not issubclass(api, OrgAPI)
+        }
     ),
 )
 def test_all_base_api_paths_have_retry_or_specifically_no_set(
