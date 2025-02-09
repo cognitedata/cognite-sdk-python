@@ -35,12 +35,13 @@ from cognite.client.data_classes.capabilities import (
 )
 from cognite.client.data_classes.iam import (
     GroupWrite,
+    Principal,
+    PrincipalList,
+    PrincipalUpdate,
+    PrincipalWrite,
     SecurityCategoryWrite,
-    ServiceAccount,
-    ServiceAccountList,
     ServiceAccountSecret,
     ServiceAccountSecretList,
-    ServiceAccountUpdate,
     ServiceAccountWrite,
     SessionStatus,
     SessionType,
@@ -114,7 +115,7 @@ class IAMAPI(APIClient):
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
-        self.service_accounts = ServiceAccountsAPI(config, api_version, cognite_client)
+        self.principals = PrincipalsAPI(config, api_version, cognite_client)
 
     @staticmethod
     def compare_capabilities(
@@ -665,8 +666,8 @@ class SessionsAPI(APIClient):
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
 
 
-class ServiceAccountsAPI(APIClient):
-    _RESOURCE_PATH = "/api/v1/orgs/{}/serviceaccounts"
+class PrincipalsAPI(APIClient):
+    _RESOURCE_PATH = "/api/v1/orgs/{}/principals"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -680,67 +681,67 @@ class ServiceAccountsAPI(APIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-    ) -> Iterator[ServiceAccount]: ...
+    ) -> Iterator[Principal]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
-    ) -> Iterator[ServiceAccountList]: ...
+    ) -> Iterator[PrincipalList]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-    ) -> Iterator[ServiceAccount] | Iterator[ServiceAccountList]:
-        """Iterate over service accounts
+    ) -> Iterator[Principal] | Iterator[PrincipalList]:
+        """Iterate over principals
 
-        Fetches service accounts as they are iterated over, so you keep a limited number of service accounts in memory.
+        Fetches principals as they are iterated over, so you keep a limited number of principals in memory.
 
         Args:
-            chunk_size (int | None): Number of service accounts to return in each chunk. Defaults to yielding one service account a time.
-            limit (int | None): Maximum number of service accounts to return. Defaults to return all.
+            chunk_size (int | None): Number of principals to return in each chunk. Defaults to yielding one principal a time.
+            limit (int | None): Maximum number of principals to return. Defaults to return all.
 
         Returns:
-            Iterator[ServiceAccount] | Iterator[ServiceAccountList]: yields ServiceAccount one by one if chunk_size is not specified, else ServiceAccountList objects.
+            Iterator[Principal] | Iterator[PrincipalList]: yields Principal one by one if chunk_size is not specified, else PrincipalList objects.
         """
         self._warning.warn()
 
         return self._list_generator(
-            list_cls=ServiceAccountList,
-            resource_cls=ServiceAccount,
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
             headers={"cdf-version": "alpha"},
         )
 
-    def __iter__(self) -> Iterator[ServiceAccount]:
-        """Iterate over service accounts
+    def __iter__(self) -> Iterator[Principal]:
+        """Iterate over principals
 
-        Fetches service accounts as they are iterated over, so you keep a
-        limited number of service accounts in memory.
+        Fetches principals as they are iterated over, so you keep a
+        limited number of principals in memory.
 
         Returns:
-            Iterator[ServiceAccount]: yields service account one by one.
+            Iterator[Principal]: yields principals one by one.
         """
         return self()
 
     @overload
-    def create(self, org: str, item: ServiceAccountWrite) -> ServiceAccount: ...
+    def create(self, org: str, item: PrincipalWrite) -> Principal: ...
 
     @overload
-    def create(self, org: str, item: Sequence[ServiceAccountWrite]) -> ServiceAccountList: ...
+    def create(self, org: str, item: Sequence[PrincipalWrite]) -> PrincipalList: ...
 
     def create(
         self,
         org: str,
-        item: ServiceAccountWrite | Sequence[ServiceAccountWrite],
-    ) -> ServiceAccount | ServiceAccountList:
-        """`Create service accounts <MISSING>`_
+        item: PrincipalWrite | Sequence[PrincipalWrite],
+    ) -> Principal | PrincipalList:
+        """`Create principals <MISSING>`_
 
-        Create service accounts in an organization.
+        Create principals in an organization.
 
         #### Access control
         Requires the caller to be an admin in the
@@ -748,10 +749,10 @@ class ServiceAccountsAPI(APIClient):
 
         Args:
             org (str): ID of an organization
-            item (ServiceAccountWrite | Sequence[ServiceAccountWrite]): Service account or list of service accounts to create.
+            item (PrincipalWrite | Sequence[PrincipalWrite]): principals or list of principals to create.
 
         Returns:
-            ServiceAccount | ServiceAccountList: The created service account or service accounts.
+            Principal | PrincipalList: The created principal or principals.
 
         Examples:
 
@@ -762,28 +763,28 @@ class ServiceAccountsAPI(APIClient):
 
         return self._create_multiple(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
-            list_cls=ServiceAccountList,
-             resource_cls=ServiceAccount,
-            items=item,
-            input_resource_cls=ServiceAccountWrite,
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            items=item,  # type: ignore[arg-type]
+            input_resource_cls=PrincipalWrite,
             headers={"cdf-version": "alpha"},
         )
 
     @overload
-    def update(self, org: str, item: ServiceAccountWrite | ServiceAccountUpdate) -> ServiceAccount: ...
+    def update(self, org: str, item: PrincipalWrite | PrincipalUpdate) -> Principal: ...
 
     @overload
-    def update(self, org: str, item: Sequence[ServiceAccount | ServiceAccountUpdate]) -> ServiceAccountList: ...
+    def update(self, org: str, item: Sequence[PrincipalWrite | PrincipalUpdate]) -> PrincipalList: ...
 
     def update(
         self,
         org: str,
-        item: ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate],
+        item: PrincipalWrite | PrincipalUpdate | Sequence[PrincipalWrite | PrincipalUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
-    ) -> ServiceAccount | ServiceAccountList:
-        """`Update service accounts <MISSING>`_
+    ) -> Principal | PrincipalList:
+        """`Update principals <MISSING>`_
 
-        Update service accounts in an organization.
+        Update principals in an organization.
 
         #### Access control
             Requires the caller to be an admin in the
@@ -791,11 +792,11 @@ class ServiceAccountsAPI(APIClient):
 
         Args:
             org (str): ID of an organization
-            item (ServiceAccountWrite | ServiceAccountUpdate | Sequence[ServiceAccount | ServiceAccountUpdate]): Service account or list of service accounts to update.
+            item (PrincipalWrite | PrincipalUpdate | Sequence[PrincipalWrite | PrincipalUpdate]): principal or list of principals to update.
             mode (Literal["replace_ignore_null", "patch", "replace"]): The update mode to use. Defaults to 'replace_ignore_null'.
 
         Returns:
-            ServiceAccount | ServiceAccountList: The updated service account or service accounts.
+            Principal | PrincipalList: The updated principals or principals.
 
         Examples:
 
@@ -806,10 +807,10 @@ class ServiceAccountsAPI(APIClient):
 
         return self._update_multiple(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
-            list_cls=ServiceAccountList,
-            resource_cls=ServiceAccount,
-            update_cls=ServiceAccountUpdate,
-            items=item,
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            update_cls=PrincipalUpdate,
+            items=item,  # type: ignore[arg-type]
             mode=mode,
             headers={"cdf-version": "alpha"},
         )
@@ -817,9 +818,9 @@ class ServiceAccountsAPI(APIClient):
     def delete(
         self, org: str, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
-        """`Delete service accounts <MISSING>`_
+        """`Delete principals <MISSING>`_
 
-        Delete service accounts in an organization. All secrets associated with the service accounts will be deleted
+        Delete principals in an organization. All secrets associated with the principals will be deleted
         as well.
 
         #### Access control
@@ -827,8 +828,8 @@ class ServiceAccountsAPI(APIClient):
 
         Args:
             org (str): ID of an organization
-            id (int | Sequence[int] | None): ID or list of IDs of service accounts to delete.
-            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs of service accounts to delete.
+            id (int | Sequence[int] | None): ID or list of IDs of principals to delete.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs of principals to delete.
 
         Examples:
 
@@ -844,10 +845,10 @@ class ServiceAccountsAPI(APIClient):
             headers={"cdf-version": "alpha"},
         )
 
-    def list(self, org: str, limit: int | None = DEFAULT_LIMIT_READ) -> ServiceAccount | ServiceAccountList:
-        """`List service accounts <MISSING>`_
+    def list(self, org: str, limit: int | None = DEFAULT_LIMIT_READ) -> Principal | PrincipalList:
+        """`List principals <MISSING>`_
 
-        List service accounts in an organization.
+        List principals in an organization.
 
         #### Access control
         Requires the caller to be logged into the target
@@ -855,10 +856,10 @@ class ServiceAccountsAPI(APIClient):
 
         Args:
             org (str): ID of an organization
-            limit (int | None): Max number of service accounts to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Max number of principals to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            ServiceAccount | ServiceAccountList: A service account or list of service accounts.
+            Principal | PrincipalList: A principals or list of principals.
 
         Examples:
 
@@ -869,8 +870,8 @@ class ServiceAccountsAPI(APIClient):
 
         return self._list(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
-            list_cls=ServiceAccountList,
-            resource_cls=ServiceAccount,
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
             method="GET",
             limit=limit,
             headers={"cdf-version": "alpha"},
@@ -878,7 +879,7 @@ class ServiceAccountsAPI(APIClient):
 
 
 class ServiceAccountSecretsAPI(APIClient):
-    _RESOURCE_PATH = "/api/v1/orgs/{}/serviceaccounts/{}/secrets"
+    _RESOURCE_PATH = "/api/v1/orgs/{}/principals/{}/secrets"
 
     def __init__(
         self,
@@ -979,7 +980,7 @@ class ServiceAccountSecretsAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
             list_cls=ServiceAccountSecretList,
             resource_cls=ServiceAccountSecret,
-            items=item,
+            items=item,  # type: ignore[arg-type]
             input_resource_cls=ServiceAccountWrite,
             headers={"cdf-version": "alpha"},
         )
@@ -996,7 +997,7 @@ class ServiceAccountSecretsAPI(APIClient):
         Args:
             org (str): ID of an organization
             client_id (str): None
-            id (int | Sequence[int]): ID or list of IDs of service account secrets to delete.
+            id (int | Sequence[int]): ID or list of IDs of princip secrets to delete.
 
         Examples:
 

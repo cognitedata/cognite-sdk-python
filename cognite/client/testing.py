@@ -41,8 +41,8 @@ from cognite.client._api.hosted_extractors.sources import SourcesAPI
 from cognite.client._api.iam import (
     IAMAPI,
     GroupsAPI,
+    PrincipalsAPI,
     SecurityCategoriesAPI,
-    ServiceAccountsAPI,
     ServiceAccountSecretsAPI,
     SessionsAPI,
     TokenAPI,
@@ -147,9 +147,9 @@ class CogniteClientMock(MagicMock):
 
         self.iam = MagicMock(spec=IAMAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
+        self.iam.principals = MagicMock(spec=PrincipalsAPI)
+        self.iam.principals.secrets = MagicMock(spec_set=ServiceAccountSecretsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
-        self.iam.service_accounts = MagicMock(spec=ServiceAccountsAPI)
-        self.iam.service_accounts.secrets = MagicMock(spec_set=ServiceAccountSecretsAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
         self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
