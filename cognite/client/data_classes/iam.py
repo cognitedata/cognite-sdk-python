@@ -584,7 +584,15 @@ class PrincipalList(WriteableCogniteResourceList[PrincipalWrite, Principal]):
 
 
 @dataclass
-class PrincipalCreator(CogniteObject):
+class PrincipalId(CogniteObject):
+    """
+    The ID of a principal.
+
+    Args:
+        org_id (str): The ID of an organization
+        user_id (str): The ID of an organization user
+    """
+
     org_id: str
     user_id: str
 
@@ -628,7 +636,7 @@ class ServiceAccount(Principal):
     Args:
         id (str): Unique identifier of a service account
         name (str): Human-readable name of a service account
-        created_by (PrincipalCreator): The ID of an organization user
+        created_by (PrincipalId): The ID of an organization user
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         picture_url (str): URL to a picture of the principal
@@ -643,7 +651,7 @@ class ServiceAccount(Principal):
         self,
         id: str,
         name: str,
-        created_by: PrincipalCreator,
+        created_by: PrincipalId,
         created_time: int,
         last_updated_time: int,
         picture_url: str,
@@ -673,7 +681,7 @@ class ServiceAccount(Principal):
             external_id=resource.get("externalId"),
             name=resource["name"],
             description=resource.get("description"),
-            created_by=PrincipalCreator._load(resource["createdBy"]),
+            created_by=PrincipalId._load(resource["createdBy"]),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             picture_url=resource["pictureUrl"],
@@ -743,30 +751,50 @@ class ServiceAccountSecret(ServiceAccountSecretCore):
     This is the read/response format of the service account secret dto.
 
     Args:
-        id (int | None): Unique identifier of a service account secret
-        client_id (str | None): Unique identifier of a service account
-        expiration_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        id (int): Unique identifier of a service account secret
+        secret (str): A client secret for a service account. This value is sensitive, and should be stored securely.
+            It will only be shown right after creation, and will not be retrievable later.
+        created_by (PrincipalId): The ID of an organization user
+        expiration_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_token_issuance_time (str | None): The time when this secret was last used to issue a CDF access token.
 
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        client_id: str | None = None,
-        expiration_time: int | None = None,
-        created_time: int | None = None,
+        id: int,
+        secret: str,
+        created_by: PrincipalId,
+        expiration_time: int,
+        created_time: int,
         last_token_issuance_time: str | None = None,
     ) -> None:
         self.id = id
-        self.client_id = client_id
+        self.secret = secret
+        self.created_by = created_by
         self.expiration_time = expiration_time
         self.created_time = created_time
         self.last_token_issuance_time = last_token_issuance_time
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["createdBy" if camel_case else "created_by"] = self.created_by.dump(camel_case)
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            secret=resource["secret"],
+            created_by=PrincipalId._load(resource["createdBy"]),
+            expiration_time=resource["expirationTime"],
+            created_time=resource["createdTime"],
+            last_token_issuance_time=resource.get("lastTokenIssuanceTime"),
+        )
 
 
 class ServiceAccountSecretWriteList(CogniteResourceList[ServiceAccountSecretWrite]):
