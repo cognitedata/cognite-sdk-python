@@ -241,6 +241,7 @@ class TestTemplatesCogniteClient:
         ]
         assert len(should_be_empty) == 0
 
+    @pytest.mark.skip("Test data is missing, cannot be ported to another CDF Project")
     def test_view_resolve(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         res = cognite_client.templates.views.resolve(
@@ -251,6 +252,7 @@ class TestTemplatesCogniteClient:
         )
         assert res == expected
 
+    @pytest.mark.skip("Test data is missing, cannot be ported to another CDF Project")
     def test_view_resolve_pagination(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         res = cognite_client.templates.views.resolve(
