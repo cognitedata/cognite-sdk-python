@@ -763,7 +763,7 @@ class ServiceAccountsAPI(APIClient):
         return self._create_multiple(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
             list_cls=ServiceAccountList,
-            resource_cls=ServiceAccount,
+             resource_cls=ServiceAccount,
             items=item,
             input_resource_cls=ServiceAccountWrite,
             headers={"cdf-version": "alpha"},
