@@ -285,6 +285,10 @@ class TestAssetsAPI:
             if a is not None:
                 cognite_client.assets.delete(id=a.id)
 
+    @pytest.mark.skip(
+        "This seems to not be enabled for new CDF projects. Similarly asset_ids "
+        "is not valid part of a GeoSpatial feature."
+    )
     def test_filter_by_geo_location(self, cognite_client):
         geo_location = GeoLocation(
             type="Feature",
