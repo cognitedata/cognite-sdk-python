@@ -596,6 +596,10 @@ class PrincipalId(CogniteObject):
     org_id: str
     user_id: str
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(org_id=resource["orgId"], user_id=resource["userId"])
+
 
 class ServiceAccountWrite(PrincipalWrite):
     """A service account.
@@ -801,7 +805,9 @@ class ServiceAccountSecretWriteList(CogniteResourceList[ServiceAccountSecretWrit
     _RESOURCE = ServiceAccountSecretWrite
 
 
-class ServiceAccountSecretList(WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret]):
+class ServiceAccountSecretList(
+    WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret], InternalIdTransformerMixin
+):
     _RESOURCE = ServiceAccountSecret
 
     def as_write(self) -> NoReturn:
