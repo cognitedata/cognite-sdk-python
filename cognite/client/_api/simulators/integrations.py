@@ -93,7 +93,7 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> res = client.simulators.integrations.list()
 
             Filter integrations by active status:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+                >>> from cognite.client.data_classes.simulators import SimulatorIntegrationFilter
                 >>> res = client.simulators.integrations.list(
                 ...     filter=SimulatorIntegrationFilter(active=True))
         """

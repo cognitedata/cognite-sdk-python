@@ -54,8 +54,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
-                >>> from cognite.client.data_classes.simulators.models import CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter, CreatedTimeSort
                 >>> res = client.simulators.models.revisions.list(
                 ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"]),
                 ...     sort=CreatedTimeSort(order="asc")
@@ -191,7 +190,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         Examples:
             Create new simulator models:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.models import SimulatorModelRevisionWrite
+                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite
                 >>> client = CogniteClient()
                 >>> models = [
                 ...     SimulatorModelRevisionWrite(external_id="model1", file_id=1, model_external_id="a_1"),

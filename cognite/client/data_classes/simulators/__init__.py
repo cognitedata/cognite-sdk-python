@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from cognite.client.data_classes.simulators.filters import (
+    SimulatorIntegrationFilter,
+    SimulatorModelRevisionsFilter,
+    SimulatorModelsFilter,
+)
 from cognite.client.data_classes.simulators.models import (
     CreatedTimeSort,
     PropertySort,
@@ -7,6 +12,8 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelList,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
+    SimulatorModelRevisionWrite,
+    SimulatorModelWrite,
 )
 from cognite.client.data_classes.simulators.simulators import (
     Simulator,
@@ -24,12 +31,17 @@ __all__ = [
     "PropertySort",
     "Simulator",
     "SimulatorIntegration",
+    "SimulatorIntegrationFilter",
     "SimulatorIntegrationList",
     "SimulatorList",
     "SimulatorModel",
     "SimulatorModelList",
     "SimulatorModelRevision",
     "SimulatorModelRevisionList",
+    "SimulatorModelRevisionWrite",
+    "SimulatorModelRevisionsFilter",
+    "SimulatorModelWrite",
+    "SimulatorModelsFilter",
     "SimulatorStep",
     "SimulatorStepField",
     "SimulatorStepOption",
