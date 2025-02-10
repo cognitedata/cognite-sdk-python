@@ -4,6 +4,7 @@ import platform
 import re
 import time
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 from unittest import mock
@@ -29,6 +30,7 @@ from cognite.client.utils._time import (
     parse_str_timezone,
     parse_str_timezone_offset,
     split_time_range,
+    timed_cache,
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
@@ -783,3 +785,27 @@ class TestDateTimeAligner:
     def test_month_aligner_add_unites__invalid_date(self):
         with pytest.raises(ValueError, match="^day is out of range for month$"):
             MonthAligner.add_units(datetime(2023, 1, 29), 1)  # 2023 = non-leap year
+
+
+class TestTimedCache:
+    def test_is_thread_safe(self):
+        hello = []
+
+        @timed_cache(ttl=2)
+        def the_function(i):
+            hello.append(i)
+
+        def entry(i):
+            the_function(i)
+            return i
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = sorted(executor.map(entry, range(10)))
+
+        assert len(hello) == 1
+        assert results == list(range(10))
+
+        # Wait for TTL and retry
+        time.sleep(2.01)
+        the_function(42)
+        assert len(hello) == 2 and hello[-1] == 42
