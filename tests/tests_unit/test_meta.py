@@ -36,7 +36,7 @@ def test_ensure_all_files_use_future_annots():
 
     err_msg = "File: '{}' is missing 'from __future__ import annotations' at line=0"
     for filepath in filter(keep, ALL_FILEPATHS):
-        with filepath.open("r") as file:
+        with filepath.open("r", encoding="utf-8") as file:
             # We just read the first line from each file:
             assert file.readline() == "from __future__ import annotations\n", err_msg.format(filepath)
 

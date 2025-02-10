@@ -93,7 +93,7 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> res = client.simulators.integrations.list()
 
             Filter integrations by active status:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
+                >>> from cognite.client.data_classes.simulators import SimulatorIntegrationFilter
                 >>> res = client.simulators.integrations.list(
                 ...     filter=SimulatorIntegrationFilter(active=True))
         """
@@ -110,13 +110,13 @@ class SimulatorIntegrationsAPI(APIClient):
     def delete(
         self,
         id: int | Sequence[int] | None = None,
-        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
-            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external_ids of simulator integrations to delete.
+            external_id (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
 
         Examples:
 
@@ -127,6 +127,6 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> client.simulators.integrations.delete(id=[1,2,3], external_id="foo")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
         )

@@ -16,7 +16,6 @@ class TestSimulatorIntegrations:
         assert len(integrations) > 0
 
     def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        # quick test of the iterator
         for integration in cognite_client.simulators.integrations(filter=SimulatorIntegrationFilter(active=True)):
             assert integration.active is True
 
@@ -52,7 +51,7 @@ class TestSimulatorIntegrations:
         all_integrations = cognite_client.simulators.integrations.list(limit=None)
         assert all_integrations.get(external_id=simulator_integration["externalId"]) is not None
 
-        cognite_client.simulators.integrations.delete(external_ids=simulator_integration["externalId"])
+        cognite_client.simulators.integrations.delete(external_id=simulator_integration["externalId"])
 
         all_integrations = cognite_client.simulators.integrations.list(limit=None)
         assert all_integrations.get(external_id=simulator_integration["externalId"]) is None
