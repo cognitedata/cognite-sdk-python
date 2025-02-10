@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client.utils import _json
 from cognite.client.utils._auxiliary import no_op
+from cognite.client.utils._time import timed_cache
 
 if TYPE_CHECKING:
     from cognite.client._cognite_client import CogniteClient
@@ -27,22 +28,27 @@ class CogniteProjectAccessError(CogniteException):
         self.x_request_id = x_request_id
         self.cluster = cluster
         self.project = project
-        self.maybe_projects = self._attempt_to_get_projects(client)
+        self.maybe_projects = self._attempt_to_get_projects(client, project)
 
     @staticmethod
-    def _attempt_to_get_projects(client: CogniteClient) -> list[str] | None:
+    @timed_cache(ttl=5)  # Don't spam requests when using concurrency
+    def _attempt_to_get_projects(client: CogniteClient, current_project: str) -> list[str] | None:
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
         _, full_url = api_client._resolve_url("GET", "/api/v1/token/inspect")
         headers = api_client._configure_headers("application/json", client._config.headers.copy())  # type: ignore [has-type]
         try:
             token_inspect = api_client._http_client.request("GET", url=full_url, headers=headers)
-            return sorted({proj["projectUrlName"] for proj in token_inspect.json()["projects"]})
+            projects = {proj["projectUrlName"] for proj in token_inspect.json()["projects"]} - {current_project}
+            return sorted(projects)
         except Exception:
             return None
 
     def __str__(self) -> str:
-        msg = f"You don't have access to the requested CDF project={self.project!r}"
+        msg = (
+            f"You don't have access to the requested CDF project={self.project!r}, reason: Unauthorized. "
+            "The token may have expired or it was invalid."
+        )
         if self.maybe_projects:
             msg += f". Did you intend to use one of: {self.maybe_projects}?"
         msg += f" | code: 401 | X-Request-ID: {self.x_request_id}"

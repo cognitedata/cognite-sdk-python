@@ -5,12 +5,15 @@ import functools
 import math
 import numbers
 import re
+import threading
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from itertools import pairwise
-from typing import TYPE_CHECKING, cast, overload
+from typing import TYPE_CHECKING, ParamSpec, TypeVar, cast, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from cognite.client.utils._importing import local_import
@@ -20,6 +23,10 @@ if TYPE_CHECKING:
     from datetime import tzinfo
 
     import pandas
+
+
+_T = TypeVar("_T")
+_P = ParamSpec("_P")
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
@@ -750,6 +757,31 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
         floored = QuarterAligner.floor(start)
         unit += {1: "-JAN", 4: "-APR", 7: "-JUL", 10: "-OCT"}[floored.month]
     return f"{multiplier}{unit}"
+
+
+def timed_cache(ttl: int = 5) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+    """
+    A thread-safe timed cache decorator for a function (that ignores arguments), accepting a custom
+    time-to-live (ttl) for the cached value (seconds).
+    """
+
+    def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
+        lock = threading.Lock()
+        value: _T = None  # type: ignore [assignment]
+        start_time = 0.0
+
+        @wraps(func)
+        def wrapper(*a: _P.args, **kw: _P.kwargs) -> _T:
+            nonlocal value, start_time
+            with lock:
+                if (current_time := time.time()) - start_time < ttl:
+                    return value
+                value, start_time = func(*a, **kw), current_time
+                return value
+
+        return wrapper
+
+    return decorator
 
 
 __all__ = ["ZoneInfo", "ZoneInfoNotFoundError"]  # Fix: Module does not explicitly export attribute "ZoneInfo
