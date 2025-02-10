@@ -116,7 +116,8 @@ class ContainersAPI(APIClient):
             Fetch using the ContainerId:
 
                 >>> from cognite.client.data_classes.data_modeling import ContainerId
-                >>> res = client.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
+                >>> res = client.data_modeling.containers.retrieve(
+                ...     ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
         return self._retrieve_multiple(
@@ -276,13 +277,23 @@ class ContainersAPI(APIClient):
 
         Examples:
 
-            Create new containers:
+            Create a new container:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Text
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerApply, ContainerProperty, Text, Float64)
                 >>> client = CogniteClient()
-                >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
-                ...     properties={"name": ContainerProperty(type=Text, name="name")})]
+                >>> container = ContainerApply(
+                ...     space="mySpace",
+                ...     external_id="myContainer",
+                ...     properties={
+                ...         "name": ContainerProperty(type=Text, name="name"),
+                ...         "numbers": ContainerProperty(
+                ...             type=Float64(is_list=True, max_list_size=200),
+                ...             description="very important numbers",
+                ...         ),
+                ...     },
+                ... ),
                 >>> res = client.data_modeling.containers.apply(container)
 
             Create new container with unit-aware properties:

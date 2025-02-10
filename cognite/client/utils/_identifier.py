@@ -302,7 +302,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
     @staticmethod
     def extract_identifiers(dct: dict[str, Any]) -> dict[str, str | int]:
         """An API payload might look like {"id": 1, "before": "2w-ago", ...}. This function extracts the identifiers"""
-        return {k: dct[k] for k in ("id", "externalId") if k in dct}
+        return {k: dct[k] for k in ("id", "externalId", "instanceId") if k in dct}
 
 
 T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierSequenceCore)

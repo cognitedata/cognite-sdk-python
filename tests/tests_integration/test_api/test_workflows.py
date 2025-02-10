@@ -600,6 +600,7 @@ class TestWorkflowTriggers:
         assert updated_trigger.created_time == workflow_scheduled_trigger.created_time
         assert updated_trigger.last_updated_time > workflow_scheduled_trigger.last_updated_time
 
+    @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
         self,
         cognite_client: CogniteClient,

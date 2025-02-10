@@ -9,7 +9,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
+from cognite.client.utils._auxiliary import is_positive, rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
@@ -68,44 +68,58 @@ class PropertyType(CogniteObject, ABC):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> PropertyType:
-        type_ = resource["type"]
-        if type_ == "text":
-            return Text(is_list=resource["list"], collation=resource.get("collation", "ucs_basic"))
-        elif type_ == "boolean":
-            return Boolean(is_list=resource["list"])
-        elif type_ == "float32":
-            return Float32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
-        elif type_ == "float64":
-            return Float64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
-        elif type_ == "int32":
-            return Int32(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
-        elif type_ == "int64":
-            return Int64(is_list=resource["list"], unit=cls.__load_unit_ref(resource))
-        elif type_ == "timestamp":
-            return Timestamp(is_list=resource["list"])
-        elif type_ == "date":
-            return Date(is_list=resource["list"])
-        elif type_ == "json":
-            return Json(is_list=resource["list"])
-        elif type_ == "timeseries":
-            return TimeSeriesReference(is_list=resource["list"])
-        elif type_ == "file":
-            return FileReference(is_list=resource["list"])
-        elif type_ == "sequence":
-            return SequenceReference(is_list=resource["list"])
-        elif type_ == "direct":
-            return DirectRelation(
-                container=ContainerId.load(container) if (container := resource.get("container")) else None,
-                # The PropertyTypes are used as both read and write objects. The `list` was added later
-                # in the API for DirectRelations. Thus, we need to set the default value to False
-                # to avoid breaking changes. When used as a read object, the `list` will always be present.
-                is_list=resource.get("list", False),
-            )
-        elif type_ == "enum":
-            values = {key: EnumValue._load(value) for key, value in resource["values"].items()}
-            return Enum(values=values, unknown_value=resource.get("unknownValue"))
-        logger.warning(f"Unknown property type: {type_}")
-        return cast(Self, UnknownCogniteObject(resource))
+        match type_ := resource["type"]:
+            case "text":
+                return Text(
+                    is_list=resource["list"],
+                    max_list_size=resource.get("maxListSize"),
+                    collation=resource.get("collation", "ucs_basic"),
+                )
+            case "boolean":
+                return Boolean(
+                    is_list=resource["list"],
+                    max_list_size=resource.get("maxListSize"),
+                )
+            case "float32" | "float64" | "int32" | "int64":
+                cls_map: dict[str, type[PropertyTypeWithUnit]] = {
+                    "float32": Float32,
+                    "float64": Float64,
+                    "int32": Int32,
+                    "int64": Int64,
+                }
+                return cls_map[type_](
+                    is_list=resource["list"],
+                    max_list_size=resource.get("maxListSize"),
+                    unit=cls.__load_unit_ref(resource),
+                )
+            case "timestamp" | "date" | "json" | "timeseries" | "file" | "sequence":
+                cls_map: dict[str, type[ListablePropertyType]] = {  # type: ignore [no-redef]
+                    "timestamp": Timestamp,
+                    "date": Date,
+                    "json": Json,
+                    "timeseries": TimeSeriesReference,
+                    "file": FileReference,
+                    "sequence": SequenceReference,
+                }
+                return cls_map[type_](
+                    is_list=resource["list"],
+                    max_list_size=resource.get("maxListSize"),
+                )
+            case "direct":
+                return DirectRelation(
+                    container=ContainerId.load(container) if (container := resource.get("container")) else None,
+                    # The PropertyTypes are used as both read and write objects. The `list` was added later
+                    # in the API for DirectRelations. Thus, we need to set the default value to False
+                    # to avoid breaking changes. When used as a read object, the `list` will always be present.
+                    is_list=resource.get("list", False),
+                    max_list_size=resource.get("maxListSize"),
+                )
+            case "enum":
+                values = {key: EnumValue._load(value) for key, value in resource["values"].items()}
+                return Enum(values=values, unknown_value=resource.get("unknownValue"))
+            case _:
+                logger.warning(f"Unknown property type: {type_}")
+                return cast(Self, UnknownCogniteObject(resource))
 
 
 # Kept around for backwards compatibility
@@ -115,6 +129,11 @@ UnknownPropertyType: TypeAlias = UnknownCogniteObject
 @dataclass
 class ListablePropertyType(PropertyType, ABC):
     is_list: bool = False
+    max_list_size: int | None = None
+
+    def __post_init__(self) -> None:
+        if is_positive(self.max_list_size) and not self.is_list:
+            raise ValueError("is_list must be True if max_list_size is set")
 
 
 @dataclass
