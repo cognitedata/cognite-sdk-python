@@ -333,3 +333,27 @@ class SimulatorIntegration(CogniteResource):
 
 class SimulatorIntegrationList(CogniteResourceList[SimulatorIntegration], IdTransformerMixin):
     _RESOURCE = SimulatorIntegration
+
+
+# class SimulationRunsList(CogniteResourceList[SimulationRun], IdTransformerMixin):
+#     _RESOURCE = SimulationRun
+
+
+# class SimulationRunCall(CogniteResource):
+#     """A representation of a Simulation Run call.
+
+#     Args:
+#         routine_external_id (str | None): No description.
+#         routine_revision_external_id (str | None): No description.
+#     """
+
+#     def __init__(
+#         self,
+#         routine_external_id: str | None = None,
+#         routine_revision_external_id: str | None = None,
+#     ) -> None:
+#         self.routine_external_id = routine_external_id
+#         self.routine_revision_external_id = routine_revision_external_id
+
+#     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+#         return super().dump(camel_case=camel_case)
