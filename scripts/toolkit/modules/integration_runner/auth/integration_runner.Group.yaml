@@ -263,6 +263,7 @@ capabilities:
       actions:
       - READ
       - MANAGE
+      - WRITE
       scope:
         all: {}
   - templateGroupsAcl:
