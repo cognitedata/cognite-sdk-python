@@ -48,7 +48,7 @@ def new_extpipe(cognite_client: CogniteClient) -> ExtractionPipeline:
 
 
 @pytest.fixture(scope="session")
-def a_extractor_pipeline(cognite_client: CogniteClient) -> ExtractionPipeline:
+def an_extractor_pipeline(cognite_client: CogniteClient) -> ExtractionPipeline:
     dataset = cognite_client.data_sets.list()[0]
     item = ExtractionPipelineWrite(
         external_id="pre-existing-extpipe",
@@ -92,7 +92,7 @@ def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipelin
 
 
 class TestExtractionPipelinesAPI:
-    @pytest.mark.usefixtures("a_extractor_pipeline")
+    @pytest.mark.usefixtures("an_extractor_pipeline")
     def test_retrieve(self, cognite_client):
         res = cognite_client.extraction_pipelines.list(limit=1)
         assert res[0] == cognite_client.extraction_pipelines.retrieve(id=res[0].id)
@@ -103,7 +103,7 @@ class TestExtractionPipelinesAPI:
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids
 
-    @pytest.mark.usefixtures("a_extractor_pipeline")
+    @pytest.mark.usefixtures("an_extractor_pipeline")
     def test_retrieve_unknown(self, cognite_client):
         res = cognite_client.extraction_pipelines.list(limit=1)
         with pytest.raises(CogniteNotFoundError):
