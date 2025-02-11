@@ -259,6 +259,12 @@ capabilities:
       - DELETE
       scope:
         all: {}
+  - simulatorsAcl:
+      actions:
+      - READ
+      - MANAGE
+      scope:
+        all: {}
   - templateGroupsAcl:
       actions:
       - WRITE
