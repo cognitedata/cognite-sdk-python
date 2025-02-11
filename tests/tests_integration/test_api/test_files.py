@@ -95,15 +95,11 @@ def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
     if missing := (set(files.as_external_ids()) - set(retrieved.as_external_ids())):
         for local in files:
             if local.external_id in missing:
-                created, upload_url = cognite_client.files.create(local)
-                response = cognite_client.files._http_client_with_retry.request(
-                    "PUT",
-                    upload_url,
-                    data=local.name.removesuffix(".txt"),
-                    timeout=cognite_client._config.file_transfer_timeout,
-                    headers={"Content-Type": local.mime_type, "accept": "*/*"},
+                created, _ = cognite_client.files.create(local)
+                _ = cognite_client.files.upload_bytes(
+                    content=local.name.removesuffix(".txt"),
+                    external_id=local.external_id,
                 )
-                assert response.status_code == 200
                 retrieved.append(created)
 
     return retrieved
@@ -113,7 +109,7 @@ def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
 def big_txt(cognite_client: CogniteClient) -> FileMetadata:
     file = cognite_client.files.retrieve(external_id="big_txt")
     if file is None:
-        created, upload_url = cognite_client.files.create(
+        created, _ = cognite_client.files.create(
             FileMetadataWrite(
                 name="big.txt",
                 external_id="big_txt",
@@ -121,14 +117,10 @@ def big_txt(cognite_client: CogniteClient) -> FileMetadata:
                 mime_type="text/plain",
             )
         )
-        response = cognite_client.files._http_client_with_retry.request(
-            "PUT",
-            upload_url,
-            data="big" * 30_000_000,
-            timeout=cognite_client._config.file_transfer_timeout,
-            headers={"Content-Type": created.mime_type, "accept": "*/*"},
+        _ = cognite_client.files.upload_bytes(
+            content="big" * 30_000_000,
+            external_id="big_txt",
         )
-        assert response.status_code == 200
         file = created
     return file
 

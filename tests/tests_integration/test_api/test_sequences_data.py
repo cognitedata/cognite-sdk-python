@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     SequenceRowsList,
     SequenceWrite,
 )
+from tests.utils import rng_context
 
 
 @pytest.fixture(scope="session")
@@ -42,6 +43,7 @@ def named_long_str(cognite_client) -> Sequence:
 
 
 @pytest.fixture(scope="session")
+@rng_context(seed=42)
 def string200(cognite_client) -> Sequence:
     seq = cognite_client.sequences.retrieve(external_id="string200")
     if seq is None:
@@ -53,7 +55,6 @@ def string200(cognite_client) -> Sequence:
         )
 
     if not cognite_client.sequences.data.retrieve(external_id=seq.external_id):
-        random.seed(42)
         cognite_client.sequences.data.insert(
             SequenceRows(
                 [

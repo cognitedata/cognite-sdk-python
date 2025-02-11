@@ -127,7 +127,6 @@ def test_features(cognite_client, test_feature_type, new_asset):
             temperature=12.4,
             volume=1212.0,
             pressure=2121.0,
-            # asset_ids=[new_asset.id],
         ),
         Feature(
             external_id=external_ids[1],
@@ -229,7 +228,6 @@ class TestGeospatialAPI:
                 temperature=12.4,
                 volume=1212.0,
                 pressure=2121.0,
-                # asset_ids=[new_asset.id],
             ),
             allow_crs_transformation=allow_crs_transformation,
         )

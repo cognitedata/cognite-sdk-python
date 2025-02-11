@@ -22,7 +22,7 @@ def new_database_with_table(cognite_client):
 def db_database(cognite_client: CogniteClient) -> str:
     db_name = "test__database1"
     all_dbs = cognite_client.raw.databases.list(limit=-1)
-    if db_name not in [db.name for db in all_dbs]:
+    if db_name not in all_dbs.as_names():
         db = cognite_client.raw.databases.create(db_name)
         for i in range(1, 4):
             table_name = f"test__table_{i}"

@@ -72,8 +72,8 @@ def twenty_events(cognite_client: CogniteClient) -> EventList:
         EventWrite(
             external_id=f"twenty_events_{i}",
             type="test-data-populator",
-            start_time=utils.timestamp_to_ms(timestamp_to_ms(datetime(2023, 8, 9, 11, 42))),
-            end_time=utils.timestamp_to_ms(timestamp_to_ms(datetime(2023, 8, 9, 11, 43))),
+            start_time=utils.timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+            end_time=utils.timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
         )
         for i in range(20)
     ]

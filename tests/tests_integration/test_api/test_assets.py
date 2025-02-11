@@ -24,7 +24,7 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import set_max_workers, set_request_limit
+from tests.utils import rng_context, set_max_workers, set_request_limit
 
 TEST_LABEL = "integration test label, dont delete"
 
@@ -84,8 +84,8 @@ def root_test_asset(cognite_client) -> Asset:
     return cognite_client.assets.retrieve(external_id=root.external_id)
 
 
+@rng_context(seed=0)
 def generate_asset_tree(root: AssetWrite, first_level_size: int, size: int, depth: int) -> list[AssetWrite]:
-    np.random.seed(0)
     # A power law distribution describes the real shape of an asset hierarchy, i.e., few roots, many leaves.
     count_per_level = np.random.power(0.2, depth)
     count_per_level.sort()
