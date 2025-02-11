@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -16,6 +17,8 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_integration,
     simulator_model,
 )
+
+SEED_DIR = Path(__file__).resolve(strict=True).parent / "seed"
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +40,7 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadat
     file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
     if not file:
         file = cognite_client.files.upload(
-            path="tests/tests_integration/test_api/test_simulators/seed/ShowerMixer.txt",
+            path=SEED_DIR / "ShowerMixer.txt",
             external_id=seed_resource_names["simulator_model_file_external_id"],
             name="ShowerMixer.txt",
             data_set_id=data_set_id,
