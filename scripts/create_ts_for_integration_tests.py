@@ -1,6 +1,5 @@
 import math
 import random
-import re
 import time
 
 import numpy as np
@@ -53,55 +52,38 @@ NAMES_USING_INSTANCE_ID = [
     NodeId(space="PySDK-DMS-time-series-integration-test", external_id="PYSDK integration test 127: clone of 121"),
 ]
 
-NAMES_BY_NUMBER = {
-    int(name.split(":", maxsplit=1)[0].removeprefix("PYSDK integration test ")): name
-    for name in NAMES + SPARSE_NAMES + [node_id.external_id for node_id in NAMES_USING_INSTANCE_ID]
-}
-
 
 def create_instance_id_ts(client: CogniteClient):
     client.data_modeling.instances.apply(
         [
             CogniteTimeSeriesApply(
                 space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[0].external_id,
-                name=NAMES_USING_INSTANCE_ID[0].external_id,
-                is_step=True,
+                external_id=node.external_id,
+                name=node.external_id,
+                is_step=(i == 0),  # First node is_step=True, others are False
                 time_series_type="numeric",
-            ),
-            CogniteTimeSeriesApply(
-                space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[1].external_id,
-                name=NAMES_USING_INSTANCE_ID[1].external_id,
-                is_step=False,
-                time_series_type="numeric",
-            ),
-            CogniteTimeSeriesApply(
-                space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[2].external_id,
-                name=NAMES_USING_INSTANCE_ID[2].external_id,
-                is_step=False,
-                time_series_type="numeric",
-            ),
+            )
+            for i, node in enumerate(NAMES_USING_INSTANCE_ID)
         ]
     )
     print("Created 3 time series using instance id via DMS")
 
 
 def clone_datapoints_to_dms_ts(client):
-    external_ids: list[str] = []
-    for node_id in NAMES_USING_INSTANCE_ID:
-        match = re.findall(r"clone of (\d+)", node_id.external_id)
-        if not match:
-            raise ValueError(f"Could not find clone number in {node_id.external_id}")
-        external_ids.append(NAMES_BY_NUMBER[int(match[0])])
-
+    external_ids: list[str] = [
+        # 125: clone of 109
+        "PYSDK integration test 109: daily values, is_step=True, 1965-1975, numeric",
+        # 126: clone of 114
+        "PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric",
+        # 127: clone of 121
+        "PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric",
+    ]
     dps_lst = client.time_series.data.retrieve(
         external_id=external_ids,
         include_status=True,
         ignore_bad_datapoints=False,
         start=MIN_TIMESTAMP_MS,
-        end=MAX_TIMESTAMP_MS,
+        end=MAX_TIMESTAMP_MS + 1,
     )
     to_insert = [
         {"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(NAMES_USING_INSTANCE_ID, dps_lst) if dps
@@ -430,7 +412,7 @@ def create_time_series(ts_api, ts_lst: list[TimeSeries], df_lst: list[pd.DataFra
 
 
 if __name__ == "__main__":
-    # # The code for getting a client is not committed, this is to avoid accidental runs.
+    # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
     client = local_client.get_production()
