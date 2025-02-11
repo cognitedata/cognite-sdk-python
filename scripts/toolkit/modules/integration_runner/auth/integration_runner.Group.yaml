@@ -264,6 +264,7 @@ capabilities:
       - READ
       - MANAGE
       - WRITE
+      - DELETE
       scope:
         all: {}
   - templateGroupsAcl:
