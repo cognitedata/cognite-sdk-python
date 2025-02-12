@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.models import SimulatorModelsAPI
-from cognite.client._api_client import APIClient
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
+from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
 from cognite.client.utils._experimental import FeaturePreviewWarning
