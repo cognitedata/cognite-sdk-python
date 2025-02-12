@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.models import SimulatorModelsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -22,6 +23,7 @@ class SimulatorsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)
+        self.routines = SimulatorRoutinesAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )

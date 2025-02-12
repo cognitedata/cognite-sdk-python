@@ -33,3 +33,13 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
         all_versions: bool | None = None,
     ) -> None:
         self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids
+
+
+class SimulatorRoutinesFilter(CogniteFilter):
+    def __init__(
+        self,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+    ) -> None:
+        self.model_external_ids = model_external_ids
+        self.simulator_integration_external_ids = simulator_integration_external_ids
