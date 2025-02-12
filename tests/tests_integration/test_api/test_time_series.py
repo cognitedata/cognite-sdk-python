@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest import mock
 
 import pytest
@@ -27,7 +26,7 @@ def post_spy(cognite_client):
 
 
 @pytest.fixture(scope="session")
-def test_tss(cognite_client):
+def test_tss(cognite_client) -> TimeSeriesList:
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
             "PYSDK integration test 003: weekly values, 1950-2000, numeric",
@@ -133,13 +132,10 @@ class TestTimeSeriesAPI:
         assert listed[0].unit_external_id == "temperature:deg_c"
         assert listed[0].external_id == "test_list_timeseries_with_target_unit:1"
 
-    def test_partitioned_list(self, cognite_client, post_spy):
-        mintime = datetime(2019, 1, 1).timestamp() * 1000
-        maxtime = datetime(2019, 5, 15).timestamp() * 1000
-        res_flat = cognite_client.time_series.list(limit=None, created_time={"min": mintime, "max": maxtime})
-        res_part = cognite_client.time_series.list(
-            partitions=8, limit=None, created_time={"min": mintime, "max": maxtime}
-        )
+    def test_partitioned_list(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
+        is_selected = filters.In("externalId", test_tss.as_external_ids())
+        res_flat = cognite_client.time_series.list(limit=len(test_tss), advanced_filter=is_selected)
+        res_part = cognite_client.time_series.list(partitions=8, limit=None, advanced_filter=is_selected)
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
@@ -276,7 +272,7 @@ class TestTimeSeriesAPI:
         }
 
     def test_create_retrieve_update_delete_with_instance_id(
-        self, cognite_client: CogniteClient, instance_id_test_space: str, alpha_test_dataset: DataSet
+        self, cognite_client: CogniteClient, instance_id_test_space: str, ts_test_dataset: DataSet
     ) -> None:
         external_id = "ts_python_sdk_instance_id_tests" + random_string(10)
         my_ts = CogniteTimeSeriesApply(
@@ -302,10 +298,10 @@ class TestTimeSeriesAPI:
             update_writable = retrieved.as_write()
             update_writable.metadata = {"c": "d"}
             update_writable.external_id = external_id
-            update_writable.data_set_id = alpha_test_dataset.id
+            update_writable.data_set_id = ts_test_dataset.id
             updated_writable = cognite_client.time_series.update(update_writable)
             assert updated_writable.metadata == {"c": "d"}
-            assert updated_writable.data_set_id == alpha_test_dataset.id
+            assert updated_writable.data_set_id == ts_test_dataset.id
             assert updated_writable.external_id == external_id
 
             updated = cognite_client.time_series.update(update)

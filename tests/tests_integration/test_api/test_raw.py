@@ -18,6 +18,20 @@ def new_database_with_table(cognite_client):
     cognite_client.raw.databases.delete(name=db.name, recursive=True)
 
 
+@pytest.fixture(scope="session")
+def db_database(cognite_client: CogniteClient) -> str:
+    db_name = "test__database1"
+    all_dbs = cognite_client.raw.databases.list(limit=-1)
+    if db_name not in all_dbs.as_names():
+        db = cognite_client.raw.databases.create(db_name)
+        for i in range(1, 4):
+            table_name = f"test__table_{i}"
+            table = cognite_client.raw.tables.create(db.name, table_name)
+            rows = [Row(key=str(j), columns={f"c{k}": f"{j}_{k}" for k in range(10)}) for j in range(2000)]
+            cognite_client.raw.rows.insert(db.name, table.name, rows)
+    return db_name
+
+
 class TestRawDatabasesAPI:
     def test_list_databases(self, cognite_client):
         dbs = cognite_client.raw.databases.list()
@@ -28,8 +42,8 @@ class TestRawDatabasesAPI:
 
 
 class TestRawTablesAPI:
-    def test_list_tables(self, cognite_client):
-        tables = cognite_client.raw.tables.list(db_name="test__database1")
+    def test_list_tables(self, cognite_client, db_database: str):
+        tables = cognite_client.raw.tables.list(db_name=db_database)
         assert len(tables) == 3
 
     def test_create_and_delete_table(self, cognite_client, new_database_with_table):
@@ -52,8 +66,8 @@ class TestRawTablesAPI:
 
 
 class TestRawRowsAPI:
-    def test_list_rows(self, cognite_client):
-        rows = cognite_client.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=10000)
+    def test_list_rows(self, cognite_client, db_database: str):
+        rows = cognite_client.raw.rows.list(db_name=db_database, table_name="test__table_1", limit=10000)
         assert 2000 == len(rows)
         assert 10 == len(rows[0].columns.keys())
 
@@ -78,24 +92,22 @@ class TestRawRowsAPI:
         finally:
             cognite_client.raw.databases.delete(randstr, recursive=True)
 
-    def test_list_rows_cols(self, cognite_client):
+    def test_list_rows_cols(self, cognite_client, db_database: str) -> None:
         rows_list = cognite_client.raw.rows.list(
-            db_name="test__database1", table_name="test__table_1", limit=10, columns=["c1", "c2"]
+            db_name=db_database, table_name="test__table_1", limit=10, columns=["c1", "c2"]
         )
         assert 10 == len(rows_list)
         for row in rows_list:
             assert {"c1", "c2"} == set(row.columns.keys())
 
-    def test_iter_rows_cols(self, cognite_client):
-        rows = cognite_client.raw.rows(
-            db_name="test__database1", table_name="test__table_1", limit=10, columns=["c1", "c2"]
-        )
+    def test_iter_rows_cols(self, cognite_client, db_database: str) -> None:
+        rows = cognite_client.raw.rows(db_name=db_database, table_name="test__table_1", limit=10, columns=["c1", "c2"])
         assert 10 == len([x for x in rows])
         for row in rows:
             assert {"c1", "c2"} == set(row.columns.keys())
 
-    def test_retrieve_row(self, cognite_client):
-        row = cognite_client.raw.rows.retrieve(db_name="test__database1", table_name="test__table_1", key="1")
+    def test_retrieve_row(self, cognite_client, db_database: str) -> None:
+        row = cognite_client.raw.rows.retrieve(db_name=db_database, table_name="test__table_1", key="1")
         assert {f"c{i}": f"1_{i}" for i in range(10)} == row.columns
 
     def test_insert_and_delete_rows(self, cognite_client, new_database_with_table):

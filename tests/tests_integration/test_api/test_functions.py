@@ -31,6 +31,58 @@ def a_function(cognite_client: CogniteClient) -> Function:
     return function
 
 
+@pytest.fixture(scope="session")
+def dummy_function(cognite_client: CogniteClient) -> Function:
+    name = "integration_test-dummy-noxid-1"
+    retrieved = cognite_client.functions.list(name=name, limit=1)
+    if retrieved:
+        return retrieved[0]
+
+    def handle(client, data, secrets, function_call_info):
+        print(f"Inputs: {data!r}")  # noqa
+        print(f"Call info: {function_call_info!r}")  # noqa
+        return data
+
+    created = cognite_client.functions.create(
+        name=name, function_handle=handle, description="print inputs & call info, return inputs"
+    )
+    schedules = [
+        FunctionScheduleWrite(
+            name="once-a-year-05-13",
+            cron_expression="36 2 13 5 *",
+            function_id=created.id,
+            data={"day": "05-13", "scheduled": True},
+        ),
+        FunctionScheduleWrite(
+            name="once-a-year-04-03",
+            cron_expression="6 4 3 4 *",
+            function_id=created.id,
+            data={"day": "04-03", "scheduled": True},
+        ),
+        FunctionScheduleWrite(
+            name="once-a-year-06-06",
+            cron_expression="50 1 6 6 *",
+            function_id=created.id,
+            data={"day": "06-06", "scheduled": True},
+        ),
+        FunctionScheduleWrite(
+            name="once-a-year-06-24",
+            cron_expression="14 6 24 6 *",
+            function_id=created.id,
+            data={"day": "06-24", "scheduled": True},
+        ),
+        FunctionScheduleWrite(
+            name="once-a-year-05-25",
+            cron_expression="36 6 25 5 *",
+            function_id=created.id,
+            data={"day": "05-25", "scheduled": True},
+        ),
+    ]
+    for schedule in schedules:
+        cognite_client.functions.schedules.create(schedule)
+    return created
+
+
 class TestFunctionsAPI:
     def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient):
         with pytest.raises(CogniteNotFoundError) as e:
@@ -42,10 +94,10 @@ class TestFunctionsAPI:
         res = cognite_client.functions.retrieve_multiple(external_ids=["this does not exist"], ignore_unknown_ids=True)
         assert len(res) == 0
 
-    def test_function_list_schedules_unlimited(self, cognite_client: CogniteClient):
+    def test_function_list_schedules_unlimited(self, cognite_client: CogniteClient, dummy_function: Function):
         expected_unique_schedules = 5
         # This is an integration test dummy function that purposefully doesn't have an external id.
-        fn = cognite_client.functions.retrieve(id=2495645514618888)
+        fn = cognite_client.functions.retrieve(id=dummy_function.id)
         schedules = fn.list_schedules(limit=-1)
 
         assert len(schedules) == expected_unique_schedules

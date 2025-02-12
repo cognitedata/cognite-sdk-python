@@ -3,6 +3,7 @@ import time
 from contextlib import contextmanager
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from cognite.client import CogniteClient
@@ -18,12 +19,12 @@ from cognite.client.data_classes import (
     GeometryFilter,
 )
 from cognite.client.data_classes import filters as flt
-from cognite.client.data_classes.assets import AssetProperty
+from cognite.client.data_classes.assets import AssetProperty, AssetWrite, AssetWriteList
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import set_max_workers, set_request_limit
+from tests.utils import rng_context, set_max_workers, set_request_limit
 
 TEST_LABEL = "integration test label, dont delete"
 
@@ -54,9 +55,59 @@ def post_spy(cognite_client):
         yield
 
 
+@pytest.fixture(scope="session")
+def twenty_assets(cognite_client: CogniteClient) -> AssetList:
+    prefix = "twenty_assets:"
+    root = AssetWrite(external_id=f"{prefix}root", name="root")
+    assets = AssetWriteList(
+        [root]
+        + [
+            AssetWrite(
+                external_id=f"{prefix}asset{i}",
+                name=f"asset{i}",
+                parent_external_id=root.external_id,
+            )
+            for i in range(19)
+        ]
+    )
+    return cognite_client.assets.upsert(assets, mode="replace")
+
+
 @pytest.fixture(scope="module")
-def root_test_asset(cognite_client):
-    return cognite_client.assets.retrieve(external_id="test__asset_0")
+def root_test_asset(cognite_client) -> Asset:
+    root = AssetWrite(external_id="test__asset_root", name="test__asset_root")
+    retrieved = cognite_client.assets.retrieve(external_id=root.external_id)
+    if retrieved is not None:
+        return retrieved
+    hierarchy = generate_asset_tree(root, first_level_size=5, size=1000, depth=8)
+    cognite_client.assets.create_hierarchy(hierarchy, upsert=True, upsert_mode="replace")
+    return cognite_client.assets.retrieve(external_id=root.external_id)
+
+
+@rng_context(seed=0)
+def generate_asset_tree(root: AssetWrite, first_level_size: int, size: int, depth: int) -> list[AssetWrite]:
+    # A power law distribution describes the real shape of an asset hierarchy, i.e., few roots, many leaves.
+    count_per_level = np.random.power(0.2, depth)
+    count_per_level.sort()
+    total = count_per_level.sum()
+    count_per_level = (count_per_level / total) * size
+    count_per_level = np.ceil(count_per_level).astype(np.int64)
+    count_per_level[0] = first_level_size
+    count_per_level[-1] = size - count_per_level[:-1].sum() - 1
+    last_level = [root]
+    hierarchy = [root]
+    for level, count in enumerate(count_per_level, 1):
+        this_level = []
+        for asset_no in range(count):
+            parent = random.choice(last_level)
+            identifier = f"test__asset_depth_{level}_asset_{asset_no}"
+            asset = AssetWrite(
+                name=f"Asset {asset_no} depth@{level}", external_id=identifier, parent_external_id=parent.external_id
+            )
+            this_level.append(asset)
+        last_level = this_level
+        hierarchy.extend(this_level)
+    return hierarchy
 
 
 @pytest.fixture(scope="module")
@@ -75,7 +126,7 @@ def root_test_asset_subtree(cognite_client, root_test_asset):
         pass
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def asset_list(cognite_client: CogniteClient) -> AssetList:
     prefix = "integration_test:"
     assets = AssetList(
@@ -100,9 +151,6 @@ def asset_list(cognite_client: CogniteClient) -> AssetList:
             ),
         ]
     )
-    retrieved = cognite_client.assets.retrieve_multiple(external_ids=assets.as_external_ids(), ignore_unknown_ids=True)
-    if len(retrieved) == len(assets):
-        return retrieved
     return cognite_client.assets.upsert(assets, mode="replace")
 
 
@@ -125,6 +173,7 @@ class TestAssetsAPI:
         )
         assert 1 == len(retr)
 
+    @pytest.mark.usefixtures("twenty_assets")
     def test_list(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.assets, 10):
             res = cognite_client.assets.list(limit=20)
@@ -132,6 +181,7 @@ class TestAssetsAPI:
         assert 20 == len(res)
         assert 2 == cognite_client.assets._post.call_count
 
+    @pytest.mark.usefixtures("twenty_assets")
     def test_partitioned_list(self, cognite_client, post_spy):
         # stop race conditions by cutting off max created time
         maxtime = int(time.time() - 3600) * 1000
@@ -154,12 +204,13 @@ class TestAssetsAPI:
             assert {"childCount"} == asset.aggregates.dump(camel_case=True).keys()
             assert isinstance(asset.aggregates.child_count, int)
 
-    def test_aggregate(self, cognite_client, new_asset):
-        res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
+    def test_aggregate(self, cognite_client, twenty_assets: AssetList):
+        res = cognite_client.assets.aggregate(filter=AssetFilter(name=twenty_assets[0].name))
         assert res[0].count > 0
 
-    def test_search(self, cognite_client):
-        res = cognite_client.assets.search(name="test__asset_0", filter=AssetFilter(name="test__asset_0"))
+    def test_search(self, cognite_client, twenty_assets: AssetList):
+        name = twenty_assets[0].name
+        res = cognite_client.assets.search(name, filter=AssetFilter(name=name))
         assert len(res) > 0
 
     def test_search_query(self, cognite_client):
@@ -207,7 +258,7 @@ class TestAssetsAPI:
         cognite_client.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
 
-    def test_get_subtree(self, cognite_client, root_test_asset):
+    def test_get_subtree(self, cognite_client, root_test_asset: Asset) -> None:
         assert isinstance(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
         assert 0 == len(cognite_client.assets.retrieve_subtree(external_id="non_existing_asset"))
         assert 0 == len(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)))
@@ -234,6 +285,10 @@ class TestAssetsAPI:
             if a is not None:
                 cognite_client.assets.delete(id=a.id)
 
+    @pytest.mark.skip(
+        "This seems to not be enabled for new CDF projects. Similarly asset_ids "
+        "is not valid part of a GeoSpatial feature."
+    )
     def test_filter_by_geo_location(self, cognite_client):
         geo_location = GeoLocation(
             type="Feature",

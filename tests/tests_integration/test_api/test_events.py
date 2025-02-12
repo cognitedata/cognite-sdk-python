@@ -7,7 +7,7 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
-from cognite.client.data_classes.events import EventProperty, SortableEventProperty
+from cognite.client.data_classes.events import EventProperty, EventWrite, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
@@ -66,6 +66,20 @@ def root_test_asset(cognite_client):
             return asset
 
 
+@pytest.fixture(scope="session")
+def twenty_events(cognite_client: CogniteClient) -> EventList:
+    events = [
+        EventWrite(
+            external_id=f"twenty_events_{i}",
+            type="test-data-populator",
+            start_time=utils.timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+            end_time=utils.timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
+        )
+        for i in range(20)
+    ]
+    return cognite_client.events.upsert(events, mode="replace")
+
+
 class TestEventsAPI:
     def test_retrieve(self, cognite_client):
         res = cognite_client.events.list(limit=1)
@@ -86,6 +100,7 @@ class TestEventsAPI:
         )
         assert 1 == len(retr)
 
+    @pytest.mark.usefixtures("twenty_events")
     def test_list(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.events, 10):
             res = cognite_client.events.list(limit=20)
@@ -97,17 +112,16 @@ class TestEventsAPI:
         res = cognite_client.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
         assert len(res) > 0
 
-    def test_aggregation(self, cognite_client, new_event):
-        res_aggregate = cognite_client.events.aggregate(filter=EventFilter(type="test__py__sdk"))
+    def test_aggregation(self, cognite_client, new_event, twenty_events: EventList):
+        res_aggregate = cognite_client.events.aggregate(filter=EventFilter(type=twenty_events[0].type))
         assert res_aggregate[0].count > 0
 
-    def test_partitioned_list(self, cognite_client):
+    def test_partitioned_list(self, cognite_client, post_spy, twenty_events: EventList):
         # stop race conditions by cutting off max created time
-        maxtime = utils.timestamp_to_ms(datetime(2019, 5, 25, 17, 30))
-        res_flat = cognite_client.events.list(limit=None, type="test-data-populator", start_time={"max": maxtime})
-        res_part = cognite_client.events.list(
-            partitions=8, type="test-data-populator", start_time={"max": maxtime}, limit=None
-        )
+        type = twenty_events[0].type
+        maxtime = twenty_events[0].start_time + 1
+        res_flat = cognite_client.events.list(limit=None, type=type, start_time={"max": maxtime})
+        res_part = cognite_client.events.list(partitions=8, type=type, start_time={"max": maxtime}, limit=None)
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}

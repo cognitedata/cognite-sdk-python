@@ -7,7 +7,10 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     FileMetadata,
     FileMetadataFilter,
+    FileMetadataList,
     FileMetadataUpdate,
+    FileMetadataWrite,
+    FileMetadataWriteList,
     GeoLocation,
     GeoLocationFilter,
     Geometry,
@@ -77,12 +80,54 @@ def new_file_with_label(cognite_client):
 
 
 @pytest.fixture(scope="class")
-def test_files(cognite_client):
-    files = {}
-    for file in cognite_client.files:
-        if file.name in ["a.txt", "b.txt", "c.txt", "big.txt"]:
-            files[file.name] = file
-    return files
+def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
+    files = FileMetadataWriteList([])
+    for letter in "abc":
+        file = FileMetadataWrite(
+            name=f"{letter}.txt",
+            external_id=f"{letter}_txt",
+            directory="/test/subdir",
+            mime_type="text/plain",
+        )
+        files.append(file)
+
+    retrieved = cognite_client.files.retrieve_multiple(external_ids=files.as_external_ids(), ignore_unknown_ids=True)
+    if missing := (set(files.as_external_ids()) - set(retrieved.as_external_ids())):
+        for local in files:
+            if local.external_id in missing:
+                created, _ = cognite_client.files.create(local)
+                _ = cognite_client.files.upload_bytes(
+                    content=local.name.removesuffix(".txt"),
+                    external_id=local.external_id,
+                )
+                retrieved.append(created)
+
+    return retrieved
+
+
+@pytest.fixture(scope="class")
+def big_txt(cognite_client: CogniteClient) -> FileMetadata:
+    file = cognite_client.files.retrieve(external_id="big_txt")
+    if file is None:
+        created, _ = cognite_client.files.create(
+            FileMetadataWrite(
+                name="big.txt",
+                external_id="big_txt",
+                directory="/test",
+                mime_type="text/plain",
+            )
+        )
+        _ = cognite_client.files.upload_bytes(
+            content="big" * 30_000_000,
+            external_id="big_txt",
+        )
+        file = created
+    return file
+
+
+@pytest.fixture(scope="class")
+def test_files(cognite_client, abc_files: FileMetadataList, big_txt: FileMetadata) -> dict[str, FileMetadata]:
+    return {f.name: f for f in [*abc_files, big_txt]}
 
 
 A_WHILE_AGO = {"max": int(time.time() - 1800) * 1000}
@@ -102,6 +147,7 @@ class TestFilesAPI:
         assert returned_file_metadata.geo_location == mock_geo_location
         cognite_client.files.delete(id=returned_file_metadata.id)
 
+    @pytest.mark.usefixtures("big_txt")
     def test_retrieve(self, cognite_client):
         res = cognite_client.files.list(name="big.txt", limit=1)
         assert res[0] == cognite_client.files.retrieve(res[0].id)

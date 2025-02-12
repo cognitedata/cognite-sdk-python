@@ -10,7 +10,7 @@ from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client.data_classes import DatapointsList, TimeSeries, TimeSeriesList
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsQuery
+from cognite.client.data_classes.datapoints import Datapoints
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
 NAMES = [
@@ -53,44 +53,46 @@ NAMES_USING_INSTANCE_ID = [
 ]
 
 
-def create_instance_id_ts(client):
-    client.dm.instances.apply(
+def create_instance_id_ts(client: CogniteClient):
+    client.data_modeling.instances.apply(
         [
             CogniteTimeSeriesApply(
                 space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[0].external_id,
-                name=NAMES_USING_INSTANCE_ID[0].external_id,
-                is_step=True,
+                external_id=node.external_id,
+                name=node.external_id,
+                is_step=(i == 0),  # First node is_step=True, others are False
                 time_series_type="numeric",
-            ),
-            CogniteTimeSeriesApply(
-                space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[1].external_id,
-                name=NAMES_USING_INSTANCE_ID[1].external_id,
-                is_step=False,
-                time_series_type="numeric",
-            ),
-            CogniteTimeSeriesApply(
-                space="PySDK-DMS-time-series-integration-test",
-                external_id=NAMES_USING_INSTANCE_ID[2].external_id,
-                name=NAMES_USING_INSTANCE_ID[2].external_id,
-                is_step=False,
-                time_series_type="numeric",
-            ),
+            )
+            for i, node in enumerate(NAMES_USING_INSTANCE_ID)
         ]
     )
+    print("Created 3 time series using instance id via DMS")
 
 
 def clone_datapoints_to_dms_ts(client):
+    external_ids: list[str] = [
+        # 125: clone of 109
+        "PYSDK integration test 109: daily values, is_step=True, 1965-1975, numeric",
+        # 126: clone of 114
+        "PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric",
+        # 127: clone of 121
+        "PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric",
+    ]
     dps_lst = client.time_series.data.retrieve(
-        instance_id=[DatapointsQuery(instance_id=node_id) for node_id in NAMES_USING_INSTANCE_ID],
+        external_id=external_ids,
         include_status=True,
         ignore_bad_datapoints=False,
         start=MIN_TIMESTAMP_MS,
-        end=MAX_TIMESTAMP_MS,
+        end=MAX_TIMESTAMP_MS + 1,
     )
-    to_insert = [{"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(dps_lst, NAMES_USING_INSTANCE_ID)]
-    client.time_series.data.insert_multiple(to_insert)
+    to_insert = [
+        {"instance_id": node_id, "datapoints": dps} for node_id, dps in zip(NAMES_USING_INSTANCE_ID, dps_lst) if dps
+    ]
+    if to_insert:
+        client.time_series.data.insert_multiple(to_insert)
+        print(f"Inserted (cloned) datapoints to {len(NAMES_USING_INSTANCE_ID)} time series using instance id")
+    else:
+        print("No datapoints to clone")
 
 
 def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
@@ -136,20 +138,18 @@ def _sparse_ts_and_dps():
         ]
     ), DatapointsList(
         [
-            {"externalId": SPARSE_NAMES[0], "datapoints": [(MIN_TIMESTAMP_MS, MIN_TIMESTAMP_MS)]},
-            {"externalId": SPARSE_NAMES[1], "datapoints": [(MAX_TIMESTAMP_MS, MAX_TIMESTAMP_MS)]},
+            Datapoints(
+                external_id=SPARSE_NAMES[0],
+                timestamp=[MIN_TIMESTAMP_MS],
+                value=[MIN_TIMESTAMP_MS],
+            ),
+            Datapoints(
+                external_id=SPARSE_NAMES[1],
+                timestamp=[MAX_TIMESTAMP_MS],
+                value=[MAX_TIMESTAMP_MS],
+            ),
         ]
     )
-
-
-def create_edge_case_time_series(ts_api):
-    ts_lst, ts_dps = _sparse_ts_and_dps()
-
-    ts_api.create(ts_lst)
-
-    time.sleep(1)
-    ts_api.data.insert_multiple(ts_dps)
-    print(f"Created {len(ts_lst)} sparse ts with data")
 
 
 def create_edge_case_if_not_exists(ts_api):
@@ -167,7 +167,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
     ts_add(TimeSeries(name=NAMES[1], external_id=NAMES[1], is_string=True, metadata={"offset": 2, "delta": 10}))
     df_add(pd.DataFrame({NAMES[1]: (arr + 2).astype(str)}, index=pd.to_datetime(arr, unit="ms")))
 
-    weekly_idx = pd.date_range(start="1950", end="2000", freq="1w")
+    weekly_idx = pd.date_range(start="1950", end="2000", freq="1W")
     arr = weekly_idx.to_numpy("datetime64[ms]").astype(np.int64)
     for i, name in enumerate(NAMES[2:53], 3):
         ts_add(
@@ -209,7 +209,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
         )
         df_add(pd.DataFrame({NAMES[i + 1]: arr + i + 2}, index=hourly_idx))
 
-        minute_idx = pd.date_range(start="1969-12-31", end="1970-01-02", freq="1T")
+        minute_idx = pd.date_range(start="1969-12-31", end="1970-01-02", freq="1min")
         arr = minute_idx.to_numpy("datetime64[ms]").astype(np.int64)
         ts_add(
             TimeSeries(
@@ -282,7 +282,7 @@ def create_dense_time_series() -> tuple[list[TimeSeries], list[pd.DataFrame]]:
     ts_add(
         TimeSeries(name=NAMES[116], external_id=NAMES[116], is_string=False, metadata={"offset": "n/a", "delta": "1H"})
     )
-    hourly_idx = pd.date_range(start="2020-01-01", end="2024-12-31 23:59:59", freq="1H", tz="UTC")
+    hourly_idx = pd.date_range(start="2020-01-01", end="2024-12-31 23:59:59", freq="1h", tz="UTC")
     df_add(pd.DataFrame(index=hourly_idx, data=np.random.normal(0, 1, len(hourly_idx)), columns=[NAMES[116]]))
 
     ts_add(
@@ -359,6 +359,7 @@ def create_status_code_ts(client: CogniteClient) -> None:
             TimeSeries(name=bad_ts_str, external_id=bad_ts_str, is_string=True, metadata={"delta": UNIT_IN_MS["d"]}),
         ]
     )
+    print("Created 4 time series using status codes")
     client.time_series.data.insert_multiple(
         [
             {"externalId": mixed_ts, "datapoints": dps},
@@ -367,6 +368,7 @@ def create_status_code_ts(client: CogniteClient) -> None:
             {"externalId": bad_ts_str, "datapoints": dps_all_bad_str},
         ]
     )
+    print("Inserted datapoints *with* status codes")
 
 
 def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: list[TimeSeries], df_lst: list[pd.DataFrame]) -> None:
@@ -392,7 +394,7 @@ def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: list[TimeSeries], df_ls
             dropna=True,
         )
         inserted += 1
-    print(f"Inserted {inserted} series of datapoints")
+    print(f"Inserted datapoints to {inserted} time series")
 
 
 def create_time_series(ts_api, ts_lst: list[TimeSeries], df_lst: list[pd.DataFrame]):
@@ -410,15 +412,24 @@ def create_time_series(ts_api, ts_lst: list[TimeSeries], df_lst: list[pd.DataFra
 
 
 if __name__ == "__main__":
-    # # The code for getting a client is not committed, this is to avoid accidental runs.
+    # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
-    client = local_client.get_interactive()
+    client = local_client.get_production()
 
-    delete_all_time_series(client.time_series)
+    if False:  # Only turn on if you want to fully recreate
+        delete_all_time_series(client.time_series)
+
+    # Normal and varied time series & datapoints
     ts_lst, df_lst = create_dense_time_series()
     create_if_not_exists(client.time_series, ts_lst, df_lst)
+
+    # Edge case time series & datapoints
     create_edge_case_if_not_exists(client.time_series)
+
+    # Time series with status codes
     create_status_code_ts(client)
+
+    # Time series created in DMS using instance id
     create_instance_id_ts(client)
     clone_datapoints_to_dms_ts(client)

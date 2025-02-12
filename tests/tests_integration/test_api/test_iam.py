@@ -7,6 +7,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import CreatedSession, Group, GroupList, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl, ProjectCapabilityList
+from cognite.client.data_classes.iam import SecurityCategoryWrite
 from cognite.client.utils._text import random_string
 
 
@@ -57,8 +58,16 @@ class TestTokensAPI:
         assert isinstance(result.capabilities, ProjectCapabilityList)
 
 
+@pytest.fixture(scope="session")
+def security_category(cognite_client: CogniteClient) -> SecurityCategory:
+    result = cognite_client.iam.security_categories.list(limit=1)
+    if result:
+        return result[0]
+    return cognite_client.iam.security_categories.create(SecurityCategoryWrite(name="integration_test"))
+
+
 class TestSecurityCategoriesAPI:
-    def test_list(self, cognite_client):
+    def test_list(self, cognite_client: CogniteClient, security_category: SecurityCategory):
         res = cognite_client.iam.security_categories.list()
         assert len(res) > 0
 

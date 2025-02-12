@@ -19,6 +19,7 @@ from cognite.client.data_classes.sequences import (
     SequenceColumnWriteList,
     SequenceProperty,
     SequenceWrite,
+    SequenceWriteList,
     SortableSequenceProperty,
 )
 from cognite.client.exceptions import CogniteNotFoundError
@@ -98,6 +99,29 @@ def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceL
     return cognite_client.sequences.upsert(sequences, mode="replace")
 
 
+@pytest.fixture(scope="session")
+def twenty_sequences(cognite_client: CogniteClient) -> SequenceList:
+    sequences = SequenceWriteList(
+        [
+            SequenceWrite(
+                columns=[SequenceColumnWrite(external_id=f"seq{i}col{j}", value_type="String") for j in range(10)],
+                external_id=f"integration_test:sequence{i}",
+                name=f"MySequence {i}",
+            )
+            for i in range(20)
+        ]
+    )
+    existing = cognite_client.sequences.retrieve_multiple(
+        external_ids=sequences.as_external_ids(), ignore_unknown_ids=True
+    )
+    if len(existing) == len(sequences):
+        return existing
+    created = cognite_client.sequences.upsert(
+        [seq for seq in sequences if seq.external_id not in set(existing.as_external_ids())], mode="replace"
+    )
+    return SequenceList(existing + created)
+
+
 class TestSequencesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.sequences.list(limit=1)[0]
@@ -126,6 +150,7 @@ class TestSequencesAPI:
 
         assert failed ^ ignore_unknown_ids  # xor
 
+    @pytest.mark.usefixtures("twenty_sequences")
     def test_call(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.sequences, 10):
             res = [s for s in cognite_client.sequences(limit=20)]
@@ -133,6 +158,7 @@ class TestSequencesAPI:
         assert 20 == len(res)
         assert 2 == cognite_client.sequences._post.call_count
 
+    @pytest.mark.usefixtures("twenty_sequences")
     def test_list(self, cognite_client, post_spy):
         with set_request_limit(cognite_client.sequences, 10):
             res = cognite_client.sequences.list(limit=20)
@@ -144,12 +170,14 @@ class TestSequencesAPI:
         res = cognite_client.sequences.list(asset_ids=[12345678910], limit=20)
         assert 0 == len(res)
 
-    def test_aggregate(self, cognite_client):
-        res = cognite_client.sequences.aggregate(filter=SequenceFilter(name="42"))
+    def test_aggregate(self, cognite_client, twenty_sequences: SequenceList):
+        res = cognite_client.sequences.aggregate(filter=SequenceFilter(name=twenty_sequences[0].name))
         assert res[0].count > 0
 
+    pytest.mark.usefixtures("twenty_sequences")
+
     def test_search(self, cognite_client):
-        res = cognite_client.sequences.search(name="42", filter=SequenceFilter(created_time={"min": 0}))
+        res = cognite_client.sequences.search(name="Sequence", filter=SequenceFilter(created_time={"min": 0}))
         assert len(res) > 0
 
     def test_update(self, cognite_client, new_seq):
