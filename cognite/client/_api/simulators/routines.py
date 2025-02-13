@@ -104,7 +104,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter
                 >>> from cognite.client.data_classes.simulators.routines import CreatedTimeSort
                 >>> res = client.simulators.routines.list(
-                ...     filter=SimulatorRoutinesFilter(simulator_external_ids=["simulator_external_id"]),
+                ...     filter=SimulatorRoutinesFilter(simulator_integration_external_ids=["integration_ext_id"]),
                 ...     sort=CreatedTimeSort(order="asc")
                 ... )
 
