@@ -139,9 +139,22 @@ class SimulatorRoutinesAPI(APIClient):
         Examples:
             Create new simulator routines:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import SimulatorModelWrite
+                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
                 >>> client = CogniteClient()
-                >>> routines = [SimulatorModelWrite(name="routine1"), SimulatorModelWrite(name="routine2")]
+                >>> routines = [
+                ...     SimulatorRoutineWrite(
+                ...         name="routine1",
+                ...         external_id="routine_ext_id",
+                ...         simulator_integration_external_id="integration_ext_id",
+                ...         model_external_id="model_ext_id",
+                ...     ),
+                ...     SimulatorRoutineWrite(
+                ...         name="routine2",
+                ...         external_id="routine_ext_id_2",
+                ...         simulator_integration_external_id="integration_ext_id_2",
+                ...         model_external_id="model_ext_id_2",
+                ...     )
+                ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
         assert_type(routines, "simulator_routines", [SimulatorRoutineCore, Sequence])

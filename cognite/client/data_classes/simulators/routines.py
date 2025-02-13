@@ -551,7 +551,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
             model_external_id=resource["modelExternalId"],
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             name=resource["name"],
-            data_set_id=resource["dataSetId"],
+            data_set_id=resource.get("dataSetId"),
             description=resource.get("description"),
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
