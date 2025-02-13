@@ -142,7 +142,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client.data_classes import SimulatorModelWrite
                 >>> client = CogniteClient()
                 >>> routines = [SimulatorModelWrite(name="routine1"), SimulatorModelWrite(name="routine2")]
-                >>> res = client.simulators.models.create(routines)
+                >>> res = client.simulators.routines.create(routines)
         """
         assert_type(routines, "simulator_routines", [SimulatorRoutineCore, Sequence])
 
