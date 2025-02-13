@@ -45,7 +45,7 @@ class SimulatorRoutinesAPI(APIClient):
     @overload
     def __call__(
         self, chunk_size: int, filter: SimulatorRoutinesFilter | None = None, limit: int | None = None
-    ) -> Iterator[SimulatorRoutine]: ...
+    ) -> Iterator[SimulatorRoutineList]: ...
 
     @overload
     def __call__(
@@ -95,18 +95,24 @@ class SimulatorRoutinesAPI(APIClient):
             SimulatorRoutineList: List of simulator routines
 
         Examples:
-
             List simulator routines:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.list()
 
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routines.list()
+            Specify filter and sort order:
+                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter
+                >>> from cognite.client.data_classes.simulators.routines import CreatedTimeSort
+                >>> res = client.simulators.routines.list(
+                ...     filter=SimulatorRoutinesFilter(simulator_external_ids=["simulator_external_id"]),
+                ...     sort=CreatedTimeSort(order="asc")
+                ... )
 
         """
         self._warning.warn()
         return self._list(
-            method="POST",
             limit=limit,
+            method="POST",
             url_path="/simulators/routines/list",
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
@@ -115,22 +121,19 @@ class SimulatorRoutinesAPI(APIClient):
         )
 
     @overload
-    def create(self, routines: Sequence[SimulatorRoutine]) -> SimulatorRoutineList: ...
+    def create(self, routines: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
 
     @overload
-    def create(self, routines: SimulatorRoutine | SimulatorRoutineWrite) -> SimulatorRoutineList: ...
+    def create(self, routines: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
 
     def create(
         self,
-        routines: SimulatorRoutine
-        | SimulatorRoutineWrite
-        | Sequence[SimulatorRoutine]
-        | Sequence[SimulatorRoutineWrite],
+        routines: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
         """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
         You can create an arbitrary number of simulator routines, and the SDK will split the request into multiple requests.
         Args:
-            routines (SimulatorRoutine | SimulatorRoutineWrite | Sequence[SimulatorRoutine] | Sequence[SimulatorRoutineWrite]): No description.
+            routines (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
         Returns:
             SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
         Examples:
@@ -138,8 +141,8 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import SimulatorModelWrite
                 >>> client = CogniteClient()
-                >>> models = [SimulatorModelWrite(name="model1"), SimulatorModelWrite(name="model2")]
-                >>> res = client.simulators.models.create(models)
+                >>> routines = [SimulatorModelWrite(name="routine1"), SimulatorModelWrite(name="routine2")]
+                >>> res = client.simulators.models.create(routines)
         """
         assert_type(routines, "simulator_routines", [SimulatorRoutineCore, Sequence])
 
@@ -159,8 +162,8 @@ class SimulatorRoutinesAPI(APIClient):
         """`Delete one or more routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external_ids of simulator routines to delete.
+            id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
+            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
 
         Examples:
 

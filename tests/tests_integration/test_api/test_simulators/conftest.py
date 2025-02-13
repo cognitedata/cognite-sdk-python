@@ -125,7 +125,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
