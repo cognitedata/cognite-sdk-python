@@ -7,7 +7,7 @@ import pytest
 
 from cognite.client.data_classes import Datapoint, DatapointsArray
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
 from cognite.client.utils._time import ZoneInfo
 
 
@@ -126,3 +126,48 @@ class TestToPandas:
             index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
         )
         pd.testing.assert_frame_equal(df, exp_df)
+
+    @pytest.mark.parametrize("id_dct", [{"id": 123}, {"external_id": "foo"}, {"instance_id": NodeId("foo", "bar")}])
+    def test_identifier_is_kept_in_df_columns__raw_datapoints(self, id_dct):
+        import numpy as np
+
+        (identifier,) = id_dct.values()
+        # Raw tests, only external_id should be a string in the dataframe columns
+        dps_simple = Datapoints(**id_dct, timestamp=[1, 2, 11], value=[-5, 2, 38])
+        dps_array = DatapointsArray(
+            **id_dct, timestamp=np.array([1, 2, 11], dtype="datetime64[ms]"), value=np.array([-5, 2, 38], np.float64)
+        )
+        for dps in dps_simple, dps_array:
+            df = dps.to_pandas(
+                # Both these settings should be ignored:
+                include_aggregate_name=True,
+                include_granularity_name=True,
+            )
+            (col,) = df.columns
+            assert col == identifier
+
+    @pytest.mark.parametrize("id_dct", [{"id": 123}, {"external_id": "foo"}, {"instance_id": NodeId("foo", "bar")}])
+    @pytest.mark.parametrize("include_agg_name", [True, False])
+    @pytest.mark.parametrize("include_gran_name", [True, False])
+    def test_identifier_is_kept_in_df_columns__aggregate_datapoints(self, id_dct, include_agg_name, include_gran_name):
+        import numpy as np
+
+        (identifier,) = id_dct.values()
+        agg_simple = Datapoints(**id_dct, timestamp=[1, 2, 11], average=[-5, 2, 38], granularity="2s")
+        agg_array = DatapointsArray(
+            **id_dct,
+            timestamp=np.array([1, 2, 11], dtype="datetime64[ms]"),
+            average=np.array([-5, 2, 38], np.float64),
+            granularity="2s",
+        )
+        for agg in agg_simple, agg_array:
+            df = agg.to_pandas(
+                include_aggregate_name=include_agg_name,
+                include_granularity_name=include_gran_name,
+            )
+            (col,) = df.columns
+            if include_agg_name or include_gran_name:
+                assert isinstance(col, str)
+                assert str(identifier) == col.split("|")[0]
+            else:
+                assert type(col) is type(identifier)
