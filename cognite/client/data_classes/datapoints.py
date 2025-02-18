@@ -835,9 +835,14 @@ class DatapointsArray(CogniteResource):
         if tz is not None:
             idx = pd.to_datetime(idx, utc=True).tz_convert(convert_tz_for_pandas(tz))
 
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
+        identifier = resolve_ts_identifier_as_df_column_name(
+            self,
+            column_names,
+            include_aggregate_name,
+            include_granularity_name,
+        )
         if self.value is not None:
-            raw_columns: dict[str, npt.NDArray] = {identifier: self.value}
+            raw_columns: dict[int | str | NodeId, npt.NDArray] = {identifier: self.value}
             if include_status:
                 if self.status_code is not None:
                     raw_columns[f"{identifier}|status_code"] = self.status_code
@@ -846,10 +851,15 @@ class DatapointsArray(CogniteResource):
             return pd.DataFrame(raw_columns, index=idx, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
-        aggregate_columns = [
-            identifier + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
-            for agg in agg_names
-        ]
+        if include_aggregate_name or include_granularity_name:
+            # User wants to include info in the column names, so we convert to strings:
+            aggregate_columns = [
+                str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
+                for agg in agg_names
+            ]
+        else:
+            # Keep id as int, or instance_id as NodeId (presumable only a single aggregate (but we support more):
+            aggregate_columns = [identifier for _ in agg_names]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
         (df := pd.DataFrame(dict(enumerate(arrays)), index=idx, copy=False)).columns = aggregate_columns
@@ -1054,10 +1064,12 @@ class Datapoints(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         pd = local_import("pandas")
-        if column_names == "externalId":
-            column_names = "external_id"  # Camel case for backwards compatibility
-        identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
-
+        identifier = resolve_ts_identifier_as_df_column_name(
+            self,
+            column_names,
+            include_aggregate_name,
+            include_granularity_name,
+        )
         if include_errors and self.error is None:
             raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
 

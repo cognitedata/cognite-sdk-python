@@ -1134,7 +1134,12 @@ class DatapointsAPI(APIClient):
             column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
+        Tip:
+            Pandas DataFrames have one shared index, so when you fetch datapoints from multiple time series, the final index will be
+            the union of all the timestamps. Thus, unless all time series have the exact same timestamps, the various columns will contain
+            NaNs to fill the "missing" values. For lower memory usage on unaligned data, use the :py:meth:`~DatapointsAPI.retrieve_arrays` method.
 
         Warning:
             If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
@@ -1170,20 +1175,21 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
                 ...     uniform_index=True)
 
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a monthly granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates="average",
-                ...     granularity="30d",
+                ...     granularity="1mo",
                 ...     include_aggregate_name=False)
 
-            You may also use ``pandas.Timestamp`` to define start and end:
+            You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
 
                 >>> import pandas as pd
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo",
+                ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"))
         """
