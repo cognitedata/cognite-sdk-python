@@ -71,22 +71,6 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
 
 
 class SimulatorRoutineWrite(SimulatorRoutineCore):
-    def __init__(
-        self,
-        external_id: str,
-        model_external_id: str,
-        simulator_integration_external_id: str,
-        name: str,
-        description: str | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            model_external_id=model_external_id,
-            simulator_integration_external_id=simulator_integration_external_id,
-            name=name,
-            description=description,
-        )
-
     def as_write(self) -> SimulatorRoutineWrite:
         """Returns a writeable version of this resource"""
         return self
