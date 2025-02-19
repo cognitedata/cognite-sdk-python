@@ -1490,13 +1490,18 @@ class DatapointsAPI(APIClient):
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
-            uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            uniform_index (bool): If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
+        Tip:
+            Pandas DataFrames have one shared index, so when you fetch datapoints from multiple time series, the final index will be
+            the union of all the timestamps. Thus, unless all time series have the exact same timestamps, the various columns will contain
+            NaNs to fill the "missing" values. For lower memory usage on unaligned data, use the :py:meth:`~DatapointsAPI.retrieve_arrays` method.
 
         Warning:
             If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
@@ -1533,20 +1538,20 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
                 ...     uniform_index=True)
 
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a monthly granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates="average",
-                ...     granularity="30d",
+                ...     granularity="1mo",
                 ...     include_aggregate_name=False)
 
-            You may also use ``pandas.Timestamp`` to define start and end:
+            You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo",
+                ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"))
         """
@@ -2126,38 +2131,43 @@ class DatapointsAPI(APIClient):
     async def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         await self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    async def insert_dataframe(
-        self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True, instance_id_headers: bool = False
-    ) -> None:
-        """Insert a dataframe (columns must be unique).
+    async def insert_dataframe(self, df: pd.DataFrame, dropna: bool = True) -> None:
+        """Insert a dataframe containing datapoints to one or more time series.
 
-        The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The names of the columns specify
-        the ids or external ids of the time series to which the datapoints will be written.
+        The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The column identifiers
+        must contain the IDs (``int``), external IDs (``str``) or instance IDs (``NodeId`` or 2-tuple (space, ext. ID))
+        of the already existing time series to which the datapoints from that particular column will be written.
 
-        Said time series must already exist.
+        Note:
+            The column identifiers must be unique.
 
         Args:
             df (pd.DataFrame):  Pandas DataFrame object containing the time series.
-            external_id_headers (bool): Interpret the column names as external IDs. Pass False if using IDs or instance IDs. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
-            instance_id_headers (bool): Interpret the column names as instance IDs. Can either be `NodeId` objects or tuples of (space, external_id). Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. Default: False.
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
             to use the :py:meth:`~DatapointsAPI.insert` method instead (or :py:meth:`~DatapointsAPI.insert_multiple`)!
 
         Examples:
-            Post a dataframe with white noise:
+            Post a dataframe with white noise to three time series, one using ID, one using external id
+            and one using instance id:
 
                 >>> import numpy as np
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> ts_xid = "my-foo-ts"
-                >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
-                >>> noise = np.random.normal(0, 1, 100)
-                >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
+                >>> node_id = NodeId("my-space", "my-ts-xid")
+                >>> df = pd.DataFrame(
+                ...     {
+                ...         123: np.random.normal(0, 1, 100),
+                ...         "foo": np.random.normal(0, 1, 100),
+                ...         node_id: np.random.normal(0, 1, 100),
+                ...     },
+                ...     index=pd.date_range(start="2018-01-01", periods=100, freq="1d")
+                ... )
                 >>> client.time_series.data.insert_dataframe(df)
         """
         np, pd = local_import("numpy", "pandas")
@@ -2169,8 +2179,6 @@ class DatapointsAPI(APIClient):
             raise ValueError("DataFrame contains one or more (+/-) Infinity. Remove them in order to insert the data.")
         if not dropna and df.isna().any(axis=None):
             raise ValueError("DataFrame contains one or more NaNs. Remove them or pass `dropna=True` to insert.")
-        if instance_id_headers and external_id_headers:
-            raise ValueError("`instance_id_headers` and `external_id_headers` cannot be used at the same time.")
 
         dps = []
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
@@ -2179,17 +2187,19 @@ class DatapointsAPI(APIClient):
             datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
             if not datapoints:
                 continue
-            if external_id_headers:
-                dps.append({"datapoints": datapoints, "externalId": column_id})
-            elif instance_id_headers:
-                if isinstance(column_id, NodeId | tuple):
-                    dps.append({"datapoints": datapoints, "instanceId": NodeId.load(column_id)})
-                else:
+
+            match column_id:
+                case int():
+                    dps.append({"datapoints": datapoints, "id": column_id})
+                case str():
+                    dps.append({"datapoints": datapoints, "external_id": column_id})
+                case NodeId() | (str(), str()):
+                    dps.append({"datapoints": datapoints, "instance_id": NodeId.load(column_id)})
+                case _:
                     raise ValueError(
-                        f"Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got {type(column_id)}"
+                        f"Column identifiers must be either 'int' (ID), 'str' (external ID), or 'NodeId' "
+                        f"(or 2-tuple (space, ext. ID)) (instance ID), not {type(column_id)}"
                     )
-            else:
-                dps.append({"datapoints": datapoints, "id": int(column_id)})
         await self.insert_multiple(dps)
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
@@ -2327,7 +2337,12 @@ class DatapointsPoster:
             dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
         headers: dict[str, str] | None = None
 
-        await self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": payload}, headers=headers)
+        await self.dps_client._post(
+            url_path=self.dps_client._RESOURCE_PATH,
+            json={"items": payload},
+            headers=headers,
+            semaphore=get_global_datapoints_semaphore(),
+        )
         for dct in payload:
             dct["datapoints"].clear()
 
