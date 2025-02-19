@@ -853,7 +853,7 @@ class DatapointsArray(CogniteResource):
         (_, *agg_names), (_, *arrays) = self._data_fields()
         if include_aggregate_name or include_granularity_name:
             # User wants to include info in the column names, so we convert to strings:
-            aggregate_columns = [
+            aggregate_columns: list[Any] = [
                 str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
                 for agg in agg_names
             ]
@@ -1094,9 +1094,9 @@ class Datapoints(CogniteResource):
                         data_lists.append(self.status_symbol)
                 continue
             if include_aggregate_name:
-                id_col_name += f"|{attr}"
+                id_col_name = f"{id_col_name}|{attr}"
             if include_granularity_name and self.granularity is not None:
-                id_col_name += f"|{self.granularity}"
+                id_col_name = f"{id_col_name}|{self.granularity}"
             field_names.append(id_col_name)
             if attr == "error":
                 data_lists.append(data)

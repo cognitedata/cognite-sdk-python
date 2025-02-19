@@ -17,13 +17,14 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    TypedDict,
     TypeGuard,
     TypeVar,
     cast,
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import NotRequired, Self
 
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
@@ -85,6 +86,13 @@ PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
+
+
+class DatapointsInsertType(TypedDict):
+    datapoints: list[tuple | dict] | Datapoints | DatapointsArray
+    id: NotRequired[int]
+    external_id: NotRequired[str]
+    instance_id: NotRequired[NodeId]
 
 
 class DpsFetchStrategy(ABC):
@@ -1580,12 +1588,13 @@ class DatapointsAPI(APIClient):
                 ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
+        to_insert = DatapointsInsertType(
+            datapoints=datapoints,
+            **Identifier.of_either(id, external_id, instance_id).as_dict(),  # type: ignore [typeddict-item]
+        )
+        DatapointsPoster(self).insert([to_insert])
 
-        post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
-        post_dps_object["datapoints"] = datapoints
-        DatapointsPoster(self).insert([post_dps_object])
-
-    def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
+    def insert_multiple(self, datapoints: list[DatapointsInsertType]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
@@ -1595,7 +1604,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints (list[DatapointsInsertType]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1612,7 +1621,6 @@ class DatapointsAPI(APIClient):
             tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`.
 
             When passing tuples, the third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
-
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId
@@ -1777,16 +1785,16 @@ class DatapointsAPI(APIClient):
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
             mask = col.notna()
-            datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
+            datapoints: list[Any] = list(map(_InsertDatapoint, idx[mask], col[mask]))
             if not datapoints:
                 continue
             match column_id:
                 case int():
-                    dps.append({"datapoints": datapoints, "id": column_id})
+                    dps.append(DatapointsInsertType(datapoints=datapoints, id=column_id))
                 case str():
-                    dps.append({"datapoints": datapoints, "external_id": column_id})
+                    dps.append(DatapointsInsertType(datapoints=datapoints, external_id=column_id))
                 case NodeId():
-                    dps.append({"datapoints": datapoints, "instance_id": column_id.dump(include_instance_type=False)})
+                    dps.append(DatapointsInsertType(datapoints=datapoints, instance_id=column_id))
                 case _:
                     raise ValueError(f"Column identifiers must be either int, str or NodeId, not {type(column_id)}")
         self.insert_multiple(dps)
@@ -1831,7 +1839,7 @@ class DatapointsPoster:
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
 
-    def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+    def insert(self, dps_object_lst: list[DatapointsInsertType]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
         # To ensure we stay below the max limit on objects per request, we first chunk based on it:
         # (with 10k limit this is almost always just one chunk)
@@ -1847,7 +1855,7 @@ class DatapointsPoster:
         )
 
     def _verify_and_prepare_dps_objects(
-        self, dps_object_lst: list[dict[str, Any]]
+        self, dps_object_lst: list[DatapointsInsertType]
     ) -> list[tuple[Identifier, list[_InsertDatapoint]]]:
         dps_to_insert: dict[Identifier, list[_InsertDatapoint]] = defaultdict(list)
         for obj in dps_object_lst:
