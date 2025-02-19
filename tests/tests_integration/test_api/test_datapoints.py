@@ -2993,8 +2993,8 @@ class TestInsertDatapointsAPI:
         )
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
-        cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
-        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
+        cognite_client.time_series.data.insert_dataframe(df)
+        assert 2 == async_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     def test_delete_range(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)
