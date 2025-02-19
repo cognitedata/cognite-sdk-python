@@ -119,9 +119,9 @@ class TestToPandas:
 
         exp_df = pd.DataFrame(
             {
-                "123": 2.0,
+                123: 2.0,
                 "foo": 4.0,
-                "NodeId(s, x)": 6.0,
+                NodeId("s", "x"): 6.0,
             },
             index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
         )

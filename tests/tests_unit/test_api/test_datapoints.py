@@ -491,14 +491,14 @@ class TestDatapointsObject:
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_datapoint(self, cognite_client):
+    def test_datapoint(self):
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
         expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
-    def test_datapoints(self, cognite_client):
+    def test_datapoints(self):
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -508,16 +508,16 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_no_names(self, cognite_client):
+    def test_datapoints_no_names(self):
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({"1": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
         expected_df = pd.DataFrame({"1|average": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
-    def test_id_and_external_id_set_gives_external_id_columns(self, cognite_client):
+    def test_id_and_external_id_set_gives_external_id_columns(self):
         import pandas as pd
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -527,11 +527,11 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
-    def test_datapoints_empty(self, cognite_client):
+    def test_datapoints_empty(self):
         d = Datapoints(external_id="1", timestamp=[], value=[])
         assert d.to_pandas().empty
 
-    def test_datapoints_list(self, cognite_client):
+    def test_datapoints_list(self):
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
@@ -544,13 +544,13 @@ class TestPandasIntegration:
                 "1|step_interpolation": [3, 4, 5, None],
                 "2|count": pd.array([2, 3, 4, None], dtype="Int64"),
                 "2|step_interpolation": [3, 4, 5, None],
-                "3": [1, None, 3, 4.0],
+                3: [1, None, 3, 4.0],
             },
             index=pd.to_datetime(range(1, 5), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
-    def test_datapoints_list_names(self, cognite_client):
+    def test_datapoints_list_names(self):
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
@@ -560,10 +560,10 @@ class TestPandasIntegration:
             {"2|max": [2, 3, 4.0], "3|average": [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms")
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        expected_df.columns = [c[:1] for c in expected_df.columns]
+        expected_df.columns = [int(c[:1]) for c in expected_df.columns]
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
-    def test_datapoints_list_names_dup(self, cognite_client):
+    def test_datapoints_list_names_dup(self):
         import pandas as pd
 
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
@@ -578,7 +578,7 @@ class TestPandasIntegration:
         dps_list.to_pandas(include_aggregate_name=False)
         assert True  # Duplicated columns names were not allowed prior to v5
 
-    def test_datapoints_list_non_aligned(self, cognite_client):
+    def test_datapoints_list_non_aligned(self):
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3.0])
@@ -587,12 +587,12 @@ class TestPandasIntegration:
         dps_list = DatapointsList([d1, d2])
 
         expected_df = pd.DataFrame(
-            {"1": [1, 2, 3, None, None], "2": [None, None, 3, 4, 5]},
+            {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
             index=pd.to_datetime(range(1, 6), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
-    def test_datapoints_list_empty(self, cognite_client):
+    def test_datapoints_list_empty(self):
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
@@ -601,10 +601,10 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            {123: [1, 2, 3, 4], 456: [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -628,7 +628,7 @@ class TestPandasIntegration:
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -660,10 +660,10 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
+            {123: [1, 2, None, 4], 456: [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, dropna=True)
+        res = cognite_client.time_series.data.insert_dataframe(df, dropna=True)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
         assert {
@@ -686,7 +686,7 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000]
         df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=pd.to_datetime(timestamps, unit="ms"))
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
 
     def test_insert_dataframe_with_infs(self, cognite_client):
