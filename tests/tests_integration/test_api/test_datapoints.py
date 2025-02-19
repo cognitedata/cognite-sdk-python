@@ -2882,7 +2882,7 @@ class TestInsertDatapointsAPI:
         assert err.value.failed == [{"externalId": xid}]
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy, monkeypatch):
+    def test_insert_pandas_dataframe(self, cognite_client, new_ts, monkeypatch):
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),

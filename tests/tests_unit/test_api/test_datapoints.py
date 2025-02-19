@@ -13,6 +13,7 @@ import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._time import ZoneInfo, granularity_to_ms
@@ -708,6 +709,29 @@ class TestPandasIntegration:
             index=pd.to_datetime(timestamps, unit="ms"),
         )
         cognite_client.time_series.data.insert_dataframe(df)
+
+    def test_insert_pandas_dataframe_various_column_types_ie_identifiers(self, cognite_client, mock_post_datapoints):
+        # This tests ensures that integers are interpreted as (internal) id, strings as external id,
+        # and NodeId as instance_id
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {123456789: [1], "asdfghjk": [2], NodeId("foo", "bar"): [3]},
+            index=[pd.Timestamp(4, unit="ms")],
+        )
+        cognite_client.time_series.data.insert_dataframe(df)
+
+        assert len(mock_post_datapoints.calls) == 1
+        call = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        items = call["items"]
+        assert len(items) == 3
+
+        expected = [
+            {"id": 123456789, "datapoints": [{"timestamp": 4, "value": 1}]},
+            {"externalId": "asdfghjk", "datapoints": [{"timestamp": 4, "value": 2}]},
+            {"instanceId": {"space": "foo", "externalId": "bar"}, "datapoints": [{"timestamp": 4, "value": 3}]},
+        ]
+        assert items == expected
 
 
 # Increase readability in test data:
