@@ -18,14 +18,12 @@ import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
-from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import get_url, jsgz_load, random_gamma_dist_integer
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
 
 @pytest.fixture
@@ -652,7 +650,7 @@ class TestPandasIntegration:
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
         assert {
@@ -678,7 +676,7 @@ class TestPandasIntegration:
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
         assert {
@@ -707,10 +705,10 @@ class TestPandasIntegration:
             {instance_ids[0]: [1, 2, 3, 4], instance_ids[1]: [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
-        assert {
+        expected_body = {
             "items": [
                 {
                     "instanceId": {"externalId": "123", "space": "space"},
@@ -721,18 +719,49 @@ class TestPandasIntegration:
                     "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
                 },
             ]
-        } == request_body
+        }
+        assert expected_body == request_body
 
-    def test_insert_dataframe_external_ids_and_instance_ids(self, cognite_client: CogniteClient) -> None:
+    def test_insert_dataframe_all_identifier_types(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
         import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         index = pd.to_datetime(timestamps, unit="ms")
-        df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
-        with pytest.raises(
-            ValueError, match=r"`instance_id_headers` and `external_id_headers` cannot be used at the same time\."
-        ):
-            cognite_client.time_series.data.insert_dataframe(df, instance_id_headers=True)
+        df = pd.DataFrame(
+            {
+                123: [1, 2, 3, 4],
+                "foo": [5, 6, 7, 8],
+                NodeId("space", "bar"): [9, 10, 11, 12],
+                ("space", "bass"): [13, 14, 15, 16],
+            },
+            index=index,
+        )
+        cognite_client.time_series.data.insert_dataframe(df)
+
+        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        expected_body = {
+            "items": [
+                {
+                    "id": 123,
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
+                },
+                {
+                    "externalId": "foo",
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(5, 9))],
+                },
+                {
+                    "instanceId": {"externalId": "bar", "space": "space"},
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(9, 13))],
+                },
+                {
+                    "instanceId": {"externalId": "bass", "space": "space"},
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(13, 17))],
+                },
+            ]
+        }
+        assert expected_body == request_body
 
     def test_insert_dataframe_malformed_instance_ids(self, cognite_client: CogniteClient) -> None:
         import pandas as pd
@@ -746,12 +775,12 @@ class TestPandasIntegration:
                 "Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>"
             ),
         ):
-            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+            cognite_client.time_series.data.insert_dataframe(df)
 
         df = pd.DataFrame({(123,): [1, 2, 3, 4], (456,): [5.0, 6.0, 7.0, 8.0]}, index=index)
         # TODO: NodeId does not give a correct error message when tuples have the wrong number of elements. This should be fixed in the NodeId class.
         with pytest.raises(KeyError):
-            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+            cognite_client.time_series.data.insert_dataframe(df)
 
     def test_insert_dataframe_with_nans(self, cognite_client: CogniteClient) -> None:
         import pandas as pd
@@ -772,7 +801,7 @@ class TestPandasIntegration:
             {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, dropna=True)
+        res = cognite_client.time_series.data.insert_dataframe(df, dropna=True)
         assert res is None
         request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
         assert {
@@ -795,7 +824,7 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000]
         df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=pd.to_datetime(timestamps, unit="ms"))
-        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
+        res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
 
     def test_insert_dataframe_with_infs(self, cognite_client: CogniteClient) -> None:
