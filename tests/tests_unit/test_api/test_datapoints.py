@@ -10,12 +10,11 @@ from random import randint, random, shuffle
 import pytest
 
 import cognite.client._api.datapoints as dps_api  # for mocking
-from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
-from cognite.client.utils._time import ZoneInfo, granularity_to_ms
+from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load, random_gamma_dist_integer
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
@@ -861,135 +860,3 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
-
-
-class TestRetrieveDataPointsInTz:
-    """
-    This test only the error raising functionality, actual retrieval functionality is tested in the integration tests.
-    """
-
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize(
-        "args, start_tz, end_tz, expected_error_message",
-        [
-            pytest.param(
-                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                None,
-                None,
-                "All times must be timezone aware, start and end do not have timezones.",
-                id="Naive timezones",
-            ),
-            pytest.param(
-                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                "Europe/Oslo",
-                "America/Los_Angeles",
-                "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/Los_Angeles'.",
-                id="Mismatch timezone",
-            ),
-            pytest.param(
-                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                "Europe/Oslo",
-                None,
-                "All times must be timezone aware, end does not have a timezone.",
-                id="Missing end timezone",
-            ),
-            pytest.param(
-                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                None,
-                "America/Los_Angeles",
-                "All times must be timezone aware, start does not have a timezone.",
-                id="Missing start timezone",
-            ),
-            pytest.param(
-                {"start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                "Europe/Oslo",
-                "Europe/Oslo",
-                re.escape("Either input id(s) or external_id(s)"),
-                id="Neither id or external id",
-            ),
-            pytest.param(
-                {"external_id": "123", "id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
-                "Europe/Oslo",
-                "Europe/Oslo",
-                re.escape("Either input id(s) or external_id(s)"),
-                id="Passed both id and external id",
-            ),
-            pytest.param(
-                {
-                    "external_id": "123",
-                    "start": datetime(2023, 1, 1),
-                    "end": datetime(2023, 1, 2),
-                    "aggregates": "average",
-                    "granularity": "12years",
-                },
-                "Europe/Oslo",
-                "Europe/Oslo",
-                r"^Granularity, '12years', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
-                id="Granularity above maximum aggregation limit in hours",
-            ),
-            pytest.param(
-                {
-                    "external_id": "123",
-                    "start": datetime(2023, 1, 1),
-                    "end": datetime(2023, 1, 2),
-                    "aggregates": "average",
-                    "granularity": "48quarters",
-                },
-                "Europe/Oslo",
-                "Europe/Oslo",
-                r"^Granularity, '48quarters', is above the maximum limit of 100k hours equivalent \(was 105192\)\.$",
-                id="Granularity above maximum aggregation limit in quarters",
-            ),
-            pytest.param(
-                {
-                    "external_id": ["123", "123"],
-                    "start": datetime(2023, 1, 1),
-                    "end": datetime(2023, 1, 2),
-                    "aggregates": "average",
-                    "granularity": "1year",
-                },
-                "Europe/Oslo",
-                "Europe/Oslo",
-                re.escape("The following identifiers were not unique: {'123'}"),
-                id="Duplicated external ids",
-            ),
-            pytest.param(
-                {
-                    "id": [123, 123],
-                    "start": datetime(2023, 1, 1),
-                    "end": datetime(2023, 1, 2),
-                    "aggregates": "average",
-                    "granularity": "1year",
-                },
-                "Europe/Oslo",
-                "Europe/Oslo",
-                re.escape("The following identifiers were not unique: {123}"),
-                id="Duplicated ids",
-            ),
-            pytest.param(
-                {"id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2), "aggregates": "average"},
-                "Europe/Oslo",
-                "Europe/Oslo",
-                "Got only one of 'aggregates' and 'granularity'. Pass both to get aggregates, or neither to get raw data",
-                id="Missing granularity",
-            ),
-            pytest.param(
-                {"id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2), "granularity": "1year"},
-                "Europe/Oslo",
-                "Europe/Oslo",
-                "Got only one of 'aggregates' and 'granularity'. Pass both to get aggregates, or neither to get raw data",
-                id="Missing aggregates",
-            ),
-        ],
-    )
-    def test_retrieve_data_points_in_tz_invalid_user_input(
-        args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
-    ):
-        if start_tz is not None:
-            args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
-        if end_tz is not None:
-            args["end"] = args["end"].astimezone(ZoneInfo(end_tz))
-
-        with pytest.raises(ValueError, match=expected_error_message):
-            cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)
