@@ -6,7 +6,6 @@ import heapq
 import itertools
 import math
 import time
-import warnings
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
@@ -22,6 +21,7 @@ from typing import (
     cast,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
 
@@ -59,13 +59,7 @@ from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._importing import import_as_completed, local_import
 from cognite.client.utils._time import (
-    ZoneInfo,
-    align_large_granularity,
-    pandas_date_range_tz,
     timestamp_to_ms,
-    to_fixed_utc_intervals,
-    to_pandas_freq,
-    validate_timezone,
 )
 from cognite.client.utils._validation import validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -1232,145 +1226,6 @@ class DatapointsAPI(APIClient):
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
         freq = cast(str, granularity).replace("m", "min")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
-
-    # TODO: Deprecated, don't add support for new features like instance_id
-    def retrieve_dataframe_in_tz(
-        self,
-        *,
-        id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
-        start: datetime.datetime,
-        end: datetime.datetime,
-        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
-        granularity: str | None = None,
-        target_unit: str | None = None,
-        target_unit_system: str | None = None,
-        ignore_unknown_ids: bool = False,
-        include_status: bool = False,
-        ignore_bad_datapoints: bool = True,
-        treat_uncertain_as_bad: bool = True,
-        uniform_index: bool = False,
-        include_aggregate_name: bool = True,
-        include_granularity_name: bool = False,
-        column_names: Literal["id", "external_id"] = "external_id",
-    ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe in the same timezone as ``start`` and ``end``.
-
-        .. admonition:: Deprecation Warning
-
-            This SDK function is deprecated and will be removed in the next major release. Reason: Cognite Data
-            Fusion now has native support for timezone and calendar-based aggregations. Please consider migrating
-            already today: The API also supports fixed offsets, yields more accurate results and have better support
-            for exotic timezones and unusual DST offsets. You can use the normal retrieve methods instead, just
-            pass 'timezone' as a parameter.
-
-        Args:
-            id (int | Sequence[int] | None): ID or list of IDs.
-            external_id (str | SequenceNotStr[str] | None): External ID or list of External IDs.
-            start (datetime.datetime): Inclusive start, must be timezone aware.
-            end (datetime.datetime): Exclusive end, must be timezone aware and have the same timezone as start.
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``min``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
-            granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
-            target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
-            target_unit_system (str | None): The unit system of the datapoints returned. Cannot be used with target_unit.
-            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
-            ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
-            treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
-            uniform_index (bool): If querying aggregates with a non-calendar granularity, specifying ``uniform_index=True`` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
-            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
-            include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
-            column_names (Literal['id', 'external_id']): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
-
-        Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given timezone.
-        """
-        warnings.warn(
-            (
-                "This SDK method, `retrieve_dataframe_in_tz`, is deprecated and will be removed in the next major release. "
-                "Reason: Cognite Data Fusion now has native support for timezone and calendar-based aggregations. Please "
-                "consider migrating already today: The API also supports fixed offsets, yields more accurate results and "
-                "have better support for exotic timezones and unusual DST offsets. You can use the normal retrieve methods "
-                "instead, just pass 'timezone' as a parameter."
-            ),
-            UserWarning,
-        )
-        _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
-
-        if not exactly_one_is_not_none(id, external_id):
-            raise ValueError("Either input id(s) or external_id(s)")
-
-        if exactly_one_is_not_none(aggregates, granularity):
-            raise ValueError(
-                "Got only one of 'aggregates' and 'granularity'. "
-                "Pass both to get aggregates, or neither to get raw data"
-            )
-        tz = validate_timezone(start, end)
-        if aggregates is None and granularity is None:
-            # For raw data, we only need to convert the timezone:
-            return (
-                # TODO: include_outside_points is missing
-                self.retrieve_dataframe(
-                    id=id,
-                    external_id=external_id,
-                    start=start,
-                    end=end,
-                    aggregates=aggregates,
-                    granularity=granularity,
-                    target_unit=target_unit,
-                    target_unit_system=target_unit_system,
-                    ignore_unknown_ids=ignore_unknown_ids,
-                    include_status=include_status,
-                    ignore_bad_datapoints=ignore_bad_datapoints,
-                    treat_uncertain_as_bad=treat_uncertain_as_bad,
-                    uniform_index=uniform_index,
-                    include_aggregate_name=include_aggregate_name,
-                    include_granularity_name=include_granularity_name,
-                    column_names=column_names,
-                    limit=None,
-                )
-                .tz_localize("utc")
-                .tz_convert(str(tz))
-            )
-        assert isinstance(granularity, str)  # mypy
-
-        identifiers = IdentifierSequence.load(id, external_id)
-        if not identifiers.are_unique():
-            duplicated = find_duplicates(identifiers.as_primitives())
-            raise ValueError(f"The following identifiers were not unique: {duplicated}")
-
-        intervals = to_fixed_utc_intervals(start, end, granularity)
-        queries = [
-            {**ident_dct, "aggregates": aggregates, **interval}
-            for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
-        ]
-        arrays = self.retrieve_arrays(
-            limit=None,
-            ignore_unknown_ids=ignore_unknown_ids,
-            include_status=include_status,
-            ignore_bad_datapoints=ignore_bad_datapoints,
-            treat_uncertain_as_bad=treat_uncertain_as_bad,
-            target_unit=target_unit,
-            target_unit_system=target_unit_system,
-            **{identifiers[0].name(): queries},  # type: ignore [arg-type]
-        )
-        assert isinstance(arrays, DatapointsArrayList)  # mypy
-
-        arrays.concat_duplicate_ids()
-        for arr in arrays:
-            # In case 'include_granularity_name' is used, we don't want '2quarters' to show up as '4343h':
-            arr.granularity = granularity
-        df = (
-            arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
-            .tz_localize("utc")
-            .tz_convert(str(tz))
-        )
-        if uniform_index:
-            freq = to_pandas_freq(granularity, start)
-            # TODO: Bug, "small" granularities like s/m/h raise here:
-            start, end = align_large_granularity(start, end, granularity)
-            return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
-        return df
 
     def retrieve_latest(
         self,

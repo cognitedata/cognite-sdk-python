@@ -66,7 +66,7 @@ from cognite.client.utils._auxiliary import exactly_one_is_not_none, find_duplic
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
-from cognite.client.utils._time import convert_data_modelling_timestamp
+from cognite.client.utils._time import convert_data_modeling_timestamp
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -1697,7 +1697,7 @@ class TypedInstance(ABC):
             return value
         annotation = str(parameter.annotation)
         if "datetime" in annotation and isinstance(value, str):
-            return convert_data_modelling_timestamp(value)
+            return convert_data_modeling_timestamp(value)
         elif "date" in annotation and isinstance(value, str):
             return date.fromisoformat(value)
         elif isinstance(value, dict):

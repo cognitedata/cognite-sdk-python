@@ -18,6 +18,7 @@ from typing import (
     TypedDict,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 from typing_extensions import NotRequired, Self
 
@@ -41,7 +42,6 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 from cognite.client.utils._time import (
-    ZoneInfo,
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
     parse_str_timezone,
@@ -650,29 +650,6 @@ class DatapointsArray(CogniteResource):
             timezone=timezone,  # type: ignore [arg-type]
         )
 
-    @classmethod
-    def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
-        sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
-        if len(sort_by_time) == 0:
-            return arrays[0]
-
-        first = sort_by_time[0]
-        if len(sort_by_time) == 1:
-            return first
-
-        arrays_by_attribute = defaultdict(list)
-        for array in sort_by_time:
-            for attr, arr in zip(*array._data_fields()):
-                arrays_by_attribute[attr].append(arr)
-        arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
-
-        all_null_ts = set().union(*(arr.null_timestamps for arr in sort_by_time if arr.null_timestamps))
-        return cls(
-            **first._ts_info,
-            **arrays_by_attribute,  # type: ignore [arg-type]
-            null_timestamps=all_null_ts,
-        )
-
     def __len__(self) -> int:
         return len(self.timestamp)
 
@@ -1269,45 +1246,6 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
         self._instance_id_to_item.update(inst_id_dct)
-
-    def concat_duplicate_ids(self) -> None:
-        """
-        Concatenates all arrays with duplicated IDs.
-
-        Arrays with the same ids are stacked in chronological order.
-
-        **Caveat** This method is not guaranteed to preserve the order of the list.
-        """
-        # Rebuilt list instead of removing duplicated one at a time at the cost of O(n).
-        self.data.clear()
-
-        # This implementation takes advantage of the ordering of the duplicated in the __init__ method
-        has_external_ids = set()
-        for ext_id, items in self._external_id_to_item.items():
-            if not isinstance(items, list):
-                self.data.append(items)
-                if items.id is not None:
-                    has_external_ids.add(items.id)
-                continue
-            concatenated = DatapointsArray.create_from_arrays(*items)
-            self._external_id_to_item[ext_id] = concatenated
-            if concatenated.id is not None:
-                has_external_ids.add(concatenated.id)
-                self._id_to_item[concatenated.id] = concatenated
-            self.data.append(concatenated)
-
-        if not (only_ids := set(self._id_to_item) - has_external_ids):
-            return
-
-        for id_, items in self._id_to_item.items():
-            if id_ not in only_ids:
-                continue
-            if not isinstance(items, list):
-                self.data.append(items)
-                continue
-            concatenated = DatapointsArray.create_from_arrays(*items)
-            self._id_to_item[id_] = concatenated
-            self.data.append(concatenated)
 
     def get(  # type: ignore [override]
         self,
