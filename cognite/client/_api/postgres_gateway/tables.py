@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Literal, overload
 import cognite.client.data_classes.postgres_gateway.tables as pg
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import TablenameSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:

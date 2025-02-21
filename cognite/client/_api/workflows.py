@@ -28,13 +28,14 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionUpsert,
 )
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import at_least_one_is_not_none, interpolate_and_url_encode, split_into_chunks
+from cognite.client.utils._auxiliary import at_least_one_is_not_none, split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
 )
 from cognite.client.utils._session import create_session_and_return_nonce
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -783,7 +784,7 @@ class WorkflowVersionAPI(APIClient):
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
         tasks = list(map(tuple, split_into_chunks(given_wf_ids, self._RETRIEVE_LIMIT)))
-        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary = execute_tasks(get_single, tasks=tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
@@ -968,7 +969,7 @@ class WorkflowAPI(APIClient):
 
         # Not really a point in splitting into chunks when chunk_size is 1, but...
         tasks = list(map(tuple, split_into_chunks(external_id, self._RETRIEVE_LIMIT)))
-        tasks_summary = execute_tasks(get_single, tasks=tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary = execute_tasks(get_single, tasks=tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
