@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING, Any, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
-from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter
+from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.routines import (
-    CreatedTimeSort,
     SimulatorRoutine,
-    SimulatorRoutineCore,
     SimulatorRoutineList,
     SimulatorRoutineWrite,
 )
@@ -87,7 +85,7 @@ class SimulatorRoutinesAPI(APIClient):
         Retrieves a list of simulator routines that match the given criteria
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 1000. Set to -1, float(“inf”) or None to return all items.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
             sort (CreatedTimeSort | None): The criteria to sort by.
 
@@ -101,8 +99,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> res = client.simulators.routines.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter
-                >>> from cognite.client.data_classes.simulators.routines import CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter, CreatedTimeSort
                 >>> res = client.simulators.routines.list(
                 ...     filter=SimulatorRoutinesFilter(simulator_integration_external_ids=["integration_ext_id"]),
                 ...     sort=CreatedTimeSort(order="asc")
@@ -121,19 +118,19 @@ class SimulatorRoutinesAPI(APIClient):
         )
 
     @overload
-    def create(self, routines: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
+    def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
 
     @overload
-    def create(self, routines: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
+    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
 
     def create(
         self,
-        routines: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
+        routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
         """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
-        You can create an arbitrary number of simulator routines, and the SDK will split the request into multiple requests.
+        You can create an arbitrary number of simulator routines.
         Args:
-            routines (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
+            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
         Returns:
             SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
         Examples:
@@ -157,12 +154,12 @@ class SimulatorRoutinesAPI(APIClient):
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
-        assert_type(routines, "simulator_routines", [SimulatorRoutineCore, Sequence])
+        assert_type(routine, "simulator_routines", [SimulatorRoutineWrite, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorRoutineList,
             resource_cls=SimulatorRoutine,
-            items=routines,
+            items=routine,
             input_resource_cls=SimulatorRoutineWrite,
             resource_path=self._RESOURCE_PATH,
         )

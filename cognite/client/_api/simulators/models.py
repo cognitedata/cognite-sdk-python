@@ -7,9 +7,8 @@ from cognite.client._api.simulators.models_revisions import SimulatorModelRevisi
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
-from cognite.client.data_classes.simulators.filters import SimulatorModelsFilter
+from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.models import (
-    CreatedTimeSort,
     SimulatorModel,
     SimulatorModelList,
     SimulatorModelUpdate,
@@ -59,7 +58,8 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators import SimulatorModelsFilter, CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators import SimulatorModelsFilter
+                >>> from cognite.client.data_classes.simulators.filters import CreatedTimeSort
                 >>> res = client.simulators.models.list(
                 ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
                 ...     sort=CreatedTimeSort(order="asc")

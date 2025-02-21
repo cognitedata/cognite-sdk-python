@@ -132,11 +132,9 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
     routines = cognite_client.simulators.routines.list(
         filter=SimulatorRoutinesFilter(model_external_ids=[model_unique_external_id])
     )
-    routine_not_exists = (
-        len(list(filter(lambda x: x.external_id == simulator_routine_unique_external_id, routines))) == 0
-    )
+    routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
 
-    if routine_not_exists:
+    if routine_not_exists is None:
         cognite_client.simulators._post(
             "/simulators/routines",
             json={

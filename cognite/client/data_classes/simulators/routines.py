@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
-    CogniteSort,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
     WriteableCogniteResource,
@@ -66,9 +65,6 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
             description=resource.get("description"),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 class SimulatorRoutineWrite(SimulatorRoutineCore):
     def as_write(self) -> SimulatorRoutineWrite:
@@ -83,41 +79,43 @@ class SimulatorRoutine(SimulatorRoutineCore):
         model_external_id: str,
         simulator_integration_external_id: str,
         name: str,
-        data_set_id: int | None = None,
-        simulator_external_id: str | None = None,
+        id: int,
+        data_set_id: int,
+        simulator_external_id: str,
+        created_time: int,
+        last_updated_time: int,
         description: str | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        id: int | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.model_external_id = model_external_id
-        self.simulator_integration_external_id = simulator_integration_external_id
-        self.name = name
-        self.description = description
+        super().__init__(
+            external_id=external_id,
+            model_external_id=model_external_id,
+            simulator_integration_external_id=simulator_integration_external_id,
+            name=name,
+            description=description,
+        )
         # id/created_time/last_updated_time are required when using the class to read,
         # but don't make sense passing in when creating a new object. So in order to make the typing
         # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
         # Optional[int].
-        self.id: int | None = id
-        self.created_time: int | None = created_time
-        self.last_updated_time: int | None = last_updated_time
-        self.simulator_external_id: str | None = simulator_external_id
-        self.data_set_id: int | None = data_set_id
+        self.id = id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.simulator_external_id = simulator_external_id
+        self.data_set_id = data_set_id
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = cls(
             external_id=resource["externalId"],
-            simulator_external_id=resource.get("simulatorExternalId"),
+            simulator_external_id=resource["simulatorExternalId"],
             model_external_id=resource["modelExternalId"],
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             name=resource["name"],
-            data_set_id=resource.get("dataSetId"),
+            data_set_id=resource["dataSetId"],
             description=resource.get("description"),
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
-            id=resource.get("id"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            id=resource["id"],
         )
         return instance
 
@@ -130,25 +128,6 @@ class SimulatorRoutine(SimulatorRoutineCore):
             name=self.name,
             description=self.description,
         )
-
-    def __hash__(self) -> int:
-        return hash(self.external_id)
-
-
-class PropertySort(CogniteSort):
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case=camel_case)
-        dumped["property"] = self.property
-        return dumped
-
-
-class CreatedTimeSort(PropertySort):
-    def __init__(
-        self,
-        property: Literal["createdTime"] = "createdTime",
-        order: Literal["asc", "desc"] = "asc",
-    ):
-        super().__init__(property, order)
 
 
 class SimulatorRoutineWriteList(CogniteResourceList[SimulatorRoutineWrite], ExternalIDTransformerMixin):

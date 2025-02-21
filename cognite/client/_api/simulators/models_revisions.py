@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any, NoReturn, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import (
-    CreatedTimeSort,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
@@ -54,7 +53,8 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter, CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
+                >>> from cognite.client.data_classes.simulators.filters import CreatedTimeSort
                 >>> res = client.simulators.models.revisions.list(
                 ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"]),
                 ...     sort=CreatedTimeSort(order="asc")

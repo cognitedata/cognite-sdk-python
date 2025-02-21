@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from cognite.client.data_classes.simulators.filters import (
+    CreatedTimeSort,
+    PropertySort,
     SimulatorIntegrationFilter,
     SimulatorModelRevisionsFilter,
     SimulatorModelsFilter,
 )
 from cognite.client.data_classes.simulators.models import (
-    CreatedTimeSort,
-    PropertySort,
     SimulatorModel,
     SimulatorModelList,
     SimulatorModelRevision,

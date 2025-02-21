@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any, Literal
 
-from cognite.client.data_classes._base import CogniteFilter
+from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -43,3 +44,19 @@ class SimulatorRoutinesFilter(CogniteFilter):
     ) -> None:
         self.model_external_ids = model_external_ids
         self.simulator_integration_external_ids = simulator_integration_external_ids
+
+
+class PropertySort(CogniteSort):
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        dumped["property"] = self.property
+        return dumped
+
+
+class CreatedTimeSort(PropertySort):
+    def __init__(
+        self,
+        property: Literal["createdTime"] = "createdTime",
+        order: Literal["asc", "desc"] = "asc",
+    ):
+        super().__init__(property, order)
