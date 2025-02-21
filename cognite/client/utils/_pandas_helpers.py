@@ -10,6 +10,7 @@ from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils._auxiliary import no_op
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, ZoneInfo
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+    from cognite.client.data_classes.data_modeling.ids import NodeId
 
 
 NULLABLE_INT_COLS = {
@@ -150,10 +152,20 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
 
 
 def resolve_ts_identifier_as_df_column_name(
-    dps: Datapoints | DatapointsArray, column_names: Literal["id", "external_id", "instance_id"]
-) -> str:
-    # Note: Although pandas columns can support numbers and objects like tuples, we may need to pad with
-    #       e.g. aggregate info, so we always ensure the column names are strings.
+    dps: Datapoints | DatapointsArray,
+    column_names: Literal["id", "external_id", "instance_id"],
+    include_aggregate_name: bool,
+    include_granularity_name: bool,
+) -> int | str | NodeId:
+    """
+    When we need to pad the identifier with additional info, e.g. aggregate name or granularity, we
+    must convert non-string identifiers like id (int) and instance_id (NodeId) to strings.
+
+    Otherwise, we can use the identifier as is (always done for raw datapoints).
+    """
+    is_raw = dps.value is not None
+    maybe_string_fn = no_op if is_raw or (not include_aggregate_name and not include_granularity_name) else str
+
     if column_names not in {"id", "external_id", "instance_id"}:
         # Don't raise here, the user may have waited a long time for datapoints fetching
         warnings.warn(
@@ -166,8 +178,7 @@ def resolve_ts_identifier_as_df_column_name(
     original = column_names
     if column_names == "instance_id":
         if dps.instance_id:
-            # Keep column name as short as possible, default repr adds "space=..." and "external_id=..."
-            return "NodeId({}, {})".format(*dps.instance_id.as_tuple())
+            return maybe_string_fn(dps.instance_id)
         column_names = "external_id"  # Fallback to external_id
 
     if column_names == "external_id":
@@ -177,7 +188,7 @@ def resolve_ts_identifier_as_df_column_name(
 
     if column_names == "id":
         if dps.id:
-            return str(dps.id)
+            return maybe_string_fn(dps.id)
 
     fallbacks = {"instance_id": ["external_id", "id"], "external_id": ["id"], "id": []}
     raise ValueError(

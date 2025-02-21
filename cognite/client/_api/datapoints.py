@@ -17,13 +17,14 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
+    TypedDict,
     TypeGuard,
     TypeVar,
     cast,
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import NotRequired, Self
 
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
@@ -85,6 +86,13 @@ PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
 _TResLst = TypeVar("_TResLst", DatapointsList, DatapointsArrayList)
+
+
+class DatapointsInsertType(TypedDict):
+    datapoints: list[tuple | dict] | Datapoints | DatapointsArray
+    id: NotRequired[int]
+    external_id: NotRequired[str]
+    instance_id: NotRequired[NodeId]
 
 
 class DpsFetchStrategy(ABC):
@@ -1128,13 +1136,18 @@ class DatapointsAPI(APIClient):
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, not aggregates.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
-            uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            uniform_index (bool): If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
+        Tip:
+            Pandas DataFrames have one shared index, so when you fetch datapoints from multiple time series, the final index will be
+            the union of all the timestamps. Thus, unless all time series have the exact same timestamps, the various columns will contain
+            NaNs to fill the "missing" values. For lower memory usage on unaligned data, use the :py:meth:`~DatapointsAPI.retrieve_arrays` method.
 
         Warning:
             If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
@@ -1170,20 +1183,21 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
                 ...     uniform_index=True)
 
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a monthly granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates="average",
-                ...     granularity="30d",
+                ...     granularity="1mo",
                 ...     include_aggregate_name=False)
 
-            You may also use ``pandas.Timestamp`` to define start and end:
+            You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
 
                 >>> import pandas as pd
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo",
+                ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"))
         """
@@ -1574,12 +1588,13 @@ class DatapointsAPI(APIClient):
                 ... )
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
+        to_insert = DatapointsInsertType(
+            datapoints=datapoints,
+            **Identifier.of_either(id, external_id, instance_id).as_dict(),  # type: ignore [typeddict-item]
+        )
+        DatapointsPoster(self).insert([to_insert])
 
-        post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
-        post_dps_object["datapoints"] = datapoints
-        DatapointsPoster(self).insert([post_dps_object])
-
-    def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
+    def insert_multiple(self, datapoints: list[DatapointsInsertType]) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
@@ -1589,7 +1604,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints (list[DatapointsInsertType]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1606,7 +1621,6 @@ class DatapointsAPI(APIClient):
             tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`.
 
             When passing tuples, the third element is optional and may contain the status code for the datapoint. To pass by symbol, a dictionary must be used.
-
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import NodeId
@@ -1718,34 +1732,43 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
-        """Insert a dataframe (columns must be unique).
+    def insert_dataframe(self, df: pd.DataFrame, dropna: bool = True) -> None:
+        """Insert a dataframe containing datapoints to one or more time series.
 
-        The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The names of the columns specify
-        the ids or external ids of the time series to which the datapoints will be written.
+        The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The column identifiers
+        must contain the IDs (int), external IDs (str) or instance IDs (NodeId) of the already existing
+        time series to which the datapoints from that particular column will be written.
 
-        Said time series must already exist.
+        Note:
+            The column identifiers must be unique.
 
         Args:
             df (pd.DataFrame):  Pandas DataFrame object containing the time series.
-            external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
-            dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
+            dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per individual column. Default: True.
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
             to use the :py:meth:`~DatapointsAPI.insert` method instead (or :py:meth:`~DatapointsAPI.insert_multiple`)!
 
         Examples:
-            Post a dataframe with white noise:
+
+            Post a dataframe with white noise to three time series, one using ID, one using external id
+            and one using instance id:
 
                 >>> import numpy as np
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
-                >>> ts_xid = "my-foo-ts"
-                >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
-                >>> noise = np.random.normal(0, 1, 100)
-                >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
+                >>> node_id = NodeId("my-space", "my-ts-xid")
+                >>> df = pd.DataFrame(
+                ...     {
+                ...         123: np.random.normal(0, 1, 100),
+                ...         "foo": np.random.normal(0, 1, 100),
+                ...         node_id: np.random.normal(0, 1, 100),
+                ...     },
+                ...     index=pd.date_range(start="2018-01-01", periods=100, freq="1d")
+                ... )
                 >>> client.time_series.data.insert_dataframe(df)
         """
         np, pd = local_import("numpy", "pandas")
@@ -1762,13 +1785,18 @@ class DatapointsAPI(APIClient):
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
             mask = col.notna()
-            datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
+            datapoints: list[Any] = list(map(_InsertDatapoint, idx[mask], col[mask]))
             if not datapoints:
                 continue
-            if external_id_headers:
-                dps.append({"datapoints": datapoints, "externalId": column_id})
-            else:
-                dps.append({"datapoints": datapoints, "id": int(column_id)})
+            match column_id:
+                case int():
+                    dps.append(DatapointsInsertType(datapoints=datapoints, id=column_id))
+                case str():
+                    dps.append(DatapointsInsertType(datapoints=datapoints, external_id=column_id))
+                case NodeId():
+                    dps.append(DatapointsInsertType(datapoints=datapoints, instance_id=column_id))
+                case _:
+                    raise ValueError(f"Column identifiers must be either int, str or NodeId, not {type(column_id)}")
         self.insert_multiple(dps)
 
     def _select_dps_fetch_strategy(self, queries: list[DatapointsQuery]) -> type[DpsFetchStrategy]:
@@ -1811,7 +1839,7 @@ class DatapointsPoster:
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
 
-    def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+    def insert(self, dps_object_lst: list[DatapointsInsertType]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
         # To ensure we stay below the max limit on objects per request, we first chunk based on it:
         # (with 10k limit this is almost always just one chunk)
@@ -1827,7 +1855,7 @@ class DatapointsPoster:
         )
 
     def _verify_and_prepare_dps_objects(
-        self, dps_object_lst: list[dict[str, Any]]
+        self, dps_object_lst: list[DatapointsInsertType]
     ) -> list[tuple[Identifier, list[_InsertDatapoint]]]:
         dps_to_insert: dict[Identifier, list[_InsertDatapoint]] = defaultdict(list)
         for obj in dps_object_lst:

@@ -2882,14 +2882,14 @@ class TestInsertDatapointsAPI:
         assert err.value.failed == [{"externalId": xid}]
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy, monkeypatch):
+    def test_insert_pandas_dataframe(self, cognite_client, new_ts, monkeypatch):
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
-        cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
+        cognite_client.time_series.data.insert_dataframe(df)
         assert 2 == cognite_client.time_series.data._post.call_count
 
     def test_delete_range(self, cognite_client, new_ts):
