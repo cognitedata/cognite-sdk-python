@@ -9,13 +9,14 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
     simulator,
     simulator_integration,
     simulator_model,
+    simulator_routine,
 )
 
 SEED_DIR = Path(__file__).resolve(strict=True).parent / "seed"
@@ -109,8 +110,8 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
     model_revision_not_exists = not model_revisions.get(external_id=model_revision_unique_external_id)
 
     if model_revision_not_exists:
-        cognite_client.post(
-            f"/api/v1/projects/{cognite_client.config.project}/simulators/models/revisions",
+        cognite_client.simulators._post(
+            "/simulators/models/revisions",
             json={
                 "items": [
                     {
@@ -118,6 +119,30 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
                         "fileId": seed_file.id,
                         "modelExternalId": model_unique_external_id,
                         "externalId": model_revision_unique_external_id,
+                    }
+                ]
+            },
+        )
+
+
+@pytest.fixture(scope="session")
+def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
+    model_unique_external_id = resource_names["simulator_model_external_id"]
+    simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
+    routines = cognite_client.simulators.routines.list(
+        filter=SimulatorRoutinesFilter(model_external_ids=[model_unique_external_id])
+    )
+    routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
+
+    if routine_not_exists is None:
+        cognite_client.simulators._post(
+            "/simulators/routines",
+            json={
+                "items": [
+                    {
+                        **simulator_routine,
+                        "modelExternalId": model_unique_external_id,
+                        "externalId": simulator_routine_unique_external_id,
                     }
                 ]
             },
