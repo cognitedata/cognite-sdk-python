@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [8.0.0a1] - 2025-07-22
+### Improved
+Everything ofc
+
 ## [Unreleased]
 ### Added
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
