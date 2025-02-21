@@ -27,7 +27,7 @@ def pyproj_version_matches() -> str | None:
 
 def _parse_changelog() -> Iterator[Match[str]]:
     changelog = (CWD / "CHANGELOG.md").read_text(encoding="utf-8")
-    return re.finditer(r"##\s\[(\d+\.\d+\.\d+)\]\s-\s(\d+-\d+-\d+)", changelog)
+    return re.finditer(r"##\s\[(\d+\.\d+\.\d+(?:[abrc]\d+)?)\]\s-\s(\d+-\d+-\d+)", changelog)
 
 
 def changelog_entry_version_matches() -> str | None:
