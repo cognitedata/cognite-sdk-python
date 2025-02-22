@@ -1,0 +1,13 @@
+environment:
+  project: python-sdk-contributor
+  validation-type: prod
+  selected:
+  - modules/
+
+variables:
+  modules:
+    read_write_group_source_id: 4521b63c-b914-44fe-9f86-f42b17fcb6c1
+    readwrite_group_name: contributor
+    #
+    readonly_group_name: viewer
+    readonly_group_source_id: not_used_for_now
