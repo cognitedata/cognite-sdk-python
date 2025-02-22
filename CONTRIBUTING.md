@@ -115,6 +115,8 @@ you do the following:
 
 Get the PR reviewed by an SDK maintainer. The integration runner will be updated once the PR is merged.
 
+For an illustration of the setup see [diagram](https://miro.com/app/board/uXjVIbOg5zw=/).
+
 ### Documentation
 
 Build html files of documentation locally by running
