@@ -516,7 +516,7 @@ class PrincipalWrite(CogniteResource, ABC):
         elif type_ is None:
             raise KeyError("type")
         try:
-            principal_cls = _PRINCIPAL_WRITE_CLASS_BY_TYPE[type_.casefold()]
+            principal_cls = _PRINCIPAL_WRITE_CLASS_BY_TYPE[type_.upper()]
         except KeyError:
             raise ValueError(f"Unknown principal type {type_}")
         return cast(Self, principal_cls._load_principal(resource))
@@ -560,7 +560,7 @@ class PrincipalUpdate(CogniteUpdate, ABC):
 
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output["type"] = self._type.upper()
+        output["type"] = self._type
         return output
 
     @classmethod
@@ -613,7 +613,7 @@ class ServiceAccountWrite(PrincipalWrite):
 
     """
 
-    _type = "service_account"
+    _type = "SERVICE_ACCOUNT"
 
     def __init__(self, name: str, external_id: str | None = None, description: str | None = None) -> None:
         self.name = name
