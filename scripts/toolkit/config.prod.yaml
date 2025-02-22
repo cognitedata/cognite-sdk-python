@@ -1,5 +1,5 @@
 environment:
-  project: python-sdk-contributor
+  project: python-sdk-test-prod
   validation-type: prod
   selected:
   - modules/

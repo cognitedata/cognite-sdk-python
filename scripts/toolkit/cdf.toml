@@ -1,3 +1,6 @@
+[toolkit]
+default_env = "contributor"
+
 [plugins]
 run = true
 
