@@ -2107,14 +2107,18 @@ class RetrieveLatestDpsFetcher:
             ids_exists = (
                 {("id", r["id"]) for r in result}
                 .union({("xid", r.get("externalId")) for r in result})
-                .union({("inst_id", r.get("instanceId")) for r in result})
+                .union({("inst_id", NodeId.load_if(r.get("instanceId"))) for r in result})
                 .difference({("xid", None), ("inst_id", None)})
             )  # fmt: skip
             self._all_identifiers = [
                 query
                 for query in self._all_identifiers
                 if ids_exists.intersection(
-                    (("id", query.get("id")), ("xid", query.get("externalId")), ("inst_id", query.get("instanceId")))
+                    (
+                        ("id", query.get("id")),
+                        ("xid", query.get("externalId")),
+                        ("inst_id", NodeId.load_if(query.get("instanceId"))),
+                    )
                 )
             ]
         for query, res in zip(self._all_identifiers, result):
