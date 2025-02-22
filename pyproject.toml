@@ -75,7 +75,6 @@ IPython = ">=7.0.0"  # Used in docstring examples
 PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
 types-simplejson = "^3.19.0.20240801"
-cognite-toolkit = "0.4.9"
 
 [build-system]
 requires = ["poetry-core"]
