@@ -105,6 +105,18 @@ For any code examples written directly in `docs/source` we are using the [sphinx
 pytest docs
 ```
 
+### Updating Integration Runner Auth
+
+If you need to add a new capability to the integration runner, you need to create a new Pull Requests (PR) in which
+you do the following:
+
+1. Add a read-only version of the new capability to the `scripts/toolkit/acces/auth/readonly.Group.yaml`
+2. Add a read-write version of the new capability to the `scripts/toolkit/acces/auth/readwrite.Group.yaml`
+
+Get the PR reviewed by an SDK maintainer. The integration runner will be updated once the PR is merged.
+
+For an illustration of the setup see [diagram](https://miro.com/app/board/uXjVIbOg5zw=/).
+
 ### Documentation
 
 Build html files of documentation locally by running
