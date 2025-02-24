@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorRoutinesFilter
+from cognite.client.data_classes.simulators.filters import CreatedTimeSort
 from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
 from cognite.client.utils._text import random_string
 
@@ -14,9 +14,7 @@ class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_unique_external_id = seed_resource_names["simulator_model_external_id"]
 
-        routines = cognite_client.simulators.routines.list(
-            filter=SimulatorRoutinesFilter(model_external_ids=[model_unique_external_id])
-        )
+        routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
 
         assert len(routines) > 0
 
@@ -52,16 +50,12 @@ class TestSimulatorRoutines:
             cognite_client.simulators.routines.create(routine_to_create)
 
         routines_asc = cognite_client.simulators.routines.list(
-            filter=SimulatorRoutinesFilter(
-                simulator_integration_external_ids=[simulator_integration_unique_external_id]
-            ),
+            simulator_integration_external_ids=[simulator_integration_unique_external_id],
             sort=CreatedTimeSort(order="asc", property="createdTime"),
         )
 
         routines_desc = cognite_client.simulators.routines.list(
-            filter=SimulatorRoutinesFilter(
-                simulator_integration_external_ids=[simulator_integration_unique_external_id]
-            ),
+            simulator_integration_external_ids=[simulator_integration_unique_external_id],
             sort=CreatedTimeSort(order="desc", property="createdTime"),
         )
 

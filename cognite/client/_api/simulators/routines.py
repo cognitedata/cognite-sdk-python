@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorRoutinesFilter
 from cognite.client.data_classes.simulators.routines import (
     SimulatorRoutine,
@@ -42,16 +41,28 @@ class SimulatorRoutinesAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorRoutinesFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorRoutineList]: ...
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorRoutinesFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorRoutine]: ...
 
     def __call__(
-        self, chunk_size: int | None = None, filter: SimulatorRoutinesFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]:
         """Iterate over simulator routines
 
@@ -59,17 +70,22 @@ class SimulatorRoutinesAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator routines to return in each chunk. Defaults to yielding one simulator routine a time.
-            filter (SimulatorRoutinesFilter | None): Filter to apply on the routines list.
+            model_external_ids (Sequence[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
             limit (int | None): Maximum number of simulator routines to return. Defaults to return all items.
 
         Returns:
             Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
         """
+        routines_filter = SimulatorRoutinesFilter(
+            model_external_ids=model_external_ids,
+            simulator_integration_external_ids=simulator_integration_external_ids,
+        )
         return self._list_generator(
             list_cls=SimulatorRoutineList,
             resource_cls=SimulatorRoutine,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=routines_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )
@@ -150,7 +166,8 @@ class SimulatorRoutinesAPI(APIClient):
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
-        filter: SimulatorRoutinesFilter | dict[str, Any] | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
         sort: CreatedTimeSort | None = None,
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
@@ -159,7 +176,8 @@ class SimulatorRoutinesAPI(APIClient):
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            filter (SimulatorRoutinesFilter | dict[str, Any] | None): The filter to narrow down simulator routines.
+            model_external_ids (Sequence[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
             sort (CreatedTimeSort | None): The criteria to sort by.
 
         Returns:
@@ -172,13 +190,17 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> res = client.simulators.routines.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutinesFilter, CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators.filters import CreatedTimeSort
                 >>> res = client.simulators.routines.list(
-                ...     filter=SimulatorRoutinesFilter(simulator_integration_external_ids=["integration_ext_id"]),
+                ...     simulator_integration_external_ids=["integration_ext_id"],
                 ...     sort=CreatedTimeSort(order="asc")
                 ... )
 
         """
+        routines_filter = SimulatorRoutinesFilter(
+            model_external_ids=model_external_ids,
+            simulator_integration_external_ids=simulator_integration_external_ids,
+        )
         self._warning.warn()
         return self._list(
             limit=limit,
@@ -187,5 +209,5 @@ class SimulatorRoutinesAPI(APIClient):
             resource_cls=SimulatorRoutine,
             list_cls=SimulatorRoutineList,
             sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=routines_filter.dump(),
         )

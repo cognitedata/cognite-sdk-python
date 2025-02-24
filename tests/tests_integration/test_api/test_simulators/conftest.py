@@ -9,7 +9,7 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorRoutinesFilter
+from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
@@ -129,9 +129,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
-    routines = cognite_client.simulators.routines.list(
-        filter=SimulatorRoutinesFilter(model_external_ids=[model_unique_external_id])
-    )
+    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
     routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
 
     if routine_not_exists is None:
