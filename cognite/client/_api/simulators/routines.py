@@ -74,6 +74,79 @@ class SimulatorRoutinesAPI(APIClient):
             limit=limit,
         )
 
+    @overload
+    def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
+
+    @overload
+    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
+
+    def create(
+        self,
+        routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
+    ) -> SimulatorRoutine | SimulatorRoutineList:
+        """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
+        You can create an arbitrary number of simulator routines.
+        Args:
+            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
+        Returns:
+            SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
+        Examples:
+            Create new simulator routines:
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
+                >>> client = CogniteClient()
+                >>> routines = [
+                ...     SimulatorRoutineWrite(
+                ...         name="routine1",
+                ...         external_id="routine_ext_id",
+                ...         simulator_integration_external_id="integration_ext_id",
+                ...         model_external_id="model_ext_id",
+                ...     ),
+                ...     SimulatorRoutineWrite(
+                ...         name="routine2",
+                ...         external_id="routine_ext_id_2",
+                ...         simulator_integration_external_id="integration_ext_id_2",
+                ...         model_external_id="model_ext_id_2",
+                ...     )
+                ... ]
+                >>> res = client.simulators.routines.create(routines)
+        """
+        self._warning.warn()
+        assert_type(routine, "simulator_routines", [SimulatorRoutineWrite, Sequence])
+
+        return self._create_multiple(
+            list_cls=SimulatorRoutineList,
+            resource_cls=SimulatorRoutine,
+            items=routine,
+            input_resource_cls=SimulatorRoutineWrite,
+            resource_path=self._RESOURCE_PATH,
+        )
+
+    def delete(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
+    ) -> None:
+        """`Delete one or more routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
+
+        Args:
+            id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
+            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
+
+        Examples:
+
+            Delete routines by id or external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.simulators.routines.delete(id=[1,2,3], external_id="foo")
+        """
+        self._warning.warn()
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
+            wrap_ids=True,
+        )
+
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
@@ -115,75 +188,4 @@ class SimulatorRoutinesAPI(APIClient):
             list_cls=SimulatorRoutineList,
             sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
             filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
-        )
-
-    @overload
-    def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
-
-    @overload
-    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
-
-    def create(
-        self,
-        routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
-    ) -> SimulatorRoutine | SimulatorRoutineList:
-        """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
-        You can create an arbitrary number of simulator routines.
-        Args:
-            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
-        Returns:
-            SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
-        Examples:
-            Create new simulator routines:
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
-                >>> client = CogniteClient()
-                >>> routines = [
-                ...     SimulatorRoutineWrite(
-                ...         name="routine1",
-                ...         external_id="routine_ext_id",
-                ...         simulator_integration_external_id="integration_ext_id",
-                ...         model_external_id="model_ext_id",
-                ...     ),
-                ...     SimulatorRoutineWrite(
-                ...         name="routine2",
-                ...         external_id="routine_ext_id_2",
-                ...         simulator_integration_external_id="integration_ext_id_2",
-                ...         model_external_id="model_ext_id_2",
-                ...     )
-                ... ]
-                >>> res = client.simulators.routines.create(routines)
-        """
-        assert_type(routine, "simulator_routines", [SimulatorRoutineWrite, Sequence])
-
-        return self._create_multiple(
-            list_cls=SimulatorRoutineList,
-            resource_cls=SimulatorRoutine,
-            items=routine,
-            input_resource_cls=SimulatorRoutineWrite,
-            resource_path=self._RESOURCE_PATH,
-        )
-
-    def delete(
-        self,
-        id: int | Sequence[int] | None = None,
-        external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
-    ) -> None:
-        """`Delete one or more routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
-
-        Args:
-            id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
-            external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
-
-        Examples:
-
-            Delete routines by id or external id:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> client.simulators.routines.delete(id=[1,2,3], external_id="foo")
-        """
-        self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
-            wrap_ids=True,
         )

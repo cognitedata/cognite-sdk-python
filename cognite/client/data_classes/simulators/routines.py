@@ -73,13 +73,41 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
 
 
 class SimulatorRoutine(SimulatorRoutineCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
+
+    * Inputs (values set into the simulator model)
+    * Commands (actions to be performed by the simulator)
+    * Outputs (values read from the simulator model)
+
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
+    Each model can have multiple routines, each performing different objectives such as calculating optimal
+    operation setpoints, forecasting production, benchmarking asset performance, and more.
+
+    Each simulator routine can have a maximum of 10 revisions
+
+    This is the read/response format of a simulator routine.
+
+    Args:
+        id (int): A unique id of a simulator routine
+        external_id (str): External id of the simulator routine
+        model_external_id (str): External id of the associated simulator model
+        simulator_integration_external_id (str): External id of the associated simulator integration
+        name (str): The name of the simulator routine
+        data_set_id (int): The id of the dataset associated with the simulator routine
+        simulator_external_id (str): External id of the associated simulator
+        created_time (int): The time when the simulator routine was created
+        last_updated_time (int): The time when the simulator routine was last updated
+        description (str | None): The description of the simulator routine
+    """
+
     def __init__(
         self,
+        id: int,
         external_id: str,
         model_external_id: str,
         simulator_integration_external_id: str,
         name: str,
-        id: int,
         data_set_id: int,
         simulator_external_id: str,
         created_time: int,
@@ -93,10 +121,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
             name=name,
             description=description,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
+
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -105,7 +130,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = cls(
+        return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
             model_external_id=resource["modelExternalId"],
@@ -117,7 +142,6 @@ class SimulatorRoutine(SimulatorRoutineCore):
             last_updated_time=resource["lastUpdatedTime"],
             id=resource["id"],
         )
-        return instance
 
     def as_write(self) -> SimulatorRoutineWrite:
         """Returns a writeable version of this resource"""
