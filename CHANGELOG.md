@@ -23,6 +23,11 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.73.4] - 2025-02-24
+### Fixed
+- An issue with `DatapointsAPI.retrieve_latest` and usage of `instance_id` when using `ignore_unknown_ids=True`
+  and *any type* of identifier was not found (no longer raises `TypeError`).
+
 ## [7.73.3] - 2025-02-07
 ### Added
 - Listable property types for containers in Data Modeling now accept `max_list_size`.

@@ -2826,6 +2826,26 @@ class TestRetrieveLatestDatapointsAPI:
             assert isinstance(dp.value, float)
             assert int(dp.timestamp / 1000) == int(dp.value)
 
+    def test_instance_id_and_missing(self, cognite_client, instance_ts_id):
+        # Before 7.73.4 (and after support for instance_id was added ofc), when a not-found time series was requested
+        # by instance_id and ignore_unknown_ids=True was passed, a TypeError was raised instead of a CogniteNotFoundError
+        # as we tried to put a dict into a set (not hashable)
+        missing = NodeId("I-do-not", "exist")
+        res = cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=True)
+        assert res is None
+        # This could also happen - but on a separate codeline - when the missing was not an instance_id, as we loaded the
+        # dict in before a comparison of the identifiers:
+        res = cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=True)
+        assert type(res) is DatapointsList
+        assert len(res) == 1
+        assert res[0].instance_id == instance_ts_id
+
+        # ...and just to ensure this still works as expected:
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
+            cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=False)
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
+            cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
+
 
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
