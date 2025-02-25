@@ -1,0 +1,139 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
+
+from cognite.client._api_client import APIClient
+from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
+from cognite.client.data_classes.simulators.models import CreatedTimeSort
+from cognite.client.data_classes.simulators.routine_revisions import (
+    SimulatorRoutineRevision,
+    SimulatorRoutineRevisionsList,
+)
+from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
+
+if TYPE_CHECKING:
+    from cognite.client import ClientConfig, CogniteClient
+
+
+class SimulatorRoutineRevisionsAPI(APIClient):
+    _RESOURCE_PATH = "/simulators/routines/revisions"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
+
+    def list(
+        self,
+        limit: int = 10,  # deviation from DEFAULT_LIMIT_READ to avoid paging by default (max 20)
+        sort: CreatedTimeSort | None = None,
+        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        include_all_fields: bool = False,
+    ) -> SimulatorRoutineRevisionsList:
+        """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
+
+        Retrieves a list of simulator routine revisions that match the given criteria.
+
+        Args:
+            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
+            sort (CreatedTimeSort | None): The criteria to sort by.
+            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
+            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
+
+        Returns:
+            SimulatorRoutineRevisionsList: List of simulator routine revisions
+
+        Examples:
+
+            List simulator routine revisions:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.list()
+
+        """
+        self._warning.warn()
+        return self._list(
+            method="POST",
+            limit=limit,
+            url_path="/simulators/routines/revisions/list",
+            resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionsList,
+            filter=filter.dump()
+            if isinstance(filter, SimulatorRoutineRevisionsFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,
+            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
+            other_params={"includeAllFields": include_all_fields},
+        )
+
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
+        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+
+        Retrieve a simulator routine revision by ID or external ID
+
+        Args:
+            id (int | None): The id of the simulator routine revision.
+            external_id (str | None): The external id of the simulator routine revision.
+
+        Returns:
+            SimulatorRoutineRevision | None: Requested simulator routine revision
+
+        Examples:
+
+            Get simulator routine revision by id:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.routines.revisions.retrieve(ids=123)
+
+            Get simulator routine revision by external id:
+                >>> res = client.simulators.routines.revisions.retrieve(external_ids="abcdef")
+        """
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionsList,
+            identifiers=identifiers,
+            resource_path="/simulators/routines/revisions",
+        )
+
+    def retrieve_multiple(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> SimulatorRoutineRevisionsList:
+        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+
+        Retrieve one or more simulator routine revisions by IDs or external IDs
+
+            Args:
+                ids (Sequence[int] | None): IDs
+                external_ids (SequenceNotStr[str] | None): External IDs
+                ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+            Returns:
+                SimulatorRoutineRevisionsList: Requested simulator routine revisions
+
+            Examples:
+
+                Get simulator routine revisions by id:
+                    >>> from cognite.client import CogniteClient
+                    >>> client = CogniteClient()
+                    >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
+
+                Get simulator routine revisions by external id:
+                    >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
+        """
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=SimulatorRoutineRevisionsList,
+            resource_cls=SimulatorRoutineRevision,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+
