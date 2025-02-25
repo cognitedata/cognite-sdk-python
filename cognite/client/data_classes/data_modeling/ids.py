@@ -190,7 +190,7 @@ EdgeIdentifier = EdgeId | tuple[str, str, str]
 Id = tuple[str, str] | tuple[str, str, str] | IdLike | VersionedIdLike
 
 
-def _load_space_identifier(ids: str | SequenceNotStr[str]) -> DataModelingIdentifierSequence:
+def _load_space_identifier(ids: str | Sequence[str] | SequenceNotStr[str]) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not isinstance(ids, str)
     spaces = [ids] if isinstance(ids, str) else ids
     return DataModelingIdentifierSequence(
