@@ -232,3 +232,153 @@ simulator_routine = {
     "name": "Simulator Routine - Test",
     "description": "Simulator Routine - Description Test",
 }
+
+
+simulator_routine_revision = {
+    "externalId": resource_names["simulator_routine_revision_external_id"],
+    "routineExternalId": resource_names["simulator_routine_external_id"],
+    "configuration": {
+        "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
+        "dataSampling": {"enabled": True, "validationWindow": None, "samplingWindow": 15, "granularity": 1},
+        "logicalCheck": [],
+        "steadyStateDetection": [],
+        "inputs": [
+            {
+                "name": "Cold Water Temperature",
+                "referenceId": "CWTC",
+                "value": 10,
+                "valueType": "DOUBLE",
+                "unit": {"name": "C", "quantity": "temperature"},
+                "saveTimeseriesExternalId": "TEST-ROUTINE-INPUT-CWTC",
+            },
+            {
+                "name": "Cold Water Pressure",
+                "referenceId": "CWPC",
+                "value": 3.6,
+                "valueType": "DOUBLE",
+                "unit": {"name": "bar", "quantity": "pressure"},
+            },
+            {
+                "name": "Cold Water Volumetric Flow",
+                "referenceId": "CWVFC",
+                "value": 0.37,
+                "valueType": "DOUBLE",
+                "unit": {"name": "m3/h", "quantity": "volumetricFlow"},
+            },
+            {
+                "name": "Hot Water Temperature",
+                "referenceId": "HWTC",
+                "value": 69,
+                "valueType": "DOUBLE",
+                "unit": {"name": "C", "quantity": "temperature"},
+            },
+            {
+                "name": "Hot Water Pressure",
+                "referenceId": "HWPC",
+                "value": 2.8,
+                "valueType": "DOUBLE",
+                "unit": {"name": "bar", "quantity": "pressure"},
+            },
+            {
+                "name": "Hot Water Volumetric Flow",
+                "referenceId": "HWVFC",
+                "value": 0.19,
+                "valueType": "DOUBLE",
+                "unit": {"name": "m3/h", "quantity": "volumetricFlow"},
+            },
+        ],
+        "outputs": [
+            {
+                "name": "Shower Temperature",
+                "referenceId": "ST",
+                "unit": {"name": "C", "quantity": "temperature"},
+                "valueType": "DOUBLE",
+                "saveTimeseriesExternalId": "TEST-ROUTINE-OUTPUT-ST",
+            },
+            {
+                "name": "Shower Pressure",
+                "referenceId": "SP",
+                "unit": {"name": "bar", "quantity": "pressure"},
+                "valueType": "DOUBLE",
+            },
+            {
+                "name": "Shower Volumetric Flow",
+                "referenceId": "SVF",
+                "unit": {"name": "m3/h", "quantity": "volumetricFlow"},
+                "valueType": "DOUBLE",
+            },
+        ],
+    },
+    "script": [
+        {
+            "order": 1,
+            "description": "Set Inputs",
+            "steps": [
+                {
+                    "order": 1,
+                    "stepType": "Set",
+                    "arguments": {"referenceId": "CWTC", "objectName": "Cold water", "objectProperty": "Temperature"},
+                },
+                {
+                    "order": 2,
+                    "stepType": "Set",
+                    "arguments": {"referenceId": "CWPC", "objectName": "Cold water", "objectProperty": "Pressure"},
+                },
+                {
+                    "order": 3,
+                    "stepType": "Set",
+                    "arguments": {
+                        "referenceId": "CWVFC",
+                        "objectName": "Cold water",
+                        "objectProperty": "Volumetric Flow",
+                    },
+                },
+                {
+                    "order": 4,
+                    "stepType": "Set",
+                    "arguments": {"referenceId": "HWTC", "objectName": "Hot water", "objectProperty": "Temperature"},
+                },
+                {
+                    "order": 5,
+                    "stepType": "Set",
+                    "arguments": {"referenceId": "HWPC", "objectName": "Hot water", "objectProperty": "Pressure"},
+                },
+                {
+                    "order": 6,
+                    "stepType": "Set",
+                    "arguments": {
+                        "referenceId": "HWVFC",
+                        "objectName": "Hot water",
+                        "objectProperty": "Volumetric Flow",
+                    },
+                },
+            ],
+        },
+        {
+            "order": 2,
+            "description": "Solve the flowsheet",
+            "steps": [{"order": 1, "stepType": "Command", "arguments": {"command": "Solve"}}],
+        },
+        {
+            "order": 3,
+            "description": "Set simulation outputs",
+            "steps": [
+                {
+                    "order": 1,
+                    "stepType": "Get",
+                    "arguments": {"referenceId": "ST", "objectName": "Shower", "objectProperty": "Temperature"},
+                },
+                {
+                    "order": 2,
+                    "stepType": "Get",
+                    "arguments": {"referenceId": "SP", "objectName": "Shower", "objectProperty": "Pressure"},
+                },
+                {
+                    "order": 3,
+                    "stepType": "Get",
+                    "arguments": {"referenceId": "SVF", "objectName": "Shower", "objectProperty": "Volumetric Flow"},
+                },
+            ],
+        },
+    ],
+}
