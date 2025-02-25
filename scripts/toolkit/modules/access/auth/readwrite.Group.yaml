@@ -1,5 +1,5 @@
-name: integration-test-runner
-sourceId: '409f29f3-7e1b-461a-add1-1184d539b623'
+name: {{ readwrite_group_name }}
+sourceId: {{ read_write_group_source_id }}
 metadata:
   origin: "cognite-toolkit"
 capabilities:

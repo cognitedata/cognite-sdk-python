@@ -1,0 +1,31 @@
+name: cdf_auth
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  cdf_auth:
+    runs-on: ubuntu-latest
+    environment: CD
+    name: Update CDF Auth
+    strategy:
+      fail-fast: false
+      matrix:
+        config_env: ["contributor", "prod"]
+    container:
+      image: cognite/toolkit:0.4.9
+      env:
+        CDF_CLUSTER: ${{ vars.CDF_CLUSTER }}
+        CDF_PROJECT: ${{ vars.CDF_PROJECT }}
+        IDP_CLIENT_ID: ${{ vars.IDP_CLIENT_ID }}
+        IDP_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET }}
+        IDP_TENANT_ID: ${{ vars.IDP_TENANT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the CDF Groups
+        working-directory: scripts/toolkit
+        run: cdf build --env ${{ matrix.config_env }}
+      - name: Update CDF Auth
+        working-directory: scripts/toolkit
+        run: cdf deploy
