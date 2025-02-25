@@ -224,13 +224,6 @@ simulator_model = {
     "type": "SteadyState",
 }
 
-simulator_model_revision = {
-    "externalId": resource_names["simulator_model_revision_external_id"],
-    "modelExternalId": resource_names["simulator_model_external_id"],
-    "description": "test sim model revision description",
-    "fileId": 00000000000000,
-}
-
 
 simulator_routine = {
     "externalId": resource_names["simulator_routine_external_id"],

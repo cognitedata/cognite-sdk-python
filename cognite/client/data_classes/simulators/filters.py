@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import Any, Literal
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
-from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SimulatorIntegrationFilter(CogniteFilter):
@@ -49,16 +48,14 @@ class SimulatorRoutinesFilter(CogniteFilter):
 
 
 class PropertySort(CogniteSort):
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case=camel_case)
-        dumped["property"] = self.property
-        return dumped
-
-
-class CreatedTimeSort(PropertySort):
     def __init__(
         self,
         property: Literal["createdTime"] = "createdTime",
         order: Literal["asc", "desc"] = "asc",
     ):
         super().__init__(property, order)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = super().dump(camel_case=camel_case)
+        dumped["property"] = self.property
+        return dumped

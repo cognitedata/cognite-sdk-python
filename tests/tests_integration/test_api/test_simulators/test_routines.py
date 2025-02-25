@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.filters import CreatedTimeSort
+from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
 from cognite.client.utils._text import random_string
 
@@ -51,12 +51,12 @@ class TestSimulatorRoutines:
 
         routines_asc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],
-            sort=CreatedTimeSort(order="asc", property="createdTime"),
+            sort=PropertySort(order="asc", property="createdTime"),
         )
 
         routines_desc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],
-            sort=CreatedTimeSort(order="desc", property="createdTime"),
+            sort=PropertySort(order="desc", property="createdTime"),
         )
 
         assert len(routines_asc) > 0

@@ -7,7 +7,7 @@ from cognite.client._api.simulators.models_revisions import SimulatorModelRevisi
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
-from cognite.client.data_classes.simulators.filters import CreatedTimeSort, SimulatorModelsFilter
+from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.models import (
     SimulatorModel,
     SimulatorModelList,
@@ -40,14 +40,14 @@ class SimulatorModelsAPI(APIClient):
         self,
         limit: int = DEFAULT_LIMIT_READ,
         filter: SimulatorModelsFilter | dict[str, Any] | None = None,
-        sort: CreatedTimeSort | None = None,
+        sort: PropertySort | None = None,
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
         Retrieves a list of simulator models that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
-            sort (CreatedTimeSort | None): The criteria to sort by.
+            sort (PropertySort | None): The criteria to sort by.
         Returns:
             SimulatorModelList: List of simulator models
 
@@ -59,10 +59,10 @@ class SimulatorModelsAPI(APIClient):
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators import SimulatorModelsFilter
-                >>> from cognite.client.data_classes.simulators.filters import CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
                 ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
-                ...     sort=CreatedTimeSort(order="asc")
+                ...     sort=PropertySort(order="asc")
                 ... )
 
         """
@@ -72,7 +72,7 @@ class SimulatorModelsAPI(APIClient):
             limit=limit,
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
-            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
         )
 
