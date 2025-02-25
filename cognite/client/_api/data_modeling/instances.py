@@ -1264,7 +1264,8 @@ class InstancesAPI(APIClient):
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            limit (int | None): Maximum number of instances to return. Defaults to 25.
+            limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
+                of results (1000) if set to None, -1, or math.inf.
 
         Returns:
             AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList: Node or edge aggregation results.
