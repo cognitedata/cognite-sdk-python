@@ -71,7 +71,7 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
-from cognite.client.utils._auxiliary import load_yaml_or_json
+from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
@@ -79,7 +79,7 @@ from cognite.client.utils._text import random_string
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import ClientConfig, CogniteClient
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
@@ -163,6 +163,10 @@ class _NodeOrEdgeApplyAdapter:
 
 class InstancesAPI(APIClient):
     _RESOURCE_PATH = "/models/instances"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._AGGREGATE_LIMIT = 1000
 
     @overload
     def __call__(
@@ -1202,7 +1206,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue: ...
 
     @overload
@@ -1217,7 +1221,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> list[AggregatedNumberedValue]: ...
 
     @overload
@@ -1232,7 +1236,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList: ...
 
     def aggregate(
@@ -1246,7 +1250,7 @@ class InstancesAPI(APIClient):
         target_units: list[TargetUnit] | None = None,
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -1260,7 +1264,7 @@ class InstancesAPI(APIClient):
             target_units (list[TargetUnit] | None): Properties to convert to another unit. The API can only convert to another unit if a unit has been defined as part of the type on the underlying container being queried.
             space (str | SequenceNotStr[str] | None): Restrict instance aggregate query to the given space (or list of spaces).
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 25.
+            limit (int | None): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList: Node or edge aggregation results.
@@ -1282,7 +1286,11 @@ class InstancesAPI(APIClient):
 
         self._validate_filter(filter)
         filter = self._merge_space_into_filter(instance_type, space, filter)
-        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+        body: dict[str, Any] = {
+            "view": view.dump(camel_case=True),
+            "instanceType": instance_type,
+            "limit": self._AGGREGATE_LIMIT if is_unlimited(limit) or limit is None else limit,
+        }
         is_single = isinstance(aggregates, (dict, MetricAggregation))
         aggregate_seq: Sequence[MetricAggregation | dict] = (
             [aggregates] if isinstance(aggregates, (dict, MetricAggregation)) else aggregates
