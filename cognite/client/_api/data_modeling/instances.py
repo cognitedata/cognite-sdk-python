@@ -1296,7 +1296,7 @@ class InstancesAPI(APIClient):
         body: dict[str, Any] = {
             "view": view.dump(camel_case=True),
             "instanceType": instance_type,
-            "limit": self._AGGREGATE_LIMIT if is_unlimited(limit) or limit is None else limit,
+            "limit": self._AGGREGATE_LIMIT if is_unlimited(limit) else limit,
         }
         is_single = isinstance(aggregates, (dict, MetricAggregation))
         aggregate_seq: Sequence[MetricAggregation | dict] = (
