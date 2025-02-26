@@ -122,6 +122,10 @@ class TestSimulatorModels:
 
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
+        assert model_revision_created.log_id is not None
+        log = cognite_client.simulators.logs.retrieve(id=model_revision_created.log_id)
+        assert log is not None
+        assert log.severity == "Debug"
         assert len(multiple_model_revisions_created) == 2
         cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
 
