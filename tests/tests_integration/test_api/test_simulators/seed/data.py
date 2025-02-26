@@ -8,7 +8,6 @@ resource_names = {
     "simulator_model_revision_external_id": "pysdk_model_revision",
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
     "simulator_routine_external_id": "pysdk_routine",
-    "simulator_routine_revision_external_id": "pysdk_routine_revision",
     "simulator_test_data_set_id": None,
     "simulator_test_data_set_external_id": data_set_external_id,
 }
@@ -235,7 +234,7 @@ simulator_routine = {
 
 
 simulator_routine_revision = {
-    "externalId": resource_names["simulator_routine_revision_external_id"],
+    "externalId": None,
     "routineExternalId": resource_names["simulator_routine_external_id"],
     "configuration": {
         "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},

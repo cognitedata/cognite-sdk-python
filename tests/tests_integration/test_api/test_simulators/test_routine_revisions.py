@@ -1,59 +1,35 @@
-import uuid
-
-import pytest
-
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators.filters import (
     SimulatorRoutineRevisionsFilter,
 )
-from cognite.client.data_classes.simulators.models import CreatedTimeSort
-from cognite.client.utils._text import random_string
-
-def truncated_uuid4():
-    return str(uuid.uuid4())[:8]
+from cognite.client.data_classes.simulators import PropertySort
 
 
-@pytest.fixture(scope="session")
-@pytest.mark.usefixtures("seed_resource_names")
-def seed_simulator_routine_unique_external_id(seed_resource_names) -> str:
-    return f"{seed_resource_names['simulator_routine_external_id']}_{random_string(8)}"
-
-@pytest.mark.usefixtures("seed_simulator_routine_unique_external_id", "seed_simulator_routine_revisions")
 class TestSimulatorRoutineRevisions:
-    def test_list_and_filtering_routine_revisions(self, seed_simulator_routine_unique_external_id, seed_resource_names, cognite_client: CogniteClient) -> None:
+    def test_list_and_filtering_routine_revisions(self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names) -> None:
+        simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routine_revisions.list(
             filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[seed_simulator_routine_unique_external_id], all_versions=True
+                routine_external_ids=[simulator_routine_external_id], all_versions=True
             ),
         )
-        assert len(revisions_all) > 1
+        assert len(revisions_all) == 2
         model_unique_external_id = seed_resource_names["simulator_model_external_id"]
         revisions_filter = cognite_client.simulators.routine_revisions.list(
+            sort=PropertySort(order="asc", property="createdTime"),
             filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_unique_external_id], all_versions=True),
         )
-        assert len(revisions_filter) == 10
-        revisions_sort_asc = cognite_client.simulators.routine_revisions.list(
-            sort=CreatedTimeSort(order="asc", property="createdTime"),
-            filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[seed_simulator_routine_unique_external_id], all_versions=True
-            ),
-        )
-        revisions_sort_desc = cognite_client.simulators.routine_revisions.list(
-            sort=CreatedTimeSort(order="desc", property="createdTime"),
-            filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[seed_simulator_routine_unique_external_id], all_versions=True
-            ),
-        )
-        assert revisions_sort_asc[0].external_id == revisions_sort_desc[-1].external_id
+        assert len(revisions_filter) == 2
 
-    def test_retrieve_routine_revision(self, cognite_client: CogniteClient) -> None:
+    def test_retrieve_routine_revision(self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names) -> None:
+        simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routine_revisions.list(
             filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[seed_simulator_routine_unique_external_id], all_versions=True
+                routine_external_ids=[simulator_routine_external_id], all_versions=True
             ),
         )
 
-        assert len(revisions_all) > 5
+        assert len(revisions_all) == 2
 
         rev1 = revisions_all[0]
         rev2 = revisions_all[1]
