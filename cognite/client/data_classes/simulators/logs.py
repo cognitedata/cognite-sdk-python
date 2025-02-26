@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -24,12 +25,20 @@ class SimulatorLogData(CogniteObject):
     message: str
     severity: Severity
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            timestamp=resource["timestamp"],
+            message=resource["message"],
+            severity=resource["severity"],
+        )
+
 
 class SimulatorLog(CogniteResource):
     def __init__(
         self,
         id: int,
-        data: list[SimulatorLogData],
+        data: Sequence[SimulatorLogData],
         created_time: int,
         last_updated_time: int,
         data_set_id: int,
@@ -49,9 +58,14 @@ class SimulatorLog(CogniteResource):
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource["dataSetId"],
-            data=resource["data"],
+            data=[SimulatorLogData._load(entry, cognite_client) for entry in resource["data"]],
             severity=resource.get("severity"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["data"] = [entry.dump(camel_case=camel_case) for entry in self.data]
+        return output
 
 
 class SimulatorLogList(CogniteResourceList[SimulatorLog], IdTransformerMixin):
