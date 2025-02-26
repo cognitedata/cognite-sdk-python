@@ -167,6 +167,7 @@ class InstancesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
+        self._SEARCH_LIMIT = 1000
 
     @overload
     def __call__(
@@ -1046,7 +1047,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         include_typing: bool = False,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[Node]: ...
 
@@ -1062,7 +1063,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         include_typing: bool = False,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList[Edge]: ...
 
@@ -1078,7 +1079,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         include_typing: bool = False,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[T_Node]: ...
 
@@ -1094,7 +1095,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         include_typing: bool = False,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList[T_Edge]: ...
 
@@ -1108,7 +1109,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         filter: Filter | dict[str, Any] | None = None,
         include_typing: bool = False,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
@@ -1122,7 +1123,8 @@ class InstancesAPI(APIClient):
             space (str | SequenceNotStr[str] | None): Restrict instance search to the given space (or list of spaces).
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
             include_typing (bool): Whether to include typing information.
-            limit (int): Maximum number of instances to return. Defaults to 25.
+            limit (int | None): Maximum number of instances to return. Defaults to 25. Will return the maximum number
+                of results (1000) if set to None, -1, or math.inf.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
 
         Returns:
@@ -1170,7 +1172,11 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type_str, "limit": limit}
+        body: dict[str, Any] = {
+            "view": view.dump(camel_case=True),
+            "instanceType": instance_type_str,
+            "limit": self._SEARCH_LIMIT if is_unlimited(limit) or limit is None else limit,
+        }
         if query:
             body["query"] = query
         if properties:

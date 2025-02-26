@@ -24,7 +24,7 @@ Changes are grouped as follows
 
 ## [7.73.5] - 2025-02-26
 ### Fixed
-- The `client.data_modeling.instances.aggregate()` method now correctly returns maximum, 1000, results when setting
+- The `client.data_modeling.instances.aggregate/search()` methods now correctly returns maximum, 1000, results when setting
   the `limit` parameter to `None`, `-1`, or `math.inf`.
 
 ## [7.73.4] - 2025-02-24
