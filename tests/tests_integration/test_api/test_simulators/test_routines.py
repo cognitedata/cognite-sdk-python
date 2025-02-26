@@ -33,9 +33,7 @@ class TestSimulatorRoutines:
             assert routine_created is not None
             assert routine_created.external_id == routine_external_id_new
         finally:
-            rtns = cognite_client.simulators.routines.list(model_external_ids=[routine_to_create.model_external_id])
-            for routine in rtns:
-                cognite_client.simulators.routines.delete(external_ids=[routine.external_id])
+            cognite_client.simulators.routines.delete(external_ids=[routine_to_create.external_id])
 
     def test_sort(self, cognite_client: CogniteClient, seed_resource_names, seed_simulator_routines) -> None:
         simulator_integration_unique_external_id = seed_resource_names["simulator_integration_external_id"]

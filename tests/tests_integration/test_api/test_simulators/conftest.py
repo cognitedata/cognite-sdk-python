@@ -133,6 +133,11 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
 
     routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
 
+    for routine in routines:
+        cognite_client.simulators.routines.delete(external_ids=[routine.external_id])
+
+    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
+
     for routine_external_id in simulator_routine_external_ids:
         if routines.get(external_id=routine_external_id) is None:
             cognite_client.simulators._post(
