@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any, NoReturn, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import (
-    CreatedTimeSort,
     SimulatorModelRevision,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
@@ -36,14 +35,14 @@ class SimulatorModelRevisionsAPI(APIClient):
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
-        sort: CreatedTimeSort | None = None,
+        sort: PropertySort | None = None,
         filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None,
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
         Retrieves a list of simulator model revisions that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            sort (CreatedTimeSort | None): The criteria to sort by.
+            sort (PropertySort | None): The criteria to sort by.
             filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
@@ -54,10 +53,11 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.list()
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter, CreatedTimeSort
+                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
+                >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.revisions.list(
                 ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"]),
-                ...     sort=CreatedTimeSort(order="asc")
+                ...     sort=PropertySort(order="asc")
                 ... )
         """
         self._warning.warn()
@@ -66,7 +66,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             limit=limit,
             resource_cls=SimulatorModelRevision,
             list_cls=SimulatorModelRevisionList,
-            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
         )
 
