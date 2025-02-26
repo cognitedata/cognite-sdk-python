@@ -8,8 +8,7 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
-from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorRoutineRevisionsFilter
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
@@ -17,6 +16,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_integration,
     simulator_model,
     simulator_routine,
+    simulator_routine_revision,
 )
 
 SEED_DIR = Path(__file__).resolve(strict=True).parent / "seed"
@@ -36,7 +36,7 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
 
 
 @pytest.fixture(scope="session")
-def seed_file(cognite_client: CogniteClient, seed_resource_names) -> FileMetadata | None:
+def seed_file(cognite_client: CogniteClient, seed_resource_names):
     data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
     if not file:
@@ -81,23 +81,25 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
     models = cognite_client.simulators.models.list(limit=None)
     model_exists = models.get(external_id=model_unique_external_id)
 
-    if model_exists:
-        return
+    if not model_exists:
+        simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
+        simulator_model["externalId"] = model_unique_external_id
 
-    simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
-    simulator_model["externalId"] = model_unique_external_id
+        model = SimulatorModelWrite._load(
+            {
+                "externalId": simulator_model["externalId"],
+                "simulatorExternalId": simulator_model["simulatorExternalId"],
+                "dataSetId": simulator_model["dataSetId"],
+                "name": simulator_model["name"],
+                "type": simulator_model["type"],
+                "description": simulator_model["description"],
+            }
+        )
+        cognite_client.simulators.models.create(model)
 
-    model = SimulatorModelWrite._load(
-        {
-            "externalId": simulator_model["externalId"],
-            "simulatorExternalId": simulator_model["simulatorExternalId"],
-            "dataSetId": simulator_model["dataSetId"],
-            "name": simulator_model["name"],
-            "type": simulator_model["type"],
-            "description": simulator_model["description"],
-        }
-    )
-    cognite_client.simulators.models.create(model)
+    yield None
+
+    cognite_client.simulators.models.delete(external_id=model_unique_external_id)
 
 
 @pytest.fixture(scope="session")
@@ -145,24 +147,30 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
             },
         )
 
-@pytest.fixture(scope="session")
-def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> None:
-    model_unique_external_id = resource_names["simulator_model_external_id"]
-    simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
-    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
-    routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
+def seed_simulator_routine_revision(cognite_client: CogniteClient, routine_external_id: str, version: str) -> None:
+    routine_revs = cognite_client.simulators.routine_revisions.list(
+        filter=SimulatorRoutineRevisionsFilter(routine_external_ids=[routine_external_id])
+    )
+    rev_external_id = f'{routine_external_id}_{version}'
+    routine_rev_exists = routine_revs.get(external_id=rev_external_id)
 
-    if routine_not_exists is None:
+    if not routine_rev_exists:
         cognite_client.simulators._post(
-            "/simulators/routines",
+            "/simulators/routines/revisions",
             json={
                 "items": [
                     {
-                        **simulator_routine,
-                        "modelExternalId": model_unique_external_id,
-                        "externalId": simulator_routine_unique_external_id,
+                        **simulator_routine_revision,
+                        "externalId": rev_external_id,
                     }
                 ]
             },
         )
+
+@pytest.fixture(scope="session")
+def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> None:
+    simulator_routine_external_id = resource_names["simulator_routine_external_id"]
+
+    seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v1')
+    seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v2')
 
