@@ -35,19 +35,8 @@ class TestSimulatorRoutines:
         finally:
             cognite_client.simulators.routines.delete(external_ids=[routine_external_id_new])
 
-    def test_sort(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_sort(self, cognite_client: CogniteClient, seed_resource_names, seed_simulator_routines) -> None:
         simulator_integration_unique_external_id = seed_resource_names["simulator_integration_external_id"]
-        routine_external_ids = [random_string(10) for _ in range(3)]
-
-        for routine_external_id in routine_external_ids:
-            routine_to_create = SimulatorRoutineWrite(
-                name="sdk-test-routine",
-                model_external_id=seed_resource_names["simulator_model_external_id"],
-                simulator_integration_external_id=simulator_integration_unique_external_id,
-                external_id=routine_external_id,
-            )
-
-            cognite_client.simulators.routines.create(routine_to_create)
 
         routines_asc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],
@@ -64,6 +53,3 @@ class TestSimulatorRoutines:
         assert len(routines_asc) == len(routines_desc)
 
         assert routines_asc[0].external_id == routines_desc[-1].external_id
-
-        for routine_external_id in routine_external_ids:
-            cognite_client.simulators.routines.delete(external_ids=[routine_external_id])

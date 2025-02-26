@@ -129,19 +129,21 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
-    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
-    routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
+    simulator_routine_external_ids = [f"{simulator_routine_unique_external_id}_{i}" for i in range(5)]
 
-    if routine_not_exists is None:
-        cognite_client.simulators._post(
-            "/simulators/routines",
-            json={
-                "items": [
-                    {
-                        **simulator_routine,
-                        "modelExternalId": model_unique_external_id,
-                        "externalId": simulator_routine_unique_external_id,
-                    }
-                ]
-            },
-        )
+    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
+
+    for routine_external_id in simulator_routine_external_ids:
+        if routines.get(external_id=routine_external_id) is None:
+            cognite_client.simulators._post(
+                "/simulators/routines",
+                json={
+                    "items": [
+                        {
+                            **simulator_routine,
+                            "modelExternalId": model_unique_external_id,
+                            "externalId": routine_external_id,
+                        }
+                    ]
+                },
+            )
