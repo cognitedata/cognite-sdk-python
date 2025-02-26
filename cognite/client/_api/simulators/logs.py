@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators.logs import SimulatorLog, SimulatorLogList
@@ -22,21 +22,15 @@ class SimulatorLogsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, id: None = None) -> NoReturn: ...
-
-    @overload
     def retrieve(self, id: int) -> SimulatorLog | None: ...
 
     @overload
     def retrieve(
         self,
-        id: int | Sequence[int] | None = None,
+        id: int | Sequence[int],
     ) -> SimulatorLogList | SimulatorLog | None: ...
 
-    def retrieve(
-        self,
-        id: int | Sequence[int] | None = None,
-    ) -> SimulatorLogList | SimulatorLog | None:
+    def retrieve(self, id: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
         """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
         Retrieve one simulator log by ID(s)
 
@@ -47,7 +41,7 @@ class SimulatorLogsAPI(APIClient):
         They help users identify issues, diagnose problems, and gain insights into the behavior of the simulator integrations.
 
         Args:
-            id (int | Sequence[int] | None): The ids of the simulator log.
+            id (int | Sequence[int]): The ids of the simulator log.
         Returns:
             SimulatorLogList | SimulatorLog | None: Requested simulator log(s)
         Examples:

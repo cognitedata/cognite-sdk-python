@@ -38,7 +38,6 @@ class TestSimulatorIntegrations:
         assert item.last_updated_time is not None
         log = cognite_client.simulators.logs.retrieve(id=item.log_id)
         assert log is not None
-        assert log.severity == "Debug"
 
     def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         simulator_integration["heartbeat"] = int(time.time() * 1000)
