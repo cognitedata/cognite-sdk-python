@@ -79,17 +79,32 @@ class TestSimulatorRoutineRevisions:
         self, cognite_client: CogniteClient, seed_simulator_models: dict[str, Any], seed_resource_names
     ):
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        revision = cognite_client.simulators.routine_revisions.create(
-            SimulatorRoutineRevisionWrite.load(
-                {
-                    **simulator_routine_revision,
-                    "externalId": f"{routine_external_id}_v3",
-                }
-            )
+        revisions = cognite_client.simulators.routine_revisions.create(
+            [
+                SimulatorRoutineRevisionWrite.load(
+                    {
+                        **simulator_routine_revision,
+                        "externalId": f"{routine_external_id}_v3",
+                    }
+                ),
+                SimulatorRoutineRevisionWrite.load(
+                    {
+                        **simulator_routine_revision,
+                        "externalId": f"{routine_external_id}_v4",
+                    }
+                ),
+            ]
         )
-        assert revision is not None
-        assert revision.external_id == f"{routine_external_id}_v3"
-        assert revision.configuration.dump() == simulator_routine_revision["configuration"]
-        assert [item.dump() for item in revision.script] == simulator_routine_revision["script"]
-        assert revision.created_time
-        assert revision.created_time > int(time.time() - 60) * 1000
+        assert len(revisions) == 2
+
+        revision_1 = revisions[0]
+        assert revision_1 is not None
+        assert revision_1.external_id == f"{routine_external_id}_v3"
+        assert revision_1.configuration.dump() == simulator_routine_revision["configuration"]
+        assert [item.dump() for item in revision_1.script] == simulator_routine_revision["script"]
+        assert revision_1.created_time
+        assert revision_1.created_time > int(time.time() - 60) * 1000
+
+        revision_2 = revisions[1]
+        assert revision_2 is not None
+        assert revision_2.external_id == f"{routine_external_id}_v4"

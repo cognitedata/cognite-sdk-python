@@ -14,6 +14,7 @@ from cognite.client.data_classes.simulators.filters import (
     SimulatorRoutineRevisionsFilter,
 )
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
+from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
     simulator,
@@ -174,10 +175,7 @@ def seed_simulator_routine_revision(
     revision = {**simulator_routine_revision, "externalId": rev_external_id}
 
     if not routine_rev_exists:
-        cognite_client.simulators._post(
-            "/simulators/routines/revisions",
-            json={"items": [revision]},
-        )
+        cognite_client.simulators.routine_revisions.create(SimulatorRoutineRevisionWrite.load(revision))
 
     return revision
 
