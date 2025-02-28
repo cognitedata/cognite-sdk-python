@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators import PropertySort
@@ -28,6 +28,8 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
+        self._CREATE_LIMIT = 1
+        self._RETRIEVE_LIMIT = 20
 
     def list(
         self,
@@ -139,11 +141,11 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    @overload
-    def create(self, routine: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
+    # @overload
+    # def create(self, routine: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
 
-    @overload
-    def create(self, routine: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+    # @overload
+    # def create(self, routine: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
 
     def create(
         self,
@@ -232,7 +234,11 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> res = client.simulators.routines.create(routines)
         """
         self._warning.warn()
-        assert_type(routine_revision, "simulator_routine_revision", (SimulatorRoutineRevisionWrite, Sequence))
+        assert_type(
+            routine_revision,
+            "simulator_routine_revision",
+            [SimulatorRoutineRevisionWrite, Sequence],
+        )
 
         return self._create_multiple(
             list_cls=SimulatorRoutineRevisionsList,
