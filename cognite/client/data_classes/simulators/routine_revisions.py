@@ -312,25 +312,17 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
     def __init__(
         self,
         external_id: str,
-        simulator_external_id: str,
         routine_external_id: str,
-        simulator_integration_external_id: str,
-        model_external_id: str,
-        data_set_id: int,
         configuration: SimulatorRoutineConfiguration,
         script: list[SimulatorRoutineStage],
     ) -> None:
         self.external_id = external_id
-        self.simulator_external_id = simulator_external_id
         self.routine_external_id = routine_external_id
-        self.simulator_integration_external_id = simulator_integration_external_id
-        self.model_external_id = model_external_id
-        self.data_set_id = data_set_id
         self.configuration = configuration
         self.script = script
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevisionCore:
         script = []
 
         if resource.get("script", None) is not None:
@@ -358,23 +350,24 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
     def __init__(
         self,
         external_id: str,
-        simulator_external_id: str,
         routine_external_id: str,
-        simulator_integration_external_id: str,
-        model_external_id: str,
-        data_set_id: int,
         configuration: SimulatorRoutineConfiguration,
         script: list[SimulatorRoutineStage],
     ) -> None:
         super().__init__(
             external_id=external_id,
-            simulator_external_id=simulator_external_id,
             routine_external_id=routine_external_id,
-            simulator_integration_external_id=simulator_integration_external_id,
-            model_external_id=model_external_id,
-            data_set_id=data_set_id,
             configuration=configuration,
             script=script,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevisionWrite:
+        return cls(
+            external_id=resource.get("externalId"),
+            routine_external_id=resource.get("routineExternalId"),
+            configuration=SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client),
+            script=[SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])],
         )
 
     def as_write(self) -> SimulatorRoutineRevisionWrite:
@@ -395,7 +388,6 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         script: list[SimulatorRoutineStage],
         id: int | None = None,
         created_by_user_id: str | None = None,
-        last_updated_time: int | None = None,
         version_number: int | None = None,
         created_time: int | None = None,
         log_id: int | None = None,
@@ -410,13 +402,12 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         self.configuration = configuration
         self.script = script
 
-        # id/created_time/last_updated_time are required when using the class to read,
+        # id/created_time are required when using the class to read,
         # but don't make sense passing in when creating a new object. So in order to make the typing
         # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
         # Optional[int].
         self.id: int | None = id
         self.created_time: int | None = created_time
-        self.last_updated_time: int | None = last_updated_time
         self.version_number = version_number
         self.log_id = log_id
 
@@ -435,7 +426,6 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             script=load.script,
             id=resource.get("id"),
             created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
             version_number=resource.get("versionNumber"),
             log_id=resource.get("logId"),
         )
@@ -456,17 +446,6 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
 
 class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevisionWrite], ExternalIDTransformerMixin):
     _RESOURCE = SimulatorRoutineRevisionWrite
-
-
-class SimulatorRoutineRevisionList(
-    WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
-):
-    _RESOURCE = SimulatorRoutineRevision
-
-    def as_write(self) -> SimulatorRoutineRevisionWriteList:
-        return SimulatorRoutineRevisionWriteList(
-            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
-        )
 
 
 class SimulatorRoutineRevisionsList(

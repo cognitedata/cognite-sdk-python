@@ -80,7 +80,7 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names) -> None:
+def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names):
     model_unique_external_id = seed_resource_names["simulator_model_external_id"]
     models = cognite_client.simulators.models.list(limit=None)
     model_exists = models.get(external_id=model_unique_external_id)
@@ -101,8 +101,10 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
         )
         cognite_client.simulators.models.create(model)
 
-    yield None
+    yield simulator_model
 
+    # todo: dont delete the model
+    # or do?
     cognite_client.simulators.models.delete(external_id=model_unique_external_id)
 
 
@@ -132,7 +134,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
+def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions):
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
     routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
@@ -152,6 +154,12 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
             },
         )
 
+    yield simulator_routine
+
+    cognite_client.simulators._post(
+        "/simulators/routines/delete",
+        json={"items": [{"externalId": simulator_routine_unique_external_id}]},
+    )
 
 def seed_simulator_routine_revision(
     cognite_client: CogniteClient, routine_external_id: str, version: str
@@ -176,9 +184,10 @@ def seed_simulator_routine_revision(
 @pytest.fixture(scope="session")
 def seed_simulator_routine_revisions(
     cognite_client: CogniteClient, seed_simulator_routines
-) -> tuple[dict[str, Any], dict[str, Any]]:
+):
     simulator_routine_external_id = resource_names["simulator_routine_external_id"]
 
     rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v1")
     rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v2")
-    return rev1, rev2
+    
+    yield rev1, rev2
