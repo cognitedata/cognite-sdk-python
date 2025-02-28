@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
+from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
-from cognite.client.data_classes.simulators.models import CreatedTimeSort
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionsList,
@@ -30,7 +30,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def list(
         self,
         limit: int = 10,  # deviation from DEFAULT_LIMIT_READ to avoid paging by default (max 20)
-        sort: CreatedTimeSort | None = None,
+        sort: PropertySort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         include_all_fields: bool = False,
     ) -> SimulatorRoutineRevisionsList:
@@ -40,7 +40,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
-            sort (CreatedTimeSort | None): The criteria to sort by.
+            sort (PropertySort | None): The criteria to sort by.
             filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
 
@@ -67,7 +67,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             else filter
             if isinstance(filter, dict)
             else None,
-            sort=[CreatedTimeSort.load(sort).dump()] if sort else None,
+            sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},
         )
 
