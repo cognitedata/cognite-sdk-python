@@ -312,8 +312,8 @@ class SimulatorRoutineStage(CogniteObject):
 class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
     def __init__(
         self,
-        external_id: str | None = None,
-        routine_external_id: str | None = None,
+        external_id: str,
+        routine_external_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
         script: list[SimulatorRoutineStage] | None = None,
     ) -> None:
@@ -333,8 +333,8 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
 class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
     def __init__(
         self,
-        external_id: str | None = None,
-        routine_external_id: str | None = None,
+        external_id: str,
+        routine_external_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
         script: list[SimulatorRoutineStage] | None = None,
     ) -> None:
@@ -358,8 +358,8 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
             else None
         )
         return cls(
-            external_id=resource.get("externalId"),
-            routine_external_id=resource.get("routineExternalId"),
+            external_id=resource["externalId"],
+            routine_external_id=resource["routineExternalId"],
             configuration=configuration,
             script=script,
         )
