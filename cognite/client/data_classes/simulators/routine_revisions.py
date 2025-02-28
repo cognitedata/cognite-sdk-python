@@ -255,7 +255,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]): #TODO: fix type
+class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):  # TODO: fix type
     reference_id: str | None = None
 
     @classmethod
@@ -322,7 +322,9 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
         self.script = script
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevisionCore:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> SimulatorRoutineRevisionCore:
         script = []
 
         if resource.get("script", None) is not None:

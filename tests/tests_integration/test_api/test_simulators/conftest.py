@@ -161,6 +161,7 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
         json={"items": [{"externalId": simulator_routine_unique_external_id}]},
     )
 
+
 def seed_simulator_routine_revision(
     cognite_client: CogniteClient, routine_external_id: str, version: str
 ) -> dict[str, Any]:
@@ -182,12 +183,10 @@ def seed_simulator_routine_revision(
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_routine_revisions(
-    cognite_client: CogniteClient, seed_simulator_routines
-):
+def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines):
     simulator_routine_external_id = resource_names["simulator_routine_external_id"]
 
     rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v1")
     rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v2")
-    
+
     yield rev1, rev2
