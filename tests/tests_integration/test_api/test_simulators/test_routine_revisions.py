@@ -37,7 +37,7 @@ class TestSimulatorRoutineRevisions:
         revisions_all_json = [item.dump() for item in revisions_all]
         assert revisions_filter_res_json == revisions_all_json
 
-        seed_rev2 = seed_simulator_routines.revisions[0]
+        seed_rev2 = seed_simulator_routine_revisions[0]
 
         last_revision = revisions_filter_res[1]
         assert last_revision.external_id == seed_resource_names["simulator_routine_external_id"] + "_v2"
