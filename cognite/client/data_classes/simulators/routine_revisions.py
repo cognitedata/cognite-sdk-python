@@ -271,12 +271,14 @@ class SimulatorRoutineStepArguments(CogniteObject):
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
     arguments: dict[str, Any]
+    order: int
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             step_type=resource["stepType"],
             arguments=resource["arguments"],
+            order=resource["order"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

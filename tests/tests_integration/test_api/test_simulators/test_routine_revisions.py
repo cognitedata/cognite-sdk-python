@@ -15,11 +15,24 @@ class TestSimulatorRoutineRevisions:
         )
         assert len(revisions_all) == 2
         model_unique_external_id = seed_resource_names["simulator_model_external_id"]
-        revisions_filter = cognite_client.simulators.routine_revisions.list(
+        revisions_filter_res = cognite_client.simulators.routine_revisions.list(
             sort=PropertySort(order="asc", property="createdTime"),
             filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_unique_external_id], all_versions=True),
+            include_all_fields=True,
         )
-        assert len(revisions_filter) == 2
+        assert len(revisions_filter_res) == 2
+
+        seed_rev2 = seed_simulator_routine_revisions[0]
+
+        last_revision = revisions_filter_res[1]
+        assert last_revision.external_id == seed_resource_names["simulator_routine_external_id"] + "_v2"
+
+        last_revision_script_json = [item.dump() for item in last_revision.script]
+        assert last_revision_script_json == seed_rev2["script"]
+
+        last_revision_config_json = last_revision.configuration.dump()
+        assert last_revision_config_json == seed_rev2["configuration"]
+
 
     def test_retrieve_routine_revision(self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]

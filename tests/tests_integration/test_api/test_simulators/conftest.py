@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -147,30 +148,33 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
             },
         )
 
-def seed_simulator_routine_revision(cognite_client: CogniteClient, routine_external_id: str, version: str) -> None:
+def seed_simulator_routine_revision(cognite_client: CogniteClient, routine_external_id: str, version: str) -> dict[str, Any]:
     routine_revs = cognite_client.simulators.routine_revisions.list(
         filter=SimulatorRoutineRevisionsFilter(routine_external_ids=[routine_external_id])
     )
     rev_external_id = f'{routine_external_id}_{version}'
     routine_rev_exists = routine_revs.get(external_id=rev_external_id)
 
+    revision = {
+        **simulator_routine_revision,
+        "externalId": rev_external_id
+    }
+
     if not routine_rev_exists:
         cognite_client.simulators._post(
             "/simulators/routines/revisions",
             json={
-                "items": [
-                    {
-                        **simulator_routine_revision,
-                        "externalId": rev_external_id,
-                    }
-                ]
+                "items": [revision]
             },
         )
 
+    return revision
+
 @pytest.fixture(scope="session")
-def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> None:
+def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> tuple[dict[str, Any], dict[str, Any]]:
     simulator_routine_external_id = resource_names["simulator_routine_external_id"]
 
-    seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v1')
-    seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v2')
+    rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v1')
+    rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v2')
+    return rev1, rev2
 
