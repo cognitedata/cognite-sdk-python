@@ -166,7 +166,7 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
 def seed_simulator_routine_revision(
     cognite_client: CogniteClient, routine_external_id: str, version: str
 ) -> dict[str, Any]:
-    routine_revs = cognite_client.simulators.routine_revisions.list(
+    routine_revs = cognite_client.simulators.routines.revisions.list(
         filter=SimulatorRoutineRevisionsFilter(routine_external_ids=[routine_external_id])
     )
     rev_external_id = f"{routine_external_id}_{version}"
@@ -175,7 +175,7 @@ def seed_simulator_routine_revision(
     revision = {**simulator_routine_revision, "externalId": rev_external_id}
 
     if not routine_rev_exists:
-        cognite_client.simulators.routine_revisions.create(SimulatorRoutineRevisionWrite.load(revision))
+        cognite_client.simulators.routines.revisions.create(SimulatorRoutineRevisionWrite.load(revision))
 
     return revision
 
