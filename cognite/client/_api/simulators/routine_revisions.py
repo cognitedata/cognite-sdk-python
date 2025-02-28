@@ -8,8 +8,8 @@ from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
-    SimulatorRoutineRevisionWrite,
     SimulatorRoutineRevisionsList,
+    SimulatorRoutineRevisionWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -138,7 +138,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-    
+
     @overload
     def create(self, routine: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
 
@@ -151,9 +151,9 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionsList:
         """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
         Args:
-            routine (Union[SimulatorRoutineRevisionWrite, Sequence[SimulatorRoutineRevisionWrite]]): The simulator routine revision(s) to create.
+            routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): No description.
         Returns:
-            Union[SimulatorRoutineRevision, SimulatorRoutineRevisionsList]: Created simulator routine revision(s)
+            SimulatorRoutineRevision | SimulatorRoutineRevisionsList: Created simulator routine revision(s)
         Examples:
             Create new simulator routine revisions:
                 >>> from cognite.client import CogniteClient

@@ -1,5 +1,6 @@
 import time
 from typing import Any
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import (
@@ -44,7 +45,10 @@ class TestSimulatorRoutineRevisions:
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
         # TODO: Fix this
-        assert last_revision.script[0].steps[0].arguments["referenceId"] == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
+        assert (
+            last_revision.script[0].steps[0].arguments["referenceId"]
+            == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
+        )
 
         last_revision_config_json = last_revision.configuration.dump()
         assert last_revision_config_json == seed_rev2["configuration"]
@@ -76,10 +80,12 @@ class TestSimulatorRoutineRevisions:
     ):
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revision = cognite_client.simulators.routine_revisions.create(
-            SimulatorRoutineRevisionWrite.load({
-                **simulator_routine_revision,
-                "externalId": f"{routine_external_id}_v3",
-            })
+            SimulatorRoutineRevisionWrite.load(
+                {
+                    **simulator_routine_revision,
+                    "externalId": f"{routine_external_id}_v3",
+                }
+            )
         )
         assert revision is not None
         assert revision.external_id == f"{routine_external_id}_v3"
