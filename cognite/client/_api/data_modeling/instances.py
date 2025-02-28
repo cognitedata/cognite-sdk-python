@@ -1175,7 +1175,7 @@ class InstancesAPI(APIClient):
         body: dict[str, Any] = {
             "view": view.dump(camel_case=True),
             "instanceType": instance_type_str,
-            "limit": self._SEARCH_LIMIT if is_unlimited(limit) or limit is None else limit,
+            "limit": self._SEARCH_LIMIT if is_unlimited(limit) else limit,
         }
         if query:
             body["query"] = query
