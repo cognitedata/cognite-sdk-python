@@ -255,10 +255,8 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineStepArguments(CogniteObject):
+class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]): #TODO: fix type
     reference_id: str | None = None
-    object_name: str | None = None
-    object_property: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -272,7 +270,7 @@ class SimulatorRoutineStepArguments(CogniteObject):
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
-    arguments: dict[str, Any]
+    arguments: SimulatorRoutineStepArguments
     order: int
 
     @classmethod
@@ -454,6 +452,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             configuration=self.configuration,
             script=self.script,
         )
+
 
 class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevisionWrite], ExternalIDTransformerMixin):
     _RESOURCE = SimulatorRoutineRevisionWrite

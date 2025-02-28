@@ -9,7 +9,10 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorRoutineRevisionsFilter
+from cognite.client.data_classes.simulators.filters import (
+    SimulatorModelRevisionsFilter,
+    SimulatorRoutineRevisionsFilter,
+)
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
@@ -127,6 +130,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
             },
         )
 
+
 @pytest.fixture(scope="session")
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
@@ -148,33 +152,33 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
             },
         )
 
-def seed_simulator_routine_revision(cognite_client: CogniteClient, routine_external_id: str, version: str) -> dict[str, Any]:
+
+def seed_simulator_routine_revision(
+    cognite_client: CogniteClient, routine_external_id: str, version: str
+) -> dict[str, Any]:
     routine_revs = cognite_client.simulators.routine_revisions.list(
         filter=SimulatorRoutineRevisionsFilter(routine_external_ids=[routine_external_id])
     )
-    rev_external_id = f'{routine_external_id}_{version}'
+    rev_external_id = f"{routine_external_id}_{version}"
     routine_rev_exists = routine_revs.get(external_id=rev_external_id)
 
-    revision = {
-        **simulator_routine_revision,
-        "externalId": rev_external_id
-    }
+    revision = {**simulator_routine_revision, "externalId": rev_external_id}
 
     if not routine_rev_exists:
         cognite_client.simulators._post(
             "/simulators/routines/revisions",
-            json={
-                "items": [revision]
-            },
+            json={"items": [revision]},
         )
 
     return revision
 
+
 @pytest.fixture(scope="session")
-def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines) -> tuple[dict[str, Any], dict[str, Any]]:
+def seed_simulator_routine_revisions(
+    cognite_client: CogniteClient, seed_simulator_routines
+) -> tuple[dict[str, Any], dict[str, Any]]:
     simulator_routine_external_id = resource_names["simulator_routine_external_id"]
 
-    rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v1')
-    rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, 'v2')
+    rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v1")
+    rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v2")
     return rev1, rev2
-
