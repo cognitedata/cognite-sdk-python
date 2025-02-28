@@ -238,14 +238,14 @@ simulator_routine_revision = {
     "routineExternalId": resource_names["simulator_routine_external_id"],
     "configuration": {
         "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
-        "dataSampling": {"enabled": True, "validationWindow": None, "samplingWindow": 15, "granularity": 1},
+        "dataSampling": {"enabled": True, "samplingWindow": 15, "granularity": 1},
         "logicalCheck": [],
         "steadyStateDetection": [],
         "inputs": [
             {
                 "name": "Cold Water Temperature",
                 "referenceId": "CWTC",
-                "value": 10,
+                "value": 10.0,
                 "valueType": "DOUBLE",
                 "unit": {"name": "C", "quantity": "temperature"},
                 "saveTimeseriesExternalId": "TEST-ROUTINE-INPUT-CWTC",
@@ -267,7 +267,7 @@ simulator_routine_revision = {
             {
                 "name": "Hot Water Temperature",
                 "referenceId": "HWTC",
-                "value": 69,
+                "value": 69.0,
                 "valueType": "DOUBLE",
                 "unit": {"name": "C", "quantity": "temperature"},
             },
