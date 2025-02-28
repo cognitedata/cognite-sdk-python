@@ -381,9 +381,9 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         version_number: int,
         created_time: int,
         data_set_id: int,
+        created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
         script: list[SimulatorRoutineStage] | None = None,
-        created_by_user_id: str | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -418,7 +418,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
             model_external_id=resource["modelExternalId"],
             data_set_id=resource["dataSetId"],
-            created_by_user_id=resource.get("createdByUserId"),
+            created_by_user_id=resource["createdByUserId"],
             configuration=configuration,
             script=script,
             created_time=resource["createdTime"],
