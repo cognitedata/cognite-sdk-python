@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
+    SimulatorRoutineRevisionWrite,
     SimulatorRoutineRevisionsList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -135,4 +137,107 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             resource_cls=SimulatorRoutineRevision,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
+        )
+    
+    @overload
+    def create(self, routine: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
+
+    @overload
+    def create(self, routine: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+
+    def create(
+        self,
+        routine_revision: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
+    ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionsList:
+        """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
+        Args:
+            routine (Union[SimulatorRoutineRevisionWrite, Sequence[SimulatorRoutineRevisionWrite]]): The simulator routine revision(s) to create.
+        Returns:
+            Union[SimulatorRoutineRevision, SimulatorRoutineRevisionsList]: Created simulator routine revision(s)
+        Examples:
+            Create new simulator routine revisions:
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineRevisionWrite
+                >>> client = CogniteClient()
+                >>> routine_revs = [
+                ...     SimulatorRoutineRevisionWrite(
+                ...         external_id="routine_rev_1",
+                ...         routine_external_id="routine_1",
+                ...         schedule={"enabled": True, "cronExpression": "*/10 * * * *"},
+                ...         data_sampling={"enabled": True, "samplingWindow": 15, "granularity": 1},
+                ...         logical_check=[],
+                ...         steady_state_detection=[],
+                ...         inputs=[
+                ...             {
+                ...                 "name": "Cold Water Temperature",
+                ...                 "reference_id": "CWTC",
+                ...                 "value": 10.0,
+                ...                 "value_type": "DOUBLE",
+                ...                 "unit": {"name": "C", "quantity": "temperature"},
+                ...                 "save_timeseries_external_id": "TEST-ROUTINE-INPUT-CWTC",
+                ...             },
+                ...             {
+                ...                 "name": "Cold Water Pressure",
+                ...                 "reference_id": "CWPC",
+                ...                 "value": 3.6,
+                ...                 "value_type": "DOUBLE",
+                ...                 "unit": {"name": "bar", "quantity": "pressure"},
+                ...             },
+                ...         ],
+                ...         outputs=[
+                ...             {
+                ...                 "name": "Shower Temperature",
+                ...                 "reference_id": "ST",
+                ...                 "unit": {"name": "C", "quantity": "temperature"},
+                ...                 "value_type": "DOUBLE",
+                ...                 "save_timeseries_external_id": "TEST-ROUTINE-OUTPUT-ST",
+                ...             },
+                ...         ],
+                ...         script=[
+                ...             {
+                ...                 "order": 1,
+                ...                 "description": "Set Inputs",
+                ...                 "steps": [
+                ...                     {
+                ...                         "order": 1,
+                ...                         "step_type": "Set",
+                ...                         "arguments": {"reference_id": "CWTC", "object_name": "Cold water", "object_property": "Temperature"},
+                ...                     },
+                ...                     {
+                ...                         "order": 2,
+                ...                         "step_type": "Set",
+                ...                         "arguments": {"reference_id": "CWPC", "object_name": "Cold water", "object_property": "Pressure"},
+                ...                     },
+                ...                 ],
+                ...             },
+                ...             {
+                ...                 "order": 2,
+                ...                 "description": "Solve the flowsheet",
+                ...                 "steps": [{"order": 1, "step_type": "Command", "arguments": {"command": "Solve"}}],
+                ...             },
+                ...             {
+                ...                 "order": 3,
+                ...                 "description": "Set simulation outputs",
+                ...                 "steps": [
+                ...                     {
+                ...                         "order": 1,
+                ...                         "step_type": "Get",
+                ...                         "arguments": {"reference_id": "ST", "object_name": "Shower", "object_property": "Temperature"},
+                ...                     },
+                ...                 ],
+                ...             },
+                ...         ],
+                ...     ),
+                ... ]
+                >>> res = client.simulators.routines.create(routines)
+        """
+        self._warning.warn()
+        assert_type(routine_revision, "simulator_routine_revision", (SimulatorRoutineRevisionWrite, Sequence))
+
+        return self._create_multiple(
+            list_cls=SimulatorRoutineRevisionsList,
+            resource_cls=SimulatorRoutineRevision,
+            items=routine_revision,
+            input_resource_cls=SimulatorRoutineRevisionWrite,
+            resource_path=self._RESOURCE_PATH,
         )
