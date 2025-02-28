@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 
 from typing_extensions import Self
 
@@ -254,23 +254,24 @@ class SimulatorRoutineConfiguration(CogniteObject):
         return output
 
 
-@dataclass
-class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):  # TODO: fix type
-    reference_id: str | None = None
+# TODO: fix type
+# @dataclass
+# class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):  
+#     reference_id: str | None = None
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
+#     @classmethod
+#     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+#         instance = super()._load(resource, cognite_client)
+#         return instance
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+#     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+#         return super().dump(camel_case=camel_case)
 
 
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
-    arguments: SimulatorRoutineStepArguments
+    arguments: Dict[str, str]
     order: int
 
     @classmethod
@@ -346,11 +347,13 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        configuration = SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client) if resource.get("configuration") else None
+        script = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])] if resource.get("script") else None
         return cls(
             external_id=resource.get("externalId"),
             routine_external_id=resource.get("routineExternalId"),
-            configuration=SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client),
-            script=[SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])],
+            configuration=configuration,
+            script=script,
         )
 
     def as_write(self) -> SimulatorRoutineRevisionWrite:

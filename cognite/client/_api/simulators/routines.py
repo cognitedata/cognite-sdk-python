@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, overload
 
+from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorRoutinesFilter
@@ -25,6 +26,7 @@ class SimulatorRoutinesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.revisions = SimulatorRoutineRevisionsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
@@ -95,7 +97,7 @@ class SimulatorRoutinesAPI(APIClient):
     def create(self, routine: Sequence[SimulatorRoutineWrite]) -> SimulatorRoutineList: ...
 
     @overload
-    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutineList: ...
+    def create(self, routine: SimulatorRoutineWrite) -> SimulatorRoutine: ...
 
     def create(
         self,
