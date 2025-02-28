@@ -60,6 +60,7 @@ class PropertySort(CogniteSort):
         dumped["property"] = self.property
         return dumped
 
+
 class SimulatorRoutineRevisionsFilter(CogniteFilter):
     def __init__(
         self,

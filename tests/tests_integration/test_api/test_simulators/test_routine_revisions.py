@@ -1,12 +1,14 @@
 from cognite.client import CogniteClient
+from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import (
     SimulatorRoutineRevisionsFilter,
 )
-from cognite.client.data_classes.simulators import PropertySort
 
 
 class TestSimulatorRoutineRevisions:
-    def test_list_and_filtering_routine_revisions(self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names) -> None:
+    def test_list_and_filtering_routine_revisions(
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+    ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routine_revisions.list(
             filter=SimulatorRoutineRevisionsFilter(
@@ -37,12 +39,15 @@ class TestSimulatorRoutineRevisions:
 
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
+        # TODO: Fix this
+        assert last_revision.script[0].steps[0].arguments["referenceId"] == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
 
         last_revision_config_json = last_revision.configuration.dump()
         assert last_revision_config_json == seed_rev2["configuration"]
 
-
-    def test_retrieve_routine_revision(self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names) -> None:
+    def test_retrieve_routine_revision(
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+    ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routine_revisions.list(
             filter=SimulatorRoutineRevisionsFilter(
