@@ -195,15 +195,16 @@ class SimulatorRoutineConfiguration(CogniteObject):
     data_sampling: SimulatorRoutineDataSampling
     logical_check: list[SimulatorRoutineLogicalCheckEnabled]
     steady_state_detection: list[SimulatorRoutineSteadyStateDetectionEnabled]
-    inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries]
-    outputs: list[SimulatorRoutineOutput]
+    inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None
+    outputs: list[SimulatorRoutineOutput] | None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        inputs = []
-        outputs = []
+        inputs = None
+        outputs = None
 
         if resource.get("inputs", None) is not None:
+            inputs = []
             for input_ in resource["inputs"]:
                 if isinstance(input_, SimulatorRoutineInputConstant) or isinstance(
                     input_, SimulatorRoutineInputTimeseries
@@ -217,6 +218,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
                         inputs.append(SimulatorRoutineInputTimeseries._load(input_, cognite_client))
 
         if resource.get("outputs", None) is not None:
+            outputs = []
             for output_ in resource["outputs"]:
                 if isinstance(output_, SimulatorRoutineOutput):
                     outputs.append(output_)
@@ -246,8 +248,8 @@ class SimulatorRoutineConfiguration(CogniteObject):
         output["steadyStateDetection"] = [
             detection_.dump(camel_case=camel_case) for detection_ in self.steady_state_detection
         ]
-        output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
-        output["outputs"] = [output_.dump(camel_case=camel_case) for output_ in self.outputs]
+        output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs] if self.inputs else None
+        output["outputs"] = [output_.dump(camel_case=camel_case) for output_ in self.outputs] if self.outputs else None
 
         return output
 
@@ -349,7 +351,7 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["configuration"] = self.configuration.dump(camel_case=camel_case)
-        output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script]
+        output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script] if self.script else None
 
         return output
 

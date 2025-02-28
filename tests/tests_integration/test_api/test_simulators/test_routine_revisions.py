@@ -14,13 +14,21 @@ class TestSimulatorRoutineRevisions:
             ),
         )
         assert len(revisions_all) == 2
-        model_unique_external_id = seed_resource_names["simulator_model_external_id"]
+        model_external_id = seed_resource_names["simulator_model_external_id"]
         revisions_filter_res = cognite_client.simulators.routine_revisions.list(
             sort=PropertySort(order="asc", property="createdTime"),
-            filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_unique_external_id], all_versions=True),
+            filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_external_id], all_versions=True),
             include_all_fields=True,
         )
         assert len(revisions_filter_res) == 2
+        revisions_filter_res_json = [item.dump() for item in revisions_filter_res]
+        # Inputs, outputs and script are not included in the response by default
+        for revision_json in revisions_filter_res_json:
+            revision_json["configuration"]["inputs"] = None
+            revision_json["configuration"]["outputs"] = None
+            revision_json["script"] = None
+        revisions_all_json = [item.dump() for item in revisions_all]
+        assert revisions_filter_res_json == revisions_all_json
 
         seed_rev2 = seed_simulator_routine_revisions[0]
 
