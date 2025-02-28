@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -256,7 +256,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
 # TODO: fix type
 # @dataclass
-# class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):  
+# class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):
 #     reference_id: str | None = None
 
 #     @classmethod
@@ -271,7 +271,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
-    arguments: Dict[str, str]
+    arguments: dict[str, str]
     order: int
 
     @classmethod
@@ -347,8 +347,16 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        configuration = SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client) if resource.get("configuration") else None
-        script = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])] if resource.get("script") else None
+        configuration = (
+            SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client)
+            if resource.get("configuration")
+            else None
+        )
+        script = (
+            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            if resource.get("script")
+            else None
+        )
         return cls(
             external_id=resource.get("externalId"),
             routine_external_id=resource.get("routineExternalId"),
