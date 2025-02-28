@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators import PropertySort
@@ -141,11 +141,11 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    # @overload
-    # def create(self, routine: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
+    @overload
+    def create(self, routine_revision: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
 
-    # @overload
-    # def create(self, routine: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+    @overload
+    def create(self, routine_revision: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
 
     def create(
         self,
