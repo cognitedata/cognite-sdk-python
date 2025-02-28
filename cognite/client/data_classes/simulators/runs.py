@@ -119,7 +119,8 @@ class SimulationRunWrite(SimulationRunCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["inputs"] = [input.dump(camel_case=camel_case) for input in self.inputs]
+        if self.inputs is not None:
+            output["inputs"] = [ input_.dump(camel_case=camel_case) for input_ in self.inputs]
         return output
 
     def as_write(self) -> SimulationRunWrite:
