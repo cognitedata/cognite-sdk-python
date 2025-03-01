@@ -131,15 +131,15 @@ class AggregatedValue(CogniteObject, ABC):
         aggregate = resource["aggregate"]
 
         if aggregate == "avg":
-            deserialized: Any = AvgValue(property=resource["property"], value=resource["value"])
+            deserialized: Any = AvgValue(property=resource["property"], value=resource.get("value"))
         elif aggregate == "count":
-            deserialized = CountValue(property=resource["property"], value=resource["value"])
+            deserialized = CountValue(property=resource["property"], value=resource.get("value"))
         elif aggregate == "max":
-            deserialized = MaxValue(property=resource["property"], value=resource["value"])
+            deserialized = MaxValue(property=resource["property"], value=resource.get("value"))
         elif aggregate == "min":
-            deserialized = MinValue(property=resource["property"], value=resource["value"])
+            deserialized = MinValue(property=resource["property"], value=resource.get("value"))
         elif aggregate == "sum":
-            deserialized = SumValue(property=resource["property"], value=resource["value"])
+            deserialized = SumValue(property=resource["property"], value=resource.get("value"))
         elif aggregate == "histogram":
             deserialized = HistogramValue(
                 property=resource["property"], interval=resource["interval"], buckets=resource["buckets"]
@@ -149,21 +149,19 @@ class AggregatedValue(CogniteObject, ABC):
         return cast(Self, deserialized)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = {"aggregate": self._aggregate, "property": self.property}
-        if camel_case:
-            output = convert_all_keys_recursive(output)
-        return output
+        return {"aggregate": self._aggregate, "property": self.property}
 
 
 @dataclass
 class AggregatedNumberedValue(AggregatedValue, ABC):
     _aggregate: ClassVar[str] = "number"
 
-    value: float
+    value: float | None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output["value"] = self.value
+        if self.value is not None:
+            output["value"] = self.value
         return output
 
 
