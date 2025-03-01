@@ -22,6 +22,11 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.73.5] - 2025-02-24
+### Fixed
+- An issue with `client.data_modeling.instances.aggregates(..., filter=my_filter)` no longer raises a `KeyError` if you
+  have a filter that returns no results.
+
 ## [7.73.4] - 2025-02-24
 ### Fixed
 - An issue with `DatapointsAPI.retrieve_latest` and usage of `instance_id` when using `ignore_unknown_ids=True`
