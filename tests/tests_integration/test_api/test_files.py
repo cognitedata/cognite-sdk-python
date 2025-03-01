@@ -95,12 +95,17 @@ def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
     if missing := (set(files.as_external_ids()) - set(retrieved.as_external_ids())):
         for local in files:
             if local.external_id in missing:
-                created, _ = cognite_client.files.create(local)
-                _ = cognite_client.files.upload_bytes(
+                created = cognite_client.files.upload_bytes(
                     content=local.name.removesuffix(".txt"),
-                    external_id=local.external_id,
+                    **local.dump(camel_case=False),
                 )
                 retrieved.append(created)
+    if not_uploaded := [f for f in retrieved if not f.uploaded]:
+        for file in not_uploaded:
+            _ = cognite_client.files.upload_content_bytes(
+                content=file.name.removesuffix(".txt"),
+                external_id=file.external_id,
+            )
 
     return retrieved
 
@@ -109,17 +114,15 @@ def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
 def big_txt(cognite_client: CogniteClient) -> FileMetadata:
     file = cognite_client.files.retrieve(external_id="big_txt")
     if file is None:
-        created, _ = cognite_client.files.create(
-            FileMetadataWrite(
-                name="big.txt",
-                external_id="big_txt",
-                directory="/test",
-                mime_type="text/plain",
-            )
-        )
-        _ = cognite_client.files.upload_bytes(
-            content="big" * 30_000_000,
+        local = FileMetadataWrite(
+            name="big.txt",
             external_id="big_txt",
+            directory="/test",
+            mime_type="text/plain",
+        )
+        created = cognite_client.files.upload_bytes(
+            content="big" * 30_000_000,
+            **local.dump(camel_case=False),
         )
         file = created
     return file
@@ -225,7 +228,7 @@ class TestFilesAPI:
         res = cognite_client.files.update(FileMetadata(id=new_file.id, directory=dir))
         assert res.directory == dir
 
-    def test_download(self, cognite_client, test_files):
+    def test_download(self, cognite_client: CogniteClient, test_files: dict[str, FileMetadata]) -> None:
         test_file = test_files["a.txt"]
         res = cognite_client.files.download_bytes(id=test_file.id)
         assert b"a" == res
