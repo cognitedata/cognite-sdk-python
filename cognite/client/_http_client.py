@@ -30,12 +30,12 @@ class NoCookiesPlease(CookieJar):
         pass
 
 
-@functools.cache
-def get_global_httpx_client() -> httpx.Client:
-    transport = httpx.HTTPTransport(
+def _get_default_transport() -> httpx.BaseTransport:
+    # This is split from 'get_global_httpx_client' to allow for easier monkeypatching in pyodide.
+    # Most comments are copied from the underlying code for visibility with our own settings.
+    return httpx.HTTPTransport(
         proxy=global_config.proxy,
-        # 'retries': The maximum number of retries when trying to establish a connection.
-        retries=0,
+        retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
         verify=not global_config.disable_ssl,
         limits=httpx.Limits(
             # max_connections: The maximum number of concurrent HTTP connections that
@@ -50,8 +50,12 @@ def get_global_httpx_client() -> httpx.Client:
             keepalive_expiry=5,  # copy httpx default
         ),
     )
+
+
+@functools.cache
+def get_global_httpx_client() -> httpx.Client:
     return httpx.Client(
-        transport=transport,
+        transport=_get_default_transport(),
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
         # Below should not be needed when we pass transport, but... :)
