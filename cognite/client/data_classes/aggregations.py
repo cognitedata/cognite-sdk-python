@@ -175,7 +175,7 @@ class AvgValue(AggregatedNumberedValue):
 @dataclass
 class CountValue(AggregatedNumberedValue):
     _aggregate: ClassVar[str] = "count"
-    value: int
+    value: int | None
 
 
 @final
