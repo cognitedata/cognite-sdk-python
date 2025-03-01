@@ -823,6 +823,8 @@ class TestInstancesAPI:
         avg_value = next((item for item in result if isinstance(item, aggregations.AvgValue)), None)
         assert max_value is not None
         assert avg_value is not None
+        assert isinstance(max_value.value, float)
+        assert isinstance(avg_value.value, float)
         assert max_value.value > avg_value.value
 
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
@@ -836,6 +838,7 @@ class TestInstancesAPI:
             limit=10,
         )
         assert count.property == "name"
+        assert isinstance(count.value, float)
         assert count.value > 0, "Add at least one person to the view to run this test"
 
     def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
@@ -1004,6 +1007,7 @@ class TestInstancesAPI:
 
         assert aggregated
         assert len(aggregated) == 1
+        assert isinstance(aggregated[0].value, float)
         assert math.isclose(aggregated[0].value, 1.1 * 1e5)
 
     def test_query_in_units(
