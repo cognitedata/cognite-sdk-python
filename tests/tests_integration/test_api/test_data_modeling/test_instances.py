@@ -838,7 +838,7 @@ class TestInstancesAPI:
             limit=10,
         )
         assert count.property == "name"
-        assert isinstance(count.value, float)
+        assert isinstance(count.value, int)
         assert count.value > 0, "Add at least one person to the view to run this test"
 
     def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
