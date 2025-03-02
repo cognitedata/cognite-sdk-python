@@ -31,7 +31,7 @@ class TestSimulatorRoutines:
         try:
             routine_created = cognite_client.simulators.routines.create(routine_to_create)
             assert routine_created is not None
-            assert routine_created.external_id == routine_external_id_new
+            assert routine_created.as_write() == routine_to_create
         finally:
             cognite_client.simulators.routines.delete(external_ids=[routine_to_create.external_id])
 
