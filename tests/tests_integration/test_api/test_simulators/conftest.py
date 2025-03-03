@@ -104,8 +104,6 @@ def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integrat
 
     yield simulator_model
 
-    # todo: dont delete the model
-    # or do?
     cognite_client.simulators.models.delete(external_id=model_unique_external_id)
 
 
