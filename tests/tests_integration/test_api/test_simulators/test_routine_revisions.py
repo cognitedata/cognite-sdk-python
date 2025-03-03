@@ -44,9 +44,8 @@ class TestSimulatorRoutineRevisions:
 
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
-        # TODO: Fix this
         assert (
-            last_revision.script[0].steps[0].arguments["referenceId"]
+            last_revision.script[0].steps[0].arguments["reference_id"]
             == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
         )
 
@@ -101,7 +100,7 @@ class TestSimulatorRoutineRevisions:
         assert revision_1 is not None
         assert revision_1.external_id == f"{routine_external_id}_v3"
         assert revision_1.configuration.dump() == simulator_routine_revision["configuration"]
-        assert [item.dump() for item in revision_1.script] == simulator_routine_revision["script"]
+        assert [item.dump(camel_case=True) for item in revision_1.script] == simulator_routine_revision["script"]
         assert revision_1.created_time
         assert revision_1.created_time > int(time.time() - 60) * 1000
 
@@ -110,4 +109,4 @@ class TestSimulatorRoutineRevisions:
         assert revision_2.external_id == f"{routine_external_id}_v4"
         assert revision_2.configuration.inputs[0].reference_id == "CWTC"
         assert revision_2.configuration.outputs[0].reference_id == "ST"
-        assert revision_2.script[0].steps[0].arguments["referenceId"] == "CWTC" # TODO: Fix this
+        assert revision_2.script[0].steps[0].arguments["reference_id"] == "CWTC"
