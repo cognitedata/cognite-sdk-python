@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -254,59 +255,58 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
         return output
 
+
 @dataclass
 class SimulatorRoutineStepArguments(CogniteObject):
-    _data: dict[str, str]
+    data: dict[str, str]
 
-    def __init__(self, _data: dict[str, str]) -> None:
-        self._data = _data
+    def __init__(self, data: dict[str, str]) -> None:
+        self.data = data
 
     def __getitem__(self, key: str) -> str:
-        return self._data[key]
-    
+        return self.data[key]
+
     def __setitem__(self, key: str, value: str) -> None:
-        self._data[key] = value
+        self.data[key] = value
 
     def __delitem__(self, key: str) -> None:
-        del self._data[key]
+        del self.data[key]
 
     def __iter__(self) -> Iterator[str]:
-        return iter(self._data)
-    
+        return iter(self.data)
+
     def __len__(self) -> int:
-        return len(self._data)
-    
+        return len(self.data)
+
     def __contains__(self, key: str) -> bool:
-        return key in self._data
-    
+        return key in self.data
+
     def keys(self) -> list[str]:
-        return list(self._data.keys())
-    
+        return list(self.data.keys())
+
     def values(self) -> list[str]:
-        return list(self._data.values())
-    
+        return list(self.data.values())
+
     def items(self) -> list[tuple[str, str]]:
-        return list(self._data.items())
-    
+        return list(self.data.items())
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SimulatorRoutineStepArguments):
             return False
-        return self._data == other._data
-    
+        return self.data == other.data
+
     def __repr__(self) -> str:
-        return self._data.__repr__()
+        return self.data.__repr__()
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         data = {to_snake_case(key): val for key, val in resource.items()}
-        return cls(
-            _data=data
-        )
-    
+        return cls(data=data)
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            **(convert_all_keys_to_camel_case(self._data) if camel_case else self._data)
-        }
+        return {**(convert_all_keys_to_camel_case(self.data) if camel_case else self.data)}
+
+
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
@@ -440,7 +440,6 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevision:
-        # load = super()._load(resource, cognite_client)
         configuration = (
             SimulatorRoutineConfiguration._load(resource.get("configuration", {}))
             if resource.get("configuration")
