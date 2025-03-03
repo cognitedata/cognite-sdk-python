@@ -95,7 +95,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
             Get simulator routine revision by external id:
-                >>> res = client.simulators.routines.revisions.retrieve(external_ids="abcdef")
+                >>> res = client.simulators.routines.revisions.retrieve(external_id="routine_v1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -131,7 +131,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                     >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
 
                 Get simulator routine revisions by external id:
-                    >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["abc", "def"])
+                    >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["routine_v1", "routine_v2"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -153,7 +153,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionsList:
         """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
         Args:
-            routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): No description.
+            routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
         Returns:
             SimulatorRoutineRevision | SimulatorRoutineRevisionsList: Created simulator routine revision(s)
         Examples:
