@@ -20,6 +20,7 @@ class SimulatorLogsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
+        self._RETRIEVE_LIMIT = 1
 
     @overload
     def retrieve(self, id: int) -> SimulatorLog | None: ...

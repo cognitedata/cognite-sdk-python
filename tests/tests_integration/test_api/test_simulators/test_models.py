@@ -8,6 +8,7 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelWrite,
 )
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 
 @pytest.mark.usefixtures(
@@ -123,8 +124,23 @@ class TestSimulatorModels:
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
         assert model_revision_created.log_id is not None
+        update_logs(
+            cognite_client,
+            model_revision_created.log_id,
+            [
+                {
+                    "timestamp": 123456789,
+                    "message": "Testing logs update for simulator model revision",
+                    "severity": "Information",
+                }
+            ],
+        )
         log = cognite_client.simulators.logs.retrieve(id=model_revision_created.log_id)
         assert log is not None
+        assert log.data is not None
+        assert len(log.data) == 1
+        assert log.data[0].message == "Testing logs update for simulator model revision"
+        assert log.data[0].severity == "Information"
         assert len(multiple_model_revisions_created) == 2
         cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
 

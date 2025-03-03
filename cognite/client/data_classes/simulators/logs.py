@@ -64,7 +64,9 @@ class SimulatorLog(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["data"] = [entry.dump(camel_case=camel_case) for entry in self.data]
+        if isinstance(self.data, list) and all(isinstance(item, SimulatorLogData) for item in self.data):
+            output["data"] = [item.dump(camel_case=camel_case) for item in self.data]
+
         return output
 
 
