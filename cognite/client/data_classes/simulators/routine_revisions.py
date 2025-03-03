@@ -23,6 +23,14 @@ if TYPE_CHECKING:
 
 @dataclass
 class SimulationValueUnitInput(CogniteObject):
+    """
+    The unit of the simulation value.
+
+    Args:
+        name (str): The name of the unit.
+        quantity (str | None): The quantity of the unit.
+    """
+
     name: str
     quantity: str | None = None
 
@@ -39,6 +47,18 @@ class SimulationValueUnitInput(CogniteObject):
 
 @dataclass
 class SimulatorRoutineInputTimeseries(CogniteObject):
+    """
+    The timeseries input of the simulator routine revision.
+
+    Args:
+        name (str): The name of the input.
+        reference_id (str): The reference ID of the input.
+        source_external_id (str): The external ID of the source timeseries.
+        aggregate (str | None): The aggregation method to use for the timeseries.
+        save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
+        unit (SimulationValueUnitInput | None): The unit of the input.
+    """
+
     name: str
     reference_id: str
     source_external_id: str
@@ -67,10 +87,22 @@ class SimulatorRoutineInputTimeseries(CogniteObject):
 
 @dataclass
 class SimulatorRoutineInputConstant(CogniteObject):
+    """
+    The constant input of the simulator routine revision.
+
+    Args:
+        name (str): The name of the input.
+        reference_id (str): The reference ID of the input.
+        value (str): The value of the input.
+        value_type (str): The value type of the input.
+        unit (SimulationValueUnitInput | None): The unit of the input.
+        save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
+    """
+
     name: str
     reference_id: str
     value: str
-    value_type: str
+    value_type: str  # TODO: ENUM?
     unit: SimulationValueUnitInput | None = None
     save_timeseries_external_id: str | None = None
 
@@ -95,6 +127,17 @@ class SimulatorRoutineInputConstant(CogniteObject):
 
 @dataclass
 class SimulatorRoutineOutput(CogniteObject):
+    """
+    The output of the simulator routine revision.
+
+    Args:
+        name (str): The name of the output.
+        reference_id (str): The reference ID of the output.
+        value_type (str): The value type of the output.
+        unit (SimulationValueUnitInput | None): The unit of the output.
+        save_timeseries_external_id (str | None): The external ID of the timeseries to save the output. If not provided, the output is not saved to a timeseries.
+    """
+
     name: str
     reference_id: str
     value_type: str
@@ -121,10 +164,18 @@ class SimulatorRoutineOutput(CogniteObject):
 
 @dataclass
 class SimulatorRoutineSchedule(CogniteObject):
+    """
+    The schedule configuration of the simulator routine revision.
+
+    Args:
+        enabled (bool): Whether the schedule is enabled.
+        cron_expression (str | None): The cron expression of the schedule.
+    """
+
     enabled: bool = False
     cron_expression: str | None = None
 
-    def __init__(self, enabled: bool, cron_expression: str | None = None, **_: Any) -> None:
+    def __init__(self, enabled: bool, cron_expression: str | None = None) -> None:
         self.enabled = enabled
         self.cron_expression = cron_expression
 
@@ -142,6 +193,17 @@ class SimulatorRoutineSchedule(CogniteObject):
 
 @dataclass
 class SimulatorRoutineDataSampling(CogniteObject):
+    """
+    The data sampling configuration of the simulator routine revision.
+    Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
+
+    Args:
+        enabled (bool): Whether the data sampling is enabled.
+        validation_window (int): The validation window of the data sampling.
+        sampling_window (int): The sampling window of the data sampling.
+        granularity (str): The granularity of the data sampling.
+    """
+
     enabled: bool = False
     validation_window: int | None = None
     sampling_window: int | None = None
@@ -157,7 +219,19 @@ class SimulatorRoutineDataSampling(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
+class SimulatorRoutineLogicalCheck(CogniteObject):
+    """
+    The logical check configuration of the simulator routine revision.
+    Learn more about logical checks <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
+
+    Args:
+        enabled (bool): Whether the logical check is enabled.
+        timeseries_external_id (str): The external ID of the time series to check.
+        aggregate (str): The aggregation method to use for the time series.
+        operator (str): The operator to use for the logical check.
+        value (float): The value to use for the logical check.
+    """
+
     enabled: bool = False
     timeseries_external_id: str | None = None
     aggregate: str | None = None
@@ -175,6 +249,20 @@ class SimulatorRoutineLogicalCheckEnabled(CogniteObject):
 
 @dataclass
 class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
+    """
+    Steady State Detection checks for steady state regions in a given time series.
+    The user specifies the time series and three parameters: min section size, var threshold, and slope threshold.
+    It returns a binary time series, with 1 for timestamps where the steady state criteria is met and 0 otherwise.
+
+    Args:
+        enabled (bool): Whether the steady state detection is enabled.
+        timeseries_external_id (str): The external ID of the time series to check for steady state.
+        aggregate (str): The aggregation method to use for the time series.
+        min_section_size (int): The minimum number of consecutive data points that must meet the steady state criteria.
+        var_threshold (float): The maximum variance allowed for the steady state region.
+        slope_threshold (float): The maximum slope allowed for the steady state region.
+    """
+
     enabled: bool = False
     timeseries_external_id: str | None = None
     aggregate: str | None = None
@@ -193,9 +281,22 @@ class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
 
 @dataclass
 class SimulatorRoutineConfiguration(CogniteObject):
+    """
+    The simulator routine configuration defines the configuration of a simulator routine revision.
+    Learn more about simulator routine configuration <https://docs.cognite.com/cdf/integration/guides/simulators/simulator_routines>.
+
+    Args:
+        schedule (SimulatorRoutineSchedule): Schedule configuration.
+        data_sampling (SimulatorRoutineDataSampling): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
+        logical_check (list[SimulatorRoutineLogicalCheck]): Logical check configuration.
+        steady_state_detection (list[SimulatorRoutineSteadyStateDetectionEnabled]): Steady state detection configuration.
+        inputs (list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None): The inputs of the simulator routine revision.
+        outputs (list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
+    """
+
     schedule: SimulatorRoutineSchedule
     data_sampling: SimulatorRoutineDataSampling
-    logical_check: list[SimulatorRoutineLogicalCheckEnabled]
+    logical_check: list[SimulatorRoutineLogicalCheck]
     steady_state_detection: list[SimulatorRoutineSteadyStateDetectionEnabled]
     inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None
     outputs: list[SimulatorRoutineOutput] | None
@@ -232,7 +333,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
             schedule=SimulatorRoutineSchedule.load(resource["schedule"], cognite_client),
             data_sampling=SimulatorRoutineDataSampling._load(resource["dataSampling"], cognite_client),
             logical_check=[
-                SimulatorRoutineLogicalCheckEnabled._load(check_, cognite_client) for check_ in resource["logicalCheck"]
+                SimulatorRoutineLogicalCheck._load(check_, cognite_client) for check_ in resource["logicalCheck"]
             ],
             steady_state_detection=[
                 SimulatorRoutineSteadyStateDetectionEnabled._load(detection_, cognite_client)
@@ -258,6 +359,13 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
 @dataclass
 class SimulatorRoutineStepArguments(CogniteObject):
+    """
+    The arguments of the simulator routine step.
+
+    Depending on the step type and simulator, the arguments can be different.
+    For "Get" and "Set" step type the reference ID is required.
+    """
+
     data: dict[str, str]
 
     def __init__(self, data: dict[str, str]) -> None:
@@ -309,7 +417,16 @@ class SimulatorRoutineStepArguments(CogniteObject):
 
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
-    step_type: str
+    """
+    The step of the simulator routine revision.
+
+    Args:
+        step_type (str): The type of the step. Can be "Get", "Set", or "Command".
+        arguments (SimulatorRoutineStepArguments): The arguments of the step.
+        order (int): The order of the step.
+    """
+
+    step_type: str  # TODO: enum? ["Get", "Set", "Command"]
     arguments: SimulatorRoutineStepArguments
     order: int
 
@@ -329,6 +446,15 @@ class SimulatorRoutineStep(CogniteObject):
 
 @dataclass
 class SimulatorRoutineStage(CogniteObject):
+    """
+    The stage of the simulator routine revision. This is a way to organize the steps of the simulator routine revision.
+
+    Args:
+        order (int): The order of the stage.
+        steps (list[SimulatorRoutineStep]): The steps of the stage.
+        description (str | None): The description of the stage.
+    """
+
     order: int
     steps: list[SimulatorRoutineStep]
     description: str | None
@@ -372,6 +498,18 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
 
 
 class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model.
+    This is a writeable version of a simulator routine revision, it is used when creating simulator routine revisions.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        routine_external_id (str): The external ID of the simulator routine.
+        configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
+        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+
+    """
+
     def __init__(
         self,
         external_id: str,
@@ -411,6 +549,33 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
 
 
 class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model.
+
+    A simulator routine includes:
+
+        Inputs (values set into the simulator model)
+        Commands (actions to be performed by the simulator)
+        Outputs (values read from the simulator model)
+
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
+    Each model can have multiple routines, each performing different objectives such as calculating optimal operation setpoints, forecasting production, benchmarking asset performance, and more.
+
+    Args:
+        id (int): The unique identifier of the simulator routine revision.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        simulator_external_id (str): The external ID of the simulator.
+        simulator_integration_external_id (str): The external ID of the simulator integration.
+        routine_external_id (str): The external ID of the simulator routine.
+        model_external_id (str): The external ID of the simulator model.
+        version_number (int): The version number of the simulator routine revision. Unique for each simulator routine.
+        created_time (int): The timestamp of when the simulator routine revision was created.
+        data_set_id (int): The ID of the data set associated with the simulator routine revision.
+        created_by_user_id (str): The ID of the user who created the simulator routine revision.
+        configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
+        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+    """
+
     def __init__(
         self,
         id: int,
