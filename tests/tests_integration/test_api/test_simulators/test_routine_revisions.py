@@ -108,3 +108,6 @@ class TestSimulatorRoutineRevisions:
         revision_2 = revisions[1]
         assert revision_2 is not None
         assert revision_2.external_id == f"{routine_external_id}_v4"
+        assert revision_2.configuration.inputs[0].reference_id == "CWTC"
+        assert revision_2.configuration.outputs[0].reference_id == "ST"
+        assert revision_2.script[0].steps[0].arguments["referenceId"] == "CWTC" # TODO: Fix this
