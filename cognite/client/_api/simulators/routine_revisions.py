@@ -30,6 +30,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
+        self._DELETE_LIMIT = 1
 
     def list(
         self,
