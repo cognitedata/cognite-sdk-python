@@ -31,7 +31,6 @@ class SimulatorRoutinesAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
         self._CREATE_LIMIT = 1
-        self._RETRIEVE_LIMIT = 20
         self._DELETE_LIMIT = 1
 
     def __iter__(self) -> Iterator[SimulatorRoutine]:
