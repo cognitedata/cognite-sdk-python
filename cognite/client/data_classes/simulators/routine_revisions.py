@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterator
 
 from typing_extensions import Self
 
@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -253,37 +254,77 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
         return output
 
+@dataclass
+class SimulatorRoutineStepArguments(CogniteObject):
+    _data: dict[str, str]
 
-# TODO: fix type
-# @dataclass
-# class SimulatorRoutineStepArguments(CogniteObject, dict[str, str]):
-#     reference_id: str | None = None
+    def __init__(self, _data: dict[str, str]) -> None:
+        self._data = _data
 
-#     @classmethod
-#     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-#         instance = super()._load(resource, cognite_client)
-#         return instance
+    def __getitem__(self, key: str) -> str:
+        return self._data[key]
+    
+    def __setitem__(self, key: str, value: str) -> None:
+        self._data[key] = value
 
-#     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-#         return super().dump(camel_case=camel_case)
+    def __delitem__(self, key: str) -> None:
+        del self._data[key]
 
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data)
+    
+    def __len__(self) -> int:
+        return len(self._data)
+    
+    def __contains__(self, key: str) -> bool:
+        return key in self._data
+    
+    def keys(self) -> list[str]:
+        return list(self._data.keys())
+    
+    def values(self) -> list[str]:
+        return list(self._data.values())
+    
+    def items(self) -> list[tuple[str, str]]:
+        return list(self._data.items())
+    
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SimulatorRoutineStepArguments):
+            return False
+        return self._data == other._data
+    
+    def __repr__(self) -> str:
+        return self._data.__repr__()
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        data = {to_snake_case(key): val for key, val in resource.items()}
+        return cls(
+            _data=data
+        )
+    
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            **(convert_all_keys_to_camel_case(self._data) if camel_case else self._data)
+        }
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
     step_type: str
-    arguments: dict[str, str]
+    arguments: SimulatorRoutineStepArguments
     order: int
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             step_type=resource["stepType"],
-            arguments=resource["arguments"],
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"], cognite_client),
             order=resource["order"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+        output = super().dump(camel_case=camel_case)
+        output["arguments"] = self.arguments.dump(camel_case=camel_case)
+        return output
 
 
 @dataclass
