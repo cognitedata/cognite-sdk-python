@@ -1,14 +1,15 @@
 import pytest
 
 from cognite.client.exceptions import CogniteAPIError
+from tests.utils import get_url
 
 
 @pytest.fixture
-def mock_get_400_error(rsps, cognite_client):
-    rsps.add(
-        rsps.GET,
-        cognite_client.assets._get_base_url_with_base_path() + "/any",
-        status=400,
+def mock_get_400_error(httpx_mock, cognite_client):
+    httpx_mock.add_response(
+        method="GET",
+        url=get_url(cognite_client.assets, "/any"),
+        status_code=400,
         json={"error": {"message": "bla", "extra": {"haha": "blabla"}, "other": "yup"}},
     )
 

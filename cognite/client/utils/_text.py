@@ -17,7 +17,7 @@ class DrawTables:
     TOPLINE = "\N{BOX DRAWINGS LIGHT DOWN AND HORIZONTAL}"
 
 
-def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
+def random_string(size: int = 100, sample_from: str = string.ascii_letters + string.digits) -> str:
     return "".join(random.choices(sample_from, k=size))
 
 

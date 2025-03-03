@@ -1253,6 +1253,7 @@ class FunctionSchedulesAPI(APIClient):
                 ... )
 
         """
+        # TODO: Add a warning to encourage CRONs that are not exactly at 00, 15, 30, 45 mins?
         if isinstance(name, str):
             if cron_expression is None:
                 raise ValueError("cron_expression must be specified when creating a new schedule.")
@@ -1263,7 +1264,7 @@ class FunctionSchedulesAPI(APIClient):
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_id is None:
             item.function_id = _get_function_internal_id(self._cognite_client, identifier)
-            # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
+            # API requires: Exactly one of 'function_id' and 'function_external_id' must be set
             item.function_external_id = None
 
         dumped = item.dump()

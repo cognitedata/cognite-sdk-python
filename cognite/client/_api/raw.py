@@ -13,8 +13,8 @@ from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import raw
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
+    drop_none_values,
     find_duplicates,
-    interpolate_and_url_encode,
     is_finite,
     is_unlimited,
     split_into_chunks,
@@ -23,6 +23,7 @@ from cognite.client.utils._auxiliary import (
 from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -132,7 +133,7 @@ class RawDatabasesAPI(APIClient):
             {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
             for chunk in chunks
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -265,7 +266,7 @@ class RawTablesAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -401,11 +402,13 @@ class RawRowsAPI(APIClient):
                 chunk_size=chunk_size,
                 method="GET",
                 limit=limit,
-                filter={
-                    "minLastUpdatedTime": min_last_updated_time,
-                    "maxLastUpdatedTime": max_last_updated_time,
-                    "columns": self._make_columns_param(columns),
-                },
+                filter=drop_none_values(
+                    {
+                        "minLastUpdatedTime": min_last_updated_time,
+                        "maxLastUpdatedTime": max_last_updated_time,
+                        "columns": self._make_columns_param(columns),
+                    },
+                ),
             )
         return self._list_generator_concurrent(
             db_name=db_name,
@@ -430,9 +433,11 @@ class RawRowsAPI(APIClient):
         partitions: int,
     ) -> Iterator[RowList]:
         # We are a bit restrictive on partitioning - especially for "small" limits:
-        partitions = min(partitions, self._config.max_workers)
+        from cognite.client import global_config
+
+        partitions = min(partitions, global_config.max_workers)
         if finite_limit := is_finite(limit):
-            partitions = min(partitions, self._config.max_workers, math.ceil(limit / 20_000))
+            partitions = min(partitions, global_config.max_workers, math.ceil(limit / 20_000))
             if chunk_size is not None and limit < chunk_size:
                 raise ValueError(f"chunk_size ({chunk_size}) should be much smaller than limit ({limit})")
 
@@ -471,7 +476,7 @@ class RawRowsAPI(APIClient):
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
-        pool = ConcurrencySettings.get_thread_pool_executor_or_raise(max_workers=self._config.max_workers)
+        pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
         futures = [pool.submit(exhaust, task) for task in read_iterators]
 
         if finite_limit:
@@ -549,7 +554,7 @@ class RawRowsAPI(APIClient):
             }
             for chunk in self._process_row_input(row)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
@@ -661,7 +666,7 @@ class RawRowsAPI(APIClient):
             }
             for chunk in split_into_chunks(to_delete, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["key"]
         )
@@ -768,11 +773,13 @@ class RawRowsAPI(APIClient):
     ) -> list[str]:
         return self._get(
             url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
-            params={
-                "minLastUpdatedTime": min_last_updated_time,
-                "maxLastUpdatedTime": max_last_updated_time,
-                "numberOfCursors": n_cursors,
-            },
+            params=drop_none_values(
+                {
+                    "minLastUpdatedTime": min_last_updated_time,
+                    "maxLastUpdatedTime": max_last_updated_time,
+                    "numberOfCursors": n_cursors,
+                }
+            ),
         ).json()["items"]
 
     def list(
@@ -842,7 +849,9 @@ class RawRowsAPI(APIClient):
         elif partitions is None:
             if is_unlimited(limit):
                 # Before 'partitions' was introduced, existing logic was that 'limit=None' meant 'partitions=max_workers'.
-                partitions = self._config.max_workers
+                from cognite.client import global_config
+
+                partitions = global_config.max_workers
             else:
                 chunk_size = limit  # We fetch serially, but don't want rows one-by-one
 

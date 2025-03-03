@@ -22,9 +22,8 @@ packages = [{ include="cognite", from="." }]
 [tool.poetry.dependencies]
 python = "^3.10"
 
-requests = "^2.27"
-requests_oauthlib = "^1"
-msal = "^1.31"
+httpx = "^0"
+authlib = "^1"
 protobuf = ">=4"
 packaging = ">=20"
 pip = ">=20.0.0"  # make optional once poetry doesn't auto-remove it on "simple install"
@@ -36,7 +35,6 @@ sympy = { version = "*", optional = true }
 pandas = { version = ">=2.1", optional = true }
 geopandas = { version = ">=0.14", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
-pyodide-http = { version = "^0.2.1", optional = true }
 PyYAML = { version = "^6.0", optional = true }
 
 [tool.poetry.extras]
@@ -60,7 +58,6 @@ pytest-asyncio = ">=0.23.5a0"
 pytest-xdist = ">=2"
 twine = ">=4.0.1"
 pre-commit = "^3"
-responses = "^0, <0.25.5"
 toml = "^0"
 python-dotenv = "^0"
 mypy = "^1"
@@ -75,6 +72,7 @@ IPython = ">=7.0.0"  # Used in docstring examples
 PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
 types-simplejson = "^3.19.0.20240801"
+pytest-httpx = ">=0.35"
 
 [build-system]
 requires = ["poetry-core"]
