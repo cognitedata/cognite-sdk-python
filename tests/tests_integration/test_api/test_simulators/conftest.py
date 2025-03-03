@@ -136,8 +136,9 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions):
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
-    routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
-    routine_not_exists = routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
+    
+    routines = cognite_client.simulators.routines.list(limit=None)
+    routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
 
     if routine_not_exists is None:
         cognite_client.simulators._post(

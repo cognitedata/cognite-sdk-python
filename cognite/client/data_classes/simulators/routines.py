@@ -19,11 +19,7 @@ if TYPE_CHECKING:
 
 class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
     """
-    The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
-
-    * Inputs (values set into the simulator model)
-    * Commands (actions to be performed by the simulator)
-    * Outputs (values read from the simulator model)
+    The simulator routine resource defines instructions on interacting with a simulator model.
 
     Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
     Each model can have multiple routines, each performing different objectives such as calculating optimal
@@ -74,11 +70,7 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
 
 class SimulatorRoutine(SimulatorRoutineCore):
     """
-    The simulator routine resource defines instructions on interacting with a simulator model. A simulator routine includes:
-
-    * Inputs (values set into the simulator model)
-    * Commands (actions to be performed by the simulator)
-    * Outputs (values read from the simulator model)
+    The simulator routine resource defines instructions on interacting with a simulator model.
 
     Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
     Each model can have multiple routines, each performing different objectives such as calculating optimal
