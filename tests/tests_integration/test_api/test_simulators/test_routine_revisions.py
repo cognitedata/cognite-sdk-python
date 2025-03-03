@@ -6,7 +6,9 @@ from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import (
     SimulatorRoutineRevisionsFilter,
 )
-from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
+from cognite.client.data_classes.simulators.routine_revisions import (
+    SimulatorRoutineRevisionWrite,
+)
 from tests.tests_integration.test_api.test_simulators.conftest import simulator_routine_revision
 
 
