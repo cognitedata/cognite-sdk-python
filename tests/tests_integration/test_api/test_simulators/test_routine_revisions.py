@@ -91,7 +91,8 @@ class TestSimulatorRoutineRevisions:
                 SimulatorRoutineRevisionWrite.load(
                     {
                         **simulator_routine_revision,
-                        "externalId": f"{routine_external_id}_v4",
+                        "externalId": f"{routine_external_id}_1_v1",
+                        "routineExternalId": f"{routine_external_id}_1",
                     }
                 ),
             ]
@@ -108,7 +109,7 @@ class TestSimulatorRoutineRevisions:
 
         revision_2 = revisions[1]
         assert revision_2 is not None
-        assert revision_2.external_id == f"{routine_external_id}_v4"
+        assert revision_2.external_id == f"{routine_external_id}_1_v1"
         assert revision_2.configuration.inputs[0].reference_id == "CWTC"
         assert revision_2.configuration.outputs[0].reference_id == "ST"
         assert revision_2.script[0].steps[0].arguments["reference_id"] == "CWTC"

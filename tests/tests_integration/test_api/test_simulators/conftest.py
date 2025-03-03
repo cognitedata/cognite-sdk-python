@@ -15,6 +15,7 @@ from cognite.client.data_classes.simulators.filters import (
 )
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
+from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     resource_names,
     simulator,
@@ -136,29 +137,30 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions):
     model_unique_external_id = resource_names["simulator_model_external_id"]
     simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
-    
-    routines = cognite_client.simulators.routines.list(limit=None)
-    routine_not_exists = routines.get(external_id=simulator_routine_unique_external_id)
 
-    if routine_not_exists is None:
-        cognite_client.simulators._post(
-            "/simulators/routines",
-            json={
-                "items": [
-                    {
-                        **simulator_routine,
-                        "modelExternalId": model_unique_external_id,
-                        "externalId": simulator_routine_unique_external_id,
-                    }
-                ]
-            },
-        )
+    routines = cognite_client.simulators.routines.create(
+        [
+            SimulatorRoutineWrite.load(
+                {
+                    **simulator_routine,
+                    "modelExternalId": model_unique_external_id,
+                    "externalId": simulator_routine_unique_external_id,
+                }
+            ),
+            SimulatorRoutineWrite.load(
+                {
+                    **simulator_routine,
+                    "modelExternalId": model_unique_external_id,
+                    "externalId": simulator_routine_unique_external_id + "_1",
+                }
+            ),
+        ]
+    )
 
-    yield simulator_routine
+    yield routines
 
-    cognite_client.simulators._post(
-        "/simulators/routines/delete",
-        json={"items": [{"externalId": simulator_routine_unique_external_id}]},
+    cognite_client.simulators.routines.delete(
+        external_ids=[simulator_routine_unique_external_id, simulator_routine_unique_external_id + "_1"]
     )
 
 
