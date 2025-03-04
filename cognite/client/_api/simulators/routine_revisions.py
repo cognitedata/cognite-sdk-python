@@ -28,8 +28,78 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
+        self._LIST_LIMIT = 20
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
+
+    def __iter__(self) -> Sequence[SimulatorRoutineRevision]:
+        """Iterate over simulator routine revisions
+
+        Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
+
+        Returns:
+            Sequence[SimulatorRoutineRevision]: yields Simulator routine revisions one by one.
+        """
+        return self()
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        include_all_fields: bool = False,
+    ) -> Sequence[SimulatorRoutineRevisionsList]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        include_all_fields: bool = False,
+    ) -> Sequence[SimulatorRoutineRevision]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
+        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        include_all_fields: bool = False,
+    ) -> Sequence[SimulatorRoutineRevision] | Sequence[SimulatorRoutineRevisionsList]:
+        """Iterate over simulator routine revisions
+
+        Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
+
+        Args:
+            chunk_size (int | None): Number of simulator routine revisions to return in each chunk. Defaults to yielding one simulator routine revision a time.
+            limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
+            sort (PropertySort | None): The criteria to sort by.
+            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
+            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
+
+        Returns:
+            Sequence[SimulatorRoutineRevision] | Sequence[SimulatorRoutineRevisionsList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionsList objects.
+        """
+        self._warning.warn()
+        return self._list_generator(
+            method="POST",
+            limit=limit,
+            url_path="/simulators/routines/revisions/list",
+            resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionsList,
+            chunk_size=chunk_size,
+            filter=filter.dump()
+            if isinstance(filter, SimulatorRoutineRevisionsFilter)
+            else filter
+            if isinstance(filter, dict)
+            else None,
+            sort=[PropertySort.load(sort).dump()] if sort else None,
+            other_params={"includeAllFields": include_all_fields},
+        )
 
     def list(
         self,
