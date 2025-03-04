@@ -105,6 +105,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             Get simulator routine revision by external id:
                 >>> res = client.simulators.routines.revisions.retrieve(external_id="routine_v1")
         """
+        self._warning.warn()
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
             resource_cls=SimulatorRoutineRevision,
@@ -141,6 +142,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 Get simulator routine revisions by external id:
                     >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["routine_v1", "routine_v2"])
         """
+        self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=SimulatorRoutineRevisionsList,
