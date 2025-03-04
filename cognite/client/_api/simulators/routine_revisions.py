@@ -33,7 +33,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
     def list(
         self,
-        limit: int = 10,  # deviation from DEFAULT_LIMIT_READ to avoid paging by default (max 20)
+        limit: int = 10,  # can't use DEFAULT_LIMIT_READ, as max limit is 20 for this endpoint
         sort: PropertySort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         include_all_fields: bool = False,
@@ -57,6 +57,14 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.routines.revisions.list()
+
+            List simulator routine revisions with filter:
+                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
+                >>> res = client.simulators.routines.revisions.list(
+                        filter=SimulatorRoutineRevisionsFilter(routine_external_ids=["routine_1"], all_versions=True),
+                        sort=PropertySort(order="asc", property="createdTime"),
+                        include_all_fields=True
+                    )
 
         """
         self._warning.warn()
@@ -92,7 +100,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             Get simulator routine revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.retrieve(ids=123)
+                >>> res = client.simulators.routines.revisions.retrieve(id=123)
 
             Get simulator routine revision by external id:
                 >>> res = client.simulators.routines.revisions.retrieve(external_id="routine_v1")
