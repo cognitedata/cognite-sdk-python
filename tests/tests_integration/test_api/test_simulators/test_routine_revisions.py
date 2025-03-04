@@ -7,6 +7,7 @@ from cognite.client.data_classes.simulators.filters import (
     SimulatorRoutineRevisionsFilter,
 )
 from cognite.client.data_classes.simulators.routine_revisions import (
+    SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
 from tests.tests_integration.test_api.test_simulators.conftest import simulator_routine_revision
@@ -17,31 +18,36 @@ class TestSimulatorRoutineRevisions:
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        revisions_all = cognite_client.simulators.routines.revisions.list(
+        revisions_by_routine = cognite_client.simulators.routines.revisions.list(
             filter=SimulatorRoutineRevisionsFilter(
                 routine_external_ids=[simulator_routine_external_id], all_versions=True
             ),
         )
-        assert len(revisions_all) == 2
+        assert len(revisions_by_routine) == 2
         model_external_id = seed_resource_names["simulator_model_external_id"]
-        revisions_filter_res = cognite_client.simulators.routines.revisions.list(
+        revisions_by_model: list[SimulatorRoutineRevision] = []
+
+        for revision in cognite_client.simulators.routines.revisions(
             sort=PropertySort(order="asc", property="createdTime"),
             filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_external_id], all_versions=True),
             include_all_fields=True,
-        )
-        assert len(revisions_filter_res) == 2
-        revisions_filter_res_json = [item.dump() for item in revisions_filter_res]
+        ):
+            revisions_by_model.append(revision)
+
+        assert len(revisions_by_model) == 2
+        revisions_by_model_json = [item.dump() for item in revisions_by_model]
         # Inputs, outputs and script are not included in the response by default
-        for revision_json in revisions_filter_res_json:
+        for revision_json in revisions_by_model_json:
             revision_json["configuration"]["inputs"] = None
             revision_json["configuration"]["outputs"] = None
             revision_json["script"] = None
-        revisions_all_json = [item.dump() for item in revisions_all]
-        assert revisions_filter_res_json == revisions_all_json
+
+        revisions_by_routine_json = [item.dump() for item in revisions_by_routine]
+        assert revisions_by_model_json == revisions_by_routine_json
 
         seed_rev2 = seed_simulator_routine_revisions[0]
 
-        last_revision = revisions_filter_res[1]
+        last_revision = revisions_by_model[1]
         assert last_revision.external_id == seed_resource_names["simulator_routine_external_id"] + "_v2"
 
         last_revision_script_json = [item.dump() for item in last_revision.script]
