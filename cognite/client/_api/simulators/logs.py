@@ -32,7 +32,7 @@ class SimulatorLogsAPI(APIClient):
     ) -> SimulatorLogList | SimulatorLog | None: ...
 
     def retrieve(self, id: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
-        """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+        """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
         Retrieve one simulator log by ID(s)
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
