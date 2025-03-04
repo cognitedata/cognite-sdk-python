@@ -63,6 +63,25 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
 
 
 class SimulatorRoutineWrite(SimulatorRoutineCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model.
+
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
+    Each model can have multiple routines, each performing different objectives such as calculating optimal
+    operation setpoints, forecasting production, benchmarking asset performance, and more.
+
+    Each simulator routine can have a maximum of 10 revisions
+
+    This is the read/response format of a simulator routine.
+
+    Args:
+        external_id (str): External id of the simulator routine
+        model_external_id (str): External id of the associated simulator model
+        simulator_integration_external_id (str): External id of the associated simulator integration
+        name (str): The name of the simulator routine
+        description (str | None): The description of the simulator routine
+    """
+
     def as_write(self) -> SimulatorRoutineWrite:
         """Returns a writeable version of this resource"""
         return self

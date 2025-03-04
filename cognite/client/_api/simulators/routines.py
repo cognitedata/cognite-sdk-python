@@ -77,6 +77,7 @@ class SimulatorRoutinesAPI(APIClient):
         Returns:
             Iterator[SimulatorRoutine] | Iterator[SimulatorRoutineList]: yields SimulatorRoutine one by one if chunk is not specified, else SimulatorRoutineList objects.
         """
+        self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
@@ -197,6 +198,7 @@ class SimulatorRoutinesAPI(APIClient):
                 ... )
 
         """
+        self._warning.warn()
         routines_filter = SimulatorRoutinesFilter(
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
