@@ -144,3 +144,4 @@ class TestSimulatorModels:
         assert model_updated is not None
         assert model_updated.description == "updated description"
         assert model_updated.name == "updated name"
+        cognite_client.simulators.models.delete(external_id=[models_created.external_id])
