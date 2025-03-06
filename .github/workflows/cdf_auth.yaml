@@ -12,7 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config_env: ["contributor", "prod"]
+        config_env: [
+          # TODO: Add this back once we get a new contributor project (one that's not in a staging cluster)
+          #"contributor",
+          "prod"
+        ]
     container:
       image: cognite/toolkit:0.4.9
       env:
