@@ -18,12 +18,12 @@ jobs:
       - name: Test full
         env:
           LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
+          COGNITE_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CD }}
+          COGNITE_TOKEN_URL: https://login.microsoftonline.com/cognitepysdk.onmicrosoft.com/oauth2/v2.0/token
+          COGNITE_TOKEN_SCOPES: ${{ vars.CDF_BASE_URL_CD }}/.default
+          COGNITE_CLIENT_ID: ${{ vars.IDP_CLIENT_ID_CD }}
+          COGNITE_PROJECT: ${{ vars.CDF_PROJECT_CD }}
+          COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CD }}
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
         # Testpaths are defined in the pytest.ini file:
         run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
