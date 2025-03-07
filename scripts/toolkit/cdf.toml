@@ -1,5 +1,5 @@
 [toolkit]
-default_env = "contributor"
+default_env = "python-sdk-contributor"
 
 [plugins]
 run = true
