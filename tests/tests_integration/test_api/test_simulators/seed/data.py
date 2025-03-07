@@ -223,3 +223,12 @@ simulator_model = {
     "dataSetId": resource_names["simulator_test_data_set_id"],
     "type": "SteadyState",
 }
+
+
+simulator_routine = {
+    "externalId": resource_names["simulator_routine_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "simulatorIntegrationExternalId": resource_names["simulator_integration_external_id"],
+    "name": "Simulator Routine - Test",
+    "description": "Simulator Routine - Description Test",
+}
