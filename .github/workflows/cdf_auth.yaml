@@ -16,11 +16,11 @@ jobs:
     container:
       image: cognite/toolkit:0.4.9
       env:
-        CDF_CLUSTER: ${{ vars.CDF_CLUSTER }}
-        CDF_PROJECT: ${{ vars.CDF_PROJECT }}
-        IDP_CLIENT_ID: ${{ vars.IDP_CLIENT_ID }}
-        IDP_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET }}
-        IDP_TENANT_ID: ${{ vars.IDP_TENANT_ID }}
+        CDF_CLUSTER: ${{ vars.CDF_CLUSTER_CD }}
+        CDF_PROJECT: ${{ vars.CDF_PROJECT_CD }}
+        IDP_CLIENT_ID: ${{ vars.IDP_CLIENT_ID_CD }}
+        IDP_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CD }}
+        IDP_TENANT_ID: ${{ vars.IDP_TENANT_ID_CD }}
     steps:
       - uses: actions/checkout@v4
       - name: Build the CDF Groups
