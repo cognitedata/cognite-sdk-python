@@ -12,20 +12,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config_env: ["contributor", "prod"]
+        cdf_project: ["python-sdk-contributor", "python-sdk-test-prod"]
     container:
       image: cognite/toolkit:0.4.9
       env:
         CDF_CLUSTER: ${{ vars.CDF_CLUSTER_CD }}
-        CDF_PROJECT: ${{ vars.CDF_PROJECT_CD }}
+        CDF_PROJECT: ${{ matrix.cdf_project }}
         IDP_CLIENT_ID: ${{ vars.IDP_CLIENT_ID_CD }}
         IDP_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CD }}
         IDP_TENANT_ID: ${{ vars.IDP_TENANT_ID_CD }}
+        PROVIDER: "entra_id"
+        LOGIN_FLOW: "client_credentials"
     steps:
       - uses: actions/checkout@v4
       - name: Build the CDF Groups
         working-directory: scripts/toolkit
-        run: cdf build --env ${{ matrix.config_env }}
+        run: cdf build --env ${{ matrix.cdf_project }}
       - name: Update CDF Auth
         working-directory: scripts/toolkit
         run: cdf deploy
