@@ -100,12 +100,6 @@ def abc_files(cognite_client: CogniteClient) -> FileMetadataList:
                     **local.dump(camel_case=False),
                 )
                 retrieved.append(created)
-    if not_uploaded := [f for f in retrieved if not f.uploaded]:
-        for file in not_uploaded:
-            _ = cognite_client.files.upload_content_bytes(
-                content=file.name.removesuffix(".txt"),
-                external_id=file.external_id,
-            )
 
     return retrieved
 
