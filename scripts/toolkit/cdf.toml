@@ -1,7 +1,10 @@
+[toolkit]
+default_env = "python-sdk-contributor"
+
 [plugins]
 run = true
 
 [modules]
 # This is the version of the modules. It should not be changed manually.
 # It will be updated by the 'cdf module upgrade' command.
-version = "0.3.28"
+version = "0.4.9"
