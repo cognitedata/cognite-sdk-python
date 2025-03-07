@@ -32,6 +32,22 @@ class InstanceId:
     def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
         return {"space": self.space, "externalId" if camel_case else "external_id": self.external_id}
 
+    @overload
+    @classmethod
+    def load_if(cls, data: None) -> None: ...
+
+    @overload
+    @classmethod
+    def load_if(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self: ...
+
+    @classmethod
+    def load_if(cls, data: dict[str, str] | tuple[str, str] | Self | None) -> Self | None:
+        # Note: For experimentation - I'd like to add this as a universal method to all classes to avoid
+        # the endless spam of 'MyClass.load(foo["bar"]) if "bar" in foo else None' in the codebase!
+        if data is None:
+            return None
+        return cls.load(data)
+
     @classmethod
     def load(cls, data: dict[str, str] | tuple[str, str] | Self) -> Self:
         if isinstance(data, cls):
