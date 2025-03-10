@@ -23,6 +23,11 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.73.6] - 2025-03-10
+### Fixed
+- An issue with `client.data_modeling.instances.aggregates(..., filter=my_filter)` no longer raises a `KeyError` if you
+  have a filter that returns no results.
+
 ## [7.73.5] - 2025-02-26
 ### Fixed
 - The `client.data_modeling.instances.aggregate/search()` methods now correctly returns maximum, 1000, results when setting
