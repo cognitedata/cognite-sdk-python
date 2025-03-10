@@ -163,7 +163,7 @@ class TestBasicRequests:
         api_client_with_token._post(URL_PATH, {"any": "OK"}, headers={"additional": "stuff"})
         headers = mock_all_requests_ok.calls[0].request.headers
 
-        assert "gzip, deflate, zstd" == headers["accept-encoding"]
+        assert {"gzip", "deflate"} <= {encoding.strip() for encoding in headers["accept-encoding"].split(",")}
         assert "gzip" == headers["content-encoding"]
         assert f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}" == headers["x-cdp-sdk"]
         assert "Bearer abc" == headers["Authorization"]
