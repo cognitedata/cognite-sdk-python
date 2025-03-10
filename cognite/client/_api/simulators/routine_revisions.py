@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -32,13 +32,13 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
 
-    def __iter__(self) -> Sequence[SimulatorRoutineRevision]:
+    def __iter__(self) -> Iterator[SimulatorRoutineRevision]:
         """Iterate over simulator routine revisions
 
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
 
         Returns:
-            Sequence[SimulatorRoutineRevision]: yields Simulator routine revisions one by one.
+            Iterator[SimulatorRoutineRevision]: yields Simulator routine revisions one by one.
         """
         return self()
 
@@ -50,7 +50,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         sort: PropertySort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         include_all_fields: bool = False,
-    ) -> Sequence[SimulatorRoutineRevisionsList]: ...
+    ) -> Iterator[SimulatorRoutineRevisionsList]: ...
 
     @overload
     def __call__(
@@ -60,7 +60,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         sort: PropertySort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         include_all_fields: bool = False,
-    ) -> Sequence[SimulatorRoutineRevision]: ...
+    ) -> Iterator[SimulatorRoutineRevision]: ...
 
     def __call__(
         self,
@@ -69,7 +69,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         sort: PropertySort | None = None,
         filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
         include_all_fields: bool = False,
-    ) -> Sequence[SimulatorRoutineRevision] | Sequence[SimulatorRoutineRevisionsList]:
+    ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]:
         """Iterate over simulator routine revisions
 
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
@@ -82,7 +82,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
 
         Returns:
-            Sequence[SimulatorRoutineRevision] | Sequence[SimulatorRoutineRevisionsList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionsList objects.
+            Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionsList objects.
         """
         self._warning.warn()
         return self._list_generator(
