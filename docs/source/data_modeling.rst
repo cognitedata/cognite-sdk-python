@@ -284,3 +284,15 @@ Apply DML
 Execute GraphQl query
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.query
+
+Core Data Model
+---------------
+.. automodule:: cognite.client.data_classes.data_modeling.cdm.v1
+    :members:
+    :show-inheritance:
+
+Extractor Extensions
+--------------------
+.. automodule:: cognite.client.data_classes.data_modeling.extractor_extensions.v1
+    :members:
+    :show-inheritance:
