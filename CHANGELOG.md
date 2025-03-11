@@ -23,6 +23,9 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+### Fixed
+- When RestSource for hosted extractors were updated, the authentication object was omitted. This is now fixed.
+
 ## [7.73.6] - 2025-03-10
 ### Fixed
 - An issue with `client.data_modeling.instances.aggregates(..., filter=my_filter)` no longer raises a `KeyError` if you
