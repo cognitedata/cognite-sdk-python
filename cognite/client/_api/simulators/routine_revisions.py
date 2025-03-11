@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators import PropertySort
@@ -46,29 +46,41 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
+        routine_external_ids: Sequence[str] | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        simulator_external_ids: Sequence[str] | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
-        include_all_fields: bool = False,
     ) -> Iterator[SimulatorRoutineRevisionsList]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: None = None,
+        routine_external_ids: Sequence[str] | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        simulator_external_ids: Sequence[str] | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
-        include_all_fields: bool = False,
     ) -> Iterator[SimulatorRoutineRevision]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
+        routine_external_ids: Sequence[str] | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        simulator_external_ids: Sequence[str] | None = None,
+        all_versions: bool = False,
+        include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
-        include_all_fields: bool = False,
     ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]:
         """Iterate over simulator routine revisions
 
@@ -76,15 +88,26 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator routine revisions to return in each chunk. Defaults to yielding one simulator routine revision a time.
+            routine_external_ids (Sequence[str] | None): Filter on routine external ids.
+            model_external_ids (Sequence[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            simulator_external_ids (Sequence[str] | None): Filter on simulator external ids.
+            all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
+            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
             sort (PropertySort | None): The criteria to sort by.
-            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
-            include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
 
         Returns:
             Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionsList objects.
         """
         self._warning.warn()
+        filter = SimulatorRoutineRevisionsFilter(
+            all_versions=all_versions,
+            routine_external_ids=routine_external_ids,
+            model_external_ids=model_external_ids,
+            simulator_integration_external_ids=simulator_integration_external_ids,
+            simulator_external_ids=simulator_external_ids,
+        )
         return self._list_generator(
             method="POST",
             limit=limit,
@@ -92,31 +115,35 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionsList,
             chunk_size=chunk_size,
-            filter=filter.dump()
-            if isinstance(filter, SimulatorRoutineRevisionsFilter)
-            else filter
-            if isinstance(filter, dict)
-            else None,
+            filter=filter.dump(),
             sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},
         )
 
     def list(
         self,
-        limit: int = 10,  # can't use DEFAULT_LIMIT_READ, as max limit is 20 for this endpoint
-        sort: PropertySort | None = None,
-        filter: SimulatorRoutineRevisionsFilter | dict[str, Any] | None = None,
+        routine_external_ids: Sequence[str] | None = None,
+        model_external_ids: Sequence[str] | None = None,
+        simulator_integration_external_ids: Sequence[str] | None = None,
+        simulator_external_ids: Sequence[str] | None = None,
+        all_versions: bool = False,
         include_all_fields: bool = False,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
     ) -> SimulatorRoutineRevisionsList:
         """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 10. Set to -1, float(“inf”) or None to return all items.
-            sort (PropertySort | None): The criteria to sort by.
-            filter (SimulatorRoutineRevisionsFilter | dict[str, Any] | None): Filter to apply.
+            routine_external_ids (Sequence[str] | None): Filter on routine external ids.
+            model_external_ids (Sequence[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
+            simulator_external_ids (Sequence[str] | None): Filter on simulator external ids.
+            all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
+            limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
+            sort (PropertySort | None): The criteria to sort by.
 
         Returns:
             SimulatorRoutineRevisionsList: List of simulator routine revisions
@@ -131,24 +158,28 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             List simulator routine revisions with filter:
                 >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
                 >>> res = client.simulators.routines.revisions.list(
-                        filter=SimulatorRoutineRevisionsFilter(routine_external_ids=["routine_1"], all_versions=True),
+                        routine_external_ids=["routine_1"],
+                        all_versions=True,
                         sort=PropertySort(order="asc", property="createdTime"),
                         include_all_fields=True
                     )
 
         """
         self._warning.warn()
+        filter = SimulatorRoutineRevisionsFilter(
+            all_versions=all_versions,
+            routine_external_ids=routine_external_ids,
+            model_external_ids=model_external_ids,
+            simulator_integration_external_ids=simulator_integration_external_ids,
+            simulator_external_ids=simulator_external_ids,
+        )
         return self._list(
             method="POST",
             limit=limit,
             url_path="/simulators/routines/revisions/list",
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionsList,
-            filter=filter.dump()
-            if isinstance(filter, SimulatorRoutineRevisionsFilter)
-            else filter
-            if isinstance(filter, dict)
-            else None,
+            filter=filter.dump(),
             sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},
         )

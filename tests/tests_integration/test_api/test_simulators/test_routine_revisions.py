@@ -3,9 +3,6 @@ from typing import Any
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import PropertySort
-from cognite.client.data_classes.simulators.filters import (
-    SimulatorRoutineRevisionsFilter,
-)
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
@@ -19,9 +16,7 @@ class TestSimulatorRoutineRevisions:
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
-            filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[simulator_routine_external_id], all_versions=True
-            ),
+            routine_external_ids=[simulator_routine_external_id], all_versions=True
         )
         assert len(revisions_by_routine) == 2
         model_external_id = seed_resource_names["simulator_model_external_id"]
@@ -29,7 +24,8 @@ class TestSimulatorRoutineRevisions:
 
         for revision in cognite_client.simulators.routines.revisions(
             sort=PropertySort(order="asc", property="createdTime"),
-            filter=SimulatorRoutineRevisionsFilter(model_external_ids=[model_external_id], all_versions=True),
+            model_external_ids=[model_external_id],
+            all_versions=True,
             include_all_fields=True,
         ):
             revisions_by_model.append(revision)
@@ -65,9 +61,7 @@ class TestSimulatorRoutineRevisions:
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routines.revisions.list(
-            filter=SimulatorRoutineRevisionsFilter(
-                routine_external_ids=[simulator_routine_external_id], all_versions=True
-            ),
+            routine_external_ids=[simulator_routine_external_id], all_versions=True
         )
 
         assert len(revisions_all) == 2

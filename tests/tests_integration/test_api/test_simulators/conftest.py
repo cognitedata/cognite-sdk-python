@@ -11,7 +11,6 @@ from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.simulators.filters import (
     SimulatorModelRevisionsFilter,
-    SimulatorRoutineRevisionsFilter,
 )
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
@@ -167,9 +166,7 @@ def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_
 def seed_simulator_routine_revision(
     cognite_client: CogniteClient, routine_external_id: str, version: str
 ) -> dict[str, Any]:
-    routine_revs = cognite_client.simulators.routines.revisions.list(
-        filter=SimulatorRoutineRevisionsFilter(routine_external_ids=[routine_external_id])
-    )
+    routine_revs = cognite_client.simulators.routines.revisions.list(routine_external_ids=[routine_external_id])
     rev_external_id = f"{routine_external_id}_{version}"
     routine_rev_exists = routine_revs.get(external_id=rev_external_id)
 
