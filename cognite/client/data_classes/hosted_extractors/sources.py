@@ -827,6 +827,7 @@ class RestSourceUpdate(SourceUpdate):
             PropertySpec("host", is_nullable=False),
             PropertySpec("scheme", is_nullable=False),
             PropertySpec("port", is_nullable=False),
+            PropertySpec("authentication", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
         ]
 
 
