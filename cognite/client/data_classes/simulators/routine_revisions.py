@@ -248,7 +248,7 @@ class SimulatorRoutineLogicalCheck(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineSteadyStateDetectionEnabled(CogniteObject):
+class SimulatorRoutineSteadyStateDetection(CogniteObject):
     """
     Steady State Detection checks for steady state regions in a given time series.
     The user specifies the time series and three parameters: min section size, var threshold, and slope threshold.
@@ -289,7 +289,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
         schedule (SimulatorRoutineSchedule): Schedule configuration.
         data_sampling (SimulatorRoutineDataSampling): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
         logical_check (list[SimulatorRoutineLogicalCheck]): Logical check configuration.
-        steady_state_detection (list[SimulatorRoutineSteadyStateDetectionEnabled]): Steady state detection configuration.
+        steady_state_detection (list[SimulatorRoutineSteadyStateDetection]): Steady state detection configuration.
         inputs (list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None): The inputs of the simulator routine revision.
         outputs (list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
     """
@@ -297,7 +297,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
     schedule: SimulatorRoutineSchedule
     data_sampling: SimulatorRoutineDataSampling
     logical_check: list[SimulatorRoutineLogicalCheck]
-    steady_state_detection: list[SimulatorRoutineSteadyStateDetectionEnabled]
+    steady_state_detection: list[SimulatorRoutineSteadyStateDetection]
     inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None
     outputs: list[SimulatorRoutineOutput] | None
 
@@ -308,17 +308,15 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
         if resource.get("inputs", None) is not None:
             inputs = []
-            for input_ in resource["inputs"]:
-                if isinstance(input_, SimulatorRoutineInputConstant) or isinstance(
-                    input_, SimulatorRoutineInputTimeseries
-                ):
-                    inputs.append(input_)
+            for input in resource["inputs"]:
+                if isinstance(input, (SimulatorRoutineInputConstant, SimulatorRoutineInputTimeseries)):
+                    inputs.append(input)
 
                 else:
-                    if "value" in input_:
-                        inputs.append(SimulatorRoutineInputConstant._load(input_, cognite_client))
+                    if "value" in input:
+                        inputs.append(SimulatorRoutineInputConstant._load(input, cognite_client))
                     else:
-                        inputs.append(SimulatorRoutineInputTimeseries._load(input_, cognite_client))
+                        inputs.append(SimulatorRoutineInputTimeseries._load(input, cognite_client))
 
         if resource.get("outputs", None) is not None:
             outputs = []
@@ -336,7 +334,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
                 SimulatorRoutineLogicalCheck._load(check_, cognite_client) for check_ in resource["logicalCheck"]
             ],
             steady_state_detection=[
-                SimulatorRoutineSteadyStateDetectionEnabled._load(detection_, cognite_client)
+                SimulatorRoutineSteadyStateDetection._load(detection_, cognite_client)
                 for detection_ in resource["steadyStateDetection"]
             ],
             inputs=inputs,
