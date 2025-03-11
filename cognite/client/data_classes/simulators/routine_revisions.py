@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -101,8 +101,8 @@ class SimulatorRoutineInputConstant(CogniteObject):
 
     name: str
     reference_id: str
-    value: str
-    value_type: str  # TODO: ENUM?
+    value: str | int | float | list[str] | list[int] | list[float]
+    value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
     unit: SimulationValueUnitInput | None = None
     save_timeseries_external_id: str | None = None
 
@@ -424,7 +424,7 @@ class SimulatorRoutineStep(CogniteObject):
         order (int): The order of the step.
     """
 
-    step_type: str  # TODO: enum? ["Get", "Set", "Command"]
+    step_type: Literal["Get", "Set", "Command"]
     arguments: SimulatorRoutineStepArguments
     order: int
 
