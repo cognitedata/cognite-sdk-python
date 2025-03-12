@@ -6,7 +6,6 @@ from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import simulator_integration
-from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_integration")
@@ -38,16 +37,11 @@ class TestSimulatorIntegrations:
         assert item.created_time is not None
         assert item.last_updated_time is not None
         assert item.log_id is not None
-        timestamp = int(time.time() * 1000)
-        update_logs(
-            cognite_client,
-            item.log_id,
-            [{"timestamp": timestamp, "message": "Testing logs update for simulator integration", "severity": "Debug"}],
-        )
         log = cognite_client.simulators.logs.retrieve(id=item.log_id)
         assert log is not None
         assert log.data is not None
-        assert log.data[0].timestamp == timestamp
+        assert log.data[0].timestamp is not None
+        assert log.data[0].timestamp > int(time.time() * 1000) - 10000  # updated less than 10 seconds ago
         assert log.data[0].message == "Testing logs update for simulator integration"
         assert log.data[0].severity == "Debug"
 

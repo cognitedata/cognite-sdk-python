@@ -25,6 +25,7 @@ class SimulatorsAPI(APIClient):
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)
         self.routines = SimulatorRoutinesAPI(config, api_version, cognite_client)
+        self.logs = SimulatorLogsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
