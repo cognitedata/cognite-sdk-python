@@ -149,3 +149,4 @@ class TestDocstringExamples:
         run_docstring_tests(simulators.models_revisions)
         run_docstring_tests(simulators.integrations)
         run_docstring_tests(simulators.routines)
+        run_docstring_tests(simulators.routine_revisions)

@@ -156,13 +156,12 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 >>> res = client.simulators.routines.revisions.list()
 
             List simulator routine revisions with filter:
-                >>> from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
                 >>> res = client.simulators.routines.revisions.list(
-                        routine_external_ids=["routine_1"],
-                        all_versions=True,
-                        sort=PropertySort(order="asc", property="createdTime"),
-                        include_all_fields=True
-                    )
+                ...     routine_external_ids=["routine_1"],
+                ...     all_versions=True,
+                ...     sort=PropertySort(order="asc", property="createdTime"),
+                ...     include_all_fields=True
+                ... )
 
         """
         self._warning.warn()
@@ -270,42 +269,44 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         Examples:
             Create new simulator routine revisions:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.routines import SimulatorRoutineRevisionWrite
+                >>> from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
                 >>> client = CogniteClient()
                 >>> routine_revs = [
                 ...     SimulatorRoutineRevisionWrite(
                 ...         external_id="routine_rev_1",
                 ...         routine_external_id="routine_1",
-                ...         schedule={"enabled": True, "cronExpression": "*/10 * * * *"},
-                ...         data_sampling={"enabled": True, "samplingWindow": 15, "granularity": 1},
-                ...         logical_check=[],
-                ...         steady_state_detection=[],
-                ...         inputs=[
-                ...             {
-                ...                 "name": "Cold Water Temperature",
-                ...                 "reference_id": "CWTC",
-                ...                 "value": 10.0,
-                ...                 "value_type": "DOUBLE",
-                ...                 "unit": {"name": "C", "quantity": "temperature"},
-                ...                 "save_timeseries_external_id": "TEST-ROUTINE-INPUT-CWTC",
-                ...             },
-                ...             {
-                ...                 "name": "Cold Water Pressure",
-                ...                 "reference_id": "CWPC",
-                ...                 "value": 3.6,
-                ...                 "value_type": "DOUBLE",
-                ...                 "unit": {"name": "bar", "quantity": "pressure"},
-                ...             },
-                ...         ],
-                ...         outputs=[
-                ...             {
-                ...                 "name": "Shower Temperature",
-                ...                 "reference_id": "ST",
-                ...                 "unit": {"name": "C", "quantity": "temperature"},
-                ...                 "value_type": "DOUBLE",
-                ...                 "save_timeseries_external_id": "TEST-ROUTINE-OUTPUT-ST",
-                ...             },
-                ...         ],
+                ...         configuration={
+                ...             "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
+                ...             "data_sampling": {"enabled": True, "samplingWindow": 15, "granularity": 1},
+                ...             "logical_check": [],
+                ...             "steady_state_detection": [],
+                ...             "inputs": [
+                ...                 {
+                ...                     "name": "Cold Water Temperature",
+                ...                     "reference_id": "CWTC",
+                ...                     "value": 10.0,
+                ...                     "value_type": "DOUBLE",
+                ...                     "unit": {"name": "C", "quantity": "temperature"},
+                ...                     "save_timeseries_external_id": "TEST-ROUTINE-INPUT-CWTC",
+                ...                 },
+                ...                 {
+                ...                     "name": "Cold Water Pressure",
+                ...                     "reference_id": "CWPC",
+                ...                     "value": 3.6,
+                ...                     "value_type": "DOUBLE",
+                ...                     "unit": {"name": "bar", "quantity": "pressure"},
+                ...                 },
+                ...             ],
+                ...             "outputs": [
+                ...                 {
+                ...                     "name": "Shower Temperature",
+                ...                     "reference_id": "ST",
+                ...                     "unit": {"name": "C", "quantity": "temperature"},
+                ...                     "value_type": "DOUBLE",
+                ...                     "save_timeseries_external_id": "TEST-ROUTINE-OUTPUT-ST",
+                ...                 },
+                ...             ],
+                ...         },
                 ...         script=[
                 ...             {
                 ...                 "order": 1,
@@ -342,7 +343,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ...         ],
                 ...     ),
                 ... ]
-                >>> res = client.simulators.routines.create(routines)
+                >>> res = client.simulators.routines.revisions.create(routine_revs)
         """
         self._warning.warn()
         assert_type(
