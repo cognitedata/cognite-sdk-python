@@ -25,7 +25,7 @@ Changes are grouped as follows
 
 ## [7.73.7] - 2025-03-14
 ### Fixed
-- When RestSource for hosted extractors were updated, the authentication and ca_ceryificate objects were omitted. This is now fixed.
+- When RestSource for hosted extractors were updated, the authentication and ca_certificate objects were omitted. This is now fixed.
 
 ## [7.73.6] - 2025-03-10
 ### Fixed
