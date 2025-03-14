@@ -1,9 +1,11 @@
+import inspect
 import textwrap
 
 import pytest
 
 from cognite.client.data_classes.hosted_extractors.sources import (
     _SOURCE_CLASS_BY_TYPE,
+    _SOURCE_UPDATE_BY_TYPE,
     _SOURCE_WRITE_CLASS_BY_TYPE,
     BasicAuthentication,
     BasicAuthenticationWrite,
@@ -126,3 +128,18 @@ def test_auth_loaders(sample_sources) -> None:
     source_write_cls = _SOURCE_WRITE_CLASS_BY_TYPE.get(resource["source"])
     obj: SourceWrite = source_write_cls._load(resource=resource)
     assert isinstance(obj.authentication, expected_auth_write_cls)
+
+
+@pytest.mark.parametrize("source_type, source_write_class", _SOURCE_WRITE_CLASS_BY_TYPE.items())
+def test_source_update_properties_match(source_type, source_write_class) -> None:
+    source_write_cls = source_write_class
+    source_update_cls = _SOURCE_UPDATE_BY_TYPE.get(source_type)
+
+    write_properties = [
+        param.name
+        for param in inspect.signature(source_write_cls.__init__).parameters.values()
+        if param.name not in ["self", "external_id"]
+    ]
+    update_properties = [property_spec.name for property_spec in source_update_cls._get_update_properties(None)]
+
+    assert set(write_properties) == set(update_properties)
