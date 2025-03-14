@@ -24,7 +24,7 @@ Changes are grouped as follows
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
 ### Fixed
-- When RestSource for hosted extractors were updated, the authentication object was omitted. This is now fixed.
+- When RestSource for hosted extractors were updated, the authentication and ca_ceryificate objects were omitted. This is now fixed.
 
 ## [7.73.6] - 2025-03-10
 ### Fixed
