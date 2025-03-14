@@ -19,6 +19,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from zoneinfo import ZoneInfo
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 
@@ -41,7 +42,6 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._time import (
-    ZoneInfo,
     align_start_and_end_for_granularity,
     convert_timezone_to_str,
     granularity_to_ms,

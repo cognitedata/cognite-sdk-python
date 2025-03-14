@@ -8,11 +8,12 @@ from inspect import signature
 from itertools import chain
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
+from zoneinfo import ZoneInfo
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_camel_case
-from cognite.client.utils._time import TIME_ATTRIBUTES, ZoneInfo
+from cognite.client.utils._time import TIME_ATTRIBUTES
 
 if TYPE_CHECKING:
     import pandas as pd
