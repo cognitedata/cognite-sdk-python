@@ -23,6 +23,10 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.74.0] - 2025-03-14
+### Added
+- Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
+
 ## [7.73.6] - 2025-03-10
 ### Fixed
 - An issue with `client.data_modeling.instances.aggregates(..., filter=my_filter)` no longer raises a `KeyError` if you
