@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from authlib.integrations.httpx_client import OAuth2Client
 
@@ -22,7 +22,8 @@ _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 60  # We use the same default as authlib,
 logger = logging.getLogger(__name__)
 
 
-class CredentialProvider(ABC):
+@runtime_checkable
+class CredentialProvider(Protocol):
     @abstractmethod
     def authorization_header(self) -> tuple[str, str]:
         raise NotImplementedError
