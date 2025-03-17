@@ -66,7 +66,7 @@ class SimulatorLog(CogniteResource):
         created_time: int,
         last_updated_time: int,
         data_set_id: int,
-        severity: Severity | None = None,
+        severity: Severity | None,
     ) -> None:
         self.id = id
         self.created_time = created_time

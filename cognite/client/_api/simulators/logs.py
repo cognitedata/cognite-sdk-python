@@ -28,8 +28,8 @@ class SimulatorLogsAPI(APIClient):
     @overload
     def retrieve(
         self,
-        id: int | Sequence[int],
-    ) -> SimulatorLogList | SimulatorLog | None: ...
+        id: Sequence[int],
+    ) -> SimulatorLogList | None: ...
 
     def retrieve(self, id: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
         """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
