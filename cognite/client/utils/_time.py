@@ -273,7 +273,7 @@ def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
     if isinstance(timestamp, numbers.Number):  # float, int, int64 etc
         ms = int(timestamp)  # type: ignore[arg-type]
     elif isinstance(timestamp, str):
-        ms = int(round(time.time() * 1000)) - time_shift_to_ms(timestamp)
+        ms = round(time.time() * 1000) - time_shift_to_ms(timestamp)
     elif isinstance(timestamp, datetime):
         ms = datetime_to_ms(timestamp)
     else:
