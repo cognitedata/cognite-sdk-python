@@ -32,10 +32,16 @@ from cognite.client._proto.data_points_pb2 import (
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
+    _OBJECT_AGGREGATES,
     Aggregate,
     Datapoints,
     DatapointsArray,
     DatapointsQuery,
+    MaxDatapoint,
+    MaxDatapointWithStatus,
+    MaxOrMinDatapoint,
+    MinDatapoint,
+    MinDatapointWithStatus,
     _DatapointsPayloadItem,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
@@ -51,7 +57,7 @@ from cognite.client.utils._time import (
     time_shift_to_ms,
     timestamp_to_ms,
 )
-from cognite.client.utils.useful_types import SequenceNotStr
+from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -112,7 +118,7 @@ class _FullDatapointsQuery:
             # ...and that one is not a sequence:
             return not (
                 isinstance(self.id, Sequence)
-                or isinstance(self.external_id, SequenceNotStr)
+                or is_sequence_not_str(self.external_id)
                 or isinstance(self.instance_id, Sequence)
             )
         return False
@@ -255,8 +261,6 @@ class _DpsQueryValidator:
             raise ValueError("When passing `aggregates`, argument `granularity` is also required.")
         elif query.include_outside_points is True:
             raise ValueError("'Include outside points' is not supported for aggregates.")
-        elif query.include_status is True:
-            raise ValueError("'Include status' is not supported for aggregates.")
         return False
 
     @staticmethod
@@ -356,6 +360,32 @@ class DpsUnpackFns:
         # We pretend like float is always returned to not break every dps annot. in the entire SDK..
         return dp.value if not dp.nullValue else None  # type: ignore [return-value]
 
+    # minDatapoint and maxDatapoint are also objects in the response. The proto lookups doesn't fail,
+    # so we must be very careful to only attach status codes if requested.
+    @staticmethod
+    def min_datapoint(agg_dp: AggregateDatapoint) -> MinDatapoint:
+        dp = agg_dp.minDatapoint
+        return MinDatapoint(dp.timestamp, dp.value)
+
+    @staticmethod
+    def max_datapoint(agg_dp: AggregateDatapoint) -> MaxDatapoint:
+        dp = agg_dp.maxDatapoint
+        return MaxDatapoint(dp.timestamp, dp.value)
+
+    @staticmethod
+    def min_datapoint_with_status(agg_dp: AggregateDatapoint) -> MinDatapointWithStatus:
+        dp = agg_dp.minDatapoint
+        return MinDatapointWithStatus(
+            dp.timestamp, dp.value, DpsUnpackFns.status_code(dp), DpsUnpackFns.status_symbol(dp)
+        )
+
+    @staticmethod
+    def max_datapoint_with_status(agg_dp: AggregateDatapoint) -> MaxDatapointWithStatus:
+        dp = agg_dp.maxDatapoint
+        return MaxDatapointWithStatus(
+            dp.timestamp, dp.value, DpsUnpackFns.status_code(dp), DpsUnpackFns.status_symbol(dp)
+        )
+
     # --------------- #
     # Above are functions that operate on single elements
     # Below are functions that operate on containers
@@ -429,7 +459,7 @@ class DpsUnpackFns:
                 return [tuple(getattr(dp, agg, None) for agg in aggregates) for dp in dps]
 
     @staticmethod
-    def extract_aggregates_numpy(
+    def extract_numeric_aggregates_numpy(
         dps: AggregateDatapoints,
         aggregates: list[str],
         unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
@@ -442,11 +472,31 @@ class DpsUnpackFns:
             # An aggregate is missing, fallback to slower `getattr`:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
+    @staticmethod
+    def extract_fn_min_or_max_dp(
+        aggregate: Literal["minDatapoint", "maxDatapoint"], include_status: bool
+    ) -> Callable[[AggregateDatapoint], MaxOrMinDatapoint]:
+        match aggregate, include_status:
+            case "minDatapoint", False:
+                return DpsUnpackFns.min_datapoint
+            case "maxDatapoint", False:
+                return DpsUnpackFns.max_datapoint
+            case "minDatapoint", True:
+                return DpsUnpackFns.min_datapoint_with_status
+            case "maxDatapoint", True:
+                return DpsUnpackFns.max_datapoint_with_status
+            case _:
+                raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
+
 
 def ensure_int(val: float, change_nan_to: int = 0) -> int:
     if math.isnan(val):
         return change_nan_to
     return int(val)
+
+
+def ensure_int_numpy(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.int64]:
+    return np.nan_to_num(arr, copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(np.int64)
 
 
 def decide_numpy_dtype_from_is_string(is_string: bool) -> type:
@@ -485,6 +535,10 @@ def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
 
 def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
     return np.hstack(list(datapoints_in_order(container)))
+
+
+def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
+    return np.array(create_list_from_dps_container(container), dtype=np.object_)
 
 
 def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
@@ -771,9 +825,14 @@ class BaseTaskOrchestrator(ABC):
             self._is_done = True
 
     def _clear_data_containers(self) -> None:
-        # Help gc clear out temporary containers:
+        # Help gc clear out temporary containers
         del self.query, self.ts_data, self.dps_data
         del self.subtasks, self.subtask_outside_points
+        for container in ("status_code", "status_symbol", "object_data"):
+            try:
+                delattr(self, container)
+            except AttributeError:
+                pass
 
     def finalize_datapoints(self) -> None:
         if self._final_result is None:
@@ -1036,40 +1095,48 @@ class ConcurrentUnlimitedRawTaskOrchestrator(BaseRawTaskOrchestrator, Concurrent
 
 class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
     def __init__(self, *, query: DatapointsQuery, use_numpy: bool, **kwargs: Any) -> None:
-        self._set_aggregate_vars(query.aggs_camel_case, use_numpy)
+        self._set_aggregate_vars(query.aggs_camel_case, use_numpy, query.include_status)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(cast(str, self.query.granularity))
 
-    def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool) -> None:
+    def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool, include_status: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
-        # Nice. However, when using protobuf, you get `double` xD ...so when this code was pivoted from
-        # JSON -> protobuf, the special handling of `count` was kept in the hopes that one day protobuf
-        # would yield the correct type...!
+        # Nice. However, when using protobuf, you get `double` xD
         self.all_aggregates = aggs_camel_case
-        self.int_aggs = _INT_AGGREGATES.intersection(aggs_camel_case)
-        self.float_aggs = set(aggs_camel_case).difference(self.int_aggs)
+        self.object_aggs = list(_OBJECT_AGGREGATES.intersection(aggs_camel_case))
+        if self.object_aggs:
+            self.object_data: dict[Literal["minDatapoint", "maxDatapoint"], _DataContainer] = {
+                agg: defaultdict(list) for agg in self.object_aggs
+            }
+            self.object_agg_unpack_fns = [
+                DpsUnpackFns.extract_fn_min_or_max_dp(agg, include_status) for agg in self.object_aggs
+            ]
+        self.numeric_aggs = [agg for agg in aggs_camel_case if agg not in self.object_aggs]
+        self.n_numeric_aggs = len(self.numeric_aggs)
+        if self.n_numeric_aggs:
+            self.numeric_agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.numeric_aggs)
+            if use_numpy:
+                if self.n_numeric_aggs == 1:
+                    self.dtype_aggs: np.dtype[Any] = np.dtype(np.float64)
+                else:  # (.., 1) is deprecated for some reason
+                    # We are storing all (2 -> 16) aggregates in one block of memory:
+                    self.dtype_aggs = np.dtype((np.float64, self.n_numeric_aggs))
 
-        self.agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.all_aggregates)
-        self.first_agg, *others = self.all_aggregates
-        self.single_agg = not others
-
-        if use_numpy:
-            if self.single_agg:
-                self.dtype_aggs: np.dtype[Any] = np.dtype(np.float64)
-            else:  # (.., 1) is deprecated for some reason
-                # We are storing all (2 -> 16) aggregates in one block of memory:
-                self.dtype_aggs = np.dtype((np.float64, len(self.all_aggregates)))
+        # We must unpack all data as double (see dev. note above), but we need to know which should be cast to int:
+        self.int_aggs = _INT_AGGREGATES.intersection(self.numeric_aggs)
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if self.use_numpy:
-            arr_dct = {"timestamp": np.array([], dtype=np.int64)}
-            if self.float_aggs:
-                arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+            arr_dct: dict[str, Any] = {"timestamp": np.array([], dtype=np.int64)}
+            if self.numeric_aggs:
+                arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.numeric_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
+            if self.object_aggs:
+                arr_dct.update({agg: np.array([], dtype=np.object_) for agg in self.object_aggs})
             return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct: dict[str, list] = {agg: [] for agg in self.all_aggregates}
@@ -1081,44 +1148,58 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
         if self.use_numpy:
             arr_dct = {"timestamp": create_array_from_dps_container(self.ts_data)}
-            arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, len(self.all_aggregates))
-            arr_dct.update(dict(zip(self.all_aggregates, arr_lst)))
+            if self.n_numeric_aggs:
+                arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, self.n_numeric_aggs)
+                arr_dct.update(dict(zip(self.numeric_aggs, arr_lst)))
+            if self.object_aggs:
+                arr_dct.update(
+                    {agg: create_object_array_from_container(data) for agg, data in self.object_data.items()}
+                )
             for agg in self.int_aggs:
                 # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double...
                 # If an interval with no datapoints (i.e. count does not exist) has data from another aggregate (probably
                 # (step_)interpolation), count returns nan... which we need float to represent... which we do not want.
                 # Thus we convert any NaNs to 0 (which for count - and duration - makes perfect sense):
-                arr_dct[agg] = np.nan_to_num(arr_dct[agg], copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(
-                    np.int64
-                )
+                arr_dct[agg] = ensure_int_numpy(arr_dct[agg])
             return DatapointsArray._load_from_arrays({**self.ts_info, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
-        if self.single_agg:
-            lst_dct[self.first_agg] = create_list_from_dps_container(self.dps_data)
-        else:
+        if self.n_numeric_aggs == 1:
+            lst_dct[self.numeric_aggs[0]] = create_list_from_dps_container(self.dps_data)
+        elif self.n_numeric_aggs > 1:
             aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
-            lst_dct.update(dict(zip(self.all_aggregates, aggs_iter)))
+            lst_dct.update(dict(zip(self.numeric_aggs, aggs_iter)))
         for agg in self.int_aggs:
             # Need to do an extra NaN-aware int-conversion because protobuf (as opposed to json) returns double:
             lst_dct[agg] = list(map(ensure_int, lst_dct[agg]))
+        if self.object_aggs:
+            lst_dct.update({agg: create_list_from_dps_container(data) for agg, data in self.object_data.items()})
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
+        # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
+        if self.object_aggs:
+            for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):
+                self.object_data[agg][idx].append(list(map(unpack_fn, dps)))
+
         if self.use_numpy:
             self._unpack_and_store_numpy(idx, dps)
         else:
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        arr = DpsUnpackFns.extract_aggregates_numpy(dps, self.all_aggregates, self.agg_unpack_fn, self.dtype_aggs)
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
-        self.dps_data[idx].append(arr.reshape(len(dps), len(self.all_aggregates)))
+        if self.numeric_aggs:
+            arr = DpsUnpackFns.extract_numeric_aggregates_numpy(
+                dps, self.numeric_aggs, self.numeric_agg_unpack_fn, self.dtype_aggs
+            )
+            self.dps_data[idx].append(arr.reshape(len(dps), self.n_numeric_aggs))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:
-        lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.all_aggregates, self.agg_unpack_fn)
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
-        self.dps_data[idx].append(lst)
+        if self.numeric_aggs:
+            lst: list[Any] = DpsUnpackFns.extract_aggregates(dps, self.numeric_aggs, self.numeric_agg_unpack_fn)
+            self.dps_data[idx].append(lst)
 
 
 class SerialLimitedAggTaskOrchestrator(BaseAggTaskOrchestrator, SerialTaskOrchestratorMixin): ...
