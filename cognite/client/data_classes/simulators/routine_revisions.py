@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from abc import ABC
+import itertools
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from typing_extensions import Self
 
@@ -12,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -43,7 +45,50 @@ class SimulationValueUnitInput(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineInputTimeseries(CogniteObject):
+class SimulatorRoutineInput(CogniteObject):
+    """
+    The input of the simulator routine revision.
+
+    Args:
+        name (str): The name of the input.
+        reference_id (str): The reference ID of the input.
+        save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
+        unit (SimulationValueUnitInput | None): The unit of the input.
+    """
+
+    _type: ClassVar[str]
+
+    name: str
+    reference_id: str
+    save_timeseries_external_id: str | None = None
+    unit: SimulationValueUnitInput | None = None
+
+    @classmethod
+    @abstractmethod
+    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        raise NotImplementedError()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        is_constant = resource.get("value")
+        is_timeseries = resource.get("sourceExternalId")
+        type_ = "constant" if is_constant else "timeseries" if is_timeseries else None
+        if type_ is None:
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        input_class = _INPUT_CLASS_BY_TYPE.get(type_)
+        if type_ is None or input_class is None:
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        return cast(Self, input_class._load_input(resource))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+        return output
+
+
+@dataclass
+class SimulatorRoutineInputTimeseries(SimulatorRoutineInput):
     """
     The timeseries input of the simulator routine revision.
 
@@ -56,15 +101,23 @@ class SimulatorRoutineInputTimeseries(CogniteObject):
         unit (SimulationValueUnitInput | None): The unit of the input.
     """
 
-    name: str
-    reference_id: str
-    source_external_id: str
-    aggregate: Literal["average", "interpolation", "stepInterpolation"] | None = None
-    save_timeseries_external_id: str | None = None
-    unit: SimulationValueUnitInput | None = None
+    _type = "timeseries"
+
+    def __init__(
+        self,
+        name: str,
+        reference_id: str,
+        source_external_id: str,
+        aggregate: Literal["average", "interpolation", "stepInterpolation"] | None = None,
+        save_timeseries_external_id: str | None = None,
+        unit: SimulationValueUnitInput | None = None,
+    ) -> None:
+        super().__init__(name, reference_id, save_timeseries_external_id, unit)
+        self.source_external_id = source_external_id
+        self.aggregate = aggregate
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -74,37 +127,38 @@ class SimulatorRoutineInputTimeseries(CogniteObject):
             unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if self.unit is not None:
-            output["unit"] = self.unit.dump(camel_case=camel_case)
-
-        return output
-
 
 @dataclass
-class SimulatorRoutineInputConstant(CogniteObject):
+class SimulatorRoutineInputConstant(SimulatorRoutineInput):
     """
     The constant input of the simulator routine revision.
 
     Args:
         name (str): The name of the input.
         reference_id (str): The reference ID of the input.
-        value (str): The value of the input.
-        value_type (str): The value type of the input.
+        value (str | int | float | list[str] | list[int] | list[float]): The value of the input.
+        value_type (Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]): The value type of the input.
         unit (SimulationValueUnitInput | None): The unit of the input.
         save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
     """
 
-    name: str
-    reference_id: str
-    value: str | int | float | list[str] | list[int] | list[float]
-    value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
-    unit: SimulationValueUnitInput | None = None
-    save_timeseries_external_id: str | None = None
+    _type = "constant"
+
+    def __init__(
+        self,
+        name: str,
+        reference_id: str,
+        value: str | int | float | list[str] | list[int] | list[float],
+        value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"],
+        unit: SimulationValueUnitInput | None = None,
+        save_timeseries_external_id: str | None = None,
+    ) -> None:
+        super().__init__(name, reference_id, save_timeseries_external_id, unit)
+        self.value = value
+        self.value_type = value_type
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load_input(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -113,13 +167,6 @@ class SimulatorRoutineInputConstant(CogniteObject):
             unit=SimulationValueUnitInput._load(resource["unit"], cognite_client) if "unit" in resource else None,
             save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        if self.unit is not None:
-            output["unit"] = self.unit.dump(camel_case=camel_case)
-
-        return output
 
 
 @dataclass
@@ -274,21 +321,16 @@ class SimulatorRoutineConfiguration(CogniteObject):
         if resource.get("inputs", None) is not None:
             inputs = []
             for input in resource["inputs"]:
-                if isinstance(input, (SimulatorRoutineInputConstant, SimulatorRoutineInputTimeseries)):
+                if issubclass(type(input), type(SimulatorRoutineInput)):
                     inputs.append(input)
-
                 else:
-                    if "value" in input:
-                        inputs.append(SimulatorRoutineInputConstant._load(input, cognite_client))
-                    else:
-                        inputs.append(SimulatorRoutineInputTimeseries._load(input, cognite_client))
+                    inputs.append(SimulatorRoutineInput._load(input, cognite_client))
 
         if resource.get("outputs", None) is not None:
             outputs = []
             for output_ in resource["outputs"]:
                 if isinstance(output_, SimulatorRoutineOutput):
                     outputs.append(output_)
-
                 else:
                     outputs.append(SimulatorRoutineOutput._load(output_, cognite_client))
 
@@ -602,3 +644,9 @@ class SimulatorRoutineRevisionsList(
         return SimulatorRoutineRevisionWriteList(
             [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
         )
+
+
+_INPUT_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineInput]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in itertools.chain(SimulatorRoutineInput.__subclasses__())
+}
