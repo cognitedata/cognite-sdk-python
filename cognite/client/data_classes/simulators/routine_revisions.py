@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from abc import ABC
+import itertools
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from typing_extensions import Self
 
@@ -12,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -384,27 +386,113 @@ class SimulatorRoutineStep(CogniteObject):
     The step of the simulator routine revision.
 
     Args:
-        step_type (str): The type of the step. Can be "Get", "Set", or "Command".
         arguments (SimulatorRoutineStepArguments): The arguments of the step.
         order (int): The order of the step.
     """
 
-    step_type: Literal["Get", "Set", "Command"]
-    arguments: SimulatorRoutineStepArguments
-    order: int
+    _type: ClassVar[str]
+
+    def __init__(self, arguments: SimulatorRoutineStepArguments, order: int) -> None:
+        self.arguments = arguments
+        self.order = order
+
+    @classmethod
+    @abstractmethod
+    def _load_step(cls, resource: dict[str, Any]) -> Self:
+        raise NotImplementedError()
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource.get("stepType")
+        if type_ is None and hasattr(cls, "_type"):
+            type_ = cls._type
+        elif type_ is None:
+            raise KeyError("stepType")
+        step_class = _ROUTINE_STEP_CLASS_BY_TYPE.get(type_)
+        if step_class is None:
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        return cast(Self, step_class._load_step(resource))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["stepType"] = self._type
+        output["arguments"] = self.arguments.dump(camel_case=camel_case)
+        return output
+
+
+@dataclass
+class SimulatorRoutineStepGet(SimulatorRoutineStep):
+    """
+    The "Get" step of the simulator routine revision.
+
+    Args:
+        arguments (SimulatorRoutineStepArguments): The arguments of the step.
+        order (int): The order of the step.
+    """
+
+    _type = "Get"
+
+    def __init__(self, arguments: SimulatorRoutineStepArguments, order: int) -> None:
+        super().__init__(arguments, order)
+
+    @classmethod
+    def _load_step(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            step_type=resource["stepType"],
-            arguments=SimulatorRoutineStepArguments._load(resource["arguments"], cognite_client),
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
             order=resource["order"],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        output["arguments"] = self.arguments.dump(camel_case=camel_case)
-        return output
+
+@dataclass
+class SimulatorRoutineStepSet(SimulatorRoutineStep):
+    """
+    The "Set" step of the simulator routine revision.
+
+    Args:
+        arguments (SimulatorRoutineStepArguments): The arguments of the step.
+        order (int): The order of the step.
+    """
+
+    _type = "Set"
+
+    def __init__(self, arguments: SimulatorRoutineStepArguments, order: int) -> None:
+        super().__init__(arguments, order)
+
+    @classmethod
+    def _load_step(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
+            order=resource["order"],
+        )
+
+
+@dataclass
+class SimulatorRoutineStepCommand(SimulatorRoutineStep):
+    """
+    The "Command" step of the simulator routine revision.
+
+    Args:
+        arguments (SimulatorRoutineStepArguments): The arguments of the step.
+        order (int): The order of the step.
+    """
+
+    _type = "Command"
+
+    def __init__(self, arguments: SimulatorRoutineStepArguments, order: int) -> None:
+        super().__init__(arguments, order)
+
+    @classmethod
+    def _load_step(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
+            order=resource["order"],
+        )
+
+
+_ROUTINE_STEP_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineStep]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in itertools.chain(SimulatorRoutineStep.__subclasses__())
+}
 
 
 @dataclass
