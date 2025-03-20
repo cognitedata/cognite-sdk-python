@@ -41,9 +41,6 @@ class SimulationValueUnitInput(CogniteObject):
             quantity=resource.get("quantity"),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 @dataclass
 class SimulatorRoutineInputTimeseries(CogniteObject):
@@ -507,20 +504,6 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
         script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
 
     """
-
-    def __init__(
-        self,
-        external_id: str,
-        routine_external_id: str,
-        configuration: SimulatorRoutineConfiguration | None = None,
-        script: list[SimulatorRoutineStage] | None = None,
-    ) -> None:
-        super().__init__(
-            external_id=external_id,
-            routine_external_id=routine_external_id,
-            configuration=configuration,
-            script=script,
-        )
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
