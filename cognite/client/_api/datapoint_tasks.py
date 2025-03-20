@@ -1127,13 +1127,12 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
 
         # We must unpack all data as double (see dev. note above), but we need to know which should be cast to int:
         self.int_aggs = _INT_AGGREGATES.intersection(self.numeric_aggs)
-        self.float_aggs = [agg for agg in self.numeric_aggs if agg not in self.object_aggs]
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if self.use_numpy:
             arr_dct: dict[str, Any] = {"timestamp": np.array([], dtype=np.int64)}
-            if self.float_aggs:
-                arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
+            if self.numeric_aggs:
+                arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.numeric_aggs})
             if self.int_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.int64) for agg in self.int_aggs})
             if self.object_aggs:
