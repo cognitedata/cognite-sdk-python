@@ -51,7 +51,7 @@ class SimulatorRoutineInputTimeseries(CogniteObject):
         name (str): The name of the input.
         reference_id (str): The reference ID of the input.
         source_external_id (str): The external ID of the source timeseries.
-        aggregate (str | None): The aggregation method to use for the timeseries.
+        aggregate (Literal["average", "interpolation", "stepInterpolation"] | None): The aggregation method to use for the timeseries.
         save_timeseries_external_id (str | None): The external ID of the timeseries to save the input. If not provided, the input is not saved to a timeseries.
         unit (SimulationValueUnitInput | None): The unit of the input.
     """
@@ -59,7 +59,7 @@ class SimulatorRoutineInputTimeseries(CogniteObject):
     name: str
     reference_id: str
     source_external_id: str
-    aggregate: str | None = None
+    aggregate: Literal["average", "interpolation", "stepInterpolation"] | None = None
     save_timeseries_external_id: str | None = None
     unit: SimulationValueUnitInput | None = None
 
@@ -172,20 +172,12 @@ class SimulatorRoutineSchedule(CogniteObject):
     enabled: bool = False
     cron_expression: str | None = None
 
-    def __init__(self, enabled: bool, cron_expression: str | None = None) -> None:
-        self.enabled = enabled
-        self.cron_expression = cron_expression
-
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineSchedule:
         return cls(
             enabled=resource["enabled"],
             cron_expression=resource.get("cronExpression"),
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        return output
 
 
 @dataclass
@@ -206,14 +198,6 @@ class SimulatorRoutineDataSampling(CogniteObject):
     sampling_window: int | None = None
     granularity: str | None = None
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 @dataclass
 class SimulatorRoutineLogicalCheck(CogniteObject):
@@ -224,24 +208,16 @@ class SimulatorRoutineLogicalCheck(CogniteObject):
     Args:
         enabled (bool): Whether the logical check is enabled.
         timeseries_external_id (str): The external ID of the time series to check.
-        aggregate (str): The aggregation method to use for the time series.
-        operator (str): The operator to use for the logical check.
+        aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
+        operator (Literal["eq", "ne", "gt", "ge", "lt", "le"]): The operator to use for the logical check.
         value (float): The value to use for the logical check.
     """
 
     enabled: bool = False
     timeseries_external_id: str | None = None
-    aggregate: str | None = None
-    operator: str | None = None
+    aggregate: Literal["average", "interpolation", "stepInterpolation"] | None = None
+    operator: Literal["eq", "ne", "gt", "ge", "lt", "le"] | None = None
     value: float | None = None
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
 
 
 @dataclass
@@ -254,7 +230,7 @@ class SimulatorRoutineSteadyStateDetection(CogniteObject):
     Args:
         enabled (bool): Whether the steady state detection is enabled.
         timeseries_external_id (str): The external ID of the time series to check for steady state.
-        aggregate (str): The aggregation method to use for the time series.
+        aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
         min_section_size (int): The minimum number of consecutive data points that must meet the steady state criteria.
         var_threshold (float): The maximum variance allowed for the steady state region.
         slope_threshold (float): The maximum slope allowed for the steady state region.
@@ -262,18 +238,10 @@ class SimulatorRoutineSteadyStateDetection(CogniteObject):
 
     enabled: bool = False
     timeseries_external_id: str | None = None
-    aggregate: str | None = None
+    aggregate: Literal["average", "interpolation", "stepInterpolation"] | None = None
     min_section_size: int | None = None
     var_threshold: float | None = None
     slope_threshold: float | None = None
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client)
-        return instance
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
 
 
 @dataclass
