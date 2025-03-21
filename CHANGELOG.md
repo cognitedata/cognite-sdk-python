@@ -26,7 +26,7 @@ Changes are grouped as follows
 
 ## [7.73.8] - 2025-03-21
 ### Fixed
-- Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was deprecated in the API in October 2024.
+- Functions: Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was removed in the API in October 2024.
 
 ## [7.73.7] - 2025-03-14
 ### Fixed
