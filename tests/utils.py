@@ -43,6 +43,7 @@ from cognite.client.data_classes.data_modeling.query import NodeResultSetExpress
 from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
+from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineStepArguments
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationWrite
 from cognite.client.data_classes.transformations.schedules import TransformationScheduleWrite
 from cognite.client.data_classes.transformations.schema import TransformationSchemaUnknownType
@@ -466,6 +467,8 @@ class FakeCogniteResourceGenerator:
         elif issubclass(resource_cls, ListablePropertyType):
             if not keyword_arguments.get("is_list"):
                 keyword_arguments.pop("max_list_size", None)
+        elif resource_cls is SimulatorRoutineStepArguments:
+            keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
