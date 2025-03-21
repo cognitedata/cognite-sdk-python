@@ -206,77 +206,78 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         Examples:
             Create new simulator routine revisions:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
+                >>> from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite, SimulatorRoutineConfiguration, SimulatorRoutineInputConstant, SimulatorRoutineOutput, SimulatorRoutineDataSampling, SimulatorRoutineStep, SimulatorRoutineStepArguments, SimulatorRoutineStage, SimulationValueUnitInput
                 >>> client = CogniteClient()
                 >>> routine_revs = [
                 ...     SimulatorRoutineRevisionWrite(
                 ...         external_id="routine_rev_1",
                 ...         routine_external_id="routine_1",
-                ...         configuration={
-                ...             "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
-                ...             "data_sampling": {"enabled": True, "samplingWindow": 15, "granularity": 1},
-                ...             "logical_check": [],
-                ...             "steady_state_detection": [],
-                ...             "inputs": [
-                ...                 {
-                ...                     "name": "Cold Water Temperature",
-                ...                     "reference_id": "CWTC",
-                ...                     "value": 10.0,
-                ...                     "value_type": "DOUBLE",
-                ...                     "unit": {"name": "C", "quantity": "temperature"},
-                ...                     "save_timeseries_external_id": "TEST-ROUTINE-INPUT-CWTC",
-                ...                 },
-                ...                 {
-                ...                     "name": "Cold Water Pressure",
-                ...                     "reference_id": "CWPC",
-                ...                     "value": 3.6,
-                ...                     "value_type": "DOUBLE",
-                ...                     "unit": {"name": "bar", "quantity": "pressure"},
-                ...                 },
+                ...         configuration=SimulatorRoutineConfiguration(
+                ...             data_sampling=SimulatorRoutineDataSampling(sampling_window=15, granularity="1m"),
+                ...             inputs=[
+                ...                 SimulatorRoutineInputConstant(
+                ...                     name="Cold Water Temperature",
+                ...                     reference_id="CWTC",
+                ...                     value=10.0,
+                ...                     value_type="DOUBLE",
+                ...                     unit=SimulationValueUnitInput(name="C", quantity="temperature"),
+                ...                     save_timeseries_external_id="TEST-ROUTINE-INPUT-CWTC",
+                ...                 ),
                 ...             ],
-                ...             "outputs": [
-                ...                 {
-                ...                     "name": "Shower Temperature",
-                ...                     "reference_id": "ST",
-                ...                     "unit": {"name": "C", "quantity": "temperature"},
-                ...                     "value_type": "DOUBLE",
-                ...                     "save_timeseries_external_id": "TEST-ROUTINE-OUTPUT-ST",
-                ...                 },
+                ...             outputs=[
+                ...                 SimulatorRoutineOutput(
+                ...                     name="Shower Temperature",
+                ...                     reference_id="ST",
+                ...                     unit=SimulationValueUnitInput(name="C", quantity="temperature"),
+                ...                     value_type="DOUBLE",
+                ...                     save_timeseries_external_id="TEST-ROUTINE-OUTPUT-ST",
+                ...                 ),
                 ...             ],
-                ...         },
+                ...         ),
                 ...         script=[
-                ...             {
-                ...                 "order": 1,
-                ...                 "description": "Set Inputs",
-                ...                 "steps": [
-                ...                     {
-                ...                         "order": 1,
-                ...                         "step_type": "Set",
-                ...                         "arguments": {"reference_id": "CWTC", "object_name": "Cold water", "object_property": "Temperature"},
-                ...                     },
-                ...                     {
-                ...                         "order": 2,
-                ...                         "step_type": "Set",
-                ...                         "arguments": {"reference_id": "CWPC", "object_name": "Cold water", "object_property": "Pressure"},
-                ...                     },
+                ...             SimulatorRoutineStage(
+                ...                 order=1,
+                ...                 description="Set Inputs",
+                ...                 steps=[
+                ...                     SimulatorRoutineStep(
+                ...                         order=1,
+                ...                         step_type="Set",
+                ...                         arguments=SimulatorRoutineStepArguments(
+                ...                             {
+                ...                                 "referenceId": "CWTC",
+                ...                                 "objectName": "Cold water",
+                ...                                 "objectProperty": "Temperature",
+                ...                             }
+                ...                         ),
+                ...                     ),
                 ...                 ],
-                ...             },
-                ...             {
-                ...                 "order": 2,
-                ...                 "description": "Solve the flowsheet",
-                ...                 "steps": [{"order": 1, "step_type": "Command", "arguments": {"command": "Solve"}}],
-                ...             },
-                ...             {
-                ...                 "order": 3,
-                ...                 "description": "Set simulation outputs",
-                ...                 "steps": [
-                ...                     {
-                ...                         "order": 1,
-                ...                         "step_type": "Get",
-                ...                         "arguments": {"reference_id": "ST", "object_name": "Shower", "object_property": "Temperature"},
-                ...                     },
+                ...             ),
+                ...             SimulatorRoutineStage(
+                ...                 order=2,
+                ...                 description="Solve the flowsheet",
+                ...                 steps=[
+                ...                     SimulatorRoutineStep(
+                ...                         order=1, step_type="Command", arguments=SimulatorRoutineStepArguments({"command": "Solve"})
+                ...                     ),
                 ...                 ],
-                ...             },
+                ...             ),
+                ...             SimulatorRoutineStage(
+                ...                 order=3,
+                ...                 description="Set simulation outputs",
+                ...                 steps=[
+                ...                     SimulatorRoutineStep(
+                ...                         order=1,
+                ...                         step_type="Get",
+                ...                         arguments=SimulatorRoutineStepArguments(
+                ...                             {
+                ...                                 "referenceId": "ST",
+                ...                                 "objectName": "Shower",
+                ...                                 "objectProperty": "Temperature",
+                ...                             }
+                ...                         ),
+                ...                     ),
+                ...                 ],
+                ...             ),
                 ...         ],
                 ...     ),
                 ... ]
