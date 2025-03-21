@@ -24,7 +24,7 @@ Changes are grouped as follows
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
 
-## [7.73.7] - 2025-03-21
+## [7.73.8] - 2025-03-21
 ### Fixed
 - Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was deprecated in the API in October 2024.
 
