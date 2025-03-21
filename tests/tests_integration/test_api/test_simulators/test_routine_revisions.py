@@ -4,6 +4,7 @@ from typing import Any
 from cognite.client import CogniteClient
 from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.routine_revisions import (
+    SimulatorRoutineInputConstant,
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
@@ -111,5 +112,6 @@ class TestSimulatorRoutineRevisions:
         assert revision_2 is not None
         assert revision_2.external_id == f"{routine_external_id}_1_v1"
         assert revision_2.configuration.inputs[0].reference_id == "CWT"
+        assert type(revision_2.configuration.inputs[0]) is SimulatorRoutineInputConstant
         assert revision_2.configuration.outputs[0].reference_id == "ST"
         assert revision_2.script[0].steps[0].arguments["reference_id"] == "CWT"

@@ -302,7 +302,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
         data_sampling (SimulatorRoutineDataSampling): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
         logical_check (list[SimulatorRoutineLogicalCheck]): Logical check configuration.
         steady_state_detection (list[SimulatorRoutineSteadyStateDetection]): Steady state detection configuration.
-        inputs (list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None): The inputs of the simulator routine revision.
+        inputs (list[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
         outputs (list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
     """
 
@@ -310,7 +310,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
     data_sampling: SimulatorRoutineDataSampling
     logical_check: list[SimulatorRoutineLogicalCheck]
     steady_state_detection: list[SimulatorRoutineSteadyStateDetection]
-    inputs: list[SimulatorRoutineInputConstant | SimulatorRoutineInputTimeseries] | None
+    inputs: list[SimulatorRoutineInput] | None
     outputs: list[SimulatorRoutineOutput] | None
 
     @classmethod
