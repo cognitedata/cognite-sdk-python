@@ -23,6 +23,11 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+
+## [7.73.7] - 2025-03-21
+### Fixed
+- Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was deprecated in the API in October 2024.
+
 ## [7.73.7] - 2025-03-14
 ### Fixed
 - When RestSource for hosted extractors were updated, the authentication and ca_certificate objects were omitted. This is now fixed.
