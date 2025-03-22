@@ -7,7 +7,6 @@ from cognite.client.data_classes.postgres_gateway import (
 
 
 class TestUsers:
-    @pytest.mark.usefixtures("one_user")
     def test_list(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.postgres_gateway.users.list(limit=1)
         assert isinstance(res, UserList)
