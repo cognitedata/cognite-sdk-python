@@ -23,6 +23,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_routine,
     simulator_routine_revision,
 )
+from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 SEED_DIR = Path(__file__).resolve(strict=True).parent / "seed"
 
@@ -64,19 +65,31 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Iterat
 
 @pytest.fixture(scope="session")
 def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, seed_resource_names) -> None:
+    log_id = None
+    timestamp = int(time.time() * 1000)
     simulator_integrations = cognite_client.simulators.integrations.list(limit=None)
     if not simulator_integrations.get(external_id=simulator_integration["externalId"]):
-        simulator_integration["heartbeat"] = int(time.time() * 1000)
+        simulator_integration["heartbeat"] = timestamp
         simulator_integration["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
-        cognite_client.simulators._post(
+        res = cognite_client.simulators._post(
             "/simulators/integrations",
             json={"items": [simulator_integration]},
         )
+        log_id = res.json()["items"][0]["logId"]
     else:
         integration = simulator_integrations.get(external_id=simulator_integration["externalId"])
+        if integration is not None:
+            log_id = integration.log_id
         cognite_client.simulators.integrations._post(
             "/simulators/integrations/update",
-            json={"items": [{"id": integration.id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
+            json={"items": [{"id": integration.id, "update": {"heartbeat": {"set": timestamp}}}]},
+        )
+
+    if log_id:
+        update_logs(
+            cognite_client,
+            log_id,
+            [{"timestamp": timestamp, "message": "Testing logs update for simulator integration", "severity": "Debug"}],
         )
 
 
