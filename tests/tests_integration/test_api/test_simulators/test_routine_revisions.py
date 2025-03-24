@@ -81,10 +81,10 @@ class TestSimulatorRoutineRevisions:
         rev1 = revisions_all[0]
         rev2 = revisions_all[1]
 
-        rev1_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_id=rev1.external_id)
+        rev1_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_ids=rev1.external_id)
         assert rev1_retrieve is not None
         assert rev1_retrieve.external_id == rev1.external_id
-        rev2_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_id=rev2.external_id)
+        rev2_retrieve = cognite_client.simulators.routines.revisions.retrieve(external_ids=rev2.external_id)
         assert rev2_retrieve is not None
         assert rev2_retrieve.external_id == rev2.external_id
 

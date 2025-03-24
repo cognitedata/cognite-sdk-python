@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.shared import TimestampRange
@@ -9,7 +9,7 @@ from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
-    SimulatorRoutineRevisionsList,
+    SimulatorRoutineRevisionList,
     SimulatorRoutineRevisionWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -56,7 +56,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevisionsList]: ...
+    ) -> Iterator[SimulatorRoutineRevisionList]: ...
 
     @overload
     def __call__(
@@ -85,7 +85,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]:
+    ) -> Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]:
         """Iterate over simulator routine revisions
 
         Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
@@ -103,7 +103,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             sort (PropertySort | None): The criteria to sort by.
 
         Returns:
-            Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionsList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionsList objects.
+            Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
         """
         self._warning.warn()
         filter = SimulatorRoutineRevisionsFilter(
@@ -119,83 +119,70 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             limit=limit,
             url_path="/simulators/routines/revisions/list",
             resource_cls=SimulatorRoutineRevision,
-            list_cls=SimulatorRoutineRevisionsList,
+            list_cls=SimulatorRoutineRevisionList,
             chunk_size=chunk_size,
             filter=filter.dump(),
             sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> SimulatorRoutineRevision | None:
+    @overload
+    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
+
+    @overload
+    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorRoutineRevision | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        ids: None,
+        external_ids: str,
+    ) -> SimulatorRoutineRevision | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+    ) -> SimulatorRoutineRevisionList | None: ...
+
+    def retrieve(
+        self,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
+    ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
         """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
-        Retrieve a simulator routine revision by ID or external ID
+        Retrieve simulator routine revisions by ID or External Id.
 
         Args:
-            id (int | None): The id of the simulator routine revision.
-            external_id (str | None): The external id of the simulator routine revision.
+            ids (int | Sequence[int] | None): Simulator routine revision ID or list of IDs
+            external_ids (str | SequenceNotStr[str] | None): Simulator routine revision External ID or list of external IDs
 
         Returns:
-            SimulatorRoutineRevision | None: Requested simulator routine revision
+            SimulatorRoutineRevision | SimulatorRoutineRevisionList | None: Requested simulator routine revision
 
         Examples:
 
             Get simulator routine revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.retrieve(id=123)
+                >>> res = client.simulators.routines.revisions.retrieve(ids=123)
 
             Get simulator routine revision by external id:
-                >>> res = client.simulators.routines.revisions.retrieve(external_id="routine_v1")
-        """
-        self._warning.warn()
-        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
-            resource_cls=SimulatorRoutineRevision,
-            list_cls=SimulatorRoutineRevisionsList,
-            identifiers=identifiers,
-            resource_path="/simulators/routines/revisions",
-        )
-
-    def retrieve_multiple(
-        self,
-        ids: Sequence[int] | None = None,
-        external_ids: SequenceNotStr[str] | None = None,
-        ignore_unknown_ids: bool = False,
-    ) -> SimulatorRoutineRevisionsList:
-        """`Retrieve simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
-
-        Retrieve one or more simulator routine revisions by IDs or external IDs
-
-            Args:
-                ids (Sequence[int] | None): IDs
-                external_ids (SequenceNotStr[str] | None): External IDs
-                ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-            Returns:
-                SimulatorRoutineRevisionsList: Requested simulator routine revisions
-
-            Examples:
-
-                Get simulator routine revisions by id:
-                    >>> from cognite.client import CogniteClient
-                    >>> client = CogniteClient()
-                    >>> res = client.simulators.routines.revisions.retrieve_multiple(ids=[1, 2, 3])
-
-                Get simulator routine revisions by external id:
-                    >>> res = client.simulators.routines.revisions.retrieve_multiple(external_ids=["routine_v1", "routine_v2"])
+                >>> res = client.simulators.routines.revisions.retrieve(external_ids="routine_v1")
         """
         self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
-            list_cls=SimulatorRoutineRevisionsList,
             resource_cls=SimulatorRoutineRevision,
+            list_cls=SimulatorRoutineRevisionList,
             identifiers=identifiers,
-            ignore_unknown_ids=ignore_unknown_ids,
+            resource_path="/simulators/routines/revisions",
         )
 
     @overload
-    def create(self, routine_revision: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionsList: ...
+    def create(self, routine_revision: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
 
     @overload
     def create(self, routine_revision: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
@@ -203,12 +190,12 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def create(
         self,
         routine_revision: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
-    ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionsList:
+    ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList:
         """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
         Args:
             routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
         Returns:
-            SimulatorRoutineRevision | SimulatorRoutineRevisionsList: Created simulator routine revision(s)
+            SimulatorRoutineRevision | SimulatorRoutineRevisionList: Created simulator routine revision(s)
         Examples:
             Create new simulator routine revisions:
                 >>> from cognite.client import CogniteClient
@@ -297,7 +284,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
         return self._create_multiple(
-            list_cls=SimulatorRoutineRevisionsList,
+            list_cls=SimulatorRoutineRevisionList,
             resource_cls=SimulatorRoutineRevision,
             items=routine_revision,
             input_resource_cls=SimulatorRoutineRevisionWrite,
@@ -315,7 +302,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         include_all_fields: bool = False,
         limit: int | None = None,
         sort: PropertySort | None = None,
-    ) -> SimulatorRoutineRevisionsList:
+    ) -> SimulatorRoutineRevisionList:
         """`Filter simulator routine revisions <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
@@ -332,7 +319,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             sort (PropertySort | None): The criteria to sort by.
 
         Returns:
-            SimulatorRoutineRevisionsList: List of simulator routine revisions
+            SimulatorRoutineRevisionList: List of simulator routine revisions
 
         Examples:
 
@@ -364,7 +351,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             limit=limit,
             url_path="/simulators/routines/revisions/list",
             resource_cls=SimulatorRoutineRevision,
-            list_cls=SimulatorRoutineRevisionsList,
+            list_cls=SimulatorRoutineRevisionList,
             filter=filter.dump(),
             sort=[PropertySort.load(sort).dump()] if sort else None,
             other_params={"includeAllFields": include_all_fields},

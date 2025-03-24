@@ -643,7 +643,7 @@ class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevi
     _RESOURCE = SimulatorRoutineRevisionWrite
 
 
-class SimulatorRoutineRevisionsList(
+class SimulatorRoutineRevisionList(
     WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
 ):
     _RESOURCE = SimulatorRoutineRevision
