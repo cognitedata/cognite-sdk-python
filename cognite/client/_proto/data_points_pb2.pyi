@@ -50,7 +50,7 @@ class StringDatapoints(_message.Message):
     def __init__(self, datapoints: _Optional[_Iterable[_Union[StringDatapoint, _Mapping]]] = ...) -> None: ...
 
 class AggregateDatapoint(_message.Message):
-    __slots__ = ("timestamp", "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation", "continuousVariance", "discreteVariance", "totalVariation", "countGood", "countUncertain", "countBad", "durationGood", "durationUncertain", "durationBad")
+    __slots__ = ("timestamp", "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation", "continuousVariance", "discreteVariance", "totalVariation", "countGood", "countUncertain", "countBad", "durationGood", "durationUncertain", "durationBad", "maxDatapoint", "minDatapoint")
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     AVERAGE_FIELD_NUMBER: _ClassVar[int]
     MAX_FIELD_NUMBER: _ClassVar[int]
@@ -68,6 +68,8 @@ class AggregateDatapoint(_message.Message):
     DURATIONGOOD_FIELD_NUMBER: _ClassVar[int]
     DURATIONUNCERTAIN_FIELD_NUMBER: _ClassVar[int]
     DURATIONBAD_FIELD_NUMBER: _ClassVar[int]
+    MAXDATAPOINT_FIELD_NUMBER: _ClassVar[int]
+    MINDATAPOINT_FIELD_NUMBER: _ClassVar[int]
     timestamp: int
     average: float
     max: float
@@ -85,7 +87,9 @@ class AggregateDatapoint(_message.Message):
     durationGood: float
     durationUncertain: float
     durationBad: float
-    def __init__(self, timestamp: _Optional[int] = ..., average: _Optional[float] = ..., max: _Optional[float] = ..., min: _Optional[float] = ..., count: _Optional[float] = ..., sum: _Optional[float] = ..., interpolation: _Optional[float] = ..., stepInterpolation: _Optional[float] = ..., continuousVariance: _Optional[float] = ..., discreteVariance: _Optional[float] = ..., totalVariation: _Optional[float] = ..., countGood: _Optional[float] = ..., countUncertain: _Optional[float] = ..., countBad: _Optional[float] = ..., durationGood: _Optional[float] = ..., durationUncertain: _Optional[float] = ..., durationBad: _Optional[float] = ...) -> None: ...
+    maxDatapoint: NumericDatapoint
+    minDatapoint: NumericDatapoint
+    def __init__(self, timestamp: _Optional[int] = ..., average: _Optional[float] = ..., max: _Optional[float] = ..., min: _Optional[float] = ..., count: _Optional[float] = ..., sum: _Optional[float] = ..., interpolation: _Optional[float] = ..., stepInterpolation: _Optional[float] = ..., continuousVariance: _Optional[float] = ..., discreteVariance: _Optional[float] = ..., totalVariation: _Optional[float] = ..., countGood: _Optional[float] = ..., countUncertain: _Optional[float] = ..., countBad: _Optional[float] = ..., durationGood: _Optional[float] = ..., durationUncertain: _Optional[float] = ..., durationBad: _Optional[float] = ..., maxDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ..., minDatapoint: _Optional[_Union[NumericDatapoint, _Mapping]] = ...) -> None: ...
 
 class AggregateDatapoints(_message.Message):
     __slots__ = ("datapoints",)
