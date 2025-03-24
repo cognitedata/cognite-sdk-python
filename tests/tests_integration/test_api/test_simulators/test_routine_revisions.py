@@ -13,7 +13,10 @@ from tests.tests_integration.test_api.test_simulators.conftest import simulator_
 
 class TestSimulatorRoutineRevisions:
     def test_list_and_filtering_routine_revisions(
-        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+        self,
+        cognite_client: CogniteClient,
+        seed_simulator_routine_revisions: list[dict[str, Any]],
+        seed_resource_names: dict[str, str],
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
@@ -58,7 +61,10 @@ class TestSimulatorRoutineRevisions:
         assert last_revision_config_json == seed_rev2["configuration"]
 
     def test_retrieve_routine_revision(
-        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+        self,
+        cognite_client: CogniteClient,
+        seed_simulator_routine_revisions: list[dict[str, Any]],
+        seed_resource_names: dict[str, str],
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions_all = cognite_client.simulators.routines.revisions.list(
@@ -78,7 +84,7 @@ class TestSimulatorRoutineRevisions:
         assert rev2_retrieve.external_id == rev2.external_id
 
     def test_create_routine_revision(
-        self, cognite_client: CogniteClient, seed_simulator_models: dict[str, Any], seed_resource_names
+        self, cognite_client: CogniteClient, seed_simulator_models: dict[str, Any], seed_resource_names: dict[str, str]
     ):
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         revisions = cognite_client.simulators.routines.revisions.create(

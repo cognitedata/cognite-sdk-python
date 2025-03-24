@@ -9,6 +9,7 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import (
     SimulatorModelRevisionsFilter,
 )
@@ -42,7 +43,7 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
 
 
 @pytest.fixture(scope="session")
-def seed_file(cognite_client: CogniteClient, seed_resource_names):
+def seed_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[FileMetadata | None]:
     data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
     if not file:
@@ -56,7 +57,7 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names):
 
 
 @pytest.fixture(scope="session")
-def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Iterator[None]:
+def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
@@ -64,7 +65,9 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names) -> Iterat
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, seed_resource_names) -> None:
+def seed_simulator_integration(
+    cognite_client: CogniteClient, seed_simulator: None, seed_resource_names: dict[str, str]
+) -> Iterator[None]:
     log_id = None
     timestamp = int(time.time() * 1000)
     simulator_integrations = cognite_client.simulators.integrations.list(limit=None)
@@ -94,7 +97,9 @@ def seed_simulator_integration(cognite_client: CogniteClient, seed_simulator, se
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_models(cognite_client: CogniteClient, seed_simulator_integration, seed_resource_names):
+def seed_simulator_models(
+    cognite_client: CogniteClient, seed_simulator_integration: None, seed_resource_names: dict[str, str]
+) -> Iterator[dict[str, Any]]:
     model_unique_external_id = seed_resource_names["simulator_model_external_id"]
     models = cognite_client.simulators.models.list(limit=None)
     model_exists = models.get(external_id=model_unique_external_id)
