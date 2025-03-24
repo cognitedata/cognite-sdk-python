@@ -1,4 +1,3 @@
-import datetime
 import time
 from typing import Any
 
@@ -10,6 +9,7 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevision,
     SimulatorRoutineRevisionWrite,
 )
+from cognite.client.utils._time import timestamp_to_ms
 from tests.tests_integration.test_api.test_simulators.conftest import simulator_routine_revision
 
 
@@ -21,9 +21,9 @@ class TestSimulatorRoutineRevisions:
         seed_resource_names: dict[str, str],
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        time_now = int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp() * 1000)
+        one_min_ahead = timestamp_to_ms("1m-ahead")
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
-            created_time=TimestampRange(min=0, max=time_now),
+            created_time=TimestampRange(min=0, max=one_min_ahead),
             routine_external_ids=[simulator_routine_external_id],
             all_versions=True,
         )
@@ -58,7 +58,7 @@ class TestSimulatorRoutineRevisions:
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
         assert (
-            last_revision.script[0].steps[0].arguments["reference_id"]
+            last_revision.script[0].steps[0].arguments["referenceId"]
             == seed_rev2["script"][0]["steps"][0]["arguments"]["referenceId"]
         )
 
@@ -125,4 +125,4 @@ class TestSimulatorRoutineRevisions:
         assert revision_2.configuration.inputs[0].reference_id == "CWT"
         assert type(revision_2.configuration.inputs[0]) is SimulatorRoutineInputConstant
         assert revision_2.configuration.outputs[0].reference_id == "ST"
-        assert revision_2.script[0].steps[0].arguments["reference_id"] == "CWT"
+        assert revision_2.script[0].steps[0].arguments["referenceId"] == "CWT"

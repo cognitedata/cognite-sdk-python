@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import MutableMapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
@@ -17,7 +17,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -413,7 +412,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineStepArguments(CogniteObject):
+class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str]):
     """
     The arguments of the simulator routine step.
 
@@ -421,53 +420,12 @@ class SimulatorRoutineStepArguments(CogniteObject):
     For "Get" and "Set" step type the reference ID is required.
     """
 
-    data: dict[str, str]
-
     def __init__(self, data: dict[str, str]) -> None:
-        self.data = data
-
-    def __getitem__(self, key: str) -> str:
-        return self.data[key]
-
-    def __setitem__(self, key: str, value: str) -> None:
-        self.data[key] = value
-
-    def __delitem__(self, key: str) -> None:
-        del self.data[key]
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.data)
-
-    def __len__(self) -> int:
-        return len(self.data)
-
-    def __contains__(self, key: str) -> bool:
-        return key in self.data
-
-    def keys(self) -> list[str]:
-        return list(self.data.keys())
-
-    def values(self) -> list[str]:
-        return list(self.data.values())
-
-    def items(self) -> list[tuple[str, str]]:
-        return list(self.data.items())
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, SimulatorRoutineStepArguments):
-            return False
-        return self.data == other.data
-
-    def __repr__(self) -> str:
-        return self.data.__repr__()
+        super().__init__(data)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        data = {to_snake_case(key): val for key, val in resource.items()}
-        return cls(data=data)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {**(convert_all_keys_to_camel_case(self.data) if camel_case else self.data)}
+        return cls(resource)
 
 
 @dataclass
@@ -478,7 +436,7 @@ class SimulatorRoutineStep(CogniteObject):
     Args:
         step_type (str): The type of the step. Can be "Get", "Set", or "Command".
         arguments (SimulatorRoutineStepArguments): The arguments of the step.
-        order (int): The order of the step.
+        order (int): Represents the order in which the step is executed compared to other steps in the stage.
     """
 
     step_type: Literal["Get", "Set", "Command"]
@@ -489,7 +447,7 @@ class SimulatorRoutineStep(CogniteObject):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             step_type=resource["stepType"],
-            arguments=SimulatorRoutineStepArguments._load(resource["arguments"], cognite_client),
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
             order=resource["order"],
         )
 
@@ -505,7 +463,7 @@ class SimulatorRoutineStage(CogniteObject):
     The stage of the simulator routine revision. This is a way to organize the steps of the simulator routine revision.
 
     Args:
-        order (int): The order of the stage.
+        order (int): Represents the order in which the stage is executed compared to other stages in the script.
         steps (list[SimulatorRoutineStep]): The steps of the stage.
         description (str | None): The description of the stage.
     """
