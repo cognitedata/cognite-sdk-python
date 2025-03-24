@@ -286,11 +286,13 @@ simulator_routine_revision = {
                 {
                     "order": 1,
                     "stepType": "Set",
+                    "description": "Set Cold Water Temperature",
                     "arguments": {"referenceId": "CWT", "objectName": "Cold water", "objectProperty": "Temperature"},
                 },
                 {
                     "order": 2,
                     "stepType": "Set",
+                    "description": "Set Cold Water Pressure",
                     "arguments": {"referenceId": "CWP", "objectName": "Cold water", "objectProperty": "Pressure"},
                 },
             ],

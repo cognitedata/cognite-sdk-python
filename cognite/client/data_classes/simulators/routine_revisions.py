@@ -440,11 +440,13 @@ class SimulatorRoutineStep(CogniteObject):
         step_type (str): The type of the step. Can be "Get", "Set", or "Command".
         arguments (SimulatorRoutineStepArguments): The arguments of the step.
         order (int): Represents the order in which the step is executed compared to other steps in the stage.
+        description (str | None): The description of the step.
     """
 
     step_type: Literal["Get", "Set", "Command"]
     arguments: SimulatorRoutineStepArguments
     order: int
+    description: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -452,6 +454,7 @@ class SimulatorRoutineStep(CogniteObject):
             step_type=resource["stepType"],
             arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
             order=resource["order"],
+            description=resource.get("description"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
