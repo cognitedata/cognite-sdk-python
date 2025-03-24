@@ -427,6 +427,9 @@ class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(resource)
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {key: value for key, value in self.items()}
+
 
 @dataclass
 class SimulatorRoutineStep(CogniteObject):
