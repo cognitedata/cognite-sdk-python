@@ -46,10 +46,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        routine_external_ids: Sequence[str] | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -60,10 +60,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -73,10 +73,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int | None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -88,10 +88,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator routine revisions to return in each chunk. Defaults to yielding one simulator routine revision a time.
-            routine_external_ids (Sequence[str] | None): Filter on routine external ids.
-            model_external_ids (Sequence[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
-            simulator_external_ids (Sequence[str] | None): Filter on simulator external ids.
+            routine_external_ids (SequenceNotStr[str] | None): Filter on routine external ids.
+            model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
+            simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
@@ -300,10 +300,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
 
     def list(
         self,
-        routine_external_ids: Sequence[str] | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -314,10 +314,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         Retrieves a list of simulator routine revisions that match the given criteria.
 
         Args:
-            routine_external_ids (Sequence[str] | None): Filter on routine external ids.
-            model_external_ids (Sequence[str] | None): Filter on model external ids.
-            simulator_integration_external_ids (Sequence[str] | None): Filter on simulator integration external ids.
-            simulator_external_ids (Sequence[str] | None): Filter on simulator external ids.
+            routine_external_ids (SequenceNotStr[str] | None): Filter on routine external ids.
+            model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
+            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
+            simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.

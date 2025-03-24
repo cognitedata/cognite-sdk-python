@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any, Literal
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SimulatorIntegrationFilter(CogniteFilter):
@@ -64,11 +65,11 @@ class PropertySort(CogniteSort):
 class SimulatorRoutineRevisionsFilter(CogniteFilter):
     def __init__(
         self,
-        routine_external_ids: Sequence[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
     ) -> None:
         self.model_external_ids = model_external_ids
         self.all_versions = all_versions
