@@ -1,7 +1,9 @@
+import datetime
 import time
 from typing import Any
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineInputConstant,
@@ -19,8 +21,11 @@ class TestSimulatorRoutineRevisions:
         seed_resource_names: dict[str, str],
     ) -> None:
         simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        time_now = int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp() * 1000)
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
-            routine_external_ids=[simulator_routine_external_id], all_versions=True
+            created_time=TimestampRange(min=0, max=time_now),
+            routine_external_ids=[simulator_routine_external_id],
+            all_versions=True,
         )
         assert len(revisions_by_routine) == 2
         model_external_id = seed_resource_names["simulator_model_external_id"]

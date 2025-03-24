@@ -4,6 +4,7 @@ from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators import PropertySort
 from cognite.client.data_classes.simulators.filters import SimulatorRoutineRevisionsFilter
 from cognite.client.data_classes.simulators.routine_revisions import (
@@ -50,6 +51,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -64,6 +66,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -77,6 +80,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -92,6 +96,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
+            created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
@@ -107,6 +112,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
             simulator_external_ids=simulator_external_ids,
+            created_time=created_time,
         )
         return self._list_generator(
             method="POST",
@@ -304,6 +310,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
         all_versions: bool = False,
         include_all_fields: bool = False,
         limit: int | None = None,
@@ -318,6 +325,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids (SequenceNotStr[str] | None): Filter on model external ids.
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter on simulator integration external ids.
             simulator_external_ids (SequenceNotStr[str] | None): Filter on simulator external ids.
+            created_time (TimestampRange | None): Filter on created time.
             all_versions (bool): If all versions of the routine should be returned. Defaults to false which only returns the latest version.
             include_all_fields (bool): If all fields should be included in the response. Defaults to false which does not include script, configuration.inputs and configuration.outputs in the response.
             limit (int | None): Maximum number of simulator routine revisions to return. Defaults to return all items.
@@ -349,6 +357,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             model_external_ids=model_external_ids,
             simulator_integration_external_ids=simulator_integration_external_ids,
             simulator_external_ids=simulator_external_ids,
+            created_time=created_time,
         )
         return self._list(
             method="POST",
