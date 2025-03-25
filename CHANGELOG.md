@@ -25,6 +25,10 @@ Changes are grouped as follows
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
 
+## [7.73.9] - 2025-03-25
+### Fixed
+- The `transformation.source/destinationOidcCredentials.scope` is no longer required when creating a Transformation.
+
 ## [7.73.8] - 2025-03-21
 ### Fixed
 - Functions: Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was removed in the API in October 2024.
