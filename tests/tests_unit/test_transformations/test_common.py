@@ -27,6 +27,10 @@ def test_oidc_credentials_no_scope() -> None:
     oidc_credentials = OidcCredentials.load(no_scopes)
 
     assert oidc_credentials.scopes is None
+    with pytest.raises(ValueError) as e:
+        oidc_credentials.as_credential_provider()
+    assert isinstance(e.value, ValueError)
+    assert str(e.value) == "Scopes must be provided to create OAuthClientCredentials"
 
 
 def test_oidc_credentials_as_credential_provider(oidc_credentials):
