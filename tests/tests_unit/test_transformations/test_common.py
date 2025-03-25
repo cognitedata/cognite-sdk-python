@@ -20,6 +20,15 @@ def test_oidc_credentials(scopes):
     assert oidc_credentials.scopes == "comma,separated,scopes"
 
 
+def test_oidc_credentials_no_scope() -> None:
+    no_scopes = dict(
+        clientId="the-id", clientSecret="the-secret", tokenUri="https://the-token-uri", cdfProjectName="my-project"
+    )
+    oidc_credentials = OidcCredentials.load(no_scopes)
+
+    assert oidc_credentials.scopes is None
+
+
 def test_oidc_credentials_as_credential_provider(oidc_credentials):
     client_creds = oidc_credentials.as_credential_provider()
 
