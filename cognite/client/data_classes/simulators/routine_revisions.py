@@ -431,6 +431,235 @@ class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str
         return {key: value for key, value in self.items()}
 
 
+@dataclass
+class SimulatorRoutineStep(CogniteObject):
+    """
+    The step of the simulator routine revision.
+
+    Args:
+        step_type (str): The type of the step. Can be "Get", "Set", or "Command".
+        arguments (SimulatorRoutineStepArguments): The arguments of the step.
+        order (int): Represents the order in which the step is executed compared to other steps in the stage.
+        description (str | None): The description of the step.
+    """
+
+    step_type: Literal["Get", "Set", "Command"]
+    arguments: SimulatorRoutineStepArguments
+    order: int
+    description: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            step_type=resource["stepType"],
+            arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
+            order=resource["order"],
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["arguments"] = self.arguments.dump(camel_case=camel_case)
+        return output
+
+
+@dataclass
+class SimulatorRoutineStage(CogniteObject):
+    """
+    The stage of the simulator routine revision. This is a way to organize the steps of the simulator routine revision.
+
+    Args:
+        order (int): Represents the order in which the stage is executed compared to other stages in the script.
+        steps (list[SimulatorRoutineStep]): The steps of the stage.
+        description (str | None): The description of the stage.
+    """
+
+    order: int
+    steps: list[SimulatorRoutineStep]
+    description: str | None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            order=resource["order"],
+            steps=[
+                SimulatorRoutineStep._load(step_, cognite_client) if isinstance(step_, dict) else step_
+                for step_ in resource["steps"]
+            ],
+            description=resource.get("description"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["steps"] = [step_.dump(camel_case=camel_case) for step_ in self.steps]
+        return output
+
+
+class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
+    def __init__(
+        self,
+        external_id: str,
+        routine_external_id: str,
+        configuration: SimulatorRoutineConfiguration | None = None,
+        script: list[SimulatorRoutineStage] | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.routine_external_id = routine_external_id
+        self.configuration = configuration
+        self.script = script
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["configuration"] = self.configuration.dump(camel_case=camel_case) if self.configuration else None
+        output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script] if self.script else None
+
+        return output
+
+
+class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model.
+    This is a writeable version of a simulator routine revision, it is used when creating simulator routine revisions.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        routine_external_id (str): The external ID of the simulator routine.
+        configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
+        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+
+    """
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        configuration = (
+            SimulatorRoutineConfiguration._load(resource.get("configuration", {}), cognite_client)
+            if resource.get("configuration")
+            else None
+        )
+        script = (
+            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            if resource.get("script")
+            else None
+        )
+        return cls(
+            external_id=resource["externalId"],
+            routine_external_id=resource["routineExternalId"],
+            configuration=configuration,
+            script=script,
+        )
+
+    def as_write(self) -> SimulatorRoutineRevisionWrite:
+        """Returns a writeable version of this resource"""
+        return self
+
+
+class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
+    """
+    The simulator routine resource defines instructions on interacting with a simulator model.
+
+    A simulator routine includes:
+
+        Inputs (values set into the simulator model)
+        Commands (actions to be performed by the simulator)
+        Outputs (values read from the simulator model)
+
+    Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
+    Each model can have multiple routines, each performing different objectives such as calculating optimal operation setpoints, forecasting production, benchmarking asset performance, and more.
+
+    Args:
+        id (int): The unique identifier of the simulator routine revision.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        simulator_external_id (str): The external ID of the simulator.
+        simulator_integration_external_id (str): The external ID of the simulator integration.
+        routine_external_id (str): The external ID of the simulator routine.
+        model_external_id (str): The external ID of the simulator model.
+        version_number (int): The version number of the simulator routine revision. Unique for each simulator routine.
+        created_time (int): The timestamp of when the simulator routine revision was created.
+        data_set_id (int): The ID of the data set associated with the simulator routine revision.
+        created_by_user_id (str): The ID of the user who created the simulator routine revision.
+        configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
+        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        external_id: str,
+        simulator_external_id: str,
+        simulator_integration_external_id: str,
+        routine_external_id: str,
+        model_external_id: str,
+        version_number: int,
+        created_time: int,
+        data_set_id: int,
+        created_by_user_id: str,
+        configuration: SimulatorRoutineConfiguration | None = None,
+        script: list[SimulatorRoutineStage] | None = None,
+    ) -> None:
+        super().__init__(external_id, routine_external_id, configuration, script)
+
+        self.id = id
+        self.external_id = external_id
+        self.simulator_external_id = simulator_external_id
+        self.simulator_integration_external_id = simulator_integration_external_id
+        self.model_external_id = model_external_id
+        self.data_set_id = data_set_id
+        self.created_by_user_id = created_by_user_id
+        self.created_time = created_time
+        self.version_number = version_number
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulatorRoutineRevision:
+        configuration = (
+            SimulatorRoutineConfiguration._load(resource.get("configuration", {}))
+            if resource.get("configuration")
+            else None
+        )
+        script = (
+            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            if resource.get("script")
+            else None
+        )
+        return cls(
+            id=resource["id"],
+            external_id=resource["externalId"],
+            simulator_external_id=resource["simulatorExternalId"],
+            routine_external_id=resource["routineExternalId"],
+            simulator_integration_external_id=resource["simulatorIntegrationExternalId"],
+            model_external_id=resource["modelExternalId"],
+            data_set_id=resource["dataSetId"],
+            created_by_user_id=resource["createdByUserId"],
+            configuration=configuration,
+            script=script,
+            created_time=resource["createdTime"],
+            version_number=resource["versionNumber"],
+        )
+
+    def as_write(self) -> SimulatorRoutineRevisionWrite:
+        """Returns a writeable version of this resource"""
+        return SimulatorRoutineRevisionWrite(
+            external_id=self.external_id,
+            routine_external_id=self.routine_external_id,
+            configuration=self.configuration,
+            script=self.script,
+        )
+
+
+class SimulatorRoutineRevisionWriteList(CogniteResourceList[SimulatorRoutineRevisionWrite], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorRoutineRevisionWrite
+
+
+class SimulatorRoutineRevisionList(
+    WriteableCogniteResourceList[SimulatorRoutineRevisionWrite, SimulatorRoutineRevision], IdTransformerMixin
+):
+    _RESOURCE = SimulatorRoutineRevision
+
+    def as_write(self) -> SimulatorRoutineRevisionWriteList:
+        return SimulatorRoutineRevisionWriteList(
+            [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
+        )
+
+
 _INPUT_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineInput]] = {
     subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in itertools.chain(SimulatorRoutineInput.__subclasses__())
