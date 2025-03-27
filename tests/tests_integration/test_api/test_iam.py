@@ -7,6 +7,13 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import CreatedSession, Group, GroupList, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl, ProjectCapabilityList
+from cognite.client.data_classes.iam import (
+    ServiceAccount,
+    ServiceAccountSecret,
+    ServiceAccountSecretWrite,
+    ServiceAccountUpdate,
+    ServiceAccountWrite,
+)
 from cognite.client.data_classes.iam import SecurityCategoryWrite
 from cognite.client.utils._text import random_string
 
@@ -96,3 +103,43 @@ class TestSessionsAPI:
             if created:
                 revoked = cognite_client.iam.sessions.revoke(created.id)
                 assert created.id == revoked.id
+
+
+class TestServiceAccountsAPI:
+    def test_create_update_retrieve_delete(self, cognite_client: CogniteClient, organization: str) -> None:
+        item = ServiceAccountWrite(
+            name="test_" + random_string(10),
+            external_id=f"test_{random_string(10)}",
+            description="Original description",
+        )
+
+        created: ServiceAccount | None = None
+        secret: ServiceAccountSecret | None = None
+        try:
+            created = cognite_client.iam.principals.create(organization, item)
+            assert created.as_write().dump() == item.dump()
+            assert isinstance(created, ServiceAccount)
+
+            update = ServiceAccountUpdate(id=created.id).description.set("Updated description")
+
+            updated = cognite_client.iam.principals.update(organization, update)
+            assert isinstance(updated, ServiceAccount)
+            assert updated.description == "Updated description"
+
+            retrieved = cognite_client.iam.principals.retrieve(created.id)
+            assert isinstance(retrieved, ServiceAccount)
+            assert retrieved.as_write().dump() == updated.as_write().dump()
+
+            secret = cognite_client.iam.principals.secrets.create(
+                organization, created.id, ServiceAccountSecretWrite(expires_in_seconds=3600)
+            )
+            assert secret.id is not None
+
+            listed = cognite_client.iam.principals.secrets.list(organization, created.id)
+            assert len(listed) >= 1
+            assert secret.id in {s.id for s in listed}
+        finally:
+            if created:
+                if secret:
+                    cognite_client.iam.principals.secrets.delete(organization, created.id, secret.id)
+                cognite_client.iam.principals.delete(created.id)
