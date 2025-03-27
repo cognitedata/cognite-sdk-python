@@ -20,7 +20,7 @@ Changes are grouped as follows
 ## [Unreleased]
 ### Added
 - Support for the `/simulators/logs` API endpoint.
-- Support for the `/simulators/routines` API endpoints.
+- Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 

@@ -97,19 +97,6 @@ class Simulator(CogniteResource):
 
 
 @dataclass
-class SimulatorRoutineStep(CogniteObject):
-    step_type: str
-    arguments: dict[str, Any]
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            step_type=resource["stepType"],
-            arguments=resource["arguments"],
-        )
-
-
-@dataclass
 class SimulatorUnitEntry(CogniteObject):
     label: str
     name: str
