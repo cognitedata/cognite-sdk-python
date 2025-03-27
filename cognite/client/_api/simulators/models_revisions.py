@@ -30,7 +30,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
         self._CREATE_LIMIT = 1
-        self._RETRIEVE_LIMIT = 1
+        self._RETRIEVE_LIMIT = 100
 
     def list(
         self,
