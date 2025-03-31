@@ -893,7 +893,7 @@ class DatapointsArray(CogniteResource):
                 data["minDatapoint"] = self.min_datapoint[i]
             if self.max_datapoint is not None:
                 data["maxDatapoint"] = self.max_datapoint[i]
-            yield Datapoint._load(data)  # type: ignore [arg-type]
+            yield Datapoint._load(data)
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields
