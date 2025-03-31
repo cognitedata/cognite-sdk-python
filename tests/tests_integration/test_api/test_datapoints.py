@@ -2014,6 +2014,20 @@ class TestRetrieveAggregateDatapointsAPI:
                     assert isinstance(dps.max_datapoint[0], MaxDatapoint)
                     assert isinstance(dp.min_datapoint, MinDatapoint)
                     assert isinstance(dp.max_datapoint, MaxDatapoint)
+                for dp in dps:
+                    dp_min, dp_max = dp.min_datapoint.value, dp.max_datapoint.value
+                    assert math.isfinite(dp_min)
+                    assert math.isfinite(dp_max)
+                    assert dp_min <= dp_max
+                    if include_status:
+                        assert isinstance(dp.min_datapoint.status_code, int)
+                        assert isinstance(dp.max_datapoint.status_symbol, str)
+                    else:
+                        for min_or_max in (dp.min_datapoint, dp.max_datapoint):
+                            with pytest.raises(AttributeError):
+                                min_or_max.status_code
+                            with pytest.raises(AttributeError):
+                                min_or_max.status_symbol
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():

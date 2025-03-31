@@ -883,13 +883,17 @@ class DatapointsArray(CogniteResource):
         # Let's not create a single Datapoint more than we have too:
         for i, row in enumerate(zip(*arrays)):
             timestamp = row[0].item() // 1_000_000
-            data: dict[str, float | str | dict | None] = dict(zip(attrs[1:], map(numpy_dtype_fix, row[1:])))
+            data: dict[str, Any] = dict(zip(map(to_camel_case, attrs[1:]), map(numpy_dtype_fix, row[1:])))
+            data.update(timestamp=timestamp, timezone=self.timezone)
             if self.status_code is not None:
-                data.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])  # type: ignore [index]
+                data.update(statusCode=self.status_code[i], statusSymbol=self.status_symbol[i])  # type: ignore [index]
             if self.null_timestamps and timestamp in self.null_timestamps:
                 data["value"] = None
-
-            yield Datapoint(timestamp=timestamp, **data, timezone=self.timezone)  # type: ignore [arg-type]
+            if self.min_datapoint is not None:
+                data["minDatapoint"] = self.min_datapoint[i]
+            if self.max_datapoint is not None:
+                data["maxDatapoint"] = self.max_datapoint[i]
+            yield Datapoint._load(data)  # type: ignore [arg-type]
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields
@@ -1027,9 +1031,9 @@ class Datapoints(CogniteResource):
         value (SequenceNotStr[str] | Sequence[float] | None): The raw data values. Can be string or numeric.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
-        max_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         min (list[float] | None): The minimum values per aggregate interval.
-        min_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
+        min_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         count (list[int] | None): The number of raw datapoints per aggregate interval.
         sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
         interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
@@ -1063,9 +1067,9 @@ class Datapoints(CogniteResource):
         value: SequenceNotStr[str] | Sequence[float] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
-        max_datapoint: list[MinDatapoint] | list[MinDatapointWithStatus] | None = None,
+        max_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
         min: list[float] | None = None,
-        min_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
+        min_datapoint: list[MinDatapoint] | list[MinDatapointWithStatus] | None = None,
         count: list[int] | None = None,
         sum: list[float] | None = None,
         interpolation: list[float] | None = None,
@@ -1386,7 +1390,7 @@ class Datapoints(CogniteResource):
                     statusCode=self.status_code[i],
                     statusSymbol=self.status_symbol[i],  # type: ignore [index]
                 )
-            new_dps_objects.append(Datapoint.load(dp_args))
+            new_dps_objects.append(Datapoint._load(dp_args))
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
