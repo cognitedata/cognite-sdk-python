@@ -738,7 +738,7 @@ class TestIterateDatapoints:
 
     @pytest.mark.parametrize("retrieve_arrays", (False, True))
     def test_iterate_multiple_requests(self, cognite_client, all_test_time_series, retrieve_arrays):
-        # Bug prior to 7.73.10, when iterating using instance ID, the total number of points returned would max
+        # Bug prior to 7.74.1, when iterating using instance ID, the total number of points returned would max
         # out at 100k (single request max size) due to an issue with InstanceId lookup in Datapoints(Array)List.
         queries = [
             DatapointsQuery(id=all_test_time_series[113].id),
@@ -753,6 +753,34 @@ class TestIterateDatapoints:
                 break
         else:
             pytest.fail("Too few iterations/datapoints returned")
+
+    @pytest.mark.parametrize("retrieve_arrays", (False, True))
+    def test_iterating_object_aggregates(self, cognite_client, all_test_time_series, retrieve_arrays):
+        # Bug prior to 7.74.2, when iterating object aggregate datapoints like `min_datapoint` or `max_datapoint`,
+        # a 'ValueError: Unsupported aggregate' would be raised because `include_status` did not have a default value.
+        queries = [
+            DatapointsQuery(
+                id=all_test_time_series[113].id,
+                start=ts_to_ms("2018-08-16"),
+                aggregates="min_datapoint",
+                granularity="1mo",
+            ),
+            DatapointsQuery(
+                external_id=all_test_time_series[115].external_id,
+                aggregates=["max_datapoint"],
+                start=ts_to_ms("2011-07-02"),
+                granularity="1q",
+            ),
+            DatapointsQuery(
+                instance_id=all_test_time_series[125].instance_id,
+                aggregates=["min_datapoint", "max_datapoint"],
+                start=ts_to_ms("2016-01-02"),
+                granularity="1y",
+            ),
+        ]
+        for dps_lst in cognite_client.time_series.data(queries, return_arrays=retrieve_arrays):
+            assert len(dps_lst) == 3
+            assert list(map(len, dps_lst)) == [17, 9, 4]
 
 
 class TestRetrieveRawDatapointsAPI:
