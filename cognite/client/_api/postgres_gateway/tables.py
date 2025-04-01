@@ -107,7 +107,6 @@ class TablesAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             items=items,  # type: ignore[arg-type]
             input_resource_cls=pg.TableWrite,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -155,7 +154,6 @@ class TablesAPI(APIClient):
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             other_params={"ignoreUnknownIds": ignore_unknown_ids},
             identifiers=TablenameSequence.load(tablenames=tablename),
-            headers={"cdf-version": "beta"},
         )
 
     def delete(self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
@@ -182,7 +180,6 @@ class TablesAPI(APIClient):
             returns_items=False,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
-            headers={"cdf-version": "beta"},
         )
 
     def list(
@@ -229,5 +226,4 @@ class TablesAPI(APIClient):
             filter={"includeBuiltIns": include_built_ins},
             method="GET",
             limit=limit,
-            headers={"cdf-version": "beta"},
         )
