@@ -756,7 +756,7 @@ class TestIterateDatapoints:
 
     @pytest.mark.parametrize("retrieve_arrays", (False, True))
     def test_iterating_object_aggregates(self, cognite_client, all_test_time_series, retrieve_arrays):
-        # Bug prior to 7.74.2, when iterating object aggregate datapoints like `min_datapoint` or `max_datapoint`,
+        # Bug prior to 7.74.3, when iterating object aggregate datapoints like `min_datapoint` or `max_datapoint`,
         # a 'ValueError: Unsupported aggregate' would be raised because `include_status` did not have a default value.
         queries = [
             DatapointsQuery(

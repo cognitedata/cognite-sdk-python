@@ -24,13 +24,18 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
-## [7.74.2] - 2025-04-01
+## [7.74.3] - 2025-04-03
 ### Fixed
-- When loading a Workflow version from dict, no longer gives a `400` when calling 
+- When iterating datapoints, object aggregates `min_datapoint` and `max_datapoint` no longer raise
+  `ValueError: Unsupported aggregate` (used to require `include_status` to be explicitly passed.)
+
+## [7.74.2] - 2025-04-02
+### Fixed
+- When loading a Workflow version from dict, no longer gives a `400` when calling
   `client.workflows.versions.upsert(...)`. For example the following workflow version can now be upserted:
 ```python
 WorkflowVersionUpsert.load({
-    "workflowExternalId": "my_workflow", "version": 1, 
+    "workflowExternalId": "my_workflow", "version": 1,
     "workflowDefinition": {
       "tasks": {
         "externalId": "task1",
