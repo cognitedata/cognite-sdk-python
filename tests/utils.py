@@ -40,7 +40,13 @@ from cognite.client.data_classes.capabilities import Capability, LegacyCapabilit
 from cognite.client.data_classes.data_modeling import TypedEdge, TypedEdgeApply, TypedNode, TypedNodeApply
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType
 from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Query
-from cognite.client.data_classes.datapoints import _INT_AGGREGATES, ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
+from cognite.client.data_classes.datapoints import (
+    _INT_AGGREGATES,
+    _OBJECT_AGGREGATES,
+    ALL_SORTED_DP_AGGS,
+    Datapoints,
+    DatapointsArray,
+)
 from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.hosted_extractors.jobs import BodyLoad, NextUrlLoad, RestConfig
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineStepArguments
@@ -160,9 +166,10 @@ def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
 
 
 INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
+OBJECT_AGGREGATES = set(map(to_snake_case, _OBJECT_AGGREGATES))
 
 
-def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False):
+def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, exclude_object_aggregates=False):
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
@@ -171,6 +178,8 @@ def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False):
         agg_lst = [a for a in agg_lst if a not in exclude]
     if exclude_integer_aggregates:
         agg_lst = [a for a in agg_lst if a not in INTEGER_AGGREGATES]
+    if exclude_object_aggregates:
+        agg_lst = [a for a in agg_lst if a not in OBJECT_AGGREGATES]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
 
@@ -395,7 +404,7 @@ class FakeCogniteResourceGenerator:
                 for aggregate in ALL_SORTED_DP_AGGS:
                     keyword_arguments.pop(aggregate, None)
             else:
-                for raw in ["value", "status_code", "status_symbol"]:
+                for raw in ["value", "status_code", "status_symbol", "min_datapoint", "max_datapoint"]:
                     keyword_arguments.pop(raw, None)
         elif resource_cls is TransformationSchemaUnknownType:
             keyword_arguments["raw_schema"]["type"] = "unknown"

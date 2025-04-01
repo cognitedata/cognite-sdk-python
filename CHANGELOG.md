@@ -28,7 +28,7 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
-## 7.73.10 - 2025-04-01
+## [7.74.1] - 2025-04-01
 
 ### Changed
 
@@ -38,6 +38,12 @@ Changes are grouped as follows
 ### Added
 
 - Adds `PostgresGatewayAcl` to postgres gateway ACLs.
+
+## [7.74.0] - 2025-03-30
+
+### Added
+
+- Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
 
 ## [7.73.9] - 2025-03-25
 
