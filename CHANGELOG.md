@@ -24,14 +24,18 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
-## [7.74.1] - 2025-04-01
+## [7.74.2] - 2025-04-01
 ### Changed
 - Removes beta header from postgres gateway APIs.
 - Removes "beta" warning from postgres gateway APIs.
 ### Added
 - Adds `PostgresGatewayAcl` to postgres gateway ACLs.
 
-## [7.74.0] - 2025-03-30
+## [7.74.1] - 2025-04-01
+### Fixed
+- When iterating through datapoints, any instance IDs used would max out after 100k values.
+
+## [7.74.0] - 2025-04-01
 ### Added
 - Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
 
