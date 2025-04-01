@@ -7,7 +7,6 @@ import cognite.client.data_classes.postgres_gateway.tables as pg
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.utils._auxiliary import interpolate_and_url_encode
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import TablenameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -20,9 +19,6 @@ class TablesAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Postgres Gateway: Tables"
-        )
         self._CREATE_LIMIT = 10
         self._DELETE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -58,15 +54,12 @@ class TablesAPI(APIClient):
         Returns:
             Iterator[pg.Table] | Iterator[pg.TableList]: yields Table one by one if chunk_size is not specified, else TableList objects.
         """
-        self._warning.warn()
-
         return self._list_generator(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            headers={"cdf-version": "beta"},
         )
 
     def __iter__(self) -> Iterator[pg.Table]:
@@ -108,7 +101,6 @@ class TablesAPI(APIClient):
                 >>> res = client.postgres_gateway.tables.create("myUserName",table)
 
         """
-        self._warning.warn()
         return self._create_multiple(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
@@ -157,8 +149,6 @@ class TablesAPI(APIClient):
                 >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
 
         """
-        self._warning.warn()
-
         return self._retrieve_multiple(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
@@ -186,8 +176,6 @@ class TablesAPI(APIClient):
 
 
         """
-        self._warning.warn()
-
         self._delete_multiple(
             identifiers=TablenameSequence.load(tablenames=tablename),
             wrap_ids=True,
@@ -234,8 +222,6 @@ class TablesAPI(APIClient):
                 ...     table_list # do something with the custom tables
 
         """
-        self._warning.warn()
-
         return self._list(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]

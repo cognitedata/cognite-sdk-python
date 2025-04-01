@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -21,7 +22,7 @@ from cognite.client.utils._time import DayAligner
 
 
 @pytest.fixture(scope="function")
-def new_extpipe(cognite_client: CogniteClient) -> ExtractionPipeline:
+def new_extpipe(cognite_client: CogniteClient) -> Generator[ExtractionPipeline, None, None]:
     testid = random_string(50)
     dataset = cognite_client.data_sets.list()[0]
     extpipe = cognite_client.extraction_pipelines.create(
@@ -126,8 +127,8 @@ class TestExtractionPipelinesAPI:
         assert cognite_client.extraction_pipelines.retrieve(id=new_extpipe.id) is None
 
     def test_last_status_message(self, cognite_client, new_extpipe: ExtractionPipeline):
-        intial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
-        assert intial_message is None
+        initial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
+        assert initial_message is None
 
         cognite_client.extraction_pipelines.runs.create(
             ExtractionPipelineRun(status="failure", message="Oh no!", extpipe_external_id=new_extpipe.external_id)
