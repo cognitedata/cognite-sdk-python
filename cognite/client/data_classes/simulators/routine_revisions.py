@@ -75,7 +75,7 @@ class SimulatorRoutineInput(CogniteObject):
         if type_ is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
         input_class = _INPUT_CLASS_BY_TYPE.get(type_)
-        if type_ is None or input_class is None:
+        if input_class is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
         return cast(Self, input_class._load_input(resource))
 
