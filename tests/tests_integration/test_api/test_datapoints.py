@@ -120,7 +120,12 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 122: mixed status codes, daily values, 2023-2024, string",
             f"{TEST_PREFIX} 123: only bad status codes, daily values, 2023-2024, numeric",
             f"{TEST_PREFIX} 124: only bad status codes, daily values, 2023-2024, string",
-        ]
+        ],
+        instance_ids=[
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 125: clone of 109"),
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 126: clone of 114"),
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 127: clone of 121"),
+        ],
     )
 
 
@@ -730,6 +735,24 @@ class TestIterateDatapoints:
 
         dps = dps_lst.get(external_id=ts_xid)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (882, 1500)
+
+    @pytest.mark.parametrize("retrieve_arrays", (False, True))
+    def test_iterate_multiple_requests(self, cognite_client, all_test_time_series, retrieve_arrays):
+        # Bug prior to 7.73.10, when iterating using instance ID, the total number of points returned would max
+        # out at 100k (single request max size) due to an issue with InstanceId lookup in Datapoints(Array)List.
+        queries = [
+            DatapointsQuery(id=all_test_time_series[113].id),
+            DatapointsQuery(external_id=all_test_time_series[115].external_id),
+            DatapointsQuery(instance_id=all_test_time_series[125].instance_id),
+        ]
+        dps_iter = cognite_client.time_series.data(queries, chunk_size_datapoints=25_000, return_arrays=retrieve_arrays)
+        for i, dps_lst in enumerate(dps_iter, 1):
+            assert len(dps_lst) == 3
+            assert list(map(len, dps_lst)) == [25_000, 25_000, 25_000]
+            if i == 5:
+                break
+        else:
+            pytest.fail("Too few iterations/datapoints returned")
 
 
 class TestRetrieveRawDatapointsAPI:
