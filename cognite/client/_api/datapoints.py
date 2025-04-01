@@ -692,7 +692,7 @@ class DatapointsAPI(APIClient):
     ) -> None:
         for query in to_fetch_queries:
             ident = query.identifier
-            dps = dps_lst.get(**ident.as_dict(camel_case=False))
+            dps = dps_lst.get(**{ident.name(camel_case=False): ident.as_primitive()})
             if isinstance(dps, list):
                 raise RuntimeError(
                     "When iterating datapoints, identifiers must be unique! You cannot get around this by passing "
