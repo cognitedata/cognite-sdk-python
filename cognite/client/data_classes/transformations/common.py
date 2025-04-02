@@ -336,9 +336,9 @@ class OidcCredentials:
     Args:
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
-        scopes (str | list[str]): A list of scopes or a comma-separated string (for backwards compatibility).
         token_uri (str): OAuth token url
         cdf_project_name (str): Name of CDF project
+        scopes (str | list[str] | None): A list of scopes or a comma-separated string (for backwards compatibility).
         audience (str | None): Audience (optional)
     """
 
@@ -346,9 +346,9 @@ class OidcCredentials:
         self,
         client_id: str,
         client_secret: str,
-        scopes: str | list[str],
         token_uri: str,
         cdf_project_name: str,
+        scopes: str | list[str] | None = None,
         audience: str | None = None,
     ) -> None:
         self.client_id = client_id
@@ -359,7 +359,9 @@ class OidcCredentials:
         self.scopes = self._verify_scopes(scopes)
 
     @staticmethod
-    def _verify_scopes(scopes: str | list[str]) -> str:
+    def _verify_scopes(scopes: str | list[str] | None) -> str | None:
+        if scopes is None:
+            return None
         if isinstance(scopes, str):
             return scopes
         elif isinstance(scopes, list):
@@ -367,6 +369,8 @@ class OidcCredentials:
         raise TypeError(f"scopes must be provided as a comma-separated string or list, not {type(scopes)}")
 
     def as_credential_provider(self) -> OAuthClientCredentials:
+        if self.scopes is None:
+            raise ValueError("Scopes must be provided to create OAuthClientCredentials")
         return OAuthClientCredentials(
             token_url=self.token_uri,
             client_id=self.client_id,
@@ -401,7 +405,7 @@ class OidcCredentials:
         return cls(
             client_id=data["clientId"],
             client_secret=data["clientSecret"],
-            scopes=data["scopes"],
+            scopes=data.get("scopes"),
             token_uri=data["tokenUri"],
             cdf_project_name=data["cdfProjectName"],
             audience=data.get("audience"),

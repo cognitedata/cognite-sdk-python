@@ -34,11 +34,17 @@ def aggregated_value_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         },
         id="histogram",
     )
+
     yield pytest.param({"aggregate": "count", "property": "instances", "value": 5}, id="count")
     yield pytest.param({"aggregate": "max", "property": "instances", "value": 5}, id="max")
     yield pytest.param({"aggregate": "min", "property": "instances", "value": 5}, id="min")
     yield pytest.param({"aggregate": "sum", "property": "instances", "value": 5}, id="sum")
     yield pytest.param({"aggregate": "avg", "property": "instances", "value": 5}, id="avg")
+    yield pytest.param({"aggregate": "count", "property": "instances"}, id="count empty")
+    yield pytest.param({"aggregate": "max", "property": "instances"}, id="max empty")
+    yield pytest.param({"aggregate": "min", "property": "instances"}, id="min empty")
+    yield pytest.param({"aggregate": "sum", "property": "instances"}, id="sum empty")
+    yield pytest.param({"aggregate": "avg", "property": "height"}, id="avg empty")
 
 
 @pytest.mark.parametrize("raw_data", list(aggregated_value_load_and_dump_equals_data()))

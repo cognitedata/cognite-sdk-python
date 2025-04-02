@@ -1,14 +1,17 @@
 # This file contains the data used to seed the test environment for the simulator tests
+from cognite.client.utils._text import random_string
+
 data_set_external_id = "sdk_tests_dwsim1"
+
+random_str = random_string(10)
 
 resource_names = {
     "simulator_external_id": "py_sdk_integration_tests",
     "simulator_integration_external_id": "py_sdk_integration_tests_connector",
-    "simulator_model_external_id": "py_sdk_integration_tests_model",
-    "simulator_model_revision_external_id": "pysdk_model_revision",
+    "simulator_model_external_id": f"py_sdk_integration_tests_model_{random_str}",
+    "simulator_model_revision_external_id": f"py_sdk_integration_tests_model_{random_str}_v1",
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
-    "simulator_routine_external_id": "pysdk_routine",
-    "simulator_routine_revision_external_id": "pysdk_routine_revision",
+    "simulator_routine_external_id": f"pysdk_routine_{random_str}",
     "simulator_test_data_set_id": None,
     "simulator_test_data_set_external_id": data_set_external_id,
 }
@@ -222,4 +225,98 @@ simulator_model = {
     "description": "Test Simulator Model Desc",
     "dataSetId": resource_names["simulator_test_data_set_id"],
     "type": "SteadyState",
+}
+
+
+simulator_routine = {
+    "externalId": resource_names["simulator_routine_external_id"],
+    "modelExternalId": resource_names["simulator_model_external_id"],
+    "simulatorIntegrationExternalId": resource_names["simulator_integration_external_id"],
+    "name": "Simulator Routine - Test",
+    "description": "Simulator Routine - Description Test",
+}
+
+
+simulator_routine_revision = {
+    "externalId": None,
+    "routineExternalId": resource_names["simulator_routine_external_id"],
+    "configuration": {
+        "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
+        "dataSampling": {"enabled": True, "samplingWindow": 15, "granularity": 1},
+        "logicalCheck": [],
+        "steadyStateDetection": [],
+        "inputs": [
+            {
+                "name": "Cold Water Temperature",
+                "referenceId": "CWT",
+                "value": 10.0,
+                "valueType": "DOUBLE",
+                "unit": {"name": "C", "quantity": "temperature"},
+                "saveTimeseriesExternalId": "TEST-ROUTINE-INPUT-CWT",
+            },
+            {
+                "name": "Cold Water Pressure",
+                "referenceId": "CWP",
+                "value": [3.6],
+                "valueType": "DOUBLE_ARRAY",
+                "unit": {"name": "bar", "quantity": "pressure"},
+            },
+        ],
+        "outputs": [
+            {
+                "name": "Shower Temperature",
+                "referenceId": "ST",
+                "unit": {"name": "C", "quantity": "temperature"},
+                "valueType": "DOUBLE",
+                "saveTimeseriesExternalId": "TEST-ROUTINE-OUTPUT-ST",
+            },
+            {
+                "name": "Shower Pressure",
+                "referenceId": "SP",
+                "unit": {"name": "bar", "quantity": "pressure"},
+                "valueType": "DOUBLE",
+            },
+        ],
+    },
+    "script": [
+        {
+            "order": 1,
+            "description": "Set Inputs",
+            "steps": [
+                {
+                    "order": 1,
+                    "stepType": "Set",
+                    "description": "Set Cold Water Temperature",
+                    "arguments": {"referenceId": "CWT", "objectName": "Cold water", "objectProperty": "Temperature"},
+                },
+                {
+                    "order": 2,
+                    "stepType": "Set",
+                    "description": "Set Cold Water Pressure",
+                    "arguments": {"referenceId": "CWP", "objectName": "Cold water", "objectProperty": "Pressure"},
+                },
+            ],
+        },
+        {
+            "order": 2,
+            "description": "Solve the flowsheet",
+            "steps": [{"order": 1, "stepType": "Command", "arguments": {"command": "Solve"}}],
+        },
+        {
+            "order": 3,
+            "description": "Set simulation outputs",
+            "steps": [
+                {
+                    "order": 1,
+                    "stepType": "Get",
+                    "arguments": {"referenceId": "ST", "objectName": "Shower", "objectProperty": "Temperature"},
+                },
+                {
+                    "order": 2,
+                    "stepType": "Get",
+                    "arguments": {"referenceId": "SP", "objectName": "Shower", "objectProperty": "Pressure"},
+                },
+            ],
+        },
+    ],
 }

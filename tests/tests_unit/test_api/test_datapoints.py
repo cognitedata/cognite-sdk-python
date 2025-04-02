@@ -28,7 +28,7 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
         dp = {}
         if aggregates:
             if aggregates == ["count"]:
-                dp["count"] = int(math.ceil((end - start) / 1000))
+                dp["count"] = math.ceil((end - start) / 1000)
             else:
                 for agg in aggregates:
                     dp[agg] = random()
