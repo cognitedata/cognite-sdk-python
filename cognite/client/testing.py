@@ -51,9 +51,9 @@ from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.logs import SimulatorLogsAPI
 from cognite.client._api.simulators.models import SimulatorModelsAPI
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
-from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
+from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
     TemplateGroupsAPI,
