@@ -6,11 +6,10 @@ from cognite.client.data_classes.simulators.runs import (
 )
 
 
-@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revision")
+@pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
-    # todo: base conftest on top of routine revisions PR
     def test_create_run(
-        self, cognite_client: CogniteClient, seed_simulator_routine_revision, seed_resource_names
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         runs = [
@@ -27,4 +26,4 @@ class TestSimulatorRuns:
 
     def test_list_runs(self, cognite_client: CogniteClient) -> None:
         runs = cognite_client.simulators.runs.list()
-        assert len(runs) > 0
+        assert len(runs) >= 1

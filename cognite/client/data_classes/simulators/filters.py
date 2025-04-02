@@ -75,7 +75,8 @@ class SimulatorRunsFilter(CogniteFilter):
         )
         self.status = status
         self.run_type = run_type
-=======
+
+
 class SimulatorRoutinesFilter(CogniteFilter):
     def __init__(
         self,
