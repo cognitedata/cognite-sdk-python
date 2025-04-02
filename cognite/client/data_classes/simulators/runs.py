@@ -108,13 +108,14 @@ class SimulationRunWrite(SimulationRunCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
+        inputs = resource.get("inputs", None)
         return cls(
-            run_type=resource["runType"],
+            run_type=resource.get("runType"),
             routine_external_id=resource["routineExternalId"],
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
-            inputs=[SimulationInputOverride._load(input) for input in resource.get("inputs", [])],
+            inputs=[SimulationInputOverride._load(_input) for _input in inputs] if inputs else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
