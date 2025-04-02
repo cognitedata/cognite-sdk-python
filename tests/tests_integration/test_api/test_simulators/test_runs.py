@@ -1,9 +1,21 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.runs import (
-    SimulationRunWrite,
-)
+from cognite.client.data_classes.simulators.runs import SimulationRunWrite, SimulatorRunsList
+
+
+def create_simulation_run(
+    cognite_client: CogniteClient,
+    routine_external_id: str,
+) -> SimulatorRunsList:
+    return cognite_client.simulators.runs.create(
+        [
+            SimulationRunWrite(
+                run_type="external",
+                routine_external_id=routine_external_id,
+            )
+        ]
+    )
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
@@ -12,13 +24,9 @@ class TestSimulatorRuns:
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_runs = cognite_client.simulators.runs.create(
-            [
-                SimulationRunWrite(
-                    run_type="external",
-                    routine_external_id=routine_external_id,
-                )
-            ]
+        created_runs = create_simulation_run(
+            cognite_client=cognite_client,
+            routine_external_id=routine_external_id,
         )
         assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
@@ -27,13 +35,9 @@ class TestSimulatorRuns:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         status = ["running", "success", "failure"]
         for _ in range(3):
-            created_runs = cognite_client.simulators.runs.create(
-                [
-                    SimulationRunWrite(
-                        run_type="external",
-                        routine_external_id=routine_external_id,
-                    )
-                ]
+            created_runs = create_simulation_run(
+                cognite_client=cognite_client,
+                routine_external_id=routine_external_id,
             )
             assert created_runs[0].routine_external_id == routine_external_id
             status_to_be_set = status.pop(0)
