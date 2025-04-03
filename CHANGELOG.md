@@ -24,6 +24,22 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.74.2] - 2025-04-01
+### Fixed
+- When loading a Workflow version from dict, no longer gives a `400` when calling 
+  `client.workflows.versions.upsert(...)`. For example the following workflow version can now be upserted:
+```python
+WorkflowVersionUpsert.load({
+    "workflowExternalId": "my_workflow", "version": 1, 
+    "workflowDefinition": {
+      "tasks": {
+        "externalId": "task1",
+        "type": "function",
+        "parameters": {"function": {"externalId": "myFunction"}}}
+    }
+})
+```
+
 ## [7.74.1] - 2025-04-01
 ### Fixed
 - When iterating through datapoints, any instance IDs used would max out after 100k values.
