@@ -572,10 +572,13 @@ class WorkflowTask(CogniteResource):
             "externalId" if camel_case else "external_id": self.external_id,
             "type": self.type,
             "parameters": self.parameters.dump(camel_case),
-            "retries": self.retries,
-            "timeout": self.timeout,
-            "onFailure" if camel_case else "on_failure": self.on_failure,
         }
+        if self.retries is not None:
+            output["retries"] = self.retries
+        if self.timeout is not None:
+            output["timeout"] = self.timeout
+        if self.on_failure is not None:
+            output["onFailure" if camel_case else "on_failure"] = self.on_failure
         if self.name:
             output["name"] = self.name
         if self.description:
