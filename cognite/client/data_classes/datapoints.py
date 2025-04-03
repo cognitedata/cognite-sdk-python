@@ -11,6 +11,7 @@ from collections.abc import Collection, Iterator, Sequence
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
+from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -266,22 +267,21 @@ class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
 
     _NOT_SET = object()
-
-    OPTIONAL_DICT_KEYS: ClassVar[frozenset[str]] = frozenset(
+    _API_DEFAULTS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
-            "start",
-            "end",
-            "aggregates",
-            "granularity",
-            "timezone",
-            "target_unit",
-            "target_unit_system",
-            "limit",
-            "include_outside_points",
-            "ignore_unknown_ids",
-            "include_status",
-            "ignore_bad_datapoints",
-            "treat_uncertain_as_bad",
+            "start": 0,
+            "end": "now",
+            "aggregates": None,
+            "granularity": None,
+            "timezone": None,
+            "target_unit": None,
+            "target_unit_system": None,
+            "limit": None,
+            "include_outside_points": False,
+            "ignore_unknown_ids": False,
+            "include_status": False,
+            "ignore_bad_datapoints": True,
+            "treat_uncertain_as_bad": True,
         }
     )
     id: InitVar[int | None] = None
@@ -325,7 +325,7 @@ class DatapointsQuery:
 
     @classmethod
     def valid_from_user_query(cls, query: Self, **settings: Any) -> Self:
-        return cls(**ChainMap(query.dump(), settings, dict.fromkeys(cls.OPTIONAL_DICT_KEYS)))
+        return cls(**ChainMap(query.dump(), settings, cls._API_DEFAULTS))  # type: ignore [arg-type]
 
     @classmethod
     # TODO: Remove in next major version (require use of DatapointsQuery directly)
@@ -336,10 +336,10 @@ class DatapointsQuery:
             # For backwards compatibility we accept identifiers in camel case:
             dct[id_type] = (dct := dct.copy()).pop(arg_name_cc)  # copy to avoid side effects for user's input
 
-        if bad_keys := set(dct) - cls.OPTIONAL_DICT_KEYS - {id_type}:
+        if bad_keys := set(dct) - cls._API_DEFAULTS.keys() - {id_type}:
             raise KeyError(
                 f"Dict provided by argument `{id_type}` included key(s) not understood: {sorted(bad_keys)}. "
-                f"Required key: `{id_type}`. Optional: {list(cls.OPTIONAL_DICT_KEYS)}."
+                f"Required key: `{id_type}`. Optional: {list(cls._API_DEFAULTS)}."
             )
         return cls(**dct)
 
