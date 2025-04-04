@@ -24,6 +24,13 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.74.3] - 2025-04-04
+### Changed
+- Removes beta header from postgres gateway APIs.
+- Removes "beta" warning from postgres gateway APIs.
+### Added
+- Adds `PostgresGatewayAcl` to postgres gateway ACLs.
+
 ## [7.74.2] - 2025-04-01
 ### Fixed
 - When loading a Workflow version from dict, no longer gives a `400` when calling 
