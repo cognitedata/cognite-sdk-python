@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.74.4] - 2025-04-04
 ### Fixed
-- Fixees for type annotations for Functions API
+- Fixes for type annotations for Functions API
 ### Added
 - Support for the `/simulators/logs` API endpoint.
 - Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.
