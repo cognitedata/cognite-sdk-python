@@ -17,7 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [7.74.4] - 2025-04-04
+### Fixed
+- Fixees for type annotations for Functions API
 ### Added
 - Support for the `/simulators/logs` API endpoint.
 - Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.
@@ -33,11 +35,11 @@ Changes are grouped as follows
 
 ## [7.74.2] - 2025-04-01
 ### Fixed
-- When loading a Workflow version from dict, no longer gives a `400` when calling 
+- When loading a Workflow version from dict, no longer gives a `400` when calling
   `client.workflows.versions.upsert(...)`. For example the following workflow version can now be upserted:
 ```python
 WorkflowVersionUpsert.load({
-    "workflowExternalId": "my_workflow", "version": 1, 
+    "workflowExternalId": "my_workflow", "version": 1,
     "workflowDefinition": {
       "tasks": {
         "externalId": "task1",
