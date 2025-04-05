@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.74.4] - 2025-04-04
+## [Unreleased]
 ### Fixed
 - Fixes for type annotations for Functions API
 ### Added
