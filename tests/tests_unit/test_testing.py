@@ -1,3 +1,5 @@
+from abc import ABC
+
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
@@ -10,7 +12,7 @@ from tests.utils import all_mock_children, all_subclasses, get_api_class_by_attr
 def test_ensure_all_apis_are_available_on_cognite_mock():
     mocked_apis = all_mock_children(CogniteClientMock())
     available = {v.__class__ for v in mocked_apis.values()}
-    expected = set(all_subclasses(APIClient))
+    expected = {api for api in all_subclasses(APIClient) if ABC not in api.__bases__}
     # Any new APIs that have not been added to CogniteClientMock?
     assert not expected.difference(available), f"Missing APIs: {expected.difference(available)}"
     # Any removed APIs that are still available on CogniteClientMock?

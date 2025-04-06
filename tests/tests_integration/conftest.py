@@ -18,6 +18,11 @@ def cognite_client() -> CogniteClient:
     return make_cognite_client(beta=False)
 
 
+@pytest.fixture(scope="session")
+def organization() -> str:
+    return "cog-python-sdk"
+
+
 @pytest.fixture(autouse=True, scope="session")
 def session_cleanup(cognite_client: CogniteClient):
     resource_age = timestamp_to_ms("30m-ago")
