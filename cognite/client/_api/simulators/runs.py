@@ -21,6 +21,7 @@ class SimulatorRunsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._CREATE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
@@ -48,7 +49,7 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: Sequence[str] | None = None,
         routine_revision_external_ids: Sequence[str] | None = None,
         model_revision_external_ids: Sequence[str] | None = None,
-    ) -> Iterator[SimulationRun]: ...
+    ) -> Iterator[SimulatorRunsList]: ...
 
     @overload
     def __call__(

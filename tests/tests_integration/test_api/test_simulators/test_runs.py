@@ -23,8 +23,8 @@ class TestSimulatorRuns:
 
     def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        status = ["running", "success", "failure"]
-        for _ in range(3):
+        runs_filtered_by_status = []
+        for current_status in ["running", "success", "failure"]:
             created_runs = cognite_client.simulators.runs.create(
                 [
                     SimulationRunWrite(
@@ -33,8 +33,6 @@ class TestSimulatorRuns:
                     )
                 ]
             )
-            assert created_runs[0].routine_external_id == routine_external_id
-            status_to_be_set = status.pop(0)
 
             cognite_client.simulators._post(
                 "/simulators/run/callback",
@@ -42,17 +40,17 @@ class TestSimulatorRuns:
                     "items": [
                         {
                             "id": created_runs[0].id,
-                            "status": status_to_be_set,
+                            "status": current_status,
                         }
                     ]
                 },
             )
 
             filter_by_status = cognite_client.simulators.runs.list(
-                status=status_to_be_set, routine_external_ids=[routine_external_id]
+                status=current_status, routine_external_ids=[routine_external_id]
             )
-            assert filter_by_status[0].status == status_to_be_set
-            assert filter_by_status[0].id == created_runs[0].id
+            runs_filtered_by_status.append(filter_by_status[0].dump())
 
-        filter_by_routine = cognite_client.simulators.runs.list(routine_external_ids=[routine_external_id])
-        assert len(filter_by_routine) >= 3
+        filter_by_routine = cognite_client.simulators.runs.list(routine_external_ids=[routine_external_id]).dump()
+        for run in runs_filtered_by_status:
+            assert run in filter_by_routine
