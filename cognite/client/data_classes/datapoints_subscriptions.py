@@ -66,7 +66,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead.
         created_time (int): Time when the subscription was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int): Time when the subscription was last updated in CDF in milliseconds since Jan 1, 1970.
-        time_series_count (int): The number of time series in the subscription.
+        time_series_count (int | None): The number of time series in the subscription. None if no timeseries.
         filter (Filter | None): If present, the subscription is defined by this filter.
         name (str | None): No description.
         description (str | None): A summary explanation for the subscription.
@@ -79,7 +79,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: int,
+        time_series_count: int | None,
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
@@ -99,7 +99,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
-            time_series_count=resource["timeSeriesCount"],
+            time_series_count=resource.get("timeSeriesCount"),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
