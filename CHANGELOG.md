@@ -18,6 +18,8 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [Unreleased]
+### Fixed
+- Fixes for type annotations for Functions API
 ### Added
 - Support for the `/simulators/logs` API endpoint.
 - Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.

@@ -508,7 +508,7 @@ class FunctionsAPI(APIClient):
         self,
         id: int | None = None,
         external_id: str | None = None,
-        data: dict | None = None,
+        data: dict[str, object] | None = None,
         wait: bool = True,
         nonce: str | None = None,
     ) -> FunctionCall:
@@ -517,7 +517,7 @@ class FunctionsAPI(APIClient):
         Args:
             id (int | None): ID
             external_id (str | None): External ID
-            data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
+            data (dict[str, object] | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
             wait (bool): Wait until the function call is finished. Defaults to True.
             nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the session before executing the function. If not provided, a new session will be created based on the client credentials.
 
@@ -618,8 +618,8 @@ class FunctionsAPI(APIClient):
             with handle_path.open("w") as f:
                 f.write(textwrap.dedent(getsource(function_handle)))
 
+            requirements_path = Path(tmpdir, REQUIREMENTS_FILE_NAME)
             if docstr_requirements:
-                requirements_path = Path(tmpdir, REQUIREMENTS_FILE_NAME)
                 with requirements_path.open("w") as f:
                     for req in docstr_requirements:
                         f.write(f"{req}\n")
@@ -965,7 +965,7 @@ class FunctionCallsAPI(APIClient):
 
     def get_response(
         self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
-    ) -> dict | None:
+    ) -> dict[str, object] | None:
         """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
 
         Args:
@@ -974,7 +974,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
-            dict | None: Response from the function call.
+            dict[str, object] | None: Response from the function call.
 
         Examples:
 
@@ -1197,9 +1197,9 @@ class FunctionSchedulesAPI(APIClient):
         cron_expression: str | None = None,
         function_id: int | None = None,
         function_external_id: str | None = None,
-        client_credentials: dict | ClientCredentials | None = None,
+        client_credentials: dict[str, str] | ClientCredentials | None = None,
         description: str | None = None,
-        data: dict | None = None,
+        data: dict[str, object] | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
@@ -1208,9 +1208,9 @@ class FunctionSchedulesAPI(APIClient):
             cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
             function_external_id (str | None): External id of the function to attach the schedule to. Will be converted to (internal) ID before creating the schedule.
-            client_credentials (dict | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
+            client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str | None): Description of the schedule.
-            data (dict | None): Data to be passed to the scheduled run.
+            data (dict[str, object] | None): Data to be passed to the scheduled run.
 
         Returns:
             FunctionSchedule: Created function schedule.
@@ -1295,13 +1295,13 @@ class FunctionSchedulesAPI(APIClient):
         url = f"{self._RESOURCE_PATH}/delete"
         self._post(url, json={"items": [{"id": id}]})
 
-    def get_input_data(self, id: int) -> dict | None:
+    def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
         Args:
             id (int): Id of the schedule
 
         Returns:
-            dict | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
+            dict[str, object] | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
 
         Examples:
 
