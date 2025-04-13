@@ -26,6 +26,10 @@ Changes are grouped as follows
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
 
+## [7.74.5] - 2025-04-08
+### Fixed
+- Empty datapoint subscriptions may return timeSeriesCount=None. This is now handled.
+
 ## [7.74.4] - 2025-04-08
 ### Fixed
 - When iterating datapoints, object aggregates `min_datapoint` and `max_datapoint` no longer raise
