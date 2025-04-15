@@ -10,9 +10,6 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import (
-    SimulatorModelRevisionsFilter,
-)
 from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
 from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
@@ -130,7 +127,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
     model_unique_external_id = resource_names["simulator_model_external_id"]
     model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
     model_revisions = cognite_client.simulators.models.revisions.list(
-        filter=SimulatorModelRevisionsFilter(model_external_ids=[model_unique_external_id])
+        model_external_ids=[model_unique_external_id],
     )
     model_revision_not_exists = not model_revisions.get(external_id=model_revision_unique_external_id)
 

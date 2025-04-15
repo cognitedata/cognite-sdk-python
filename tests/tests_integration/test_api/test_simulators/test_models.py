@@ -2,7 +2,6 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import SimulatorModelRevisionsFilter, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
@@ -18,7 +17,8 @@ from tests.tests_integration.test_api.test_simulators.utils import update_logs
 class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         models = cognite_client.simulators.models.list(
-            limit=5, filter=SimulatorModelsFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
+            limit=5,
+            simulator_external_ids=[seed_resource_names["simulator_external_id"]],
         )
 
         model_ids = []
@@ -48,7 +48,7 @@ class TestSimulatorModels:
 
         revisions = cognite_client.simulators.models.revisions.list(
             limit=5,
-            filter=SimulatorModelRevisionsFilter(model_external_ids=[model_external_id]),
+            model_external_ids=[model_external_id],
         )
 
         model_revision_ids = []
