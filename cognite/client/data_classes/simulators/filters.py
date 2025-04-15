@@ -37,6 +37,7 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
         all_versions: bool | None = None,
     ) -> None:
         self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids
+        self.all_versions = all_versions
 
 
 class SimulatorRoutinesFilter(CogniteFilter):
