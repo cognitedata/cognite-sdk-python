@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
@@ -171,8 +171,8 @@ class SimulationRun(SimulationRunCore):
         model_revision_external_id: str,
         routine_revision_external_id: str,
         routine_external_id: str,
-        run_type: str,
-        status: str,
+        run_type: Literal["external", "manual", "scheduled"],
+        status: Literal["ready", "running", "success", "failure"],
         data_set_id: int,
         user_id: str,
         log_id: int,

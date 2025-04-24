@@ -8,10 +8,10 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
-def parse_str_or_sequence(value: str | Sequence[str] | None) -> list[str] | None:
+def _parse_str_or_sequence(value: str | SequenceNotStr[str] | None) -> list[str] | None:
     if isinstance(value, str):
         return [value]
-    elif isinstance(value, Sequence):
+    elif isinstance(value, SequenceNotStr):
         return list(value)
     return None
 
@@ -52,19 +52,19 @@ class SimulatorRunsFilter(CogniteFilter):
         self,
         status: str | None = None,
         run_type: str | None = None,
-        model_external_ids: str | Sequence[str] | None = None,
-        simulator_integration_external_ids: str | Sequence[str] | None = None,
-        simulator_external_ids: str | Sequence[str] | None = None,
-        routine_external_ids: str | Sequence[str] | None = None,
-        routine_revision_external_ids: str | Sequence[str] | None = None,
-        model_revision_external_ids: str | Sequence[str] | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: str | SequenceNotStr[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        routine_external_ids: str | SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: str | SequenceNotStr[str] | None = None,
+        model_revision_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids
-        self.simulator_integration_external_ids = parse_str_or_sequence(simulator_integration_external_ids)
-        self.simulator_external_ids = parse_str_or_sequence(simulator_external_ids)
-        self.routine_external_ids = parse_str_or_sequence(routine_external_ids)
-        self.routine_revision_external_ids = parse_str_or_sequence(routine_revision_external_ids)
-        self.model_revision_external_ids = parse_str_or_sequence(model_revision_external_ids)
+        self.model_external_ids = _parse_str_or_sequence(model_external_ids)
+        self.simulator_integration_external_ids = _parse_str_or_sequence(simulator_integration_external_ids)
+        self.simulator_external_ids = _parse_str_or_sequence(simulator_external_ids)
+        self.routine_external_ids = _parse_str_or_sequence(routine_external_ids)
+        self.routine_revision_external_ids = _parse_str_or_sequence(routine_revision_external_ids)
+        self.model_revision_external_ids = _parse_str_or_sequence(model_revision_external_ids)
         self.status = status
         self.run_type = run_type
 

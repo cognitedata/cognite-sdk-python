@@ -53,5 +53,6 @@ class TestSimulatorRuns:
                 )
             ]
         )
+        assert len(created_runs) == 1
         assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
