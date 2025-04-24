@@ -9,6 +9,7 @@ from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
 from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._validation import assert_type
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -43,12 +44,12 @@ class SimulatorRunsAPI(APIClient):
         limit: int | None = None,
         status: str | None = None,
         run_type: str | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        routine_revision_external_ids: Sequence[str] | None = None,
-        model_revision_external_ids: Sequence[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
     ) -> Iterator[SimulatorRunsList]: ...
 
     @overload
@@ -58,12 +59,12 @@ class SimulatorRunsAPI(APIClient):
         limit: int | None = None,
         status: str | None = None,
         run_type: str | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        routine_revision_external_ids: Sequence[str] | None = None,
-        model_revision_external_ids: Sequence[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
     ) -> Iterator[SimulationRun]: ...
 
     def __call__(
@@ -72,12 +73,12 @@ class SimulatorRunsAPI(APIClient):
         limit: int | None = None,
         status: str | None = None,
         run_type: str | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        routine_revision_external_ids: Sequence[str] | None = None,
-        model_revision_external_ids: Sequence[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
     ) -> Iterator[SimulationRun] | Iterator[SimulatorRunsList]:
         """Iterate over simulation runs
 
@@ -88,12 +89,12 @@ class SimulatorRunsAPI(APIClient):
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
             status (str | None): Filter by simulation run status
             run_type (str | None): Filter by simulation run type
-            model_external_ids (Sequence[str] | None): Filter by simulator model external ids
-            simulator_integration_external_ids (Sequence[str] | None): Filter by simulator integration external ids
-            simulator_external_ids (Sequence[str] | None): Filter by simulator external ids
-            routine_external_ids (Sequence[str] | None): Filter by routine external ids
-            routine_revision_external_ids (Sequence[str] | None): Filter by routine revision external ids
-            model_revision_external_ids (Sequence[str] | None): Filter by model revision external ids
+            model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
+            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
+            simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
+            routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
+            routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
+            model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
 
         Returns:
             Iterator[SimulationRun] | Iterator[SimulatorRunsList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
@@ -124,12 +125,12 @@ class SimulatorRunsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         status: str | None = None,
         run_type: str | None = None,
-        model_external_ids: Sequence[str] | None = None,
-        simulator_integration_external_ids: Sequence[str] | None = None,
-        simulator_external_ids: Sequence[str] | None = None,
-        routine_external_ids: Sequence[str] | None = None,
-        routine_revision_external_ids: Sequence[str] | None = None,
-        model_revision_external_ids: Sequence[str] | None = None,
+        model_external_ids: SequenceNotStr[str] | None = None,
+        simulator_integration_external_ids: SequenceNotStr[str] | None = None,
+        simulator_external_ids: SequenceNotStr[str] | None = None,
+        routine_external_ids: SequenceNotStr[str] | None = None,
+        routine_revision_external_ids: SequenceNotStr[str] | None = None,
+        model_revision_external_ids: SequenceNotStr[str] | None = None,
     ) -> SimulatorRunsList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
         Retrieves a list of simulation runs that match the given criteria
@@ -138,12 +139,12 @@ class SimulatorRunsAPI(APIClient):
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
             status (str | None): Filter by simulation run status
             run_type (str | None): Filter by simulation run type
-            model_external_ids (Sequence[str] | None): Filter by simulator model external ids
-            simulator_integration_external_ids (Sequence[str] | None): Filter by simulator integration external ids
-            simulator_external_ids (Sequence[str] | None): Filter by simulator external ids
-            routine_external_ids (Sequence[str] | None): Filter by routine external ids
-            routine_revision_external_ids (Sequence[str] | None): Filter by routine revision external ids
-            model_revision_external_ids (Sequence[str] | None): Filter by model revision external ids
+            model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
+            simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
+            simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
+            routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
+            routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
+            model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
 
         Returns:
             SimulatorRunsList: List of simulation runs
