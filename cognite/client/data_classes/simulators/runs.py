@@ -149,8 +149,8 @@ class SimulationRun(SimulationRunCore):
         model_revision_external_id (str): External id of the associated simulator model revision
         routine_revision_external_id (str): External id of the associated simulator routine revision
         routine_external_id (str): External id of the associated simulator routine
-        run_type (str): The type of the simulation run
-        status (str): The status of the simulation run
+        run_type (Literal['external', 'manual', 'scheduled']): The type of the simulation run
+        status (Literal['ready', 'running', 'success', 'failure']): The status of the simulation run
         data_set_id (int): The id of the dataset associated with the simulation run
         user_id (str): The id of the user who executed the simulation run
         log_id (int): The id of the log associated with the simulation run
