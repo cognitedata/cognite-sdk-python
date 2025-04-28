@@ -84,7 +84,10 @@ class TestSpacesAPI:
             cognite_client.data_modeling.spaces.apply(SpaceApply(space="myInvalidSpace", name="wayTooLong" * 255))
 
         assert error.value.code == 400
-        assert error.value.message == "Name must be at most 255 characters long."
+        assert (
+            error.value.message
+            == "Request had 1 constraint violations. Please fix the request and try again. [name size must be between 0 and 255]"
+        )
 
     def test_apply_failed_and_successful_task(
         self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
@@ -96,7 +99,10 @@ class TestSpacesAPI:
             with pytest.raises(CogniteAPIError) as error:
                 cognite_client.data_modeling.spaces.apply([valid_space, invalid_space])
 
-            assert error.value.message == "Name must be at most 255 characters long."
+            assert (
+                error.value.message
+                == "Request had 1 constraint violations. Please fix the request and try again. [name size must be between 0 and 255]"
+            )
             assert error.value.code == 400
             assert len(error.value.successful) == 1
             assert len(error.value.failed) == 1
