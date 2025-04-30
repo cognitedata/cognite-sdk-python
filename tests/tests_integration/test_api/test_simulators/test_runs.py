@@ -56,3 +56,64 @@ class TestSimulatorRuns:
         assert len(created_runs) == 1
         assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
+
+    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        created_run = cognite_client.simulators.runs.create(
+            [
+                SimulationRunWrite(
+                    run_type="external",
+                    routine_external_id=routine_external_id,
+                )
+            ]
+        )
+
+        outputs = [
+            {
+                "referenceId": "ST",
+                "simulatorObjectReference": {"address": "test_out"},
+                "value": 18.5,
+                "valueType": "DOUBLE",
+                "unit": {"name": "C"},
+            },
+        ]
+
+        inputs = [
+            {
+                "referenceId": "CWT",
+                "value": 11.0,
+                "valueType": "DOUBLE",
+                "overridden": True,
+                "unit": {"name": "C"},
+            },
+            {
+                "referenceId": "CWP",
+                "overridden": True,
+                "value": [5.0],
+                "valueType": "DOUBLE_ARRAY",
+                "unit": {"name": "bar"},
+            },
+        ]
+
+        cognite_client.simulators._post(
+            "/simulators/run/callback",
+            json={
+                "items": [
+                    {
+                        "id": created_run[0].id,
+                        "status": "success",
+                        "outputs": outputs,
+                        "inputs": inputs,
+                    }
+                ]
+            },
+        )
+
+        get_run_data = cognite_client.simulators.runs.list_run_data(
+            run_id=created_run[0].id,
+        )
+
+        assert len(get_run_data) == 1
+        assert get_run_data[0].run_id == created_run[0].id
+        assert get_run_data[0].inputs[0].dump() == inputs[0]
+        assert get_run_data[0].outputs[0].dump() == outputs[0]
