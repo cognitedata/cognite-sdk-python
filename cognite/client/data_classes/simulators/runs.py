@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -208,6 +209,22 @@ class SimulationRun(SimulationRunCore):
             run_type=self.run_type,
             run_time=self.run_time,
         )
+
+    def update(self) -> None:
+        """Update the simulation run object. Can be useful if the run was created with wait=False."""
+        # same logic as Cognite Functions
+        latest = self._cognite_client.simulators.runs.retrieve(id=self.id)
+        if latest is None:
+            raise RuntimeError("Unable to update the simulation run object (it was not found)")
+        self.status = latest.status
+        self.status_message = latest.status_message
+        self.simulation_time = latest.simulation_time
+        self.last_updated_time = latest.last_updated_time
+
+    def wait(self) -> None:
+        while self.status not in ["success", "failure"]:
+            self.update()
+            time.sleep(1.0)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:

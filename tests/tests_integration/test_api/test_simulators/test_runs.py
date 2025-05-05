@@ -10,21 +10,14 @@ class TestSimulatorRuns:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
-            created_runs = cognite_client.simulators.runs.create(
-                [
-                    SimulationRunWrite(
-                        run_type="external",
-                        routine_external_id=routine_external_id,
-                    )
-                ]
-            )
+            created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
 
             cognite_client.simulators._post(
                 "/simulators/run/callback",
                 json={
                     "items": [
                         {
-                            "id": created_runs[0].id,
+                            "id": created_run.id,
                             "status": current_status,
                         }
                     ]
@@ -41,18 +34,16 @@ class TestSimulatorRuns:
             filter_by_routine, key=lambda x: x["id"]
         )
 
+    def test_retrieve_run(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        retrieved_run = cognite_client.simulators.runs.retrieve(id=created_run.id)
+        assert created_run.id == retrieved_run.id
+
     def test_create_run(
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_runs = cognite_client.simulators.runs.create(
-            [
-                SimulationRunWrite(
-                    run_type="external",
-                    routine_external_id=routine_external_id,
-                )
-            ]
-        )
-        assert len(created_runs) == 1
-        assert created_runs[0].routine_external_id == routine_external_id
-        assert created_runs[0].id is not None
+        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        assert created_run.routine_external_id == routine_external_id
+        assert created_run.id is not None

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
-from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
+from cognite.client.data_classes.simulators.runs import SimulationRun, SimulatorRunsList
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -182,38 +181,18 @@ class SimulatorRunsAPI(APIClient):
             filter=filter_runs.dump(),
         )
 
-    @overload
-    def create(self, run: SimulationRunWrite) -> SimulationRun: ...
-
-    @overload
-    def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunsList: ...
-
-    def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunsList:
-        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+    def retrieve(self, id: int) -> SimulationRun:
+        """`Retrieve a simulation run by ID <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`
         Args:
-            run (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
+            id (int): ID of the simulation run
         Returns:
-            SimulationRun | SimulatorRunsList: Created simulation run(s)
+            SimulationRun: Requested simulation run
         Examples:
-            Create new simulation run:
+            Retrieve a single simulation run by id:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
                 >>> client = CogniteClient()
-                >>> run = [
-                ...     SimulationRunWrite(
-                ...         routine_external_id="routine1",
-                ...         log_severity="Debug",
-                ...         run_type="external",
-                ...     ),
-                ... ]
-                >>> res = client.simulators.runs.create(run)
+                >>> run = client.simulators.runs.retrieve(id=2)
         """
-        assert_type(run, "simulation_run", [SimulationRunWrite, Sequence])
-
-        return self._create_multiple(
-            list_cls=SimulatorRunsList,
-            resource_cls=SimulationRun,
-            items=run,
-            input_resource_cls=SimulationRunWrite,
-            resource_path=self._RESOURCE_PATH_RUN,
-        )
+        self._warning.warn()
+        res = self._post(url=self._RESOURCE_PATH+"byids", json={"items": [{"id": id}]})
+        return SimulationRun._load(res.json(), cognite_client=self._cognite_client)
