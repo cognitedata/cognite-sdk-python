@@ -1,7 +1,6 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.runs import SimulationRunWrite
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
