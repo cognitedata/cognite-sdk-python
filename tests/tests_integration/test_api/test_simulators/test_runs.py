@@ -47,3 +47,9 @@ class TestSimulatorRuns:
         created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
         assert created_run.routine_external_id == routine_external_id
         assert created_run.id is not None
+
+    def test_get_logs(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        simulation_log = created_run.get_logs()
+        assert simulation_log.id == created_run.log_id

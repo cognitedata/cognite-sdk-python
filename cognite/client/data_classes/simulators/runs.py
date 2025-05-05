@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.simulators.logs import SimulatorLog
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
@@ -209,6 +210,14 @@ class SimulationRun(SimulationRunCore):
             run_type=self.run_type,
             run_time=self.run_time,
         )
+
+    def get_logs(self) -> SimulatorLog:
+        """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
+
+        Returns:
+            SimulatorLog: Log for the simulation run.
+        """
+        return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
 
     def update(self) -> None:
         """Update the simulation run object. Can be useful if the run was created with wait=False."""
