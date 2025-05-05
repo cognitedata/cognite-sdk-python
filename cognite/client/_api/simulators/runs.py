@@ -19,11 +19,18 @@ class SimulatorRunsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/runs"
     _RESOURCE_PATH_RUN = "/simulators/run"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+    ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+            api_maturity="General Availability",
+            sdk_maturity="alpha",
+            feature_name="Simulators",
         )
 
     def __iter__(self) -> Iterator[SimulationRun]:
@@ -194,5 +201,5 @@ class SimulatorRunsAPI(APIClient):
                 >>> run = client.simulators.runs.retrieve(id=2)
         """
         self._warning.warn()
-        res = self._post(url=self._RESOURCE_PATH+"byids", json={"items": [{"id": id}]})
+        res = self._post(url_path=self._RESOURCE_PATH + "byids", json={"items": [{"id": id}]})
         return SimulationRun._load(res.json(), cognite_client=self._cognite_client)

@@ -51,7 +51,7 @@ class SimulationInputOverride(CogniteObject):
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
-            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            unit=(SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None),
         )
 
     def __post_init__(self) -> None:
@@ -117,7 +117,7 @@ class SimulationRunWrite(SimulationRunCore):
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
-            inputs=[SimulationInputOverride._load(_input) for _input in inputs] if inputs else None,
+            inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -211,11 +211,11 @@ class SimulationRun(SimulationRunCore):
             run_time=self.run_time,
         )
 
-    def get_logs(self) -> SimulatorLog:
+    def get_logs(self) -> SimulatorLog | None:
         """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Returns:
-            SimulatorLog: Log for the simulation run.
+            SimulatorLog | None: Log for the simulation run.
         """
         return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
 
