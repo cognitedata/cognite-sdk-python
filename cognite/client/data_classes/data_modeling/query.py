@@ -175,9 +175,6 @@ class Query(CogniteObject):
 
 
 class ResultSetExpression(CogniteObject, ABC):
-    def __eq__(self, other: Any) -> bool:
-        return type(other) is type(self) and self.dump() == other.dump()
-
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ResultSetExpression:
         if "nodes" in resource:
@@ -450,6 +447,10 @@ class QueryResult(UserDict):
 
 
 class SetOperation(ResultSetExpression, ABC):
+    def __init__(self, except_: SequenceNotStr[str] | None = None, limit: int | None = None) -> None:
+        self.except_ = except_
+        self.limit = limit
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SetOperation:
         if "union" in resource:
@@ -463,9 +464,11 @@ class SetOperation(ResultSetExpression, ABC):
 
 
 class Union(SetOperation):
-    def __init__(self, union: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None) -> None:
+    def __init__(
+        self, union: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None, limit: int | None = None
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
         self.union = union
-        self.except_ = except_
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Union:
@@ -474,13 +477,29 @@ class Union(SetOperation):
         return cls(
             union=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
             except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "union": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
 
 
 class UnionAll(SetOperation):
-    def __init__(self, union_all: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None) -> None:
+    def __init__(
+        self,
+        union_all: Sequence[str | SetOperation],
+        except_: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
         self.union_all = union_all
-        self.except_ = except_
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnionAll:
@@ -489,13 +508,29 @@ class UnionAll(SetOperation):
         return cls(
             union_all=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
             except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "unionAll": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union_all]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
 
 
 class Intersection(SetOperation):
-    def __init__(self, intersection: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None) -> None:
+    def __init__(
+        self,
+        intersection: Sequence[str | SetOperation],
+        except_: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
         self.intersection = intersection
-        self.except_ = except_
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Intersection:
@@ -504,4 +539,15 @@ class Intersection(SetOperation):
         return cls(
             intersection=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
             except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "intersection": [item if isinstance(item, str) else item.dump(camel_case) for item in self.intersection]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
