@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 class SimulatorRunsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/runs"
     _RESOURCE_PATH_RUN = "/simulators/run"
-    _RESOURCE_RUNS_DATA_PATH = "/simulators/runs/data"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -247,7 +246,7 @@ class SimulatorRunsAPI(APIClient):
         self._warning.warn()
 
         req = self._post(
-            url_path=f"{self._RESOURCE_RUNS_DATA_PATH}/list",
+            url_path=f"{self._RESOURCE_PATH}/data/list",
             json={"items": [{"runId": run_id}]},
         )
 
