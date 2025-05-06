@@ -1,9 +1,7 @@
 """This script requires pygen to be installed. It generates typed classes for the core data model v1.
 
-`pip install cognite-pygen==0.99.34`
+`pip install cognite-pygen==1.2.5`
 
-Note that `pygen` requires `Python 3.9` or later`, so if you develop in an older version of Python,
-you need to run this script in a Python 3.9 environment.
 """
 
 from pathlib import Path
