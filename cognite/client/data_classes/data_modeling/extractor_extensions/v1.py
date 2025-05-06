@@ -25,6 +25,7 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor datum.
@@ -50,6 +51,7 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
     """This represents the reading format of Cognite extractor datum.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -109,6 +111,7 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor file.
@@ -123,12 +126,12 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None): List of assets this file relates to
-        mime_type (str | None): MIME type of the file
-        directory (str | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None): Point in time when the file upload was completed and the file was made available
-        category (DirectRelationReference | tuple[str, str] | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets this file is related to.
+        mime_type (str | None): The MIME type of the file.
+        directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        is_uploaded (bool | None): Specifies if the file content has been uploaded to Cognite Data Fusion or not.
+        uploaded_time (datetime | None): The time the file upload completed.
+        category (DirectRelationReference | tuple[str, str] | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         extracted_data (dict | None): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -186,6 +189,7 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor file.
@@ -203,12 +207,12 @@ class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference] | None): List of assets this file relates to
-        mime_type (str | None): MIME type of the file
-        directory (str | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        is_uploaded (bool | None): Whether the file content has been uploaded to Cognite Data Fusion
-        uploaded_time (datetime | None): Point in time when the file upload was completed and the file was made available
-        category (DirectRelationReference | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        assets (list[DirectRelationReference] | None): A list of assets this file is related to.
+        mime_type (str | None): The MIME type of the file.
+        directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        is_uploaded (bool | None): Specifies if the file content has been uploaded to Cognite Data Fusion or not.
+        uploaded_time (datetime | None): The time the file upload completed.
+        category (DirectRelationReference | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         extracted_data (dict | None): Unstructured information extracted from source system
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
@@ -312,11 +316,12 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor time series.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
+        is_step (bool): Specifies whether the time series is a step time series or not.
+        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -328,10 +333,10 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | tuple[str, str] | None): direct relation to the unit of the time series
-        assets (list[DirectRelationReference | tuple[str, str]] | None): The asset field.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None): The equipment field.
+        source_unit (str | None): The unit specified in the source system.
+        unit (DirectRelationReference | tuple[str, str] | None): The unit of the time series.
+        assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets the time series is related to.
+        equipment (list[DirectRelationReference | tuple[str, str]] | None): A list of equipment the time series is related to.
         extracted_data (dict | None): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -389,14 +394,15 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNod
 
     It is used to when data is read from CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor time series.
         version (int): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_step (bool): Defines whether the time series is a step series or not.
-        time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
+        is_step (bool): Specifies whether the time series is a step time series or not.
+        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -408,10 +414,10 @@ class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNod
         source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None): Unit as specified in the source system
-        unit (DirectRelationReference | None): direct relation to the unit of the time series
-        assets (list[DirectRelationReference] | None): The asset field.
-        equipment (list[DirectRelationReference] | None): The equipment field.
+        source_unit (str | None): The unit specified in the source system.
+        unit (DirectRelationReference | None): The unit of the time series.
+        assets (list[DirectRelationReference] | None): A list of assets the time series is related to.
+        equipment (list[DirectRelationReference] | None): A list of equipment the time series is related to.
         extracted_data (dict | None): Unstructured information extracted from source system
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
