@@ -22,7 +22,7 @@ load_dotenv(THIS_REPO / ".env")
 def main() -> None:
     client = make_cognite_client(beta=False)
 
-    typed_classes = generate_typed(("cdf_cdm", "CogniteCore", "v1"), None, client, format_code=True)
+    typed_classes = generate_typed(("cdf_cdm", "CogniteCore", "v1"), None, client, format_code=False)
 
     # For some reason, mypy doesn't need the ignore in one location.
     typed_classes = typed_classes.replace(
