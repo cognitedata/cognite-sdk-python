@@ -9,7 +9,7 @@ class TestSimulatorRuns:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
-            created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+            created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
 
             cognite_client.simulators._post(
                 "/simulators/run/callback",
@@ -35,7 +35,7 @@ class TestSimulatorRuns:
 
     def test_retrieve_run(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
         retrieved_run = cognite_client.simulators.runs.retrieve(id=created_run.id)
         assert created_run.id == retrieved_run.id
 
@@ -43,12 +43,12 @@ class TestSimulatorRuns:
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
         assert created_run.routine_external_id == routine_external_id
         assert created_run.id is not None
 
     def test_get_logs(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_run = cognite_client.simulators.run(routine_external_id=routine_external_id)
+        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
         simulation_log = created_run.get_logs()
         assert simulation_log.id == created_run.log_id

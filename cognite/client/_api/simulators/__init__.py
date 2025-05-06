@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.logs import SimulatorLogsAPI
@@ -10,10 +10,6 @@ from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.simulators.runs import (
-    SimulationInputOverride,
-    SimulationRun,
-)
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
@@ -24,7 +20,6 @@ if TYPE_CHECKING:
 
 class SimulatorsAPI(APIClient):
     _RESOURCE_PATH = "/simulators"
-    _RESOURCE_PATH_RUN = "/simulators/run"
 
     def __init__(
         self,
@@ -104,50 +99,3 @@ class SimulatorsAPI(APIClient):
         """
         self._warning.warn()
         return self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)
-
-    def run(
-        self,
-        routine_external_id: str | None = None,
-        routine_revision_external_id: str | None = None,
-        model_revision_external_id: str | None = None,
-        inputs: Sequence[SimulationInputOverride] | None = None,
-        run_time: int | None = None,
-        queue: bool | None = None,
-        log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
-        wait: bool = True,
-    ) -> SimulationRun:
-        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>``
-        Args:
-            routine_external_id (str | None): External id of the simulator routine
-            routine_revision_external_id (str | None): External id of the simulator routine revision
-            model_revision_external_id (str | None): External id of the simulator model revision
-            inputs (Sequence[SimulationInputOverride] | None): List of input overrides
-            run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
-            queue (bool | None): Queue the simulation run when connector is down.
-            log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
-            wait (bool): Wait until the simulation run is finished. Defaults to True.
-        Returns:
-            SimulationRun: Created simulation run
-        Examples:
-            Create new simulation run:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> run = client.simulators.run(routine_external_id="routine1", log_severity="Debug")
-        """
-        self._warning.warn()
-        res = self._post(
-            url_path=self._RESOURCE_PATH_RUN,
-            json={
-                "routineExternalId": routine_external_id,
-                "routine_revision_external_id": routine_revision_external_id,
-                "model_revision_external_id": model_revision_external_id,
-                "inputs": [item.dump for item in inputs] if inputs else None,
-                "runTime": run_time,
-                "queue": queue,
-                "logSeverity": log_severity,
-            },
-        )
-        simulation_run = SimulationRun._load(res.json(), cognite_client=self._cognite_client)
-        if wait:
-            simulation_run.wait()
-        return simulation_run
