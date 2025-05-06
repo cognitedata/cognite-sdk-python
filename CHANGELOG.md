@@ -18,9 +18,75 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [Unreleased]
+### Fixed
+- Fixes for type annotations for Functions API
 ### Added
+- Support for the `/simulators/logs` API endpoint.
+- Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+
+## [7.74.5] - 2025-04-08
+### Fixed
+- Empty datapoint subscriptions may return timeSeriesCount=None. This is now handled.
+
+## [7.74.4] - 2025-04-08
+### Fixed
+- When iterating datapoints, object aggregates `min_datapoint` and `max_datapoint` no longer raise
+  `ValueError: Unsupported aggregate` (used to require `include_status` to be explicitly passed.)
+
+## [7.74.3] - 2025-04-04
+### Changed
+- Removes beta header from postgres gateway APIs.
+- Removes "beta" warning from postgres gateway APIs.
+### Added
+- Adds `PostgresGatewayAcl` to postgres gateway ACLs.
+
+## [7.74.2] - 2025-04-02
+### Fixed
+- When loading a Workflow version from dict, no longer gives a `400` when calling
+  `client.workflows.versions.upsert(...)`. For example the following workflow version can now be upserted:
+```python
+WorkflowVersionUpsert.load({
+    "workflowExternalId": "my_workflow", "version": 1,
+    "workflowDefinition": {
+      "tasks": {
+        "externalId": "task1",
+        "type": "function",
+        "parameters": {"function": {"externalId": "myFunction"}}}
+    }
+})
+```
+
+## [7.74.1] - 2025-04-01
+### Fixed
+- When iterating through datapoints, any instance IDs used would max out after 100k values.
+
+## [7.74.0] - 2025-04-01
+### Added
+- Support for new (object) datapoint aggregates `min_datapoint` and `max_datapoint`.
+
+## [7.73.9] - 2025-03-25
+### Fixed
+- The `transformation.source/destinationOidcCredentials.scope` is no longer required when creating a Transformation.
+
+## [7.73.8] - 2025-03-21
+### Fixed
+- Functions: Removed `"py38"` from list of valid runtimes for Functions in docstrings and type annotations. Runtime `"py38"` was removed in the API in October 2024.
+
+## [7.73.7] - 2025-03-14
+### Fixed
+- When RestSource for hosted extractors were updated, the authentication and ca_certificate objects were omitted. This is now fixed.
+
+## [7.73.6] - 2025-03-10
+### Fixed
+- An issue with `client.data_modeling.instances.aggregates(..., filter=my_filter)` no longer raises a `KeyError` if you
+  have a filter that returns no results.
+
+## [7.73.5] - 2025-02-26
+### Fixed
+- The `client.data_modeling.instances.aggregate/search()` methods now correctly returns maximum, 1000, results when setting
+  the `limit` parameter to `None`, `-1`, or `math.inf`.
 
 ## [7.73.4] - 2025-02-24
 ### Fixed

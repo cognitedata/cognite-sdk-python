@@ -200,7 +200,7 @@ class Capability(ABC):
                     allow_unknown=allow_unknown,
                 ),
             )
-        # We infer this as an unknown acl not yet added to the SDK. All API-responses are neccessarily
+        # We infer this as an unknown acl not yet added to the SDK. All API-responses are necessarily
         # loaded with 'allow_unknown=True' (to future-proof):
         if allow_unknown:
             if len(resource) != 1:
@@ -406,6 +406,18 @@ class ExtractionPipelineScope(Capability.Scope):
 
     def as_tuples(self) -> set[tuple[str, int]]:
         return {(self._scope_name, i) for i in self.ids}
+
+
+@dataclass(frozen=True)
+class PostgresGatewayUsersScope(Capability.Scope):
+    _scope_name = "usersScope"
+    usernames: list[str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "usernames", [str(i) for i in self.usernames])
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, i) for i in self.usernames}
 
 
 @dataclass(frozen=True)
@@ -1294,7 +1306,7 @@ class WorkflowOrchestrationAcl(Capability):
 class PostgresGatewayAcl(Capability):
     _capability_name = "postgresGatewayAcl"
     actions: Sequence[Action]
-    scope: AllScope = field(default_factory=AllScope)
+    scope: AllScope | PostgresGatewayUsersScope = field(default_factory=AllScope)
 
     class Action(Capability.Action):  # type: ignore [misc]
         Read = "READ"
@@ -1302,6 +1314,7 @@ class PostgresGatewayAcl(Capability):
 
     class Scope:
         All = AllScope
+        UsersScope = PostgresGatewayUsersScope
 
 
 @dataclass

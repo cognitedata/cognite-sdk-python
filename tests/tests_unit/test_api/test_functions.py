@@ -75,8 +75,8 @@ EXAMPLE_FUNCTION = {
     "envVars": {"env1": "foo", "env2": "bar"},
     "cpu": 0.25,
     "memory": 1,
-    "runtime": "py38",
-    "runtimeVersion": "Python 3.8.13",
+    "runtime": "py311",
+    "runtimeVersion": "Python 3.11.11",
 }
 CALL_RUNNING = {
     "id": CALL_ID,
@@ -355,7 +355,7 @@ def mock_functions_limit_response(rsps, cognite_client):
         "cpuCores": {"min": 0.1, "max": 0.6, "default": 0.25},
         "memoryGb": {"min": 0.1, "max": 2.5, "default": 1.0},
         "responseSizeMb": 1,
-        "runtimes": ["py38", "py39", "py310"],
+        "runtimes": ["py39", "py310", "py311"],
     }
     url = full_url(cognite_client, "/functions/limits")
     rsps.add(rsps.GET, url, status=200, json=response_body)

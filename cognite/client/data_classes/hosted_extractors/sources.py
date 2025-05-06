@@ -809,6 +809,14 @@ class RestSourceUpdate(SourceUpdate):
         def set(self, value: int) -> RestSourceUpdate:
             return self._set(value)
 
+    class _CACertificateUpdate(CognitePrimitiveUpdate):
+        def set(self, value: CACertificate | None) -> RestSourceUpdate:
+            return self._set(value.dump() if value else None)
+
+    class _AuthenticationUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Authentication | None) -> RestSourceUpdate:
+            return self._set(value.dump() if value else None)
+
     @property
     def host(self) -> _HostUpdate:
         return RestSourceUpdate._HostUpdate(self, "host")
@@ -821,12 +829,22 @@ class RestSourceUpdate(SourceUpdate):
     def port(self) -> _PortUpdate:
         return RestSourceUpdate._PortUpdate(self, "port")
 
+    @property
+    def ca_certificate(self) -> _CACertificateUpdate:
+        return RestSourceUpdate._CACertificateUpdate(self, "caCertificate")
+
+    @property
+    def authentication(self) -> _AuthenticationUpdate:
+        return RestSourceUpdate._AuthenticationUpdate(self, "authentication")
+
     @classmethod
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("host", is_nullable=False),
             PropertySpec("scheme", is_nullable=False),
             PropertySpec("port", is_nullable=False),
+            PropertySpec("ca_certificate", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
+            PropertySpec("authentication", is_nullable=True, is_object=True, is_explicit_nullable_object=True),
         ]
 
 
