@@ -77,7 +77,7 @@ class SimulatorIntegrationsAPI(APIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
@@ -85,7 +85,7 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
-            simulator_external_ids (str | Sequence[str] | None): Filter on simulator external ids.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
             active (bool | None): Filter on active status of the simulator integration.
 
         Returns:

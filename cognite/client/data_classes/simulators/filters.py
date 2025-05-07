@@ -19,7 +19,7 @@ def _parse_str_or_sequence(value: str | SequenceNotStr[str] | None) -> list[str]
 class SimulatorIntegrationFilter(CogniteFilter):
     def __init__(
         self,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> None:
         self.simulator_external_ids = (
@@ -31,7 +31,7 @@ class SimulatorIntegrationFilter(CogniteFilter):
 class SimulatorModelsFilter(CogniteFilter):
     def __init__(
         self,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
         self.simulator_external_ids = (
             [simulator_external_ids] if isinstance(simulator_external_ids, str) else simulator_external_ids
@@ -41,7 +41,7 @@ class SimulatorModelsFilter(CogniteFilter):
 class SimulatorModelRevisionsFilter(CogniteFilter):
     def __init__(
         self,
-        model_external_ids: str | Sequence[str] | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
     ) -> None:
         self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids

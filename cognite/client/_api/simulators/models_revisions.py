@@ -36,7 +36,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self,
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
-        model_external_ids: str | Sequence[str] | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
@@ -44,7 +44,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
-            model_external_ids (str | Sequence[str] | None): The external ids of the simulator models to filter by.
+            model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
             all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions

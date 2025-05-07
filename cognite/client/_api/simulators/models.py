@@ -39,14 +39,14 @@ class SimulatorModelsAPI(APIClient):
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
         Retrieves a list of simulator models that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            simulator_external_ids (str | Sequence[str] | None): Filter by simulator external id(s).
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
             sort (PropertySort | None): The criteria to sort by.
         Returns:
             SimulatorModelList: List of simulator models
