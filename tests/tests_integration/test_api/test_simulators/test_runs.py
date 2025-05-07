@@ -1,7 +1,12 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.runs import SimulationRunWrite
+from cognite.client.data_classes.simulators.runs import (
+    SimulationInput,
+    SimulationOutput,
+    SimulationRunWrite,
+    SimulationValueUnitName,
+)
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
@@ -69,30 +74,30 @@ class TestSimulatorRuns:
         )
 
         outputs = [
-            {
-                "referenceId": "ST",
-                "simulatorObjectReference": {"address": "test_out"},
-                "value": 18.5,
-                "valueType": "DOUBLE",
-                "unit": {"name": "C"},
-            },
+            SimulationOutput(
+                reference_id="ST",
+                simulator_object_reference={"address": "test_out"},
+                value=18.5,
+                value_type="DOUBLE",
+                unit=SimulationValueUnitName(name="C"),
+            ).dump(),
         ]
 
         inputs = [
-            {
-                "referenceId": "CWT",
-                "value": 11.0,
-                "valueType": "DOUBLE",
-                "overridden": True,
-                "unit": {"name": "C"},
-            },
-            {
-                "referenceId": "CWP",
-                "overridden": True,
-                "value": [5.0],
-                "valueType": "DOUBLE_ARRAY",
-                "unit": {"name": "bar"},
-            },
+            SimulationInput(
+                reference_id="CWT",
+                value=11.0,
+                value_type="DOUBLE",
+                overridden=True,
+                unit=SimulationValueUnitName(name="C"),
+            ).dump(),
+            SimulationInput(
+                reference_id="CWP",
+                overridden=True,
+                value=[5.0],
+                value_type="DOUBLE_ARRAY",
+                unit=SimulationValueUnitName(name="bar"),
+            ).dump(),
         ]
 
         cognite_client.simulators._post(

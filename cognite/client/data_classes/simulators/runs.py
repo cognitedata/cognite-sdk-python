@@ -279,7 +279,7 @@ class SimulationValueBase(CogniteObject):
         return output
 
 
-class SimulationValue(SimulationValueBase):
+class SimulationInput(SimulationValueBase):
     """
     This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
@@ -292,7 +292,7 @@ class SimulationValue(SimulationValueBase):
         value: str | int | float | list[str] | list[int] | list[float],
         value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"],
         unit: SimulationValueUnitName | None = None,
-        simulator_object_reference: Any | None = None,
+        simulator_object_reference: dict[str, str] | None = None,
         timeseries_external_id: str | None = None,
         overridden: bool | None = None,
     ) -> None:
@@ -331,16 +331,20 @@ class SimulationValue(SimulationValueBase):
         return output
 
 
+class SimulationOutput(SimulationValueBase):
+    pass
+
+
 class SimulationRunDataItem(CogniteResource):
     run_id: int
-    inputs: list[SimulationValue]
-    outputs: list[SimulationValueBase]
+    inputs: list[SimulationInput]
+    outputs: list[SimulationOutput]
 
     def __init__(
         self,
         run_id: int,
-        inputs: list[SimulationValue],
-        outputs: list[SimulationValueBase],
+        inputs: list[SimulationInput],
+        outputs: list[SimulationOutput],
     ) -> None:
         super().__init__()
         self.run_id = run_id
@@ -349,8 +353,8 @@ class SimulationRunDataItem(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        inputs = [SimulationValue._load(input_) for input_ in resource["inputs"]]
-        outputs = [SimulationValueBase._load(output_) for output_ in resource["outputs"]]
+        inputs = [SimulationInput._load(input_) for input_ in resource["inputs"]]
+        outputs = [SimulationOutput._load(output_) for output_ in resource["outputs"]]
         return cls(
             run_id=resource["runId"],
             inputs=inputs,
