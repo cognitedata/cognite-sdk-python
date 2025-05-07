@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
-from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
+from cognite.client.data_classes.simulators.runs import (
+    SimulationRun,
+    SimulationRunDataItem,
+    SimulationRunWrite,
+    SimulatorRunDataList,
+    SimulatorRunsList,
+)
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -217,3 +223,34 @@ class SimulatorRunsAPI(APIClient):
             input_resource_cls=SimulationRunWrite,
             resource_path=self._RESOURCE_PATH_RUN,
         )
+
+    def list_run_data(
+        self,
+        run_id: int,
+    ) -> SimulatorRunDataList:
+        """`Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        Retrieve data associated with a simulation run by ID.
+
+        Args:
+            run_id (int): Simulation run id.
+
+        Returns:
+            SimulatorRunDataList: List of simulation run data
+
+        Examples:
+            Get simulation run data:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.runs.list_run_data(run_id=12345)
+        """
+        self._warning.warn()
+
+        req = self._post(
+            url_path=f"{self._RESOURCE_PATH}/data/list",
+            json={"items": [{"runId": run_id}]},
+        )
+
+        items = req.json().get("items", [])
+        run_items = [SimulationRunDataItem.load(item) for item in items]
+
+        return SimulatorRunDataList(resources=run_items, cognite_client=self._cognite_client)
