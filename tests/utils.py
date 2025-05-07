@@ -420,19 +420,8 @@ class FakeCogniteResourceGenerator:
             if skip_defaulted_args:
                 # At least external_id or id must be set
                 keyword_arguments["external_id"] = "my_sequence"
-                keyword_arguments["rows"] = [
-                    SequenceRow(
-                        row_number=1,
-                        values=[
-                            1,
-                        ],
-                    )
-                ]
-                keyword_arguments["columns"] = SequenceColumnList(
-                    [
-                        SequenceColumn("my_column"),
-                    ]
-                )
+                keyword_arguments["rows"] = [SequenceRow(row_number=1, values=[1])]
+                keyword_arguments["columns"] = SequenceColumnList([SequenceColumn("my_column")])
             else:
                 # All row values must match the number of columns
                 keyword_arguments.pop("rows", None)
@@ -511,12 +500,7 @@ class FakeCogniteResourceGenerator:
             return self.create_value(first_not_none)
         elif container_type is typing.Literal:
             return self._random.choice(args)
-        elif container_type in [
-            list,
-            typing.Sequence,
-            collections.abc.Sequence,
-            collections.abc.Collection,
-        ]:
+        elif container_type in [list, typing.Sequence, collections.abc.Sequence, collections.abc.Collection]:
             return [self.create_value(first_not_none) for _ in range(3)]
         elif container_type in [dict, collections.abc.MutableMapping, collections.abc.Mapping]:
             if first_not_none is None:
