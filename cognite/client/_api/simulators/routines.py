@@ -248,7 +248,7 @@ class SimulatorRoutinesAPI(APIClient):
             Create new simulation run:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> run = client.simulators.run(routine_external_id="routine1", log_severity="Debug")
+                >>> run = client.simulators.routines.run(routine_external_id="routine1", log_severity="Debug")
         """
         self._warning.warn()
         run_object = SimulationRunWrite(
