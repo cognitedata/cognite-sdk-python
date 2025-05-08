@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
-from cognite.client.data_classes.simulators.runs import SimulationRun, SimulatorRunsList
+from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -203,3 +204,39 @@ class SimulatorRunsAPI(APIClient):
         self._warning.warn()
         res = self._post(url_path=self._RESOURCE_PATH + "byids", json={"items": [{"id": id}]})
         return SimulationRun._load(res.json(), cognite_client=self._cognite_client)
+
+    @overload
+    def create(self, run: SimulationRunWrite) -> SimulationRun: ...
+
+    @overload
+    def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunsList: ...
+
+    def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunsList:
+        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        Args:
+            run (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
+        Returns:
+            SimulationRun | SimulatorRunsList: Created simulation run(s)
+        Examples:
+            Create new simulation run:
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
+                >>> client = CogniteClient()
+                >>> run = [
+                ...     SimulationRunWrite(
+                ...         routine_external_id="routine1",
+                ...         log_severity="Debug",
+                ...         run_type="external",
+                ...     ),
+                ... ]
+                >>> res = client.simulators.runs.create(run)
+        """
+        assert_type(run, "simulation_run", [SimulationRunWrite, Sequence])
+
+        return self._create_multiple(
+            list_cls=SimulatorRunsList,
+            resource_cls=SimulationRun,
+            items=run,
+            input_resource_cls=SimulationRunWrite,
+            resource_path=self._RESOURCE_PATH_RUN,
+        )
