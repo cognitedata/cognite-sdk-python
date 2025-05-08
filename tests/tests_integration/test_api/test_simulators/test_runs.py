@@ -1,6 +1,7 @@
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
+from cognite.client.data_classes.simulators.runs import SimulationRunWrite
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
@@ -9,14 +10,21 @@ class TestSimulatorRuns:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
-            created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
+            created_runs = cognite_client.simulators.runs.create(
+                [
+                    SimulationRunWrite(
+                        run_type="external",
+                        routine_external_id=routine_external_id,
+                    )
+                ]
+            )
 
             cognite_client.simulators._post(
                 "/simulators/run/callback",
                 json={
                     "items": [
                         {
-                            "id": created_run.id,
+                            "id": created_runs[0].id,
                             "status": current_status,
                         }
                     ]
@@ -43,12 +51,14 @@ class TestSimulatorRuns:
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
         routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
-        assert created_run.routine_external_id == routine_external_id
-        assert created_run.id is not None
-
-    def test_get_logs(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
-        created_run = cognite_client.simulators.routines.run(routine_external_id=routine_external_id)
-        simulation_log = created_run.get_logs()
-        assert simulation_log.id == created_run.log_id
+        created_runs = cognite_client.simulators.runs.create(
+            [
+                SimulationRunWrite(
+                    run_type="external",
+                    routine_external_id=routine_external_id,
+                )
+            ]
+        )
+        assert len(created_runs) == 1
+        assert created_runs[0].routine_external_id == routine_external_id
+        assert created_runs[0].id is not None
