@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
@@ -161,6 +161,7 @@ class SimulationRun(SimulationRunCore):
         status_message (str | None): The status message of the simulation run
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
 
     """
 
@@ -183,6 +184,7 @@ class SimulationRun(SimulationRunCore):
         status_message: str | None = None,
         simulation_time: int | None = None,
         run_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             run_type=run_type,
@@ -203,6 +205,7 @@ class SimulationRun(SimulationRunCore):
         self.data_set_id = data_set_id
         self.user_id = user_id
         self.log_id = log_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
