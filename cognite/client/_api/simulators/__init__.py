@@ -21,12 +21,7 @@ if TYPE_CHECKING:
 class SimulatorsAPI(APIClient):
     _RESOURCE_PATH = "/simulators"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.integrations = SimulatorIntegrationsAPI(config, api_version, cognite_client)
         self.models = SimulatorModelsAPI(config, api_version, cognite_client)
@@ -34,9 +29,7 @@ class SimulatorsAPI(APIClient):
         self.routines = SimulatorRoutinesAPI(config, api_version, cognite_client)
         self.logs = SimulatorLogsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability",
-            sdk_maturity="alpha",
-            feature_name="Simulators",
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
 
     def __iter__(self) -> Iterator[Simulator]:
@@ -83,7 +76,7 @@ class SimulatorsAPI(APIClient):
         List simulators
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
             SimulatorList: List of simulators
