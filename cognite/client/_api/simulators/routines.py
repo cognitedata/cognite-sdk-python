@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
 class SimulatorRoutinesAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines"
-    _RESOURCE_PATH_RUN = "/simulators/run"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -232,6 +231,7 @@ class SimulatorRoutinesAPI(APIClient):
         queue: bool | None = None,
         log_severity: Literal["Debug", "Information", "Warning", "Error"] | None = None,
         wait: bool = True,
+        timeout: float = 60,
     ) -> SimulationRun:
         """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>``
         Args:
@@ -241,6 +241,7 @@ class SimulatorRoutinesAPI(APIClient):
             queue (bool | None): Queue the simulation run when connector is down.
             log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
             wait (bool): Wait until the simulation run is finished. Defaults to True.
+            timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
         Returns:
             SimulationRun: Created simulation run
         Examples:

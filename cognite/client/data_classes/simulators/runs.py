@@ -16,6 +16,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.simulators.logs import SimulatorLog
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._retry import Backoff
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -234,10 +235,23 @@ class SimulationRun(SimulationRunCore):
         self.simulation_time = latest.simulation_time
         self.last_updated_time = latest.last_updated_time
 
-    def wait(self) -> None:
-        while self.status not in ["success", "failure"]:
+    def wait(self, timeout: float = 60) -> None:
+        """Waits for simulation status to become either success or failure.
+        This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
+
+        Args:
+            timeout (float): Time out after this many seconds. Defaults to 60 seconds.
+        """
+
+        end_time = time.time() + timeout
+        poll_backoff = Backoff(max_wait=30, base=10)
+
+        while time.time() < end_time:
             self.update()
-            time.sleep(1.0)
+            if self.status in ["success", "failure"]:
+                return
+            sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
+            time.sleep(sleep_time)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:

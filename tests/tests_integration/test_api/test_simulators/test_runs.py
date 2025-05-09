@@ -87,6 +87,12 @@ class TestSimulatorRuns:
         retrieved_run = cognite_client.simulators.runs.retrieve(ids=created_run.id)
         assert created_run.id == retrieved_run.id
 
+        logs_res = retrieved_run.get_logs()
+        logs_res2 = cognite_client.simulators.logs.retrieve(id=created_run.log_id)
+
+        assert logs_res is not None
+        assert logs_res.dump() == logs_res2.dump()
+
     def test_create_run(
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:
