@@ -8,6 +8,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
 from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -28,6 +29,7 @@ class SimulatorRunsAPI(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
+        self._RETRIEVE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability",
             sdk_maturity="alpha",
@@ -189,21 +191,29 @@ class SimulatorRunsAPI(APIClient):
             filter=filter_runs.dump(),
         )
 
-    def retrieve(self, id: int) -> SimulationRun:
+    def retrieve(
+        self,
+        ids: int | Sequence[int],
+    ) -> SimulationRun | SimulatorRunsList | None:
         """`Retrieve a simulation run by ID <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`
         Args:
-            id (int): ID of the simulation run
+            ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
         Returns:
-            SimulationRun: Requested simulation run
+            SimulationRun | SimulatorRunsList | None: The simulation run(s) with the given ID(s)
         Examples:
             Retrieve a single simulation run by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> run = client.simulators.runs.retrieve(id=2)
+                >>> run = client.simulators.runs.retrieve(ids=2)
         """
         self._warning.warn()
-        res = self._post(url_path=self._RESOURCE_PATH + "byids", json={"items": [{"id": id}]})
-        return SimulationRun._load(res.json(), cognite_client=self._cognite_client)
+        identifiers = IdentifierSequence.load(ids=ids)
+        return self._retrieve_multiple(
+            resource_cls=SimulationRun,
+            list_cls=SimulatorRunsList,
+            identifiers=identifiers,
+            resource_path=self._RESOURCE_PATH,
+        )
 
     @overload
     def create(self, run: SimulationRunWrite) -> SimulationRun: ...

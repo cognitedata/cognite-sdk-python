@@ -16,7 +16,6 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
     SimulationRun,
     SimulationRunWrite,
-    SimulatorRunsList,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -259,13 +258,8 @@ class SimulatorRoutinesAPI(APIClient):
             log_severity=log_severity,
         )
 
-        simulation_run = self._create_multiple(
-            list_cls=SimulatorRunsList,
-            resource_cls=SimulationRun,
-            items=run_object,
-            input_resource_cls=SimulationRunWrite,
-            resource_path=self._RESOURCE_PATH_RUN,
-        )
+        simulation_run = self._cognite_client.simulators.runs.create(run_object)
+
         if wait:
             simulation_run.wait()
         return simulation_run

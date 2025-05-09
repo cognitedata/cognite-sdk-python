@@ -223,11 +223,12 @@ class SimulationRun(SimulationRunCore):
         return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
 
     def update(self) -> None:
-        """Update the simulation run object. Can be useful if the run was created with wait=False."""
+        """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
         # same logic as Cognite Functions
-        latest = self._cognite_client.simulators.runs.retrieve(id=self.id)
+        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
+        assert isinstance(latest, SimulationRun)
         self.status = latest.status
         self.status_message = latest.status_message
         self.simulation_time = latest.simulation_time
@@ -258,6 +259,7 @@ class SimulationRun(SimulationRunCore):
             status_message=resource.get("statusMessage"),
             run_time=resource.get("runTime"),
             simulation_time=resource.get("simulationTime"),
+            cognite_client=cognite_client,
         )
 
 
