@@ -267,7 +267,7 @@ class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalID
     _RESOURCE = SimulationRunWrite
 
 
-class SimulatorRunsList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
+class SimulatorRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
     def as_write(self) -> SimulationRunWriteList:

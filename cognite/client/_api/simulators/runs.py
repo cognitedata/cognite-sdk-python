@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
-from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunsList
+from cognite.client.data_classes.simulators.runs import SimulationRun, SimulationRunWrite, SimulatorRunList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
@@ -59,7 +59,7 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
-    ) -> Iterator[SimulatorRunsList]: ...
+    ) -> Iterator[SimulatorRunList]: ...
 
     @overload
     def __call__(
@@ -88,7 +88,7 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
-    ) -> Iterator[SimulationRun] | Iterator[SimulatorRunsList]:
+    ) -> Iterator[SimulationRun] | Iterator[SimulatorRunList]:
         """Iterate over simulation runs
 
         Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
@@ -106,7 +106,7 @@ class SimulatorRunsAPI(APIClient):
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
 
         Returns:
-            Iterator[SimulationRun] | Iterator[SimulatorRunsList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
+            Iterator[SimulationRun] | Iterator[SimulatorRunList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
         """
 
         filter_runs = SimulatorRunsFilter(
@@ -121,7 +121,7 @@ class SimulatorRunsAPI(APIClient):
         )
 
         return self._list_generator(
-            list_cls=SimulatorRunsList,
+            list_cls=SimulatorRunList,
             resource_cls=SimulationRun,
             method="POST",
             filter=filter_runs.dump(),
@@ -140,7 +140,7 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
-    ) -> SimulatorRunsList:
+    ) -> SimulatorRunList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
         Retrieves a list of simulation runs that match the given criteria
 
@@ -156,7 +156,7 @@ class SimulatorRunsAPI(APIClient):
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
 
         Returns:
-            SimulatorRunsList: List of simulation runs
+            SimulatorRunList: List of simulation runs
 
         Examples:
 
@@ -187,19 +187,28 @@ class SimulatorRunsAPI(APIClient):
             method="POST",
             limit=limit,
             resource_cls=SimulationRun,
-            list_cls=SimulatorRunsList,
+            list_cls=SimulatorRunList,
             filter=filter_runs.dump(),
         )
+
+    @overload
+    def retrieve(self, ids: int) -> SimulationRun | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        ids: Sequence[int],
+    ) -> SimulatorRunList | None: ...
 
     def retrieve(
         self,
         ids: int | Sequence[int],
-    ) -> SimulationRun | SimulatorRunsList | None:
-        """`Retrieve a simulation run by ID <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`
+    ) -> SimulationRun | SimulatorRunList | None:
+        """`Retrieve a simulation run by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
         Returns:
-            SimulationRun | SimulatorRunsList | None: The simulation run(s) with the given ID(s)
+            SimulationRun | SimulatorRunList | None: The simulation run(s) with the given ID(s)
         Examples:
             Retrieve a single simulation run by id:
                 >>> from cognite.client import CogniteClient
@@ -210,7 +219,7 @@ class SimulatorRunsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=ids)
         return self._retrieve_multiple(
             resource_cls=SimulationRun,
-            list_cls=SimulatorRunsList,
+            list_cls=SimulatorRunList,
             identifiers=identifiers,
             resource_path=self._RESOURCE_PATH,
         )
@@ -219,14 +228,14 @@ class SimulatorRunsAPI(APIClient):
     def create(self, run: SimulationRunWrite) -> SimulationRun: ...
 
     @overload
-    def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunsList: ...
+    def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunList: ...
 
-    def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunsList:
+    def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunList:
         """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
         Args:
             run (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
         Returns:
-            SimulationRun | SimulatorRunsList: Created simulation run(s)
+            SimulationRun | SimulatorRunList: Created simulation run(s)
         Examples:
             Create new simulation run:
                 >>> from cognite.client import CogniteClient
@@ -244,7 +253,7 @@ class SimulatorRunsAPI(APIClient):
         assert_type(run, "simulation_run", [SimulationRunWrite, Sequence])
 
         return self._create_multiple(
-            list_cls=SimulatorRunsList,
+            list_cls=SimulatorRunList,
             resource_cls=SimulationRun,
             items=run,
             input_resource_cls=SimulationRunWrite,
