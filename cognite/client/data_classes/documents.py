@@ -205,7 +205,7 @@ class Document(CogniteResource):
         created_time (int): The creation time of the document in CDF in milliseconds since Jan 1, 1970.
         source_file (SourceFile): The source file that this document is derived from.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
-        instance_id (InstanceId | None): No description.
+        instance_id (InstanceId | None): The instance ID of the node this document is associated with.
         title (str | None): The title of the document.
         author (str | None): The author of the document.
         producer (str | None): The producer of the document. Many document types contain metadata indicating what software or system was used to create the document.
