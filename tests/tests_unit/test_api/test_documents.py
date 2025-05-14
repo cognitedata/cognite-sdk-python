@@ -113,7 +113,7 @@ class TestDocumentsAPI:
         assert isinstance(file_wo_instance_id, Document)
         assert file_with_instance_id.instance_id is not None
         assert file_with_instance_id.instance_id.space == "demo-space"
-        assert file_with_instance_id.instance_id.external_id == "doc-001"
+        assert file_with_instance_id.instance_id.external_id == "7a05f794-d6b0-413a-a0ff-c03eb38d9e83"
         assert file_wo_instance_id.instance_id is None
         for i, doc in enumerate(documents):
             expected = mock_documents_response.calls[0].response.json()["items"][i]
