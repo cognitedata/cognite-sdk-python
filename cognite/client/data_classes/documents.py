@@ -18,6 +18,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
+from cognite.client.utils._identifier import InstanceId
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -204,6 +205,7 @@ class Document(CogniteResource):
         created_time (int): The creation time of the document in CDF in milliseconds since Jan 1, 1970.
         source_file (SourceFile): The source file that this document is derived from.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        instance_id (InstanceId | None): No description.
         title (str | None): The title of the document.
         author (str | None): The author of the document.
         producer (str | None): The producer of the document. Many document types contain metadata indicating what software or system was used to create the document.
@@ -228,6 +230,7 @@ class Document(CogniteResource):
         created_time: int,
         source_file: SourceFile,
         external_id: str | None = None,
+        instance_id: InstanceId | None = None,
         title: str | None = None,
         author: str | None = None,
         producer: str | None = None,
@@ -249,6 +252,7 @@ class Document(CogniteResource):
         self.created_time = created_time
         self.source_file = source_file
         self.external_id = external_id
+        self.instance_id = instance_id
         self.title = title
         self.author = author
         self.producer = producer
@@ -272,6 +276,7 @@ class Document(CogniteResource):
             created_time=resource["createdTime"],
             source_file=SourceFile._load(resource["sourceFile"]),
             external_id=resource.get("externalId"),
+            instance_id=InstanceId.load_if(resource.get("instanceId")),
             title=resource.get("title"),
             author=resource.get("author"),
             producer=resource.get("producer"),
@@ -297,6 +302,8 @@ class Document(CogniteResource):
             output["labels"] = [label.dump(camel_case) for label in self.labels]
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
+        if self.instance_id:
+            output["instanceId" if camel_case else "instance_id"] = self.instance_id.dump(camel_case)
         return output
 
 
