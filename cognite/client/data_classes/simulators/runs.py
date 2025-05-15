@@ -35,9 +35,6 @@ class SimulationValueUnitName(CogniteObject):
     def __post_init__(self) -> None:
         _WARNING.warn()
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
-
 
 @dataclass
 class SimulationInputOverride(CogniteObject):
@@ -246,10 +243,9 @@ class SimulationValueBase(CogniteObject):
         value: str | int | float | list[str] | list[int] | list[float],
         value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"],
         unit: SimulationValueUnitName | None = None,
-        simulator_object_reference: Any | None = None,
+        simulator_object_reference: dict[str, str] | None = None,
         timeseries_external_id: str | None = None,
     ) -> None:
-        super().__init__()
         self.reference_id = reference_id
         self.value = value
         self.value_type = value_type
@@ -332,14 +328,15 @@ class SimulationInput(SimulationValueBase):
 
 
 class SimulationOutput(SimulationValueBase):
+    """
+    This class is used to return the outputs generated during the simulation.
+    The value can be a string, double, array of strings or array of doubles.
+    """
+
     pass
 
 
 class SimulationRunDataItem(CogniteResource):
-    run_id: int
-    inputs: list[SimulationInput]
-    outputs: list[SimulationOutput]
-
     def __init__(
         self,
         run_id: int,

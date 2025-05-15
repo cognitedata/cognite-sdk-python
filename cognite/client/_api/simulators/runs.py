@@ -8,7 +8,6 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
 from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
-    SimulationRunDataItem,
     SimulationRunWrite,
     SimulatorRunDataList,
     SimulatorRunsList,
@@ -251,6 +250,4 @@ class SimulatorRunsAPI(APIClient):
         )
 
         items = req.json().get("items", [])
-        run_items = [SimulationRunDataItem.load(item) for item in items]
-
-        return SimulatorRunDataList(resources=run_items, cognite_client=self._cognite_client)
+        return SimulatorRunDataList._load(items, cognite_client=self._cognite_client)
