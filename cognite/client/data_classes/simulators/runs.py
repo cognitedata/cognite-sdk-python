@@ -29,7 +29,7 @@ class SimulationValueUnitName(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            name=resource["name"],
+            name=resource.get("name"),
         )
 
     def __post_init__(self) -> None:
