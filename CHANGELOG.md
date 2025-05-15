@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.75.1] - 2025-05-15
+### Fixed
+- Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
+
 ## [7.75.0] - 2025-04-22
 ### Added
 - Support for data modeling query set operations - union, unionAll, and intersection
