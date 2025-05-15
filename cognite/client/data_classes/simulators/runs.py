@@ -229,11 +229,11 @@ class SimulationRun(SimulationRunCore):
         latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
-        assert isinstance(latest, SimulationRun)
-        self.status = latest.status
-        self.status_message = latest.status_message
-        self.simulation_time = latest.simulation_time
-        self.last_updated_time = latest.last_updated_time
+        else:
+            self.status = latest.status
+            self.status_message = latest.status_message
+            self.simulation_time = latest.simulation_time
+            self.last_updated_time = latest.last_updated_time
 
     def wait(self, timeout: float = 60) -> None:
         """Waits for simulation status to become either success or failure.
