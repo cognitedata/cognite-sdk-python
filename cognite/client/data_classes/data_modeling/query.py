@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import UserDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -23,6 +23,7 @@ from cognite.client.data_classes.data_modeling.instances import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -174,6 +175,19 @@ class Query(CogniteObject):
 
 
 class ResultSetExpression(CogniteObject, ABC):
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ResultSetExpression:
+        if "nodes" in resource:
+            return NodeResultSetExpression._load(resource, cognite_client)
+        elif "edges" in resource:
+            return EdgeResultSetExpression._load(resource, cognite_client)
+        elif "union" in resource or "unionAll" in resource or "intersection" in resource:
+            return SetOperation._load(resource, cognite_client)
+        else:
+            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+
+
+class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
     def __init__(
         self,
         from_: str | None,
@@ -192,25 +206,8 @@ class ResultSetExpression(CogniteObject, ABC):
         self.chain_to = chain_to
         self.skip_already_deleted = skip_already_deleted
 
-    @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
 
-    @classmethod
-    def _load(
-        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
-    ) -> NodeResultSetExpression | EdgeResultSetExpression:
-        if "nodes" in resource:
-            return NodeResultSetExpression._load(resource, cognite_client)
-        elif "edges" in resource:
-            return EdgeResultSetExpression._load(resource, cognite_client)
-        else:
-            return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
-
-    def __eq__(self, other: Any) -> bool:
-        return type(other) is type(self) and self.dump() == other.dump()
-
-
-class NodeResultSetExpression(ResultSetExpression):
+class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for nodes in the data model.
 
     Args:
@@ -302,7 +299,7 @@ class NodeResultSetExpression(ResultSetExpression):
         return output
 
 
-class EdgeResultSetExpression(ResultSetExpression):
+class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for edges in the data model.
 
     Args:
@@ -449,32 +446,108 @@ class QueryResult(UserDict):
         )
 
 
-# class SetOperationResultSetExpression(ResultSetExpression):
-#     ...
-#
-#
-# class UnionAllTableExpression(SetOperationResultSetExpression):
-#     def __init__(
-#         self, union_all: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-#     ):
-#         self.union_all = union_all
-#         self.except_ = except_
-#         self.limit = limit
-#
-#
-# class UnionTableExpression(SetOperationResultSetExpression):
-#     def __init__(
-#         self, union: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-#     ):
-#         self.union = union
-#         self.except_ = except_
-#         self.limit = limit
-#
-#
-# class IntersectTableExpression(SetOperationResultSetExpression):
-#     def __init__(
-#         self, intersection: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-#     ):
-#         self.intersect = intersection
-#         self.except_ = except_
-#         self.limit = limit
+class SetOperation(ResultSetExpression, ABC):
+    def __init__(self, except_: SequenceNotStr[str] | None = None, limit: int | None = None) -> None:
+        self.except_ = except_
+        self.limit = limit
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SetOperation:
+        if "union" in resource:
+            return Union._load(resource, cognite_client)
+        elif "unionAll" in resource:
+            return UnionAll._load(resource, cognite_client)
+        elif "intersection" in resource:
+            return Intersection._load(resource, cognite_client)
+        else:
+            raise ValueError(f"Unknown set operation {resource}")
+
+
+class Union(SetOperation):
+    def __init__(
+        self, union: Sequence[str | SetOperation], except_: SequenceNotStr[str] | None = None, limit: int | None = None
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
+        self.union = union
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Union:
+        union = resource["union"]
+        except_ = resource.get("except")
+        return cls(
+            union=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
+            except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "union": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
+
+
+class UnionAll(SetOperation):
+    def __init__(
+        self,
+        union_all: Sequence[str | SetOperation],
+        except_: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
+        self.union_all = union_all
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnionAll:
+        union = resource["unionAll"]
+        except_ = resource.get("except")
+        return cls(
+            union_all=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
+            except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "unionAll": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union_all]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
+
+
+class Intersection(SetOperation):
+    def __init__(
+        self,
+        intersection: Sequence[str | SetOperation],
+        except_: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> None:
+        super().__init__(except_=except_, limit=limit)
+        self.intersection = intersection
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Intersection:
+        union = resource["intersection"]
+        except_ = resource.get("except")
+        return cls(
+            intersection=[item if isinstance(item, str) else SetOperation._load(item) for item in union],
+            except_=[str(item) for item in except_] if except_ else None,
+            limit=resource.get("limit"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "intersection": [item if isinstance(item, str) else item.dump(camel_case) for item in self.intersection]
+        }
+        if self.except_:
+            output["except"] = self.except_
+        if self.limit:
+            output["limit"] = self.limit
+        return output
