@@ -23,13 +23,13 @@ _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturi
 
 
 @dataclass
-class SimulationValueUnit(CogniteObject):
-    external_id: str | None = None
+class SimulationValueUnitName(CogniteObject):
+    name: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            external_id=resource.get("externalId"),
+            name=resource["name"],
         )
 
     def __post_init__(self) -> None:
@@ -37,13 +37,13 @@ class SimulationValueUnit(CogniteObject):
 
 
 @dataclass
-class SimulationValueUnitName(SimulationValueUnit):
-    name: str | None = None
+class SimulationValueUnit(SimulationValueUnitName):
+    external_id: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            name=resource["name"],
+            external_id=resource.get("externalId"),
         )
 
     def __post_init__(self) -> None:
