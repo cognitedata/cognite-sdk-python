@@ -44,6 +44,7 @@ class SimulationValueUnit(SimulationValueUnitName):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             external_id=resource.get("externalId"),
+            name=resource.get("name"),
         )
 
     def __post_init__(self) -> None:
