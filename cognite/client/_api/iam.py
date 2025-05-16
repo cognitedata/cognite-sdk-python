@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterable, Sequence
+from abc import ABC
+from collections.abc import Iterable, Iterator, Sequence
 from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
+from urllib.parse import urljoin
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
@@ -35,12 +37,22 @@ from cognite.client.data_classes.capabilities import (
 )
 from cognite.client.data_classes.iam import (
     GroupWrite,
+    Principal,
+    PrincipalList,
+    PrincipalUpdate,
+    PrincipalWrite,
     SecurityCategoryWrite,
+    ServiceAccountSecret,
+    ServiceAccountSecretList,
+    ServiceAccountWrite,
     SessionStatus,
     SessionType,
     TokenInspection,
 )
+from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -105,6 +117,7 @@ class IAMAPI(APIClient):
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
+        self.principals = PrincipalsAPI(config, api_version, cognite_client)
 
     @staticmethod
     def compare_capabilities(
@@ -653,3 +666,394 @@ class SessionsAPI(APIClient):
         """
         filter = {"status": status.upper()} if status is not None else None
         return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
+
+
+class OrgAPI(APIClient, ABC):
+    def _get_base_url_with_base_path(self) -> str:
+        base_path = ""
+        if self._api_version:
+            base_path = f"/api/{self._api_version}/orgs"
+        return urljoin(self._config.auth_url, base_path)
+
+
+class PrincipalsAPI(OrgAPI):
+    _RESOURCE_PATH = "/{}/principals"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="alpha", sdk_maturity="alpha", feature_name="ServiceAccounts"
+        )
+        self.secrets = ServiceAccountSecretsAPI(config, api_version, cognite_client, self._warning)
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+    ) -> Iterator[Principal]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+    ) -> Iterator[PrincipalList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        limit: int | None = None,
+    ) -> Iterator[Principal] | Iterator[PrincipalList]:
+        """Iterate over principals
+
+        Fetches principals as they are iterated over, so you keep a limited number of principals in memory.
+
+        Args:
+            chunk_size (int | None): Number of principals to return in each chunk. Defaults to yielding one principal a time.
+            limit (int | None): Maximum number of principals to return. Defaults to return all.
+
+        Returns:
+            Iterator[Principal] | Iterator[PrincipalList]: yields Principal one by one if chunk_size is not specified, else PrincipalList objects.
+        """
+        self._warning.warn()
+
+        return self._list_generator(
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            method="GET",
+            chunk_size=chunk_size,
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def __iter__(self) -> Iterator[Principal]:
+        """Iterate over principals
+
+        Fetches principals as they are iterated over, so you keep a
+        limited number of principals in memory.
+
+        Returns:
+            Iterator[Principal]: yields principals one by one.
+        """
+        return self()
+
+    @overload
+    def create(self, org: str, item: PrincipalWrite) -> Principal: ...
+
+    @overload
+    def create(self, org: str, item: Sequence[PrincipalWrite]) -> PrincipalList: ...
+
+    def create(
+        self,
+        org: str,
+        item: PrincipalWrite | Sequence[PrincipalWrite],
+    ) -> Principal | PrincipalList:
+        """`Create principals <MISSING>`_
+
+        Create principals in an organization.
+
+        #### Access control
+        Requires the caller to be an admin in the
+        target organization.
+
+        Args:
+            org (str): ID of an organization
+            item (PrincipalWrite | Sequence[PrincipalWrite]): principals or list of principals to create.
+
+        Returns:
+            Principal | PrincipalList: The created principal or principals.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._create_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            items=item,  # type: ignore[arg-type]
+            input_resource_cls=PrincipalWrite,
+            headers={"cdf-version": "alpha"},
+        )
+
+    @overload
+    def update(self, org: str, item: PrincipalWrite | PrincipalUpdate) -> Principal: ...
+
+    @overload
+    def update(self, org: str, item: Sequence[PrincipalWrite | PrincipalUpdate]) -> PrincipalList: ...
+
+    def update(
+        self,
+        org: str,
+        item: PrincipalWrite | PrincipalUpdate | Sequence[PrincipalWrite | PrincipalUpdate],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+    ) -> Principal | PrincipalList:
+        """`Update principals <MISSING>`_
+
+        Update principals in an organization.
+
+        #### Access control
+            Requires the caller to be an admin in the
+            target organization.
+
+        Args:
+            org (str): ID of an organization
+            item (PrincipalWrite | PrincipalUpdate | Sequence[PrincipalWrite | PrincipalUpdate]): principal or list of principals to update.
+            mode (Literal["replace_ignore_null", "patch", "replace"]): The update mode to use. Defaults to 'replace_ignore_null'.
+
+        Returns:
+            Principal | PrincipalList: The updated principals or principals.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._update_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            update_cls=PrincipalUpdate,
+            items=item,  # type: ignore[arg-type]
+            mode=mode,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def delete(
+        self, org: str, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
+    ) -> None:
+        """`Delete principals <MISSING>`_
+
+        Delete principals in an organization. All secrets associated with the principals will be deleted
+        as well.
+
+        #### Access control
+        Requires the caller to be an admin in the target organization.
+
+        Args:
+            org (str): ID of an organization
+            id (int | Sequence[int] | None): ID or list of IDs of principals to delete.
+            external_id (str | SequenceNotStr[str] | None): External ID or list of external IDs of principals to delete.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        self._delete_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=False,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def list(self, org: str, limit: int | None = DEFAULT_LIMIT_READ) -> Principal | PrincipalList:
+        """`List principals <MISSING>`_
+
+        List principals in an organization.
+
+        #### Access control
+        Requires the caller to be logged into the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            limit (int | None): Max number of principals to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            Principal | PrincipalList: A principals or list of principals.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._list(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org),
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            method="GET",
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+
+class ServiceAccountSecretsAPI(OrgAPI):
+    _RESOURCE_PATH = "/{}/principals/{}/secrets"
+
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+        warning: FeaturePreviewWarning,
+    ) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = warning
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecret]: ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecretList]: ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        limit: int | None = None,
+    ) -> Iterator[ServiceAccountSecret] | Iterator[ServiceAccountSecretList]:
+        """Iterate over service account secrets
+
+        Fetches service account secret as they are iterated over, so you keep a limited number of service account secrets in memory.
+
+        Args:
+            chunk_size (int | None): Number of service account secretss to return in each chunk. Defaults to yielding one service account secret a time.
+            limit (int | None): Maximum number of service account secrets to return. Defaults to return all.
+
+        Returns:
+            Iterator[ServiceAccountSecret] | Iterator[ServiceAccountSecretList]: yields ServiceAccountSecret one by one if chunk_size is not specified, else ServiceAccountSecretList objects.
+        """
+        self._warning.warn()
+
+        return self._list_generator(
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            method="GET",
+            chunk_size=chunk_size,
+            limit=limit,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def __iter__(self) -> Iterator[ServiceAccountSecret]:
+        """Iterate over service account secretss
+
+        Fetches service account secrets as they are iterated over, so you keep a
+        limited number of service account secrets in memory.
+
+        Returns:
+            Iterator[ServiceAccountSecret]: yields service account secret one by one.
+        """
+        return self()
+
+    @overload
+    def create(self, org: str, client_id: str, item: ServiceAccountWrite) -> ServiceAccountSecret: ...
+
+    @overload
+    def create(self, org: str, client_id: str, item: Sequence[ServiceAccountWrite]) -> ServiceAccountSecretList: ...
+
+    def create(
+        self, org: str, client_id: str, item: ServiceAccountWrite | Sequence[ServiceAccountWrite]
+    ) -> ServiceAccountSecret | ServiceAccountSecretList:
+        """`Create a service account secret <MISSING>`_
+
+        Create a secret for a service account.
+
+        This is the only time when the client secret will be shown. Make sure to store it securely.
+
+        #### Access control
+        Requires the caller to be an admin in the target organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): None
+            item (ServiceAccountWrite | Sequence[ServiceAccountWrite]): Service account or list of service accounts to create.
+
+        Returns:
+            ServiceAccountSecret | ServiceAccountSecretList: The created service account secret or service account secrets.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._create_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            items=item,  # type: ignore[arg-type]
+            input_resource_cls=ServiceAccountWrite,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def delete(self, org: str, client_id: str, id: int | Sequence[int]) -> None:
+        """`Delete service account secrets <MISSING>`_
+
+        Delete secrets for a service account.
+
+        #### Access control
+        Requires the caller to be an admin in the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): None
+            id (int | Sequence[int]): ID or list of IDs of princip secrets to delete.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        self._delete_multiple(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            identifiers=IdentifierSequence.load(ids=id),
+            wrap_ids=False,
+            headers={"cdf-version": "alpha"},
+        )
+
+    def list(
+        self,
+        org: str,
+        client_id: str,
+    ) -> ServiceAccountSecretList:
+        """`List service account secrets <MISSING>`_
+
+        List secrets for a service account.
+
+        #### Access control
+        Requires the caller to be an admin in the target
+        organization.
+
+        Args:
+            org (str): ID of an organization
+            client_id (str): Unique identifier of a service account
+
+        Returns:
+            ServiceAccountSecretList: A list of service account secrets.
+
+        Examples:
+
+            <MISSING>
+
+        """
+        self._warning.warn()
+
+        return self._list(
+            resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, org, client_id),
+            list_cls=ServiceAccountSecretList,
+            resource_cls=ServiceAccountSecret,
+            method="GET",
+            headers={"cdf-version": "alpha"},
+        )
