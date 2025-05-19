@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.76.0] - 2025-05-19
+### Added
+- When using `retrieve_dataframe` or `to_pandas` with datapoints, an `include_unit` argument has been added that will include the units as a second level to the columns.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
