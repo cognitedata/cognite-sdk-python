@@ -1006,7 +1006,7 @@ class DatapointsArray(CogniteResource):
                     data.append(self.status_symbol)
                     units.append(None)
             if include_unit and any(bool(u and not u.isspace()) for u in units):
-                columns = pd.MultiIndex.from_tuples(list(zip(columns, units)))
+                columns = pd.MultiIndex.from_tuples(list(zip(columns, units)), names=[None, "Units"])
             return pd.DataFrame(np.concatenate(data), columns=columns, index=idx, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
@@ -1015,7 +1015,7 @@ class DatapointsArray(CogniteResource):
             for agg in agg_names
         ]
         if include_unit and any(bool(u and not u.isspace()) for u in units):
-            aggregate_columns = pd.MultiIndex.from_tuples(list(zip(aggregate_columns, units)))
+            aggregate_columns = pd.MultiIndex.from_tuples(list(zip(aggregate_columns, units)), names=[None, "Units"])
         # We need special handling for object aggregates:
         for i, agg in enumerate(agg_names):
             if agg in ("min_datapoint", "max_datapoint"):
@@ -1286,7 +1286,7 @@ class Datapoints(CogniteResource):
         else:
             idx = pd.to_datetime(self.timestamp, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(tz))
         if include_unit and any(bool(u and not u.isspace()) for u in units):
-            field_names = pd.MultiIndex.from_tuples(list(zip(field_names, units)))
+            field_names = pd.MultiIndex.from_tuples(list(zip(field_names, units)), names=[None, "Units"])
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
 
