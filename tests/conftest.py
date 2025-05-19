@@ -6,7 +6,7 @@ import responses
 
 from cognite.client import global_config
 
-dotenv.load_dotenv()
+dotenv.load_dotenv(override=True)
 
 global_config.disable_pypi_version_check = True
 
