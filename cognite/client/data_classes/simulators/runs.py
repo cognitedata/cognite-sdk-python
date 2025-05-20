@@ -8,6 +8,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteObject,
+    CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
@@ -26,19 +27,31 @@ _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturi
 
 @dataclass
 class SimulationValueUnitName(CogniteObject):
-    name: str
+    name: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            name=resource["name"],
+            name=resource.get("name"),
         )
 
     def __post_init__(self) -> None:
         _WARNING.warn()
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return super().dump(camel_case=camel_case)
+
+@dataclass
+class SimulationValueUnit(SimulationValueUnitName):
+    external_id: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+        )
+
+    def __post_init__(self) -> None:
+        _WARNING.warn()
 
 
 @dataclass
@@ -275,6 +288,145 @@ class SimulationRun(SimulationRunCore):
             simulation_time=resource.get("simulationTime"),
             cognite_client=cognite_client,
         )
+
+
+class SimulationValueBase(CogniteObject):
+    """
+    Base class for simulation values. This class is used to define the value and its type.
+    The value can be a string, double, array of strings or array of doubles.
+    The maximum length is 1024 for strings and 200 for arrays.
+    """
+
+    def __init__(
+        self,
+        reference_id: str,
+        value: str | int | float | list[str] | list[int] | list[float],
+        value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"],
+        unit: SimulationValueUnitName | None = None,
+        simulator_object_reference: dict[str, str] | None = None,
+        timeseries_external_id: str | None = None,
+    ) -> None:
+        self.reference_id = reference_id
+        self.value = value
+        self.value_type = value_type
+        self.unit = unit
+        self.simulator_object_reference = simulator_object_reference
+        self.timeseries_external_id = timeseries_external_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            reference_id=resource["referenceId"],
+            value=resource["value"],
+            value_type=resource["valueType"],
+            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            simulator_object_reference=resource.get("simulatorObjectReference"),
+            timeseries_external_id=resource.get("timeseriesExternalId"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+        if self.simulator_object_reference is not None:
+            output["simulatorObjectReference"] = self.simulator_object_reference
+        if self.timeseries_external_id is not None:
+            output["timeseriesExternalId"] = self.timeseries_external_id
+        return output
+
+
+class SimulationInput(SimulationValueBase):
+    """
+    This class is used to define the value and its type.
+    The value can be a string, double, array of strings or array of doubles.
+    The maximum length is 1024 for strings and 200 for arrays.
+    """
+
+    def __init__(
+        self,
+        reference_id: str,
+        value: str | int | float | list[str] | list[int] | list[float],
+        value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"],
+        unit: SimulationValueUnitName | None = None,
+        simulator_object_reference: dict[str, str] | None = None,
+        timeseries_external_id: str | None = None,
+        overridden: bool | None = None,
+    ) -> None:
+        super().__init__(
+            reference_id=reference_id,
+            value=value,
+            value_type=value_type,
+            unit=unit,
+            simulator_object_reference=simulator_object_reference,
+            timeseries_external_id=timeseries_external_id,
+        )
+        self.overridden = overridden
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            reference_id=resource["referenceId"],
+            value=resource["value"],
+            value_type=resource["valueType"],
+            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            simulator_object_reference=resource.get("simulatorObjectReference"),
+            timeseries_external_id=resource.get("timeseriesExternalId"),
+            overridden=resource.get("overridden"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.unit is not None:
+            output["unit"] = self.unit.dump(camel_case=camel_case)
+        if self.simulator_object_reference is not None:
+            output["simulatorObjectReference"] = self.simulator_object_reference
+        if self.timeseries_external_id is not None:
+            output["timeseriesExternalId"] = self.timeseries_external_id
+        if self.overridden is not None:
+            output["overridden"] = self.overridden
+        return output
+
+
+class SimulationOutput(SimulationValueBase):
+    """
+    This class is used to return the outputs generated during the simulation.
+    The value can be a string, double, array of strings or array of doubles.
+    """
+
+    pass
+
+
+class SimulationRunDataItem(CogniteResource):
+    def __init__(
+        self,
+        run_id: int,
+        inputs: list[SimulationInput],
+        outputs: list[SimulationOutput],
+    ) -> None:
+        super().__init__()
+        self.run_id = run_id
+        self.inputs = inputs
+        self.outputs = outputs
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        inputs = [SimulationInput._load(input_) for input_ in resource["inputs"]]
+        outputs = [SimulationOutput._load(output_) for output_ in resource["outputs"]]
+        return cls(
+            run_id=resource["runId"],
+            inputs=inputs,
+            outputs=outputs,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
+        output["outputs"] = [output_.dump(camel_case=camel_case) for output_ in self.outputs]
+        return output
+
+
+class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
+    _RESOURCE = SimulationRunDataItem
 
 
 class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):

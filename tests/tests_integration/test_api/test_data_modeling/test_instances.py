@@ -54,11 +54,14 @@ from cognite.client.data_classes.data_modeling.instances import (
     TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import (
+    Intersection,
     NodeResultSetExpression,
     Query,
     QueryResult,
     Select,
     SourceSelector,
+    Union,
+    UnionAll,
 )
 from cognite.client.data_classes.filters import Prefix
 from cognite.client.exceptions import CogniteAPIError
@@ -1242,6 +1245,49 @@ class TestInstancesAPI:
             )
             expected = set(node.external_id.removeprefix(random_prefix) for node in res.as_ids())
             assert expected == {"0", "1"}
+        finally:
+            cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
+
+    def test_set_operation_result_expressions(
+        self, cognite_client: CogniteClient, integration_test_space: Space
+    ) -> None:
+        random_prefix = random_string(10)
+        nodes = [NodeApply(integration_test_space.space, random_prefix + str(i)) for i in range(2)]
+
+        try:
+            cognite_client.data_modeling.instances.apply(nodes)
+            res = cognite_client.data_modeling.instances.query(
+                Query(
+                    with_={
+                        "0_": NodeResultSetExpression(
+                            filter=filters.Equals(["node", "externalId"], random_prefix + "0")
+                        ),
+                        "0_duplicate": NodeResultSetExpression(
+                            filter=filters.Equals(["node", "externalId"], random_prefix + "0")
+                        ),
+                        "1_": NodeResultSetExpression(
+                            filter=filters.Equals(["node", "externalId"], random_prefix + "1")
+                        ),
+                        "all": NodeResultSetExpression(
+                            filter=filters.In(["node", "externalId"], [random_prefix + i for i in ["0", "1"]])
+                        ),
+                        "union": Union(["0_", "0_duplicate", "1_"]),
+                        "union_all": UnionAll(["0_", "0_duplicate", "1_"]),
+                        "intersection": Intersection(["all", "0_"]),
+                        "except": Union(["1_", "all"], except_=["0_"]),
+                    },
+                    select={
+                        "union": Select(),
+                        "union_all": Select(),
+                        "intersection": Select(),
+                        "except": Select(),
+                    },
+                )
+            )
+            assert {n.external_id for n in res["union"]} == {random_prefix + i for i in ["0", "1"]}
+            assert {n.external_id for n in res["union_all"]} == {random_prefix + i for i in ["0", "0", "1"]}
+            assert {n.external_id for n in res["intersection"]} == {random_prefix + i for i in ["0"]}
+            assert {n.external_id for n in res["except"]} == {random_prefix + i for i in ["1"]}
         finally:
             cognite_client.data_modeling.instances.delete([node.as_id() for node in nodes])
 

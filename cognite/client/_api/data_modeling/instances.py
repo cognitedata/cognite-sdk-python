@@ -65,6 +65,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypeInformation,
 )
 from cognite.client.data_classes.data_modeling.query import (
+    NodeOrEdgeResultSetExpression,
     Query,
     QueryResult,
     SourceSelector,
@@ -818,7 +819,10 @@ class InstancesAPI(APIClient):
                 >>> subscription_context.cancel()
         """
         for result_set_expression in query.with_.values():
-            if result_set_expression.from_ is not None:
+            if (
+                isinstance(result_set_expression, NodeOrEdgeResultSetExpression)
+                and result_set_expression.from_ is not None
+            ):
                 raise ValueError("Cannot chain result sets when subscribing to a query")
 
         subscription_context = SubscriptionContext()

@@ -17,14 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [7.75.1] - 2025-05-15
 ### Fixed
-- Fixes for type annotations for Functions API
+- Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
+
+## [7.75.0] - 2025-04-22
 ### Added
+- Support for data modeling query set operations - union, unionAll, and intersection
 - Support for the `/simulators/logs` API endpoint.
 - Support for the `/simulators/routines` and `/simulators/routines/revisions` API endpoints.
 - Support for the `/simulators/models` and `/simulators/models/revisions` API endpoints.
 - Support for the `/simulators` and `/simulators/integration` API endpoints.
+### Fixed
+- Fixes for type annotations for Functions API
 
 ## [7.74.5] - 2025-04-08
 ### Fixed
