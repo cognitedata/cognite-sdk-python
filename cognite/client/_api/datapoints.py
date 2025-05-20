@@ -1102,6 +1102,7 @@ class DatapointsAPI(APIClient):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id", "instance_id"] = "instance_id",
+        include_unit: bool = False,
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
 
@@ -1132,6 +1133,7 @@ class DatapointsAPI(APIClient):
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used. If none of the time series have units, the columns will not have a second level.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1211,7 +1213,11 @@ class DatapointsAPI(APIClient):
 
         if not uniform_index:
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
-                column_names, include_aggregate_name, include_granularity_name, include_status=include_status
+                column_names,
+                include_aggregate_name,
+                include_granularity_name,
+                include_status=include_status,
+                include_unit=include_unit,
             )
         # Uniform index requires extra validation and processing:
         uses_tz_or_calendar_gran = any(q.use_cursors for q in fetcher.all_queries)
@@ -1224,7 +1230,11 @@ class DatapointsAPI(APIClient):
                 "OR when timezone is used OR when a calendar granularity is used (e.g. month/quarter/year)"
             )
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
-            column_names, include_aggregate_name, include_granularity_name, include_status=include_status
+            column_names,
+            include_aggregate_name,
+            include_granularity_name,
+            include_status=include_status,
+            include_unit=include_unit,
         )
         start = pd.Timestamp(min(q.start_ms for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")

@@ -2681,6 +2681,33 @@ class TestRetrieveDataFrameAPI:
                 id=one_mill_dps_ts[0].id, limit=5, granularity="1d", aggregates="min", include_granularity_name=None
             )
 
+    def test_include_unit(
+        self, cognite_client: CogniteClient, timeseries_degree_c_minus40_0_100: TimeSeries, one_mill_dps_ts: tuple
+    ):
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=timeseries_degree_c_minus40_0_100.external_id,
+            include_unit=True,
+            aggregates="average",
+            granularity="1d",
+        )
+        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        res = cognite_client.time_series.data.retrieve(
+            external_id=timeseries_degree_c_minus40_0_100.external_id, aggregates="average", granularity="1d"
+        ).to_pandas(include_unit=True)
+        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=timeseries_degree_c_minus40_0_100.external_id, include_unit=True
+        )
+        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        res = cognite_client.time_series.data.retrieve(
+            external_id=timeseries_degree_c_minus40_0_100.external_id
+        ).to_pandas(include_unit=True)
+        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        res = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=one_mill_dps_ts[0].external_id, include_unit=True, aggregates="average", granularity="100d"
+        )
+        assert type(res.columns) is pd.core.indexes.base.Index
+
 
 @pytest.fixture
 def post_spy(cognite_client):

@@ -63,6 +63,7 @@ def concat_dps_dataframe_list(
     include_aggregate_name: bool,
     include_granularity_name: bool,
     include_status: bool,
+    include_unit: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
     dfs = [
@@ -71,6 +72,7 @@ def concat_dps_dataframe_list(
             include_aggregate_name=include_aggregate_name,
             include_granularity_name=include_granularity_name,
             include_status=include_status,
+            include_unit=include_unit,
         )
         for dps in dps_lst
     ]
