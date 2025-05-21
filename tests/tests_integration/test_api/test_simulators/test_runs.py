@@ -1,9 +1,13 @@
+import asyncio
+import time
+
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
+    SimulationRun,
     SimulationRunWrite,
     SimulationValueUnitName,
 )
@@ -45,6 +49,55 @@ class TestSimulatorRuns:
         assert sorted(runs_filtered_by_status, key=lambda x: x["id"]) == sorted(
             filter_by_routine, key=lambda x: x["id"]
         )
+
+    @pytest.mark.asyncio
+    async def test_run_with_wait_and_retrieve(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+
+        run_task = asyncio.create_task(
+            asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
+        )
+
+        run_to_update: SimulationRun | None = None
+        start_time = time.time()
+
+        # 1. Wait for the run to be created
+        # 2. Emulate it being finished by the simulator
+        while run_to_update is None and time.time() - start_time < 30:
+            runs_to_update = cognite_client.simulators.runs.list(
+                routine_external_ids=[routine_external_id],
+                status="ready",
+                limit=5,
+            )
+            if len(runs_to_update) == 1:
+                run_to_update = runs_to_update[0]
+            else:
+                await asyncio.sleep(1)
+
+        assert run_to_update is not None
+
+        cognite_client.simulators._post(
+            "/simulators/run/callback",
+            json={
+                "items": [
+                    {
+                        "id": run_to_update.id,
+                        "status": "success",
+                    }
+                ]
+            },
+        )
+
+        created_run = await run_task
+
+        retrieved_run = cognite_client.simulators.runs.retrieve(ids=created_run.id)
+        assert created_run.id == retrieved_run.id
+
+        logs_res = retrieved_run.get_logs()
+        logs_res2 = cognite_client.simulators.logs.retrieve(id=created_run.log_id)
+
+        assert logs_res is not None
+        assert logs_res.dump() == logs_res2.dump()
 
     def test_create_run(
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names

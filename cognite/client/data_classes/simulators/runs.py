@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
@@ -14,7 +15,9 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.simulators.logs import SimulatorLog
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._retry import Backoff
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -62,7 +65,7 @@ class SimulationInputOverride(CogniteObject):
         return cls(
             reference_id=resource["referenceId"],
             value=resource["value"],
-            unit=SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None,
+            unit=(SimulationValueUnitName._load(resource["unit"], cognite_client) if resource.get("unit") else None),
         )
 
     def __post_init__(self) -> None:
@@ -128,7 +131,7 @@ class SimulationRunWrite(SimulationRunCore):
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
-            inputs=[SimulationInputOverride._load(_input) for _input in inputs] if inputs else None,
+            inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -172,6 +175,7 @@ class SimulationRun(SimulationRunCore):
         status_message (str | None): The status message of the simulation run
         simulation_time (int | None): Simulation time in milliseconds. Timestamp when the input data was sampled. Used for indexing input and output time series.
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
+        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
 
     """
 
@@ -194,6 +198,7 @@ class SimulationRun(SimulationRunCore):
         status_message: str | None = None,
         simulation_time: int | None = None,
         run_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             run_type=run_type,
@@ -214,6 +219,7 @@ class SimulationRun(SimulationRunCore):
         self.data_set_id = data_set_id
         self.user_id = user_id
         self.log_id = log_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
@@ -221,6 +227,44 @@ class SimulationRun(SimulationRunCore):
             run_type=self.run_type,
             run_time=self.run_time,
         )
+
+    def get_logs(self) -> SimulatorLog | None:
+        """`Retrieve logs for this simulation run. <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
+
+        Returns:
+            SimulatorLog | None: Log for the simulation run.
+        """
+        return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
+
+    def update(self) -> None:
+        """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
+        # same logic as Cognite Functions
+        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
+        if latest is None:
+            raise RuntimeError("Unable to update the simulation run object (it was not found)")
+        else:
+            self.status = latest.status
+            self.status_message = latest.status_message
+            self.simulation_time = latest.simulation_time
+            self.last_updated_time = latest.last_updated_time
+
+    def wait(self, timeout: float = 60) -> None:
+        """Waits for simulation status to become either success or failure.
+        This is generally not needed to call directly, as client.simulators.routines.run(...) will wait for the simulation to finish by default.
+
+        Args:
+            timeout (float): Time out after this many seconds. Defaults to 60 seconds.
+        """
+
+        end_time = time.time() + timeout
+        poll_backoff = Backoff(max_wait=30, base=10)
+
+        while time.time() < end_time:
+            self.update()
+            if self.status in ["success", "failure"]:
+                return
+            sleep_time = min(next(poll_backoff) + 1, end_time - time.time())
+            time.sleep(sleep_time)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRun:
@@ -242,6 +286,7 @@ class SimulationRun(SimulationRunCore):
             status_message=resource.get("statusMessage"),
             run_time=resource.get("runTime"),
             simulation_time=resource.get("simulationTime"),
+            cognite_client=cognite_client,
         )
 
 
@@ -388,7 +433,7 @@ class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalID
     _RESOURCE = SimulationRunWrite
 
 
-class SimulatorRunsList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
+class SimulatorRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
     def as_write(self) -> SimulationRunWriteList:
