@@ -30,6 +30,7 @@ HANDLER_FILE_NAME = "handler.py"
 class FunctionHandle(Protocol):
     def __call__(
         self,
+        *,
         client: CogniteClient | None = None,
         data: dict[str, object] | None = None,
         secrets: dict[str, str] | None = None,
@@ -192,7 +193,9 @@ class Function(FunctionCore):
             metadata=self.metadata,
         )
 
-    def call(self, data: dict[str, object] | None = None, wait: bool = True) -> FunctionCall:
+    def call(
+        self, data: dict[str, object] | None = None, wait: bool = True
+    ) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
@@ -233,7 +236,9 @@ class Function(FunctionCore):
             limit=limit,
         )
 
-    def list_schedules(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
+    def list_schedules(
+        self, limit: int | None = DEFAULT_LIMIT_READ
+    ) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
@@ -242,7 +247,9 @@ class Function(FunctionCore):
         Returns:
             FunctionSchedulesList: List of function schedules
         """
-        return self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
+        return self._cognite_client.functions.schedules.list(
+            function_id=self.id, limit=limit
+        )
 
     def retrieve_call(self, id: int) -> FunctionCall | None:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
@@ -253,7 +260,9 @@ class Function(FunctionCore):
         Returns:
             FunctionCall | None: Requested function call or None if not found.
         """
-        return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
+        return self._cognite_client.functions.calls.retrieve(
+            call_id=id, function_id=self.id
+        )
 
     def update(self) -> None:
         """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
@@ -324,7 +333,9 @@ class FunctionWrite(FunctionCore):
         self.extra_index_urls = extra_index_urls
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionWrite:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> FunctionWrite:
         return cls(
             name=resource["name"],
             external_id=resource.get("externalId"),
@@ -463,7 +474,9 @@ class FunctionSchedule(FunctionScheduleCore):
     def as_write(self) -> FunctionScheduleWrite:
         """Returns a writeable version of this function schedule."""
         if self.cron_expression is None or self.name is None:
-            raise ValueError("cron_expression or name are required to create a FunctionSchedule")
+            raise ValueError(
+                "cron_expression or name are required to create a FunctionSchedule"
+            )
         return FunctionScheduleWrite(
             name=self.name,
             cron_expression=self.cron_expression,
@@ -516,7 +529,9 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         self.data = data
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionScheduleWrite:
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> FunctionScheduleWrite:
         return cls(
             name=resource["name"],
             function_id=resource.get("functionId"),
@@ -559,19 +574,25 @@ class FunctionSchedulesList(
 
     def as_write(self) -> FunctionScheduleWriteList:
         """Returns a writeable version of this function schedule."""
-        return FunctionScheduleWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
+        return FunctionScheduleWriteList(
+            [f.as_write() for f in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
     _RESOURCE = FunctionWrite
 
 
-class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTransformerMixin):
+class FunctionList(
+    WriteableCogniteResourceList[FunctionWrite, Function], IdTransformerMixin
+):
     _RESOURCE = Function
 
     def as_write(self) -> FunctionWriteList:
         """Returns a writeable version of this function."""
-        return FunctionWriteList([f.as_write() for f in self.data], cognite_client=self._get_cognite_client())
+        return FunctionWriteList(
+            [f.as_write() for f in self.data], cognite_client=self._get_cognite_client()
+        )
 
 
 class FunctionCall(CogniteResource):
@@ -623,7 +644,9 @@ class FunctionCall(CogniteResource):
             dict[str, object] | None: Response from the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        return self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
+        return self._cognite_client.functions.calls.get_response(
+            call_id=call_id, function_id=function_id
+        )
 
     def get_logs(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
@@ -632,23 +655,33 @@ class FunctionCall(CogniteResource):
             FunctionCallLog: Log for the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        return self._cognite_client.functions.calls.get_logs(call_id=call_id, function_id=function_id)
+        return self._cognite_client.functions.calls.get_logs(
+            call_id=call_id, function_id=function_id
+        )
 
     def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False."""
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        latest = self._cognite_client.functions.calls.retrieve(call_id=call_id, function_id=function_id)
+        latest = self._cognite_client.functions.calls.retrieve(
+            call_id=call_id, function_id=function_id
+        )
         if latest is None:
-            raise RuntimeError("Unable to update the function call object (it was not found)")
+            raise RuntimeError(
+                "Unable to update the function call object (it was not found)"
+            )
         self.status = latest.status
         self.end_time = latest.end_time
         self.error = latest.error
 
     @staticmethod
-    def _get_identifiers_or_raise(call_id: int | None, function_id: int | None) -> tuple[int, int]:
+    def _get_identifiers_or_raise(
+        call_id: int | None, function_id: int | None
+    ) -> tuple[int, int]:
         # Mostly a mypy thing, but for sure nice with an error message :D
         if call_id is None or function_id is None:
-            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
+            raise ValueError(
+                "FunctionCall is missing one or more of: [id, function_id]"
+            )
         return call_id, function_id
 
     def wait(self) -> None:
