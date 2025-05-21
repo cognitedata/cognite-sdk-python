@@ -12,7 +12,7 @@ from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, overload
+from typing import TYPE_CHECKING, Literal, NoReturn, cast, overload
 from zipfile import ZipFile
 
 from cognite.client._api_client import APIClient
@@ -662,7 +662,7 @@ class FunctionsAPI(APIClient):
     def _assert_exactly_one_of_folder_or_file_id_or_function_handle(
         folder: str | None,
         file_id: int | None,
-        function_handle: Callable[..., Any] | None,
+        function_handle: FunctionHandle | None,
     ) -> None:
         source_code_options = {
             "folder": folder,
@@ -790,7 +790,9 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
             _run_import_check_backup(root_path, module_path)
 
 
-def _validate_function_handle(handle_obj: Callable | ast.FunctionDef) -> None:
+def _validate_function_handle(
+    handle_obj: Callable[..., object] | ast.FunctionDef,
+) -> None:
     if isinstance(handle_obj, ast.FunctionDef):
         name = handle_obj.name
         accepts_args = {arg.arg for arg in handle_obj.args.args}

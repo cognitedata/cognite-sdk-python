@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 ### Fixed
-- Fixes type annotations for Functions API
+- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
 ## [7.75.1] - 2025-05-15
 ### Fixed
