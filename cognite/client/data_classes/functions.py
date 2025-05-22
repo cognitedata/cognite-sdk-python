@@ -28,6 +28,31 @@ HANDLER_FILE_NAME = "handler.py"
 
 
 class FunctionHandle(Protocol):
+    """The function handle.
+
+    This is the function that will be called when the function is executed. The function
+    must be named "handle" and can take any of the following named only arguments:
+
+    Args:
+        client (CogniteClient | None): Cognite client.
+        data (dict[str, object] | None): Input data to the function.
+        secrets (dict[str, str] | None): Secrets passed to the function.
+        function_call_info (dict[str, object] | None): Function call information.
+
+    Example:
+        .. code-block:: python
+
+            def handle(
+                client: CogniteClient | None = None,
+                data: dict[str, object] | None = None,
+            ) -> object:
+                # Do something with the data
+                return {"result": "success"}
+
+    Returns:
+        object: Return value of the function. Any JSON serializable object is allowed.
+    """
+
     def __call__(
         self,
         *,
