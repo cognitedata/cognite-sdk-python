@@ -43,9 +43,13 @@ class SimulatorModelRevisionsFilter(CogniteFilter):
         self,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids
         self.all_versions = all_versions
+        self.created_time: TimestampRange | None = None
+        self.last_updated_time: TimestampRange | None = None
 
 
 class SimulatorRunsFilter(CogniteFilter):
