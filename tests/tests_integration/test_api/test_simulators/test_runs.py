@@ -1,6 +1,7 @@
 import asyncio
 import time
 
+import pandas as pd
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
@@ -8,6 +9,7 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
     SimulationRun,
+    SimulationRunDataItem,
     SimulationRunWrite,
     SimulationValueUnitName,
 )
@@ -180,3 +182,72 @@ class TestSimulatorRuns:
         assert get_run_data[0].run_id == created_run[0].id
         assert get_run_data[0].inputs[0].dump() == inputs[0]
         assert get_run_data[0].outputs[0].dump() == outputs[0]
+
+
+@pytest.mark.dsl
+class TestSimulationRunDataItemPandasIntegration:
+    def test_to_pandas(self):
+        # Create sample data
+        unit = SimulationValueUnitName(name="C")
+        inputs = [
+            SimulationInput(
+                reference_id="CWT",
+                value=11.0,
+                value_type="DOUBLE",
+                overridden=True,
+                unit=unit,
+            ),
+            SimulationInput(
+                reference_id="CWP",
+                value=[5.0],
+                value_type="DOUBLE_ARRAY",
+                overridden=True,
+                unit=SimulationValueUnitName(name="bar"),
+            ),
+        ]
+        outputs = [
+            SimulationOutput(
+                reference_id="ST",
+                simulator_object_reference={"address": "test_out"},
+                value=18.5,
+                value_type="DOUBLE",
+                unit=unit,
+            )
+        ]
+
+        # Create the SimulationRunDataItem
+        data_item = SimulationRunDataItem(run_id=123, inputs=inputs, outputs=outputs)
+
+        # Convert to pandas DataFrame
+        df = data_item.to_pandas()
+
+        # Assertions
+        assert isinstance(df, pd.DataFrame)
+        assert df.shape == (3, 9)  # 3 rows (2 inputs + 1 output), 9 columns
+
+        # Check that the data is correctly formatted
+        assert list(df.columns) == [
+            "run_id",
+            "type",
+            "reference_id",
+            "value",
+            "unit",
+            "value_type",
+            "overridden",
+            "timeseries_external_id",
+            "address",
+        ]
+
+        # Check specific values
+        assert df.loc[0, "run_id"] == 123
+        assert df.loc[0, "type"] == "Input"
+        assert df.loc[0, "reference_id"] == "CWT"
+        assert df.loc[0, "value"] == 11.0
+        assert df.loc[0, "unit"] == "C"
+        assert df.loc[0, "value_type"] == "DOUBLE"
+        assert df.loc[0, "overridden"]
+
+        assert df.loc[2, "type"] == "Output"
+        assert df.loc[2, "reference_id"] == "ST"
+        assert df.loc[2, "value"] == 18.5
+        assert df.loc[2, "address"] == "test_out"
