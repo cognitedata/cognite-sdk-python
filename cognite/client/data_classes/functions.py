@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (
@@ -25,6 +25,54 @@ if TYPE_CHECKING:
 RunTime: TypeAlias = Literal["py39", "py310", "py311"]
 FunctionStatus: TypeAlias = Literal["Queued", "Deploying", "Ready", "Failed"]
 HANDLER_FILE_NAME = "handler.py"
+
+
+class FunctionHandle(Protocol):
+    """The function handle.
+
+    This is the function that will be called when the function is executed. The function
+    must be named "handle" and can take any of the following named only arguments:
+
+    Args:
+        client (CogniteClient | None): Cognite client.
+        data (dict[str, object] | None): Input data to the function.
+        secrets (dict[str, str] | None): Secrets passed to the function.
+        function_call_info (dict[str, object] | None): Function call information.
+
+    Example:
+        .. code-block:: python
+
+            def handle(
+                client: CogniteClient | None = None,
+                data: dict[str, object] | None = None,
+            ) -> object:
+                # Do something with the data
+                return {"result": "success"}
+
+    Returns:
+        object: Return value of the function. Any JSON serializable object is allowed.
+    """
+
+    def __call__(
+        self,
+        *,
+        client: CogniteClient | None = None,
+        data: dict[str, object] | None = None,
+        secrets: dict[str, str] | None = None,
+        function_call_info: dict[str, object] | None = None,
+    ) -> object:
+        """Function handle protocol.
+
+        Args:
+            client (CogniteClient | None): Cognite client.
+            data (dict[str, object] | None): Input data to the function.
+            secrets (dict[str, str] | None): Secrets passed to the function.
+            function_call_info (dict[str, object] | None): Function call information.
+
+        Returns:
+            object: Return value of the function. Any JSON serializable object is allowed.
+        """
+        ...
 
 
 class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
@@ -170,11 +218,11 @@ class Function(FunctionCore):
             metadata=self.metadata,
         )
 
-    def call(self, data: dict | None = None, wait: bool = True) -> FunctionCall:
+    def call(self, data: dict[str, object] | None = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
-            data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
+            data (dict[str, object] | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
             wait (bool): Wait until the function call is finished. Defaults to True.
 
         Returns:
@@ -530,7 +578,8 @@ class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
 
 
 class FunctionSchedulesList(
-    WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule], InternalIdTransformerMixin
+    WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule],
+    InternalIdTransformerMixin,
 ):
     _RESOURCE = FunctionSchedule
 
@@ -593,11 +642,11 @@ class FunctionCall(CogniteResource):
         self.function_id: int = function_id  # type: ignore
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_response(self) -> dict | None:
+    def get_response(self) -> dict[str, object] | None:
         """Retrieve the response from this function call.
 
         Returns:
-            dict | None: Response from the function call.
+            dict[str, object] | None: Response from the function call.
         """
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
         return self._cognite_client.functions.calls.get_response(call_id=call_id, function_id=function_id)
