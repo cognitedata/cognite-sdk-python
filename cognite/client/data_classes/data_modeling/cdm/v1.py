@@ -38,6 +38,7 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image.
@@ -114,6 +115,7 @@ class Cognite360Image(_Cognite360ImageProperties, TypedNode):
     """This represents the reading format of Cognite 360 image.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -234,6 +236,8 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
     It is used to when data is written to CDF.
 
     Represents a logical collection of Cognite360Image instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image collection.
@@ -282,6 +286,8 @@ class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, TypedNode)
     It is used to when data is read from CDF.
 
     Represents a logical collection of Cognite360Image instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image collection.
@@ -360,6 +366,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
     It is used to when data is written to CDF.
 
     Navigational aid for traversing Cognite360ImageModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image model.
@@ -367,8 +375,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -382,8 +390,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -392,8 +400,8 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
 
 class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
@@ -402,6 +410,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Navigational aid for traversing Cognite360ImageModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image model.
@@ -412,8 +422,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -430,8 +440,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -440,8 +450,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
     def as_write(self) -> Cognite360ImageModelApply:
         return Cognite360ImageModelApply(
@@ -451,8 +461,8 @@ class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            model_type=self.model_type,
             thumbnail=self.thumbnail,
+            model_type=self.model_type,
             existing_version=self.version,
             type=self.type,
         )
@@ -472,6 +482,8 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
     It is used to when data is written to CDF.
 
     A way to group images across collections. Used for creating visual scan history
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image station.
@@ -511,6 +523,8 @@ class Cognite360ImageStation(_Cognite360ImageStationProperties, TypedNode):
     It is used to when data is read from CDF.
 
     A way to group images across collections. Used for creating visual scan history
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image station.
@@ -577,6 +591,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -584,8 +600,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -599,8 +615,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -609,8 +625,8 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
 
 class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
@@ -619,6 +635,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -629,8 +647,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -647,8 +665,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -657,8 +675,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
     def as_write(self) -> Cognite3DModelApply:
         return Cognite3DModelApply(
@@ -668,8 +686,8 @@ class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            model_type=self.model_type,
             thumbnail=self.thumbnail,
+            model_type=self.model_type,
             existing_version=self.version,
             type=self.type,
         )
@@ -694,6 +712,8 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D object.
@@ -748,6 +768,8 @@ class Cognite3DObject(_Cognite3DObjectProperties, TypedNode):
     It is used to when data is read from CDF.
 
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D object.
@@ -836,6 +858,8 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
 
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D revision.
@@ -872,6 +896,8 @@ class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -944,6 +970,8 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D transformation node.
@@ -995,6 +1023,8 @@ class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode)
     It is used to when data is read from CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -1088,6 +1118,8 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents activities. Activities typically happen over a period and have a start and end time.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1168,6 +1200,8 @@ class CogniteActivity(_CogniteActivityProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents activities. Activities typically happen over a period and have a start and end time.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1297,6 +1331,8 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1313,6 +1349,9 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
         source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         parent (DirectRelationReference | tuple[str, str] | None): The parent of the asset.
+        root (DirectRelationReference | tuple[str, str] | None): An automatically updated reference to the top-level asset of the hierarchy.
+        path (list[DirectRelationReference | tuple[str, str]] | None): An automatically updated ordered list of this asset's ancestors, starting with the root asset. Enables subtree filtering to find all assets under a parent.
+        path_last_updated_time (datetime | None): The last time the path was updated for this asset.
         asset_class (DirectRelationReference | tuple[str, str] | None): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
         asset_type (DirectRelationReference | tuple[str, str] | None): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
@@ -1337,6 +1376,9 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         source_created_user: str | None = None,
         source_updated_user: str | None = None,
         parent: DirectRelationReference | tuple[str, str] | None = None,
+        root: DirectRelationReference | tuple[str, str] | None = None,
+        path: list[DirectRelationReference | tuple[str, str]] | None = None,
+        path_last_updated_time: datetime | None = None,
         asset_class: DirectRelationReference | tuple[str, str] | None = None,
         asset_type: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
@@ -1356,6 +1398,9 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         self.source_created_user = source_created_user
         self.source_updated_user = source_updated_user
         self.parent = DirectRelationReference.load(parent) if parent else None
+        self.root = DirectRelationReference.load(root) if root else None
+        self.path = [DirectRelationReference.load(path) for path in path] if path else None
+        self.path_last_updated_time = path_last_updated_time
         self.asset_class = DirectRelationReference.load(asset_class) if asset_class else None
         self.asset_type = DirectRelationReference.load(asset_type) if asset_type else None
 
@@ -1366,6 +1411,8 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1460,6 +1507,9 @@ class CogniteAsset(_CogniteAssetProperties, TypedNode):
             source_created_user=self.source_created_user,
             source_updated_user=self.source_updated_user,
             parent=self.parent,
+            root=self.root,
+            path=self.path,  # type: ignore[arg-type]
+            path_last_updated_time=self.path_last_updated_time,
             asset_class=self.asset_class,
             asset_type=self.asset_type,
             existing_version=self.version,
@@ -1479,6 +1529,8 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents the class of an asset.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1521,6 +1573,8 @@ class CogniteAssetClass(_CogniteAssetClassProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents the class of an asset.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1591,6 +1645,8 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents the type of an asset.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1636,6 +1692,8 @@ class CogniteAssetType(_CogniteAssetTypeProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents the type of an asset.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1710,6 +1768,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Navigational aid for traversing CogniteCADModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -1717,8 +1777,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -1732,8 +1792,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -1742,8 +1802,8 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
 
 class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
@@ -1752,6 +1812,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Navigational aid for traversing CogniteCADModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -1762,8 +1824,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -1780,8 +1842,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -1790,8 +1852,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
     def as_write(self) -> CogniteCADModelApply:
         return CogniteCADModelApply(
@@ -1801,8 +1863,8 @@ class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            model_type=self.model_type,
             thumbnail=self.thumbnail,
+            model_type=self.model_type,
             existing_version=self.version,
             type=self.type,
         )
@@ -1826,6 +1888,8 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents nodes from the 3D model that have been contextualized
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1880,6 +1944,8 @@ class CogniteCADNode(_CogniteCADNodeProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents nodes from the 3D model that have been contextualized
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1967,6 +2033,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad revision.
@@ -2004,6 +2071,7 @@ class CogniteCADRevision(_CogniteCADRevisionProperties, TypedNode):
     """This represents the reading format of Cognite cad revision.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -2070,6 +2138,8 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
 
     The cube map holds references to 6 images in used to visually represent the surrounding environment
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cube map.
@@ -2112,6 +2182,8 @@ class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
     It is used to when data is read from CDF.
 
     The cube map holds references to 6 images in used to visually represent the surrounding environment
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -2182,6 +2254,8 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite describable node.
@@ -2218,6 +2292,8 @@ class CogniteDescribableNode(_CogniteDescribableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -2288,6 +2364,8 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Equipment represents physical supplies or devices.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2360,6 +2438,8 @@ class CogniteEquipment(_CogniteEquipmentProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Equipment represents physical supplies or devices.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2471,6 +2551,8 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
     It is used to when data is written to CDF.
 
     Represents the type of equipment.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2519,6 +2601,8 @@ class CogniteEquipmentType(_CogniteEquipmentTypeProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents the type of equipment.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2605,6 +2689,8 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents files.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2622,6 +2708,8 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         assets (list[DirectRelationReference | tuple[str, str]] | None): A list of assets this file is related to.
         mime_type (str | None): The MIME type of the file.
         directory (str | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        is_uploaded (bool | None): Specifies if the file content has been uploaded to Cognite Data Fusion or not.
+        uploaded_time (datetime | None): The time the file upload completed.
         category (DirectRelationReference | tuple[str, str] | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
@@ -2646,6 +2734,8 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         assets: list[DirectRelationReference | tuple[str, str]] | None = None,
         mime_type: str | None = None,
         directory: str | None = None,
+        is_uploaded: bool | None = None,
+        uploaded_time: datetime | None = None,
         category: DirectRelationReference | tuple[str, str] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
@@ -2665,6 +2755,8 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         self.assets = [DirectRelationReference.load(asset) for asset in assets] if assets else None
         self.mime_type = mime_type
         self.directory = directory
+        self.is_uploaded = is_uploaded
+        self.uploaded_time = uploaded_time
         self.category = DirectRelationReference.load(category) if category else None
 
 
@@ -2674,6 +2766,8 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents files.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2766,6 +2860,8 @@ class CogniteFile(_CogniteFileProperties, TypedNode):
             assets=self.assets,  # type: ignore[arg-type]
             mime_type=self.mime_type,
             directory=self.directory,
+            is_uploaded=self.is_uploaded,
+            uploaded_time=self.uploaded_time,
             category=self.category,
             existing_version=self.version,
             type=self.type,
@@ -2786,6 +2882,8 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents the categories of files as determined by contextualization or categorization.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -2831,6 +2929,8 @@ class CogniteFileCategory(_CogniteFileCategoryProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents the categories of files as determined by contextualization or categorization.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -2905,6 +3005,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
     It is used to when data is written to CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -2912,8 +3014,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | tuple[str, str] | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
         type (DirectRelationReference | tuple[str, str] | None): Direct relation pointing to the type node.
     """
@@ -2927,8 +3029,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | tuple[str, str] | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         existing_version: int | None = None,
         type: DirectRelationReference | tuple[str, str] | None = None,
     ) -> None:
@@ -2937,8 +3039,8 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
 
 class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
@@ -2947,6 +3049,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -2957,8 +3061,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
         aliases (list[str] | None): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         thumbnail (DirectRelationReference | None): Thumbnail of the 3D model
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None): CAD, PointCloud or Image360
         type (DirectRelationReference | None): Direct relation pointing to the type node.
         deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
@@ -2975,8 +3079,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         description: str | None = None,
         tags: list[str] | None = None,
         aliases: list[str] | None = None,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         thumbnail: DirectRelationReference | None = None,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | None = None,
         type: DirectRelationReference | None = None,
         deleted_time: int | None = None,
     ) -> None:
@@ -2985,8 +3089,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
         self.description = description
         self.tags = tags
         self.aliases = aliases
-        self.model_type = model_type
         self.thumbnail = DirectRelationReference.load(thumbnail) if thumbnail else None
+        self.model_type = model_type
 
     def as_write(self) -> CognitePointCloudModelApply:
         return CognitePointCloudModelApply(
@@ -2996,8 +3100,8 @@ class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
             description=self.description,
             tags=self.tags,
             aliases=self.aliases,
-            model_type=self.model_type,
             thumbnail=self.thumbnail,
+            model_type=self.model_type,
             existing_version=self.version,
             type=self.type,
         )
@@ -3019,6 +3123,8 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
     It is used to when data is written to CDF.
 
     Navigational aid for traversing CognitePointCloudRevision instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
@@ -3058,6 +3164,8 @@ class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, TypedNode)
     It is used to when data is read from CDF.
 
     Navigational aid for traversing CognitePointCloudRevision instances
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
@@ -3128,6 +3236,8 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
     It is used to when data is written to CDF.
 
     PointCloud volume definition
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -3185,6 +3295,8 @@ class CognitePointCloudVolume(_CognitePointCloudVolumeProperties, TypedNode):
     It is used to when data is read from CDF.
 
     PointCloud volume definition
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -3278,6 +3390,8 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -3314,6 +3428,8 @@ class CogniteSchedulable(_CogniteSchedulableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -3376,6 +3492,8 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -3418,6 +3536,8 @@ class CogniteSourceSystem(_CogniteSourceSystemProperties, TypedNode):
     It is used to when data is read from CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -3492,6 +3612,7 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite sourceable node.
@@ -3535,6 +3656,7 @@ class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
     """This represents the reading format of Cognite sourceable node.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -3617,7 +3739,9 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
 
     It is used to when data is written to CDF.
 
-    Represents a series of data points in time order."
+    Represents a series of data points in time order.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
@@ -3692,7 +3816,9 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
 
     It is used to when data is read from CDF.
 
-    Represents a series of data points in time order."
+    Represents a series of data points in time order.
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
@@ -3807,6 +3933,8 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     Represents a single unit of measurement
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite unit.
@@ -3855,6 +3983,8 @@ class CogniteUnit(_CogniteUnitProperties, TypedNode):
     It is used to when data is read from CDF.
 
     Represents a single unit of measurement
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite unit.
@@ -3933,6 +4063,8 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
     It is used to when data is written to CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -3960,6 +4092,8 @@ class CogniteVisualizable(_CogniteVisualizableProperties, TypedNode):
     It is used to when data is read from CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -4014,6 +4148,7 @@ class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, Typed
     """This represents the writing format of Cognite 360 image annotation.
 
     It is used to when data is written to CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -4086,6 +4221,7 @@ class Cognite360ImageAnnotation(_Cognite360ImageAnnotationProperties, TypedEdge)
     """This represents the reading format of Cognite 360 image annotation.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
@@ -4194,6 +4330,8 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D transformation edge.
@@ -4249,6 +4387,8 @@ class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge)
     It is used to when data is read from CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -4345,6 +4485,8 @@ class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
     It is used to when data is written to CDF.
 
     Annotation represents contextualization results or links
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4412,6 +4554,8 @@ class CogniteAnnotation(_CogniteAnnotationProperties, TypedEdge):
     It is used to when data is read from CDF.
 
     Annotation represents contextualization results or links
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4511,6 +4655,8 @@ class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply)
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite describable edge.
@@ -4551,6 +4697,8 @@ class CogniteDescribableEdge(_CogniteDescribableProperties, TypedEdge):
     It is used to when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
+
+
 
     Args:
         space (str): The space where the node is located.
@@ -4639,6 +4787,8 @@ class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEd
     It is used to when data is written to CDF.
 
     Annotation for diagrams
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -4742,6 +4892,8 @@ class CogniteDiagramAnnotation(_CogniteDiagramAnnotationProperties, TypedEdge):
     It is used to when data is read from CDF.
 
     Annotation for diagrams
+
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -4887,6 +5039,7 @@ class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
 
     It is used to when data is written to CDF.
 
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite sourceable edge.
@@ -4934,6 +5087,7 @@ class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
     """This represents the reading format of Cognite sourceable edge.
 
     It is used to when data is read from CDF.
+
 
     Args:
         space (str): The space where the node is located.
