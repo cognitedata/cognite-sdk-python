@@ -82,8 +82,12 @@ def twenty_events(cognite_client: CogniteClient) -> EventList:
 
 class TestEventsAPI:
     def test_retrieve(self, cognite_client):
-        res = cognite_client.events.list(limit=1)
-        assert res[0] == cognite_client.events.retrieve(res[0].id)
+        random_external_id = random_string(10)
+        try:
+            cognite_client.events.create(EventWrite(external_id=random_external_id))
+            assert cognite_client.events.retrieve(external_id=random_external_id) is not None
+        finally:
+            cognite_client.events.delete(external_id=random_external_id, ignore_unknown_ids=True)
 
     def test_retrieve_multiple(self, cognite_client, root_test_asset):
         res_listed_ids = [e.id for e in cognite_client.events.list(limit=2, type="test-data-populator")]

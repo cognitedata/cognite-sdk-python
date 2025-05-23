@@ -81,6 +81,46 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
     )
     yield pytest.param(raw, loaded_edge, id="Filter Edge on Type")
 
+    raw = {
+        "union": [
+            "1",
+            {
+                "intersection": [
+                    "2",
+                    {
+                        "unionAll": ["3", "4"],
+                        "except": ["5"],
+                        "limit": 100,
+                    },
+                ],
+                "except": ["5"],
+                "limit": 100,
+            },
+        ],
+        "except": ["5"],
+        "limit": 100,
+    }
+    loaded_set_expression = q.Union(
+        union=[
+            "1",
+            q.Intersection(
+                intersection=[
+                    "2",
+                    q.UnionAll(
+                        union_all=["3", "4"],
+                        except_=["5"],
+                        limit=100,
+                    ),
+                ],
+                except_=["5"],
+                limit=100,
+            ),
+        ],
+        except_=["5"],
+        limit=100,
+    )
+    yield pytest.param(raw, loaded_set_expression, id="Deeply nested set operations")
+
 
 class TestResultSetExpressions:
     @pytest.mark.parametrize("raw_data, loaded", list(result_set_expression_load_and_dump_equals_data()))
