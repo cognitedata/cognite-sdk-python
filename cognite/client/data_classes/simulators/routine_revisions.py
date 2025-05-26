@@ -231,12 +231,12 @@ class SimulatorRoutineDataSampling(CogniteObject):
 
     Args:
         sampling_window (int): Sampling window of the data sampling. Represented in minutes
-        granularity (str): The granularity of the data sampling.
+        granularity (int): The granularity of the data sampling in minutes.
         validation_window (int | None): Validation window of the data sampling. Represented in minutes. Used when either logical check or steady state detection is enabled.
     """
 
     sampling_window: int
-    granularity: str
+    granularity: int
     validation_window: int | None = None
 
     @classmethod
