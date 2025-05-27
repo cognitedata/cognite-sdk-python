@@ -117,7 +117,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         return self._list_generator(
             method="POST",
             limit=limit,
-            url_path="/simulators/routines/revisions/list",
+            url_path=self._RESOURCE_PATH + "/list",
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionList,
             chunk_size=chunk_size,
@@ -178,7 +178,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionList,
             identifiers=identifiers,
-            resource_path="/simulators/routines/revisions",
+            resource_path=self._RESOURCE_PATH,
         )
 
     @overload
@@ -349,7 +349,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         return self._list(
             method="POST",
             limit=limit,
-            url_path="/simulators/routines/revisions/list",
+            url_path=self._RESOURCE_PATH + "/list",
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionList,
             filter=filter.dump(),

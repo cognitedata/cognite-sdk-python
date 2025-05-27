@@ -22,11 +22,13 @@ from pathlib import Path
 import numpy as np
 
 from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.data_classes.functions import FunctionHandle
 from cognite.client.utils._text import shorten
 
 FUNC_EXCEPTIONS = {}
 CLS_METHOD_EXCEPTIONS = {
     (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
+    (FunctionHandle, "__init__"),  # Reason: Protocol class doesn't have __init__ with return type
 }
 
 # Helper for testing specific class + method/property:
