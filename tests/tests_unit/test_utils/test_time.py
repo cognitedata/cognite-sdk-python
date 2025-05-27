@@ -458,20 +458,20 @@ class TestCDFAggregation:
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     oslo = ZoneInfo("Europe/Oslo")
-    utc = dict(tzinfo=ZoneInfo("UTC"))
-    oslo_dst = datetime(2023, 3, 25, 23, **utc)
-    oslo_std = datetime(2023, 10, 28, 22, **utc)
+    utc = tzinfo=ZoneInfo("UTC")
+    oslo_dst = datetime(2023, 3, 25, 23, tzinfo=utc)
+    oslo_std = datetime(2023, 10, 28, 22, tzinfo=utc)
 
     yield pytest.param(
         datetime(2023, 1, 1, tzinfo=oslo),
         datetime(2023, 12, 31, 23, 59, 59, tzinfo=oslo),
         "1day",
         [
-            {"start": datetime(2022, 12, 31, 23, **utc), "end": oslo_dst, "granularity": "24h"},
+            {"start": datetime(2022, 12, 31, 23, tzinfo=utc), "end": oslo_dst, "granularity": "24h"},
             {"start": oslo_dst, "end": oslo_dst + timedelta(hours=23), "granularity": "23h"},
             {"start": oslo_dst + timedelta(hours=23), "end": oslo_std, "granularity": "24h"},
             {"start": oslo_std, "end": oslo_std + timedelta(hours=25), "granularity": "25h"},
-            {"start": oslo_std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, **utc), "granularity": "24h"},
+            {"start": oslo_std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, tzinfo=utc), "granularity": "24h"},
         ],
         id="Year 2023 at daily granularity",
     )
@@ -481,10 +481,10 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
         datetime(2023, 4, 9, tzinfo=oslo),
         "2weeks",
         [
-            {"start": datetime(2023, 3, 5, 23, **utc), "end": datetime(2023, 3, 19, 23, **utc), "granularity": "336h"},
+            {"start": datetime(2023, 3, 5, 23, tzinfo=utc), "end": datetime(2023, 3, 19, 23, tzinfo=utc), "granularity": "336h"},
             # Passing DST
-            {"start": datetime(2023, 3, 19, 23, **utc), "end": datetime(2023, 4, 2, 22, **utc), "granularity": "335h"},
-            {"start": datetime(2023, 4, 2, 22, **utc), "end": datetime(2023, 4, 16, 22, **utc), "granularity": "336h"},
+            {"start": datetime(2023, 3, 19, 23, tzinfo=utc), "end": datetime(2023, 4, 2, 22, tzinfo=utc), "granularity": "335h"},
+            {"start": datetime(2023, 4, 2, 22, tzinfo=utc), "end": datetime(2023, 4, 16, 22, tzinfo=utc), "granularity": "336h"},
         ],
         id="Passed DST with 2 weeks granularity",
     )
@@ -495,23 +495,23 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
         "1quarter",
         [
             {
-                "start": datetime(2022, 12, 31, 23, **utc),
-                "end": datetime(2023, 3, 31, 22, **utc),
+                "start": datetime(2022, 12, 31, 23, tzinfo=utc),
+                "end": datetime(2023, 3, 31, 22, tzinfo=utc),
                 "granularity": "2159h",
             },
             {
-                "start": datetime(2023, 3, 31, 22, **utc),
-                "end": datetime(2023, 6, 30, 22, **utc),
+                "start": datetime(2023, 3, 31, 22, tzinfo=utc),
+                "end": datetime(2023, 6, 30, 22, tzinfo=utc),
                 "granularity": "2184h",
             },
             {
-                "start": datetime(2023, 6, 30, 22, **utc),
-                "end": datetime(2023, 9, 30, 22, **utc),
+                "start": datetime(2023, 6, 30, 22, tzinfo=utc),
+                "end": datetime(2023, 9, 30, 22, tzinfo=utc),
                 "granularity": "2208h",
             },
             {
-                "start": datetime(2023, 9, 30, 22, **utc),
-                "end": datetime(2023, 12, 31, 23, **utc),
+                "start": datetime(2023, 9, 30, 22, tzinfo=utc),
+                "end": datetime(2023, 12, 31, 23, tzinfo=utc),
                 "granularity": "2209h",
             },
         ],
@@ -524,23 +524,23 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
         "2months",
         [
             {
-                "start": datetime(2022, 9, 30, 22, **utc),
-                "end": datetime(2022, 11, 30, 23, **utc),
+                "start": datetime(2022, 9, 30, 22, tzinfo=utc),
+                "end": datetime(2022, 11, 30, 23, tzinfo=utc),
                 "granularity": "1465h",
             },
             {
-                "start": datetime(2022, 11, 30, 23, **utc),
-                "end": datetime(2023, 1, 31, 23, **utc),
+                "start": datetime(2022, 11, 30, 23, tzinfo=utc),
+                "end": datetime(2023, 1, 31, 23, tzinfo=utc),
                 "granularity": "1488h",
             },
             {
-                "start": datetime(2023, 1, 31, 23, **utc),
-                "end": datetime(2023, 3, 31, 22, **utc),
+                "start": datetime(2023, 1, 31, 23, tzinfo=utc),
+                "end": datetime(2023, 3, 31, 22, tzinfo=utc),
                 "granularity": "1415h",
             },
             {
-                "start": datetime(2023, 3, 31, 22, **utc),
-                "end": datetime(2023, 5, 31, 22, **utc),
+                "start": datetime(2023, 3, 31, 22, tzinfo=utc),
+                "end": datetime(2023, 5, 31, 22, tzinfo=utc),
                 "granularity": "1464h",
             },
         ],
@@ -553,13 +553,13 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
         "2years",
         [
             {
-                "start": datetime(2019, 12, 31, 23, **utc),
-                "end": datetime(2021, 12, 31, 23, **utc),
+                "start": datetime(2019, 12, 31, 23, tzinfo=utc),
+                "end": datetime(2021, 12, 31, 23, tzinfo=utc),
                 "granularity": "17544h",
             },
             {
-                "start": datetime(2021, 12, 31, 23, **utc),
-                "end": datetime(2023, 12, 31, 23, **utc),
+                "start": datetime(2021, 12, 31, 23, tzinfo=utc),
+                "end": datetime(2023, 12, 31, 23, tzinfo=utc),
                 "granularity": "17520h",
             },
         ],
