@@ -458,7 +458,7 @@ class TestCDFAggregation:
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     oslo = ZoneInfo("Europe/Oslo")
-    utc = tzinfo=ZoneInfo("UTC")
+    utc = ZoneInfo("UTC")
     oslo_dst = datetime(2023, 3, 25, 23, tzinfo=utc)
     oslo_std = datetime(2023, 10, 28, 22, tzinfo=utc)
 
