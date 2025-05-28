@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import httpx  # Changed from import requests
+import httpx
 
 URL_BASE = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries/"
 FILES = "data_point_list_response.proto", "data_points.proto", "data_point_insertion_request.proto"
@@ -29,7 +29,6 @@ def download_proto_files_and_compile():
         os.chdir(tmpdir)
         for file in map(Path, FILES):
             file.touch()
-            # Changed requests.get to httpx.get and added follow_redirects=True
             response = httpx.get(f"{URL_BASE}{file}", follow_redirects=True)
             response.raise_for_status()  # Good practice to check for errors
             file.write_bytes(response.content)

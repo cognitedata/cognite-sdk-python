@@ -16,7 +16,6 @@ from typing import Any, Protocol, runtime_checkable
 import httpx # Added import
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 # from oauthlib.oauth2 import BackendApplicationClient # No longer needed directly by OAuthClientCredentials
-# from requests_oauthlib import OAuth2Session # Removed
 
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict

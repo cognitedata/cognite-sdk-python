@@ -6,7 +6,8 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
-from responses import RequestsMock
+import respx
+from respx import MockRouter
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import (
@@ -72,38 +73,32 @@ def mock_get_response_body_ok() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_post_extract(rsps: RequestsMock, mock_post_response_body: dict[str, Any]) -> RequestsMock:
-    rsps.add(
-        rsps.POST,
-        re.compile(".*?/context/vision/extract"),
-        status=200,
-        json=mock_post_response_body,
+@respx.mock
+def mock_post_extract(respx_mock: MockRouter, mock_post_response_body: dict[str, Any]) -> MockRouter:
+    respx_mock.post(re.compile(".*?/context/vision/extract")).respond(
+        status_code=200, json=mock_post_response_body
     )
-    yield rsps
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
-    rsps.add(
-        rsps.GET,
-        re.compile(".*?/context/vision/extract/\\d+"),
-        status=200,
-        json=mock_get_response_body_ok,
+@respx.mock
+def mock_get_extract(respx_mock: MockRouter, mock_get_response_body_ok: dict[str, Any]) -> MockRouter:
+    respx_mock.get(re.compile(".*?/context/vision/extract/\\d+")).respond(
+        status_code=200, json=mock_get_response_body_ok
     )
-    yield rsps
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
+@respx.mock
+def mock_get_extract_empty_predictions(
+    respx_mock: MockRouter, mock_get_response_body_ok: dict[str, Any]
+) -> MockRouter:
     response_copy = deepcopy(mock_get_response_body_ok)
     response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
-    rsps.add(
-        rsps.GET,
-        re.compile(".*?/context/vision/extract/\\d+"),
-        status=200,
-        json=response_copy,
-    )
-    yield rsps
+    respx_mock.get(re.compile(".*?/context/vision/extract/\\d+")).respond(status_code=200, json=response_copy)
+    yield respx_mock
 
 
 class TestJobStatusEnum:
@@ -159,8 +154,8 @@ class TestVisionExtract:
     )
     def test_extract_unit(
         self,
-        mock_post_extract: RequestsMock,
-        mock_get_extract: RequestsMock,
+        mock_post_extract: MockRouter, # Fixture now provides MockRouter
+        mock_get_extract: MockRouter,   # Fixture now provides MockRouter
         features: VisionFeature | list[VisionFeature],
         parameters: FeatureParameters | None,
         error_message: str | None,
@@ -172,11 +167,13 @@ class TestVisionExtract:
         if error_message is not None:
             with pytest.raises(TypeError, match=error_message):
                 # GET request will not be executed due to invalid parameters in POST
-                # thus relax the assertion requirements
-                mock_post_extract.assert_all_requests_are_fired = False
+                # No direct equivalent for assert_all_requests_are_fired = False, respx default is suitable.
                 VAPI.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
         else:
-            is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
+            if isinstance(features, list):
+                is_beta_feature = any(f in VisionFeature.beta_features() for f in features)
+            else: # It's a single VisionFeature enum
+                is_beta_feature = features in VisionFeature.beta_features()
             error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
             with error_handling:
@@ -216,15 +213,15 @@ class TestVisionExtract:
                     )
                     if is_beta_feature:
                         assert call.request.headers.get("cdf-version") == "beta"
-                    assert expected_request_body == jsgz_load(call.request.body)
-                else:
+                    assert expected_request_body == jsgz_load(call.request.content)
+                elif call.request.method == "GET": # Check GET calls on mock_get_extract
                     num_get_requests += 1
                     assert f"/{expected_job_id}" in call.request.url
             assert 1 == num_post_requests
             assert 1 == num_get_requests
 
     def test_get_extract(
-        self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
+        self, mock_post_extract: MockRouter, mock_get_extract: MockRouter, cognite_client: CogniteClient
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
@@ -249,8 +246,8 @@ class TestVisionExtract:
 
     def test_save_empty_predictions(
         self,
-        mock_post_extract: RequestsMock,
-        mock_get_extract_empty_predictions: RequestsMock,
+        mock_post_extract: MockRouter,
+        mock_get_extract_empty_predictions: MockRouter,
         cognite_client: CogniteClient,
     ) -> None:
         VAPI = cognite_client.vision

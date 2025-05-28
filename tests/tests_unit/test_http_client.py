@@ -2,6 +2,8 @@ from unittest.mock import MagicMock
 
 import httpx # Replaced requests.exceptions
 import pytest
+import respx
+from respx import MockRouter # Using MockRouter alias for HTTPXMock
 # import urllib3.exceptions # No longer needed as httpx has its own hierarchy
 
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, _RetryTracker
@@ -75,22 +77,24 @@ class TestRetryTracker:
 # as we will mock httpx exceptions directly.
 
 class TestHTTPClient:
-    def test_read_timeout_errors(self):
+    @respx.mock
+    def test_read_timeout_errors(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
-        mock_session = MagicMock(spec=httpx.Client)
-        mock_session.request.side_effect = httpx.ReadTimeout("timeout")
+        
+        # Define the mock route using respx_mock
+        respx_mock.get("https://example.com/bla").mock(side_effect=httpx.ReadTimeout("timeout"))
 
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=mock_session,
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteReadTimeout):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
         assert retry_tracker.read == DEFAULT_CONFIG.max_retries_read
@@ -98,73 +102,72 @@ class TestHTTPClient:
         assert retry_tracker.status == 0
 
     @pytest.mark.parametrize("exc_type", [ConnectionAbortedError, ConnectionResetError, BrokenPipeError])
-    def test_connect_errors(self, exc_type):
+    @respx.mock
+    def test_connect_errors(self, respx_mock: MockRouter, exc_type):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
-        mock_session = MagicMock(spec=httpx.Client)
-        # httpx.ConnectError is a general connection error. Specific ones like ConnectionAbortedError
-        # might be wrapped by httpcore or httpx itself. For testing, directly raising ConnectError is sufficient
-        # or using the specific errors if httpx guarantees they are raised directly.
-        # Let's assume ConnectError for simplicity, or the specific one if appropriate.
-        mock_session.request.side_effect = httpx.ConnectError(f"{exc_type.__name__} error")
 
+        # Define the mock route using respx_mock
+        respx_mock.get("https://example.com/bla").mock(side_effect=httpx.ConnectError(f"{exc_type.__name__} error"))
 
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=mock_session,
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteConnectionError):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.read == 0
         assert retry_tracker.connect == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.status == 0
 
-    def test_connection_refused_retried(self):
+    @respx.mock
+    def test_connection_refused_retried(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
-        mock_session = MagicMock(spec=httpx.Client)
-        # _http_client.py specifically checks for e.__cause__ being ConnectionRefusedError
-        # when handling httpx.ConnectError. So, we construct an httpx.ConnectError with ConnectionRefusedError as its cause.
+
         connect_error_with_refused_cause = httpx.ConnectError("connection refused")
-        connect_error_with_refused_cause.__cause__ = ConnectionRefusedError()
-        mock_session.request.side_effect = connect_error_with_refused_cause
+        # In Python 3.11+, __cause__ must be an exception instance.
+        # For older versions, it might be None or an exception.
+        # Let's ensure it's always an instance for consistency.
+        connect_error_with_refused_cause.__cause__ = ConnectionRefusedError("connection refused error detail")
+        
+        respx_mock.get("https://example.com/bla").mock(side_effect=connect_error_with_refused_cause)
 
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=mock_session,
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteConnectionRefused):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
-    def test_status_errors(self):
+    @respx.mock
+    def test_status_errors(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
-        mock_session = MagicMock(spec=httpx.Client)
-        # httpx.Response needs a request object.
-        dummy_request = httpx.Request("GET", "https://example.com/bla")
-        mock_session.request.return_value = httpx.Response(429, request=dummy_request)
+
+        respx_mock.get("https://example.com/bla").respond(status_code=429)
 
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=mock_session,
+            # No longer passing mock_session
         )
 
-        res = c.request("GET", "bla", headers={"accept": "application/json"})
+        res = c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
         assert res.status_code == 429
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_status

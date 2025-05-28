@@ -11,7 +11,6 @@ from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
-    # from requests import Session # No longer needed
     from httpx import Client as HttpxClient # For type hinting
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
