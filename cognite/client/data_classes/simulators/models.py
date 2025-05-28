@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -9,7 +9,6 @@ from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
-    CogniteSort,
     CogniteUpdate,
     ExternalIDTransformerMixin,
     IdTransformerMixin,
@@ -20,22 +19,6 @@ from cognite.client.data_classes._base import (
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-
-class PropertySort(CogniteSort):
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        dumped = super().dump(camel_case=camel_case)
-        dumped["property"] = self.property
-        return dumped
-
-
-class CreatedTimeSort(PropertySort):
-    def __init__(
-        self,
-        property: Literal["createdTime"] = "createdTime",
-        order: Literal["asc", "desc"] = "asc",
-    ):
-        super().__init__(property, order)
 
 
 class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisionWrite"], ABC):
