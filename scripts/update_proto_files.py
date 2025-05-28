@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import requests
+import httpx  # Changed from import requests
 
 URL_BASE = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries/"
 FILES = "data_point_list_response.proto", "data_points.proto", "data_point_insertion_request.proto"
@@ -29,7 +29,10 @@ def download_proto_files_and_compile():
         os.chdir(tmpdir)
         for file in map(Path, FILES):
             file.touch()
-            file.write_bytes(requests.get(f"{URL_BASE}{file}").content)
+            # Changed requests.get to httpx.get and added follow_redirects=True
+            response = httpx.get(f"{URL_BASE}{file}", follow_redirects=True)
+            response.raise_for_status()  # Good practice to check for errors
+            file.write_bytes(response.content)
         protoc_command = " ".join(("protoc", *FILES, f"--python_out={PROTO_DIR}", f"--pyi_out={PROTO_DIR}"))
         subprocess.run(shlex.split(protoc_command), check=True)
 
@@ -55,3 +58,5 @@ if __name__ == "__main__":
     download_proto_files_and_compile()
     os.chdir(PROTO_DIR)
     patch_bad_imports()
+
+[end of scripts/update_proto_files.py]

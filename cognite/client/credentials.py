@@ -13,9 +13,10 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Protocol, runtime_checkable
 
+import httpx # Added import
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
-from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
-from requests_oauthlib import OAuth2Session
+# from oauthlib.oauth2 import BackendApplicationClient # No longer needed directly by OAuthClientCredentials
+# from requests_oauthlib import OAuth2Session # Removed
 
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
@@ -738,32 +739,30 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: dict[str, Any] = token_custom_args
-        self.__oauth = self._create_oauth_session()
+        # self.__oauth = self._create_oauth_session() # Removed
         self._validate_token_custom_args()
 
-    def _create_oauth_session(self) -> OAuth2Session:
-        return OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
+    # def _create_oauth_session(self) -> OAuth2Session: # Removed
+    #     return OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes)) # Removed
 
     def _validate_token_custom_args(self) -> None:
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
-        # named parameters that 'fetch_token' accepts:
-        reserved = set(inspect.signature(self.__oauth.fetch_token).parameters) - {"kwargs"}
-        if bad_args := reserved.intersection(self.__token_custom_args):
+        # standard OAuth2 parameters we set manually.
+        # Standard params for client credentials flow: grant_type, client_id, client_secret, scope
+        standard_params = {"grant_type", "client_id", "client_secret", "scope"}
+        if bad_args := standard_params.intersection(self.__token_custom_args):
             raise TypeError(
-                f"The following reserved token custom arg(s) were passed: {sorted(bad_args)}. The full list of "
-                f"reserved custom args is: {sorted(reserved)}."
+                f"The following reserved token custom arg(s) were passed: {sorted(list(bad_args))}. These are set automatically."
             )
 
     def __getstate__(self) -> dict[str, Any]:
-        # OAuth2Session is not picklable, temporarily remove:
-        oauth_session_tmp, self.__oauth = self.__oauth, None
+        # __oauth was removed, no special handling needed here beyond what parent does
         state = super().__getstate__()
-        self.__oauth = oauth_session_tmp
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         super().__setstate__(state)
-        self.__oauth = self._create_oauth_session()
+        # __oauth was removed, no special handling needed here
 
     @property
     def token_url(self) -> str:
@@ -788,20 +787,51 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     def _refresh_access_token(self) -> tuple[str, float]:
         from cognite.client.config import global_config
 
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": self.__client_id,
+            "client_secret": self.__client_secret,
+            "scope": " ".join(self.__scopes),
+            **self.__token_custom_args,
+        }
+
         try:
-            credentials = self.__oauth.fetch_token(
-                token_url=self.__token_url,
-                verify=not global_config.disable_ssl,
-                client_secret=self.__client_secret,
-                **self.__token_custom_args,
-            )
-            # Azure gives 'expires_at' directly, but it's not a part of the RFC:
+            # Create a new client for each token refresh to ensure thread safety if this method is called concurrently
+            # and to pick up any changes in global_config (e.g. proxies, ssl)
+            with httpx.Client(verify=not global_config.disable_ssl, proxies=global_config.proxies) as client:
+                response = client.post(
+                    self.__token_url,
+                    data=data,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+                response.raise_for_status()  # Raises HTTPStatusError for 4xx/5xx responses
+                credentials = response.json()
+
+            if "access_token" not in credentials or "expires_in" not in credentials:
+                # Handle cases where token endpoint returns 200 but without expected fields
+                err_descr = credentials.get("error_description", "Token endpoint did not return access_token or expires_in.")
+                raise CogniteAuthError(
+                    f"Error generating access token! Error: {credentials.get('error', 'InvalidResponse')}, error description: {err_descr}"
+                )
+
             return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
-        except OAuth2Error as oauth_err:
+        except httpx.HTTPStatusError as e:
+            # Try to parse error from response body, similar to how OAuth2Error might provide details
+            try:
+                error_details = e.response.json()
+                err = error_details.get("error", e.response.status_code)
+                err_descr = error_details.get("error_description", e.response.text)
+            except Exception: # If response is not JSON or parsing fails
+                err = e.response.status_code
+                err_descr = e.response.text
             raise CogniteAuthError(
-                f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
-            ) from oauth_err
+                f"Error generating access token: {err}, {e.response.status_code}, {err_descr}"
+            ) from e
+        except httpx.RequestError as e: # For network errors, timeouts, etc.
+            raise CogniteAuthError(f"Network error while requesting access token: {e}") from e
+        except Exception as e: # Catch-all for other unexpected errors like JSONDecodeError if response is not JSON
+            raise CogniteAuthError(f"An unexpected error occurred while fetching token: {e}") from e
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:

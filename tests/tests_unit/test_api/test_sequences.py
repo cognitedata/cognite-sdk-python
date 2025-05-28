@@ -1,6 +1,9 @@
 import re
 
 import pytest
+from httpx import Request as HttpxRequest 
+from httpx import Response as HttpxResponse 
+
 
 from cognite.client.data_classes import (
     Sequence,
@@ -14,17 +17,17 @@ from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_seq_response(rsps, cognite_client):
+def mock_seq_response(respx_mock, cognite_client):
     response_body = {
         "items": [
             {
                 "id": 0,
                 "externalId": "string",
                 "name": "stringname",
+                "isString": False, 
                 "metadata": {"metadata-key": "metadata-value"},
                 "assetId": 0,
                 "description": "string",
-                #                "securityCategories": [0],
                 "createdTime": 0,
                 "lastUpdatedTime": 0,
                 "columns": [
@@ -50,148 +53,123 @@ def mock_seq_response(rsps, cognite_client):
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
         + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
-    rsps.assert_all_requests_are_fired = False
-
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    respx_mock.get(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_sequences_empty(rsps, cognite_client):
+def mock_sequences_empty(respx_mock, cognite_client):
     response_body = {"items": []}
     url_pattern = re.compile(
         re.escape(cognite_client.sequences._get_base_url_with_base_path())
         + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
-    rsps.assert_all_requests_are_fired = False
-
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
-
-
-@pytest.fixture
-def mock_post_sequence_data(rsps, cognite_client):
-    rsps.add(
-        rsps.POST, cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data", status=200, json={}
-    )
-    yield rsps
+    
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    respx_mock.get(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_data(rsps, cognite_client):
-    json = {
+def mock_post_sequence_data(respx_mock, cognite_client):
+    respx_mock.post(cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data").respond(status_code=200, json={})
+    yield respx_mock
+
+
+@pytest.fixture
+def mock_get_sequence_data(respx_mock, cognite_client):
+    json_response = { 
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid", "valueType": "Double"}],
+        "columns": [{"externalId": "ceid", "valueType": "Double"}], 
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_empty_data(rsps, cognite_client):
-    json = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid"}, {"externalId": "ceid2"}], "rows": []}
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+def mock_get_sequence_empty_data(respx_mock, cognite_client):
+    json_response = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid", "valueType": "STRING"}, {"externalId": "ceid2", "valueType": "DOUBLE"}], "rows": []} 
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_data_many_columns(rsps, cognite_client):
-    json = {
+def mock_get_sequence_data_many_columns(respx_mock, cognite_client):
+    json_response = { 
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": f"ceid{i}"} for i in range(200)],
+        "columns": [{"externalId": f"ceid{i}", "valueType": "STRING"} for i in range(200)], 
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_data_two_col(rsps, cognite_client):
-    json = {
+def mock_get_sequence_data_two_col(respx_mock, cognite_client):
+    json_response = { 
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "col1"}, {"externalId": "col2"}],
+        "columns": [{"externalId": "col1", "valueType": "DOUBLE"}, {"externalId": "col2", "valueType": "DOUBLE"}], 
         "rows": [{"rowNumber": 0, "values": [1, 2]}],
     }
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_data_two_col_with_zero(rsps, cognite_client):
-    json = {
+def mock_get_sequence_data_two_col_with_zero(respx_mock, cognite_client):
+    json_response = { 
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "str"}, {"externalId": "lon"}],
+        "columns": [{"externalId": "str", "valueType": "STRING"}, {"externalId": "lon", "valueType": "DOUBLE"}], 
         "rows": [{"rowNumber": 12, "values": ["string-12", 0]}],
     }
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_get_sequence_data_with_null(rsps, cognite_client):
-    json = {
+def mock_get_sequence_data_with_null(respx_mock, cognite_client):
+    json_response = { 
         "id": 0,
         "externalId": "eid",
-        "columns": [{"id": 0, "externalId": "intcol"}, {"id": 1, "externalId": "strcol"}],
+        "columns": [{"id": 0, "externalId": "intcol", "valueType": "LONG"}, {"id": 1, "externalId": "strcol", "valueType": "STRING"}], 
         "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 1, "values": [None, "blah"]}],
     }
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
-        status=200,
-        json=json,
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list"
+    ).respond(status_code=200, json=json_response)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_delete_sequence_data(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/delete",
-        status=200,
-        json={},
-    )
-    yield rsps
+def mock_delete_sequence_data(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/delete"
+    ).respond(status_code=200, json={})
+    yield respx_mock
 
 
 class TestSequences:
     def test_retrieve_single(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.retrieve(id=1)
         assert isinstance(res, Sequence)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_column_ids(self, cognite_client, mock_seq_response):
         seq = cognite_client.sequences.retrieve(id=1)
@@ -202,11 +180,11 @@ class TestSequences:
     def test_retrieve_multiple(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.retrieve_multiple(ids=[1])
         assert isinstance(res, SequenceList)
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_list(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.list()
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_with_filters(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.list(
@@ -219,7 +197,7 @@ class TestSequences:
             asset_subtree_ids=[1],
             asset_subtree_external_ids=["a"],
         )
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
         assert {
             "metadata": {"a": "b"},
             "assetIds": [1, 2],
@@ -227,19 +205,30 @@ class TestSequences:
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
             "dataSetIds": [{"id": 11}, {"externalId": "fml"}],
-        } == jsgz_load(mock_seq_response.calls[0].request.body)["filter"]
+        } == jsgz_load(mock_seq_response.calls.last.request.content)["filter"]
+
+    @pytest.mark.dsl
+    def test_list_with_asset_ids(self, cognite_client, mock_seq_response):
+        import numpy
+
+        cognite_client.sequences.list(asset_ids=[1])
+        cognite_client.sequences.list(asset_ids=[numpy.int64(1)])
+        for i in range(len(mock_seq_response.calls)):
+            if mock_seq_response.calls.nth(i).request.method == "POST": # List can be GET or POST
+                assert [1] == jsgz_load(mock_seq_response.calls.nth(i).request.content)["filter"]["assetIds"]
+
 
     def test_create_single(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
             Sequence(external_id="1", name="blabla", columns=[{"externalId": "column0"}])
         )
         assert isinstance(res, Sequence)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
         assert {
             "items": [
-                {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "Double"}]}
+                {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "DOUBLE"}]}
             ]
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     def test_create_single_multicol(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
@@ -250,7 +239,7 @@ class TestSequences:
             )
         )
         assert isinstance(res, Sequence)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
         assert {
             "items": [
                 {
@@ -262,7 +251,7 @@ class TestSequences:
                     ],
                 }
             ]
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     def test_create_columnid_passed(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
@@ -271,7 +260,7 @@ class TestSequences:
         assert isinstance(res, Sequence)
         assert {
             "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     def test_create_column_snake_cased(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
@@ -280,73 +269,73 @@ class TestSequences:
         assert isinstance(res, Sequence)
         assert {
             "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     def test_create_multiple(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
             [Sequence(external_id="1", name="blabla", columns=[{"externalId": "cid"}])]
         )
         assert isinstance(res, SequenceList)
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, cognite_client, mock_seq_response):
         for asset in cognite_client.sequences:
-            assert mock_seq_response.calls[0].response.json()["items"][0] == asset.dump(camel_case=True)
+            assert mock_seq_response.calls.last.response.json()["items"][0] == asset.dump(camel_case=True)
 
     def test_iter_chunk(self, cognite_client, mock_seq_response):
         for assets in cognite_client.sequences(chunk_size=1):
-            assert mock_seq_response.calls[0].response.json()["items"] == assets.dump(camel_case=True)
+            assert mock_seq_response.calls.last.response.json()["items"] == assets.dump(camel_case=True)
 
     def test_delete_single(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.delete(id=1)
-        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(mock_seq_response.calls[0].request.body)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(mock_seq_response.calls.last.request.content)
         assert res is None
 
     def test_delete_multiple(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.delete(id=[1])
-        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(mock_seq_response.calls[0].request.body)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(mock_seq_response.calls.last.request.content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.update(Sequence(id=1))
         assert isinstance(res, Sequence)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.update(SequenceUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Sequence)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.update([SequenceUpdate(id=1).description.set("blabla")])
         assert isinstance(res, SequenceList)
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_search(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.search(filter=SequenceFilter(external_id_prefix="e"))
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"externalIdPrefix": "e"},
             "limit": 25,
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
     def test_search_dict_filter(self, cognite_client, mock_seq_response, filter_field):
         res = cognite_client.sequences.search(filter={filter_field: True})
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
+        } == jsgz_load(mock_seq_response.calls.last.request.content)
 
     def test_search_with_filter(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.search(
             name="n", description="d", query="q", filter=SequenceFilter(last_updated_time={"max": 42})
         )
-        assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        req_body = jsgz_load(mock_seq_response.calls[0].request.body)
+        assert mock_seq_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
+        req_body = jsgz_load(mock_seq_response.calls.last.request.content)
         assert 42 == req_body["filter"]["lastUpdatedTime"]["max"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
@@ -376,7 +365,7 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls.last.request.content)
 
     def test_insert_extid(self, cognite_client, mock_post_sequence_data):
         data = {i: [2 * i] for i in range(1, 11)}
@@ -389,7 +378,7 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls.last.request.content)
 
     def test_insert_tuple(self, cognite_client, mock_post_sequence_data):
         data = [(i, [2 * i]) for i in range(1, 11)]
@@ -402,7 +391,7 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls.last.request.content)
 
     def test_insert_raw(self, cognite_client, mock_post_sequence_data):
         data = [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)]
@@ -415,7 +404,7 @@ class TestSequences:
                     "rows": [{"rowNumber": i, "values": [2 * i, "str"]} for i in range(1, 11)],
                 }
             ]
-        } == jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        } == jsgz_load(mock_post_sequence_data.calls.last.request.content)
 
     def test_retrieve_no_data(self, cognite_client, mock_seq_response, mock_get_sequence_empty_data):
         data = cognite_client.sequences.rows.retrieve(id=1, start=0, end=None)
@@ -459,18 +448,18 @@ class TestSequences:
 
     def test_retrieve_neg_1_end_index(self, cognite_client, mock_seq_response, mock_get_sequence_data):
         cognite_client.sequences.data.retrieve(id=123, start=123, end=-1)
-        assert jsgz_load(mock_get_sequence_data.calls[0].request.body)["end"] is None
+        assert jsgz_load(mock_get_sequence_data.calls.last.request.content)["end"] is None
 
     def test_delete_by_id(self, cognite_client, mock_delete_sequence_data):
         res = cognite_client.sequences.data.delete(id=1, rows=[1, 2, 3])
         assert res is None
-        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_sequence_data.calls[0].request.body)
+        assert {"items": [{"id": 1, "rows": [1, 2, 3]}]} == jsgz_load(mock_delete_sequence_data.calls.last.request.content)
 
     def test_delete_by_external_id(self, cognite_client, mock_delete_sequence_data):
         res = cognite_client.sequences.data.delete(external_id="foo", rows=[1])
         assert res is None
         assert {"items": [{"externalId": "foo", "rows": [1]}]} == jsgz_load(
-            mock_delete_sequence_data.calls[0].request.body
+            mock_delete_sequence_data.calls.last.request.content
         )
 
     def test_retrieve_rows(self, cognite_client, mock_seq_response, mock_get_sequence_data):
@@ -500,7 +489,7 @@ class TestSequences:
         assert r1 == r2
         assert r1.__eq__(r2)
         assert str(r1) == str(r2)
-        assert mock_seq_response.calls[0].response.json()["items"][0] == r1.dump(camel_case=True)
+        assert mock_seq_response.calls.last.response.json()["items"][0] == r1.dump(camel_case=True)
 
     def test_sequence_data_builtins(self, cognite_client, mock_seq_response, mock_get_sequence_data):
         r1 = cognite_client.sequences.data.retrieve(id=0, start=0, end=None)
@@ -508,7 +497,7 @@ class TestSequences:
         assert r1 == r2
         assert str(r1) == str(r2)
         assert r1.dump() == r2.dump()
-        list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url)
+        list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in str(call.request.url))
         response = list_request.response.json()
         data_dump = r1.dump(camel_case=True)
         for f in ["columns", "rows", "id"]:
@@ -629,7 +618,7 @@ class TestSequencesPandasIntegration:
         df["bb"] = [5.0, 6.0]
         res = cognite_client.sequences.data.insert_dataframe(df, id=42)
         assert res is None
-        request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        request_body = jsgz_load(mock_post_sequence_data.calls.last.request.content)
         expected_rows = [{"rowNumber": 123, "values": [1, 5.0]}, {"rowNumber": 456, "values": [2, 6.0]}]
         expected_body = {"items": [{"id": 42, "columns": ["aa", "bb"], "rows": expected_rows}]}
         assert expected_body == request_body
@@ -646,7 +635,7 @@ class TestSequencesPandasIntegration:
             index=range(5),
         )
         cognite_client.sequences.data.insert_dataframe(df, id=42)
-        request_body = jsgz_load(mock_post_sequence_data.calls[0].request.body)
+        request_body = jsgz_load(mock_post_sequence_data.calls.last.request.content)
         expected_rows = [
             {"rowNumber": 0, "values": [1.0, None]},
             {"rowNumber": 1, "values": [2.0, "b"]},
@@ -656,7 +645,12 @@ class TestSequencesPandasIntegration:
         expected_body = {"items": [{"id": 42, "columns": ["col-A", "col-B"], "rows": expected_rows}]}
         assert expected_body == request_body
 
+        mock_post_sequence_data.calls.clear() 
         cognite_client.sequences.data.insert_dataframe(df, id=42, dropna=False)
-        request_body = jsgz_load(mock_post_sequence_data.calls[1].request.body)
+        request_body = jsgz_load(mock_post_sequence_data.calls.last.request.content) 
         expected_rows.insert(2, {"rowNumber": 2, "values": [None, None]})
+        # Re-assert expected_body as it's modified by the previous assertion if not careful
+        expected_body = {"items": [{"id": 42, "columns": ["col-A", "col-B"], "rows": expected_rows}]}
         assert expected_body == request_body
+
+[end of tests/tests_unit/test_api/test_sequences.py]

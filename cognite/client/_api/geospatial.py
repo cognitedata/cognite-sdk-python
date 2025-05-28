@@ -5,7 +5,7 @@ import urllib.parse
 from collections.abc import Iterator, Sequence
 from typing import Any, cast, overload
 
-from requests.exceptions import ChunkedEncodingError
+from httpx import ChunkedDecodeError
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -713,7 +713,7 @@ class GeospatialAPI(APIClient):
         try:
             for line in res.iter_lines():
                 yield Feature._load(_json.loads(line))
-        except (ChunkedEncodingError, ConnectionError) as e:
+        except (ChunkedDecodeError, ConnectionError) as e: # Changed ChunkedEncodingError to ChunkedDecodeError
             raise CogniteConnectionError(e)
 
     def aggregate_features(

@@ -1,16 +1,19 @@
 import pytest
+from httpx import Request as HttpxRequest 
+from httpx import Response as HttpxResponse 
 
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture
-def mock_get_400_error(rsps, cognite_client):
-    rsps.add(
-        rsps.GET,
-        cognite_client.assets._get_base_url_with_base_path() + "/any",
-        status=400,
+def mock_get_400_error(respx_mock, cognite_client): 
+    respx_mock.get( 
+        cognite_client.assets._get_base_url_with_base_path() + "/any" 
+    ).respond(
+        status_code=400,
         json={"error": {"message": "bla", "extra": {"haha": "blabla"}, "other": "yup"}},
     )
+    yield respx_mock # Yielding the mock so it can be used in the test if needed for assertions on calls
 
 
 class TestAPIError:
@@ -44,3 +47,5 @@ class TestAPIError:
             assert False, "Call did not raise exception"
         except CogniteAPIError as e:
             assert e.cluster == "api"
+
+[end of tests/tests_unit/test_exceptions.py]

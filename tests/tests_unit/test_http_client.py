@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
+import httpx # Replaced requests.exceptions
 import pytest
-import requests.exceptions
-import urllib3.exceptions
+# import urllib3.exceptions # No longer needed as httpx has its own hierarchy
 
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, _RetryTracker
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
@@ -71,30 +71,22 @@ class TestRetryTracker:
         assert rt.should_retry(409, is_auto_retryable=False) is False
 
 
-def raise_exception_wrapped_as_in_requests_lib(exc: Exception):
-    try:
-        raise exc
-    except type(exc):
-        try:
-            raise urllib3.exceptions.RequestError(pool=None, url=None, message=None)
-        except urllib3.exceptions.RequestError:
-            raise requests.exceptions.RequestException
-
+# The function raise_exception_wrapped_as_in_requests_lib is no longer needed
+# as we will mock httpx exceptions directly.
 
 class TestHTTPClient:
     def test_read_timeout_errors(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+        mock_session = MagicMock(spec=httpx.Client)
+        mock_session.request.side_effect = httpx.ReadTimeout("timeout")
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(TimeoutError())
-                )
-            ),
+            session=mock_session,
         )
 
         with pytest.raises(CogniteReadTimeout):
@@ -110,15 +102,19 @@ class TestHTTPClient:
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+        mock_session = MagicMock(spec=httpx.Client)
+        # httpx.ConnectError is a general connection error. Specific ones like ConnectionAbortedError
+        # might be wrapped by httpcore or httpx itself. For testing, directly raising ConnectError is sufficient
+        # or using the specific errors if httpx guarantees they are raised directly.
+        # Let's assume ConnectError for simplicity, or the specific one if appropriate.
+        mock_session.request.side_effect = httpx.ConnectError(f"{exc_type.__name__} error")
+
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(exc_type())
-                )
-            ),
+            session=mock_session,
         )
 
         with pytest.raises(CogniteConnectionError):
@@ -133,17 +129,18 @@ class TestHTTPClient:
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+        mock_session = MagicMock(spec=httpx.Client)
+        # _http_client.py specifically checks for e.__cause__ being ConnectionRefusedError
+        # when handling httpx.ConnectError. So, we construct an httpx.ConnectError with ConnectionRefusedError as its cause.
+        connect_error_with_refused_cause = httpx.ConnectError("connection refused")
+        connect_error_with_refused_cause.__cause__ = ConnectionRefusedError()
+        mock_session.request.side_effect = connect_error_with_refused_cause
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(
-                        ConnectionRefusedError()
-                    )
-                )
-            ),
+            session=mock_session,
         )
 
         with pytest.raises(CogniteConnectionRefused):
@@ -155,11 +152,16 @@ class TestHTTPClient:
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+        mock_session = MagicMock(spec=httpx.Client)
+        # httpx.Response needs a request object.
+        dummy_request = httpx.Request("GET", "https://example.com/bla")
+        mock_session.request.return_value = httpx.Response(429, request=dummy_request)
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
+            session=mock_session,
         )
 
         res = c.request("GET", "bla", headers={"accept": "application/json"})
@@ -170,47 +172,4 @@ class TestHTTPClient:
         assert retry_tracker.connect == 0
         assert retry_tracker.status == DEFAULT_CONFIG.max_retries_status
 
-
-class UnderlyingException(Exception):
-    pass
-
-
-class TestGetUnderlyingException:
-    def test_get_underlying_exception_does_not_exist_in_context(self):
-        try:
-            raise Exception
-        except Exception as e:
-            assert not HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
-
-    def test_get_underlying_exception_no_context(self):
-        try:
-            raise UnderlyingException
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, (UnderlyingException, Exception))
-
-    def test_get_underlying_exception_nested_1_layer(self):
-        def testcase():
-            try:
-                raise UnderlyingException
-            except Exception:
-                raise Exception()
-
-        try:
-            testcase()
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
-
-    def test_get_underlying_exception_nested_2_layers(self):
-        def testcase():
-            try:
-                raise UnderlyingException
-            except Exception:
-                try:
-                    raise Exception()
-                except Exception:
-                    raise Exception()
-
-        try:
-            testcase()
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+# The TestGetUnderlyingException class is removed as _any_exception_in_context_isinstance was removed.

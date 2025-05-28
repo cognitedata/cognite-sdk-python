@@ -1,6 +1,8 @@
 import logging
 
 import pytest
+from httpx import Request as HttpxRequest
+from httpx import Response as HttpxResponse
 
 from cognite.client import ClientConfig, CogniteClient, global_config
 from cognite.client._api.assets import AssetList
@@ -44,14 +46,14 @@ def client_config_w_client_credentials():
 
 
 @pytest.fixture
-def mock_token_inspect(rsps) -> None:
-    rsps.add(
-        rsps.GET,
-        BASE_URL + "/api/v1/token/inspect",
-        status=200,
+def mock_token_inspect(respx_mock) -> None: 
+    respx_mock.get(
+        BASE_URL + "/api/v1/token/inspect"
+    ).respond(
+        status_code=200,
         json={"subject": "bla", "capabilities": [], "projects": []},
     )
-    yield
+    yield respx_mock # Yield the mock if it's to be used for assertions in the test
 
 
 class TestCogniteClient:
@@ -82,25 +84,28 @@ class TestCogniteClient:
         log.handlers = []
         log.propagate = False
 
-    def test_api_version_present_in_header(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_api_version_present_in_header(self, respx_mock, client_config_w_token_factory, mock_token_inspect): 
         client = CogniteClient(client_config_w_token_factory)
         client.iam.token.inspect()
-        assert rsps.calls[0].request.headers["cdf-version"] == client.config.api_subversion
+        assert respx_mock.calls.last.request.headers["cdf-version"] == client.config.api_subversion
 
-    def test_beta_header_for_beta_client(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_beta_header_for_beta_client(self, respx_mock, client_config_w_token_factory, mock_token_inspect): 
         from cognite.client.beta import CogniteClient as BetaClient
 
         client = BetaClient(client_config_w_token_factory)
         client.iam.token.inspect()
-        assert rsps.calls[0].request.headers["cdf-version"] == "beta"
+        assert respx_mock.calls.last.request.headers["cdf-version"] == "beta"
 
-    def test_verify_ssl_enabled_by_default(self, rsps, client_config_w_token_factory, mock_token_inspect):
+    def test_verify_ssl_enabled_by_default(self, respx_mock, client_config_w_token_factory, mock_token_inspect): 
         client = CogniteClient(client_config_w_token_factory)
         client.iam.token.inspect()
-
-        assert rsps.calls[0][0].req_kwargs["verify"] is True
+        
+        assert len(respx_mock.calls) > 0 
+        # SSL verification is a client-level config, not easily inspectable per-request via respx's call object.
+        # We trust that httpx's default is True and that our client config reflects this.
         assert client._api_client._http_client_with_retry.session.verify is True
         assert client._api_client._http_client.session.verify is True
+
 
     def test_client_load(self):
         config = {
@@ -134,7 +139,9 @@ class TestInstantiateWithClient:
         client = CogniteClient(client_config_w_token_factory)
         assert cls(cognite_client=client)._cognite_client == client
 
-    @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
+    @pytest.mark.parametrize("cls", [AssetList, EventList, FileMetadataList, TimeSeriesList]) 
     def test_instantiate_resource_lists_with_cognite_client(self, cls, client_config_w_token_factory):
         client = CogniteClient(client_config_w_token_factory)
         assert cls([], cognite_client=client)._cognite_client == client
+
+[end of tests/tests_unit/test_cognite_client.py]

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from requests.utils import CaseInsensitiveDict
+from httpx import Headers as CaseInsensitiveDict # Replaced requests.utils.CaseInsensitiveDict
 from typing_extensions import Self
 
 from cognite.client.data_classes import Annotation

@@ -20,12 +20,13 @@ from typing import (
 )
 from urllib.parse import urljoin
 
-import requests.utils
-from requests import Response
-from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
-from requests.structures import CaseInsensitiveDict
+import httpx # requests.utils might be needed if its functionality is used elsewhere, otherwise remove
+from httpx import Response
+# RequestsJSONDecodeError is replaced by the standard json.JSONDecodeError,
+# which is already aliased as cognite.client.utils._json.JSONDecodeError
+from httpx import Headers as CaseInsensitiveDict
 
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_httpx_client
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -127,7 +128,7 @@ class APIClient:
         self._UPDATE_LIMIT = 1000
 
     def _init_http_clients(self) -> None:
-        session = get_global_requests_session()
+        session = get_global_httpx_client()
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
@@ -250,8 +251,9 @@ class APIClient:
     def _configure_headers(
         self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
     ) -> MutableMapping[str, Any]:
-        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
-        headers.update(requests.utils.default_headers())
+        headers: MutableMapping[str, Any] = CaseInsensitiveDict() # This is now httpx.Headers
+        # httpx manages its own default headers (e.g. user-agent, accept-encoding)
+        # We will set our specific ones.
         self._refresh_auth_header(headers)
         headers["content-type"] = "application/json"
         headers["accept"] = accept
@@ -1366,10 +1368,14 @@ class APIClient:
         extra["response_headers"] = res.headers
 
         try:
-            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
+            # httpx.Response.http_version is a string like "HTTP/1.1" or "HTTP/2"
+            http_protocol = res.http_version
+            if not http_protocol: # Should generally be set, but fallback if empty for some reason
+                http_protocol = "HTTP/Unknown"
         except AttributeError:
-            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
-            http_protocol = "XMLHTTP"
+            # Fallback for any unusual Response objects not conforming to httpx.Response (e.g. testing mocks)
+            # or if running in an environment where http_version might not be populated as expected.
+            http_protocol = "HTTP/Unknown" # Or "XMLHTTP" if specifically for pyodide context
 
         logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
@@ -1377,7 +1383,7 @@ class APIClient:
     def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
-        except (JSONDecodeError, RequestsJSONDecodeError):
+        except JSONDecodeError: # Removed RequestsJSONDecodeError
             pass
 
         try:

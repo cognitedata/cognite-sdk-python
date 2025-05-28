@@ -8,6 +8,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
+from httpx import Request as HttpxRequest
+from httpx import Response as HttpxResponse
 
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes import (
@@ -32,7 +34,7 @@ def mock_geo_location() -> GeoLocation:
 
 
 @pytest.fixture
-def mock_files_response(rsps, cognite_client, mock_geo_location: GeoLocation):
+def mock_files_response(respx_mock, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "items": [
             {
@@ -54,15 +56,14 @@ def mock_files_response(rsps, cognite_client, mock_geo_location: GeoLocation):
     }
 
     url_pattern = re.compile(re.escape(cognite_client.files._get_base_url_with_base_path()) + "/.+")
-    rsps.assert_all_requests_are_fired = False
-
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    respx_mock.get(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_upload_response(rsps, cognite_client, mock_geo_location: GeoLocation):
+def mock_file_upload_response(respx_mock, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -77,15 +78,15 @@ def mock_file_upload_response(rsps, cognite_client, mock_geo_location: GeoLocati
         "uploadedTime": 0,
         "createdTime": 0,
         "lastUpdatedTime": 0,
-        "uploadUrl": "https://upload.here",
+        "uploadUrl": "https://upload.here/",
     }
-    rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=200, json=response_body)
-    rsps.add(rsps.PUT, "https://upload.here", status=200)
-    yield rsps
+    respx_mock.post(cognite_client.files._get_base_url_with_base_path() + "/files").respond(status_code=200, json=response_body)
+    respx_mock.put("https://upload.here/").respond(status_code=200) 
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_upload_response_without_netloc_in_upload_url(rsps, cognite_client, mock_geo_location: GeoLocation):
+def mock_file_upload_response_without_netloc_in_upload_url(respx_mock, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -100,15 +101,16 @@ def mock_file_upload_response_without_netloc_in_upload_url(rsps, cognite_client,
         "uploadedTime": 0,
         "createdTime": 0,
         "lastUpdatedTime": 0,
-        "uploadUrl": "upload/here/to/some/path",
+        "uploadUrl": "upload/here/to/some/path", # Relative URL
     }
-    rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=200, json=response_body)
-    rsps.add(rsps.PUT, cognite_client.config.base_url + "/upload/here/to/some/path", status=200)
-    yield rsps
+    respx_mock.post(cognite_client.files._get_base_url_with_base_path() + "/files").respond(status_code=200, json=response_body)
+    upload_url_full = cognite_client.config.base_url.rstrip('/') + "/" + response_body["uploadUrl"].lstrip('/')
+    respx_mock.put(upload_url_full).respond(status_code=200)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_create_response(rsps, cognite_client, mock_geo_location: GeoLocation):
+def mock_file_create_response(respx_mock, cognite_client, mock_geo_location: GeoLocation):
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -123,47 +125,45 @@ def mock_file_create_response(rsps, cognite_client, mock_geo_location: GeoLocati
         "uploadedTime": 0,
         "createdTime": 0,
         "lastUpdatedTime": 0,
-        "uploadUrl": "https://upload.here",
+        "uploadUrl": "https://upload.here/",
     }
-    rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=200, json=response_body)
-    yield rsps
+    respx_mock.post(cognite_client.files._get_base_url_with_base_path() + "/files").respond(status_code=200, json=response_body)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_download_response(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
-        status=200,
+def mock_file_download_response(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids"
+    ).respond(
+        status_code=200,
         json={"items": [{"id": 1, "name": "file1"}, {"id": 10, "externalId": "2", "name": "file2"}]},
     )
 
-    def download_link_callback(request):
-        identifier = jsgz_load(request.body)["items"][0]
-        response = {}
+    def download_link_callback_side_effect(request: HttpxRequest):
+        identifier = jsgz_load(request.content)["items"][0]
+        response_json = {}
         if identifier.get("id") == 1:
-            response = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]}
+            response_json = {"items": [{"id": 1, "downloadUrl": "https://download.file1.here/"}]} 
         if identifier.get("id") == 10:
-            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.file2.here"}]}
-        return 200, {}, json.dumps(response)
+            response_json = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.file2.here/"}]} 
+        return HttpxResponse(200, json=response_json)
 
-    rsps.add_callback(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
-        callback=download_link_callback,
-        content_type="application/json",
-    )
-    rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
-    rsps.add(rsps.GET, "https://download.file2.here", status=200, body="content2")
-    yield rsps
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink"
+    ).mock(side_effect=download_link_callback_side_effect)
+    
+    respx_mock.get("https://download.file1.here/").respond(status_code=200, content=b"content1") 
+    respx_mock.get("https://download.file2.here/").respond(status_code=200, content=b"content2") 
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
-        status=200,
+def mock_file_download_response_with_folder_structure_same_name(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids"
+    ).respond(
+        status_code=200,
         json={
             "items": [
                 {"id": 1, "name": "file_a", "directory": "/rootdir/subdir"},
@@ -172,32 +172,30 @@ def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_cl
         },
     )
 
-    def download_link_callback(request):
-        identifier = jsgz_load(request.body)["items"][0]
-        response = {}
+    def download_link_callback_side_effect(request: HttpxRequest):
+        identifier = jsgz_load(request.content)["items"][0]
+        response_json = {}
         if identifier.get("id") == 1:
-            response = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here"}]}
+            response_json = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here/"}]}
         if identifier.get("id") == 10:
-            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.fileNoDir.here"}]}
-        return 200, {}, json.dumps(response)
+            response_json = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.fileNoDir.here/"}]}
+        return HttpxResponse(200, json=response_json)
 
-    rsps.add_callback(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
-        callback=download_link_callback,
-        content_type="application/json",
-    )
-    rsps.add(rsps.GET, "https://download.fileFromSubdir.here", status=200, body="contentSubDir")
-    rsps.add(rsps.GET, "https://download.fileNoDir.here", status=200, body="contentNoDir")
-    yield rsps
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink"
+    ).mock(side_effect=download_link_callback_side_effect)
+    
+    respx_mock.get("https://download.fileFromSubdir.here/").respond(status_code=200, content=b"contentSubDir")
+    respx_mock.get("https://download.fileNoDir.here/").respond(status_code=200, content=b"contentNoDir")
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_file_download_response_one_fails(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
-        status=200,
+def mock_file_download_response_one_fails(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids"
+    ).respond(
+        status_code=200,
         json={
             "items": [
                 {"id": 1, "externalId": "success", "name": "file1"},
@@ -206,35 +204,33 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
         },
     )
 
-    def download_link_callback(request):
-        identifier = jsgz_load(request.body)["items"][0]
+    def download_link_callback_side_effect(request: HttpxRequest):
+        identifier = jsgz_load(request.content)["items"][0]
         if identifier.get("id") == 1:
-            return 200, {}, json.dumps({"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
+            return HttpxResponse(200, json={"items": [{"id": 1, "downloadUrl": "https://download.file1.here/"}]})
         elif identifier.get("id") == 2:
-            return (400, {}, json.dumps({"error": {"message": "User error", "code": 400}}))
+            return HttpxResponse(400, json={"error": {"message": "User error", "code": 400}})
+        return HttpxResponse(404) 
 
-    rsps.add_callback(
-        rsps.POST,
-        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
-        callback=download_link_callback,
-        content_type="application/json",
-    )
-    rsps.add(rsps.GET, "https://download.file1.here", status=200, body="content1")
-    yield rsps
+    respx_mock.post(
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink"
+    ).mock(side_effect=download_link_callback_side_effect)
+    respx_mock.get("https://download.file1.here/").respond(status_code=200, content=b"content1")
+    yield respx_mock
 
 
 class TestFilesAPI:
     def test_create(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadata(name="bla")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
-        response_body = mock_file_create_response.calls[0].response.json()
+        response_body = mock_file_create_response.calls.last.response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
 
     def test_create_with_label(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
-        response_body = mock_file_create_response.calls[0].response.json()
+        response_body = mock_file_create_response.calls.last.response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
@@ -242,15 +238,15 @@ class TestFilesAPI:
     def test_create_with_label_request(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
-        response_body = mock_file_create_response.calls[0].response.json()
-        request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
+        response_body = mock_file_create_response.calls.last.response.json()
+        request_body = jsgz_load(mock_file_create_response.calls.last.request.content)
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
 
     def test_create_with_geoLocation(self, cognite_client, mock_file_create_response, mock_geo_location):
         file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
-        response_body = mock_file_create_response.calls[0].response.json()
+        response_body = mock_file_create_response.calls.last.response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["geoLocation"] == mock_geo_location.dump(camel_case=True)
 
@@ -266,8 +262,8 @@ class TestFilesAPI:
     def test_create_with_geoLocation_request(self, cognite_client, mock_file_create_response, mock_geo_location):
         file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
-        response_body = mock_file_create_response.calls[0].response.json()
-        request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
+        response_body = mock_file_create_response.calls.last.response.json()
+        request_body = jsgz_load(mock_file_create_response.calls.last.request.content)
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert all(
             body["geoLocation"] == mock_geo_location.dump(camel_case=True) for body in [request_body, response_body]
@@ -276,19 +272,19 @@ class TestFilesAPI:
     def test_retrieve_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve(id=1)
         assert isinstance(res, FileMetadata)
-        assert mock_files_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_files_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, cognite_client, mock_files_response):
         res = cognite_client.files.retrieve_multiple(ids=[1])
         assert isinstance(res, FileMetadataList)
-        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_list(self, cognite_client, mock_files_response):
         res = cognite_client.files.list(source="bla", limit=10)
         assert isinstance(res, FileMetadataList)
-        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert "bla" == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["source"]
-        assert 10 == jsgz_load(mock_files_response.calls[0].request.body)["limit"]
+        assert mock_files_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
+        assert "bla" == jsgz_load(mock_files_response.calls.last.request.content)["filter"]["source"]
+        assert 10 == jsgz_load(mock_files_response.calls.last.request.content)["limit"]
 
     def test_list_params(self, cognite_client, mock_files_response):
         cognite_client.files.list(data_set_external_ids=["x"], limit=10)
@@ -300,7 +296,7 @@ class TestFilesAPI:
             "filter": {
                 "dataSetIds": [{"externalId": "x"}],
             },
-        } == jsgz_load(calls[0].request.body)
+        } == jsgz_load(calls.last.request.content)
 
     def test_list_subtrees(self, cognite_client, mock_files_response):
         cognite_client.files.list(asset_subtree_ids=[1], asset_subtree_external_ids=["a"], limit=10)
@@ -310,13 +306,13 @@ class TestFilesAPI:
             "cursor": None,
             "limit": 10,
             "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]},
-        } == jsgz_load(calls[0].request.body)
+        } == jsgz_load(calls.last.request.content)
 
     def test_filter_directory(self, cognite_client, mock_files_response):
         cognite_client.files.list(directory_prefix="/test", limit=10)
         calls = mock_files_response.calls
         assert len(calls) == 1
-        assert jsgz_load(calls[0].request.body) == {"cursor": None, "filter": {"directoryPrefix": "/test"}, "limit": 10}
+        assert jsgz_load(calls.last.request.content) == {"cursor": None, "filter": {"directoryPrefix": "/test"}, "limit": 10}
 
     def test_filter_geoLocation(self, cognite_client, mock_files_response):
         cognite_client.files.list(
@@ -325,7 +321,7 @@ class TestFilesAPI:
         )
         calls = mock_files_response.calls
         assert len(calls) == 1
-        assert jsgz_load(calls[0].request.body) == {
+        assert jsgz_load(calls.last.request.content) == {
             "cursor": None,
             "filter": {"geoLocation": {"relation": "within", "shape": {"type": "Point", "coordinates": [35, 10]}}},
             "limit": 10,
@@ -333,36 +329,36 @@ class TestFilesAPI:
 
     def test_list_with_time_dict(self, cognite_client, mock_files_response):
         cognite_client.files.list(created_time={"min": 20})
-        assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
-        assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
+        assert 20 == jsgz_load(mock_files_response.calls.last.request.content)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_files_response.calls.last.request.content)["filter"]["createdTime"]
 
     def test_list_with_timestamp_range(self, cognite_client, mock_files_response):
         cognite_client.files.list(created_time=TimestampRange(min=20))
-        assert 20 == jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]["min"]
-        assert "max" not in jsgz_load(mock_files_response.calls[0].request.body)["filter"]["createdTime"]
+        assert 20 == jsgz_load(mock_files_response.calls.last.request.content)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_files_response.calls.last.request.content)["filter"]["createdTime"]
 
     def test_delete_single(self, cognite_client, mock_files_response):
         res = cognite_client.files.delete(id=1)
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls.last.request.content)
         assert res is None
 
     def test_delete_multiple(self, cognite_client, mock_files_response):
         res = cognite_client.files.delete(id=[1])
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls[0].request.body)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(mock_files_response.calls.last.request.content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_files_response):
         res = cognite_client.files.update(FileMetadata(id=1, source="bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
-            mock_files_response.calls[0].request.body
+            mock_files_response.calls.last.request.content
         )
 
     def test_update_with_update_class(self, cognite_client, mock_files_response):
         res = cognite_client.files.update(FileMetadataUpdate(id=1).source.set("bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
-            mock_files_response.calls[0].request.body
+            mock_files_response.calls.last.request.content
         )
 
     def test_update_with_update_class_using_instance_id(self, cognite_client, mock_files_response):
@@ -370,7 +366,7 @@ class TestFilesAPI:
         assert isinstance(res, FileMetadata)
         assert {
             "items": [{"instanceId": {"space": "foo", "externalId": "bar"}, "update": {"source": {"set": "bla"}}}]
-        } == jsgz_load(mock_files_response.calls[0].request.body)
+        } == jsgz_load(mock_files_response.calls.last.request.content)
 
     @pytest.mark.parametrize("extra_identifiers", (dict(id=1), dict(external_id="a"), dict(id=1, external_id="a")))
     def test_update_with_update_class_using_instance_id_and_other_identifier(
@@ -382,7 +378,7 @@ class TestFilesAPI:
     def test_update_labels_single(self, cognite_client, mock_files_response):
         cognite_client.files.update([FileMetadataUpdate(id=1).labels.add("PUMP").labels.remove("WELL LOG")])
         expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "WELL LOG"}]}}
-        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
+        assert jsgz_load(mock_files_response.calls.last.request.content)["items"][0]["update"] == expected
 
     def test_update_labels_multiple(self, cognite_client, mock_files_response):
         cognite_client.files.update(
@@ -394,24 +390,24 @@ class TestFilesAPI:
                 "remove": [{"externalId": "WELL LOG"}],
             }
         }
-        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
+        assert jsgz_load(mock_files_response.calls.last.request.content)["items"][0]["update"] == expected
 
     def test_update_labels_resource_class(self, cognite_client, mock_files_response):
         cognite_client.files.update(FileMetadata(id=1, labels=[Label(external_id="Pump")], external_id="newId"))
         expected = {"externalId": {"set": "newId"}, "labels": {"set": [{"externalId": "Pump"}]}}
-        assert expected == jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"]
+        assert expected == jsgz_load(mock_files_response.calls.last.request.content)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, cognite_client, mock_files_response):
         my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
         cognite_client.files.list(labels=my_label_filter)
-        assert jsgz_load(mock_files_response.calls[0].request.body)["filter"]["labels"] == {
+        assert jsgz_load(mock_files_response.calls.last.request.content)["filter"]["labels"] == {
             "containsAll": [{"externalId": "WELL LOG"}, {"externalId": "VERIFIED"}]
         }
 
     def test_labels_filter_contains_any(self, cognite_client, mock_files_response):
         my_label_filter = LabelFilter(contains_any=["WELL LOG", "WELL REPORT"])
         cognite_client.files.list(labels=my_label_filter)
-        assert jsgz_load(mock_files_response.calls[0].request.body)["filter"]["labels"] == {
+        assert jsgz_load(mock_files_response.calls.last.request.content)["filter"]["labels"] == {
             "containsAny": [{"externalId": "WELL LOG"}, {"externalId": "WELL REPORT"}]
         }
 
@@ -425,90 +421,87 @@ class TestFilesAPI:
                 {"id": 1, "update": {"source": {"setNull": True}}},
                 {"externalId": "2", "update": {"source": {"set": "bla"}}},
             ]
-        } == jsgz_load(mock_files_response.calls[0].request.body)
+        } == jsgz_load(mock_files_response.calls.last.request.content)
 
     def test_iter_single(self, cognite_client, mock_files_response):
         for file in cognite_client.files:
             assert isinstance(file, FileMetadata)
-            assert mock_files_response.calls[0].response.json()["items"][0] == file.dump(camel_case=True)
+            assert mock_files_response.calls.last.response.json()["items"][0] == file.dump(camel_case=True)
 
     def test_iter_chunk(self, cognite_client, mock_files_response):
         for file in cognite_client.files(chunk_size=1):
             assert isinstance(file, FileMetadataList)
-            assert mock_files_response.calls[0].response.json()["items"] == file.dump(camel_case=True)
+            assert mock_files_response.calls.last.response.json()["items"] == file.dump(camel_case=True)
 
     def test_search(self, cognite_client, mock_files_response):
         res = cognite_client.files.search(filter=FileMetadataFilter(external_id_prefix="abc"))
-        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
         assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
-            mock_files_response.calls[0].request.body
+            mock_files_response.calls.last.request.content
         )
 
     @pytest.mark.parametrize("filter_field", ["external_id_prefix", "externalIdPrefix"])
     def test_search_dict_filter(self, cognite_client, mock_files_response, filter_field):
         res = cognite_client.files.search(filter={filter_field: "abc"})
-        assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_files_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
         assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
-            mock_files_response.calls[0].request.body
+            mock_files_response.calls.last.request.content
         )
 
     def test_upload(self, cognite_client, mock_file_upload_response):
-        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        path = os.path.join(dir, "file_for_test_upload_1.txt")
-        res = cognite_client.files.upload(path, name="bla", directory=dir)
-        response_body = mock_file_upload_response.calls[0].response.json()
+        dir_path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir_path, "file_for_test_upload_1.txt")
+        res = cognite_client.files.upload(path, name="bla", directory=dir_path)
+        response_body = mock_file_upload_response.calls.nth(0).response.json()
         del response_body["uploadUrl"]
         assert FileMetadata.load(response_body) == res
-        assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
-        assert {"name": "bla", "directory": dir} == jsgz_load(mock_file_upload_response.calls[0].request.body)
-        assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
+        assert "https://upload.here/" == str(mock_file_upload_response.calls.nth(1).request.url)
+        assert {"name": "bla", "directory": dir_path} == jsgz_load(mock_file_upload_response.calls.nth(0).request.content)
+        assert isinstance(mock_file_upload_response.calls.nth(1).request.content, bytes)
 
     def test_upload_with_external_id(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, external_id="blabla", name="bla", data_set_id=42)
 
     def test_upload_with_label(self, cognite_client, mock_file_upload_response):
-        """
-        Uploading a file with a label gave a `ValueError: Could not parse label: {'external_id': 'foo-bar'}` from v7.0.0
-        """
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, name="bla", labels=[Label("PUMP")])
 
     def test_upload_no_name(self, cognite_client, mock_file_upload_response):
-        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        path = os.path.join(dir, "file_for_test_upload_1.txt")
-        cognite_client.files.upload(path, directory=dir)
-        assert {"name": "file_for_test_upload_1.txt", "directory": dir} == jsgz_load(
-            mock_file_upload_response.calls[0].request.body
+        dir_path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir_path, "file_for_test_upload_1.txt")
+        cognite_client.files.upload(path, directory=dir_path)
+        assert {"name": "file_for_test_upload_1.txt", "directory": dir_path} == jsgz_load(
+            mock_file_upload_response.calls.nth(0).request.content
         )
 
     def test_upload_set_directory(self, cognite_client, mock_file_upload_response):
         set_dir = "/Some/custom/directory"
-        dir = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
-        path = os.path.join(dir, "file_for_test_upload_1.txt")
+        dir_path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
+        path = os.path.join(dir_path, "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, directory=set_dir)
         assert {"name": "file_for_test_upload_1.txt", "directory": set_dir} == jsgz_load(
-            mock_file_upload_response.calls[0].request.body
+            mock_file_upload_response.calls.nth(0).request.content
         )
 
     def test_upload_from_directory(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
-        response_body = mock_file_upload_response.calls[0].response.json()
+        response_body = mock_file_upload_response.calls.nth(0).response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata.load(response_body), FileMetadata.load(response_body)]) == res
         assert 4 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
-            payload = call.request.body
-            if isinstance(payload, BufferedReader):
-                continue
-            else:
-                json = jsgz_load(payload)
-                assert [1, 2] == json["assetIds"]
-                assert json["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
+            if call.request.method == "POST": 
+                json_payload = jsgz_load(call.request.content)
+                assert [1, 2] == json_payload["assetIds"]
+                assert json_payload["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
+            elif call.request.method == "PUT":
+                assert isinstance(call.request.content, bytes)
 
-    def test_upload_from_directory_fails(self, cognite_client, rsps):
-        rsps.add(rsps.POST, cognite_client.files._get_base_url_with_base_path() + "/files", status=400, json={})
+
+    def test_upload_from_directory_fails(self, cognite_client, respx_mock): 
+        respx_mock.post(cognite_client.files._get_base_url_with_base_path() + "/files").respond(status_code=400, json={})
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.files.upload(path=path)
@@ -518,73 +511,65 @@ class TestFilesAPI:
     def test_upload_from_directory_recursively(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = cognite_client.files.upload(path=path, recursive=True, asset_ids=[1, 2])
-        response_body = mock_file_upload_response.calls[0].response.json()
+        response_body = mock_file_upload_response.calls.nth(0).response.json()
         del response_body["uploadUrl"]
         assert FileMetadataList([FileMetadata.load(response_body) for _ in range(3)]) == res
         assert 6 == len(mock_file_upload_response.calls)
         for call in mock_file_upload_response.calls:
-            payload = call.request.body
-            if isinstance(payload, BufferedReader):
-                continue
-            else:
-                json = jsgz_load(payload)
-                assert json["name"] in [
+            if call.request.method == "POST":
+                json_payload = jsgz_load(call.request.content)
+                assert json_payload["name"] in [
                     "file_for_test_upload_1.txt",
                     "file_for_test_upload_2.txt",
                     "file_for_test_upload_3.txt",
                 ]
-            assert [1, 2] == json["assetIds"]
+                assert [1, 2] == json_payload["assetIds"]
+            elif call.request.method == "PUT":
+                 assert isinstance(call.request.content, bytes)
+
 
     def test_upload_from_memory(self, cognite_client, mock_file_upload_response):
         res = cognite_client.files.upload_bytes(content=b"content", name="bla")
-        response_body = mock_file_upload_response.calls[0].response.json()
+        response_body = mock_file_upload_response.calls.nth(0).response.json()
         del response_body["uploadUrl"]
         assert FileMetadata.load(response_body) == res
-        assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
-        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
-        assert b"content" == mock_file_upload_response.calls[1].request.body
+        assert "https://upload.here/" == str(mock_file_upload_response.calls.nth(1).request.url)
+        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls.nth(0).request.content)
+        assert b"content" == mock_file_upload_response.calls.nth(1).request.content
 
     def test_upload_with_netloc(self, cognite_client, mock_file_upload_response):
-        """
-        When uploading a file, the upload URL should be used as-is if it contains a netloc.
-        """
         _ = cognite_client.files.upload_bytes(content=b"content", name="bla")
-        assert mock_file_upload_response.calls[1].request.url == "https://upload.here/"
+        assert str(mock_file_upload_response.calls.nth(1).request.url) == "https://upload.here/"
 
     def test_upload_without_netloc(self, cognite_client, mock_file_upload_response_without_netloc_in_upload_url):
-        """
-        When uploading a file, the upload URL should be appended to the base URL if it does not contain a netloc.
-        """
         _ = cognite_client.files.upload_bytes(content=b"content", name="bla")
-        assert (
-            mock_file_upload_response_without_netloc_in_upload_url.calls[1].request.url
-            == "https://api.cognitedata.com/upload/here/to/some/path"
-        )
+        expected_upload_url = cognite_client.config.base_url.rstrip('/') + "/upload/here/to/some/path"
+        assert str(mock_file_upload_response_without_netloc_in_upload_url.calls.nth(1).request.url) == expected_upload_url
 
     def test_upload_using_file_handle(self, cognite_client, mock_file_upload_response):
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         with open(path, "rb") as fh:
             res = cognite_client.files.upload_bytes(fh, name="bla")
-        response_body = mock_file_upload_response.calls[0].response.json()
+        response_body = mock_file_upload_response.calls.nth(0).response.json()
         del response_body["uploadUrl"]
         assert FileMetadata.load(response_body) == res
-        assert "https://upload.here/" == mock_file_upload_response.calls[1].request.url
-        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls[0].request.body)
-        assert isinstance(mock_file_upload_response.calls[1].request.body, BufferedReader)
+        assert "https://upload.here/" == str(mock_file_upload_response.calls.nth(1).request.url)
+        assert {"name": "bla"} == jsgz_load(mock_file_upload_response.calls.nth(0).request.content)
+        assert isinstance(mock_file_upload_response.calls.nth(1).request.content, bytes)
 
     def test_upload_path_does_not_exist(self, cognite_client):
         with pytest.raises(ValueError, match="does not exist"):
             cognite_client.files.upload(path="/no/such/path")
 
     def test_download(self, cognite_client, mock_file_download_response):
-        with TemporaryDirectory() as dir:
-            res = cognite_client.files.download(directory=dir, id=[1], external_id=["2"])
+        with TemporaryDirectory() as dir_path: 
+            res = cognite_client.files.download(directory=dir_path, id=[1], external_id=["2"])
             assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-                mock_file_download_response.calls[0].request.body
+                mock_file_download_response.calls.nth(0).request.content
             )
             assert res is None
-            fp1 = os.path.join(dir, "file1")
-            fp2 = os.path.join(dir, "file2")
+            fp1 = os.path.join(dir_path, "file1")
+            fp2 = os.path.join(dir_path, "file2")
             assert os.path.isfile(fp1)
             assert os.path.isfile(fp2)
             with open(fp1, "rb") as fh:
@@ -632,7 +617,7 @@ class TestFilesAPI:
             resolve_duplicate_file_names=True,
         )
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+            mock_file_download_response_with_folder_structure_same_name.calls.nth(0).request.content
         )
         fp1 = tmp_path / "file_a"
         fp2 = tmp_path / "file_a(1)"
@@ -644,7 +629,7 @@ class TestFilesAPI:
     ):
         cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-            mock_file_download_response_with_folder_structure_same_name.calls[0].request.body
+            mock_file_download_response_with_folder_structure_same_name.calls.nth(0).request.content
         )
         fp1 = tmp_path / "rootdir/subdir/file_a"
         fp2 = tmp_path / "file_a"
@@ -654,33 +639,29 @@ class TestFilesAPI:
         assert fp2.read_text() == "contentNoDir"
 
     @pytest.fixture
-    def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):
+    def mock_byids_response__file_with_double_dots(self, respx_mock, cognite_client):
         filename = "../file1"
-        rsps.add(
-            rsps.POST,
-            cognite_client.files._get_base_url_with_base_path() + "/files/byids",
-            status=200,
-            json={"items": [{"id": 1, "name": filename}]},
-        )
-        yield rsps
+        respx_mock.post(
+            cognite_client.files._get_base_url_with_base_path() + "/files/byids"
+        ).respond(status_code=200, json={"items": [{"id": 1, "name": filename}]})
+        yield respx_mock
 
     def test_download_file_outside_download_directory(self, cognite_client, mock_byids_response__file_with_double_dots):
-        with TemporaryDirectory() as dir:
+        with TemporaryDirectory() as dir_path: 
             with pytest.raises(RuntimeError, match="not inside download directory"):
-                cognite_client.files.download(directory=dir, id=[1])
+                cognite_client.files.download(directory=dir_path, id=[1])
 
     def test_download_one_file_fails(self, cognite_client, mock_file_download_response_one_fails):
-        with TemporaryDirectory() as dir:
+        with TemporaryDirectory() as dir_path: 
             with pytest.raises(CogniteAPIError) as e:
-                cognite_client.files.download(directory=dir, id=[1], external_id="fail")
+                cognite_client.files.download(directory=dir_path, id=[1], external_id="fail")
             assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
             assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed
-            assert os.path.isfile(os.path.join(dir, "file1"))
+            assert os.path.isfile(os.path.join(dir_path, "file1"))
 
     def test_download_file_to_path(self, cognite_client, mock_file_download_response):
-        mock_file_download_response.assert_all_requests_are_fired = False
-        with TemporaryDirectory() as dir:
-            file_path = os.path.join(dir, "my_downloaded_file.txt")
+        with TemporaryDirectory() as dir_path: 
+            file_path = os.path.join(dir_path, "my_downloaded_file.txt")
             res = cognite_client.files.download_to_path(path=file_path, id=1)
             assert res is None
             assert os.path.isfile(file_path)
@@ -688,23 +669,22 @@ class TestFilesAPI:
                 assert b"content1" == f.read()
 
     def test_download_to_memory(self, cognite_client, mock_file_download_response):
-        mock_file_download_response.assert_all_requests_are_fired = False
         res = cognite_client.files.download_bytes(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.calls[0].request.body)
+        assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.calls.last.request.content)
         assert res == b"content1"
 
     def test_download_ids_over_limit(self, cognite_client, mock_file_download_response):
         with set_request_limit(cognite_client.files, 1):
-            with TemporaryDirectory() as dir:
-                res = cognite_client.files.download(directory=dir, id=[1], external_id=["2"])
-                bodies = [jsgz_load(mock_file_download_response.calls[i].request.body) for i in range(2)]
+            with TemporaryDirectory() as dir_path: 
+                res = cognite_client.files.download(directory=dir_path, id=[1], external_id=["2"])
+                bodies = [jsgz_load(mock_file_download_response.calls.nth(i).request.content) for i in range(2)] 
                 assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} in bodies
                 assert {"ignoreUnknownIds": False, "items": [{"externalId": "2"}]} in bodies
                 assert res is None
-                assert os.path.isfile(os.path.join(dir, "file1"))
-                assert os.path.isfile(os.path.join(dir, "file2"))
+                assert os.path.isfile(os.path.join(dir_path, "file1"))
+                assert os.path.isfile(os.path.join(dir_path, "file2"))
 
-    def test_files_update_object(self):
+    def test_files_update_object(self, mock_geo_location): 
         assert isinstance(
             FileMetadataUpdate(1)
             .asset_ids.add([])
@@ -716,7 +696,7 @@ class TestFilesAPI:
             .metadata.remove([])
             .labels.add(["WELL LOG"])
             .labels.remove(["CV"])
-            .geo_location.set(mock_geo_location)
+            .geo_location.set(mock_geo_location) 
             .geo_location.set(None)
             .source.set(1)
             .source.set(None),
@@ -762,16 +742,17 @@ class TestFilesAPI:
     )
     def test_upload_bytes_post_error(
         self,
+        respx_mock, 
         cognite_client,
         data_set_id: int,
         api_error: CogniteAPIError,
         expected_error: type[CogniteAPIError],
         expected_error_message: str,
     ):
-        def raise_api_error(*args, **kwargs):
+        def raise_api_error_side_effect(request: HttpxRequest): 
             raise api_error
 
-        cognite_client.files._post = raise_api_error
+        respx_mock.post(cognite_client.files._get_base_url_with_base_path() + "/files").mock(side_effect=raise_api_error_side_effect)
 
         with pytest.raises(expected_error) as e:
             cognite_client.files.upload_bytes(content=b"content", name="bla", data_set_id=data_set_id)
@@ -782,10 +763,10 @@ class TestFilesAPI:
 
 
 @pytest.fixture
-def mock_files_empty(rsps, cognite_client):
+def mock_files_empty(respx_mock, cognite_client):
     url_pattern = re.compile(re.escape(cognite_client.files._get_base_url_with_base_path()) + "/.+")
-    rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
-    yield rsps
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json={"items": []})
+    yield respx_mock
 
 
 @pytest.mark.dsl
@@ -813,3 +794,5 @@ class TestPandasIntegration:
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
+
+[end of tests/tests_unit/test_api/test_files.py]

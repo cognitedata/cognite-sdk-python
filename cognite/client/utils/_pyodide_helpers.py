@@ -11,7 +11,8 @@ from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
-    from requests import Session
+    # from requests import Session # No longer needed
+    from httpx import Client as HttpxClient # For type hinting
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
 
@@ -60,15 +61,19 @@ def patch_sdk_for_pyodide() -> None:
 def http_client__init__(
     self: HTTPClient,
     config: HTTPClientConfig,
-    session: Session,
+    session: HttpxClient, # Changed from requests.Session to httpx.Client
     refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
     retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
 ) -> None:
-    import pyodide_http
+    # import pyodide_http # pyodide_http is used in _http_client.py for transport
 
+    # The global httpx client is now already configured with PyodideClientTransport
+    # in get_global_httpx_client if running in Pyodide.
+    # Thus, the original __init__ call is sufficient and mounting adapters here is not needed.
     self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
-    self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
-    self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
+    # The mount calls below are for requests.Session and are no longer applicable.
+    # self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
+    # self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
 
 
 class EnvVarToken(CredentialProvider):
