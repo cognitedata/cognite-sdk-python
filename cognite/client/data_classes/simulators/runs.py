@@ -451,16 +451,17 @@ class SimulationRunDataItem(CogniteResource):
         """
         pd = local_import("pandas")
 
-        def create_row(item: SimulationInput | SimulationOutput, item_type: str) -> dict:
+        def _create_row(item: SimulationInput | SimulationOutput) -> dict:
             """Create a row dictionary for an input or output item."""
+            item_type = (isinstance(item, SimulationInput) and "Input") or "Output"
             row = {
                 "run_id": self.run_id,
                 "type": item_type,
                 "reference_id": item.reference_id,
                 "value": item.value,
-                "unit": item.unit.name if item.unit else "",
+                "unit_name": item.unit.name if item.unit else None,
                 "value_type": item.value_type,
-                "overridden": bool(getattr(item, "overridden", False)),
+                "overridden": getattr(item, "overridden", None),
                 "timeseries_external_id": item.timeseries_external_id,
             }
 
@@ -471,9 +472,7 @@ class SimulationRunDataItem(CogniteResource):
 
             return row
 
-        rows = [create_row(input_item, "Input") for input_item in self.inputs] + [
-            create_row(output_item, "Output") for output_item in self.outputs
-        ]
+        rows = [_create_row(item) for item in self.inputs + self.outputs]
 
         return pd.DataFrame(rows)
 

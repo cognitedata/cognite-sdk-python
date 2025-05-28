@@ -231,23 +231,46 @@ class TestSimulationRunDataItemPandasIntegration:
             "type",
             "reference_id",
             "value",
-            "unit",
+            "unit_name",
             "value_type",
             "overridden",
             "timeseries_external_id",
             "address",
         ]
 
-        # Check specific values
-        assert df.loc[0, "run_id"] == 123
-        assert df.loc[0, "type"] == "Input"
-        assert df.loc[0, "reference_id"] == "CWT"
-        assert df.loc[0, "value"] == 11.0
-        assert df.loc[0, "unit"] == "C"
-        assert df.loc[0, "value_type"] == "DOUBLE"
-        assert df.loc[0, "overridden"]
+        expected_data_rows = [
+            {
+                "run_id": 123,
+                "type": "Input",
+                "reference_id": "CWT",
+                "value": 11.0,
+                "unit_name": "C",
+                "value_type": "DOUBLE",
+                "overridden": True,
+                "timeseries_external_id": None,
+            },
+            {
+                "run_id": 123,
+                "type": "Input",
+                "reference_id": "CWP",
+                "value": [5.0],
+                "unit_name": "bar",
+                "value_type": "DOUBLE_ARRAY",
+                "overridden": True,
+                "timeseries_external_id": None,
+            },
+            {
+                "run_id": 123,
+                "type": "Output",
+                "reference_id": "ST",
+                "value": 18.5,
+                "unit_name": "C",
+                "value_type": "DOUBLE",
+                "overridden": None,
+                "timeseries_external_id": None,
+                "address": "test_out",
+            },
+        ]
 
-        assert df.loc[2, "type"] == "Output"
-        assert df.loc[2, "reference_id"] == "ST"
-        assert df.loc[2, "value"] == 18.5
-        assert df.loc[2, "address"] == "test_out"
+        expected_df = pd.DataFrame(expected_data_rows)
+        pd.testing.assert_frame_equal(df, expected_df)
