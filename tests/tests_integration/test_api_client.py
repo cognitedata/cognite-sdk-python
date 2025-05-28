@@ -11,7 +11,7 @@ from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Asset, AssetWrite, Event, EventFilter, EventList, aggregations, filters
-from cognite.client.data_classes.events import EventProperty
+from cognite.client.data_classes.events import EventProperty, EventWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
@@ -361,11 +361,20 @@ class TestAPIClientRetrieveMultiple:
     ) -> None:
         # Between SDK version 7.0.0 and 7.33.1, ordering of results was broken when >> 1k elements
         # was requested (meaning multiple requests were used):
-        event_ids = cognite_client.events.list(limit=2000, sort="createdTime:asc").as_ids()
-        random.shuffle(event_ids)
-        monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
-        res = cognite_client.events.retrieve_multiple(ids=event_ids)
-        assert res.as_ids() == event_ids
+        random_prefix = random_string(10)
+        num_items = 2000
+        try:
+            cognite_client.events.create([EventWrite(external_id=f"{random_prefix}:{i}") for i in range(num_items)])
+            event_ids = cognite_client.events.list(
+                limit=num_items, sort="createdTime:asc", external_id_prefix=random_prefix
+            ).as_ids()
+            random.shuffle(event_ids)
+            # monkeypatch.setattr(cognite_client.events, "_RETRIEVE_LIMIT", 80)
+            res = cognite_client.events.retrieve_multiple(ids=event_ids)
+            assert res.as_ids() == event_ids
+        finally:
+            event_ids = cognite_client.events.list(limit=num_items, external_id_prefix=random_prefix).as_ids()
+            cognite_client.events.delete(id=event_ids, ignore_unknown_ids=True)
 
 
 class TestAPIClientDelete:

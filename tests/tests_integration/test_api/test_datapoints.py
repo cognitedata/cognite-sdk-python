@@ -12,6 +12,7 @@ import math
 import random
 import re
 import unittest
+import warnings
 from collections import UserList
 from collections.abc import Callable, Iterator
 from contextlib import nullcontext as does_not_raise
@@ -42,7 +43,15 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
-from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
+from cognite.client.data_classes.datapoints import (
+    _OBJECT_AGGREGATES,
+    ALL_SORTED_DP_AGGS,
+    ALL_SORTED_NUMERIC_DP_AGGS,
+    MaxDatapoint,
+    MaxDatapointWithStatus,
+    MinDatapoint,
+    MinDatapointWithStatus,
+)
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._text import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
@@ -111,8 +120,18 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
             f"{TEST_PREFIX} 122: mixed status codes, daily values, 2023-2024, string",
             f"{TEST_PREFIX} 123: only bad status codes, daily values, 2023-2024, numeric",
             f"{TEST_PREFIX} 124: only bad status codes, daily values, 2023-2024, string",
-        ]
+        ],
+        instance_ids=[
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 125: clone of 109"),
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 126: clone of 114"),
+            NodeId(space="PySDK-DMS-time-series-integration-test", external_id=f"{TEST_PREFIX} 127: clone of 121"),
+        ],
     )
+
+
+@pytest.fixture
+def all_numeric_test_time_series(all_test_time_series):
+    return TimeSeriesList([ts for ts in all_test_time_series if ts.is_string is False])
 
 
 @pytest.fixture
@@ -289,10 +308,11 @@ def make_dps_tests_reproducible(testrun_uid, request):
 
     # To make this show up in the logs, it must be run here as part of teardown (post-yield):
     if request.session.testsfailed:
-        print(  # noqa: T201
+        warnings.warn(  # not using print as stdout typically gets hidden by xdist even upon failure
             f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints "
             "test failed - and you weren't the cause, please create a new (GitHub) issue: "
-            "https://github.com/cognitedata/cognite-sdk-python/issues"
+            "https://github.com/cognitedata/cognite-sdk-python/issues",
+            UserWarning,
         )
 
 
@@ -715,6 +735,52 @@ class TestIterateDatapoints:
 
         dps = dps_lst.get(external_id=ts_xid)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (882, 1500)
+
+    @pytest.mark.parametrize("retrieve_arrays", (False, True))
+    def test_iterate_multiple_requests(self, cognite_client, all_test_time_series, retrieve_arrays):
+        # Bug prior to 7.74.1, when iterating using instance ID, the total number of points returned would max
+        # out at 100k (single request max size) due to an issue with InstanceId lookup in Datapoints(Array)List.
+        queries = [
+            DatapointsQuery(id=all_test_time_series[113].id),
+            DatapointsQuery(external_id=all_test_time_series[115].external_id),
+            DatapointsQuery(instance_id=all_test_time_series[125].instance_id),
+        ]
+        dps_iter = cognite_client.time_series.data(queries, chunk_size_datapoints=25_000, return_arrays=retrieve_arrays)
+        for i, dps_lst in enumerate(dps_iter, 1):
+            assert len(dps_lst) == 3
+            assert list(map(len, dps_lst)) == [25_000, 25_000, 25_000]
+            if i == 5:
+                break
+        else:
+            pytest.fail("Too few iterations/datapoints returned")
+
+    @pytest.mark.parametrize("retrieve_arrays", (False, True))
+    def test_iterating_object_aggregates(self, cognite_client, all_test_time_series, retrieve_arrays):
+        # Bug prior to 7.74.3, when iterating object aggregate datapoints like `min_datapoint` or `max_datapoint`,
+        # a 'ValueError: Unsupported aggregate' would be raised because `include_status` did not have a default value.
+        queries = [
+            DatapointsQuery(
+                id=all_test_time_series[113].id,
+                start=ts_to_ms("2018-08-16"),
+                aggregates="min_datapoint",
+                granularity="1mo",
+            ),
+            DatapointsQuery(
+                external_id=all_test_time_series[115].external_id,
+                aggregates=["max_datapoint"],
+                start=ts_to_ms("2011-07-02"),
+                granularity="1q",
+            ),
+            DatapointsQuery(
+                instance_id=all_test_time_series[125].instance_id,
+                aggregates=["min_datapoint", "max_datapoint"],
+                start=ts_to_ms("2016-01-02"),
+                granularity="1y",
+            ),
+        ]
+        for dps_lst in cognite_client.time_series.data(queries, return_arrays=retrieve_arrays):
+            assert len(dps_lst) == 3
+            assert list(map(len, dps_lst)) == [17, 9, 4]
 
 
 class TestRetrieveRawDatapointsAPI:
@@ -1343,13 +1409,12 @@ class TestRetrieveAggregateDatapointsAPI:
         (
             "min",
             "step_interpolation",
-            "stepInterpolation",
-            ["step_interpolation"],
             ["stepInterpolation"],
             ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation"],
-            ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation", "min"],
             list(map(to_camel_case, ALL_SORTED_DP_AGGS)),
             list(map(to_snake_case, ALL_SORTED_DP_AGGS)),
+            list(map(to_snake_case, ALL_SORTED_NUMERIC_DP_AGGS)),
+            list(_OBJECT_AGGREGATES),
             # Give a mix:
             ["continuousVariance", "discrete_variance", "step_interpolation", "totalVariation"],
             ["continuous_variance", "discreteVariance", "stepInterpolation", "total_variation", "min"],
@@ -1574,23 +1639,25 @@ class TestRetrieveAggregateDatapointsAPI:
             assert sum(res.sum) == 500_000
 
     @pytest.mark.parametrize(
-        "first_gran, second_gran, start",
+        "first_gran, second_gran, start, min_multiplier",
         (
-            ("60s", "1m", 86572008555),
-            ("120s", "2m", 27340402091),
-            ("60m", "1h", -357464206106),
-            ("120m", "2h", -150117679983),
-            ("24h", "1d", 114399466017),
-            ("48h", "2d", -170931071253),
-            ("240h", "10d", 366850985031),
-            ("4800h", "200d", -562661581583),
+            ("60s", "1m", 86572008555, 40),
+            ("120s", "2m", 27340402091, 83),
+            ("60m", "1h", -357464206106, 1),
+            ("120m", "2h", -150117679983, 1),
+            ("24h", "1d", 114399466017, 1),
+            ("48h", "2d", -170931071253, 1),
+            ("240h", "10d", 366850985031, 1),
+            ("4800h", "200d", -562661581583, 1),
         ),
     )
-    def test_can_be_equivalent_granularities(self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints):
+    def test_can_be_equivalent_granularities(
+        self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints, min_multiplier
+    ):
         ts, _ = one_mill_dps_ts  # data: 1950-2020
         gran_ms = granularity_to_ms(first_gran)
         for endpoint in retrieve_endpoints:
-            end = start + gran_ms * random.randint(10, 1000)
+            end = start + gran_ms * random.randint(min_multiplier, 1000)
             start_aligned, end_aligned = align_start_and_end_for_granularity(start, end, second_gran)
             res_lst = endpoint(
                 aggregates=random_aggregates(),
@@ -1968,6 +2035,50 @@ class TestRetrieveAggregateDatapointsAPI:
             assert_equal(exp_days_per_year, y_utc.count)
             assert_equal(exp_days_per_quarter, q_utc.count[: 4 * 4])
             assert_equal(exp_days_per_month, mo_utc.count[: 12 * 4])
+
+    @pytest.mark.parametrize("include_status", (True, False))
+    def test_object_aggregates(self, retrieve_endpoints, all_numeric_test_time_series, include_status):
+        ts1, ts2 = random.sample(all_numeric_test_time_series, k=2)
+        for endpoint in retrieve_endpoints:
+            dps_lst = endpoint(
+                id=ts1.id,
+                external_id=ts2.external_id,
+                start=MIN_TIMESTAMP_MS,
+                end=MAX_TIMESTAMP_MS,
+                aggregates=list(_OBJECT_AGGREGATES),
+                granularity="1mo",
+                include_status=include_status,
+                limit=2,
+            )
+            for dps in dps_lst:
+                assert 1 <= len(dps.min_datapoint) <= 2
+                assert 1 <= len(dps.max_datapoint) <= 2
+                dp = dps[0]
+                assert isinstance(dp, Datapoint)
+                if include_status:
+                    assert isinstance(dps.min_datapoint[0], MinDatapointWithStatus)
+                    assert isinstance(dps.max_datapoint[0], MaxDatapointWithStatus)
+                    assert isinstance(dp.min_datapoint, MinDatapointWithStatus)
+                    assert isinstance(dp.max_datapoint, MaxDatapointWithStatus)
+                else:
+                    assert isinstance(dps.min_datapoint[0], MinDatapoint)
+                    assert isinstance(dps.max_datapoint[0], MaxDatapoint)
+                    assert isinstance(dp.min_datapoint, MinDatapoint)
+                    assert isinstance(dp.max_datapoint, MaxDatapoint)
+                for dp in dps:
+                    dp_min, dp_max = dp.min_datapoint.value, dp.max_datapoint.value
+                    assert math.isfinite(dp_min)
+                    assert math.isfinite(dp_max)
+                    assert dp_min <= dp_max
+                    if include_status:
+                        assert isinstance(dp.min_datapoint.status_code, int)
+                        assert isinstance(dp.max_datapoint.status_symbol, str)
+                    else:
+                        for min_or_max in (dp.min_datapoint, dp.max_datapoint):
+                            with pytest.raises(AttributeError):
+                                min_or_max.status_code
+                            with pytest.raises(AttributeError):
+                                min_or_max.status_symbol
 
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
@@ -2495,6 +2606,7 @@ class TestRetrieveDataFrameAPI:
                 "aggregates": random_aggregates(
                     exclude={"interpolation", "step_interpolation"},
                     exclude_integer_aggregates=True,
+                    exclude_object_aggregates=True,
                 ),
             },
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),

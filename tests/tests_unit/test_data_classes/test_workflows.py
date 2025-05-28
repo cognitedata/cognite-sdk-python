@@ -215,3 +215,36 @@ class TestWorkflowExecutionDetailed:
 
             if actual_task.id == "38b3e696-adcb-4bf8-9217-747449f55289":
                 assert actual_task.dump(camel_case=True) == execution_data["executedTasks"][0]
+
+
+class TestWorkflowTask:
+    @pytest.mark.parametrize(
+        ["raw"],
+        [
+            (
+                {
+                    "externalId": "task1",
+                    "type": "function",
+                    "parameters": {
+                        "function": {"externalId": "myFunction"},
+                    },
+                },
+            ),
+            (
+                {
+                    "externalId": "task1",
+                    "type": "transformation",
+                    "parameters": {
+                        "transformation": {
+                            "externalId": "myTransformation",
+                            "concurrencyPolicy": "fail",
+                            "useTransformationCredentials": False,
+                        }
+                    },
+                },
+            ),
+        ],
+    )
+    def test_serialization(self, raw: dict):
+        loaded = WorkflowTask._load(raw)
+        assert loaded.dump() == raw

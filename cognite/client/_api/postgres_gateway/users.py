@@ -13,7 +13,6 @@ from cognite.client.data_classes.postgres_gateway.users import (
     UserUpdate,
     UserWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import UsernameSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -26,7 +25,6 @@ class UsersAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Users")
         self._CREATE_LIMIT = 1
         self._UPDATE_LIMIT = 1
         self._DELETE_LIMIT = 1
@@ -64,15 +62,12 @@ class UsersAPI(APIClient):
         Returns:
             Iterator[User] | Iterator[UserList]: yields User one by one if chunk_size is not specified, else UserList objects.
         """
-        self._warning.warn()
-
         return self._list_generator(
             list_cls=UserList,
             resource_cls=User,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            headers={"cdf-version": "beta"},
         )
 
     def __iter__(self) -> Iterator[User]:
@@ -120,13 +115,11 @@ class UsersAPI(APIClient):
                 >>> res = client.postgres_gateway.users.create(user)
 
         """
-        self._warning.warn()
         return self._create_multiple(
             list_cls=UserCreatedList,
             resource_cls=UserCreated,
             items=user,
             input_resource_cls=UserWrite,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -163,13 +156,11 @@ class UsersAPI(APIClient):
                 >>> res = client.postgres_gateway.users.update(update)
 
         """
-        self._warning.warn()
         return self._update_multiple(
             items=items,
             list_cls=UserList,
             resource_cls=User,
             update_cls=UserUpdate,
-            headers={"cdf-version": "beta"},
         )
 
     def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
@@ -192,7 +183,6 @@ class UsersAPI(APIClient):
 
 
         """
-        self._warning.warn()
         extra_body_fields = {"ignore_unknown_ids": ignore_unknown_ids}
 
         self._delete_multiple(
@@ -200,7 +190,6 @@ class UsersAPI(APIClient):
             wrap_ids=True,
             returns_items=False,
             extra_body_fields=extra_body_fields,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -230,14 +219,11 @@ class UsersAPI(APIClient):
                     >>> res = client.postgres_gateway.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
-        self._warning.warn()
-
         return self._retrieve_multiple(
             list_cls=UserList,
             resource_cls=User,
             identifiers=UsernameSequence.load(usernames=username),
             ignore_unknown_ids=ignore_unknown_ids,
-            headers={"cdf-version": "beta"},
         )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
@@ -270,11 +256,9 @@ class UsersAPI(APIClient):
                 ...     user_list # do something with the users
 
         """
-        self._warning.warn()
         return self._list(
             list_cls=UserList,
             resource_cls=User,
             method="GET",
             limit=limit,
-            headers={"cdf-version": "beta"},
         )
