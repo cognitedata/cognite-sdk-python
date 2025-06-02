@@ -19,7 +19,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import (
     simulator_integration,
     simulator_model,
     simulator_routine,
-    simulator_routine_revision,
+    simulator_routine_revision_obj,
 )
 from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
@@ -185,7 +185,7 @@ def seed_simulator_routine_revision(
     rev_external_id = f"{routine_external_id}_{version}"
     routine_rev_exists = routine_revs.get(external_id=rev_external_id)
 
-    revision = {**simulator_routine_revision, "externalId": rev_external_id}
+    revision = {**simulator_routine_revision_obj, "externalId": rev_external_id}
 
     if not routine_rev_exists:
         cognite_client.simulators.routines.revisions.create(SimulatorRoutineRevisionWrite.load(revision))
