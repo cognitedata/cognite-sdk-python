@@ -1,4 +1,18 @@
 # This file contains the data used to seed the test environment for the simulator tests
+from cognite.client.data_classes.simulators.routine_revisions import (
+    SimulationValueUnitInput,
+    SimulatorRoutineConfiguration,
+    SimulatorRoutineDataSampling,
+    SimulatorRoutineInputConstant,
+    SimulatorRoutineLogicalCheck,
+    SimulatorRoutineOutput,
+    SimulatorRoutineRevisionWrite,
+    SimulatorRoutineSchedule,
+    SimulatorRoutineStage,
+    SimulatorRoutineSteadyStateDetection,
+    SimulatorRoutineStep,
+    SimulatorRoutineStepArguments,
+)
 from cognite.client.utils._text import random_string
 
 data_set_external_id = "sdk_tests_dwsim1"
@@ -236,87 +250,190 @@ simulator_routine = {
     "description": "Simulator Routine - Description Test",
 }
 
-
-simulator_routine_revision = {
-    "externalId": None,
-    "routineExternalId": resource_names["simulator_routine_external_id"],
-    "configuration": {
-        "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
-        "dataSampling": {"enabled": True, "samplingWindow": 15, "granularity": 1},
-        "logicalCheck": [],
-        "steadyStateDetection": [],
-        "inputs": [
-            {
-                "name": "Cold Water Temperature",
-                "referenceId": "CWT",
-                "value": 10.0,
-                "valueType": "DOUBLE",
-                "unit": {"name": "C", "quantity": "temperature"},
-                "saveTimeseriesExternalId": "TEST-ROUTINE-INPUT-CWT",
-            },
-            {
-                "name": "Cold Water Pressure",
-                "referenceId": "CWP",
-                "value": [3.6],
-                "valueType": "DOUBLE_ARRAY",
-                "unit": {"name": "bar", "quantity": "pressure"},
-            },
-        ],
-        "outputs": [
-            {
-                "name": "Shower Temperature",
-                "referenceId": "ST",
-                "unit": {"name": "C", "quantity": "temperature"},
-                "valueType": "DOUBLE",
-                "saveTimeseriesExternalId": "TEST-ROUTINE-OUTPUT-ST",
-            },
-            {
-                "name": "Shower Pressure",
-                "referenceId": "SP",
-                "unit": {"name": "bar", "quantity": "pressure"},
-                "valueType": "DOUBLE",
-            },
-        ],
-    },
-    "script": [
+simulator_routine_revision_config_obj = {
+    "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
+    "dataSampling": {"enabled": True, "samplingWindow": 15, "granularity": 1, "validationWindow": 5},
+    "logicalCheck": [
         {
-            "order": 1,
-            "description": "Set Inputs",
-            "steps": [
-                {
-                    "order": 1,
-                    "stepType": "Set",
-                    "description": "Set Cold Water Temperature",
-                    "arguments": {"referenceId": "CWT", "objectName": "Cold water", "objectProperty": "Temperature"},
-                },
-                {
-                    "order": 2,
-                    "stepType": "Set",
-                    "description": "Set Cold Water Pressure",
-                    "arguments": {"referenceId": "CWP", "objectName": "Cold water", "objectProperty": "Pressure"},
-                },
-            ],
+            "enabled": True,
+            "aggregate": "average",
+            "operator": "lt",
+            "value": 75.8,
+            "timeseriesExternalId": "VAL-45-PT-92608_test",
+        }
+    ],
+    "steadyStateDetection": [
+        {
+            "enabled": True,
+            "aggregate": "average",
+            "minSectionSize": 1,
+            "varThreshold": 3.5,
+            "slopeThreshold": -7.5,
+            "timeseriesExternalId": "VAL-45-PT-92608",
+        }
+    ],
+    "inputs": [
+        {
+            "name": "Cold Water Temperature",
+            "referenceId": "CWT",
+            "value": 10.0,
+            "valueType": "DOUBLE",
+            "unit": {"name": "C", "quantity": "temperature"},
+            "saveTimeseriesExternalId": "TEST-ROUTINE-INPUT-CWT",
         },
         {
-            "order": 2,
-            "description": "Solve the flowsheet",
-            "steps": [{"order": 1, "stepType": "Command", "arguments": {"command": "Solve"}}],
+            "name": "Cold Water Pressure",
+            "referenceId": "CWP",
+            "value": [3.6],
+            "valueType": "DOUBLE_ARRAY",
+            "unit": {"name": "bar", "quantity": "pressure"},
+        },
+    ],
+    "outputs": [
+        {
+            "name": "Shower Temperature",
+            "referenceId": "ST",
+            "unit": {"name": "C", "quantity": "temperature"},
+            "valueType": "DOUBLE",
+            "saveTimeseriesExternalId": "TEST-ROUTINE-OUTPUT-ST",
         },
         {
-            "order": 3,
-            "description": "Set simulation outputs",
-            "steps": [
-                {
-                    "order": 1,
-                    "stepType": "Get",
-                    "arguments": {"referenceId": "ST", "objectName": "Shower", "objectProperty": "Temperature"},
-                },
-                {
-                    "order": 2,
-                    "stepType": "Get",
-                    "arguments": {"referenceId": "SP", "objectName": "Shower", "objectProperty": "Pressure"},
-                },
-            ],
+            "name": "Shower Pressure",
+            "referenceId": "SP",
+            "unit": {"name": "bar", "quantity": "pressure"},
+            "valueType": "DOUBLE",
         },
     ],
 }
+
+simulator_routine_revision_script_obj = [
+    {
+        "order": 1,
+        "description": "Set Inputs",
+        "steps": [
+            {
+                "order": 1,
+                "stepType": "Set",
+                "description": "Set Cold Water Temperature",
+                "arguments": {"referenceId": "CWT", "objectName": "Cold water", "objectProperty": "Temperature"},
+            },
+            {
+                "order": 2,
+                "stepType": "Set",
+                "description": "Set Cold Water Pressure",
+                "arguments": {"referenceId": "CWP", "objectName": "Cold water", "objectProperty": "Pressure"},
+            },
+        ],
+    },
+    {
+        "order": 2,
+        "description": "Solve the flowsheet",
+        "steps": [{"order": 1, "stepType": "Command", "arguments": {"command": "Solve"}}],
+    },
+    {
+        "order": 3,
+        "description": "Set simulation outputs",
+        "steps": [
+            {
+                "order": 1,
+                "stepType": "Get",
+                "arguments": {"referenceId": "ST", "objectName": "Shower", "objectProperty": "Temperature"},
+            },
+            {
+                "order": 2,
+                "stepType": "Get",
+                "arguments": {"referenceId": "SP", "objectName": "Shower", "objectProperty": "Pressure"},
+            },
+        ],
+    },
+]
+
+simulator_routine_revision_obj = {
+    "externalId": None,
+    "routineExternalId": resource_names["simulator_routine_external_id"],
+    "configuration": simulator_routine_revision_config_obj,
+    "script": simulator_routine_revision_script_obj,
+}
+
+
+def create_simulator_routine_revision(
+    external_id: str,
+    routine_external_id: str,
+) -> SimulatorRoutineRevisionWrite:
+    """Create a test simulator routine revision object."""
+    return SimulatorRoutineRevisionWrite(
+        external_id=external_id,
+        routine_external_id=routine_external_id,
+        configuration=SimulatorRoutineConfiguration(
+            schedule=SimulatorRoutineSchedule(
+                cron_expression=simulator_routine_revision_config_obj["schedule"]["cronExpression"],
+            ),
+            data_sampling=SimulatorRoutineDataSampling(
+                sampling_window=simulator_routine_revision_config_obj["dataSampling"]["samplingWindow"],
+                granularity=simulator_routine_revision_config_obj["dataSampling"]["granularity"],
+                validation_window=simulator_routine_revision_config_obj["dataSampling"]["validationWindow"],
+            ),
+            logical_check=[
+                SimulatorRoutineLogicalCheck(
+                    aggregate=logical_check["aggregate"],
+                    operator=logical_check["operator"],
+                    value=logical_check["value"],
+                    timeseries_external_id=logical_check["timeseriesExternalId"],
+                )
+                for logical_check in simulator_routine_revision_config_obj["logicalCheck"]
+            ],
+            steady_state_detection=[
+                SimulatorRoutineSteadyStateDetection(
+                    aggregate=steady_state_detection["aggregate"],
+                    min_section_size=steady_state_detection["minSectionSize"],
+                    var_threshold=steady_state_detection["varThreshold"],
+                    slope_threshold=steady_state_detection["slopeThreshold"],
+                    timeseries_external_id=steady_state_detection["timeseriesExternalId"],
+                )
+                for steady_state_detection in simulator_routine_revision_config_obj["steadyStateDetection"]
+            ],
+            inputs=[
+                SimulatorRoutineInputConstant(
+                    name=input_cfg["name"],
+                    reference_id=input_cfg["referenceId"],
+                    value=input_cfg["value"],
+                    value_type=input_cfg["valueType"],
+                    unit=SimulationValueUnitInput(
+                        name=input_cfg["unit"]["name"],
+                        quantity=input_cfg["unit"]["quantity"],
+                    ),
+                    save_timeseries_external_id=input_cfg.get("saveTimeseriesExternalId"),
+                )
+                for input_cfg in simulator_routine_revision_config_obj["inputs"]
+            ],
+            outputs=[
+                SimulatorRoutineOutput(
+                    name=output_cfg["name"],
+                    reference_id=output_cfg["referenceId"],
+                    unit=SimulationValueUnitInput(
+                        name=output_cfg["unit"]["name"],
+                        quantity=output_cfg["unit"]["quantity"],
+                    ),
+                    value_type=output_cfg["valueType"],
+                    save_timeseries_external_id=output_cfg.get("saveTimeseriesExternalId"),
+                )
+                for output_cfg in simulator_routine_revision_config_obj["outputs"]
+            ],
+        ),
+        script=[
+            SimulatorRoutineStage(
+                order=stage_cfg["order"],
+                description=stage_cfg["description"],
+                steps=[
+                    SimulatorRoutineStep(
+                        order=step_cfg["order"],
+                        step_type=step_cfg["stepType"],
+                        description=step_cfg.get("description"),
+                        arguments=SimulatorRoutineStepArguments(step_cfg["arguments"]),
+                    )
+                    for step_cfg in stage_cfg["steps"]
+                ],
+            )
+            for stage_cfg in simulator_routine_revision_script_obj
+        ],
+    )
