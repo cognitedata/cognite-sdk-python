@@ -18,7 +18,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.simulators.logs import SimulatorLog
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import to_snake_case
 
@@ -476,9 +475,6 @@ class SimulationRunDataItem(CogniteResource):
 
         return pd.DataFrame(rows)
 
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
-
 
 class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
     _RESOURCE = SimulationRunDataItem
@@ -493,9 +489,6 @@ class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransfo
         """
         pd = local_import("pandas")
         return pd.concat([item.to_pandas() for item in self.data], ignore_index=True)
-
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
 
 
 class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):
