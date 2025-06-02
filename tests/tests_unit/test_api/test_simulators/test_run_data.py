@@ -1,4 +1,3 @@
-import pandas as pd
 import pytest
 
 from cognite.client.data_classes.simulators.runs import (
@@ -12,6 +11,8 @@ from cognite.client.data_classes.simulators.runs import (
 @pytest.mark.dsl
 class TestSimulationRunDataItemPandasIntegration:
     def test_to_pandas(self):
+        import pandas as pd
+
         # Create sample data
         unit = SimulationValueUnitName(name="C")
         inputs = [
