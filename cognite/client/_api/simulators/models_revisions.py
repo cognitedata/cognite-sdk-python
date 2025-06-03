@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, NoReturn, overload
+from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteFilter
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevision,
@@ -36,14 +37,20 @@ class SimulatorModelRevisionsAPI(APIClient):
         self,
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
-        filter: SimulatorModelRevisionsFilter | dict[str, Any] | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
         Retrieves a list of simulator model revisions that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
-            filter (SimulatorModelRevisionsFilter | dict[str, Any] | None): Filter to apply.
+            model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
+            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            created_time (TimestampRange | None): Filter by created time.
+            last_updated_time (TimestampRange | None): Filter by last updated time.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
         Examples:
@@ -55,11 +62,22 @@ class SimulatorModelRevisionsAPI(APIClient):
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
+                >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.models.revisions.list(
-                ...     filter=SimulatorModelRevisionsFilter(model_external_ids=["model_external_id"]),
-                ...     sort=PropertySort(order="asc")
+                ...     model_external_ids=["model1", "model2"],
+                ...     all_versions=True,
+                ...     created_time=TimestampRange(min=0, max=1000000),
+                ...     last_updated_time=TimestampRange(min=0, max=1000000),
+                ...     sort=PropertySort(order="asc", property="createdTime"),
+                ...     limit=10
                 ... )
         """
+        model_revisions_filter = SimulatorModelRevisionsFilter(
+            model_external_ids=model_external_ids,
+            all_versions=all_versions,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        )
         self._warning.warn()
         return self._list(
             method="POST",
@@ -67,7 +85,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             list_cls=SimulatorModelRevisionList,
             sort=[PropertySort.load(sort).dump()] if sort else None,
-            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
+            filter=model_revisions_filter.dump(),
         )
 
     @overload
