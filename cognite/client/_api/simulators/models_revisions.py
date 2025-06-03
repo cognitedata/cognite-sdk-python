@@ -62,9 +62,14 @@ class SimulatorModelRevisionsAPI(APIClient):
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
+                >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.models.revisions.list(
                 ...     model_external_ids=["model1", "model2"],
                 ...     all_versions=True,
+                ...     created_time=TimestampRange(min=0, max=1000000),
+                ...     last_updated_time=TimestampRange(min=0, max=1000000),
+                ...     sort=PropertySort(order="asc", property="createdTime"),
+                ...     limit=10
                 ... )
         """
         model_revisions_filter = SimulatorModelRevisionsFilter(
