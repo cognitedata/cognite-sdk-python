@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from requests import Response
+from httpx import Response
 
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.annotations import AnnotationsAPI

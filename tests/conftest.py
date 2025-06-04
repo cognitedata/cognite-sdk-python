@@ -2,7 +2,7 @@ import platform
 
 import dotenv
 import pytest
-import responses
+import respx # Replaced responses
 
 from cognite.client import global_config
 
@@ -12,9 +12,9 @@ global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture
-def rsps():
-    with responses.RequestsMock() as rsps:
-        yield rsps
+def respx_mock(): # Renamed rsps to respx_mock
+    with respx.mock:
+        yield respx.mock
 
 
 @pytest.fixture

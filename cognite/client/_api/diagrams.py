@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
-from requests import Response
+from httpx import Response
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource

@@ -6,7 +6,7 @@ import warnings
 from contextlib import suppress
 from threading import Thread
 
-import requests
+import httpx
 from packaging import version
 
 
@@ -14,7 +14,9 @@ def get_all_sdk_versions() -> list[version.Version]:
     from cognite.client.config import global_config
 
     verify_ssl = not global_config.disable_ssl
-    res = requests.get("https://pypi.org/simple/cognite-sdk/", verify=verify_ssl, timeout=5)
+    # httpx uses 'verify' for SSL verification, similar to requests.
+    # The default timeout for httpx is 5 seconds, matching the existing requests call.
+    res = httpx.get("https://pypi.org/simple/cognite-sdk/", verify=verify_ssl, timeout=5)
     return list(map(version.parse, re.findall(r"cognite[_-]sdk-(\d+\.\d+.[\dabrc]+)", res.text)))
 
 

@@ -4,6 +4,8 @@ import re
 from typing import Any
 
 import pytest
+from httpx import Request as HttpxRequest 
+from httpx import Response as HttpxResponse 
 
 import cognite.client.data_classes.capabilities as capabilities_module  # F401
 from cognite.client.data_classes import Group, GroupList
@@ -420,7 +422,7 @@ def unknown_acls_items():
 
 
 @pytest.fixture
-def mock_groups_resp(rsps, cognite_client, unknown_acls_items):
+def mock_groups_resp(respx_mock, cognite_client, unknown_acls_items): 
     response_body = {
         "items": [
             {
@@ -433,20 +435,20 @@ def mock_groups_resp(rsps, cognite_client, unknown_acls_items):
         ]
     }
     url_pattern = cognite_client.iam.groups._get_base_url_with_base_path() + "/groups?all=False"
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    respx_mock.get(url_pattern).respond(status_code=200, json=response_body) 
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_token_inspect_resp(rsps, cognite_client, unknown_acls_items):
+def mock_token_inspect_resp(respx_mock, cognite_client, unknown_acls_items): 
     response_body = {
         "subject": "a49ba849-c0d7-abcd-dcba-8a1f0366aaaf",
         "projects": [{"projectUrlName": "my-sandbox", "groups": [229705, 863871]}],
         "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
     }
     url_pattern = cognite_client.iam.token._get_base_url_with_base_path() + "/api/v1/token/inspect"
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    respx_mock.get(url_pattern).respond(status_code=200, json=response_body) 
+    yield respx_mock
 
 
 class TestCogniteClientDoesntRaiseOnUnknownAcls:
@@ -631,3 +633,5 @@ def test_show_example_usage(capability):
         cmd = capability.show_example_usage().removeprefix("Example usage: ")
         exec(f"{capability.__name__} = capabilities_module.{capability.__name__}", globals())
         exec(cmd)
+
+[end of tests/tests_unit/test_data_classes/test_capabilities.py]

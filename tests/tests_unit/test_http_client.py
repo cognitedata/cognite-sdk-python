@@ -1,8 +1,10 @@
 from unittest.mock import MagicMock
 
+import httpx # Replaced requests.exceptions
 import pytest
-import requests.exceptions
-import urllib3.exceptions
+import respx
+from respx import MockRouter # Using MockRouter alias for HTTPXMock
+# import urllib3.exceptions # No longer needed as httpx has its own hierarchy
 
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, _RetryTracker
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
@@ -71,34 +73,28 @@ class TestRetryTracker:
         assert rt.should_retry(409, is_auto_retryable=False) is False
 
 
-def raise_exception_wrapped_as_in_requests_lib(exc: Exception):
-    try:
-        raise exc
-    except type(exc):
-        try:
-            raise urllib3.exceptions.RequestError(pool=None, url=None, message=None)
-        except urllib3.exceptions.RequestError:
-            raise requests.exceptions.RequestException
-
+# The function raise_exception_wrapped_as_in_requests_lib is no longer needed
+# as we will mock httpx exceptions directly.
 
 class TestHTTPClient:
-    def test_read_timeout_errors(self):
+    @respx.mock
+    def test_read_timeout_errors(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+        
+        # Define the mock route using respx_mock
+        respx_mock.get("https://example.com/bla").mock(side_effect=httpx.ReadTimeout("timeout"))
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(TimeoutError())
-                )
-            ),
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteReadTimeout):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
         assert retry_tracker.read == DEFAULT_CONFIG.max_retries_read
@@ -106,63 +102,72 @@ class TestHTTPClient:
         assert retry_tracker.status == 0
 
     @pytest.mark.parametrize("exc_type", [ConnectionAbortedError, ConnectionResetError, BrokenPipeError])
-    def test_connect_errors(self, exc_type):
+    @respx.mock
+    def test_connect_errors(self, respx_mock: MockRouter, exc_type):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+
+        # Define the mock route using respx_mock
+        respx_mock.get("https://example.com/bla").mock(side_effect=httpx.ConnectError(f"{exc_type.__name__} error"))
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(exc_type())
-                )
-            ),
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteConnectionError):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.read == 0
         assert retry_tracker.connect == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.status == 0
 
-    def test_connection_refused_retried(self):
+    @respx.mock
+    def test_connection_refused_retried(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+
+        connect_error_with_refused_cause = httpx.ConnectError("connection refused")
+        # In Python 3.11+, __cause__ must be an exception instance.
+        # For older versions, it might be None or an exception.
+        # Let's ensure it's always an instance for consistency.
+        connect_error_with_refused_cause.__cause__ = ConnectionRefusedError("connection refused error detail")
+        
+        respx_mock.get("https://example.com/bla").mock(side_effect=connect_error_with_refused_cause)
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(
-                request=MagicMock(
-                    side_effect=lambda *args, **kwargs: raise_exception_wrapped_as_in_requests_lib(
-                        ConnectionRefusedError()
-                    )
-                )
-            ),
+            # No longer passing mock_session
         )
 
         with pytest.raises(CogniteConnectionRefused):
-            c.request("GET", "bla", headers={"accept": "application/json"})
+            c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
-    def test_status_errors(self):
+    @respx.mock
+    def test_status_errors(self, respx_mock: MockRouter):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
+
+        respx_mock.get("https://example.com/bla").respond(status_code=429)
+
         c = HTTPClient(
             config=cnf,
             refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
-            session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
+            # No longer passing mock_session
         )
 
-        res = c.request("GET", "bla", headers={"accept": "application/json"})
+        res = c.request("GET", "https://example.com/bla", headers={"accept": "application/json"})
         assert res.status_code == 429
 
         assert retry_tracker.total == DEFAULT_CONFIG.max_retries_status
@@ -170,47 +175,4 @@ class TestHTTPClient:
         assert retry_tracker.connect == 0
         assert retry_tracker.status == DEFAULT_CONFIG.max_retries_status
 
-
-class UnderlyingException(Exception):
-    pass
-
-
-class TestGetUnderlyingException:
-    def test_get_underlying_exception_does_not_exist_in_context(self):
-        try:
-            raise Exception
-        except Exception as e:
-            assert not HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
-
-    def test_get_underlying_exception_no_context(self):
-        try:
-            raise UnderlyingException
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, (UnderlyingException, Exception))
-
-    def test_get_underlying_exception_nested_1_layer(self):
-        def testcase():
-            try:
-                raise UnderlyingException
-            except Exception:
-                raise Exception()
-
-        try:
-            testcase()
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
-
-    def test_get_underlying_exception_nested_2_layers(self):
-        def testcase():
-            try:
-                raise UnderlyingException
-            except Exception:
-                try:
-                    raise Exception()
-                except Exception:
-                    raise Exception()
-
-        try:
-            testcase()
-        except Exception as e:
-            assert HTTPClient._any_exception_in_context_isinstance(e, UnderlyingException)
+# The TestGetUnderlyingException class is removed as _any_exception_in_context_isinstance was removed.

@@ -8,6 +8,9 @@ from datetime import datetime, timezone
 from random import randint, random, shuffle
 
 import pytest
+from httpx import Request as HttpxRequest
+from httpx import Response as HttpxResponse
+
 
 import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
@@ -40,41 +43,37 @@ def generate_datapoints(start: int, end: int, aggregates=None, granularity=None)
 
 
 @pytest.fixture
-def mock_retrieve_latest(rsps, cognite_client):
-    def request_callback(request):
-        payload = jsgz_load(request.body)
-
+def mock_retrieve_latest(respx_mock, cognite_client):
+    def request_callback_side_effect(request: HttpxRequest):
+        payload = jsgz_load(request.content)
         items = []
         for latest_query in payload["items"]:
-            id = latest_query.get("id", -1)
-            external_id = latest_query.get("externalId", "-1")
+            id_val = latest_query.get("id", -1)
+            external_id_val = latest_query.get("externalId", "-1")
             before = latest_query.get("before", 10001)
             items.append(
                 {
-                    "id": id,
-                    "externalId": external_id,
+                    "id": id_val,
+                    "externalId": external_id_val,
                     "isString": False,
                     "isStep": False,
                     "datapoints": [{"timestamp": before - 1, "value": random()}],
                 }
             )
-        return 200, {}, _json.dumps({"items": items})
+        return HttpxResponse(200, json={"items": items})
 
-    rsps.add_callback(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest",
-        callback=request_callback,
-        content_type="application/json",
-    )
-    yield rsps
+    respx_mock.post(
+        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest"
+    ).mock(side_effect=request_callback_side_effect)
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest",
-        status=200,
+def mock_retrieve_latest_empty(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest"
+    ).respond(
+        status_code=200,
         json={
             "items": [
                 {"id": 1, "externalId": "1", "isString": False, "isStep": True, "datapoints": []},
@@ -82,15 +81,15 @@ def mock_retrieve_latest_empty(rsps, cognite_client):
             ]
         },
     )
-    yield rsps
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest",
-        status=200,
+def mock_retrieve_latest_with_failure(respx_mock, cognite_client):
+    latest_url = cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest"
+    # First call, success
+    respx_mock.post(latest_url).respond(
+        status_code=200,
         json={
             "items": [
                 {"id": 1, "externalId": "1", "isString": False, "isStep": False, "datapoints": []},
@@ -98,13 +97,15 @@ def mock_retrieve_latest_with_failure(rsps, cognite_client):
             ]
         },
     )
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/latest",
-        status=500,
+    # Second call, failure
+    # To ensure this is picked up for a subsequent call to the same URL pattern,
+    # we can define it after the first one. Respx matches routes in the order they are added
+    # if multiple routes match the same request.
+    respx_mock.post(latest_url).respond(
+        status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
-    yield rsps
+    yield respx_mock
 
 
 class TestGetLatest:
@@ -149,7 +150,7 @@ class TestGetLatest:
     def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure, monkeypatch):
         monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 2)
         with pytest.raises(CogniteAPIError) as e:
-            cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
+            cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3]) 
         assert e.value.code == 500
 
     @pytest.mark.parametrize(
@@ -191,25 +192,22 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data",
-        status=200,
-        json={},
-    )
-    yield rsps
+def mock_post_datapoints(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data"
+    ).respond(status_code=200, json={})
+    yield respx_mock
 
 
 @pytest.fixture
-def mock_post_datapoints_400(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data",
-        status=400,
+def mock_post_datapoints_400(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data"
+    ).respond(
+        status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
-    yield rsps
+    yield respx_mock
 
 
 class TestInsertDatapoints:
@@ -219,7 +217,7 @@ class TestInsertDatapoints:
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
-        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+        } == jsgz_load(mock_post_datapoints.calls.last.request.content)
 
     def test_insert_dicts(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
@@ -227,7 +225,7 @@ class TestInsertDatapoints:
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
-        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+        } == jsgz_load(mock_post_datapoints.calls.last.request.content)
 
     def test_by_external_id(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
@@ -236,7 +234,7 @@ class TestInsertDatapoints:
             "items": [
                 {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}
             ]
-        } == jsgz_load(mock_post_datapoints.calls[0].request.body)
+        } == jsgz_load(mock_post_datapoints.calls.last.request.content)
 
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
     def test_invalid_datapoints_keys(self, cognite_client, ts_key, value_key):
@@ -250,7 +248,7 @@ class TestInsertDatapoints:
         dps = [(i * 1e11, i) for i in range(1, 11)]
         res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
-        request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
+        request_bodies = [jsgz_load(call.request.content) for call in mock_post_datapoints.calls]
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 6)]}]
         } in request_bodies
@@ -267,7 +265,7 @@ class TestInsertDatapoints:
         dps_objects = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
         res = cognite_client.time_series.data.insert_multiple(dps_objects)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        request_body = jsgz_load(mock_post_datapoints.calls.last.request.content)
         assert {
             "items": [
                 {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]},
@@ -292,9 +290,9 @@ class TestInsertDatapoints:
         dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 101)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 1 == len(mock_post_datapoints.calls)
-        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
-        for i, dps in enumerate(request_body["items"], 1):
-            assert i == dps["id"]
+        request_body = jsgz_load(mock_post_datapoints.calls.last.request.content)
+        for i, dps_item in enumerate(request_body["items"], 1):
+            assert i == dps_item["id"]
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
         self, cognite_client, mock_post_datapoints, monkeypatch
@@ -316,14 +314,11 @@ class TestInsertDatapoints:
 
 
 @pytest.fixture
-def mock_delete_datapoints(rsps, cognite_client):
-    rsps.add(
-        rsps.POST,
-        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/delete",
-        status=200,
-        json={},
-    )
-    yield rsps
+def mock_delete_datapoints(respx_mock, cognite_client):
+    respx_mock.post(
+        cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/delete"
+    ).respond(status_code=200, json={})
+    yield respx_mock
 
 
 class TestDeleteDatapoints:
@@ -333,7 +328,7 @@ class TestDeleteDatapoints:
         )
         assert res is None
         assert {"items": [{"id": 1, "inclusiveBegin": 1514764800000, "exclusiveEnd": 1514851200000}]} == jsgz_load(
-            mock_delete_datapoints.calls[0].request.body
+            mock_delete_datapoints.calls.last.request.content
         )
 
     @pytest.mark.parametrize(
@@ -356,7 +351,7 @@ class TestDeleteDatapoints:
                 {"id": 1, "inclusiveBegin": 0, "exclusiveEnd": 1},
                 {"externalId": "1", "inclusiveBegin": 0, "exclusiveEnd": 1},
             ]
-        } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
+        } == jsgz_load(mock_delete_datapoints.calls.last.request.content)
 
     @pytest.mark.parametrize(
         "input_dct, err_suffix",
@@ -605,7 +600,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        request_body = jsgz_load(mock_post_datapoints.calls.last.request.content)
         assert {
             "items": [
                 {
@@ -629,7 +624,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        request_body = jsgz_load(mock_post_datapoints.calls.last.request.content)
         assert {
             "items": [
                 {
@@ -664,7 +659,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, dropna=True)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        request_body = jsgz_load(mock_post_datapoints.calls.last.request.content)
         assert {
             "items": [
                 {
@@ -993,3 +988,5 @@ class TestRetrieveDataPointsInTz:
 
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)
+
+[end of tests/tests_unit/test_api/test_datapoints.py]

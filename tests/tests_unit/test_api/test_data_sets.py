@@ -1,6 +1,9 @@
 import re
 
 import pytest
+from httpx import Request as HttpxRequest # Added for respx side_effect type hinting
+from httpx import Response as HttpxResponse # Added for respx side_effect type hinting
+
 
 from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, TimestampRange
 from tests.utils import jsgz_load
@@ -12,7 +15,7 @@ def dataset_update():
 
 
 @pytest.fixture
-def mock_ds_response(rsps, cognite_client):
+def mock_ds_response(respx_mock, cognite_client): # Changed rsps to respx_mock
     response_body = {
         "items": [
             {
@@ -31,80 +34,80 @@ def mock_ds_response(rsps, cognite_client):
         re.escape(cognite_client.data_sets._get_base_url_with_base_path())
         + r"/datasets(?:/byids|/update|/delete|/list|$|\?.+)"
     )
-    rsps.assert_all_requests_are_fired = False
+    # respx_mock.assert_all_called = False # Not a direct equivalent
 
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    respx_mock.get(url__regex=url_pattern).respond(status_code=200, json=response_body)
+    yield respx_mock
 
 
 class TestDataset:
     def test_retrieve_single(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.retrieve(id=1)
         assert isinstance(res, DataSet)
-        assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_retrieve_multiple(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.retrieve_multiple(ids=[1])
         assert isinstance(res, DataSetList)
-        assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_with_timestamp_range(self, cognite_client, mock_ds_response):
         cognite_client.data_sets.list(created_time=TimestampRange(min=20))
-        assert 20 == jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]["min"]
-        assert "max" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["createdTime"]
+        assert 20 == jsgz_load(mock_ds_response.calls.last.request.content)["filter"]["createdTime"]["min"]
+        assert "max" not in jsgz_load(mock_ds_response.calls.last.request.content)["filter"]["createdTime"]
 
     def test_list_with_time_dict(self, cognite_client, mock_ds_response):
         cognite_client.data_sets.list(last_updated_time={"max": 20})
-        assert 20 == jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["lastUpdatedTime"]["max"]
-        assert "min" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["lastUpdatedTime"]
+        assert 20 == jsgz_load(mock_ds_response.calls.last.request.content)["filter"]["lastUpdatedTime"]["max"]
+        assert "min" not in jsgz_load(mock_ds_response.calls.last.request.content)["filter"]["lastUpdatedTime"]
 
     def test_call_root(self, cognite_client, mock_ds_response):
         list(cognite_client.data_sets(write_protected=True, limit=10))
         calls = mock_ds_response.calls
         assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {"writeProtected": True}} == jsgz_load(calls[0].request.body)
+        assert {"cursor": None, "limit": 10, "filter": {"writeProtected": True}} == jsgz_load(calls.last.request.content)
 
     def test_create_single(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.create(DataSet(external_id="1", name="blabla"))
         assert isinstance(res, DataSet)
-        assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.create([DataSet(external_id="1")])
         assert isinstance(res, DataSetList)
-        assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_iter_single(self, cognite_client, mock_ds_response):
         for dataset in cognite_client.data_sets:
-            assert mock_ds_response.calls[0].response.json()["items"][0] == dataset.dump(camel_case=True)
+            assert mock_ds_response.calls.last.response.json()["items"][0] == dataset.dump(camel_case=True)
 
     @pytest.mark.skip("delete not implemented")
     def test_delete_single(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.delete(id=1)
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_ds_response.calls[0].request.body)
+        assert {"items": [{"id": 1}]} == jsgz_load(mock_ds_response.calls.last.request.content)
         assert res is None
 
     @pytest.mark.skip("delete not implemented")
     def test_delete_multiple(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.delete(id=[1])
-        assert {"items": [{"id": 1}]} == jsgz_load(mock_ds_response.calls[0].request.body)
+        assert {"items": [{"id": 1}]} == jsgz_load(mock_ds_response.calls.last.request.content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_ds_response):
         res = cognite_client.data_sets.update(DataSet(id=1))
         assert isinstance(res, DataSet)
-        assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_update_class(self, cognite_client, mock_ds_response, dataset_update):
         res = cognite_client.data_sets.update(dataset_update)
         assert isinstance(res, DataSet)
-        assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_multiple(self, cognite_client, mock_ds_response, dataset_update):
         res = cognite_client.data_sets.update([dataset_update])
         assert isinstance(res, DataSetList)
-        assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
+        assert mock_ds_response.calls.last.response.json()["items"] == res.dump(camel_case=True)
 
     def test_event_update_object(self):
         assert isinstance(
@@ -124,10 +127,10 @@ class TestDataset:
 
 
 @pytest.fixture
-def mock_ds_empty(rsps, cognite_client):
+def mock_ds_empty(respx_mock, cognite_client): # Changed rsps to respx_mock
     url_pattern = re.compile(re.escape(cognite_client.data_sets._get_base_url_with_base_path()) + "/.+")
-    rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
-    yield rsps
+    respx_mock.post(url__regex=url_pattern).respond(status_code=200, json={"items": []})
+    yield respx_mock
 
 
 @pytest.mark.dsl

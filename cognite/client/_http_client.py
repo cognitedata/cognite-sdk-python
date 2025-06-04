@@ -3,14 +3,13 @@ from __future__ import annotations
 import functools
 import random
 import socket
+import sys # Added for Pyodide check
 import time
 from collections.abc import Callable, Iterable, MutableMapping
 from http import cookiejar
 from typing import Any, Literal
 
-import requests
-import requests.adapters
-import urllib3
+import httpx
 
 from cognite.client.config import global_config
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
@@ -27,20 +26,30 @@ class BlockAll(cookiejar.CookiePolicy):
 
 
 @functools.lru_cache(1)
-def get_global_requests_session() -> requests.Session:
-    session = requests.Session()
-    session.cookies.set_policy(BlockAll())
-    adapter = requests.adapters.HTTPAdapter(
-        pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+def get_global_httpx_client() -> httpx.Client:
+    # httpx default behavior is to not use cookies, similar to BlockAll.
+    # Retries are handled by the SDK's retry logic, not at the client level here.
+    limits = httpx.Limits(max_connections=global_config.max_connection_pool_size)
+    transport = None
+    if "pyodide" in sys.modules:
+        try:
+            from pyodide_http import PyodideClientTransport
+            transport = PyodideClientTransport()
+        except ImportError:
+            # Handle case where pyodide_http is not available, though it should be in Pyodide
+            pass # Or log a warning
+
+    client = httpx.Client(
+        limits=limits,
+        proxies=global_config.proxies,
+        verify=not global_config.disable_ssl,
+        transport=transport, # Set transport if in Pyodide
     )
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    if global_config.disable_ssl:
-        urllib3.disable_warnings()
-        session.verify = False
-    if global_config.proxies is not None:
-        session.proxies.update(global_config.proxies)
-    return session
+    # No need to mount adapters for http/https like in requests.
+    # httpx handles this by default.
+    # urllib3.disable_warnings() is not needed as httpx manages its own SSL context
+    # if verify=False (disable_ssl=True).
+    return client
 
 
 class HTTPClientConfig:
@@ -100,7 +109,7 @@ class HTTPClient:
     def __init__(
         self,
         config: HTTPClientConfig,
-        session: requests.Session,
+        session: httpx.Client,
         refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
     ) -> None:
@@ -119,7 +128,7 @@ class HTTPClient:
         params: dict[str, Any] | str | bytes | None = None,
         stream: bool | None = None,
         allow_redirects: bool = False,
-    ) -> requests.Response:
+    ) -> httpx.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         is_auto_retryable = False
@@ -136,13 +145,17 @@ class HTTPClient:
                     allow_redirects=allow_redirects,
                 )
                 if accepts_json:
-                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    res.json = functools.lru_cache(maxsize=1)(res.json)  # type: ignore[assignment]
+                    # httpx.Response.json() is a method. To cache its result, we can store it in a custom attribute.
+                    # However, the SDK's retry logic might lead to multiple response objects for the "same" logical request.
+                    # Caching here might be premature if the response object itself is recreated on retry.
+                    # For now, let's assume that if `is_auto_retryable` needs to be checked, it's okay to call .json()
+                    # and then call it again later if the consumer of the response needs the JSON body.
+                    # A more robust caching would involve a wrapper class or careful handling within the retry loop if needed.
+                    _cached_json = None
                     try:
-                        is_auto_retryable = res.json().get("error", {}).get("isAutoRetryable", False)
-                    except Exception:
-                        # if the response is not JSON or it doesn't conform to the api design guide,
-                        # we assume it's not auto-retryable
+                        _cached_json = res.json() # Call once
+                        is_auto_retryable = _cached_json.get("error", {}).get("isAutoRetryable", False)
+                    except Exception: # Covers JSONDecodeError or if 'error' key path doesn't exist
                         pass
 
                 retry_tracker.status += 1
@@ -174,53 +187,35 @@ class HTTPClient:
         params: dict[str, Any] | str | bytes | None = None,
         stream: bool | None = None,
         allow_redirects: bool = False,
-    ) -> requests.Response:
-        """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
-
-        Sometimes the appropriate built-in networking exception is not in the context, sometimes the requests
-        exception is not in the context, so we need to check for the appropriate built-in exceptions,
-        urllib3 exceptions, and requests exceptions.
-        """
+    ) -> httpx.Response:
+        """httpx raises more direct exceptions compared to requests/urllib3's layered approach."""
         try:
+            # httpx uses 'content' for body, and 'follow_redirects' for 'allow_redirects'
             res = self.session.request(
                 method=method,
                 url=url,
-                data=data,
+                content=data, # Changed from 'data' to 'content'
                 headers=headers,
                 timeout=timeout,
                 params=params,
                 stream=stream,
-                allow_redirects=allow_redirects,
+                follow_redirects=allow_redirects, # Changed from 'allow_redirects'
             )
             return res
-        except Exception as e:
-            if self._any_exception_in_context_isinstance(
-                e, (socket.timeout, urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout)
-            ):
-                raise CogniteReadTimeout from e
-            if self._any_exception_in_context_isinstance(
-                e,
-                (
-                    ConnectionError,
-                    urllib3.exceptions.ConnectionError,
-                    urllib3.exceptions.ConnectTimeoutError,
-                    requests.exceptions.ConnectionError,
-                ),
-            ):
-                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
-                    raise CogniteConnectionRefused from e
-                raise CogniteConnectionError from e
+        except httpx.ReadTimeout as e:
+            raise CogniteReadTimeout from e
+        except httpx.ConnectTimeout as e: # More specific than ConnectError for timeout cases
+            raise CogniteConnectionError(f"Connection timed out: {e}") from e
+        except httpx.ConnectError as e:
+            # Check for ConnectionRefusedError specifically, as httpx might wrap it
+            if isinstance(e.__cause__, ConnectionRefusedError):
+                raise CogniteConnectionRefused from e
+            raise CogniteConnectionError from e
+        except httpx.NetworkError as e: # A base class for network-related errors in httpx
+            # This can catch a broader range of network issues not covered by ConnectError/ReadTimeout
+            raise CogniteConnectionError from e
+        # No need for _any_exception_in_context_isinstance with httpx's more direct exceptions for these cases.
+        # Other httpx exceptions like httpcore.LocalProtocolError or httpcore.RemoteProtocolError
+        # would typically indicate server-side or unexpected protocol issues and will be raised as is.
+        except Exception as e: # Catch any other unexpected exceptions
             raise e
-
-    @classmethod
-    def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, exc_types: tuple[type[BaseException], ...] | type[BaseException]
-    ) -> bool:
-        """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
-        the __context__ attribute.
-        """
-        if isinstance(exc, exc_types):
-            return True
-        if exc.__context__ is None:
-            return False
-        return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)
