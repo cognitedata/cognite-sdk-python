@@ -38,7 +38,15 @@ from cognite.client._api.hosted_extractors.destinations import DestinationsAPI
 from cognite.client._api.hosted_extractors.jobs import JobsAPI
 from cognite.client._api.hosted_extractors.mappings import MappingsAPI
 from cognite.client._api.hosted_extractors.sources import SourcesAPI
-from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+from cognite.client._api.iam import (
+    IAMAPI,
+    GroupsAPI,
+    PrincipalsAPI,
+    SecurityCategoriesAPI,
+    ServiceAccountSecretsAPI,
+    SessionsAPI,
+    TokenAPI,
+)
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
@@ -143,6 +151,8 @@ class CogniteClientMock(MagicMock):
 
         self.iam = MagicMock(spec=IAMAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
+        self.iam.principals = MagicMock(spec=PrincipalsAPI)
+        self.iam.principals.secrets = MagicMock(spec_set=ServiceAccountSecretsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
         self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
