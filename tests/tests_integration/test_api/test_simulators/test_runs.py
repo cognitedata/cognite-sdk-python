@@ -99,6 +99,11 @@ class TestSimulatorRuns:
         assert logs_res is not None
         assert logs_res.dump() == logs_res2.dump()
 
+        data_res = retrieved_run.get_data()
+        data_res2 = cognite_client.simulators.runs.list_run_data(run_id=created_run.id)[0]
+        assert data_res is not None
+        assert data_res.dump() == data_res2.dump()
+
     def test_create_run(
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
     ) -> None:

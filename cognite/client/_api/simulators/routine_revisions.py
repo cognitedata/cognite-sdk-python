@@ -206,7 +206,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ...         external_id="routine_rev_1",
                 ...         routine_external_id="routine_1",
                 ...         configuration=SimulatorRoutineConfiguration(
-                ...             data_sampling=SimulatorRoutineDataSampling(sampling_window=15, granularity="1m"),
+                ...             data_sampling=SimulatorRoutineDataSampling(sampling_window=15, granularity=1),
                 ...             inputs=[
                 ...                 SimulatorRoutineInputConstant(
                 ...                     name="Cold Water Temperature",

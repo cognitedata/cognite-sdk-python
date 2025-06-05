@@ -17,9 +17,13 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.simulators.logs import SimulatorLog
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._importing import local_import
 from cognite.client.utils._retry import Backoff
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
+    import pandas
+
     from cognite.client import CogniteClient
 
 _WARNING = FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
@@ -236,6 +240,18 @@ class SimulationRun(SimulationRunCore):
         """
         return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
 
+    def get_data(self) -> SimulationRunDataItem | None:
+        """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+
+        Returns:
+            SimulationRunDataItem | None: Data for the simulation run.
+        """
+        data = self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
+        if data:
+            return data[0]
+
+        return None
+
     def update(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
         # same logic as Cognite Functions
@@ -424,9 +440,55 @@ class SimulationRunDataItem(CogniteResource):
         output["outputs"] = [output_.dump(camel_case=camel_case) for output_ in self.outputs]
         return output
 
+    def to_pandas(  # type: ignore [override]
+        self,
+    ) -> pandas.DataFrame:
+        """Convert the simulation run data to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
+        pd = local_import("pandas")
+
+        def _create_row(item: SimulationInput | SimulationOutput) -> dict:
+            """Create a row dictionary for an input or output item."""
+            item_type = (isinstance(item, SimulationInput) and "Input") or "Output"
+            row = {
+                "run_id": self.run_id,
+                "type": item_type,
+                "reference_id": item.reference_id,
+                "value": item.value,
+                "unit_name": item.unit.name if item.unit else None,
+                "value_type": item.value_type,
+                "overridden": getattr(item, "overridden", None),
+                "timeseries_external_id": item.timeseries_external_id,
+            }
+
+            if item.simulator_object_reference:
+                for reference_key, reference_value in item.simulator_object_reference.items():
+                    snake_key = to_snake_case(reference_key)
+                    row[snake_key] = reference_value
+
+            return row
+
+        rows = [_create_row(item) for item in self.inputs + self.outputs]
+
+        return pd.DataFrame(rows)
+
 
 class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
     _RESOURCE = SimulationRunDataItem
+
+    def to_pandas(  # type: ignore [override]
+        self,
+    ) -> pandas.DataFrame:
+        """Convert the simulation run data list to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
+        pd = local_import("pandas")
+        return pd.concat([item.to_pandas() for item in self.data], ignore_index=True)
 
 
 class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):
