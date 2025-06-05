@@ -3,6 +3,7 @@ import re
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client._api.raw import RawRowsAPI
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, RowWriteList, Table, TableList
 from cognite.client.exceptions import CogniteAPIError
@@ -77,6 +78,29 @@ def mock_retrieve_raw_rows_response_two_rows(rsps, cognite_client):
         cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
         status=200,
         json=response_body,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def integer_rows_response() -> dict:
+    return {
+        "items": [
+            {"key": "row1", "columns": {"c1": 1, "c2": 4.0}, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": {"c1": 2, "c2": 3}, "lastUpdatedTime": 1},
+            {"key": "row3", "columns": {"c1": 3, "c2": 1}, "lastUpdatedTime": 2},
+            {"key": "row4", "columns": {"c1": None, "c2": 0.1}, "lastUpdatedTime": 3},
+        ]
+    }
+
+
+@pytest.fixture
+def mock_retrieve_integer_rows(rsps, integer_rows_response: dict, cognite_client: CogniteClient):
+    rsps.add(
+        rsps.GET,
+        cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows",
+        status=200,
+        json=integer_rows_response,
     )
     yield rsps
 
@@ -377,6 +401,17 @@ class TestRawRowsDataframe:
             pd.Timestamp(0, unit="ms"),
             pd.Timestamp(1, unit="ms"),
         ]
+
+    def test_retrieve_dataframe_integers(
+        self,
+        cognite_client: CogniteClient,
+        mock_retrieve_integer_rows,
+        integer_rows_response: dict,
+    ) -> None:
+        result = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+
+        actual = result.to_dict(orient="index")
+        assert actual == {row["key"]: row["columns"] for row in integer_rows_response["items"]}
 
 
 @pytest.mark.parametrize("raw_cls", (Row, RowWrite))
