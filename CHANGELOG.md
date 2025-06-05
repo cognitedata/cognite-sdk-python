@@ -21,6 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.75.2] - 2025-06-05
+### Fixed
+- The `client.raw.rows.retrieve_dataframe` now keeps the original data types of the values in the columns, rather
+  than trying to convert them. For example, a column with integer values and a single `None` value will no longer
+  be converted to a float column. Instead all columns will be of type `object`.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
