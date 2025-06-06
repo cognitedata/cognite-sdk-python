@@ -505,7 +505,7 @@ class DatapointsAPI(APIClient):
         self,
         queries: DatapointsQuery,
         *,
-        return_arrays: Literal[True],
+        return_arrays: Literal[True] = True,
         chunk_size_datapoints: int = 100_000,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArray]: ...
@@ -515,7 +515,7 @@ class DatapointsAPI(APIClient):
         self,
         queries: Sequence[DatapointsQuery],
         *,
-        return_arrays: Literal[True],
+        return_arrays: Literal[True] = True,
         chunk_size_datapoints: int = 100_000,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArrayList]: ...
@@ -1685,7 +1685,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
-            **{identifiers[0].name(): queries},  # type: ignore [arg-type]
+            **{identifiers[0].name(): queries},
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
 
@@ -1998,8 +1998,10 @@ class DatapointsAPI(APIClient):
         datapoints: Datapoints
         | DatapointsArray
         | Sequence[dict[str, int | float | str | datetime.datetime]]
-        | Sequence[tuple[int | float | datetime.datetime, int | float | str]]
-        | Sequence[tuple[int | float | datetime.datetime, int | float | str, int]],
+        | Sequence[
+            tuple[int | float | datetime.datetime, int | float | str]
+            | tuple[int | float | datetime.datetime, int | float | str, int]
+        ],
         id: int | None = None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
@@ -2013,7 +2015,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]] | Sequence[tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
+            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str] | tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
             instance_id (NodeId | None): Instance ID of time series to insert datapoints into.

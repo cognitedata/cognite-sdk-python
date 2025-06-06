@@ -148,12 +148,12 @@ def rng_context(seed: int | str):
                 pass
 
 
-def random_cognite_ids(n):
+def random_cognite_ids(n: int) -> list[int]:
     # Returns list of random, valid Cognite internal IDs:
     return random.choices(range(1, MAX_VALID_INTERNAL_ID + 1), k=n)
 
 
-def random_cognite_external_ids(n, str_len=50):
+def random_cognite_external_ids(n: int, str_len: int = 50) -> list[str]:
     # Returns list of random, valid Cognite external IDs:
     return [random_string(str_len) for _ in range(n)]
 
@@ -241,7 +241,7 @@ def cdf_aggregate(
     raw_df: pandas.DataFrame,
     aggregate: Literal["average", "sum", "count"],
     granularity: str,
-    is_step: bool = False,
+    is_step: bool | None = False,
     raw_freq: str | None = None,
 ) -> pandas.DataFrame:
     """Aggregates the dataframe as CDF is doing it on the database layer.
@@ -623,3 +623,10 @@ class FakeCogniteResourceGenerator:
             # Python 3.10 Type Hint
             if annotation.startswith("Sequence[") and annotation.endswith("]"):
                 return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+
+
+def get_or_raise(obj: T | None) -> T:
+    """Get the object or raise an exception if it is None."""
+    if obj is None:
+        raise ValueError("Object is None")
+    return obj
