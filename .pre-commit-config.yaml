@@ -34,6 +34,7 @@ repos:
           poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
           tests/tests_unit/test_data_classes/test_data_models
           tests/tests_unit/test_utils/test_time.py
+          tests/tests_integration/test_api/test_datapoints.py
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
