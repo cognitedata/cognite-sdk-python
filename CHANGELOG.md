@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.76.0] - 2025-05-15
+### Added
+- When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
