@@ -3,8 +3,10 @@ import pytest
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
+    SimulationRun,
     SimulationRunDataItem,
     SimulationValueUnitName,
+    SimulatorRunList,
 )
 
 
@@ -100,3 +102,41 @@ class TestSimulationRunDataItemPandasIntegration:
 
         expected_df = pd.DataFrame(expected_data_rows)
         pd.testing.assert_frame_equal(df, expected_df)
+
+
+class TestRunsPandasIntegration:
+    def test_run_and_run_list_to_pandas(self):
+        import pandas as pd
+
+        # Create a sample SimulationRun
+        expected_data = {
+            "run_type": "external",
+            "run_time": 1760000000000,
+            "routine_external_id": "routine",
+            "id": 123,
+            "created_time": 1700000000000,
+            "last_updated_time": 1800000000000,
+            "simulator_external_id": "simulator",
+            "simulator_integration_external_id": "sim_integration",
+            "model_external_id": "model",
+            "model_revision_external_id": "model_revision",
+            "routine_revision_external_id": "routine_revision",
+            "simulation_time": 1750000000000,
+            "status": "ready",
+            "data_set_id": 456,
+            "user_id": "user",
+            "log_id": 789,
+        }
+        run = SimulationRun(**expected_data)
+        run_df = run.to_pandas()
+        run_list_df = SimulatorRunList([run]).to_pandas()
+
+        # Assertions
+        for key in ["run_time", "created_time", "last_updated_time", "simulation_time"]:
+            expected_data[key] = pd.to_datetime(expected_data[key], unit="ms")
+        expected_df = pd.DataFrame(expected_data, index=["value"])
+        pd.testing.assert_frame_equal(run_df, expected_df.T)
+
+        expected_df.index = pd.Index([0])
+        expected_df.data_set_id = expected_df.data_set_id.astype("Int64")
+        pd.testing.assert_frame_equal(run_list_df, expected_df)
