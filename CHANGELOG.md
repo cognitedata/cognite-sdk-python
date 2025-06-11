@@ -23,7 +23,7 @@ Changes are grouped as follows
 
 ## [7.76.0] - 2025-05-15
 ### Added
-- When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names.
+- When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names when `instance_id_headers` is `True`. Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. E.g. if the column name is of type `NodeId` it will automatically be interpreted as instance ID.
 
 ## [7.75.1] - 2025-05-15
 ### Fixed
