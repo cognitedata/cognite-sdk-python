@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
+DEFAULT_DATAPOINTS_CHUNK_SIZE = 100_000
 
 as_completed = import_as_completed()
 
@@ -506,7 +507,7 @@ class DatapointsAPI(APIClient):
         queries: DatapointsQuery,
         *,
         return_arrays: Literal[True] = True,
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArray]: ...
 
@@ -516,7 +517,7 @@ class DatapointsAPI(APIClient):
         queries: Sequence[DatapointsQuery],
         *,
         return_arrays: Literal[True] = True,
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArrayList]: ...
 
@@ -526,7 +527,7 @@ class DatapointsAPI(APIClient):
         queries: DatapointsQuery,
         *,
         return_arrays: Literal[False],
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[Datapoints]: ...
 
@@ -536,7 +537,7 @@ class DatapointsAPI(APIClient):
         queries: Sequence[DatapointsQuery],
         *,
         return_arrays: Literal[False],
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsList]: ...
 
@@ -544,7 +545,7 @@ class DatapointsAPI(APIClient):
         self,
         queries: DatapointsQuery | Sequence[DatapointsQuery],
         *,
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
     ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
