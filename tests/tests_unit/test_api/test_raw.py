@@ -408,7 +408,7 @@ class TestRawRowsDataframe:
         mock_retrieve_integer_rows,
         integer_rows_response: dict,
     ) -> None:
-        result = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
+        result = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1", infer_dtypes=False)
 
         actual = result.to_dict(orient="index")
         assert actual == {row["key"]: row["columns"] for row in integer_rows_response["items"]}

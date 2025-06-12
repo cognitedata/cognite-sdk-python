@@ -137,7 +137,7 @@ class TestRawRowsAPI:
         db, table = new_database_with_table
         data = {"a": {"r1": 1, "r2": 1, "r3": 1}, "b": {"r1": None, "r2": None, "r3": None}}
 
-        df = pd.DataFrame.from_dict(data, dtype=object)
+        df = pd.DataFrame.from_dict(data)
         cognite_client.raw.rows.insert_dataframe(db.name, table.name, df)
         retrieved_df = cognite_client.raw.rows.retrieve_dataframe(db.name, table.name)
 
