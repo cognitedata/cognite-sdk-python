@@ -758,9 +758,6 @@ class RawRowsAPI(APIClient):
         else:
             idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
-        # We set dtype=object to allow for mixed types in the columns
-        # For example, if a column has both int and float values, we do not want pandas to convert
-        # the column to float64, as that would lose the int values.
         return pd.DataFrame(cols, index=idx, dtype=object if not infer_dtypes else None)
 
     def _get_parallel_cursors(
