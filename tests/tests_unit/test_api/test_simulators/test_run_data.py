@@ -104,6 +104,7 @@ class TestSimulationRunDataItemPandasIntegration:
         pd.testing.assert_frame_equal(df, expected_df)
 
 
+@pytest.mark.dsl
 class TestRunsPandasIntegration:
     def test_run_and_run_list_to_pandas(self):
         import pandas as pd
