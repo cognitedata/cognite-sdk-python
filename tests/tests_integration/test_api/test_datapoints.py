@@ -14,16 +14,18 @@ import re
 import unittest
 import warnings
 from collections import UserList
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence, Sized
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timedelta, timezone
-from typing import Literal
+from typing import Any, Literal, cast
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.mark.structures import ParameterSet
 from numpy.testing import assert_allclose, assert_equal
+from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -64,8 +66,10 @@ from cognite.client.utils._time import (
     ms_to_datetime,
     timestamp_to_ms,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import (
     cdf_aggregate,
+    get_or_raise,
     random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,
@@ -92,7 +96,7 @@ TEST_PREFIX = "PYSDK integration test"
 
 
 @pytest.fixture(scope="session")
-def all_test_time_series(cognite_client) -> TimeSeriesList:
+def all_test_time_series(cognite_client: CogniteClient) -> TimeSeriesList:
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
             f"{TEST_PREFIX} 001: outside points, numeric",
@@ -130,52 +134,52 @@ def all_test_time_series(cognite_client) -> TimeSeriesList:
 
 
 @pytest.fixture
-def all_numeric_test_time_series(all_test_time_series):
+def all_numeric_test_time_series(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
     return TimeSeriesList([ts for ts in all_test_time_series if ts.is_string is False])
 
 
 @pytest.fixture
-def outside_points_ts(all_test_time_series):
+def outside_points_ts(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
     return all_test_time_series[:2]
 
 
 @pytest.fixture
-def weekly_dps_ts(all_test_time_series):
+def weekly_dps_ts(all_test_time_series: TimeSeriesList) -> tuple[TimeSeriesList, TimeSeriesList]:
     return all_test_time_series[2:53], all_test_time_series[53:103]
 
 
 @pytest.fixture
-def fixed_freq_dps_ts(all_test_time_series):
+def fixed_freq_dps_ts(all_test_time_series: TimeSeriesList) -> tuple[TimeSeriesList, TimeSeriesList]:
     return all_test_time_series[103:108], all_test_time_series[108:113]
 
 
 @pytest.fixture
-def one_mill_dps_ts(all_test_time_series):
+def one_mill_dps_ts(all_test_time_series: TimeSeriesList) -> tuple[TimeSeries, TimeSeries]:
     return all_test_time_series[113], all_test_time_series[114]
 
 
 @pytest.fixture
-def ms_bursty_ts(all_test_time_series):
+def ms_bursty_ts(all_test_time_series: TimeSeriesList) -> TimeSeries:
     return all_test_time_series[115]
 
 
 @pytest.fixture
-def hourly_normal_dist(all_test_time_series) -> TimeSeries:
+def hourly_normal_dist(all_test_time_series: TimeSeriesList) -> TimeSeries:
     return all_test_time_series[118]
 
 
 @pytest.fixture
-def minutely_normal_dist(all_test_time_series) -> TimeSeries:
+def minutely_normal_dist(all_test_time_series: TimeSeriesList) -> TimeSeries:
     return all_test_time_series[119]
 
 
 @pytest.fixture
-def ts_status_codes(all_test_time_series) -> TimeSeriesList:
+def ts_status_codes(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
     return all_test_time_series[120:124]
 
 
 @pytest.fixture(scope="session")
-def new_ts(cognite_client):
+def new_ts(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
     ts = cognite_client.time_series.create(TimeSeries(is_string=False))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
@@ -183,7 +187,7 @@ def new_ts(cognite_client):
 
 
 @pytest.fixture(scope="session")
-def new_ts_string(cognite_client):
+def new_ts_string(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
     ts = cognite_client.time_series.create(TimeSeries(is_string=True))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
@@ -191,7 +195,7 @@ def new_ts_string(cognite_client):
 
 
 @pytest.fixture
-def retrieve_endpoints(cognite_client):
+def retrieve_endpoints(cognite_client: CogniteClient) -> list[Callable]:
     return [
         cognite_client.time_series.data.retrieve,
         cognite_client.time_series.data.retrieve_arrays,
@@ -199,7 +203,7 @@ def retrieve_endpoints(cognite_client):
 
 
 @pytest.fixture
-def all_retrieve_endpoints(cognite_client, retrieve_endpoints):
+def all_retrieve_endpoints(cognite_client: CogniteClient, retrieve_endpoints: list[Callable]) -> list[Callable]:
     # retrieve_dataframe is just a wrapper around retrieve_arrays
     return [*retrieve_endpoints, cognite_client.time_series.data.retrieve_dataframe]
 
@@ -247,12 +251,12 @@ def instance_ts_latest(cognite_client: CogniteClient, instance_id_test_space: st
     return instance_id
 
 
-def ts_to_ms(ts, tz=None):
+def ts_to_ms(ts: str, tz: str | None = None) -> int:
     assert isinstance(ts, str)
     return pd.Timestamp(ts, tz=tz).value // int(1e6)
 
 
-def convert_any_ts_to_integer(ts):
+def convert_any_ts_to_integer(ts: int | np.datetime64) -> int:
     if isinstance(ts, int):
         return ts
     elif isinstance(ts, np.datetime64):
@@ -260,16 +264,21 @@ def convert_any_ts_to_integer(ts):
     raise ValueError
 
 
-def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
+def validate_raw_datapoints_lst(
+    ts_lst: TimeSeriesList | list[TimeSeries], dps_lst: DatapointsList | DatapointsArrayList, **kw: Any
+) -> None:
     assert isinstance(dps_lst, DPS_LST_TYPES), "Datapoints(Array)List not given"
     for ts, dps in zip(ts_lst, dps_lst):
         validate_raw_datapoints(ts, dps, **kw)
 
 
-def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
+def validate_raw_datapoints(
+    ts: TimeSeries, dps: Datapoints | DatapointsArray, check_offset: bool = True, check_delta: bool = True
+) -> tuple[np.ndarray, np.ndarray]:
     assert isinstance(dps, DPS_TYPES), "Datapoints(Array) not given"
     assert ts.id == dps.id
     assert ts.external_id == dps.external_id
+    assert ts.metadata
     # Convert both dps types to arrays for simple comparisons:
     # (also convert string datapoints - which are also integers)
     values = np.array(dps.value, dtype=np.int64)
@@ -299,7 +308,7 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
 
 
 @pytest.fixture(scope="module", autouse=True)
-def make_dps_tests_reproducible(testrun_uid, request):
+def make_dps_tests_reproducible(testrun_uid: str, request: Any) -> Iterator[None]:
     # To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
     # generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
     # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
@@ -318,7 +327,9 @@ def make_dps_tests_reproducible(testrun_uid, request):
 
 # We also have some test data that depend on random input:
 @pytest.fixture
-def parametrized_values_all_unknown_single_multiple_given(testrun_uid):
+def parametrized_values_all_unknown_single_multiple_given(
+    testrun_uid: str,
+) -> tuple[tuple, ...]:
     with rng_context(testrun_uid + "42"):
         return (
             # Single identifier given as base type (int/str) or as dict
@@ -396,7 +407,7 @@ def parametrized_values_all_unknown_single_multiple_given(testrun_uid):
 
 
 @pytest.fixture
-def parametrized_values_uniform_index_fails(testrun_uid):
+def parametrized_values_uniform_index_fails(testrun_uid: str) -> tuple:
     with rng_context(testrun_uid + "1337"):
         return (
             # Fail because of raw request:
@@ -422,7 +433,7 @@ def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeri
 
 
 @pytest.fixture
-def dps_queries_dst_transitions(all_test_time_series):
+def dps_queries_dst_transitions(all_test_time_series: TimeSeriesList) -> list[DatapointsQuery]:
     ts1, ts2 = all_test_time_series[113], all_test_time_series[119]
     oslo = "Europe/Oslo"
     return [
@@ -456,14 +467,16 @@ def dps_queries_dst_transitions(all_test_time_series):
 
 
 @pytest.fixture(scope="session")
-def space_for_time_series(cognite_client) -> Iterator[Space]:
+def space_for_time_series(cognite_client: CogniteClient) -> Iterator[Space]:
     name = "PySDK-DMS-time-series-integration-test"
     space = SpaceApply(name, name=name.replace("-", " "))
     yield cognite_client.data_modeling.spaces.apply(space)
 
 
 @pytest.fixture(scope="session")
-def ts_create_in_dms(cognite_client, space_for_time_series, os_and_py_version) -> NodeApplyResult:
+def ts_create_in_dms(
+    cognite_client: CogniteClient, space_for_time_series: Space, os_and_py_version: str
+) -> NodeApplyResult:
     from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 
     dms_ts = CogniteTimeSeriesApply(
@@ -478,14 +491,15 @@ def ts_create_in_dms(cognite_client, space_for_time_series, os_and_py_version) -
 
 
 class TestTimeSeriesCreatedInDMS:
-    def test_insert_read_delete_dps(self, cognite_client, ts_create_in_dms):
+    def test_insert_read_delete_dps(self, cognite_client: CogniteClient, ts_create_in_dms: NodeApplyResult) -> None:
         # Ensure the DMS time series is retrievable from normal TS API:
         inst_id = ts_create_in_dms.as_id()
         ts = cognite_client.time_series.retrieve(instance_id=inst_id)
+        assert ts
         assert ts.instance_id == inst_id
 
         numbers = random_cognite_ids(3)
-        datapoints = [
+        datapoints: list[tuple[datetime, int, int] | tuple[datetime, int]] = [
             (datetime(2018, 1, 1, tzinfo=timezone.utc), numbers[0]),
             (datetime(2018, 1, 2, tzinfo=timezone.utc), numbers[1], StatusCode.Good),
             (datetime(2018, 1, 3, tzinfo=timezone.utc), numbers[2], StatusCode.Uncertain),
@@ -493,14 +507,17 @@ class TestTimeSeriesCreatedInDMS:
         cognite_client.time_series.data.insert(datapoints, instance_id=inst_id)
 
         dps1 = cognite_client.time_series.data.retrieve(instance_id=inst_id, ignore_bad_datapoints=False)
+        assert dps1
         assert dps1.instance_id == inst_id
+
         dps2 = cognite_client.time_series.data.retrieve(id=ts.id, ignore_bad_datapoints=False)
+        assert dps2
 
         assert dps1.value == dps2.value == numbers
 
 
 @pytest.fixture
-def queries_for_iteration(all_test_time_series):
+def queries_for_iteration(all_test_time_series: TimeSeriesList) -> list[DatapointsQuery]:
     # Mix of ids, external_ids, and instance_ids
     return [
         DatapointsQuery(
@@ -515,7 +532,9 @@ def queries_for_iteration(all_test_time_series):
             start=132710400000,
         ),
         DatapointsQuery(
-            id=all_test_time_series.get(external_id="PYSDK integration test 089: weekly values, 1950-2000, string").id,
+            id=get_or_raise(
+                all_test_time_series.get(external_id="PYSDK integration test 089: weekly values, 1950-2000, string")
+            ).id,
             start=-334195200000,
             end=270000000000 + 1,
         ),
@@ -524,14 +543,18 @@ def queries_for_iteration(all_test_time_series):
             start=1166400000,
         ),
         DatapointsQuery(
-            id=all_test_time_series.get(
-                external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric"
+            id=get_or_raise(
+                all_test_time_series.get(
+                    external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric"
+                )
             ).id,
             start=-1118,
         ),
         DatapointsQuery(
-            id=all_test_time_series.get(
-                external_id="PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric"
+            id=get_or_raise(
+                all_test_time_series.get(
+                    external_id="PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric"
+                )
             ).id,
             start=-111360848336,
         ),
@@ -553,8 +576,10 @@ def queries_for_iteration(all_test_time_series):
             start=1702252800000,
         ),
         DatapointsQuery(
-            id=all_test_time_series.get(
-                external_id="PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric"
+            id=get_or_raise(
+                all_test_time_series.get(
+                    external_id="PYSDK integration test 121: mixed status codes, daily values, 2023-2024, numeric"
+                )
             ).id,
             start=1678924800000,
         ),
@@ -577,7 +602,13 @@ class TestIterateDatapoints:
             (300_000, does_not_raise()),
         ),
     )
-    def test_chunk_size_datapoints(self, cognite_client, chunk_size_datapoints, raises_ctx, queries_for_iteration):
+    def test_chunk_size_datapoints(
+        self,
+        cognite_client: CogniteClient,
+        chunk_size_datapoints: int,
+        raises_ctx: Any,
+        queries_for_iteration: list[DatapointsQuery],
+    ) -> None:
         with raises_ctx:
             for dps_lst in cognite_client.time_series.data(
                 queries_for_iteration[7:],
@@ -600,8 +631,13 @@ class TestIterateDatapoints:
         ),
     )
     def test_chunk_sizes_time_series(
-        self, cognite_client, chunk_size_time_series, n_exp_returned, raises_ctx, queries_for_iteration
-    ):
+        self,
+        cognite_client: CogniteClient,
+        chunk_size_time_series: int | None,
+        n_exp_returned: int,
+        raises_ctx: Any,
+        queries_for_iteration: list[DatapointsQuery],
+    ) -> None:
         with raises_ctx:
             for dps_lst in cognite_client.time_series.data(
                 queries_for_iteration[:5],
@@ -611,25 +647,30 @@ class TestIterateDatapoints:
                 assert list(map(len, dps_lst)) == [1000, 291, 1000, 1093, 2619][:n_exp_returned]
                 break
 
-    def test_invalid_options(self, cognite_client, queries_for_iteration):
+    def test_invalid_options(self, cognite_client: CogniteClient, queries_for_iteration: list[DatapointsQuery]) -> None:
         _, q2, q3, q4, *_ = queries_for_iteration
         q2.limit = 100_000
-        q3.limit = random.choice([None, -1, math.inf])
+        q3.limit = cast(int | None, random.choice([None, -1, math.inf]))
         q4.include_outside_points = True
         for query in q2, q3, q4:
             with pytest.raises(ValueError, match="options 'include_outside_points' and 'limit' are not supported"):
                 next(cognite_client.time_series.data(query))
 
-    def test_duplicates_not_allowed(self, cognite_client, queries_for_iteration):
+    def test_duplicates_not_allowed(
+        self, cognite_client: CogniteClient, queries_for_iteration: list[DatapointsQuery]
+    ) -> None:
         qs_with_duplicates = random.choices(queries_for_iteration * 2, k=len(queries_for_iteration) + 3)
         with pytest.raises(ValueError, match="identifiers must be unique! Duplicates found"):
             next(cognite_client.time_series.data(qs_with_duplicates))
 
-    def test_hidden_duplicates_also_not_allowed(self, cognite_client, ts_create_in_dms):
+    def test_hidden_duplicates_also_not_allowed(
+        self, cognite_client: CogniteClient, ts_create_in_dms: NodeApplyResult
+    ) -> None:
         # We won't know that these are duplicates before runtime:
         instance_id = ts_create_in_dms.as_id()
-        id_ = cognite_client.time_series.retrieve(instance_id=instance_id).id
-        qs_with_hidden_duplicates = [DatapointsQuery(id=id_), DatapointsQuery(instance_id=instance_id)]
+        res = cognite_client.time_series.retrieve(instance_id=instance_id)
+        assert res
+        qs_with_hidden_duplicates = [DatapointsQuery(id=res.id), DatapointsQuery(instance_id=instance_id)]
 
         with pytest.raises(RuntimeError, match="must be unique! You cannot get around this"):
             next(cognite_client.time_series.data(qs_with_hidden_duplicates))
@@ -643,24 +684,31 @@ class TestIterateDatapoints:
             (False, True, DatapointsArrayList),
         ),
     )
-    def test_iterate_single_ts(self, cognite_client, is_single, use_numpy, exp_type, all_test_time_series):
+    def test_iterate_single_ts(
+        self,
+        cognite_client: CogniteClient,
+        is_single: bool,
+        use_numpy: bool,
+        exp_type: type,
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         xid1 = all_test_time_series[0].external_id
-        query = DatapointsQuery(external_id=xid1)
+        query: DatapointsQuery | list[DatapointsQuery] = DatapointsQuery(external_id=xid1)
         if not is_single:
             xid2 = all_test_time_series[1].external_id
-            query = [query, DatapointsQuery(external_id=xid2)]
+            query = [DatapointsQuery(external_id=xid1), DatapointsQuery(external_id=xid2)]
 
-        res = next(cognite_client.time_series.data(query, return_arrays=use_numpy, chunk_size_datapoints=5))
+        res = next(cognite_client.time_series.data(query, return_arrays=use_numpy, chunk_size_datapoints=5))  # type: ignore
         assert isinstance(res, exp_type)
-        assert 5 == len(res[0] if isinstance(res, UserList) else res)
+        assert 5 == len(res[0] if isinstance(res, UserList) else res)  # type: ignore
 
-    def test_no_data_is_noop(self, cognite_client, all_test_time_series):
+    def test_no_data_is_noop(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         xid = all_test_time_series[0].external_id
         query = DatapointsQuery(external_id=xid, start=ts_to_ms("1970-01-01 00:00:00.100") + 1)
         for _ in cognite_client.time_series.data(query):
             assert False, "No iteration should happen"
 
-    def test_no_data_due_to_missing_is_noop(self, cognite_client):
+    def test_no_data_due_to_missing_is_noop(self, cognite_client: CogniteClient) -> None:
         xid1, xid2 = random_cognite_external_ids(2, str_len=60)
         query1 = DatapointsQuery(external_id=xid1, ignore_unknown_ids=True)
         for _ in cognite_client.time_series.data(query1):
@@ -670,7 +718,12 @@ class TestIterateDatapoints:
         for _ in cognite_client.time_series.data([query1, query2]):
             assert False, "No iteration should happen"
 
-    def test_iterate_exhausted_but_queue_not_empty(self, cognite_client, weekly_dps_ts, all_test_time_series):
+    def test_iterate_exhausted_but_queue_not_empty(
+        self,
+        cognite_client: CogniteClient,
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         # These two have exactly 100k dps left, and we chunk time series 1-by-1, so the first will be unknowningly
         # exhausted after the first iteration, then second iteration is not yielded because empty, but since the
         # queue is not empty, the third iteration yields the second and on the fourth iteration, we quit (queue empty):
@@ -696,7 +749,12 @@ class TestIterateDatapoints:
 
         assert next(dps_iterator, None) is None
 
-    def test_iterate_datapoints(self, cognite_client, queries_for_iteration, all_test_time_series):
+    def test_iterate_datapoints(
+        self,
+        cognite_client: CogniteClient,
+        queries_for_iteration: list[DatapointsQuery],
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         # One external id to follow through all iterations and use for asserts:
         ts_xid = all_test_time_series[107].external_id
         # Add a few query options:
@@ -737,7 +795,9 @@ class TestIterateDatapoints:
         assert (dps.timestamp[0], dps.timestamp[-1]) == (882, 1500)
 
     @pytest.mark.parametrize("retrieve_arrays", (False, True))
-    def test_iterate_multiple_requests(self, cognite_client, all_test_time_series, retrieve_arrays):
+    def test_iterate_multiple_requests(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList, retrieve_arrays: bool
+    ) -> None:
         # Bug prior to 7.74.1, when iterating using instance ID, the total number of points returned would max
         # out at 100k (single request max size) due to an issue with InstanceId lookup in Datapoints(Array)List.
         queries = [
@@ -745,20 +805,29 @@ class TestIterateDatapoints:
             DatapointsQuery(external_id=all_test_time_series[115].external_id),
             DatapointsQuery(instance_id=all_test_time_series[125].instance_id),
         ]
-        dps_iter = cognite_client.time_series.data(queries, chunk_size_datapoints=25_000, return_arrays=retrieve_arrays)
+        if retrieve_arrays:
+            dps_iter: Iterator[DatapointsArrayList] | Iterator[DatapointsList] = cognite_client.time_series.data(
+                queries, chunk_size_datapoints=25_000, return_arrays=True
+            )
+        else:
+            dps_iter = cognite_client.time_series.data(queries, chunk_size_datapoints=25_000, return_arrays=False)
+
         for i, dps_lst in enumerate(dps_iter, 1):
+            assert isinstance(dps_lst, (DatapointsArrayList, DatapointsList))
             assert len(dps_lst) == 3
-            assert list(map(len, dps_lst)) == [25_000, 25_000, 25_000]
+            assert [len(dps) for dps in dps_lst] == [25_000, 25_000, 25_000]
             if i == 5:
                 break
         else:
             pytest.fail("Too few iterations/datapoints returned")
 
     @pytest.mark.parametrize("retrieve_arrays", (False, True))
-    def test_iterating_object_aggregates(self, cognite_client, all_test_time_series, retrieve_arrays):
+    def test_iterating_object_aggregates(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList, retrieve_arrays: bool
+    ) -> None:
         # Bug prior to 7.74.3, when iterating object aggregate datapoints like `min_datapoint` or `max_datapoint`,
         # a 'ValueError: Unsupported aggregate' would be raised because `include_status` did not have a default value.
-        queries = [
+        queries: Sequence[DatapointsQuery] = [
             DatapointsQuery(
                 id=all_test_time_series[113].id,
                 start=ts_to_ms("2018-08-16"),
@@ -778,7 +847,13 @@ class TestIterateDatapoints:
                 granularity="1y",
             ),
         ]
-        for dps_lst in cognite_client.time_series.data(queries, return_arrays=retrieve_arrays):
+        if retrieve_arrays:
+            res: Iterator[DatapointsArrayList] | Iterator[DatapointsList] = cognite_client.time_series.data(
+                queries, return_arrays=True
+            )
+        else:
+            res = cognite_client.time_series.data(queries, return_arrays=False)
+        for dps_lst in res:
             assert len(dps_lst) == 3
             assert list(map(len, dps_lst)) == [17, 9, 4]
 
@@ -789,8 +864,8 @@ class TestRetrieveRawDatapointsAPI:
     """
 
     def test_retrieve_chunking_mode_with_limit_ignores_dps_count_in_first_batch(
-        self, cognite_client, all_test_time_series
-    ):
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
+    ) -> None:
         # From 6.33.2 to 7.41.0, when fetching in "chunking mode" with a finite limit and with more than
         # 100 time series per available worker - in some rare cases - the initial batch of datapoints would
         # not be counted towards the total limit requested.
@@ -799,7 +874,9 @@ class TestRetrieveRawDatapointsAPI:
             dps_lst = cognite_client.time_series.data.retrieve(id=ids, limit=1001)
         assert all(len(dps) == 1001 for dps in dps_lst)
 
-    def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(self, cognite_client, weekly_dps_ts):
+    def test_retrieve_chunking_mode_outside_points_stopped_after_no_cursor(
+        self, cognite_client: CogniteClient, weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList]
+    ) -> None:
         # From 7.45.0 to 7.48.0, when fetching in "chunking mode" with include_outside_points=True,
         # due to an added is-nextCursor-empty check, the queries would short-circuit after the first batch.
         ts_ids, ts_xids = weekly_dps_ts
@@ -818,18 +895,20 @@ class TestRetrieveRawDatapointsAPI:
             assert df.notna().any(axis=None)
 
     def test_retrieve_ignore_unknown_ids_true_passed_as_query_param_not_top_level(
-        self, cognite_client, retrieve_endpoints
-    ):
+        self, cognite_client: CogniteClient, retrieve_endpoints: list[Callable]
+    ) -> None:
         # From v5 to 7.64.8, when requesting datapoints from a single time series that do not exist,
         # and passing ignore_unknown_ids=True as part of the datapoints-query (instead of the top-level),
         # an IndexError would be raised (no such issue for retrieve_latest which only allows top-level):
 
         for endpoint in retrieve_endpoints:
             query = DatapointsQuery(id=123, ignore_unknown_ids=True)
-            res = cognite_client.time_series.data.retrieve(id=query, ignore_unknown_ids=False)
+            res = endpoint(id=query, ignore_unknown_ids=False)
             assert res is None
 
-    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(self, cognite_client, outside_points_ts):
+    def test_retrieve_eager_mode_raises_single_error_with_all_missing_ts(
+        self, cognite_client: CogniteClient, outside_points_ts: TimeSeriesList
+    ) -> None:
         # From v5 to 6.33.1, when fetching in "eager mode", only the first encountered missing
         # non-ignorable ts would be raised in a CogniteNotFoundError.
         ts_exists1, ts_exists2 = outside_points_ts
@@ -837,19 +916,21 @@ class TestRetrieveRawDatapointsAPI:
 
         with set_max_workers(cognite_client, 6), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'") as err:
+                ids: list[int | DatapointsQuery] = [
+                    ts_exists1.id,
+                    # Only id=456 should be raised from 'id':
+                    DatapointsQuery(id=456, ignore_unknown_ids=False),
+                    123,
+                ]
+                external_ids: list[str | DatapointsQuery] = [
+                    # Only xid on next line should be raised from 'xid':
+                    DatapointsQuery(external_id=f"{missing_xid}1", ignore_unknown_ids=False),
+                    cast(str, ts_exists2.external_id),
+                    f"{missing_xid}2",
+                ]
                 cognite_client.time_series.data.retrieve(
-                    id=[
-                        ts_exists1.id,
-                        # Only id=456 should be raised from 'id':
-                        {"id": 456, "ignore_unknown_ids": False},
-                        123,
-                    ],
-                    external_id=[
-                        # Only xid on next line should be raised from 'xid':
-                        {"external_id": f"{missing_xid}1", "ignore_unknown_ids": False},
-                        ts_exists2.external_id,
-                        f"{missing_xid}2",
-                    ],
+                    id=ids,
+                    external_id=external_ids,
                     ignore_unknown_ids=True,
                 )
             assert len(err.value.not_found) == 2
@@ -860,11 +941,19 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_only(
-        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
-    ):
+        self,
+        retrieve_endpoints: list[Callable],
+        outside_points_ts: TimeSeriesList,
+        start: int,
+        end: int,
+        has_before: bool,
+        has_after: bool,
+    ) -> None:
         # We have 10 ms resolution data between ts = -100 and +100
         for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
-            res = endpoint(id=ts.id, limit=0, start=start, end=end, include_outside_points=True)
+            res: Datapoints | DatapointsArray = endpoint(
+                id=ts.id, limit=0, start=start, end=end, include_outside_points=True
+            )
             index, values = validate_raw_datapoints(ts, res, check_delta=False)
             assert len(res) == has_before + has_after
 
@@ -879,8 +968,14 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points_nonzero_limit(
-        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
-    ):
+        self,
+        retrieve_endpoints: list[Callable],
+        outside_points_ts: TimeSeriesList,
+        start: int,
+        end: int,
+        has_before: bool,
+        has_after: bool,
+    ) -> None:
         for ts, endpoint, limit in itertools.product(outside_points_ts, retrieve_endpoints, [3, None]):
             res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
             index, values = validate_raw_datapoints(ts, res, check_delta=limit is None)
@@ -896,8 +991,16 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points__query_limit_plusminus1_tests(
-        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after, cognite_client, monkeypatch
-    ):
+        self,
+        retrieve_endpoints: list[Callable],
+        outside_points_ts: TimeSeriesList,
+        start: int,
+        end: int,
+        has_before: bool,
+        has_after: bool,
+        cognite_client: CogniteClient,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
         limit = 3
         for dps_limit in range(limit - 1, limit + 2):
             monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", dps_limit)
@@ -923,8 +1026,15 @@ class TestRetrieveRawDatapointsAPI:
         ],
     )
     def test_retrieve_outside_points__query_chunking_mode(
-        self, start, end, exp_first_ts, exp_last_ts, cognite_client, retrieve_endpoints, weekly_dps_ts
-    ):
+        self,
+        start: int,
+        end: int,
+        exp_first_ts: int,
+        exp_last_ts: int,
+        cognite_client: CogniteClient,
+        retrieve_endpoints: list[Callable],
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
         ts_lst = weekly_dps_ts[0] + weekly_dps_ts[1]  # chain numeric & string
         limits = [0, 1, 50, int(1e9), None]  # None ~ 100 dps (max dps returned)
         with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
@@ -956,8 +1066,13 @@ class TestRetrieveRawDatapointsAPI:
         ],
     )
     def test_retrieve_raw_eager_mode_single_identifier_type(
-        self, cognite_client, n_ts, identifier, retrieve_endpoints, weekly_dps_ts
-    ):
+        self,
+        cognite_client: CogniteClient,
+        n_ts: int,
+        identifier: str,
+        retrieve_endpoints: list[Callable],
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
         # We patch out ChunkingDpsFetcher to make sure we fail if we're not in eager mode:
         with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
@@ -986,8 +1101,13 @@ class TestRetrieveRawDatapointsAPI:
         ],
     )
     def test_retrieve_raw_chunking_mode_single_identifier_type(
-        self, cognite_client, n_ts, identifier, retrieve_endpoints, weekly_dps_ts
-    ):
+        self,
+        cognite_client: CogniteClient,
+        n_ts: int,
+        identifier: str,
+        retrieve_endpoints: list[Callable],
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
         # We patch out EagerDpsFetcher to make sure we fail if we're not in chunking mode:
         with set_max_workers(cognite_client, 2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
@@ -1019,14 +1139,14 @@ class TestRetrieveRawDatapointsAPI:
     )
     def test_retrieve_unknown__check_raises_or_returns_existing_only(
         self,
-        n_ts,
-        ignore_unknown_ids,
-        mock_out_eager_or_chunk,
-        expected_raise,
-        cognite_client,
-        retrieve_endpoints,
-        all_test_time_series,
-    ):
+        n_ts: int,
+        ignore_unknown_ids: bool,
+        mock_out_eager_or_chunk: str,
+        expected_raise: Any,
+        cognite_client: CogniteClient,
+        retrieve_endpoints: list[Callable],
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         ts_exists = all_test_time_series[0]
         with set_max_workers(cognite_client, 9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             identifier = {
@@ -1051,8 +1171,12 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize("test_id", range(24))  # not populated here because test data depend on deterministic rng
     def test_retrieve__all_unknown_single_multiple_given(
-        self, test_id, cognite_client, retrieve_endpoints, parametrized_values_all_unknown_single_multiple_given
-    ):
+        self,
+        test_id: int,
+        cognite_client: CogniteClient,
+        retrieve_endpoints: list[Callable],
+        parametrized_values_all_unknown_single_multiple_given: tuple[tuple, ...],
+    ) -> None:
         test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
         max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
@@ -1077,18 +1201,18 @@ class TestRetrieveRawDatapointsAPI:
     )
     def test_retrieve_nothing__single(
         self,
-        max_workers,
-        mock_out_eager_or_chunk,
-        identifier,
-        exp_res_types,
-        outside_points_ts,
-        retrieve_endpoints,
-        cognite_client,
-    ):
+        max_workers: int,
+        mock_out_eager_or_chunk: str,
+        identifier: str,
+        exp_res_types: list[type],
+        outside_points_ts: TimeSeriesList,
+        retrieve_endpoints: list[Callable],
+        cognite_client: CogniteClient,
+    ) -> None:
         ts = outside_points_ts[0]
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
-                res = endpoint(**{identifier: getattr(ts, identifier)}, start=1, end=9)
+                res: Datapoints | DatapointsArray = endpoint(**{identifier: getattr(ts, identifier)}, start=1, end=9)
                 assert isinstance(res, exp_res_type)
                 assert len(res) == 0
                 assert isinstance(res.is_step, bool)
@@ -1102,12 +1226,20 @@ class TestRetrieveRawDatapointsAPI:
         ],
     )
     def test_retrieve_nothing__multiple(
-        self, max_workers, mock_out_eager_or_chunk, exp_res_types, outside_points_ts, retrieve_endpoints, cognite_client
-    ):
+        self,
+        max_workers: int,
+        mock_out_eager_or_chunk: str,
+        exp_res_types: list[type],
+        outside_points_ts: TimeSeriesList,
+        retrieve_endpoints: list[Callable],
+        cognite_client: CogniteClient,
+    ) -> None:
         ts1, ts2 = outside_points_ts
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
-                res = endpoint(id=ts1.id, external_id=[ts2.external_id], start=1, end=9)
+                res: DatapointsList | DatapointsArrayList = endpoint(
+                    id=ts1.id, external_id=[ts2.external_id], start=1, end=9
+                )
                 assert isinstance(res, exp_res_type)
                 assert len(res) == 2
                 for r in res:
@@ -1163,12 +1295,15 @@ class TestRetrieveRawDatapointsAPI:
         assert res[1].unit_external_id == "temperature:deg_f"
         assert res[2].unit_external_id == "temperature:k"
 
-    def test_numpy_dtypes_conversions_for_string_and_numeric(self, cognite_client, all_test_time_series):
+    def test_numpy_dtypes_conversions_for_string_and_numeric(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
+    ) -> None:
         # Bug prior to 7.32.4, several methods on DatapointsArray would fail due to a bad
         # conversion of numpy dtypes to native.
         str_ts = all_test_time_series[1]
         # We only test retrieve_array since that uses numpy arrays
         dps_arr = cognite_client.time_series.data.retrieve_arrays(id=str_ts.id, limit=3)
+        assert dps_arr
         # Test __iter__
         for dp in dps_arr:
             assert type(dp.timestamp) is int
@@ -1185,26 +1320,31 @@ class TestRetrieveRawDatapointsAPI:
         assert type(dp_dumped["timestamp"]) is int
         assert type(dp_dumped["value"]) is str
 
-    def test_getitem_and_iter_preserves_status_codes(self, cognite_client, ts_status_codes, retrieve_endpoints):
+    def test_getitem_and_iter_preserves_status_codes(
+        self, cognite_client: CogniteClient, ts_status_codes: TimeSeriesList, retrieve_endpoints: list[Callable]
+    ) -> None:
         mixed_ts, *_ = ts_status_codes
         for endpoint in retrieve_endpoints:
-            dps_res = endpoint(
+            dps_res: Datapoints | DatapointsArray = endpoint(
                 id=mixed_ts.id, include_status=True, ignore_bad_datapoints=False, start=ts_to_ms("2023-02-11"), limit=5
             )
             # Test object itself, plus slice of object:
             for dps in [dps_res, dps_res[:5]]:
+                assert dps.status_code is not None
+                assert dps.status_symbol is not None
                 for dp, code, symbol in zip(dps, dps.status_code, dps.status_symbol):
                     assert isinstance(dp, Datapoint)
                     assert code is not None and code == dp.status_code
                     assert symbol is not None and symbol == dp.status_symbol
 
-                assert math.isclose(dps.value[0], dps[0].value)
-                assert math.isclose(dps.value[4], dps[4].value)
-                assert math.isclose(dps.value[0], 432.9514228031592)
-                assert math.isclose(dps.value[4], 143.05065712951188)
+                assert dps.value is not None
+                assert math.isclose(dps.value[0], dps[0].value)  # type: ignore[arg-type]
+                assert math.isclose(dps.value[4], dps[4].value)  # type: ignore[arg-type]
+                assert math.isclose(dps.value[0], 432.9514228031592)  # type: ignore[arg-type]
+                assert math.isclose(dps.value[4], 143.05065712951188)  # type: ignore[arg-type]
 
                 assert dps.value[1] == dps[1].value == math.inf
-                assert math.isnan(dps.value[2]) and math.isnan(dps[2].value)
+                assert math.isnan(dps.value[2]) and math.isnan(dps[2].value)  # type: ignore[arg-type]
 
                 if isinstance(dps, Datapoints):
                     assert dps.value[3] is None
@@ -1220,7 +1360,9 @@ class TestRetrieveRawDatapointsAPI:
                     assert False
 
     @pytest.mark.parametrize("test_is_string", (True, False))
-    def test_n_dps_retrieved_with_without_uncertain_and_bad(self, retrieve_endpoints, ts_status_codes, test_is_string):
+    def test_n_dps_retrieved_with_without_uncertain_and_bad(
+        self, retrieve_endpoints: list[Callable], ts_status_codes: TimeSeriesList, test_is_string: bool
+    ) -> None:
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -1250,7 +1392,9 @@ class TestRetrieveRawDatapointsAPI:
             assert len(bad3) == 365
 
     @pytest.mark.parametrize("test_is_string", (True, False))
-    def test_outside_points_with_bad_and_uncertain(self, retrieve_endpoints, ts_status_codes, test_is_string):
+    def test_outside_points_with_bad_and_uncertain(
+        self, retrieve_endpoints: list[Callable], ts_status_codes: TimeSeriesList, test_is_string: bool
+    ) -> None:
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -1287,7 +1431,9 @@ class TestRetrieveRawDatapointsAPI:
             assert len(bad2) == 350
             assert len(bad4) == 352
 
-    def test_status_codes_and_symbols(self, retrieve_endpoints, ts_status_codes):
+    def test_status_codes_and_symbols(
+        self, retrieve_endpoints: list[Callable], ts_status_codes: TimeSeriesList
+    ) -> None:
         mixed_ts, _, bad_ts, _ = ts_status_codes
         for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
             dps_lst = endpoint(
@@ -1352,15 +1498,17 @@ class TestRetrieveRawDatapointsAPI:
             assert b3.status_code[-1] == 2165309440
             assert b3.status_symbol[-1] == "BadLicenseNotAvailable"
 
-    def test_query_no_ts_exists(self, retrieve_endpoints):
+    def test_query_no_ts_exists(self, retrieve_endpoints: list[Callable]) -> None:
         for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
             ts_id = random_cognite_ids(1)  # list of len 1
-            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
+            res_lst: DatapointsList | DatapointsArrayList = endpoint(id=ts_id, ignore_unknown_ids=True)
             assert isinstance(res_lst, exp_res_lst_type)
             # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
             assert res_lst.get(id=ts_id[0]) is None
 
-    def test_timezone_raw_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+    def test_timezone_raw_query_dst_transitions(
+        self, all_retrieve_endpoints: list[Callable], dps_queries_dst_transitions: list[DatapointsQuery]
+    ) -> None:
         expected_index = pd.to_datetime(
             [
                 # to summer
@@ -1421,8 +1569,11 @@ class TestRetrieveAggregateDatapointsAPI:
         ),
     )
     def test_aggregates_single_and_multiple_in_snake_or_camel_case(
-        self, aggregates, fixed_freq_dps_ts, retrieve_endpoints
-    ):
+        self,
+        aggregates: list[str],
+        fixed_freq_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         dfs, ts = [], random.choice(fixed_freq_dps_ts[0])  # only pick from numeric ts
         granularity = random_granularity()
         for endpoint in retrieve_endpoints:
@@ -1439,7 +1590,9 @@ class TestRetrieveAggregateDatapointsAPI:
         pd.testing.assert_frame_equal(dfs[0], dfs[2])
         pd.testing.assert_frame_equal(dfs[1], dfs[3])
 
-    def test_aggregates_bad_string(self, fixed_freq_dps_ts, retrieve_endpoints):
+    def test_aggregates_bad_string(
+        self, fixed_freq_dps_ts: tuple[TimeSeriesList, TimeSeriesList], retrieve_endpoints: list[Callable]
+    ) -> None:
         ts = random.choice(fixed_freq_dps_ts[0])  # only pick from numeric ts
         granularity = random_granularity()
         for endpoint in retrieve_endpoints:
@@ -1471,17 +1624,17 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_sparse_data__multiple_granularities_is_step_true_false(
         self,
-        is_step,
-        start,
-        end,
-        exp_start,
-        exp_end,
-        max_workers,
-        mock_out_eager_or_chunk,
-        cognite_client,
-        retrieve_endpoints,
-        fixed_freq_dps_ts,
-    ):
+        is_step: bool,
+        start: int,
+        end: int,
+        exp_start: int,
+        exp_end: int,
+        max_workers: int,
+        mock_out_eager_or_chunk: str,
+        cognite_client: CogniteClient,
+        retrieve_endpoints: list[Callable],
+        fixed_freq_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
         # Underlying time series has daily values, we ask for 1d, 1h, 1m and 1s and make sure all share
         # the exact same timestamps. Interpolation aggregates tested separately because they return data
         # also in empty regions... why:(
@@ -1529,14 +1682,14 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_interpolation_returns_data_from_empty_periods_before_and_after_data(
         self,
-        is_step,
-        aggregates,
-        empty,
-        before_first_dp,
-        retrieve_endpoints,
-        fixed_freq_dps_ts,
-        cognite_client,
-    ):
+        is_step: bool,
+        aggregates: list[str],
+        empty: bool,
+        before_first_dp: bool,
+        retrieve_endpoints: list[Callable],
+        fixed_freq_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+        cognite_client: CogniteClient,
+    ) -> None:
         # Ts: has ms resolution data from:
         # 1969-12-31 23:59:58.500 (-1500 ms) to 1970-01-01 00:00:01.500 (1500 ms)
         (*_, ts_ms), (*_, ts_ms_is_step) = fixed_freq_dps_ts
@@ -1608,8 +1761,14 @@ class TestRetrieveAggregateDatapointsAPI:
         ],
     )
     def test_retrieve_aggregates__string_ts_raises(
-        self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
-    ):
+        self,
+        max_workers: int,
+        n_ts: int,
+        mock_out_eager_or_chunk: str,
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+        cognite_client: CogniteClient,
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         _, string_ts = weekly_dps_ts
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             ts_chunk = random.sample(string_ts, k=n_ts)
@@ -1625,7 +1784,14 @@ class TestRetrieveAggregateDatapointsAPI:
                 assert exc.value.message == "Aggregates are not supported for string time series"
 
     @pytest.mark.parametrize("granularity, lower_lim, upper_lim", (("h", 30, 1000), ("d", 1, 200)))
-    def test_granularity_invariants(self, granularity, lower_lim, upper_lim, one_mill_dps_ts, retrieve_endpoints):
+    def test_granularity_invariants(
+        self,
+        granularity: str,
+        lower_lim: int,
+        upper_lim: int,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         # Sum of count and sum of sum is independent of granularity
         ts, _ = one_mill_dps_ts
         for endpoint in retrieve_endpoints:
@@ -1652,8 +1818,14 @@ class TestRetrieveAggregateDatapointsAPI:
         ),
     )
     def test_can_be_equivalent_granularities(
-        self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints, min_multiplier
-    ):
+        self,
+        first_gran: str,
+        second_gran: str,
+        start: int,
+        min_multiplier: int,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         ts, _ = one_mill_dps_ts  # data: 1950-2020
         gran_ms = granularity_to_ms(first_gran)
         for endpoint in retrieve_endpoints:
@@ -1725,17 +1897,17 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_eager_fetcher_unlimited(
         self,
-        max_workers,
-        ts_idx,
-        granularity,
-        exp_len,
-        start,
-        end,
-        exclude_aggregate,
-        retrieve_endpoints,
-        all_test_time_series,
-        cognite_client,
-    ):
+        max_workers: int,
+        ts_idx: int,
+        granularity: str,
+        exp_len: int,
+        start: int,
+        end: int,
+        exclude_aggregate: set[str],
+        retrieve_endpoints: list[Callable],
+        all_test_time_series: TimeSeriesList,
+        cognite_client: CogniteClient,
+    ) -> None:
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
             for endpoint in retrieve_endpoints:
                 res = endpoint(
@@ -1749,7 +1921,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 assert len(res) == exp_len
                 assert len(set(np.diff(res.timestamp))) == 1
 
-    def test_eager_chunking_unlimited(self, retrieve_endpoints, all_test_time_series, cognite_client):
+    def test_eager_chunking_unlimited(
+        self, retrieve_endpoints: list[Callable], all_test_time_series: TimeSeriesList, cognite_client: CogniteClient
+    ) -> None:
         # We run all test from Eager (above) at the same time:
         test_setup_data = (
             (105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), False),
@@ -1793,15 +1967,15 @@ class TestRetrieveAggregateDatapointsAPI:
     )
     def test_finite_limit(
         self,
-        max_workers,
-        n_ts,
-        mock_out_eager_or_chunk,
-        use_bursty,
-        cognite_client,
-        ms_bursty_ts,
-        one_mill_dps_ts,
-        retrieve_endpoints,
-    ):
+        max_workers: int,
+        n_ts: int,
+        mock_out_eager_or_chunk: str,
+        use_bursty: bool,
+        cognite_client: CogniteClient,
+        ms_bursty_ts: TimeSeries,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         if use_bursty:
             ts = ms_bursty_ts  # data: 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900
             start, end, gran_unit_upper = YEAR_MS[2000], YEAR_MS[2014], 60
@@ -1827,7 +2001,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 for res, exp_lim in zip(res_lst, limits):
                     assert len(res) == exp_lim
 
-    def test_edge_case_all_aggs_missing(self, one_mill_dps_ts, retrieve_endpoints):
+    def test_edge_case_all_aggs_missing(
+        self, one_mill_dps_ts: tuple[TimeSeries, TimeSeries], retrieve_endpoints: list[Callable]
+    ) -> None:
         xid = one_mill_dps_ts[0].external_id
         for endpoint in retrieve_endpoints:
             res = endpoint(
@@ -1859,7 +2035,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 res = DatapointsArray(max=res.values)
             assert math.isclose(res.max[0], 212)
 
-    def test_status_codes_affect_aggregate_calculations(self, retrieve_endpoints, ts_status_codes):
+    def test_status_codes_affect_aggregate_calculations(
+        self, retrieve_endpoints: list[Callable], ts_status_codes: TimeSeriesList
+    ) -> None:
         mixed_ts, _, bad_ts, _ = ts_status_codes  # No aggregates for string dps
         bad_xid = bad_ts.external_id
         for endpoint, uses_numpy in zip(retrieve_endpoints, (False, True)):
@@ -1950,7 +2128,9 @@ class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.skip(
         reason="TODO(doctrino): Skipped while awaiting https://github.com/cognitedata/cognite-sdk-python/pull/2102"
     )
-    def test_timezone_agg_query_dst_transitions(self, all_retrieve_endpoints, dps_queries_dst_transitions):
+    def test_timezone_agg_query_dst_transitions(
+        self, all_retrieve_endpoints: list[Callable], dps_queries_dst_transitions: list[DatapointsQuery]
+    ) -> None:
         expected_values1 = [0.23625579717753353, 0.02829928231631262, -0.0673823850533647, -0.20908049925449418]
         expected_values2 = [-0.13218082741552517, -0.20824244773820486, 0.02566169899072951, 0.15040625644292185]
         expected_index = pd.to_datetime(
@@ -1992,7 +2172,9 @@ class TestRetrieveAggregateDatapointsAPI:
             pd.testing.assert_index_equal(expected_to_winter_index, to_winter.index)
             pd.testing.assert_index_equal(expected_to_summer_index, to_summer.index)
 
-    def test_calendar_granularities_in_utc_and_timezone(self, retrieve_endpoints, all_test_time_series):
+    def test_calendar_granularities_in_utc_and_timezone(
+        self, retrieve_endpoints: list[Callable], all_test_time_series: TimeSeriesList
+    ) -> None:
         daily_ts, oslo = all_test_time_series[108], ZoneInfo("Europe/Oslo")
         granularities = [
             "1" + random.choice(["mo", "month", "months"]),
@@ -2037,7 +2219,9 @@ class TestRetrieveAggregateDatapointsAPI:
             assert_equal(exp_days_per_month, mo_utc.count[: 12 * 4])
 
     @pytest.mark.parametrize("include_status", (True, False))
-    def test_object_aggregates(self, retrieve_endpoints, all_numeric_test_time_series, include_status):
+    def test_object_aggregates(
+        self, retrieve_endpoints: list[Callable], all_numeric_test_time_series: TimeSeriesList, include_status: bool
+    ) -> None:
         ts1, ts2 = random.sample(all_numeric_test_time_series, k=2)
         for endpoint in retrieve_endpoints:
             dps_lst = endpoint(
@@ -2081,7 +2265,7 @@ class TestRetrieveAggregateDatapointsAPI:
                                 min_or_max.status_symbol
 
 
-def retrieve_dataframe_in_tz_count_large_granularities_data():
+def retrieve_dataframe_in_tz_count_large_granularities_data() -> Iterator[ParameterSet]:
     # "start, end, granularity, expected_df"
     oslo = ZoneInfo("Europe/Oslo")
     start = datetime(2023, 3, 21, tzinfo=oslo)
@@ -2141,7 +2325,7 @@ def retrieve_dataframe_in_tz_count_large_granularities_data():
     )
 
 
-def retrieve_dataframe_in_tz_count_small_granularities_data():
+def retrieve_dataframe_in_tz_count_small_granularities_data() -> Iterator[ParameterSet]:
     # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
@@ -2182,7 +2366,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     )
 
 
-def retrieve_dataframe_in_tz_uniform_data():
+def retrieve_dataframe_in_tz_uniform_data() -> Iterator[ParameterSet]:
     oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
         119,
@@ -2212,7 +2396,9 @@ class TestRetrieveTimezoneDatapointsAPI:
     """
 
     @staticmethod
-    def test_retrieve_dataframe_in_tz_ambiguous_time(cognite_client, hourly_normal_dist):
+    def test_retrieve_dataframe_in_tz_ambiguous_time(
+        cognite_client: CogniteClient, hourly_normal_dist: TimeSeries
+    ) -> None:
         oslo = ZoneInfo("Europe/Oslo")
         df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=hourly_normal_dist.external_id,
@@ -2239,20 +2425,22 @@ class TestRetrieveTimezoneDatapointsAPI:
         ),
     )
     def test_cdf_aggregate_equal_to_cdf(
-        test_series_no: str,
+        test_series_no: int,
         start: str,
         end: str,
         aggregation: Literal["average", "sum", "count"],
         granularity: str,
         cognite_client: CogniteClient,
         all_test_time_series: TimeSeriesList,
-    ):
+    ) -> None:
         ts = all_test_time_series[test_series_no - 1]
-        start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
-        raw_df = cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
+        start_dt, end_dt = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        raw_df = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=ts.external_id, start=start_dt, end=end_dt
+        )
         expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
-            start=start,
-            end=end,
+            start=start_dt,
+            end=end_dt,
             external_id=ts.external_id,
             aggregates=aggregation,
             granularity=granularity,
@@ -2282,7 +2470,7 @@ class TestRetrieveTimezoneDatapointsAPI:
         tz_name: str,
         cognite_client: CogniteClient,
         hourly_normal_dist: TimeSeries,
-    ):
+    ) -> None:
         tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
@@ -2292,7 +2480,7 @@ class TestRetrieveTimezoneDatapointsAPI:
             )
             .tz_localize("UTC")
             .tz_convert(tz_name)
-            .loc[str(start) : str(end)]
+            .loc[str(start) : str(end)]  # type: ignore[misc]
         )
         expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
@@ -2314,8 +2502,13 @@ class TestRetrieveTimezoneDatapointsAPI:
         "start, end, granularity, expected_df", list(retrieve_dataframe_in_tz_count_large_granularities_data())
     )
     def test_retrieve_dataframe_in_tz_count_large_granularities(
-        start: datetime, end: datetime, granularity: str, expected_df: pd.DataFrame, cognite_client, hourly_normal_dist
-    ):
+        start: datetime,
+        end: datetime,
+        granularity: str,
+        expected_df: pd.DataFrame,
+        cognite_client: CogniteClient,
+        hourly_normal_dist: TimeSeries,
+    ) -> None:
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=hourly_normal_dist.external_id,
             start=start,
@@ -2332,14 +2525,14 @@ class TestRetrieveTimezoneDatapointsAPI:
         list(retrieve_dataframe_in_tz_count_small_granularities_data()),
     )
     def test_retrieve_dataframe_in_tz_count_small_granularities(
-        test_series_no: str,
+        test_series_no: int,
         start: datetime,
         end: datetime,
         granularity: str,
         expected_df: pd.DataFrame,
-        cognite_client,
-        all_test_time_series,
-    ):
+        cognite_client: CogniteClient,
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=ts.external_id,
@@ -2357,14 +2550,14 @@ class TestRetrieveTimezoneDatapointsAPI:
         list(retrieve_dataframe_in_tz_uniform_data()),
     )
     def test_retrieve_dataframe_in_tz_uniform(
-        test_series_no: str,
+        test_series_no: int,
         start: datetime,
         end: datetime,
         granularity: str,
         expected_index: pd.DatetimeIndex,
-        cognite_client,
-        all_test_time_series,
-    ):
+        cognite_client: CogniteClient,
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         ts = all_test_time_series[test_series_no - 1]
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=ts.external_id,
@@ -2386,24 +2579,31 @@ class TestRetrieveTimezoneDatapointsAPI:
         ],
     )
     def test_retrieve_dataframe_in_tz_raw_data(
-        test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
-    ):
+        test_series_no: int,
+        start: str,
+        end: str,
+        tz_name: str,
+        cognite_client: CogniteClient,
+        all_test_time_series: TimeSeriesList,
+    ) -> None:
         ts = all_test_time_series[test_series_no - 1]
-        start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
+        start_dt, end_dt = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
         tz = ZoneInfo(tz_name)
-        start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
+        start_dt, end_dt = start_dt.replace(tzinfo=tz), end_dt.replace(tzinfo=tz)
         expected_df = (
-            cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start, end=end)
+            cognite_client.time_series.data.retrieve_dataframe(external_id=ts.external_id, start=start_dt, end=end_dt)
             .tz_localize("utc")
             .tz_convert(tz_name)
         )
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=ts.external_id, start=start, end=end
+            external_id=ts.external_id, start=start_dt, end=end_dt
         )
         pd.testing.assert_frame_equal(actual_df, expected_df)
 
     @staticmethod
-    def test_retrieve_dataframe_in_tz_multiple_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
+    def test_retrieve_dataframe_in_tz_multiple_timeseries(
+        cognite_client: CogniteClient, hourly_normal_dist: TimeSeries, minutely_normal_dist: TimeSeries
+    ) -> None:
         oslo = ZoneInfo("Europe/Oslo")
         start, end = datetime(2023, 1, 2, tzinfo=oslo), datetime(2023, 1, 2, 23, 59, 59, tzinfo=oslo)
         expected_df = pd.DataFrame(
@@ -2423,7 +2623,9 @@ class TestRetrieveTimezoneDatapointsAPI:
         pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)])
 
     @staticmethod
-    def test_retrieve_dataframe_in_tz_empty_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
+    def test_retrieve_dataframe_in_tz_empty_timeseries(
+        cognite_client: CogniteClient, hourly_normal_dist: TimeSeries, minutely_normal_dist: TimeSeries
+    ) -> None:
         oslo = ZoneInfo("Europe/Oslo")
         start, end = datetime(2010, 1, 1, tzinfo=oslo), datetime(2022, 1, 1, tzinfo=oslo)
         index = pd.date_range("2020-01-01", "2021-12-31", tz="Europe/Oslo", freq="AS")
@@ -2464,8 +2666,13 @@ class TestRetrieveTimezoneDatapointsAPI:
         ],
     )
     def test_retrieve_dataframe_in_tz_datetime_formats(
-        start: datetime, end: datetime, cognite_client, aggregates: str, granularity: str, hourly_normal_dist
-    ):
+        start: datetime,
+        end: datetime,
+        cognite_client: CogniteClient,
+        aggregates: str,
+        granularity: str,
+        hourly_normal_dist: TimeSeries,
+    ) -> None:
         df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=hourly_normal_dist.external_id,
             start=start,
@@ -2479,14 +2686,14 @@ class TestRetrieveTimezoneDatapointsAPI:
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(
         self,
-        ms_bursty_ts,
-        one_mill_dps_ts,
-        retrieve_endpoints,
-    ):
+        ms_bursty_ts: TimeSeries,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
         ts_num, ts_str = one_mill_dps_ts
         for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
             random_xids = random_cognite_external_ids(3)
-            res_lst = endpoint(
+            res_lst: DatapointsList | DatapointsArrayList = endpoint(
                 ignore_unknown_ids=False,  # The key test ingredient
                 external_id=[
                     ts_str.external_id,
@@ -2505,14 +2712,19 @@ class TestRetrieveMixedRawAndAgg:
             assert len(res_lst) == 3
             assert res_lst.get(external_id=random_xids[0]) is None
             dps_xid = res_lst.get(external_id=ts_str.external_id)
-            assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
+            assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
             dps_id = res_lst.get(id=ts_num.id)
-            assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
+            assert isinstance(dps_id, exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
 
-    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
+    def test_query_with_duplicates(
+        self,
+        retrieve_endpoints: list[Callable],
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+        ms_bursty_ts: TimeSeries,
+    ) -> None:
         ts_numeric, ts_string = one_mill_dps_ts
         for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            res_lst = endpoint(
+            res_lst: DatapointsList | DatapointsArrayList = endpoint(
                 id=[
                     ms_bursty_ts.id,  # This is the only non-duplicated
                     ts_string.id,
@@ -2527,17 +2739,17 @@ class TestRetrieveMixedRawAndAgg:
             )
             assert isinstance(res_lst, exp_res_lst_type)
             # Check non-duplicated in result:
-            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
-            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
+            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
+            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)  # type: ignore[attr-defined]
             # Check duplicated in result:
             assert isinstance(res_lst.get(id=ts_numeric.id), list)
             assert isinstance(res_lst.get(id=ts_string.id), list)
             assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
             assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
-            assert len(res_lst.get(id=ts_numeric.id)) == 3
-            assert len(res_lst.get(id=ts_string.id)) == 2
-            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
-            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+            assert len(res_lst.get(id=ts_numeric.id)) == 3  # type: ignore[arg-type]
+            assert len(res_lst.get(id=ts_string.id)) == 2  # type: ignore[arg-type]
+            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3  # type: ignore[arg-type]
+            assert len(res_lst.get(external_id=ts_string.external_id)) == 2  # type: ignore[arg-type]
 
 
 class TestRetrieveDataFrameAPI:
@@ -2554,8 +2766,16 @@ class TestRetrieveDataFrameAPI:
             (2, 5, "EagerDpsFetcher", False, 524 - 2),
         ),
     )
-    def test_raw_dps(self, max_workers, n_ts, mock_out_eager_or_chunk, outside, exp_len, cognite_client, weekly_dps_ts):
-        ts_lst_numeric, ts_lst_string = weekly_dps_ts
+    def test_raw_dps(
+        self,
+        max_workers: int,
+        n_ts: int,
+        mock_out_eager_or_chunk: str,
+        outside: bool,
+        exp_len: int,
+        cognite_client: CogniteClient,
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
         for exp_dtype, ts_lst in zip([np.float64, object], weekly_dps_ts):
             ts_sample = random.sample(ts_lst, k=n_ts)
             res_df = cognite_client.time_series.data.retrieve_dataframe(
@@ -2571,8 +2791,13 @@ class TestRetrieveDataFrameAPI:
 
     @pytest.mark.parametrize("uniform, exp_n_ts_delta, exp_n_nans_step_interp", ((True, 1, 1), (False, 2, 0)))
     def test_agg_uniform_true_false(
-        self, uniform, exp_n_ts_delta, exp_n_nans_step_interp, cognite_client, one_mill_dps_ts
-    ):
+        self,
+        uniform: bool,
+        exp_n_ts_delta: int,
+        exp_n_nans_step_interp: int,
+        cognite_client: CogniteClient,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+    ) -> None:
         ts, _ = one_mill_dps_ts
         with set_max_workers(cognite_client, 1):
             res_df = cognite_client.time_series.data.retrieve_dataframe(
@@ -2588,27 +2813,29 @@ class TestRetrieveDataFrameAPI:
             assert (res_df.count().values == [28994, 29215]).all()
 
     @pytest.mark.parametrize("limit", (0, 1, 2))
-    def test_low_limits(self, limit, cognite_client, one_mill_dps_ts):
+    def test_low_limits(
+        self, limit: int, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
+    ) -> None:
         ts_numeric, ts_string = one_mill_dps_ts
         res_df = cognite_client.time_series.data.retrieve_dataframe(
             # Raw dps:
             id=[
                 ts_string.id,
-                {"id": ts_string.id, "include_outside_points": True},
+                DatapointsQuery(id=ts_string.id, include_outside_points=True),
                 ts_numeric.id,
-                {"id": ts_numeric.id, "include_outside_points": True},
+                DatapointsQuery(id=ts_numeric.id, include_outside_points=True),
             ],
             # Agg dps:
-            external_id={
-                "external_id": ts_numeric.external_id,
-                "granularity": random_granularity(upper_lim=120),
+            external_id=DatapointsQuery(
+                external_id=ts_numeric.external_id,
+                granularity=random_granularity(upper_lim=120),
                 # Exclude count (only non-float agg) and (step_)interpolation which might yield nans:
-                "aggregates": random_aggregates(
+                aggregates=random_aggregates(
                     exclude={"interpolation", "step_interpolation"},
                     exclude_integer_aggregates=True,
                     exclude_object_aggregates=True,
                 ),
-            },
+            ),
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
             end=ts_to_ms("2019-12-01"),
             limit=limit,
@@ -2622,14 +2849,18 @@ class TestRetrieveDataFrameAPI:
 
     @pytest.mark.parametrize("test_id", range(3))
     def test_uniform_index_fails(
-        self, test_id, parametrized_values_uniform_index_fails, cognite_client, one_mill_dps_ts
-    ):
+        self,
+        test_id: int,
+        parametrized_values_uniform_index_fails: tuple,
+        cognite_client: CogniteClient,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+    ) -> None:
         granularity_lst, aggregates_lst, limits = parametrized_values_uniform_index_fails[test_id]
         with pytest.raises(ValueError, match="Cannot return a uniform index"):
             cognite_client.time_series.data.retrieve_dataframe(
                 uniform_index=True,
                 id=[
-                    {"id": one_mill_dps_ts[0].id, "granularity": gran, "aggregates": agg, "limit": lim}
+                    DatapointsQuery(id=one_mill_dps_ts[0].id, granularity=gran, aggregates=agg, limit=lim)
                     for gran, agg, lim in zip(granularity_lst, aggregates_lst, limits)
                 ],
             )
@@ -2644,8 +2875,12 @@ class TestRetrieveDataFrameAPI:
         ),
     )
     def test_include_aggregate_name_and_column_names_true_false(
-        self, include_aggregate_name, column_names, cognite_client, one_mill_dps_ts
-    ):
+        self,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+        cognite_client: CogniteClient,
+        one_mill_dps_ts: tuple[TimeSeries, TimeSeries],
+    ) -> None:
         ts = one_mill_dps_ts[0]
         random.shuffle(aggs := ALL_SORTED_DP_AGGS[:])
 
@@ -2663,47 +2898,65 @@ class TestRetrieveDataFrameAPI:
                 name += f"|{agg}"
             assert col == name
 
-    def test_column_names_fails(self, cognite_client, one_mill_dps_ts):
+    def test_column_names_fails(
+        self, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
+    ) -> None:
         with pytest.warns(UserWarning, match=re.escape("must be either 'instance_id', 'external_id' or 'id'")):
             cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id, limit=5, column_names="bogus_id"
+                id=one_mill_dps_ts[0].id,
+                limit=5,
+                column_names="bogus_id",  # type: ignore[arg-type]
             )
 
-    def test_include_aggregate_name_fails(self, cognite_client, one_mill_dps_ts):
+    def test_include_aggregate_name_fails(
+        self, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
+    ) -> None:
         with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
             cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id, limit=5, granularity="1d", aggregates="min", include_aggregate_name=None
+                id=one_mill_dps_ts[0].id,
+                limit=5,
+                granularity="1d",
+                aggregates="min",
+                include_aggregate_name=None,  # type: ignore[arg-type]
             )
 
-    def test_include_granularity_name_fails(self, cognite_client, one_mill_dps_ts):
+    def test_include_granularity_name_fails(
+        self, cognite_client: CogniteClient, one_mill_dps_ts: tuple[TimeSeries, TimeSeries]
+    ) -> None:
         with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
             cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id, limit=5, granularity="1d", aggregates="min", include_granularity_name=None
+                id=one_mill_dps_ts[0].id,
+                limit=5,
+                granularity="1d",
+                aggregates="min",
+                include_granularity_name=None,  # type: ignore[arg-type]
             )
 
 
 @pytest.fixture
-def post_spy(cognite_client):
+def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
     dps_api = cognite_client.time_series.data
     with patch.object(dps_api, "_post", wraps=dps_api._post):
         yield
 
 
 @pytest.fixture
-def do_request_spy(cognite_client):
+def do_request_spy(cognite_client: CogniteClient) -> Iterator[None]:
     dps_api = cognite_client.time_series.data
     with patch.object(dps_api, "_do_request", wraps=dps_api._do_request):
         yield
 
 
 class TestRetrieveLatestDatapointsAPI:
-    def test_retrieve_latest(self, cognite_client, all_test_time_series):
+    def test_retrieve_latest(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         ids = [all_test_time_series[0].id, all_test_time_series[1].id]
         res = cognite_client.time_series.data.retrieve_latest(id=ids)
         for dps in res:
             assert 1 == len(dps)
 
-    def test_retrieve_latest_two_unknown(self, cognite_client, all_test_time_series):
+    def test_retrieve_latest_two_unknown(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
+    ) -> None:
         ids = [all_test_time_series[0].id, all_test_time_series[1].id, 42, 1337]
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
         assert 2 == len(res)
@@ -2711,7 +2964,7 @@ class TestRetrieveLatestDatapointsAPI:
             assert 1 == len(dps)
 
     @pytest.mark.usefixtures("post_spy")
-    def test_retrieve_latest_many(self, cognite_client, monkeypatch):
+    def test_retrieve_latest_many(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
         assert len(ids) > 10  # more than one page
 
@@ -2719,51 +2972,62 @@ class TestRetrieveLatestDatapointsAPI:
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
         for dps in res:
             assert len(dps) <= 1  # could be empty
 
-    def test_retrieve_latest_before(self, cognite_client, all_test_time_series):
+    def test_retrieve_latest_before(self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList) -> None:
         ts = all_test_time_series[0]
         res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
+        assert res
         assert 1 == len(res)
         assert res[0].timestamp < timestamp_to_ms("1h-ago")
 
-    @pytest.mark.parametrize(
-        "kwargs",
-        [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
-    )
     def test_retrieve_latest_in_target_unit(
         self,
-        kwargs: dict,
-        cognite_client: CogniteClient,
-        timeseries_degree_c_minus40_0_100: TimeSeries,
-    ) -> None:
-        ts = timeseries_degree_c_minus40_0_100
-
-        res = cognite_client.time_series.data.retrieve_latest(external_id=ts.external_id, before="now", **kwargs)
-        assert math.isclose(res.value[0], 212)
-        assert res.unit_external_id == "temperature:deg_f"
-
-    @pytest.mark.parametrize(
-        "kwargs",
-        [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
-    )
-    def test_retrieve_latest_query_in_target_unit(
-        self,
-        kwargs: dict,
         cognite_client: CogniteClient,
         timeseries_degree_c_minus40_0_100: TimeSeries,
     ) -> None:
         ts = timeseries_degree_c_minus40_0_100
 
         res = cognite_client.time_series.data.retrieve_latest(
-            external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", **kwargs)
+            external_id=cast(str, ts.external_id), before="now", target_unit="temperature:deg_f"
         )
-        assert math.isclose(res.value[0], 212)
+        assert res
+        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
         assert res.unit_external_id == "temperature:deg_f"
 
-    def test_error_when_both_target_unit_and_system_in_latest(self, cognite_client, all_test_time_series):
+        res = cognite_client.time_series.data.retrieve_latest(
+            external_id=cast(str, ts.external_id), before="now", target_unit_system="Imperial"
+        )
+        assert res
+        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.unit_external_id == "temperature:deg_f"
+
+    def test_retrieve_latest_query_in_target_unit(
+        self,
+        cognite_client: CogniteClient,
+        timeseries_degree_c_minus40_0_100: TimeSeries,
+    ) -> None:
+        ts = timeseries_degree_c_minus40_0_100
+
+        res = cognite_client.time_series.data.retrieve_latest(
+            external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", target_unit="temperature:deg_f")
+        )
+        assert res
+        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.unit_external_id == "temperature:deg_f"
+
+        res = cognite_client.time_series.data.retrieve_latest(
+            external_id=LatestDatapointQuery(external_id=ts.external_id, before="now", target_unit_system="Imperial")
+        )
+        assert res
+        assert res.value and math.isclose(res.value[0], 212)  # type: ignore[arg-type]
+        assert res.unit_external_id == "temperature:deg_f"
+
+    def test_error_when_both_target_unit_and_system_in_latest(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList
+    ) -> None:
         ts = all_test_time_series[0]
         with pytest.raises(ValueError, match="You must use either 'target_unit' or 'target_unit_system', not both."):
             cognite_client.time_series.data.retrieve_latest(
@@ -2785,16 +3049,27 @@ class TestRetrieveLatestDatapointsAPI:
             ("external_id", True),
         ),
     )
-    def test_using_latest_datapoint_query(self, cognite_client, all_test_time_series, attr, multiple):
+    def test_using_latest_datapoint_query(
+        self, cognite_client: CogniteClient, all_test_time_series: TimeSeriesList, attr: str, multiple: bool
+    ) -> None:
         identifier = getattr(all_test_time_series[0], attr)
-        ldq = LatestDatapointQuery(**{attr: identifier}, before="1d-ago")
+        ldq: (
+            LatestDatapointQuery
+            | SequenceNotStr[LatestDatapointQuery | str]
+            | SequenceNotStr[LatestDatapointQuery | int]
+        ) = LatestDatapointQuery(**{attr: identifier}, before="1d-ago")
         if multiple:
             # Package inside list with other "primitive" identifiers:
             ldq = [identifier, ldq, ldq]
-        res = cognite_client.time_series.data.retrieve_latest(**{attr: ldq})
+        if attr == "id":
+            res: DatapointsList | Datapoints | None = cognite_client.time_series.data.retrieve_latest(id=ldq)  # type: ignore[arg-type]
+        elif attr == "external_id":
+            res = cognite_client.time_series.data.retrieve_latest(external_id=ldq)  # type: ignore[arg-type]
+        else:
+            raise ValueError(f"Unknown attr {attr}")
         if multiple:
             assert isinstance(res, DatapointsList)
-            assert len(ldq) == len(res)
+            assert len(cast(Sized, ldq)) == len(res)
         else:
             assert isinstance(res, Datapoints)
             assert 1 == len(res)
@@ -2802,8 +3077,12 @@ class TestRetrieveLatestDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_ignore_unknown_ids_true_good_status_codes_are_populated(
-        self, cognite_client, ts_status_codes, test_is_string, monkeypatch
-    ):
+        self,
+        cognite_client: CogniteClient,
+        ts_status_codes: TimeSeriesList,
+        test_is_string: bool,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
         # We test result ordering by ensuring multiple splits of identifiers:
         monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 4)
 
@@ -2812,17 +3091,27 @@ class TestRetrieveLatestDatapointsAPI:
         else:
             mixed_ts, _, bad_ts, _ = ts_status_codes
 
-        kwargs = dict(
-            id=[mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)],
-            external_id=[mixed_ts.external_id, *random_cognite_external_ids(4), bad_ts.external_id],
-            before=1698537600000 + 1,  # 2023-10-29
-            include_status=True,
-            ignore_bad_datapoints=False,
-        )
-        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
-            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=False)
+        ts_id: list[int] = [mixed_ts.id, *random_cognite_ids(3), bad_ts.id, *random_cognite_ids(4)]
+        ts_external_id: list[str] = [
+            cast(str, mixed_ts.external_id),
+            *random_cognite_external_ids(4),
+            cast(str, bad_ts.external_id),
+        ]
+        ts_before = 1698537600000 + 1  # 2023-10-29
+        ts_include_status = True
+        ts_ignore_bad_datapoints = False
 
-        assert 4 == cognite_client.time_series.data._post.call_count
+        with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[\{"):
+            cognite_client.time_series.data.retrieve_latest(
+                id=ts_id,
+                external_id=ts_external_id,
+                before=ts_before,
+                include_status=ts_include_status,
+                ignore_bad_datapoints=ts_ignore_bad_datapoints,
+                ignore_unknown_ids=False,
+            )
+
+        assert 4 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
         with pytest.raises(
             RuntimeError,
@@ -2832,10 +3121,22 @@ class TestRetrieveLatestDatapointsAPI:
                 "underlying time series. Duplicates: ["
             ),
         ):
-            cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+            cognite_client.time_series.data.retrieve_latest(
+                id=ts_id,
+                external_id=ts_external_id,
+                before=ts_before,
+                include_status=ts_include_status,
+                ignore_bad_datapoints=ts_ignore_bad_datapoints,
+                ignore_unknown_ids=True,
+            )
 
-        kwargs.pop("external_id")  # only fetch by id
-        res = cognite_client.time_series.data.retrieve_latest(**kwargs, ignore_unknown_ids=True)
+        res = cognite_client.time_series.data.retrieve_latest(
+            id=ts_id,
+            before=ts_before,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+            ignore_unknown_ids=True,
+        )
         assert len(res) == 2
 
         m1, b1 = res
@@ -2854,8 +3155,8 @@ class TestRetrieveLatestDatapointsAPI:
 
     @pytest.mark.parametrize("test_is_string", (True, False))
     def test_effect_of_uncertain_and_bad_settings_using_same_before_setting(
-        self, cognite_client, ts_status_codes, test_is_string
-    ):
+        self, cognite_client: CogniteClient, ts_status_codes: TimeSeriesList, test_is_string: bool
+    ) -> None:
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -2885,13 +3186,15 @@ class TestRetrieveLatestDatapointsAPI:
         assert not b2.timestamp and not b2.value
 
         if not test_is_string:
-            assert math.isclose(m1.value[0], -443.7838445173604)
-            assert math.isclose(m2.value[0], 792804.310084)
-            assert math.isclose(m3.value[0], 1e100)
-            assert math.isclose(b3.value[0], -1e100)
+            assert m1.value and math.isclose(m1.value[0], -443.7838445173604)  # type:ignore[arg-type]
+            assert m2.value and math.isclose(m2.value[0], 792804.310084)  # type:ignore[arg-type]
+            assert m3.value and math.isclose(m3.value[0], 1e100)  # type:ignore[arg-type]
+            assert b3.value and math.isclose(b3.value[0], -1e100)  # type:ignore[arg-type]
 
     @pytest.mark.parametrize("test_is_string", (True, False))
-    def test_json_float_translation(self, cognite_client, ts_status_codes, test_is_string):
+    def test_json_float_translation(
+        self, cognite_client: CogniteClient, ts_status_codes: TimeSeriesList, test_is_string: bool
+    ) -> None:
         if test_is_string:
             _, mixed_ts, _, bad_ts = ts_status_codes
         else:
@@ -2905,21 +3208,25 @@ class TestRetrieveLatestDatapointsAPI:
         for dps, exp_ts in zip(dps_lst, exp_timestamps):
             assert dps.timestamp == [exp_ts]
 
-        assert dps_lst[3].value[0] is None
+        assert dps_lst[3].value and dps_lst[3].value[0] is None
         if test_is_string:
             for i, dps in enumerate(dps_lst):
                 if i == 3:
                     continue  # None aka missing, checked above
                 assert isinstance(dps.value[0], str)
         else:
-            assert math.isclose(dps_lst[0].value[0], 2.71)
-            assert math.isclose(dps_lst[2].value[0], -5e-324)
-            assert math.isnan(dps_lst[4].value[0])
-            assert dps_lst[1].value[0] == -math.inf
-            assert dps_lst[5].value[0] == math.inf
+            assert dps_lst[0].value and math.isclose(dps_lst[0].value[0], 2.71)
+            assert dps_lst[2].value and math.isclose(dps_lst[2].value[0], -5e-324)
+            assert dps_lst[4].value and math.isnan(dps_lst[4].value[0])
+            assert dps_lst[1].value and dps_lst[1].value[0] == -math.inf
+            assert dps_lst[5].value and dps_lst[5].value[0] == math.inf
 
-    def test_instance_id_usage(self, cognite_client, instance_ts_id, instance_ts_latest):
-        single = random.choice([instance_ts_latest, LatestDatapointQuery(instance_id=instance_ts_latest)])
+    def test_instance_id_usage(
+        self, cognite_client: CogniteClient, instance_ts_id: NodeId, instance_ts_latest: NodeId
+    ) -> None:
+        single: NodeId | LatestDatapointQuery = random.choice(
+            [instance_ts_latest, LatestDatapointQuery(instance_id=instance_ts_latest)]
+        )  # type: ignore[assignment]
         dps1 = cognite_client.time_series.data.retrieve_latest(instance_id=single)
         assert type(dps1) is Datapoints
 
@@ -2938,7 +3245,7 @@ class TestRetrieveLatestDatapointsAPI:
             assert isinstance(dp.value, float)
             assert int(dp.timestamp / 1000) == int(dp.value)
 
-    def test_instance_id_and_missing(self, cognite_client, instance_ts_id):
+    def test_instance_id_and_missing(self, cognite_client: CogniteClient, instance_ts_id: NodeId) -> None:
         # Before 7.73.4 (and after support for instance_id was added ofc), when a not-found time series was requested
         # by instance_id and ignore_unknown_ids=True was passed, a TypeError was raised instead of a CogniteNotFoundError
         # as we tried to put a dict into a set (not hashable)
@@ -2947,59 +3254,72 @@ class TestRetrieveLatestDatapointsAPI:
         assert res is None
         # This could also happen - but on a separate codeline - when the missing was not an instance_id, as we loaded the
         # dict in before a comparison of the identifiers:
-        res = cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=True)
-        assert type(res) is DatapointsList
+        res = cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=True)  # type: ignore
+        assert isinstance(res, DatapointsList)
         assert len(res) == 1
         assert res[0].instance_id == instance_ts_id
 
         # ...and just to ensure this still works as expected:
         with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
-            cognite_client.time_series.data.retrieve_latest(id=1, instance_id=instance_ts_id, ignore_unknown_ids=False)
+            cognite_client.time_series.data.retrieve_latest(id=1, ignore_unknown_ids=False)
         with pytest.raises(CogniteNotFoundError, match=r"^Not found: \[{'"):
             cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
 
 
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
-    def test_insert(self, cognite_client, new_ts, monkeypatch):
+    def test_insert(self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch) -> None:
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_before_epoch(self, cognite_client, new_ts, monkeypatch):
+    def test_insert_before_epoch(
+        self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch
+    ) -> None:
         datapoints = [
             (datetime(year=1950, month=1, day=1, hour=1, minute=i, tzinfo=timezone.utc), i) for i in range(60)
         ]
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_copy(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts, do_request_spy):
+    def test_insert_copy(
+        self,
+        cognite_client: CogniteClient,
+        endpoint_attr: str,
+        ms_bursty_ts: TimeSeries,
+        new_ts: TimeSeries,
+        do_request_spy: None,
+    ) -> None:
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
-        assert 1 == cognite_client.time_series.data._do_request.call_count  # needs do_request_spy
+        assert 1 == cognite_client.time_series.data._do_request.call_count  # type: ignore[attr-defined]
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 1 == cognite_client.time_series.data._post.call_count
+        assert 1 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
-    def test_insert_copy_fails_at_aggregate(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts):
+    def test_insert_copy_fails_at_aggregate(
+        self, cognite_client: CogniteClient, endpoint_attr: str, ms_bursty_ts: TimeSeries, new_ts: TimeSeries
+    ) -> None:
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, end="now", granularity="1m", aggregates=random_aggregates(1), limit=100)
         assert 100 == len(data)
         with pytest.raises(ValueError, match="Only raw datapoints are supported when inserting data from"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
-    def test_insert_not_found_ts(self, cognite_client, new_ts, monkeypatch):
+    def test_insert_not_found_ts(
+        self, cognite_client: CogniteClient, new_ts: TimeSeries, monkeypatch: MonkeyPatch
+    ) -> None:
         # From 7.35.0 to 7.37.1, 'CogniteNotFoundError.[failed, successful]' was not reported correctly:
         xid = random_cognite_external_ids(1)[0]
-        dps = [
+        dps: list[dict[str, Any]] = [
             {"id": new_ts.id, "datapoints": [(123456789, 1111111)]},
             {"external_id": xid, "datapoints": [(123456789, 6666666)]},
         ]
@@ -3014,7 +3334,9 @@ class TestInsertDatapointsAPI:
         assert err.value.failed == [{"externalId": xid}]
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy, monkeypatch):
+    def test_insert_pandas_dataframe(
+        self, cognite_client: CogniteClient, new_ts: TimeSeries, post_spy: None, monkeypatch: MonkeyPatch
+    ) -> None:
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
@@ -3022,33 +3344,45 @@ class TestInsertDatapointsAPI:
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
         cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # type: ignore[attr-defined]
 
-    def test_delete_range(self, cognite_client, new_ts):
+    def test_delete_range(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)
 
-    def test_delete_range_before_epoch(self, cognite_client, new_ts):
+    def test_delete_range_before_epoch(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         cognite_client.time_series.data.delete_range(start=MIN_TIMESTAMP_MS, end=0, id=new_ts.id)
 
-    def test_delete_ranges(self, cognite_client, new_ts):
+    def test_delete_ranges(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
 
-    def test_invalid_status_code(self, cognite_client, new_ts):
+    def test_invalid_status_code(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         with pytest.raises(CogniteAPIError, match="^Invalid status code"):
             # code=1 is not allowed: When info type is 00, all info bits must be 0
             cognite_client.time_series.data.insert(datapoints=[(1, 3.1, 1)], id=new_ts.id)
 
-    def test_invalid_status_symbol(self, cognite_client, new_ts):
+    def test_invalid_status_symbol(self, cognite_client: CogniteClient, new_ts: TimeSeries) -> None:
         symbol = random.choice(("good", "uncertain", "bad"))  # should be PascalCased
         with pytest.raises(CogniteAPIError, match="^Invalid status code symbol"):
-            cognite_client.time_series.data.insert(
-                datapoints=[{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}], id=new_ts.id
-            )
+            datapoints: list[dict] = [{"timestamp": 0, "value": 2.3, "status": {"symbol": symbol}}]
+            cognite_client.time_series.data.insert(datapoints=datapoints, id=new_ts.id)
 
-    def test_tuples_and_dps_objects_with_status_codes__numeric_ts(self, cognite_client, new_ts):
-        ts_kwargs = dict(id=new_ts.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+    def test_tuples_and_dps_objects_with_status_codes__numeric_ts(
+        self, cognite_client: CogniteClient, new_ts: TimeSeries
+    ) -> None:
+        ts_id = new_ts.id
+        ts_start = -123
+        ts_limit = 50
+        ts_include_status = True
+        ts_ignore_bad_datapoints = False
         cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         actual_timestamp = [0, 123, 1234, 12345, 123456, 1234567, 12345678, 123456789, 1234567890]
@@ -3060,53 +3394,109 @@ class TestInsertDatapointsAPI:
 
         cognite_client.time_series.data.insert(
             id=new_ts.id,
-            datapoints=[
+            datapoints=[  # type: ignore[arg-type]
                 (-123, -1),  # no status code
                 *zip(actual_timestamp, accepted_insert_values, actual_status_codes),
             ],
         )
 
-        def assert_correct_data(to_check):
+        def assert_correct_data(to_check: Datapoints | DatapointsArray | None) -> None:
+            assert to_check is not None
+            assert to_check.value is not None
             assert to_check.value[0] == -1
             assert to_check.value[1] == actual_value[0]
-            assert math.isnan(to_check.value[3]) and math.isnan(to_check.value[4])
+            assert math.isnan(to_check.value[3]) and math.isnan(to_check.value[4])  # type: ignore[arg-type]
             if isinstance(to_check, Datapoints):
                 assert to_check.value[2] is None
             else:
                 bad_ts = to_check.timestamp[2].item() // 1_000_000
+                assert to_check.null_timestamps
                 assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
-                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()  # type: ignore[assignment]
             assert list(to_check.value[5:]) == actual_value[4:]
             assert list(to_check.timestamp[1:]) == actual_timestamp
             exp_status_symbols = ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Uncertain"]
-            assert list(to_check.status_symbol) == exp_status_symbols
+            assert to_check.status_symbol is not None and list(to_check.status_symbol) == exp_status_symbols
 
-        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        dps1 = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert dps1
         assert_correct_data(dps1)
 
         cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         # Test insert Datapoints object:
         cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps1)
-        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        dps2 = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
         assert_correct_data(dps2)
 
-        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert dps_array1
         cognite_client.time_series.data.delete_range(id=new_ts.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         # Test insert DatapointsArray object:
         cognite_client.time_series.data.insert(id=new_ts.id, datapoints=dps_array1)
-        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
         assert_correct_data(dps_array2)
 
-    def test_tuples_and_dps_objects_with_status_codes__string_ts(self, cognite_client, new_ts_string):
-        ts_kwargs = dict(id=new_ts_string.id, start=-123, limit=50, include_status=True, ignore_bad_datapoints=False)
+    def test_tuples_and_dps_objects_with_status_codes__string_ts(
+        self, cognite_client: CogniteClient, new_ts_string: TimeSeries
+    ) -> None:
+        ts_id = new_ts_string.id
+        ts_start = -123
+        ts_limit = 50
+        ts_include_status = True
+        ts_ignore_bad_datapoints = False
         cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         sassy = "Negative, really? Where's my status code, huh"
@@ -3116,43 +3506,96 @@ class TestInsertDatapointsAPI:
 
         cognite_client.time_series.data.insert(
             id=new_ts_string.id,
-            datapoints=[
+            datapoints=[  # type: ignore[arg-type]
                 (-123, sassy),  # no status code
                 *zip(actual_timestamp, actual_value, actual_status_codes),
             ],
         )
 
-        def assert_correct_data(to_check):
+        def assert_correct_data(to_check: Datapoints | DatapointsArray | None) -> None:
+            assert to_check is not None and to_check.value is not None and to_check.status_symbol is not None
             assert to_check.value[0] == sassy
             if isinstance(to_check, DatapointsArray):
-                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
-            assert list(to_check.timestamp[1:]) == actual_timestamp
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()  # type: ignore[assignment]
+            assert to_check.timestamp and list(to_check.timestamp[1:]) == actual_timestamp
             assert list(to_check.value[1:]) == actual_value
-            assert list(to_check.status_symbol) == ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Good", "Uncertain"]
 
-        dps1 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+            assert list(to_check.status_symbol) == [
+                "Good",
+                "Good",
+                "Bad",
+                "Bad",
+                "Bad",
+                "Bad",
+                "Good",
+                "Uncertain",
+            ]
+
+        dps1 = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert dps1 is not None
         assert_correct_data(dps1)
 
         cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         # Test insert Datapoints object:
         cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps1)
-        dps2 = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        dps2 = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
         assert_correct_data(dps2)
 
-        dps_array1 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        dps_array1 = cognite_client.time_series.data.retrieve_arrays(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert dps_array1
         cognite_client.time_series.data.delete_range(id=new_ts_string.id, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS)
-        empty_dps = cognite_client.time_series.data.retrieve(**ts_kwargs)
+        empty_dps = cognite_client.time_series.data.retrieve(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
+        assert empty_dps is not None
         assert empty_dps.timestamp == empty_dps.value == empty_dps.status_code == []
 
         # Test insert DatapointsArray object:
         cognite_client.time_series.data.insert(id=new_ts_string.id, datapoints=dps_array1)
-        dps_array2 = cognite_client.time_series.data.retrieve_arrays(**ts_kwargs)
+        dps_array2 = cognite_client.time_series.data.retrieve_arrays(
+            id=ts_id,
+            start=ts_start,
+            limit=ts_limit,
+            include_status=ts_include_status,
+            ignore_bad_datapoints=ts_ignore_bad_datapoints,
+        )
         assert_correct_data(dps_array2)
 
-    def test_dict_format_with_status_codes_using_insert_multiple(self, cognite_client, new_ts, new_ts_string):
+    def test_dict_format_with_status_codes_using_insert_multiple(
+        self, cognite_client: CogniteClient, new_ts: TimeSeries, new_ts_string: TimeSeries
+    ) -> None:
         cognite_client.time_series.data.delete_ranges(
             [{"id": new_ts.id, "start": 0, "end": 20}, {"id": new_ts_string.id, "start": 0, "end": 20}]
         )
@@ -3201,6 +3644,8 @@ class TestInsertDatapointsAPI:
         assert None in dps_numeric.value and None in dps_str.value
         assert dps_numeric.status_code == dps_str.status_code
         assert dps_numeric.status_symbol == dps_str.status_symbol
+
+        assert dps_numeric.status_symbol is not None
         assert set(dps_numeric.status_symbol) == {"Good", "Uncertain", "Bad"}
 
     def test_insert_retrieve_delete_datapoints_with_instance_id(
@@ -3210,12 +3655,14 @@ class TestInsertDatapointsAPI:
         cognite_client.time_series.data.insert([(0, v1), (1.0, v2)], instance_id=instance_ts_id)
         retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
+        assert retrieved is not None
         assert retrieved.timestamp == [0, 1]
         assert retrieved.value == [v1, v2]
 
         cognite_client.time_series.data.delete_range(0, 2, instance_id=instance_ts_id)
         retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=0, end=2)
 
+        assert retrieved is not None
         assert retrieved.timestamp == []
 
     def test_insert_multiple_with_instance_id(self, cognite_client: CogniteClient, instance_ts_id: NodeId) -> None:
@@ -3225,5 +3672,6 @@ class TestInsertDatapointsAPI:
         )
         retrieved = cognite_client.time_series.data.retrieve(instance_id=instance_ts_id, start=ts, end=ts + 1)
 
+        assert retrieved is not None
         assert retrieved.timestamp == [ts]
         assert retrieved.value == [value]

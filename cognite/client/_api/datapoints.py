@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
+DEFAULT_DATAPOINTS_CHUNK_SIZE = 100_000
 
 as_completed = import_as_completed()
 
@@ -505,7 +506,9 @@ class DatapointsAPI(APIClient):
         self,
         queries: DatapointsQuery,
         *,
-        return_arrays: Literal[True],
+        return_arrays: Literal[True] = True,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
+        chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArray]: ...
 
     @overload
@@ -513,7 +516,9 @@ class DatapointsAPI(APIClient):
         self,
         queries: Sequence[DatapointsQuery],
         *,
-        return_arrays: Literal[True],
+        return_arrays: Literal[True] = True,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
+        chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsArrayList]: ...
 
     @overload
@@ -522,6 +527,8 @@ class DatapointsAPI(APIClient):
         queries: DatapointsQuery,
         *,
         return_arrays: Literal[False],
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
+        chunk_size_time_series: int | None = None,
     ) -> Iterator[Datapoints]: ...
 
     @overload
@@ -530,13 +537,15 @@ class DatapointsAPI(APIClient):
         queries: Sequence[DatapointsQuery],
         *,
         return_arrays: Literal[False],
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
+        chunk_size_time_series: int | None = None,
     ) -> Iterator[DatapointsList]: ...
 
     def __call__(
         self,
         queries: DatapointsQuery | Sequence[DatapointsQuery],
         *,
-        chunk_size_datapoints: int = 100_000,
+        chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
     ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
@@ -706,12 +715,217 @@ class DatapointsAPI(APIClient):
                     continue
             alive_queries.pop(ident)
 
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: int | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: Sequence[int | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        external_id: str | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        external_id: SequenceNotStr[str | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        instance_id: NodeId | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        instance_id: Sequence[NodeId | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
+        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
+        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsList: ...
+
     def retrieve(
         self,
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
         external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -748,7 +962,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -949,12 +1163,132 @@ class DatapointsAPI(APIClient):
             return None
         return dps_lst[0]
 
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: int | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArray | None: ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: Sequence[int | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArrayList: ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        external_id: str | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArray | None: ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        external_id: SequenceNotStr[str | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArrayList: ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        instance_id: NodeId | DatapointsQuery,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArray | None: ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        instance_id: Sequence[NodeId | DatapointsQuery],
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
+        granularity: str | None = None,
+        timezone: str | datetime.timezone | ZoneInfo | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        limit: int | None = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+    ) -> DatapointsArrayList: ...
+
     def retrieve_arrays(
         self,
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
         external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -980,7 +1314,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1084,7 +1418,7 @@ class DatapointsAPI(APIClient):
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
         external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -1114,7 +1448,7 @@ class DatapointsAPI(APIClient):
         Args:
             id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | Sequence[NodeId] | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1344,7 +1678,7 @@ class DatapointsAPI(APIClient):
             {**ident_dct, "aggregates": aggregates, **interval}
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
-        arrays = self.retrieve_arrays(
+        arrays = self.retrieve_arrays(  # type: ignore [call-overload]
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
             include_status=include_status,
@@ -1352,7 +1686,7 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             target_unit=target_unit,
             target_unit_system=target_unit_system,
-            **{identifiers[0].name(): queries},  # type: ignore [arg-type]
+            **{identifiers[0].name(): queries},
         )
         assert isinstance(arrays, DatapointsArrayList)  # mypy
 
@@ -1372,11 +1706,185 @@ class DatapointsAPI(APIClient):
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
         return df
 
+    @overload
     def retrieve_latest(
         self,
-        id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
-        external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
-        instance_id: NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery] | None = None,
+        id: int | LatestDatapointQuery,
+        *,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        id: Sequence[int | LatestDatapointQuery],
+        *,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        id: int | LatestDatapointQuery,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        id: Sequence[int | LatestDatapointQuery],
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        external_id: str | LatestDatapointQuery,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        external_id: SequenceNotStr[str | LatestDatapointQuery],
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        instance_id: NodeId | LatestDatapointQuery,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> Datapoints | None: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        instance_id: Sequence[NodeId | LatestDatapointQuery],
+        external_id: None = None,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
+        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
+        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
+        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
+        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    @overload
+    def retrieve_latest(
+        self,
+        *,
+        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
+        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
+        before: None | int | str | datetime.datetime = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+        include_status: bool = False,
+        ignore_bad_datapoints: bool = True,
+        treat_uncertain_as_bad: bool = True,
+        ignore_unknown_ids: bool = False,
+    ) -> DatapointsList: ...
+
+    def retrieve_latest(
+        self,
+        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None = None,
+        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None = None,
+        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None = None,
         before: None | int | str | datetime.datetime = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
@@ -1391,9 +1899,9 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
-            external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
-            instance_id (NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
+            id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
+            external_id (str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None): External id or list of external ids.
+            instance_id (NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
             before (None | int | str | datetime.datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
@@ -1491,7 +1999,10 @@ class DatapointsAPI(APIClient):
         datapoints: Datapoints
         | DatapointsArray
         | Sequence[dict[str, int | float | str | datetime.datetime]]
-        | Sequence[tuple[int | float | datetime.datetime, int | float | str]],
+        | Sequence[
+            tuple[int | float | datetime.datetime, int | float | str]
+            | tuple[int | float | datetime.datetime, int | float | str, int]
+        ],
         id: int | None = None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
@@ -1505,7 +2016,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
+            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime.datetime]] | Sequence[tuple[int | float | datetime.datetime, int | float | str] | tuple[int | float | datetime.datetime, int | float | str, int]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int | None): Id of time series to insert datapoints into.
             external_id (str | None): External id of time series to insert datapoint into.
             instance_id (NodeId | None): Instance ID of time series to insert datapoints into.
@@ -1579,7 +2090,9 @@ class DatapointsAPI(APIClient):
         post_dps_object["datapoints"] = datapoints
         DatapointsPoster(self).insert([post_dps_object])
 
-    def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
+    def insert_multiple(
+        self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]
+    ) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Timestamps can be represented as milliseconds since epoch or datetime objects. Note that naive datetimes
@@ -1589,7 +2102,7 @@ class DatapointsAPI(APIClient):
         `status codes. <https://developer.cognite.com/dev/concepts/reference/quality_codes/>`_
 
         Args:
-            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Note:
             All datapoints inserted without a status code (or symbol) is assumed to be good (code 0). To mark a value, pass
@@ -1956,9 +2469,9 @@ class DatapointsPoster:
 class RetrieveLatestDpsFetcher:
     def __init__(
         self,
-        id: None | int | LatestDatapointQuery | list[int | LatestDatapointQuery],
-        external_id: None | str | LatestDatapointQuery | list[str | LatestDatapointQuery],
-        instance_id: None | NodeId | LatestDatapointQuery | list[NodeId | LatestDatapointQuery],
+        id: None | int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery],
+        external_id: None | str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery],
+        instance_id: None | NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery],
         before: None | int | str | datetime.datetime,
         target_unit: None | str,
         target_unit_system: None | str,
