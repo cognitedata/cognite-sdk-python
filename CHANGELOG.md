@@ -23,9 +23,8 @@ Changes are grouped as follows
 
 ## [7.75.2] - 2025-06-05
 ### Fixed
-- The `client.raw.rows.retrieve_dataframe` now keeps the original data types of the values in the columns, rather
-  than trying to convert them. For example, a column with integer values and a single `None` value will no longer
-  be converted to a float column. Instead all columns will be of type `object`.
+- The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
+  you to not infer the data types of column types in the returning dataframe.
 
 ## [7.75.1] - 2025-05-15
 ### Fixed
