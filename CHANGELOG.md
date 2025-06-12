@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.76.0] - 2025-06-12
+### Changed
+- When listing simalation runs and converting the result to a Pandas dataframe, the `simulation_time` and `run_time` columns now have type `pd.Timestamp`.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
