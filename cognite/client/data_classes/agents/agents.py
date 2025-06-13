@@ -38,8 +38,11 @@ class AgentCore(WriteableCogniteResource["AgentWrite"], ABC):
     tools: list[AgentTool] | None = None
 
     def __post_init__(self) -> None:
-        if self.tools is not None and not isinstance(self.tools, list):
-            self.tools = [self.tools]
+        if self.tools is not None:
+            if not isinstance(self.tools, list):
+                self.tools = [self.tools]
+            if not all(isinstance(tool, AgentTool) for tool in self.tools):
+                raise TypeError("All tools must be instances of AgentTool")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
