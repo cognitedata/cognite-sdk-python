@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
+from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.tools import AIToolsAPI
 from cognite.client._api.ai.tools.documents import AIDocumentsAPI
@@ -109,6 +110,8 @@ class CogniteClientMock(MagicMock):
         self.ai = MagicMock(spec=AIAPI)
         self.ai.tools = MagicMock(spec=AIToolsAPI)
         self.ai.tools.documents = MagicMock(spec_set=AIDocumentsAPI)
+
+        self.agents = MagicMock(spec_set=AgentsAPI)
 
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
