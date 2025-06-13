@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.agents import Agent, AgentList, AgentWrite
+from cognite.client.data_classes.agents import Agent, AgentList, AgentTool, AgentWrite
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
@@ -14,6 +14,28 @@ def new_agent(cognite_client: CogniteClient) -> Agent:
         external_id=f"test_agent_{random_string(10)}",
         name="Test Agent",
         description="This is a test agent.",
+        instructions="These are the instructions for the test agent.",
+        model="azure/gpt-4o",
+        tools=[
+            AgentTool(
+                name="test_tool",
+                type="queryKnowledgeGraph",
+                description="A test tool",
+                configuration={
+                    "dataModels": [
+                        {
+                            "space": "cdf_cdm",
+                            "externalId": "CogniteCore",
+                            "version": "v1",
+                            "viewExternalIds": ["CogniteAsset"],
+                        }
+                    ]
+                },
+            ),
+            AgentTool(name="test_tool2", type="summarizeDocument", description="A test tool"),
+            AgentTool(name="test_tool3", type="askDocument", description="A test tool"),
+            AgentTool(name="test_tool4", type="queryTimeSeriesDatapoints", description="A test tool"),
+        ],
     )
     created_agent = cognite_client.agents.apply(agent)
     yield created_agent
