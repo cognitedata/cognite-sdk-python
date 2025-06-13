@@ -126,7 +126,7 @@ class AgentWrite(AgentCore):
         )
 
 
-class AgentWriteList(CogniteResourceList[AgentWrite]):
+class AgentWriteList(CogniteResourceList[AgentWrite], ExternalIDTransformerMixin):
     _RESOURCE = AgentWrite
 
 
