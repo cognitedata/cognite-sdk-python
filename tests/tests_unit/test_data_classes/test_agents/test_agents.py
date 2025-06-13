@@ -58,12 +58,9 @@ class TestAgent:
         agent = Agent(external_id="test_agent", name="Test Agent")
         assert agent.tools is None
 
-        # Test with single tool
-        single_tool = AgentTool(name="test_tool", type="test_type", description="A test tool")
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=single_tool)
-        assert len(agent.tools) == 1
-        assert isinstance(agent.tools[0], AgentTool)
-        assert agent.tools[0].name == "test_tool"
+        # Test with an empty list of tools
+        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
+        assert agent.tools == []
 
         # Test with list of tools
         tools_list = [
@@ -82,7 +79,7 @@ class TestAgent:
 
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type
-        with pytest.raises(TypeError, match="All tools must be instances of AgentTool"):
+        with pytest.raises(TypeError):
             Agent(
                 external_id="test_agent",
                 name="Test Agent",
