@@ -21,6 +21,11 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.75.2] - 2025-06-05
+### Fixed
+- The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
+  you to not infer the data types of column types in the returning dataframe.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
