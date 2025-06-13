@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
-    InternalIdTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -76,14 +75,7 @@ class AgentToolWrite(AgentToolCore):
         configuration (dict[str, Any] | None): The configuration of the tool.
     """
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolWrite:
-        return cls(
-            name=resource["name"],
-            type=resource["type"],
-            description=resource["description"],
-            configuration=resource.get("configuration"),
-        )
+    pass
 
 
 class AgentToolWriteList(CogniteResourceList[AgentToolWrite]):
@@ -92,7 +84,6 @@ class AgentToolWriteList(CogniteResourceList[AgentToolWrite]):
 
 class AgentToolList(
     WriteableCogniteResourceList[AgentToolWrite, AgentTool],
-    InternalIdTransformerMixin,
 ):
     _RESOURCE = AgentTool
 
