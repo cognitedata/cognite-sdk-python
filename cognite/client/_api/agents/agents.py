@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -19,6 +20,9 @@ class AgentsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warnings = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Agents")
+        self._api_subversion = "alpha"
+        self._CREATE_LIMIT = 1
+        self._DELETE_LIMIT = 1
 
     @overload
     def apply(self, agent: AgentWrite) -> Agent: ...
@@ -36,14 +40,12 @@ class AgentsAPI(APIClient):
             Agent | AgentList: The created agent(s).
 
         """
-        headers = {"cdf-version": "alpha"}
         self._warnings.warn()
         return self._create_multiple(
             list_cls=AgentList,
             resource_cls=Agent,
             items=agent,
             input_resource_cls=AgentWrite,
-            headers=headers,
         )
 
     @overload
@@ -65,23 +67,14 @@ class AgentsAPI(APIClient):
             Agent | AgentList | None: The requested agent or agent list.
 
         """
-        is_single = isinstance(external_ids, str)
-        body = self._create_body(external_ids, ignore_unknown_ids)
-
         self._warnings.warn()
-
-        headers = {"cdf-version": "alpha"}
-        res = self._post(url_path=self._RESOURCE_PATH + "/byids", json=body, headers=headers)
-        lst = AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
-        if is_single:
-            return lst[0] if lst else None
-        return lst
-
-    @staticmethod
-    def _create_body(external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> dict:
-        ids = [external_ids] if isinstance(external_ids, str) else external_ids
-        body = {"items": [{"externalId": eid} for eid in ids], "ignoreUnknownIds": ignore_unknown_ids}
-        return body
+        identifiers = IdentifierSequence.load(external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=AgentList,
+            resource_cls=Agent,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
 
     def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """Delete one or more agents.
@@ -91,10 +84,12 @@ class AgentsAPI(APIClient):
             ignore_unknown_ids (bool): If `True`, the call will ignore unknown external IDs.
 
         """
-        body = self._create_body(external_ids, ignore_unknown_ids)
         self._warnings.warn()
-        headers = {"cdf-version": "alpha"}
-        self._post(url_path=self._RESOURCE_PATH + "/delete", json=body, headers=headers)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_ids),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     def list(self) -> AgentList:
         """List agents.
@@ -104,6 +99,5 @@ class AgentsAPI(APIClient):
 
         """
         self._warnings.warn()
-        headers = {"cdf-version": "alpha"}
-        res = self._get(url_path=self._RESOURCE_PATH, headers=headers)
+        res = self._get(url_path=self._RESOURCE_PATH)
         return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
