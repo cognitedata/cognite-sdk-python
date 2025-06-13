@@ -75,7 +75,14 @@ class AgentToolWrite(AgentToolCore):
         configuration (dict[str, Any] | None): The configuration of the tool.
     """
 
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolWrite:
+        return cls(
+            name=resource["name"],
+            type=resource["type"],
+            description=resource["description"],
+            configuration=resource.get("configuration"),
+        )
 
 
 class AgentToolWriteList(CogniteResourceList[AgentToolWrite]):
