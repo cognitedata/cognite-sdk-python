@@ -48,8 +48,6 @@ class AgentCore(WriteableCogniteResource["AgentWrite"], ABC):
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
-        if not self.instructions:
-            result["instructions"] = ""  # match API behavior
         return result
 
     def as_write(self) -> AgentWrite:
@@ -121,8 +119,8 @@ class AgentWrite(AgentCore):
         return cls(
             external_id=resource["externalId"],
             name=resource["name"],
-            description=resource.get("description", ""),
-            instructions=resource.get("instructions", ""),
+            description=resource.get("description"),
+            instructions=resource.get("instructions"),
             model=resource.get("model"),
             tools=tools,
         )
