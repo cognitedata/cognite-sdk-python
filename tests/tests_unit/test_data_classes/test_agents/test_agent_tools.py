@@ -3,6 +3,33 @@ from __future__ import annotations
 from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply, AgentToolApplyList, AgentToolList
 
 
+class TestAgentToolApply:
+    def test_load_dump(self) -> None:
+        data = {
+            "name": "test_tool",
+            "type": "test_type",
+            "description": "A test tool",
+            "configuration": {"key": "value"},
+        }
+
+        tool = AgentToolApply._load(data)
+        assert tool.name == "test_tool"
+        assert tool.type == "test_type"
+        assert tool.description == "A test tool"
+        assert tool.configuration == {"key": "value"}
+
+        dumped = tool.dump(camel_case=True)
+        assert data == dumped
+
+    def test_as_apply(self) -> None:
+        tool_apply = AgentToolApply(
+            name="test_tool",
+            type="test_type",
+            description="A test tool",
+        )
+        assert tool_apply is tool_apply.as_apply()
+
+
 class TestAgentTool:
     def test_load_dump(self) -> None:
         # This is a valid configuration for the queryKnowledgeGraph tool

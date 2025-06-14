@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -15,9 +14,9 @@ from cognite.client.data_classes._base import (
 
 
 @dataclass
-class AgentToolCore(WriteableCogniteResource["AgentToolApply"], ABC):
-    """
-    Representation of an AI Agent Tool in CDF.
+class AgentToolApply(WriteableCogniteResource["AgentToolApply"]):
+    """Representation of an AI Agent Tool in CDF.
+    This is the write format of an agent tool.
 
     Args:
         name (str): The name of the tool.
@@ -32,19 +31,23 @@ class AgentToolCore(WriteableCogniteResource["AgentToolApply"], ABC):
     configuration: dict[str, Any] | None = None
 
     def as_apply(self) -> AgentToolApply:
-        return AgentToolApply(
-            name=self.name,
-            type=self.type,
-            description=self.description,
-            configuration=self.configuration,
-        )
+        return self
 
     def as_write(self) -> AgentToolApply:
         return self.as_apply()
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolApply:
+        return cls(
+            name=resource["name"],
+            type=resource["type"],
+            description=resource["description"],
+            configuration=resource.get("configuration"),
+        )
+
 
 @dataclass
-class AgentTool(AgentToolCore):
+class AgentTool(AgentToolApply):
     """
     Representation of an AI Agent Tool in CDF.
     This is the read format of an agent tool.
@@ -56,30 +59,16 @@ class AgentTool(AgentToolCore):
         configuration (dict[str, Any] | None): The configuration of the tool.
     """
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentTool:
-        return cls(
-            name=resource["name"],
-            type=resource["type"],
-            description=resource["description"],
-            configuration=resource.get("configuration"),
+    def as_apply(self) -> AgentToolApply:
+        return AgentToolApply(
+            name=self.name,
+            type=self.type,
+            description=self.description,
+            configuration=self.configuration,
         )
 
-
-@dataclass
-class AgentToolApply(AgentToolCore):
-    """Representation of an AI Agent Tool in CDF.
-    This is the write format of an agent tool.
-
-    Args:
-        name (str): The name of the tool.
-        type (str): The type of the tool.
-        description (str): The description of the tool.
-        configuration (dict[str, Any] | None): The configuration of the tool.
-    """
-
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolApply:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentTool:
         return cls(
             name=resource["name"],
             type=resource["type"],
