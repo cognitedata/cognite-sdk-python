@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolWrite
-from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentWrite, AgentWriteList
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply
+from cognite.client.data_classes.agents.agents import Agent, AgentApply, AgentApplyList, AgentList
 
 
 class TestAgent:
@@ -92,7 +92,7 @@ class TestAgent:
                 tools={"name": "test_tool", "type": "test_type", "description": "A test tool"},
             )
 
-    def test_as_write(self) -> None:
+    def test_as_apply(self) -> None:
         agent = Agent(
             external_id="test_agent",
             name="Test Agent",
@@ -102,28 +102,28 @@ class TestAgent:
             tools=[AgentTool(name="test_tool", type="test_type", description="A test tool")],
         )
 
-        write_agent = agent.as_write()
-        assert isinstance(write_agent, AgentWrite)
+        write_agent = agent.as_apply()
+        assert isinstance(write_agent, AgentApply)
         assert write_agent.external_id == agent.external_id
         assert write_agent.name == agent.name
         assert write_agent.description == agent.description
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
         assert len(write_agent.tools) == 1
-        assert isinstance(write_agent.tools[0], AgentToolWrite)
+        assert isinstance(write_agent.tools[0], AgentToolApply)
 
 
 class TestAgentList:
-    def test_as_write(self) -> None:
+    def test_as_apply(self) -> None:
         agents = [
             Agent(external_id="agent1", name="Agent 1"),
             Agent(external_id="agent2", name="Agent 2"),
         ]
         agent_list = AgentList(agents)
 
-        write_list = agent_list.as_write()
-        assert isinstance(write_list, AgentWriteList)
+        write_list = agent_list.as_apply()
+        assert isinstance(write_list, AgentApplyList)
         assert len(write_list) == 2
-        assert all(isinstance(agent, AgentWrite) for agent in write_list)
+        assert all(isinstance(agent, AgentApply) for agent in write_list)
         assert write_list[0].external_id == "agent1"
         assert write_list[1].external_id == "agent2"

@@ -14,7 +14,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolWrite
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply
 
 
 @dataclass
@@ -38,7 +38,7 @@ class AgentCore(CogniteResource, ABC):
 
 
 @dataclass
-class Agent(AgentCore, WriteableCogniteResource["AgentWrite"]):
+class Agent(AgentCore, WriteableCogniteResource["AgentApply"]):
     """Representation of an AI Agent in CDF.
     This is the read format of an agent.
 
@@ -70,16 +70,20 @@ class Agent(AgentCore, WriteableCogniteResource["AgentWrite"]):
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
 
-    def as_write(self) -> AgentWrite:
+    def as_apply(self) -> AgentApply:
         """Returns this Agent in its writeable format"""
-        return AgentWrite(
+        return AgentApply(
             external_id=self.external_id,
             name=self.name,
             description=self.description,
             instructions=self.instructions,
             model=self.model,
-            tools=[tool.as_write() for tool in self.tools] if self.tools else None,
+            tools=[tool.as_apply() for tool in self.tools] if self.tools else None,
         )
+
+    def as_write(self) -> AgentApply:
+        """Returns this Agent in its writeable format"""
+        return self.as_apply()
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
@@ -103,7 +107,7 @@ class Agent(AgentCore, WriteableCogniteResource["AgentWrite"]):
 
 
 @dataclass
-class AgentWrite(AgentCore):
+class AgentApply(AgentCore):
     """Representation of an AI Agent in CDF.
     This is the write format of an agent.
 
@@ -113,16 +117,16 @@ class AgentWrite(AgentCore):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use.
-        tools (list[AgentToolWrite] | None): List of tools for the agent.
+        tools (list[AgentToolApply] | None): List of tools for the agent.
 
     """
 
-    tools: list[AgentToolWrite] | None = None
+    tools: list[AgentToolApply] | None = None
 
     def __post_init__(self) -> None:
         if self.tools is not None:
-            if not isinstance(self.tools, list) or not all(isinstance(tool, AgentToolWrite) for tool in self.tools):
-                raise TypeError("Tools must be a list of AgentToolWrite instances.")
+            if not isinstance(self.tools, list) or not all(isinstance(tool, AgentToolApply) for tool in self.tools):
+                raise TypeError("Tools must be a list of AgentToolApply instances.")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -130,14 +134,18 @@ class AgentWrite(AgentCore):
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
 
-    def as_write(self) -> AgentWrite:
-        """Returns this AgentWrite instance."""
+    def as_apply(self) -> AgentApply:
+        """Returns this AgentApply instance."""
         return self
 
+    def as_write(self) -> AgentApply:
+        """Returns this AgentApply in its writeable format"""
+        return self.as_apply()
+
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentApply:
         tools = (
-            [AgentToolWrite._load(item) for item in resource.get("tools", [])]
+            [AgentToolApply._load(item) for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), list)
             else None
         )
@@ -152,16 +160,20 @@ class AgentWrite(AgentCore):
         )
 
 
-class AgentWriteList(CogniteResourceList[AgentWrite], ExternalIDTransformerMixin):
-    _RESOURCE = AgentWrite
+class AgentApplyList(CogniteResourceList[AgentApply], ExternalIDTransformerMixin):
+    _RESOURCE = AgentApply
 
 
 class AgentList(
-    WriteableCogniteResourceList[AgentWrite, Agent],
+    WriteableCogniteResourceList[AgentApply, Agent],
     ExternalIDTransformerMixin,
 ):
     _RESOURCE = Agent
 
-    def as_write(self) -> AgentWriteList:
+    def as_apply(self) -> AgentApplyList:
         """Returns this AgentList as writeableinstance"""
-        return AgentWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return AgentApplyList([item.as_apply() for item in self.data], cognite_client=self._get_cognite_client())
+
+    def as_write(self) -> AgentApplyList:
+        """Returns this AgentList as writeable instance"""
+        return self.as_apply()

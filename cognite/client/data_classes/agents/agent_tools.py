@@ -15,7 +15,7 @@ from cognite.client.data_classes._base import (
 
 
 @dataclass
-class AgentToolCore(WriteableCogniteResource["AgentToolWrite"], ABC):
+class AgentToolCore(WriteableCogniteResource["AgentToolApply"], ABC):
     """
     Representation of an AI Agent Tool in CDF.
 
@@ -31,13 +31,16 @@ class AgentToolCore(WriteableCogniteResource["AgentToolWrite"], ABC):
     description: str
     configuration: dict[str, Any] | None = None
 
-    def as_write(self) -> AgentToolWrite:
-        return AgentToolWrite(
+    def as_apply(self) -> AgentToolApply:
+        return AgentToolApply(
             name=self.name,
             type=self.type,
             description=self.description,
             configuration=self.configuration,
         )
+
+    def as_write(self) -> AgentToolApply:
+        return self.as_apply()
 
 
 @dataclass
@@ -64,7 +67,7 @@ class AgentTool(AgentToolCore):
 
 
 @dataclass
-class AgentToolWrite(AgentToolCore):
+class AgentToolApply(AgentToolCore):
     """Representation of an AI Agent Tool in CDF.
     This is the write format of an agent tool.
 
@@ -76,7 +79,7 @@ class AgentToolWrite(AgentToolCore):
     """
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolWrite:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolApply:
         return cls(
             name=resource["name"],
             type=resource["type"],
@@ -85,15 +88,18 @@ class AgentToolWrite(AgentToolCore):
         )
 
 
-class AgentToolWriteList(CogniteResourceList[AgentToolWrite]):
-    _RESOURCE = AgentToolWrite
+class AgentToolApplyList(CogniteResourceList[AgentToolApply]):
+    _RESOURCE = AgentToolApply
 
 
 class AgentToolList(
-    WriteableCogniteResourceList[AgentToolWrite, AgentTool],
+    WriteableCogniteResourceList[AgentToolApply, AgentTool],
 ):
     _RESOURCE = AgentTool
 
-    def as_write(self) -> AgentToolWriteList:
+    def as_apply(self) -> AgentToolApplyList:
         """Returns this agent tool list as a writeable instance"""
-        return AgentToolWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
+        return AgentToolApplyList([item.as_apply() for item in self.data], cognite_client=self._get_cognite_client())
+
+    def as_write(self) -> AgentToolApplyList:
+        return self.as_apply()
