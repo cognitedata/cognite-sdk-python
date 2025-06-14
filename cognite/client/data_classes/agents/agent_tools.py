@@ -95,5 +95,5 @@ class AgentToolList(
     _RESOURCE = AgentTool
 
     def as_write(self) -> AgentToolWriteList:
-        """Returns this AgentToolWriteList instance"""
+        """Returns this agent tool list as a writeable instance"""
         return AgentToolWriteList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
