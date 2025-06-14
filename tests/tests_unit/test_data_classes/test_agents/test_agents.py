@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolWrite
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentWrite, AgentWriteList
 
 
@@ -110,7 +110,7 @@ class TestAgent:
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
         assert len(write_agent.tools) == 1
-        assert isinstance(write_agent.tools[0], AgentTool)
+        assert isinstance(write_agent.tools[0], AgentToolWrite)
 
 
 class TestAgentList:

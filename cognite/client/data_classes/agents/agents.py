@@ -8,16 +8,17 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 from cognite.client.data_classes._base import (
+    CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.agents.agent_tools import AgentTool
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolWrite
 
 
 @dataclass
-class AgentCore(WriteableCogniteResource["AgentWrite"], ABC):
+class AgentCore(CogniteResource, ABC):
     """Representation of an AI Agent in CDF.
 
     Args:
@@ -26,7 +27,6 @@ class AgentCore(WriteableCogniteResource["AgentWrite"], ABC):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use.
-        tools (list[AgentTool] | None): List of tools for the agent.
 
     """
 
@@ -35,32 +35,10 @@ class AgentCore(WriteableCogniteResource["AgentWrite"], ABC):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
-    tools: list[AgentTool] | None = None
-
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            if not isinstance(self.tools, list) or not all(isinstance(tool, AgentTool) for tool in self.tools):
-                raise TypeError("Tools must be a list of AgentTool instances.")
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        if self.tools:
-            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
-        return result
-
-    def as_write(self) -> AgentWrite:
-        return AgentWrite(
-            external_id=self.external_id,
-            name=self.name,
-            description=self.description,
-            instructions=self.instructions,
-            model=self.model,
-            tools=self.tools,
-        )
 
 
 @dataclass
-class Agent(AgentCore):
+class Agent(AgentCore, WriteableCogniteResource["AgentWrite"]):
     """Representation of an AI Agent in CDF.
     This is the read format of an agent.
 
@@ -76,9 +54,32 @@ class Agent(AgentCore):
         owner_id (str | None): The ID of the user who owns the agent.
     """
 
+    tools: list[AgentTool] | None = None
     created_time: int | None = None
     last_updated_time: int | None = None
     owner_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.tools is not None:
+            if not isinstance(self.tools, list) or not all(isinstance(tool, AgentTool) for tool in self.tools):
+                raise TypeError("Tools must be a list of AgentTool instances.")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.tools:
+            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        return result
+
+    def as_write(self) -> AgentWrite:
+        """Returns this Agent in its writeable format"""
+        return AgentWrite(
+            external_id=self.external_id,
+            name=self.name,
+            description=self.description,
+            instructions=self.instructions,
+            model=self.model,
+            tools=[tool.as_write() for tool in self.tools] if self.tools else None,
+        )
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
@@ -112,14 +113,31 @@ class AgentWrite(AgentCore):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use.
-        tools (list[AgentTool] | None): List of tools for the agent.
+        tools (list[AgentToolWrite] | None): List of tools for the agent.
 
     """
+
+    tools: list[AgentToolWrite] | None = None
+
+    def __post_init__(self) -> None:
+        if self.tools is not None:
+            if not isinstance(self.tools, list) or not all(isinstance(tool, AgentToolWrite) for tool in self.tools):
+                raise TypeError("Tools must be a list of AgentToolWrite instances.")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.tools:
+            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        return result
+
+    def as_write(self) -> AgentWrite:
+        """Returns this AgentWrite instance."""
+        return self
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentWrite:
         tools = (
-            [AgentTool._load(item) for item in resource.get("tools", [])]
+            [AgentToolWrite._load(item) for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), list)
             else None
         )
