@@ -6,35 +6,56 @@ from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolA
 from cognite.client.data_classes.agents.agents import Agent, AgentApply, AgentApplyList, AgentList
 
 
-class TestAgentApply:
-    def test_load_dump(self) -> None:
-        data = {
-            "externalId": "test_agent",
-            "name": "Test Agent",
-            "description": "A test agent",
-            "instructions": "Test instructions",
-            "model": "gpt-4",
-            "tools": [
-                {  # Valid queryKnowledgeGraph tool
-                    "name": "test_tool",
-                    "type": "queryKnowledgeGraph",
-                    "description": "A test tool",
-                    "configuration": {
-                        "dataModels": [
-                            {
-                                "space": "cdf_cdm",
-                                "externalId": "CogniteCore",
-                                "version": "v1",
-                                "viewExternalIds": ["CogniteAsset"],
-                            }
-                        ],
-                        "instanceSpaces": {"type": "all"},
-                    },
-                }
-            ],
-        }
+@pytest.fixture
+def agent_apply_dump() -> dict:
+    return {
+        "externalId": "test_agent",
+        "name": "Test Agent",
+        "description": "A test agent",
+        "instructions": "Test instructions",
+        "model": "gpt-4",
+        "tools": [
+            {  # Valid queryKnowledgeGraph tool
+                "name": "test_tool",
+                "type": "queryKnowledgeGraph",
+                "description": "A test tool",
+                "configuration": {
+                    "dataModels": [
+                        {
+                            "space": "cdf_cdm",
+                            "externalId": "CogniteCore",
+                            "version": "v1",
+                            "viewExternalIds": ["CogniteAsset"],
+                        }
+                    ],
+                    "instanceSpaces": {"type": "all"},
+                },
+            }
+        ],
+    }
 
-        agent = AgentApply._load(data)
+
+@pytest.fixture
+def agent_dump(agent_apply_dump: dict) -> dict:
+    return {
+        **agent_apply_dump,
+        "createdTime": 667008000000,
+        "lastUpdatedTime": 667008000001,
+        "ownerId": "this!1sMy@ID",
+    }
+
+
+@pytest.fixture
+def agent_minimal_dump() -> dict:
+    return {
+        "externalId": "test_agent",
+        "name": "Test Agent",
+    }
+
+
+class TestAgentApply:
+    def test_load_dump(self, agent_apply_dump: dict) -> None:
+        agent = AgentApply._load(agent_apply_dump)
         assert agent.external_id == "test_agent"
         assert agent.name == "Test Agent"
         assert agent.description == "A test agent"
@@ -46,7 +67,7 @@ class TestAgentApply:
 
         dumped = agent.dump(camel_case=True)
         # Note: createdTime, lastUpdatedTime, ownerId are not part of AgentApply
-        assert data == dumped
+        assert agent_apply_dump == dumped
 
     def test_as_apply(self) -> None:
         agent_apply = AgentApply(
@@ -57,37 +78,8 @@ class TestAgentApply:
 
 
 class TestAgent:
-    def test_load_dump(self) -> None:
-        data = {
-            "externalId": "test_agent",
-            "name": "Test Agent",
-            "description": "A test agent",
-            "instructions": "Test instructions",
-            "model": "gpt-4",
-            "tools": [
-                {  # Valid queryKnowledgeGraph tool
-                    "name": "test_tool",
-                    "type": "queryKnowledgeGraph",
-                    "description": "A test tool",
-                    "configuration": {
-                        "dataModels": [
-                            {
-                                "space": "cdf_cdm",
-                                "externalId": "CogniteCore",
-                                "version": "v1",
-                                "viewExternalIds": ["CogniteAsset"],
-                            }
-                        ],
-                        "instanceSpaces": {"type": "all"},
-                    },
-                }
-            ],
-            "createdTime": 667008000000,
-            "lastUpdatedTime": 667008000001,
-            "ownerId": "this!1sMy@ID",
-        }
-
-        agent = Agent._load(data)
+    def test_load_dump(self, agent_dump: dict) -> None:
+        agent = Agent._load(agent_dump)
         assert agent.external_id == "test_agent"
         assert agent.name == "Test Agent"
         assert agent.description == "A test agent"
@@ -101,15 +93,10 @@ class TestAgent:
         assert agent.owner_id == "this!1sMy@ID"
 
         dumped = agent.dump(camel_case=True)
-        assert data == dumped
+        assert agent_dump == dumped
 
-    def test_load_dump_minimal(self) -> None:
-        data = {
-            "externalId": "test_agent",
-            "name": "Test Agent",
-        }
-
-        agent = Agent._load(data)
+    def test_load_dump_minimal(self, agent_minimal_dump: dict) -> None:
+        agent = Agent._load(agent_minimal_dump)
         assert agent.external_id == "test_agent"
         assert agent.name == "Test Agent"
         assert agent.description is None
@@ -118,7 +105,7 @@ class TestAgent:
         assert agent.tools is None  # TODO: Check if this should be an empty list
 
         dumped = agent.dump(camel_case=True)
-        assert data == dumped
+        assert agent_minimal_dump == dumped
 
     def test_tools_handling(self) -> None:
         # Test with no tools
