@@ -31,13 +31,43 @@ class AgentsAPI(APIClient):
     def apply(self, agents: Sequence[AgentApply]) -> AgentList: ...
 
     def apply(self, agents: AgentApply | Sequence[AgentApply]) -> Agent | AgentList:
-        """Create new agents.
+        """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/main_api_v1_projects__projectName__ai_agents_post>`_
 
         Args:
-            agents (AgentApply | Sequence[AgentApply]): Agent or list of agents to create.
+            agents (AgentApply | Sequence[AgentApply]): Agent or list of agents to create or update.
 
         Returns:
-            Agent | AgentList: The created agent(s).
+            Agent | AgentList: The created or updated agent(s).
+
+        Examples:
+
+            Create a new agent:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import AgentApply, AgentToolApply
+                >>> client = CogniteClient()
+                >>> find_assets_tool = AgentToolApply(
+                ...     name="find assets",
+                ...     type="queryKnowledgeGraph",
+                ...     description="Use this tool to find assets",
+                ...     configuration={
+                ...         "dataModels": [
+                ...             {
+                ...                 "space": "cdf_cdm",
+                ...                 "externalId": "CogniteCore",
+                ...                 "version": "v1",
+                ...                 "viewExternalIds": ["CogniteAsset"]
+                ...             }
+                ...         ],
+                ...         "instanceSpaces": {"type": "all"}
+                ...     }
+                ... )
+                >>> agent = AgentApply(
+                ...     external_id="my_agent",
+                ...     name="My Agent",
+                ...     tools=[find_assets_tool]
+                ... )
+                >>> client.agents.apply(agents=[agent])
 
         """
         self._warnings.warn()
@@ -57,15 +87,26 @@ class AgentsAPI(APIClient):
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Agent | AgentList | None:
-        """Retrieve one or more agents.
+        """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/get_agents_by_ids_api_v1_projects__projectName__ai_agents_byids_post>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external id of the agent(s) to retrieve.
-            ignore_unknown_ids (bool): Whether to ignore unknown IDs.
+            ignore_unknown_ids (bool): Whether to ignore unknown IDs. Defaults to False.
 
         Returns:
-            Agent | AgentList | None: The requested agent or agent list.
+            Agent | AgentList | None: The requested agent or agent list. `None` is returned if `ignore_unknown_ids` is `True` and the external ID is not found.
 
+        Examples:
+
+            Retrieve an agent by external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.agents.retrieve(external_ids="my_agent")
+
+            Retrieve multiple agents:
+
+                >>> res = client.agents.retrieve(external_ids=["my_agent_1", "my_agent_2"])
         """
         self._warnings.warn()
         identifiers = IdentifierSequence.load(external_ids=external_ids)
@@ -77,11 +118,19 @@ class AgentsAPI(APIClient):
         )
 
     def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """Delete one or more agents.
+        """`Delete one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_delete_api_v1_projects__projectName__ai_agents_delete_post>`_
 
         Args:
             external_ids (str | SequenceNotStr[str]): External ID of the agent or a list of external ids.
-            ignore_unknown_ids (bool): If `True`, the call will ignore unknown external IDs.
+            ignore_unknown_ids (bool): If `True`, the call will ignore unknown external IDs. Defaults to False.
+
+        Examples:
+
+            Delete an agent by external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> client.agents.delete(external_ids="my_agent")
 
         """
         self._warnings.warn()
@@ -92,10 +141,18 @@ class AgentsAPI(APIClient):
         )
 
     def list(self) -> AgentList:  # The API does not yet support limit or pagination
-        """List agents.
+        """`List agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_list_api_v1_projects__projectName__ai_agents_get>`_
 
         Returns:
             AgentList: The list of agents.
+
+        Examples:
+
+            List all agents:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> agent_list = client.agents.list()
 
         """
         self._warnings.warn()
