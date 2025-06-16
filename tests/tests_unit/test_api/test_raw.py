@@ -7,7 +7,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.raw import RawRowsAPI
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, RowWriteList, Table, TableList
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load, assert_all_value_types_equal
+from tests.utils import assert_all_value_types_equal, jsgz_load
 
 
 @pytest.fixture
@@ -411,12 +411,9 @@ class TestRawRowsDataframe:
         result = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1", infer_dtypes=True)
 
         actual = result.to_dict(orient="index")
-        expected = {
-            row["key"]: row["columns"] for row in integer_rows_response["items"]
-        }
+        expected = {row["key"]: row["columns"] for row in integer_rows_response["items"]}
         assert_all_value_types_equal(actual, expected)
         assert actual == expected
-
 
 
 @pytest.mark.parametrize("raw_cls", (Row, RowWrite))

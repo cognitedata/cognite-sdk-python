@@ -631,10 +631,11 @@ def get_or_raise(obj: T | None) -> T:
         raise ValueError("Object is None")
     return obj
 
+
 def assert_all_value_types_equal(d1: dict, d2: dict) -> None:
     assert d1.keys() == d2.keys()
     for k in d1.keys():
         v1, v2 = d1[k], d2[k]
-        assert type(v1) == type(v2), f"Type mismatch for key '{k}': {type(v1)} != {type(v2)}"
+        assert type(v1) is type(v2), f"Type mismatch for key '{k}': {type(v1)} != {type(v2)}"
         if isinstance(v1, dict) and isinstance(v2, dict):
             assert_all_value_types_equal(v1, v2)
