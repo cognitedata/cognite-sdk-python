@@ -2326,6 +2326,8 @@ class DatapointsPoster:
 
     def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
+        if not to_insert:
+            return
         # To ensure we stay below the max limit on objects per request, we first chunk based on it:
         # (with 10k limit this is almost always just one chunk)
         tasks = [
@@ -2344,15 +2346,14 @@ class DatapointsPoster:
     ) -> list[tuple[Identifier, list[_InsertDatapoint]]]:
         dps_to_insert: dict[Identifier, list[_InsertDatapoint]] = defaultdict(list)
         for obj in dps_object_lst:
+            if not obj["datapoints"]:
+                continue
             identifier = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
             dps_to_insert[identifier].extend(validated_dps)
         return list(dps_to_insert.items())
 
     def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
-        if not dps:
-            raise ValueError("No datapoints provided")
-
         if isinstance(dps, Datapoints):
             self._verify_dps_object_for_insertion(dps)
             return self._extract_raw_data_from_datapoints(dps)
