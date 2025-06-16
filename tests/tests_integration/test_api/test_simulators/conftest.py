@@ -130,28 +130,35 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
         model_external_ids=[model_unique_external_id],
     )
 
-    versions_ext_ids = [f"{model_revision_unique_external_id}_{i}" for i in range(1, 4)]
-    for version_ext_id in versions_ext_ids:
-        model_revision_not_exists = not model_revisions.get(external_id=version_ext_id)
+    cognite_client.simulators._post(
+        "/simulators/models/delete",
+        json={
+            "items": [
+                {
+                    "externalId": model_unique_external_id,
+                }
+            ]
+        },
+    )
 
-        if model_revision_not_exists:
-            cognite_client.simulators._post(
-                "/simulators/models/revisions",
-                json={
-                    "items": [
-                        {
-                            "description": "test sim model revision description",
-                            "fileId": seed_file.id,
-                            "modelExternalId": model_unique_external_id,
-                            "externalId": version_ext_id,
-                        }
-                    ]
-                },
-            )
+    second_version_ext_id = f"{model_revision_unique_external_id}_1"
 
-    model_revision_not_exists = not model_revisions.get(external_id=model_revision_unique_external_id)
+    if not model_revisions.get(external_id=second_version_ext_id):
+        cognite_client.simulators._post(
+            "/simulators/models/revisions",
+            json={
+                "items": [
+                    {
+                        "description": "test sim model revision description",
+                        "fileId": seed_file.id,
+                        "modelExternalId": model_unique_external_id,
+                        "externalId": second_version_ext_id,
+                    }
+                ]
+            },
+        )
 
-    if model_revision_not_exists:
+    if not model_revisions.get(external_id=model_revision_unique_external_id):
         cognite_client.simulators._post(
             "/simulators/models/revisions",
             json={

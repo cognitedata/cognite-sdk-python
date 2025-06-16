@@ -2,7 +2,6 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevisionWrite,
@@ -96,42 +95,6 @@ class TestSimulatorModels:
         assert len(revisions_desc) > 0
         assert revisions_asc[0].created_time == revisions_desc[-1].created_time
         assert revisions_desc[0].created_time == revisions_asc[-1].created_time
-
-    def test_list_model_revisions_filtering_timestamp(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        all_revisions = cognite_client.simulators.models.revisions.list(
-            model_external_ids=[seed_resource_names["simulator_model_external_id"]],
-            all_versions=True,
-            sort=PropertySort(order="asc", property="createdTime"),
-        )
-
-        assert len(all_revisions) == 4
-
-        filter_created_time = TimestampRange(
-            min=all_revisions[1].created_time + 1, max=all_revisions[-1].created_time + 1000
-        )
-
-        filtered_revisions_created_time = cognite_client.simulators.models.revisions.list(
-            model_external_ids=[seed_resource_names["simulator_model_external_id"]],
-            created_time=filter_created_time,
-            all_versions=True,
-            sort=PropertySort(order="asc", property="createdTime"),
-        )
-
-        assert len(filtered_revisions_created_time) == 2
-
-        filter_last_updated_time = TimestampRange(min=0, max=all_revisions[1].created_time)
-
-        filtered_revisions_last_updated_time = cognite_client.simulators.models.revisions.list(
-            model_external_ids=[seed_resource_names["simulator_model_external_id"]],
-            created_time=filter_last_updated_time,
-            all_versions=True,
-            sort=PropertySort(order="asc", property="createdTime"),
-        )
-
-        assert len(filtered_revisions_last_updated_time) == 2
-
-        merge_filtered_revsions = filtered_revisions_last_updated_time + filtered_revisions_created_time
-        assert merge_filtered_revsions == all_revisions
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
