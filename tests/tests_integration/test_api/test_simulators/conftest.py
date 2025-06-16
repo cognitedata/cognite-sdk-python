@@ -130,17 +130,6 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
         model_external_ids=[model_unique_external_id],
     )
 
-    cognite_client.simulators._post(
-        "/simulators/models/delete",
-        json={
-            "items": [
-                {
-                    "externalId": model_unique_external_id,
-                }
-            ]
-        },
-    )
-
     second_version_ext_id = f"{model_revision_unique_external_id}_1"
 
     if not model_revisions.get(external_id=second_version_ext_id):
