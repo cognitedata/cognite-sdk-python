@@ -54,11 +54,8 @@ class SimulatorLogsAPI(APIClient):
                 >>> logs = client.simulators.logs.retrieve(id=model.log_id)
 
             Get simulator logs by simulator integration id:
-                >>> res = client.simulators.integrations.list(
-                ...     filter=SimulatorIntegrationFilter(active=True)
-                ... )
-                >>> integration = res[0]
-                >>> logs = client.simulators.logs.retrieve(id=integration.log_id)
+                >>> integrations = client.simulators.integrations.list()
+                >>> logs = client.simulators.logs.retrieve(id=integrations[0].log_id)
 
             Get simulator logs by simulation run id:
                 >>> run = client.simulators.runs.retrieve(id=1)
