@@ -17,18 +17,15 @@ from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolU
 
 
 @dataclass
-class AgentUpsert(WriteableCogniteResource["AgentUpsert"]):
-    """Representation of an AI Agent in CDF.
-    This is the write format of an agent.
+class AgentCore(WriteableCogniteResource["AgentUpsert"]):
+    """Core representation of an AI agent.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent.
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use.
-        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
-
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
     """
 
     external_id: str
@@ -36,6 +33,23 @@ class AgentUpsert(WriteableCogniteResource["AgentUpsert"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
+
+
+@dataclass
+class AgentUpsert(AgentCore):
+    """Representation of an AI agent.
+    This is the write format of an agent.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the agent, for use in user interfaces.
+        description (str | None): The human readable description of the agent.
+        instructions (str | None): Instructions for the agent.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
+
+    """
+
     tools: Sequence[AgentToolUpsert] | None = None
 
     def __post_init__(self) -> None:
@@ -74,8 +88,8 @@ class AgentUpsert(WriteableCogniteResource["AgentUpsert"]):
 
 
 @dataclass
-class Agent(AgentUpsert):
-    """Representation of an AI Agent in CDF.
+class Agent(AgentCore):
+    """Representation of an AI agent.
     This is the read format of an agent.
 
     Args:
@@ -83,7 +97,7 @@ class Agent(AgentUpsert):
         name (str): The name of the agent, for use in user interfaces.
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
         tools (Sequence[AgentTool] | None): List of tools for the agent.
         created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -94,6 +108,12 @@ class Agent(AgentUpsert):
     created_time: int | None = None
     last_updated_time: int | None = None
     owner_id: str | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.tools:
+            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        return result
 
     def __post_init__(self) -> None:
         if self.tools is not None:

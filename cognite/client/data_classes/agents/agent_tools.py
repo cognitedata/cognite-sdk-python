@@ -14,21 +14,20 @@ from cognite.client.data_classes._base import (
 
 
 @dataclass
-class AgentToolUpsert(WriteableCogniteResource["AgentToolUpsert"]):
-    """Representation of an AI Agent Tool in CDF.
-    This is the write format of an agent tool.
-
-    Args:
-        name (str): The name of the tool.
-        type (str): The type of the tool.
-        description (str): The description of the tool.
-        configuration (dict[str, Any] | None): The configuration of the tool.
-    """
+class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"]):
+    """Core representation of an AI Agent Tool in CDF."""
 
     name: str
     type: str
     description: str
     configuration: dict[str, Any] | None = None
+
+
+@dataclass
+class AgentToolUpsert(AgentToolCore):
+    """Representation of an AI Agent Tool in CDF.
+    This is the write format of an agent tool.
+    """
 
     def as_write(self) -> AgentToolUpsert:
         return self
@@ -44,16 +43,10 @@ class AgentToolUpsert(WriteableCogniteResource["AgentToolUpsert"]):
 
 
 @dataclass
-class AgentTool(AgentToolUpsert):
+class AgentTool(AgentToolCore):
     """
     Representation of an AI Agent Tool in CDF.
     This is the read format of an agent tool.
-
-    Args:
-        name (str): The name of the tool.
-        type (str): The type of the tool.
-        description (str): The description of the tool.
-        configuration (dict[str, Any] | None): The configuration of the tool.
     """
 
     def as_write(self) -> AgentToolUpsert:
