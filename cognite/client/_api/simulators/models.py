@@ -285,7 +285,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.update(model)
 
             Perform a partial update on a simulator model, updating the description and name:
-                >>> from cognite.client.data_classes.simulators import SimulatorModelUpdate
+                >>> from cognite.client.data_classes.simulators.models import SimulatorModelUpdate
                 >>> # TODO: Uncomment when SimulatorModelUpdate is fixed
                 >>> # my_update = SimulatorModelUpdate(id=1).name.set("new_name").description.set("new_description")
                 >>> # res = client.simulators.models.update(my_update)
