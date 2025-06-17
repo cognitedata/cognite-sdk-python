@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply
-from cognite.client.data_classes.agents.agents import Agent, AgentApply, AgentApplyList, AgentList
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolUpsert
+from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
 
 
 @pytest.fixture
-def agent_apply_dump() -> dict:
+def agent_upsert_dump() -> dict:
     return {
         "externalId": "test_agent",
         "name": "Test Agent",
@@ -36,9 +36,9 @@ def agent_apply_dump() -> dict:
 
 
 @pytest.fixture
-def agent_dump(agent_apply_dump: dict) -> dict:
+def agent_dump(agent_upsert_dump: dict) -> dict:
     return {
-        **agent_apply_dump,
+        **agent_upsert_dump,
         "createdTime": 667008000000,
         "lastUpdatedTime": 667008000001,
         "ownerId": "this!1sMy@ID",
@@ -53,28 +53,28 @@ def agent_minimal_dump() -> dict:
     }
 
 
-class TestAgentApply:
-    def test_load_dump(self, agent_apply_dump: dict) -> None:
-        agent = AgentApply._load(agent_apply_dump)
+class TestAgentUpsert:
+    def test_load_dump(self, agent_upsert_dump: dict) -> None:
+        agent = AgentUpsert._load(agent_upsert_dump)
         assert agent.external_id == "test_agent"
         assert agent.name == "Test Agent"
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
         assert len(agent.tools) == 1
-        assert isinstance(agent.tools[0], AgentToolApply)
+        assert isinstance(agent.tools[0], AgentToolUpsert)
         assert agent.tools[0].name == "test_tool"
 
         dumped = agent.dump(camel_case=True)
-        # Note: createdTime, lastUpdatedTime, ownerId are not part of AgentApply
-        assert agent_apply_dump == dumped
+        # Note: createdTime, lastUpdatedTime, ownerId are not part of AgentUpsert
+        assert agent_upsert_dump == dumped
 
-    def test_as_apply(self) -> None:
-        agent_apply = AgentApply(
+    def test_as_write(self) -> None:
+        agent_upsert = AgentUpsert(
             external_id="test_agent",
             name="Test Agent",
         )
-        assert agent_apply is agent_apply.as_apply()
+        assert agent_upsert is agent_upsert.as_write()
 
 
 class TestAgent:
@@ -140,7 +140,7 @@ class TestAgent:
                 tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],
             )
 
-    def test_as_apply(self) -> None:
+    def test_as_write(self) -> None:
         agent = Agent(
             external_id="test_agent",
             name="Test Agent",
@@ -150,29 +150,29 @@ class TestAgent:
             tools=[AgentTool(name="test_tool", type="test_type", description="A test tool")],
         )
 
-        write_agent = agent.as_apply()
-        assert isinstance(write_agent, AgentApply)
+        write_agent = agent.as_write()
+        assert isinstance(write_agent, AgentUpsert)
         assert write_agent.external_id == agent.external_id
         assert write_agent.name == agent.name
         assert write_agent.description == agent.description
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
         assert len(write_agent.tools) == 1
-        assert isinstance(write_agent.tools[0], AgentToolApply)
+        assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
 
 
 class TestAgentList:
-    def test_as_apply(self) -> None:
+    def test_as_write(self) -> None:
         agents = [
             Agent(external_id="agent1", name="Agent 1"),
             Agent(external_id="agent2", name="Agent 2"),
         ]
         agent_list = AgentList(agents)
 
-        write_list = agent_list.as_apply()
-        assert isinstance(write_list, AgentApplyList)
+        write_list = agent_list.as_write()
+        assert isinstance(write_list, AgentUpsertList)
         assert len(write_list) == 2
-        assert all(isinstance(agent, AgentApply) for agent in write_list)
+        assert all(isinstance(agent, AgentUpsert) for agent in write_list)
         assert write_list[0].external_id == "agent1"
         assert write_list[1].external_id == "agent2"

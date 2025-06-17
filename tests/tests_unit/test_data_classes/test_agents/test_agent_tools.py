@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply, AgentToolApplyList, AgentToolList
+from cognite.client.data_classes.agents.agent_tools import (
+    AgentTool,
+    AgentToolList,
+    AgentToolUpsert,
+    AgentToolUpsertList,
+)
 
 
-class TestAgentToolApply:
+class TestAgentToolUpsert:
     def test_load_dump(self) -> None:
         data = {
             "name": "test_tool",
@@ -12,7 +17,7 @@ class TestAgentToolApply:
             "configuration": {"key": "value"},
         }
 
-        tool = AgentToolApply._load(data)
+        tool = AgentToolUpsert._load(data)
         assert tool.name == "test_tool"
         assert tool.type == "test_type"
         assert tool.description == "A test tool"
@@ -21,13 +26,13 @@ class TestAgentToolApply:
         dumped = tool.dump(camel_case=True)
         assert data == dumped
 
-    def test_as_apply(self) -> None:
-        tool_apply = AgentToolApply(
+    def test_as_write(self) -> None:
+        tool_upsert = AgentToolUpsert(
             name="test_tool",
             type="test_type",
             description="A test tool",
         )
-        assert tool_apply is tool_apply.as_apply()
+        assert tool_upsert is tool_upsert.as_write()
 
 
 class TestAgentTool:
@@ -78,7 +83,7 @@ class TestAgentTool:
         dumped = tool.dump(camel_case=True)
         assert data == dumped
 
-    def test_as_apply(self) -> None:
+    def test_as_write(self) -> None:
         tool = AgentTool(
             name="test_tool",
             type="test_type",
@@ -86,8 +91,8 @@ class TestAgentTool:
             configuration={"key": "value"},
         )
 
-        write_tool = tool.as_apply()
-        assert isinstance(write_tool, AgentToolApply)
+        write_tool = tool.as_write()
+        assert isinstance(write_tool, AgentToolUpsert)
         assert write_tool.name == tool.name
         assert write_tool.type == tool.type
         assert write_tool.description == tool.description
@@ -95,16 +100,16 @@ class TestAgentTool:
 
 
 class TestAgentToolList:
-    def test_as_apply(self) -> None:
+    def test_as_write(self) -> None:
         tools = [
             AgentTool(name="tool1", type="type1", description="desc1"),
             AgentTool(name="tool2", type="type2", description="desc2"),
         ]
         tool_list = AgentToolList(tools)
 
-        write_list = tool_list.as_apply()
-        assert isinstance(write_list, AgentToolApplyList)
+        write_list = tool_list.as_write()
+        assert isinstance(write_list, AgentToolUpsertList)
         assert len(write_list) == 2
-        assert all(isinstance(tool, AgentToolApply) for tool in write_list)
+        assert all(isinstance(tool, AgentToolUpsert) for tool in write_list)
         assert write_list[0].name == "tool1"
         assert write_list[1].name == "tool2"

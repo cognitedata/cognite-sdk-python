@@ -13,11 +13,11 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply
+from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolUpsert
 
 
 @dataclass
-class AgentApply(WriteableCogniteResource["AgentApply"]):
+class AgentUpsert(WriteableCogniteResource["AgentUpsert"]):
     """Representation of an AI Agent in CDF.
     This is the write format of an agent.
 
@@ -27,7 +27,7 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use.
-        tools (Sequence[AgentToolApply] | None): List of tools for the agent.
+        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
 
     """
 
@@ -36,12 +36,14 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
-    tools: Sequence[AgentToolApply] | None = None
+    tools: Sequence[AgentToolUpsert] | None = None
 
     def __post_init__(self) -> None:
         if self.tools is not None:
-            if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentToolApply) for tool in self.tools):
-                raise TypeError("Tools must be a sequence of AgentToolApply instances.")
+            if not isinstance(self.tools, Sequence) or not all(
+                isinstance(tool, AgentToolUpsert) for tool in self.tools
+            ):
+                raise TypeError("Tools must be a sequence of AgentToolUpsert instances.")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -49,18 +51,14 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
 
-    def as_apply(self) -> AgentApply:
-        """Returns this AgentApply instance."""
+    def as_write(self) -> AgentUpsert:
+        """Returns this AgentUpsert in its writeable format"""
         return self
 
-    def as_write(self) -> AgentApply:
-        """Returns this AgentApply in its writeable format"""
-        return self.as_apply()
-
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentApply:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
         tools = (
-            [AgentToolApply._load(item) for item in resource.get("tools", [])]
+            [AgentToolUpsert._load(item) for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
             else None
         )
@@ -76,7 +74,7 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
 
 
 @dataclass
-class Agent(AgentApply):
+class Agent(AgentUpsert):
     """Representation of an AI Agent in CDF.
     This is the read format of an agent.
 
@@ -102,15 +100,15 @@ class Agent(AgentApply):
             if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentTool) for tool in self.tools):
                 raise TypeError("Tools must be a sequence of AgentTool instances.")
 
-    def as_apply(self) -> AgentApply:
+    def as_write(self) -> AgentUpsert:
         """Returns this Agent in its writeable format"""
-        return AgentApply(
+        return AgentUpsert(
             external_id=self.external_id,
             name=self.name,
             description=self.description,
             instructions=self.instructions,
             model=self.model,
-            tools=[tool.as_apply() for tool in self.tools] if self.tools else None,
+            tools=[tool.as_write() for tool in self.tools] if self.tools else None,
         )
 
     @classmethod
@@ -134,20 +132,16 @@ class Agent(AgentApply):
         )
 
 
-class AgentApplyList(CogniteResourceList[AgentApply], ExternalIDTransformerMixin):
-    _RESOURCE = AgentApply
+class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMixin):
+    _RESOURCE = AgentUpsert
 
 
 class AgentList(
-    WriteableCogniteResourceList[AgentApply, Agent],
+    WriteableCogniteResourceList[AgentUpsert, Agent],
     ExternalIDTransformerMixin,
 ):
     _RESOURCE = Agent
 
-    def as_apply(self) -> AgentApplyList:
+    def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeableinstance"""
-        return AgentApplyList([item.as_apply() for item in self.data], cognite_client=self._get_cognite_client())
-
-    def as_write(self) -> AgentApplyList:
-        """Returns this AgentList as writeable instance"""
-        return self.as_apply()
+        return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
