@@ -43,11 +43,14 @@ class SimulatorModelsAPI(APIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
-        Retrieves a list of simulator models that match the given criteria
+
+        Retrieves a list of simulator models that match the given criteria.
+
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
             sort (PropertySort | None): The criteria to sort by.
+
         Returns:
             SimulatorModelList: List of simulator models
 
@@ -55,7 +58,7 @@ class SimulatorModelsAPI(APIClient):
             List simulator models:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.models.list()
+                >>> res = client.simulators.models.list(limit=10)
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators import SimulatorModelsFilter
@@ -101,13 +104,17 @@ class SimulatorModelsAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModel | SimulatorModelList | None:
-        """`Retrieve simulator model(s) <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
-        Retrieve one or more simulator models by ID(s) or external ID(s)
+        """`Retrieve simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
+
+        Retrieve one or more simulator models by ID(s) or external ID(s).
+
         Args:
             id (int | Sequence[int] | None): The id of the simulator model.
             external_id (str | SequenceNotStr[str] | None): The external id of the simulator model.
+
         Returns:
             SimulatorModel | SimulatorModelList | None: Requested simulator model(s)
+
         Examples:
             Get simulator model by id:
                 >>> from cognite.client import CogniteClient
@@ -121,7 +128,9 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.retrieve(id=[1,2])
 
             Get multiple simulator models by external ids:
-                >>> res = client.simulators.models.retrieve(external_id=["model_external_id", "model_external_id2"])
+                >>> res = client.simulators.models.retrieve(
+                ...     external_id=["model_external_id", "model_external_id2"]
+                ... )
         """
         self._warning.warn()
 
@@ -183,10 +192,13 @@ class SimulatorModelsAPI(APIClient):
 
     def create(self, model: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
+
         Args:
             model (SimulatorModelWrite | Sequence[SimulatorModelWrite]): The model to create.
+
         Returns:
             SimulatorModel | SimulatorModelList: Created simulator model(s)
+
         Examples:
             Create new simulator models:
                 >>> from cognite.client import CogniteClient
@@ -220,11 +232,13 @@ class SimulatorModelsAPI(APIClient):
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
+
         Args:
             id (int | Sequence[int] | None): id (or sequence of ids) for the model(s) to delete.
             external_id (str | SequenceNotStr[str] | None): external id (or sequence of external ids) for the model(s) to delete.
+
         Examples:
-            Delete models by id or external id:
+            Delete simulator models by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.simulators.models.delete(id=[1,2,3], external_id="model_external_id")
@@ -238,22 +252,43 @@ class SimulatorModelsAPI(APIClient):
     @overload
     def update(
         self,
-        item: Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
+        model: Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModelList: ...
 
     @overload
     def update(
         self,
-        item: SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate,
+        model: SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate,
     ) -> SimulatorModel: ...
 
     def update(
         self,
-        item: SimulatorModel
+        model: SimulatorModel
         | SimulatorModelWrite
         | SimulatorModelUpdate
         | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModel | SimulatorModelList:
+        """`Update simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
+
+        Args:
+            model (SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate]): The model to update.
+
+        Returns:
+            SimulatorModel | SimulatorModelList: Updated simulator model(s)
+
+        Examples:
+            Update a simulator model that you have fetched. This will perform a full update of the model:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> model = client.simulators.models.retrieve(external_id="model_external_id")
+                >>> model.name = "new_name"
+                >>> res = client.simulators.models.update(model)
+
+            Perform a partial update on a simulator model, updating the description and name:
+                >>> from cognite.client.data_classes.simulators import SimulatorModelUpdate
+                >>> my_update = SimulatorModelUpdate(id=1).name.set("new_name").description.set("new_description")
+                >>> res = client.simulators.models.update(my_update)
+        """
         return self._update_multiple(
-            list_cls=SimulatorModelList, resource_cls=SimulatorModel, update_cls=SimulatorModelUpdate, items=item
+            list_cls=SimulatorModelList, resource_cls=SimulatorModel, update_cls=SimulatorModelUpdate, items=model
         )

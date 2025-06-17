@@ -32,8 +32,7 @@ class SimulatorLogsAPI(APIClient):
     ) -> SimulatorLogList | None: ...
 
     def retrieve(self, id: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
-        """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
-        Retrieve one simulator log by ID(s)
+        """`Retrieve simulator logs <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
         They provide valuable information for monitoring, debugging, and auditing.
@@ -43,14 +42,31 @@ class SimulatorLogsAPI(APIClient):
 
         Args:
             id (int | Sequence[int]): The ids of the simulator log.
+
         Returns:
             SimulatorLogList | SimulatorLog | None: Requested simulator log(s)
+
         Examples:
-            Get simulator model logs:
+            Get simulator logs by simulator model id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> model = client.simulators.models.retrieve(id=1)
                 >>> logs = client.simulators.logs.retrieve(id=model.log_id)
+
+            Get simulator logs by simulator integration id:
+                >>> res = client.simulators.integrations.list(
+                ...     filter=SimulatorIntegrationFilter(active=True)
+                ... )
+                >>> integration = res[0]
+                >>> logs = client.simulators.logs.retrieve(id=integration.log_id)
+
+            Get simulator logs by simulation run id:
+                >>> run = client.simulators.runs.retrieve(id=1)
+                >>> logs = client.simulators.logs.retrieve(id=run.log_id)
+
+            Get simulator logs directly on a simulation run object:
+                >>> run = client.simulators.runs.retrieve(ids=2)
+                >>> res = run.get_logs()
         """
         self._warning.warn()
 

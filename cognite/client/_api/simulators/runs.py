@@ -147,7 +147,8 @@ class SimulatorRunsAPI(APIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
     ) -> SimulatorRunList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
-        Retrieves a list of simulation runs that match the given criteria
+
+        Retrieves a list of simulation runs that match the given criteria.
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
@@ -164,7 +165,6 @@ class SimulatorRunsAPI(APIClient):
             SimulatorRunList: List of simulation runs
 
         Examples:
-
             List simulation runs:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -209,11 +209,14 @@ class SimulatorRunsAPI(APIClient):
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulatorRunList | None:
-        """`Retrieve a simulation run by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`
+        """`Retrieve a simulation run by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
+
         Returns:
             SimulationRun | SimulatorRunList | None: The simulation run(s) with the given ID(s)
+
         Examples:
             Retrieve a single simulation run by id:
                 >>> from cognite.client import CogniteClient
@@ -236,11 +239,14 @@ class SimulatorRunsAPI(APIClient):
     def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunList: ...
 
     def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunList:
-        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+
         Args:
             run (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
+
         Returns:
             SimulationRun | SimulatorRunList: Created simulation run(s)
+
         Examples:
             Create new simulation run:
                 >>> from cognite.client import CogniteClient
@@ -270,6 +276,7 @@ class SimulatorRunsAPI(APIClient):
         run_id: int,
     ) -> SimulatorRunDataList:
         """`Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+
         Retrieve data associated with a simulation run by ID.
 
         Args:
@@ -279,10 +286,14 @@ class SimulatorRunsAPI(APIClient):
             SimulatorRunDataList: List of simulation run data
 
         Examples:
-            Get simulation run data:
+            Get simulation run data by run id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.runs.list_run_data(run_id=12345)
+
+            Get simulation run data directly on a simulation run object:
+                >>> run = client.simulators.runs.retrieve(ids=2)
+                >>> res = run.get_data()
         """
         self._warning.warn()
 
