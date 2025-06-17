@@ -8,7 +8,7 @@ List simulators
 .. automethod:: cognite.client._api.simulators.SimulatorsAPI.list
 
 Simulator Integrations
----------------------
+-----------------------
 
 List simulator integrations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -19,7 +19,7 @@ Delete simulator integrations
 .. automethod:: cognite.client._api.simulators.integrations.SimulatorIntegrationsAPI.delete
 
 Simulator Models
----------------
+----------------
 
 List simulator models
 ^^^^^^^^^^^^^^^^^^^^^
@@ -42,7 +42,7 @@ Delete simulator models
 .. automethod:: cognite.client._api.simulators.models.SimulatorModelsAPI.delete
 
 Simulator Model Revisions
--------------------------
+--------------------------
 
 List simulator model revisions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -57,7 +57,7 @@ Create simulator model revisions
 .. automethod:: cognite.client._api.simulators.models_revisions.SimulatorModelRevisionsAPI.create
 
 Simulator Routines
------------------
+------------------
 
 List simulator routines
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -76,7 +76,7 @@ Run simulator routines
 .. automethod:: cognite.client._api.simulators.routines.SimulatorRoutinesAPI.run
 
 Simulator Routine Revisions
----------------------------
+----------------------------
 
 List simulator routine revisions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -91,7 +91,7 @@ Create simulator routine revisions
 .. automethod:: cognite.client._api.simulators.routine_revisions.SimulatorRoutineRevisionsAPI.create
 
 Simulation Runs
---------------
+---------------
 
 List simulation runs
 ^^^^^^^^^^^^^^^^^^^^
@@ -119,20 +119,5 @@ Retrieve simulator logs
 Data classes
 ------------
 .. automodule:: cognite.client.data_classes.simulators
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.simulators.models
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.simulators.routines
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.simulators.runs
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.simulators.logs
-    :members:
-    :show-inheritance:
-.. automodule:: cognite.client.data_classes.simulators.filters
     :members:
     :show-inheritance: 
