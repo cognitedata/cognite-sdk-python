@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -65,12 +63,12 @@ class AgentUpsert(AgentCore):
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
 
-    def as_write(self) -> AgentUpsert:
+    def as_write(self) -> "AgentUpsert":
         """Returns this AgentUpsert in its writeable format"""
         return self
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "AgentUpsert":
         tools = (
             [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
@@ -120,7 +118,7 @@ class Agent(AgentCore):
             if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentTool) for tool in self.tools):
                 raise TypeError("Tools must be a sequence of AgentTool instances.")
 
-    def as_write(self) -> AgentUpsert:
+    def as_write(self) -> "AgentUpsert":
         """Returns this Agent in its writeable format"""
         return AgentUpsert(
             external_id=self.external_id,
@@ -132,7 +130,7 @@ class Agent(AgentCore):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "Agent":
         tools = (
             [AgentTool._load(item) for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)

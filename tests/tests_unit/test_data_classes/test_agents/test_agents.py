@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pytest
 
 from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolUpsert
