@@ -227,7 +227,6 @@ class SummarizeDocumentAgentTool(AgentTool):
     """Agent tool for summarizing documents."""
 
     _type: ClassVar[str] = "summarizeDocument"
-    configuration: None = None
 
     def __init__(
         self,
@@ -270,7 +269,6 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
     """Upsert version of document summarization agent tool."""
 
     _type: ClassVar[str] = "summarizeDocument"
-    configuration: None = None
 
     def __init__(self, name: str, description: str):
         super().__init__(name=name, description=description)
@@ -282,7 +280,6 @@ class AskDocumentAgentTool(AgentTool):
     """Agent tool for asking questions about documents."""
 
     _type: ClassVar[str] = "askDocument"
-    configuration: None = None
 
     def __init__(
         self,
@@ -325,7 +322,6 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
     """Upsert version of document question agent tool."""
 
     _type: ClassVar[str] = "askDocument"
-    configuration: None = None
 
     def __init__(self, name: str, description: str):
         super().__init__(name=name, description=description)
@@ -414,7 +410,6 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
     """Agent tool for querying time series datapoints."""
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
-    configuration: None = None
 
     def __init__(
         self,
@@ -457,7 +452,6 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
     """Upsert version of time series datapoints query agent tool."""
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
-    configuration: None = None
 
     def __init__(self, name: str, description: str):
         super().__init__(name=name, description=description)
