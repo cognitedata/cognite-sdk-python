@@ -21,9 +21,14 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
-## [7.76.0] - 2025-05-15
+## [7.76.0] - 2025-06-18
 ### Added
 - When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names when `instance_id_headers` is `True`. Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. E.g. if the column name is of type `NodeId` it will automatically be interpreted as instance ID.
+
+## [7.75.2] - 2025-06-05
+### Fixed
+- The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
+  you to not infer the data types of column types in the returning dataframe.
 
 ## [7.75.1] - 2025-05-15
 ### Fixed
