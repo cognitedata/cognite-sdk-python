@@ -2245,7 +2245,7 @@ class DatapointsAPI(APIClient):
             df (pd.DataFrame):  Pandas DataFrame object containing the time series.
             external_id_headers (bool): Interpret the column names as external IDs. Pass False if using IDs or instance IDs. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
-            instance_id_headers (bool): No description.
+            instance_id_headers (bool): Interpret the column names as instance IDs. Can either be `NodeId` objects or tuples of (space, external_id). Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. Default: False.
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
