@@ -258,9 +258,11 @@ class TestInsertDatapoints:
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(6, 11)]}]
         } in request_bodies
 
-    def test_insert_datapoints_no_data(self, cognite_client):
-        with pytest.raises(ValueError, match="No datapoints provided"):
-            cognite_client.time_series.data.insert(id=1, datapoints=[])
+    @pytest.mark.parametrize("datapoints, id", [([], 1), (Datapoints(id=1), 1)])
+    def test_insert_datapoints_no_data(
+        self, cognite_client: CogniteClient, datapoints: list | Datapoints, id: int | None
+    ):
+        cognite_client.time_series.data.insert(datapoints=datapoints, id=id)
 
     def test_insert_datapoints_in_multiple_time_series(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
