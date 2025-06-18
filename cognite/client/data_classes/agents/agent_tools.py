@@ -17,9 +17,17 @@ from cognite.client.data_classes._base import (
 class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
     """Core representation of an AI Agent Tool in CDF."""
 
+    _type: ClassVar[str]  # Will be set by concrete classes
     name: str
     description: str
-    type: str = ""  # Will be auto-set by concrete classes
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
+        result = super().dump(camel_case=camel_case)
+        # Only add type if this class has _type defined
+        if hasattr(self.__class__, "_type"):
+            result["type"] = self._type
+        return result
 
 
 @dataclass
@@ -27,6 +35,21 @@ class AgentToolUpsert(AgentToolCore):
     """Representation of an AI Agent Tool in CDF.
     This is the write format of an agent tool.
     """
+
+    type: str = ""  # Instance field for UnknownAgentToolUpsert - will be overridden by concrete classes
+
+    def __init__(self, name: str, description: str, type: str = ""):
+        self.name = name
+        self.description = description
+        # Use ClassVar if available, otherwise use passed type
+        self.type = getattr(self.__class__, "_type", type)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
+        result = super().dump(camel_case=camel_case)
+        # Override with instance type to handle UnknownAgentToolUpsert
+        result["type"] = self.type
+        return result
 
     def as_write(self) -> "AgentToolUpsert":
         return self
@@ -47,9 +70,34 @@ class AgentTool(AgentToolCore):
     This is the read format of an agent tool.
     """
 
+    type: str = ""  # Instance field for UnknownAgentTool - will be overridden by concrete classes
     created_time: int | None = None
     last_updated_time: int | None = None
     owner_id: str | None = None
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        type: str = "",
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        owner_id: str | None = None,
+    ):
+        self.name = name
+        self.description = description
+        # Use ClassVar if available, otherwise use passed type
+        self.type = getattr(self.__class__, "_type", type)
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.owner_id = owner_id
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
+        result = super().dump(camel_case=camel_case)
+        # Override with instance type to handle UnknownAgentTool
+        result["type"] = self.type
+        return result
 
     def as_write(self) -> "AgentToolUpsert":
         # Handle configuration dynamically - only if the tool has it
@@ -192,7 +240,6 @@ class SummarizeDocumentAgentTool(AgentTool):
         super().__init__(
             name=name,
             description=description,
-            type=self._type,
             created_time=created_time,
             last_updated_time=last_updated_time,
             owner_id=owner_id,
@@ -226,7 +273,7 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
     configuration: None = None
 
     def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description, type=self._type)
+        super().__init__(name=name, description=description)
         self.configuration = None
 
 
@@ -248,7 +295,6 @@ class AskDocumentAgentTool(AgentTool):
         super().__init__(
             name=name,
             description=description,
-            type=self._type,
             created_time=created_time,
             last_updated_time=last_updated_time,
             owner_id=owner_id,
@@ -280,7 +326,7 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
     configuration: None = None
 
     def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description, type=self._type)
+        super().__init__(name=name, description=description)
         self.configuration = None
 
 
@@ -303,7 +349,6 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
         super().__init__(
             name=name,
             description=description,
-            type=self._type,
             created_time=created_time,
             last_updated_time=last_updated_time,
             owner_id=owner_id,
@@ -352,7 +397,7 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
     def __init__(
         self, name: str, description: str, configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None
     ):
-        super().__init__(name=name, description=description, type=self._type)
+        super().__init__(name=name, description=description)
         self.configuration = configuration
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -380,7 +425,6 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
         super().__init__(
             name=name,
             description=description,
-            type=self._type,
             created_time=created_time,
             last_updated_time=last_updated_time,
             owner_id=owner_id,
@@ -414,7 +458,7 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
     configuration: None = None
 
     def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description, type=self._type)
+        super().__init__(name=name, description=description)
         self.configuration = None
 
 
@@ -422,6 +466,7 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
 class UnknownAgentTool(AgentTool):
     """Agent tool for unknown/unrecognized tool types."""
 
+    type: str
     configuration: dict[str, Any] | None = None  # Unknown tools can have any dict config
     # Note: UnknownAgentTool still requires type parameter since it can be anything
 
@@ -443,6 +488,7 @@ class UnknownAgentTool(AgentTool):
 class UnknownAgentToolUpsert(AgentToolUpsert):
     """Upsert version of unknown agent tool."""
 
+    type: str
     configuration: dict[str, Any] | None = None
     # Note: UnknownAgentToolUpsert still requires type parameter since it can be anything
 
