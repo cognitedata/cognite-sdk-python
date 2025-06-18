@@ -72,7 +72,7 @@ class AgentUpsert(AgentCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
         tools = (
-            [AgentToolUpsert._load(item) for item in resource.get("tools", [])]
+            [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
             else None
         )

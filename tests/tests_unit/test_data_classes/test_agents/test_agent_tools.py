@@ -1,115 +1,112 @@
 from __future__ import annotations
 
+import pytest
+
 from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
-    AgentToolList,
-    AgentToolUpsert,
-    AgentToolUpsertList,
+    AskDocumentAgentTool,
+    QueryKnowledgeGraphAgentTool,
+    QueryKnowledgeGraphAgentToolConfiguration,
+    QueryTimeSeriesDatapointsAgentTool,
+    SummarizeDocumentAgentTool,
+    UnknownAgentTool,
 )
 
+qkgExample = {
+    "name": "qkgExample",
+    "type": "queryKnowledgeGraph",
+    "description": "Query the knowledge graph",
+    "configuration": {
+        "dataModels": [
+            {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
+        ],
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+    },
+    "created_time": 1718630400,
+    "last_updated_time": 1718630400,
+    "owner_id": "123abc!!",
+}
 
-class TestAgentToolUpsert:
-    def test_load_dump(self) -> None:
-        data = {
-            "name": "test_tool",
-            "type": "test_type",
-            "description": "A test tool",
-            "configuration": {"key": "value"},
-        }
+askDocumentExample = {
+    "name": "askDocumentExample",
+    "type": "askDocument",
+    "description": "Ask a question about the document",
+    "created_time": 1718630400,
+    "last_updated_time": 1718630400,
+    "owner_id": "123abc!!",
+}
 
-        tool = AgentToolUpsert._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "test_type"
-        assert tool.description == "A test tool"
-        assert tool.configuration == {"key": "value"}
+summarizeDocumentExample = {
+    "name": "summarizeDocumentExample",
+    "type": "summarizeDocument",
+    "description": "Summarize the document",
+    "created_time": 1718630400,
+    "last_updated_time": 1718630400,
+    "owner_id": "123abc!!",
+}
 
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
+queryTimeSeriesDatapointsExample = {
+    "name": "queryTimeSeriesDatapointsExample",
+    "type": "queryTimeSeriesDatapoints",
+    "description": "Query the time series datapoints",
+    "created_time": 1718630400,
+    "last_updated_time": 1718630400,
+    "owner_id": "123abc!!",
+}
 
-    def test_as_write(self) -> None:
-        tool_upsert = AgentToolUpsert(
-            name="test_tool",
-            type="test_type",
-            description="A test tool",
-        )
-        assert tool_upsert is tool_upsert.as_write()
-
-
-class TestAgentTool:
-    def test_load_dump(self) -> None:
-        # This is a valid configuration for the queryKnowledgeGraph tool
-        query_knowledge_graph_configuration = {
-            "dataModels": [
-                {
-                    "space": "cdf_cdm",
-                    "externalId": "CogniteCore",
-                    "version": "v1",
-                    "viewExternalIds": ["CogniteAsset"],
-                }
-            ],
-            "instanceSpaces": {"type": "all"},
-        }
-
-        # This is a valid data for the queryKnowledgeGraph tool
-        data = {
-            "name": "test_tool",
-            "type": "queryKnowledgeGraph",
-            "description": "A test tool",
-            "configuration": query_knowledge_graph_configuration,
-        }
-
-        tool = AgentTool._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "queryKnowledgeGraph"
-        assert tool.description == "A test tool"
-        assert tool.configuration == query_knowledge_graph_configuration
-
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
-
-    def test_load_dump_no_configuration(self) -> None:
-        data = {
-            "name": "test_tool",
-            "type": "test_type",
-            "description": "A test tool",
-        }
-
-        tool = AgentTool._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "test_type"
-        assert tool.description == "A test tool"
-        assert tool.configuration is None
-
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
-
-    def test_as_write(self) -> None:
-        tool = AgentTool(
-            name="test_tool",
-            type="test_type",
-            description="A test tool",
-            configuration={"key": "value"},
-        )
-
-        write_tool = tool.as_write()
-        assert isinstance(write_tool, AgentToolUpsert)
-        assert write_tool.name == tool.name
-        assert write_tool.type == tool.type
-        assert write_tool.description == tool.description
-        assert write_tool.configuration == tool.configuration
+unknownExample = {
+    "name": "unknownExample",
+    "type": "yolo",  # This is not a known tool type
+    "description": "An unknown tool",
+    "configuration": {"key": "value"},
+    "created_time": 1718630400,
+    "last_updated_time": 1718630400,
+    "owner_id": "123abc!!",
+}
 
 
-class TestAgentToolList:
-    def test_as_write(self) -> None:
-        tools = [
-            AgentTool(name="tool1", type="type1", description="desc1"),
-            AgentTool(name="tool2", type="type2", description="desc2"),
-        ]
-        tool_list = AgentToolList(tools)
+class TestAgentToolLoad:
+    @pytest.mark.parametrize(
+        "tool_data,expected_type",
+        [
+            (qkgExample, QueryKnowledgeGraphAgentTool),
+            (askDocumentExample, AskDocumentAgentTool),
+            (summarizeDocumentExample, SummarizeDocumentAgentTool),
+            (queryTimeSeriesDatapointsExample, QueryTimeSeriesDatapointsAgentTool),
+            (unknownExample, UnknownAgentTool),
+        ],
+        ids=["queryKnowledgeGraph", "askDocument", "summarizeDocument", "queryTimeSeriesDatapoints", "somethingElse"],
+    )
+    def test_agent_tool_load_returns_correct_subtype(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
+        """Test that AgentTool._load() returns the correct subtype based on the tool type."""
+        loaded_tool = AgentTool._load(tool_data)
 
-        write_list = tool_list.as_write()
-        assert isinstance(write_list, AgentToolUpsertList)
-        assert len(write_list) == 2
-        assert all(isinstance(tool, AgentToolUpsert) for tool in write_list)
-        assert write_list[0].name == "tool1"
-        assert write_list[1].name == "tool2"
+        assert isinstance(loaded_tool, expected_type)
+        assert loaded_tool.name == tool_data["name"]
+        assert loaded_tool.type == tool_data["type"]
+        assert loaded_tool.description == tool_data["description"]
+        assert loaded_tool.created_time == tool_data["created_time"]
+        assert loaded_tool.last_updated_time == tool_data["last_updated_time"]
+        assert loaded_tool.owner_id == tool_data["owner_id"]
+
+        # Handle configuration comparison based on tool type
+        if "configuration" in tool_data:
+            if isinstance(loaded_tool, QueryKnowledgeGraphAgentTool):
+                # For QueryKnowledgeGraph, we expect a structured configuration object
+                assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
+                # Compare by serializing the structured object back to dict
+                assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
+            else:
+                # For other tools (like UnknownAgentTool), configuration should be a dict
+                assert loaded_tool.configuration == tool_data["configuration"]
+        else:
+            # Tools without configuration should have None
+            assert loaded_tool.configuration is None
+
+    def test_unknown_agent_tool_preserves_custom_type(self) -> None:
+        """Test that UnknownAgentTool preserves the original type string."""
+        loaded_tool = AgentTool._load(unknownExample)
+
+        assert isinstance(loaded_tool, UnknownAgentTool)
+        assert loaded_tool.type == "yolo"
+        assert loaded_tool.configuration == unknownExample["configuration"]
