@@ -125,10 +125,10 @@ class AgentTool(AgentToolCore):
         tool_class = _AGENT_TOOL_CLS_BY_TYPE.get(tool_type, UnknownAgentTool)
 
         # Let each tool class handle its own loading logic
-        return tool_class._load(resource, cognite_client)
+        return tool_class._load_tool(resource, cognite_client)
 
     @classmethod
-    def _load_instance(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "AgentTool":
+    def _load_tool(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "AgentTool":
         """Default instance loading method for simple tool types."""
         return cls(
             name=resource["name"],
@@ -253,7 +253,7 @@ class SummarizeDocumentAgentTool(AgentTool):
         )
 
     @classmethod
-    def _load(
+    def _load_tool(
         cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None
     ) -> "SummarizeDocumentAgentTool":
         return cls(
@@ -308,7 +308,9 @@ class AskDocumentAgentTool(AgentTool):
         )
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "AskDocumentAgentTool":
+    def _load_tool(
+        cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None
+    ) -> "AskDocumentAgentTool":
         return cls(
             name=resource["name"],
             description=resource["description"],
@@ -356,7 +358,7 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
         self.configuration = configuration
 
     @classmethod
-    def _load(
+    def _load_tool(
         cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None
     ) -> "QueryKnowledgeGraphAgentTool":
         # Parse the configuration specifically for this tool type
@@ -438,7 +440,7 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
         )
 
     @classmethod
-    def _load(
+    def _load_tool(
         cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None
     ) -> "QueryTimeSeriesDatapointsAgentTool":
         return cls(
@@ -471,7 +473,7 @@ class UnknownAgentTool(AgentTool):
     # Note: UnknownAgentTool still requires type parameter since it can be anything
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "UnknownAgentTool":
+    def _load_tool(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> "UnknownAgentTool":
         # Unknown tools need to handle configuration from the resource
         return cls(
             name=resource["name"],
