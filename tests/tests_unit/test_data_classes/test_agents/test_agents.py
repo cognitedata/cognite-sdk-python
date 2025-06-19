@@ -135,6 +135,17 @@ class TestAgent:
         agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
         assert agent.tools == []
 
+    def test_agent_with_empty_tools_list(self) -> None:
+        """Test agent creation with empty tools list."""
+        agent = Agent(external_id="test", name="test", tools=[])
+        assert agent.tools == []
+        assert not agent.tools  # Should be falsy
+
+    def test_agent_with_none_tools(self) -> None:
+        """Test agent creation with None tools."""
+        agent = Agent(external_id="test", name="test", tools=None)
+        assert agent.tools is None
+
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type
         with pytest.raises(TypeError):
@@ -180,3 +191,15 @@ class TestAgentList:
         assert all(isinstance(agent, AgentUpsert) for agent in write_list)
         assert write_list[0].external_id == "agent1"
         assert write_list[1].external_id == "agent2"
+
+
+def test_load_with_missing_required_fields():
+    """Test that loading fails gracefully with missing required fields."""
+    with pytest.raises(KeyError):
+        AgentTool._load({"type": "askDocument"})  # Missing name and description
+
+
+def test_load_with_invalid_tool_type():
+    """Test handling of completely invalid tool data."""
+    with pytest.raises(KeyError):
+        AgentTool._load({"name": "test", "description": "test"})  # Missing type
