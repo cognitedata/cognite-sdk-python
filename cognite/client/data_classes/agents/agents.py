@@ -13,7 +13,12 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolUpsert
+from cognite.client.data_classes.agents.agent_tools import (
+    AgentTool,
+    AgentToolList,
+    AgentToolUpsert,
+    AgentToolUpsertList,
+)
 
 
 @dataclass
@@ -35,7 +40,6 @@ class AgentCore(WriteableCogniteResource["AgentUpsert"]):
     model: str | None = None
 
 
-@dataclass
 class AgentUpsert(AgentCore):
     """Representation of an AI agent.
     This is the write format of an agent.
@@ -52,12 +56,19 @@ class AgentUpsert(AgentCore):
 
     tools: Sequence[AgentToolUpsert] | None = None
 
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            if not isinstance(self.tools, Sequence) or not all(
-                isinstance(tool, AgentToolUpsert) for tool in self.tools
-            ):
-                raise TypeError("Tools must be a sequence of AgentToolUpsert instances.")
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        tools: Sequence[AgentToolUpsert] | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+        )
+        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -87,7 +98,6 @@ class AgentUpsert(AgentCore):
         )
 
 
-@dataclass
 class Agent(AgentCore):
     """Representation of an AI agent.
     This is the read format of an agent.
@@ -109,16 +119,31 @@ class Agent(AgentCore):
     last_updated_time: int | None = None
     owner_id: str | None = None
 
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        tools: Sequence[AgentTool] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        owner_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+        )
+        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.owner_id = owner_id
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
-
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentTool) for tool in self.tools):
-                raise TypeError("Tools must be a sequence of AgentTool instances.")
 
     def as_write(self) -> AgentUpsert:
         """Returns this Agent in its writeable format"""
