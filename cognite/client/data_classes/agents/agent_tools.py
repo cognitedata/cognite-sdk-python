@@ -26,7 +26,7 @@ class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type."""
         result = super().dump(camel_case=camel_case)
-        # Only add type if this class has _type defined
+
         if hasattr(self.__class__, "_type"):
             result["type"] = self._type
         return result
@@ -93,18 +93,15 @@ class AgentTool(AgentToolCore):
         return result
 
     def as_write(self) -> AgentToolUpsert:
-        # Handle configuration dynamically - only if the tool has it
         config = getattr(self, "configuration", None)
         config_for_upsert = config.dump() if config is not None and hasattr(config, "dump") else config
 
-        # Create base upsert
         upsert = AgentToolUpsert(
             name=self.name,
             type=self.type,
             description=self.description,
         )
 
-        # Add configuration if it exists
         if config is not None:
             setattr(upsert, "configuration", config_for_upsert)
 
@@ -114,10 +111,9 @@ class AgentTool(AgentToolCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentTool:
         tool_type = resource.get("type", "")
 
-        # Get the appropriate class based on the tool type
+        # Get the appropriate class based on the tool.type
         tool_class = _AGENT_TOOL_CLS_BY_TYPE.get(tool_type, UnknownAgentTool)
 
-        # Let each tool class handle its own loading logic
         return tool_class._load_tool(resource, cognite_client)
 
     @classmethod
@@ -416,11 +412,9 @@ class UnknownAgentTool(AgentTool):
 
     type: str
     configuration: dict[str, Any] | None = None  # Unknown tools can have any dict config
-    # Note: UnknownAgentTool still requires type parameter, but it can be anything
 
     @classmethod
     def _load_tool(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAgentTool:
-        # Unknown tools need to handle configuration from the resource
         return cls(
             name=resource["name"],
             type=resource["type"],
@@ -435,7 +429,6 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
 
     type: str
     configuration: dict[str, Any] | None = None
-    # Note: UnknownAgentToolUpsert still requires type parameter since it can be anything
 
 
 class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert]):
