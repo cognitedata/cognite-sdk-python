@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -33,79 +33,40 @@ class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
 
 
 @dataclass
-class AgentToolUpsert(AgentToolCore):
+class AgentToolUpsert(AgentToolCore, ABC):
     """Representation of an AI Agent Tool in CDF.
     This is the write format of an agent tool.
     """
 
-    type: str = ""  # Instance field for UnknownAgentToolUpsert - will be overridden by concrete classes
-
-    def __init__(self, name: str, description: str, type: str = ""):
-        self.name = name
-        self.description = description
-        # Use ClassVar if available, otherwise use passed type
-        self.type = getattr(self.__class__, "_type", type)
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type."""
         result = super().dump(camel_case=camel_case)
-        # Override with instance type to handle UnknownAgentToolUpsert
-        result["type"] = self.type
+        # Use the _type from the class if available, otherwise use instance type
+        result["type"] = getattr(self.__class__, "_type", getattr(self, "type", ""))
         return result
 
     def as_write(self) -> AgentToolUpsert:
         return self
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolUpsert:
-        return cls(
-            name=resource["name"],
-            type=resource["type"],
-            description=resource["description"],
-        )
-
 
 @dataclass
-class AgentTool(AgentToolCore):
+class AgentTool(AgentToolCore, ABC):
     """
     Representation of an AI Agent Tool in CDF.
     This is the read format of an agent tool.
     """
 
-    type: str = ""  # Instance field for UnknownAgentTool - will be overridden by concrete classes
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        type: str = "",
-    ):
-        self.name = name
-        self.description = description
-        # Use ClassVar if available, otherwise use passed type
-        self.type = getattr(self.__class__, "_type", type)
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type."""
         result = super().dump(camel_case=camel_case)
-        # Override with instance type to handle UnknownAgentTool
-        result["type"] = self.type
+        # Use the _type from the class if available, otherwise use instance type
+        result["type"] = getattr(self.__class__, "_type", getattr(self, "type", ""))
         return result
 
+    @abstractmethod
     def as_write(self) -> AgentToolUpsert:
-        config = getattr(self, "configuration", None)
-        config_for_upsert = config.dump() if config is not None and hasattr(config, "dump") else config
-
-        upsert = AgentToolUpsert(
-            name=self.name,
-            type=self.type,
-            description=self.description,
-        )
-
-        if config is not None:
-            setattr(upsert, "configuration", config_for_upsert)
-
-        return upsert
+        """Convert this tool to its upsert representation."""
+        pass
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentTool:
@@ -121,7 +82,6 @@ class AgentTool(AgentToolCore):
         """Default instance loading method for simple tool types."""
         return cls(
             name=resource["name"],
-            type=resource["type"],
             description=resource["description"],
         )
 
@@ -214,17 +174,6 @@ class SummarizeDocumentAgentTool(AgentTool):
 
     _type: ClassVar[str] = "summarizeDocument"
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-    ):
-        super().__init__(
-            name=name,
-            description=description,
-        )
-        self.configuration = None
-
     def as_write(self) -> SummarizeDocumentAgentToolUpsert:
         return SummarizeDocumentAgentToolUpsert(
             name=self.name,
@@ -247,27 +196,12 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
 
     _type: ClassVar[str] = "summarizeDocument"
 
-    def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description)
-        self.configuration = None
-
 
 @dataclass
 class AskDocumentAgentTool(AgentTool):
     """Agent tool for asking questions about documents."""
 
     _type: ClassVar[str] = "askDocument"
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-    ):
-        super().__init__(
-            name=name,
-            description=description,
-        )
-        self.configuration = None
 
     def as_write(self) -> AskDocumentAgentToolUpsert:
         return AskDocumentAgentToolUpsert(
@@ -289,10 +223,6 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
 
     _type: ClassVar[str] = "askDocument"
 
-    def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description)
-        self.configuration = None
-
 
 @dataclass
 class QueryKnowledgeGraphAgentTool(AgentTool):
@@ -300,18 +230,6 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
 
     _type: ClassVar[str] = "queryKnowledgeGraph"
     configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None,
-    ):
-        super().__init__(
-            name=name,
-            description=description,
-        )
-        self.configuration = configuration
 
     @classmethod
     def _load_tool(
@@ -349,12 +267,6 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
     _type: ClassVar[str] = "queryKnowledgeGraph"
     configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None
 
-    def __init__(
-        self, name: str, description: str, configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None
-    ):
-        super().__init__(name=name, description=description)
-        self.configuration = configuration
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.configuration:
@@ -367,17 +279,6 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
     """Agent tool for querying time series datapoints."""
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-    ):
-        super().__init__(
-            name=name,
-            description=description,
-        )
-        self.configuration = None
 
     def as_write(self) -> QueryTimeSeriesDatapointsAgentToolUpsert:
         return QueryTimeSeriesDatapointsAgentToolUpsert(
@@ -401,17 +302,21 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
 
-    def __init__(self, name: str, description: str):
-        super().__init__(name=name, description=description)
-        self.configuration = None
-
 
 @dataclass
 class UnknownAgentTool(AgentTool):
     """Agent tool for unknown/unrecognized tool types."""
 
     type: str
-    configuration: dict[str, Any] | None = None  # Unknown tools can have any dict config
+    configuration: dict[str, Any] | None = None
+
+    def as_write(self) -> UnknownAgentToolUpsert:
+        return UnknownAgentToolUpsert(
+            name=self.name,
+            type=self.type,
+            description=self.description,
+            configuration=self.configuration,
+        )
 
     @classmethod
     def _load_tool(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAgentTool:
@@ -447,5 +352,7 @@ class AgentToolList(
 
 # Build the mapping AFTER all classes are defined
 _AGENT_TOOL_CLS_BY_TYPE: dict[str, type[AgentTool]] = {
-    subclass._type: subclass for subclass in AgentTool.__subclasses__() if hasattr(subclass, "_type")
+    subclass._type: cast(type[AgentTool], subclass)
+    for subclass in AgentTool.__subclasses__()
+    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }

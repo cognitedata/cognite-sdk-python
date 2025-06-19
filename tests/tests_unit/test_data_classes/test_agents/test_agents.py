@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolUpsert
+from cognite.client.data_classes.agents.agent_tools import (
+    AgentTool,
+    AgentToolUpsert,
+    AskDocumentAgentTool,
+    SummarizeDocumentAgentTool,
+)
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
 
 
@@ -117,8 +122,8 @@ class TestAgent:
 
         # Test with list of tools
         tools_list = [
-            AgentTool(name="test_tool1", type="test_type", description="A test tool"),
-            AgentTool(name="test_tool2", type="test_type", description="Another test tool"),
+            SummarizeDocumentAgentTool(name="test_tool1", description="A test tool"),
+            AskDocumentAgentTool(name="test_tool2", description="Another test tool"),
         ]
         agent = Agent(external_id="test_agent", name="Test Agent", tools=tools_list)
         assert len(agent.tools) == 2
@@ -146,7 +151,7 @@ class TestAgent:
             description="A test agent",
             instructions="Test instructions",
             model="gpt-4",
-            tools=[AgentTool(name="test_tool", type="test_type", description="A test tool")],
+            tools=[SummarizeDocumentAgentTool(name="test_tool", description="A test tool")],
         )
 
         write_agent = agent.as_write()

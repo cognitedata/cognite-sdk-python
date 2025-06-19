@@ -68,8 +68,12 @@ class TestAgentToolLoad:
 
         assert isinstance(loaded_tool, expected_type)
         assert loaded_tool.name == tool_data["name"]
-        assert loaded_tool.type == tool_data["type"]
         assert loaded_tool.description == tool_data["description"]
+
+        if isinstance(loaded_tool, UnknownAgentTool):
+            assert loaded_tool.type == tool_data["type"]
+        else:
+            assert loaded_tool._type == expected_type._type
 
         # Handle configuration comparison based on tool type
         if "configuration" in tool_data:
