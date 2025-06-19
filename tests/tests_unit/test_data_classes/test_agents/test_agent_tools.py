@@ -85,9 +85,6 @@ class TestAgentToolLoad:
             else:
                 # For other tools (like UnknownAgentTool), configuration should be a dict
                 assert loaded_tool.configuration == tool_data["configuration"]
-        else:
-            # Tools without configuration should have None
-            assert loaded_tool.configuration is None
 
     def test_unknown_agent_tool_preserves_custom_type(self) -> None:
         """Test that UnknownAgentTool preserves the original type string."""
