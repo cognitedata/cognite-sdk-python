@@ -106,7 +106,7 @@ class TestAgent:
         assert agent.description is None
         assert agent.instructions is None
         assert agent.model is None
-        assert agent.tools is None  # TODO: Check if this should be an empty list
+        assert agent.tools is None
 
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
