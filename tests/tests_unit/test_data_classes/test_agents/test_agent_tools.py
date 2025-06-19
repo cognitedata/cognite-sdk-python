@@ -22,36 +22,24 @@ qkgExample = {
         ],
         "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
     },
-    "created_time": 1718630400,
-    "last_updated_time": 1718630400,
-    "owner_id": "123abc!!",
 }
 
 askDocumentExample = {
     "name": "askDocumentExample",
     "type": "askDocument",
     "description": "Ask a question about the document",
-    "created_time": 1718630400,
-    "last_updated_time": 1718630400,
-    "owner_id": "123abc!!",
 }
 
 summarizeDocumentExample = {
     "name": "summarizeDocumentExample",
     "type": "summarizeDocument",
     "description": "Summarize the document",
-    "created_time": 1718630400,
-    "last_updated_time": 1718630400,
-    "owner_id": "123abc!!",
 }
 
 queryTimeSeriesDatapointsExample = {
     "name": "queryTimeSeriesDatapointsExample",
     "type": "queryTimeSeriesDatapoints",
     "description": "Query the time series datapoints",
-    "created_time": 1718630400,
-    "last_updated_time": 1718630400,
-    "owner_id": "123abc!!",
 }
 
 unknownExample = {
@@ -59,9 +47,6 @@ unknownExample = {
     "type": "yolo",  # This is not a known tool type
     "description": "An unknown tool",
     "configuration": {"key": "value"},
-    "created_time": 1718630400,
-    "last_updated_time": 1718630400,
-    "owner_id": "123abc!!",
 }
 
 
@@ -85,9 +70,6 @@ class TestAgentToolLoad:
         assert loaded_tool.name == tool_data["name"]
         assert loaded_tool.type == tool_data["type"]
         assert loaded_tool.description == tool_data["description"]
-        assert loaded_tool.created_time == tool_data["created_time"]
-        assert loaded_tool.last_updated_time == tool_data["last_updated_time"]
-        assert loaded_tool.owner_id == tool_data["owner_id"]
 
         # Handle configuration comparison based on tool type
         if "configuration" in tool_data:

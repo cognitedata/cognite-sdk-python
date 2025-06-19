@@ -66,7 +66,6 @@ class TestAgentUpsert:
         assert agent.tools[0].name == "test_tool"
 
         dumped = agent.dump(camel_case=True)
-        # Note: createdTime, lastUpdatedTime, ownerId are not part of AgentUpsert
         assert agent_upsert_dump == dumped
 
     def test_as_write(self) -> None:
