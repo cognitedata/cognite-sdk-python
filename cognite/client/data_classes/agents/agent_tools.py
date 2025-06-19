@@ -73,26 +73,17 @@ class AgentTool(AgentToolCore):
     """
 
     type: str = ""  # Instance field for UnknownAgentTool - will be overridden by concrete classes
-    created_time: int | None = None
-    last_updated_time: int | None = None
-    owner_id: str | None = None
 
     def __init__(
         self,
         name: str,
         description: str,
         type: str = "",
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
     ):
         self.name = name
         self.description = description
         # Use ClassVar if available, otherwise use passed type
         self.type = getattr(self.__class__, "_type", type)
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
-        self.owner_id = owner_id
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type."""
@@ -136,9 +127,6 @@ class AgentTool(AgentToolCore):
             name=resource["name"],
             type=resource["type"],
             description=resource["description"],
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
 
@@ -234,16 +222,10 @@ class SummarizeDocumentAgentTool(AgentTool):
         self,
         name: str,
         description: str,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
     ):
         super().__init__(
             name=name,
             description=description,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            owner_id=owner_id,
         )
         self.configuration = None
 
@@ -260,9 +242,6 @@ class SummarizeDocumentAgentTool(AgentTool):
         return cls(
             name=resource["name"],
             description=resource["description"],
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
 
@@ -287,16 +266,10 @@ class AskDocumentAgentTool(AgentTool):
         self,
         name: str,
         description: str,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
     ):
         super().__init__(
             name=name,
             description=description,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            owner_id=owner_id,
         )
         self.configuration = None
 
@@ -311,9 +284,6 @@ class AskDocumentAgentTool(AgentTool):
         return cls(
             name=resource["name"],
             description=resource["description"],
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
 
@@ -340,16 +310,10 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
         name: str,
         description: str,
         configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
     ):
         super().__init__(
             name=name,
             description=description,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            owner_id=owner_id,
         )
         self.configuration = configuration
 
@@ -366,9 +330,6 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
             name=resource["name"],
             description=resource["description"],
             configuration=configuration,
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
     def as_write(self) -> QueryKnowledgeGraphAgentToolUpsert:
@@ -415,16 +376,10 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
         self,
         name: str,
         description: str,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
     ):
         super().__init__(
             name=name,
             description=description,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            owner_id=owner_id,
         )
         self.configuration = None
 
@@ -441,9 +396,6 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
         return cls(
             name=resource["name"],
             description=resource["description"],
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
 
@@ -464,7 +416,7 @@ class UnknownAgentTool(AgentTool):
 
     type: str
     configuration: dict[str, Any] | None = None  # Unknown tools can have any dict config
-    # Note: UnknownAgentTool still requires type parameter since it can be anything
+    # Note: UnknownAgentTool still requires type parameter, but it can be anything
 
     @classmethod
     def _load_tool(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAgentTool:
@@ -474,9 +426,6 @@ class UnknownAgentTool(AgentTool):
             type=resource["type"],
             description=resource["description"],
             configuration=resource.get("configuration"),
-            created_time=resource.get("created_time"),
-            last_updated_time=resource.get("last_updated_time"),
-            owner_id=resource.get("owner_id"),
         )
 
 
