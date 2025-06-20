@@ -21,6 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.76.2] - 2025-07-16
+### Fixed
+- Added missing parameter `nonce` to the `client.functions.schedules.create` method to allow passing 
+  a custom nonce instead of letting the SDK generate it from your current credentials or the passed in client
+  ID and secret.
+
 ## [7.76.1] - 2025-07-12
 ### Added
 - [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
