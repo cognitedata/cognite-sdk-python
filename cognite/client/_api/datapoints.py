@@ -2286,10 +2286,12 @@ class DatapointsAPI(APIClient):
             if external_id_headers:
                 dps.append({"datapoints": datapoints, "externalId": column_id})
             elif instance_id_headers:
-                if isinstance(column_id, NodeId):
-                    dps.append({"datapoints": datapoints, "instanceId": column_id})
-                elif isinstance(column_id, tuple):
+                if isinstance(column_id, NodeId | tuple):
                     dps.append({"datapoints": datapoints, "instanceId": NodeId.load(column_id)})
+                else:
+                    raise ValueError(
+                        f"Could not find instance Ids in the coulnm header. InstanceId are given as NodeId or tuple. Got {type(column_id)}"
+                    )
             else:
                 dps.append({"datapoints": datapoints, "id": int(column_id)})
         self.insert_multiple(dps)
