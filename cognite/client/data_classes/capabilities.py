@@ -491,10 +491,10 @@ class SpaceIDScope(Capability.Scope):
 @dataclass(frozen=True)
 class AppConfigScope(Capability.Scope):
     _scope_name = "appScope"
-    app_config_ids: list[Literal["SEARCH"]]
+    apps: list[Literal["SEARCH"]]
 
     def as_tuples(self) -> set[tuple[str, str]]:
-        return {(self._scope_name, i) for i in self.app_config_ids}
+        return {(self._scope_name, i) for i in self.apps}
 
 
 @dataclass(frozen=True)
