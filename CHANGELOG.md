@@ -21,6 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.75.3] - 2025-06-20
+### Fixed
+- Added missing parameter `nonce` to the `client.functions.schedules.create` method to allow passing 
+  a custom nonce instead of letting the SDK generate it from your current credentials or the passed in client
+  ID and secret.
+
 ## [7.75.2] - 2025-06-05
 ### Fixed
 - The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
