@@ -56,6 +56,13 @@ class AgentToolUpsert(AgentToolCore, ABC):
     def as_write(self) -> AgentToolUpsert:
         return self
 
+    @classmethod
+    def _load_tool(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
+
 
 @dataclass
 class AgentTool(AgentToolCore, ABC):
