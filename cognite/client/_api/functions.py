@@ -1344,7 +1344,7 @@ class FunctionSchedulesAPI(APIClient):
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_external_id is not None:
             warnings.warn(
-                "function_external_id is deprecated is automatically converted to function_id. ",
+                "function_external_id is not supported. Replacing it with function_id instead.",
                 UserWarning,
                 stacklevel=2,
             )
