@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import hashlib
 import random
 import socket
 import time
@@ -9,11 +10,17 @@ from http import cookiejar
 from typing import Any, Literal
 
 import requests
-import requests.adapters
 import urllib3
+from requests.adapters import HTTPAdapter
+from urllib3 import exceptions
+from urllib3.connectionpool import HTTPSConnection
 
 from cognite.client.config import global_config
-from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
+from cognite.client.exceptions import (
+    CogniteConnectionError,
+    CogniteConnectionRefused,
+    CogniteReadTimeout,
+)
 from cognite.client.utils.useful_types import SupportsRead
 
 
@@ -30,11 +37,18 @@ class BlockAll(cookiejar.CookiePolicy):
 def get_global_requests_session() -> requests.Session:
     session = requests.Session()
     session.cookies.set_policy(BlockAll())
-    adapter = requests.adapters.HTTPAdapter(
-        pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+
+    http_adapter = HTTPAdapter(
+        pool_maxsize=global_config.max_connection_pool_size,
+        max_retries=urllib3.Retry(False),
     )
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
+    https_adapter = CogniteHTTPSAdapter(
+        pool_maxsize=global_config.max_connection_pool_size,
+        max_retries=urllib3.Retry(False),
+    )
+    session.mount("http://", http_adapter)
+    session.mount("https://", https_adapter)
+
     if global_config.disable_ssl:
         urllib3.disable_warnings()
         session.verify = False
@@ -195,15 +209,20 @@ class HTTPClient:
             return res
         except Exception as e:
             if self._any_exception_in_context_isinstance(
-                e, (socket.timeout, urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout)
+                e,
+                (
+                    socket.timeout,
+                    exceptions.ReadTimeoutError,
+                    requests.exceptions.ReadTimeout,
+                ),
             ):
                 raise CogniteReadTimeout from e
             if self._any_exception_in_context_isinstance(
                 e,
                 (
                     ConnectionError,
-                    urllib3.exceptions.ConnectionError,
-                    urllib3.exceptions.ConnectTimeoutError,
+                    exceptions.ConnectionError,
+                    exceptions.ConnectTimeoutError,
                     requests.exceptions.ConnectionError,
                 ),
             ):
@@ -214,7 +233,9 @@ class HTTPClient:
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, exc_types: tuple[type[BaseException], ...] | type[BaseException]
+        cls,
+        exc: BaseException,
+        exc_types: tuple[type[BaseException], ...] | type[BaseException],
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.
@@ -224,3 +245,53 @@ class HTTPClient:
         if exc.__context__ is None:
             return False
         return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)
+
+
+class CogniteHTTPSAdapter(HTTPAdapter):
+    """
+    A custom Cognite HTTPS Adapter for Python Requests that verifies multiple certificate fingerprints
+    Example usage:
+    .. code-block:: python
+        import requests
+        from requests_toolbelt.adapters.fingerprint import MultiFingerprintAdapter
+        fingerprints = ['...', '...']
+        s = requests.Session()
+        s.mount(
+            'https://',
+            CogniteHTTPSAdapter(fingerprints)
+        )
+    """
+
+    def __init__(
+        self,
+        pool_maxsize: int,
+        max_retries: urllib3.Retry | int | None = None,
+        fingerprints: set[str] | None = None,
+    ) -> None:
+        self.fingerprints = fingerprints
+
+        super().__init__(
+            pool_maxsize=pool_maxsize,
+            max_retries=max_retries,
+        )
+
+    def cert_verify(
+        self,
+        conn: HTTPSConnection,
+        url: str,
+        verify: bool | str,
+        cert: tuple[str, bytes] | str,
+    ) -> None:
+        # First call the base class method to perform standard verification
+        super().cert_verify(conn, url, verify, cert)
+
+        if self.fingerprints:
+            self._normalized_fingerprints = {fp.replace(":", "").lower() for fp in self.fingerprints}
+
+            # Then we fetch the certificate and check its fingerprint
+            der_cert = conn.sock.getpeercert(True)
+            actual_fingerprint = hashlib.sha256(der_cert).hexdigest()
+            if actual_fingerprint not in self._normalized_fingerprints:
+                raise requests.exceptions.SSLError(
+                    f"Certificate fingerprint mismatch. Expected one of {self._normalized_fingerprints}."
+                )

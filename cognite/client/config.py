@@ -32,6 +32,9 @@ class GlobalConfig:
         max_workers (int | None): Max number of workers to spawn when parallelizing API calls. Defaults to 5.
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
+        allowed_fingerprints (Set[str] | None): A set of allowed SSL certificate fingerprints. If set, the SDK Will
+            validate the SSL certificate fingerprints against this set. If the fingerprint is not in the set, a
+            an exception will be raised. This is useful for ensuring that the SDK only connects to trusted CDF clusters.
     """
 
     def __new__(cls) -> GlobalConfig:
@@ -58,6 +61,7 @@ class GlobalConfig:
         self.proxies: dict[str, str] | None = {}
         self.max_workers: int = 5
         self.silence_feature_preview_warnings: bool = False
+        self.allowed_fingerprints: set[str] | None = None
 
     def apply_settings(self, settings: dict[str, Any] | str) -> None:
         """Apply settings to the global configuration object from a YAML/JSON string or dict.
@@ -146,7 +150,9 @@ class ClientConfig:
         self._validate_config()
 
         if not global_config.disable_pypi_version_check:
-            from cognite.client.utils._version_checker import check_client_is_running_latest_version
+            from cognite.client.utils._version_checker import (
+                check_client_is_running_latest_version,
+            )
 
             check_client_is_running_latest_version()
 
@@ -170,7 +176,10 @@ class ClientConfig:
 
     @debug.setter
     def debug(self, value: bool) -> None:
-        from cognite.client.utils._logging import _configure_logger_for_debug_mode, _disable_debug_logging
+        from cognite.client.utils._logging import (
+            _configure_logger_for_debug_mode,
+            _disable_debug_logging,
+        )
 
         if value:
             _configure_logger_for_debug_mode()
@@ -183,7 +192,10 @@ class ClientConfig:
         if not self.base_url:
             raise ValueError(f"Invalid value for ClientConfig.base_url: <{self.base_url}>")
         elif self.cdf_cluster is None:
-            warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
+            warnings.warn(
+                f"Given base URL may be invalid, please double-check: {self.base_url!r}",
+                UserWarning,
+            )
 
     def __str__(self) -> str:
         return pprint.pformat({"max_workers": self.max_workers, **self.__dict__}, indent=4)
@@ -193,7 +205,11 @@ class ClientConfig:
 
     @classmethod
     def default(
-        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: str | None = None
+        cls,
+        project: str,
+        cdf_cluster: str,
+        credentials: CredentialProvider,
+        client_name: str | None = None,
     ) -> ClientConfig:
         """Create a default client config object.
 
@@ -269,7 +285,8 @@ class ClientConfig:
     def cdf_cluster(self) -> str | None:
         # A best effort attempt to extract the cluster from the base url
         if match := re.match(
-            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url
+            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)",
+            self.base_url,
         ):
             return match.group(2)
         return None
