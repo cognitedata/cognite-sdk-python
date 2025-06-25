@@ -1,110 +1,165 @@
 from __future__ import annotations
 
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply, AgentToolApplyList, AgentToolList
+import pytest
+
+from cognite.client.data_classes.agents.agent_tools import (
+    AgentTool,
+    AskDocumentAgentTool,
+    QueryKnowledgeGraphAgentTool,
+    QueryKnowledgeGraphAgentToolConfiguration,
+    QueryTimeSeriesDatapointsAgentTool,
+    SummarizeDocumentAgentTool,
+    UnknownAgentTool,
+)
+
+qkg_example = {
+    "name": "qkgExample",
+    "type": "queryKnowledgeGraph",
+    "description": "Query the knowledge graph",
+    "configuration": {
+        "dataModels": [
+            {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
+        ],
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+    },
+}
+
+ask_document_example = {
+    "name": "askDocumentExample",
+    "type": "askDocument",
+    "description": "Ask a question about the document",
+}
+
+summarize_document_example = {
+    "name": "summarizeDocumentExample",
+    "type": "summarizeDocument",
+    "description": "Summarize the document",
+}
+
+query_time_series_datapoints_example = {
+    "name": "queryTimeSeriesDatapointsExample",
+    "type": "queryTimeSeriesDatapoints",
+    "description": "Query the time series datapoints",
+}
+
+unknown_example = {
+    "name": "unknownExample",
+    "type": "yolo",  # This is not a known tool type
+    "description": "An unknown tool",
+    "configuration": {"key": "value"},
+}
 
 
-class TestAgentToolApply:
-    def test_load_dump(self) -> None:
-        data = {
-            "name": "test_tool",
-            "type": "test_type",
-            "description": "A test tool",
-            "configuration": {"key": "value"},
-        }
+class TestAgentToolLoad:
+    @pytest.mark.parametrize(
+        "tool_data,expected_type",
+        [
+            (qkg_example, QueryKnowledgeGraphAgentTool),
+            (ask_document_example, AskDocumentAgentTool),
+            (summarize_document_example, SummarizeDocumentAgentTool),
+            (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (unknown_example, UnknownAgentTool),
+        ],
+        ids=["queryKnowledgeGraph", "askDocument", "summarizeDocument", "queryTimeSeriesDatapoints", "somethingElse"],
+    )
+    def test_agent_tool_load_returns_correct_subtype(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
+        """Test that AgentTool._load() returns the correct subtype based on the tool type."""
+        loaded_tool = AgentTool._load(tool_data)
 
-        tool = AgentToolApply._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "test_type"
-        assert tool.description == "A test tool"
-        assert tool.configuration == {"key": "value"}
+        assert isinstance(loaded_tool, expected_type)
+        assert loaded_tool.name == tool_data["name"]
+        assert loaded_tool.description == tool_data["description"]
 
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
+        if isinstance(loaded_tool, UnknownAgentTool):
+            assert loaded_tool.type == tool_data["type"]
+        else:
+            assert loaded_tool._type == expected_type._type
 
-    def test_as_apply(self) -> None:
-        tool_apply = AgentToolApply(
-            name="test_tool",
-            type="test_type",
-            description="A test tool",
-        )
-        assert tool_apply is tool_apply.as_apply()
+        # Handle configuration comparison based on tool type
+        if "configuration" in tool_data:
+            if isinstance(loaded_tool, QueryKnowledgeGraphAgentTool):
+                # For QueryKnowledgeGraph, we expect a structured configuration object
+                assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
+                # Compare by serializing the structured object back to dict
+                assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
+            else:
+                # For other tools (like UnknownAgentTool), configuration should be a dict
+                assert loaded_tool.configuration == tool_data["configuration"]
 
+    def test_unknown_agent_tool_preserves_custom_type(self) -> None:
+        """Test that UnknownAgentTool preserves the original type string."""
+        loaded_tool = AgentTool._load(unknown_example)
 
-class TestAgentTool:
-    def test_load_dump(self) -> None:
-        # This is a valid configuration for the queryKnowledgeGraph tool
-        query_knowledge_graph_configuration = {
-            "dataModels": [
-                {
-                    "space": "cdf_cdm",
-                    "externalId": "CogniteCore",
-                    "version": "v1",
-                    "viewExternalIds": ["CogniteAsset"],
-                }
-            ],
-            "instanceSpaces": {"type": "all"},
-        }
-
-        # This is a valid data for the queryKnowledgeGraph tool
-        data = {
-            "name": "test_tool",
-            "type": "queryKnowledgeGraph",
-            "description": "A test tool",
-            "configuration": query_knowledge_graph_configuration,
-        }
-
-        tool = AgentTool._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "queryKnowledgeGraph"
-        assert tool.description == "A test tool"
-        assert tool.configuration == query_knowledge_graph_configuration
-
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
-
-    def test_load_dump_no_configuration(self) -> None:
-        data = {
-            "name": "test_tool",
-            "type": "test_type",
-            "description": "A test tool",
-        }
-
-        tool = AgentTool._load(data)
-        assert tool.name == "test_tool"
-        assert tool.type == "test_type"
-        assert tool.description == "A test tool"
-        assert tool.configuration is None
-
-        dumped = tool.dump(camel_case=True)
-        assert data == dumped
-
-    def test_as_apply(self) -> None:
-        tool = AgentTool(
-            name="test_tool",
-            type="test_type",
-            description="A test tool",
-            configuration={"key": "value"},
-        )
-
-        write_tool = tool.as_apply()
-        assert isinstance(write_tool, AgentToolApply)
-        assert write_tool.name == tool.name
-        assert write_tool.type == tool.type
-        assert write_tool.description == tool.description
-        assert write_tool.configuration == tool.configuration
+        assert isinstance(loaded_tool, UnknownAgentTool)
+        assert loaded_tool.type == unknown_example["type"]
+        assert loaded_tool.configuration == unknown_example["configuration"]
 
 
-class TestAgentToolList:
-    def test_as_apply(self) -> None:
-        tools = [
-            AgentTool(name="tool1", type="type1", description="desc1"),
-            AgentTool(name="tool2", type="type2", description="desc2"),
-        ]
-        tool_list = AgentToolList(tools)
+class TestAgentToolDump:
+    @pytest.mark.parametrize(
+        "tool_data,expected_type",
+        [
+            (qkg_example, QueryKnowledgeGraphAgentTool),
+            (ask_document_example, AskDocumentAgentTool),
+            (summarize_document_example, SummarizeDocumentAgentTool),
+            (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (unknown_example, UnknownAgentTool),
+        ],
+    )
+    def test_agent_tool_dump_returns_correct_type(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
+        """Test that AgentTool.dump() returns the correct type."""
+        loaded_tool = AgentTool._load(tool_data)
+        dumped_tool = loaded_tool.dump(camel_case=True)
 
-        write_list = tool_list.as_apply()
-        assert isinstance(write_list, AgentToolApplyList)
-        assert len(write_list) == 2
-        assert all(isinstance(tool, AgentToolApply) for tool in write_list)
-        assert write_list[0].name == "tool1"
-        assert write_list[1].name == "tool2"
+        if isinstance(loaded_tool, UnknownAgentTool):
+            assert dumped_tool["type"] == unknown_example["type"]
+        else:
+            assert dumped_tool["type"] == expected_type._type
+
+        assert dumped_tool["name"] == tool_data["name"]
+        assert dumped_tool["description"] == tool_data["description"]
+
+    def test_agent_tool_dump_returns_correct_type_for_unknown_tool(self) -> None:
+        """Test that AgentTool.dump() returns the correct type for unknown tools."""
+        loaded_tool = AgentTool._load(unknown_example)
+        dumped_tool = loaded_tool.dump(camel_case=True)
+
+        assert dumped_tool["type"] == unknown_example["type"]
+        assert dumped_tool["name"] == unknown_example["name"]
+        assert dumped_tool["description"] == unknown_example["description"]
+        assert dumped_tool["configuration"] == unknown_example["configuration"]
+
+    def test_agent_tool_dump_returns_correct_type_for_query_knowledge_graph_tool(self) -> None:
+        """Test that AgentTool.dump() returns the correct type for query knowledge graph tools."""
+        loaded_tool = AgentTool._load(qkg_example)
+        dumped_tool = loaded_tool.dump(camel_case=True)
+
+        assert dumped_tool["type"] == "queryKnowledgeGraph"
+        assert dumped_tool["name"] == qkg_example["name"]
+        assert dumped_tool["description"] == qkg_example["description"]
+        assert dumped_tool["configuration"] == qkg_example["configuration"]
+
+
+class TestAgentToolUpsert:
+    @pytest.mark.parametrize(
+        "tool_data,expected_type",
+        [
+            (qkg_example, QueryKnowledgeGraphAgentTool),
+            (ask_document_example, AskDocumentAgentTool),
+            (summarize_document_example, SummarizeDocumentAgentTool),
+            (query_time_series_datapoints_example, QueryTimeSeriesDatapointsAgentTool),
+            (unknown_example, UnknownAgentTool),
+        ],
+    )
+    def test_agent_tool_upsert_returns_correct_type(self, tool_data: dict, expected_type: type[AgentTool]) -> None:
+        """Test that AgentToolUpsert.dump() returns the correct type."""
+        loaded_tool = AgentTool._load(tool_data)
+        dumped_tool = loaded_tool.as_write().dump(camel_case=True)
+
+        if isinstance(loaded_tool, UnknownAgentTool):
+            assert dumped_tool["type"] == unknown_example["type"]
+        else:
+            assert dumped_tool["type"] == expected_type._type
+
+        assert dumped_tool["name"] == tool_data["name"]
+        assert dumped_tool["description"] == tool_data["description"]

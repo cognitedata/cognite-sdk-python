@@ -13,22 +13,24 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.agents.agent_tools import AgentTool, AgentToolApply
+from cognite.client.data_classes.agents.agent_tools import (
+    AgentTool,
+    AgentToolList,
+    AgentToolUpsert,
+    AgentToolUpsertList,
+)
 
 
 @dataclass
-class AgentApply(WriteableCogniteResource["AgentApply"]):
-    """Representation of an AI Agent in CDF.
-    This is the write format of an agent.
+class AgentCore(WriteableCogniteResource["AgentUpsert"]):
+    """Core representation of an AI agent.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str): The name of the agent.
         description (str | None): The description of the agent.
         instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use.
-        tools (Sequence[AgentToolApply] | None): List of tools for the agent.
-
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
     """
 
     external_id: str
@@ -36,12 +38,37 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
     description: str | None = None
     instructions: str | None = None
     model: str | None = None
-    tools: Sequence[AgentToolApply] | None = None
 
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentToolApply) for tool in self.tools):
-                raise TypeError("Tools must be a sequence of AgentToolApply instances.")
+
+class AgentUpsert(AgentCore):
+    """Representation of an AI agent.
+    This is the write format of an agent.
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        name (str): The name of the agent, for use in user interfaces.
+        description (str | None): The human readable description of the agent.
+        instructions (str | None): Instructions for the agent.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
+        tools (Sequence[AgentToolUpsert] | None): List of tools for the agent.
+
+    """
+
+    tools: Sequence[AgentToolUpsert] | None = None
+
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        tools: Sequence[AgentToolUpsert] | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+        )
+        self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -49,18 +76,14 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         return result
 
-    def as_apply(self) -> AgentApply:
-        """Returns this AgentApply instance."""
+    def as_write(self) -> AgentUpsert:
+        """Returns this AgentUpsert in its writeable format"""
         return self
 
-    def as_write(self) -> AgentApply:
-        """Returns this AgentApply in its writeable format"""
-        return self.as_apply()
-
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentApply:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentUpsert:
         tools = (
-            [AgentToolApply._load(item) for item in resource.get("tools", [])]
+            [AgentTool._load(item, cognite_client).as_write() for item in resource.get("tools", [])]
             if isinstance(resource.get("tools"), Sequence)
             else None
         )
@@ -75,9 +98,8 @@ class AgentApply(WriteableCogniteResource["AgentApply"]):
         )
 
 
-@dataclass
-class Agent(AgentApply):
-    """Representation of an AI Agent in CDF.
+class Agent(AgentCore):
+    """Representation of an AI agent.
     This is the read format of an agent.
 
     Args:
@@ -85,7 +107,7 @@ class Agent(AgentApply):
         name (str): The name of the agent, for use in user interfaces.
         description (str | None): The human readable description of the agent.
         instructions (str | None): Instructions for the agent.
-        model (str | None): Name of the language model to use.
+        model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
         tools (Sequence[AgentTool] | None): List of tools for the agent.
         created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
@@ -97,20 +119,41 @@ class Agent(AgentApply):
     last_updated_time: int | None = None
     owner_id: str | None = None
 
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            if not isinstance(self.tools, Sequence) or not all(isinstance(tool, AgentTool) for tool in self.tools):
-                raise TypeError("Tools must be a sequence of AgentTool instances.")
+    def __init__(
+        self,
+        external_id: str,
+        name: str,
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        tools: Sequence[AgentTool] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        owner_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id, name=name, description=description, instructions=instructions, model=model
+        )
+        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.owner_id = owner_id
 
-    def as_apply(self) -> AgentApply:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        if self.tools:
+            result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        return result
+
+    def as_write(self) -> AgentUpsert:
         """Returns this Agent in its writeable format"""
-        return AgentApply(
+        return AgentUpsert(
             external_id=self.external_id,
             name=self.name,
             description=self.description,
             instructions=self.instructions,
             model=self.model,
-            tools=[tool.as_apply() for tool in self.tools] if self.tools else None,
+            tools=[tool.as_write() for tool in self.tools] if self.tools else None,
         )
 
     @classmethod
@@ -134,20 +177,16 @@ class Agent(AgentApply):
         )
 
 
-class AgentApplyList(CogniteResourceList[AgentApply], ExternalIDTransformerMixin):
-    _RESOURCE = AgentApply
+class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMixin):
+    _RESOURCE = AgentUpsert
 
 
 class AgentList(
-    WriteableCogniteResourceList[AgentApply, Agent],
+    WriteableCogniteResourceList[AgentUpsert, Agent],
     ExternalIDTransformerMixin,
 ):
     _RESOURCE = Agent
 
-    def as_apply(self) -> AgentApplyList:
+    def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeableinstance"""
-        return AgentApplyList([item.as_apply() for item in self.data], cognite_client=self._get_cognite_client())
-
-    def as_write(self) -> AgentApplyList:
-        """Returns this AgentList as writeable instance"""
-        return self.as_apply()
+        return AgentUpsertList([item.as_write() for item in self.data], cognite_client=self._get_cognite_client())
