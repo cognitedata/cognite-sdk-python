@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.agents import Agent, AgentApply, AgentList
+from cognite.client.data_classes.agents import Agent, AgentUpsert, AgentUpsertList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -25,28 +25,28 @@ class AgentsAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    def apply(self, agents: AgentApply) -> Agent: ...
+    def apply(self, agents: AgentUpsert) -> Agent: ...
 
     @overload
-    def apply(self, agents: Sequence[AgentApply]) -> AgentList: ...
+    def apply(self, agents: Sequence[AgentUpsert]) -> AgentUpsertList: ...
 
-    def apply(self, agents: AgentApply | Sequence[AgentApply]) -> Agent | AgentList:
+    def apply(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentUpsertList:
         """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/main_api_v1_projects__projectName__ai_agents_post>`_
 
         Args:
-            agents (AgentApply | Sequence[AgentApply]): Agent or list of agents to create or update.
+            agents (AgentUpsert | Sequence[AgentUpsert]): Agent or list of agents to create or update.
 
         Returns:
-            Agent | AgentList: The created or updated agent(s).
+            Agent | AgentUpsertList: The created or updated agent(s).
 
         Examples:
 
             Create a new agent:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.agents import AgentApply, AgentToolApply
+                >>> from cognite.client.data_classes.agents import AgentUpsert, AgentToolUpsert
                 >>> client = CogniteClient()
-                >>> find_assets_tool = AgentToolApply(
+                >>> find_assets_tool = AgentToolUpsert(
                 ...     name="find assets",
                 ...     type="queryKnowledgeGraph",
                 ...     description="Use this tool to find assets",
@@ -62,7 +62,7 @@ class AgentsAPI(APIClient):
                 ...         "instanceSpaces": {"type": "all"}
                 ...     }
                 ... )
-                >>> agent = AgentApply(
+                >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
                 ...     name="My Agent",
                 ...     tools=[find_assets_tool]
@@ -72,21 +72,21 @@ class AgentsAPI(APIClient):
         """
         self._warnings.warn()
         return self._create_multiple(
-            list_cls=AgentList,
+            list_cls=AgentUpsertList,
             resource_cls=Agent,
             items=agents,
-            input_resource_cls=AgentApply,
+            input_resource_cls=AgentUpsert,
         )
 
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Agent | None: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentList: ...
+    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> AgentUpsertList: ...
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Agent | AgentList | None:
+    ) -> Agent | AgentUpsertList | None:
         """`Retrieve one or more agents by external ID. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/get_agents_by_ids_api_v1_projects__projectName__ai_agents_byids_post>`_
 
         Args:
@@ -94,7 +94,7 @@ class AgentsAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore unknown IDs. Defaults to False.
 
         Returns:
-            Agent | AgentList | None: The requested agent or agent list. `None` is returned if `ignore_unknown_ids` is `True` and the external ID is not found.
+            Agent | AgentUpsertList | None: The requested agent or agent list. `None` is returned if `ignore_unknown_ids` is `True` and the external ID is not found.
 
         Examples:
 
@@ -111,7 +111,7 @@ class AgentsAPI(APIClient):
         self._warnings.warn()
         identifiers = IdentifierSequence.load(external_ids=external_ids)
         return self._retrieve_multiple(
-            list_cls=AgentList,
+            list_cls=AgentUpsertList,
             resource_cls=Agent,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
@@ -140,11 +140,11 @@ class AgentsAPI(APIClient):
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
-    def list(self) -> AgentList:  # The API does not yet support limit or pagination
+    def list(self) -> AgentUpsertList:  # The API does not yet support limit or pagination
         """`List agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_list_api_v1_projects__projectName__ai_agents_get>`_
 
         Returns:
-            AgentList: The list of agents.
+            AgentUpsertList: The list of agents.
 
         Examples:
 
@@ -157,4 +157,4 @@ class AgentsAPI(APIClient):
         """
         self._warnings.warn()
         res = self._get(url_path=self._RESOURCE_PATH)
-        return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return AgentUpsertList._load(res.json()["items"], cognite_client=self._cognite_client)
