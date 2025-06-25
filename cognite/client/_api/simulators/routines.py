@@ -110,12 +110,14 @@ class SimulatorRoutinesAPI(APIClient):
         self,
         routine: SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite],
     ) -> SimulatorRoutine | SimulatorRoutineList:
-        """`Create simulator routine <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
-        You can create an arbitrary number of simulator routines.
+        """`Create simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/create_simulator_routine_simulators_routines_post>`_
+
         Args:
-            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routines to create.
+            routine (SimulatorRoutineWrite | Sequence[SimulatorRoutineWrite]): Simulator routine(s) to create.
+
         Returns:
             SimulatorRoutine | SimulatorRoutineList: Created simulator routine(s)
+
         Examples:
             Create new simulator routines:
                 >>> from cognite.client import CogniteClient
@@ -153,16 +155,14 @@ class SimulatorRoutinesAPI(APIClient):
         id: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
+        """`Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
             id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
             external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
 
         Examples:
-
-            Delete routines by id or external id:
-
+            Delete simulator routines by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.simulators.routines.delete(id=[1,2,3], external_id="foo")
@@ -182,7 +182,7 @@ class SimulatorRoutinesAPI(APIClient):
     ) -> SimulatorRoutineList:
         """`Filter simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/filter_simulator_routines_simulators_routines_list_post>`_
 
-        Retrieves a list of simulator routines that match the given criteria
+        Retrieves a list of simulator routines that match the given criteria.
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
@@ -197,7 +197,7 @@ class SimulatorRoutinesAPI(APIClient):
             List simulator routines:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.list()
+                >>> res = client.simulators.routines.list(limit=10)
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
@@ -233,22 +233,30 @@ class SimulatorRoutinesAPI(APIClient):
         wait: bool = True,
         timeout: float = 60,
     ) -> SimulationRun:
-        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>``
+        """`Run a simulation <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+
+        Run a simulation for a given simulator routine.
+
         Args:
-            routine_external_id (str): External id of the simulator routine
+            routine_external_id (str): External id of the simulator routine to run
             inputs (Sequence[SimulationInputOverride] | None): List of input overrides
             run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
             queue (bool | None): Queue the simulation run when connector is down.
             log_severity (Literal['Debug', 'Information', 'Warning', 'Error'] | None): Override the minimum severity level for the simulation run logs. If not provided, the minimum severity is read from the connector logger configuration.
             wait (bool): Wait until the simulation run is finished. Defaults to True.
             timeout (float): Timeout in seconds for waiting for the simulation run to finish. Defaults to 60 seconds.
+
         Returns:
             SimulationRun: Created simulation run
+
         Examples:
             Create new simulation run:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> run = client.simulators.routines.run(routine_external_id="routine1", log_severity="Debug")
+                >>> run = client.simulators.routines.run(
+                ...     routine_external_id="routine1",
+                ...     log_severity="Debug"
+                ... )
         """
         self._warning.warn()
         run_object = SimulationRunWrite(
