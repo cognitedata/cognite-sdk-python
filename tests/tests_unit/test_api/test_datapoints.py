@@ -684,6 +684,23 @@ class TestPandasIntegration:
         ):
             cognite_client.time_series.data.insert_dataframe(df, instance_id_headers=True)
 
+    def test_insert_dataframe_malformed_instance_ids(self, cognite_client: CogniteClient):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        index = pd.to_datetime(timestamps, unit="ms")
+        df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
+        with pytest.raises(
+            ValueError,
+            match="Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>",
+        ):
+            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+
+        df = pd.DataFrame({(123,): [1, 2, 3, 4], (456,): [5.0, 6.0, 7.0, 8.0]}, index=index)
+        # TODO: NodeId does not give a correct error message when tuples have the wrong number of elements. This should be fixed in the NodeId class.
+        with pytest.raises(KeyError):
+            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+
     def test_insert_dataframe_with_nans(self, cognite_client):
         import pandas as pd
 

@@ -2290,7 +2290,7 @@ class DatapointsAPI(APIClient):
                     dps.append({"datapoints": datapoints, "instanceId": NodeId.load(column_id)})
                 else:
                     raise ValueError(
-                        f"Could not find instance Ids in the coulnm header. InstanceId are given as NodeId or tuple. Got {type(column_id)}"
+                        f"Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got {type(column_id)}"
                     )
             else:
                 dps.append({"datapoints": datapoints, "id": int(column_id)})
