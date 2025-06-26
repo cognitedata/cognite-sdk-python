@@ -513,12 +513,12 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult[Node, Edge]:
-        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more instances by id(s). <https://developer.cognite.com/api#tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (Source | Sequence[Source] | None): Retrieve properties from the listed - by reference - views.
+            sources (Source | Sequence[Source] | None): Governs which properties are retrieved for the instances.  If not specified, only basic fields common to all instances will be retrieved. To retrieve properties specified in a view, sources must be specified (as references).  Some properties can not be retrieved via this function.  To gain access to those properties, you can use InstancesAPI.query, which allows you to specify the properties you want int the output.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -526,7 +526,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Retrieve instances by id:
+            Retrieve instances by id.  Get properties specified in the view "myView" with version "myViewVersion":
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -535,7 +535,7 @@ class InstancesAPI(APIClient):
                 ...     edges=("mySpace", "myEdgeExternalId"),
                 ...     sources=("mySpace", "myViewExternalId", "myViewVersion"))
 
-            Retrieve nodes an edges using the built in data class
+            Retrieve the same node and edge using the built in data classes
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
                 >>> res = client.data_modeling.instances.retrieve(
@@ -543,7 +543,7 @@ class InstancesAPI(APIClient):
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     ViewId("mySpace", "myViewExternalId", "myViewVersion"))
 
-            Retrieve nodes an edges using the the view object as source
+            Retrieve the same node and edge, specifying the source as a view object
 
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> res = client.data_modeling.instances.retrieve(
@@ -1612,7 +1612,7 @@ class InstancesAPI(APIClient):
         Args:
             instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (Source | Sequence[Source] | None): Views to retrieve properties from.
+            sources (Source | Sequence[Source] | None): Governs which properties are retrieved for the instances.  If not specified, only basic fields common to all instances will be retrieved. To retrieve properties specified in a view, sources must be specified (as references).  Some properties can not be retrieved via this function.  To gain access to those properties, you can use InstancesAPI.query, which allows you to specify the properties you want int the output.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
@@ -1642,12 +1642,12 @@ class InstancesAPI(APIClient):
                 ...     nulls_first=True)
                 >>> instance_list = client.data_modeling.instances.list(sort=property_sort)
 
-            Iterate over instances (note: returns nodes):
+            Iterate over all instances (note: returns nodes):
 
                 >>> for instance in client.data_modeling.instances:
                 ...     instance # do something with the instance
 
-            Iterate over chunks of instances to reduce memory load:
+            Iterate over chunks from all instances to reduce memory load:
 
                 >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
