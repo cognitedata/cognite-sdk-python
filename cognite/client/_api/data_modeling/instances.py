@@ -518,7 +518,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (Source | Sequence[Source] | None): Governs which properties are retrieved for the instances.  If not specified, only basic fields common to all instances will be retrieved. To retrieve properties specified in a view, sources must be specified (as references).  Some properties can not be retrieved via this function.  To gain access to those properties, you can use InstancesAPI.query, which allows you to specify the properties you want int the output.
+            sources (Source | Sequence[Source] | None): Governs which properties are retrieved for the instances.  If not specified, only basic fields common to all instances will be retrieved. To retrieve properties specified in a view, sources must be specified (as references).  Some properties can not be retrieved via this function.  To gain access to those properties, you can use InstancesAPI.query, which allows you to specify the properties you want in the output.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -526,7 +526,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Retrieve instances by id.  Get properties specified in the view "myView" with version "myViewVersion":
+            Retrieve instances by id.  Include in the output properties specified in the view "myView" with version "myViewVersion":
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
