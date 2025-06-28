@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.75.4] - 2025-06-25
+### Improved
+- Improved the error message when using `InstanceId.load` with a tuple of wrong length.
+
 ## [7.75.3] - 2025-06-25
 ### Added
 - Added new `appConfigAcl` capability.
