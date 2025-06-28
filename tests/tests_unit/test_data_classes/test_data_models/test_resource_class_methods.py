@@ -107,9 +107,3 @@ def test_extend_method(node_lst: NodeList, edge_lst: EdgeList, space_lst: SpaceL
     lst.extend(not_overlapping)
     with pytest.raises(ValueError, match=r"^Unable to extend as this would introduce duplicates$"):
         lst.extend(overlapping)
-
-
-@pytest.mark.parametrize("instance_ids", (("space",), ("space", "external_id", "version")))
-def test_instance_id_tuple_length(instance_ids: tuple[str, ...]) -> None:
-    with pytest.raises(ValueError, match=r".*expected tuple of exactly two elements, \(space, external_id\)"):
-        InstanceId.load(instance_ids)  # type: ignore[arg-type]

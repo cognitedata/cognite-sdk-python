@@ -17,6 +17,13 @@ from cognite.client.utils._identifier import (
 )
 
 
+class TestInstanceId:
+    @pytest.mark.parametrize("instance_ids", (("space",), ("space", "external_id", "version")))
+    def test_instance_id_tuple_length(self, instance_ids: tuple[str, ...]) -> None:
+        with pytest.raises(ValueError, match=r".*expected tuple of exactly two elements, \(space, external_id\)"):
+            InstanceId.load(instance_ids)  # type: ignore[arg-type]
+
+
 class TestIdentifier:
     @pytest.mark.parametrize(
         "id, external_id, instance_id, exp_tpl",
