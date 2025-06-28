@@ -20,11 +20,9 @@ class TestSimulatorIntegrations:
             assert integration.active is True
 
         all_integrations = cognite_client.simulators.integrations.list()
-        active_integrations = cognite_client.simulators.integrations.list(
-            filter=SimulatorIntegrationFilter(active=True)
-        )
+        active_integrations = cognite_client.simulators.integrations.list(active=True)
         filtered_integrations = cognite_client.simulators.integrations.list(
-            filter=SimulatorIntegrationFilter(simulator_external_ids=[seed_resource_names["simulator_external_id"]])
+            simulator_external_ids=[seed_resource_names["simulator_external_id"]],
         )
         assert len(all_integrations) > 0
         assert len(active_integrations) > 0
