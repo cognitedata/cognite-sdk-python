@@ -2231,7 +2231,9 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
+    def insert_dataframe(
+        self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True, instance_id_headers: bool = False
+    ) -> None:
         """Insert a dataframe (columns must be unique).
 
         The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The names of the columns specify
@@ -2241,8 +2243,9 @@ class DatapointsAPI(APIClient):
 
         Args:
             df (pd.DataFrame):  Pandas DataFrame object containing the time series.
-            external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
+            external_id_headers (bool): Interpret the column names as external IDs. Pass False if using IDs or instance IDs. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
+            instance_id_headers (bool): Interpret the column names as instance IDs. Can either be `NodeId` objects or tuples of (space, external_id). Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. Default: False.
 
         Warning:
             You can not insert datapoints with status codes using this method (``insert_dataframe``), you'll need
@@ -2270,6 +2273,8 @@ class DatapointsAPI(APIClient):
             raise ValueError("DataFrame contains one or more (+/-) Infinity. Remove them in order to insert the data.")
         if not dropna and df.isna().any(axis=None):
             raise ValueError("DataFrame contains one or more NaNs. Remove them or pass `dropna=True` to insert.")
+        if instance_id_headers and external_id_headers:
+            raise ValueError("`instance_id_headers` and `external_id_headers` cannot be used at the same time.")
 
         dps = []
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
@@ -2280,6 +2285,13 @@ class DatapointsAPI(APIClient):
                 continue
             if external_id_headers:
                 dps.append({"datapoints": datapoints, "externalId": column_id})
+            elif instance_id_headers:
+                if isinstance(column_id, NodeId | tuple):
+                    dps.append({"datapoints": datapoints, "instanceId": NodeId.load(column_id)})
+                else:
+                    raise ValueError(
+                        f"Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got {type(column_id)}"
+                    )
             else:
                 dps.append({"datapoints": datapoints, "id": int(column_id)})
         self.insert_multiple(dps)
