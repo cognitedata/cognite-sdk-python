@@ -717,6 +717,7 @@ class RawRowsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
         last_updated_time_in_index: bool = False,
+        infer_dtypes: bool = True,
     ) -> pd.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -734,6 +735,7 @@ class RawRowsAPI(APIClient):
                 (will be capped at this value). To prevent unexpected problems and maximize read throughput, check out
                 `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
             last_updated_time_in_index (bool): Use a MultiIndex with row keys and last_updated_time as index.
+            infer_dtypes (bool): If True, pandas will try to infer dtypes of the columns. Defaults to True.
 
         Returns:
             pd.DataFrame: The requested rows in a pandas dataframe.
@@ -756,7 +758,7 @@ class RawRowsAPI(APIClient):
         else:
             idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
-        return pd.DataFrame(cols, index=idx)
+        return pd.DataFrame(cols, index=idx, dtype=object if not infer_dtypes else None)
 
     def _get_parallel_cursors(
         self,
