@@ -518,7 +518,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (Source | Sequence[Source] | None): Governs which views to retrieve properties through.  Only properties specified on the provided views will be retrieved.  If not specified, only base properties (space, external id, type, ...) will be retrieved.  Connection properties (edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties) can not be retrieved/traversed using this method; use the `query` method instead.
+            sources (Source | Sequence[Source] | None): Governs which views to retrieve properties through.  Only properties specified on the provided views will be retrieved.  If not specified, only base properties (space, external id, type, ...) will be retrieved.  Connection properties (e.g. edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties) can not be retrieved/traversed using this method; use the `query` method instead.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -1612,7 +1612,7 @@ class InstancesAPI(APIClient):
         Args:
             instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (Source | Sequence[Source] | None): Governs which views to retrieve properties through.  Only properties specified on the provided views will be retrieved.  If not specified, only base properties (space, external id, type, ...) will be retrieved.  Connection properties (edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties) can not be retrieved/traversed using this method; use the `query` method instead.
+            sources (Source | Sequence[Source] | None): Governs which views to retrieve properties through.  Only properties specified on the provided views will be retrieved.  If not specified, only base properties (space, external id, type, ...) will be retrieved.  Connection properties (e.g. edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties) can not be retrieved/traversed using this method; use the `query` method instead.
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
             limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
