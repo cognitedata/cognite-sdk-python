@@ -77,14 +77,16 @@ class SimulatorIntegrationsAPI(APIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        filter: SimulatorIntegrationFilter | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
         Retrieves a list of simulator integrations that match the given criteria
 
         Args:
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
-            filter (SimulatorIntegrationFilter | None): Filter to apply.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
+            active (bool | None): Filter on active status of the simulator integration.
 
         Returns:
             SimulatorIntegrationList: List of simulator integrations
@@ -99,15 +101,18 @@ class SimulatorIntegrationsAPI(APIClient):
             Filter integrations by active status:
                 >>> from cognite.client.data_classes.simulators import SimulatorIntegrationFilter
                 >>> res = client.simulators.integrations.list(
-                ...     filter=SimulatorIntegrationFilter(active=True))
+                ...     simulator_external_ids=["sim1", "sim2"],
+                ...     active=True,
+                ... )
         """
+        integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         self._warning.warn()
         return self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=integrations_filter.dump(),
         )
 
     def delete(
