@@ -25,12 +25,12 @@ class AgentsAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    def apply(self, agents: AgentUpsert) -> Agent: ...
+    def upsert(self, agents: AgentUpsert) -> Agent: ...
 
     @overload
-    def apply(self, agents: Sequence[AgentUpsert]) -> AgentUpsertList: ...
+    def upsert(self, agents: Sequence[AgentUpsert]) -> AgentUpsertList: ...
 
-    def apply(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentUpsertList:
+    def upsert(self, agents: AgentUpsert | Sequence[AgentUpsert]) -> Agent | AgentUpsertList:
         """`Create or update (upsert) one or more agents. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/main_api_v1_projects__projectName__ai_agents_post>`_
 
         Args:
@@ -44,23 +44,11 @@ class AgentsAPI(APIClient):
             Create a new agent:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.agents import AgentUpsert, AgentToolUpsert
+                >>> from cognite.client.data_classes.agents import AgentUpsert, QueryKnowledgeGraphAgentToolUpsert
                 >>> client = CogniteClient()
-                >>> find_assets_tool = AgentToolUpsert(
+                >>> find_assets_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find assets",
-                ...     type="queryKnowledgeGraph",
                 ...     description="Use this tool to find assets",
-                ...     configuration={
-                ...         "dataModels": [
-                ...             {
-                ...                 "space": "cdf_cdm",
-                ...                 "externalId": "CogniteCore",
-                ...                 "version": "v1",
-                ...                 "viewExternalIds": ["CogniteAsset"]
-                ...             }
-                ...         ],
-                ...         "instanceSpaces": {"type": "all"}
-                ...     }
                 ... )
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
