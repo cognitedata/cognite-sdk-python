@@ -5,6 +5,8 @@ on:
   merge_group:
   pull_request:
     branches: [master]
+    paths-ignore:
+      - '**/*.md'
 
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref }}
