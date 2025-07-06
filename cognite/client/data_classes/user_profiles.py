@@ -49,14 +49,12 @@ class UserProfile(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UserProfile:
-        to_load = {
-            "user_identifier": resource["userIdentifier"],
-            "last_updated_time": resource["lastUpdatedTime"],
-        }
-        for param in ["given_name", "surname", "email", "display_name", "job_title"]:
-            if (value := resource.get(to_camel_case(param))) is not None:
-                to_load[param] = value
-        return cls(**to_load, cognite_client=cognite_client)
+        return cls(
+            user_identifier=resource["userIdentifier"],
+            last_updated_time=resource["lastUpdatedTime"],
+            **{to_camel_case(k): v for k, v in resource.items() if k not in {"userIdentifier", "lastUpdatedTime"}},
+            cognite_client=cognite_client,
+        )
 
 
 class UserProfileList(CogniteResourceList[UserProfile]):
