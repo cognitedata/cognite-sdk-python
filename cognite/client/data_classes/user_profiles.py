@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -49,14 +48,16 @@ class UserProfile(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UserProfile:
-        to_load = {
-            "user_identifier": resource["userIdentifier"],
-            "last_updated_time": resource["lastUpdatedTime"],
-        }
-        for param in ["given_name", "surname", "email", "display_name", "job_title"]:
-            if (value := resource.get(to_camel_case(param))) is not None:
-                to_load[param] = value
-        return cls(**to_load, cognite_client=cognite_client)
+        return cls(
+            user_identifier=resource["userIdentifier"],
+            last_updated_time=resource["lastUpdatedTime"],
+            given_name=resource.get("givenName"),
+            surname=resource.get("surname"),
+            email=resource.get("email"),
+            display_name=resource.get("displayName"),
+            job_title=resource.get("jobTitle"),
+            cognite_client=cognite_client,
+        )
 
 
 class UserProfileList(CogniteResourceList[UserProfile]):
