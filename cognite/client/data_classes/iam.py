@@ -1,18 +1,25 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
+    CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
+    CogniteUpdate,
     IdTransformerMixin,
     InternalIdTransformerMixin,
     NameTransformerMixin,
+    PropertySpec,
+    T_WriteClass,
+    UnknownCogniteObject,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -489,3 +496,335 @@ class ClientCredentials(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ClientCredentials:
         return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])
+
+
+class PrincipalWrite(CogniteResource, ABC):
+    """Base class for all principals in write/request format."""
+
+    _type: ClassVar[str]
+
+    @classmethod
+    @abstractmethod
+    def _load_principal(cls, resource: dict[str, Any]) -> Self:
+        raise NotImplementedError()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource.get("type")
+        if type_ is None and hasattr(cls, "_type"):
+            type_ = cls._type
+        elif type_ is None:
+            raise KeyError("type")
+        try:
+            principal_cls = _PRINCIPAL_WRITE_CLASS_BY_TYPE[type_.upper()]
+        except KeyError:
+            raise ValueError(f"Unknown principal type {type_}")
+        return cast(Self, principal_cls._load_principal(resource))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["type"] = self._type.upper()
+        return output
+
+
+class Principal(WriteableCogniteResource[T_WriteClass], ABC):
+    """Base class for all principals in read/response format."""
+
+    _type: ClassVar[str]
+
+    @classmethod
+    @abstractmethod
+    def _load_principal(cls, resource: dict[str, Any]) -> Self:
+        raise NotImplementedError()
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        type_ = resource.get("type")
+        if type_ is None and hasattr(cls, "_type"):
+            type_ = cls._type
+        elif type_ is None:
+            raise KeyError("type")
+        principal_class = _PRINCIPAL_CLASS_BY_TYPE.get(type_.casefold())
+        if principal_class is None:
+            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+        return cast(Self, principal_class._load_principal(resource))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["type"] = self._type.upper()
+        return output
+
+
+class PrincipalUpdate(CogniteUpdate, ABC):
+    _type: ClassVar[str]
+
+    def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["type"] = self._type
+        return output
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        if item is None or not isinstance(item, PrincipalWrite):
+            return []
+        return _PRINCIPAL_UPDATE_BY_TYPE[item._type]._get_update_properties(item)
+
+
+class PrincipalWriteList(CogniteResourceList[PrincipalWrite]):
+    _RESOURCE = PrincipalWrite
+
+
+class PrincipalList(WriteableCogniteResourceList[PrincipalWrite, Principal]):
+    _RESOURCE = Principal
+
+    def as_write(
+        self,
+    ) -> PrincipalWriteList:
+        return PrincipalWriteList([item.as_write() for item in self.data])
+
+
+@dataclass
+class PrincipalId(CogniteObject):
+    """
+    The ID of a principal.
+
+    Args:
+        org_id (str): The ID of an organization
+        user_id (str): The ID of an organization user
+    """
+
+    org_id: str
+    user_id: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(org_id=resource["orgId"], user_id=resource["userId"])
+
+
+class ServiceAccountWrite(PrincipalWrite):
+    """A service account.
+
+    This is the write/request format of the service account dto.
+
+    Args:
+        name (str): Human-readable name of a service account
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): Longer description of a service account
+
+    """
+
+    _type = "SERVICE_ACCOUNT"
+
+    def __init__(self, name: str, external_id: str | None = None, description: str | None = None) -> None:
+        self.name = name
+        self.external_id = external_id
+        self.description = description
+
+    def as_write(self) -> ServiceAccountWrite:
+        return self
+
+    @classmethod
+    def _load_principal(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            name=resource["name"],
+            external_id=resource.get("externalId"),
+            description=resource.get("description"),
+        )
+
+
+class ServiceAccount(Principal):
+    """A service account.
+
+    This is the read/response format of the service account.
+
+    Args:
+        id (str): Unique identifier of a service account
+        name (str): Human-readable name of a service account
+        created_by (PrincipalId): The ID of an organization user
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        picture_url (str): URL to a picture of the principal
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): Longer description of a service account
+
+    """
+
+    _type = "service_account"
+
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        created_by: PrincipalId,
+        created_time: int,
+        last_updated_time: int,
+        picture_url: str,
+        external_id: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        self.name = name
+        self.external_id = external_id
+        self.description = description
+        self.id = id
+        self.created_by = created_by
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.picture_url = picture_url
+
+    def as_write(self) -> ServiceAccountWrite:
+        return ServiceAccountWrite(
+            external_id=self.external_id,
+            description=self.description,
+            name=self.name,
+        )
+
+    @classmethod
+    def _load_principal(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            id=resource["id"],
+            external_id=resource.get("externalId"),
+            name=resource["name"],
+            description=resource.get("description"),
+            created_by=PrincipalId._load(resource["createdBy"]),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            picture_url=resource["pictureUrl"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["createdBy" if camel_case else "created_by"] = self.created_by.dump(camel_case)
+        return output
+
+
+class ServiceAccountUpdate(PrincipalUpdate):
+    _type = "service_account"
+
+    class _NullableStringServiceAccountUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str | None) -> ServiceAccountUpdate:
+            return self._set(value)
+
+    class _StringServiceAccountUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> ServiceAccountUpdate:
+            return self._set(value)
+
+    @property
+    def name(self) -> _StringServiceAccountUpdate:
+        return ServiceAccountUpdate._StringServiceAccountUpdate(self, "name")
+
+    @property
+    def description(self) -> _NullableStringServiceAccountUpdate:
+        return ServiceAccountUpdate._NullableStringServiceAccountUpdate(self, "description")
+
+    @property
+    def external_id(self) -> _NullableStringServiceAccountUpdate:
+        return ServiceAccountUpdate._NullableStringServiceAccountUpdate(self, "externalId")
+
+    @classmethod
+    def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=True),
+            PropertySpec("external_id", is_nullable=True),
+        ]
+
+
+class ServiceAccountSecretCore(WriteableCogniteResource["ServiceAccountSecretWrite"], ABC): ...
+
+
+class ServiceAccountSecretWrite(ServiceAccountSecretCore):
+    """A service account secret.
+
+    This is the write/request format of the service account secret dto.
+
+    Args:
+        expires_in_seconds (int | None): The number of seconds until the secret expires. The maximum value is 180 days.
+
+    """
+
+    def __init__(self, expires_in_seconds: int | None = None) -> None:
+        self.expires_in_seconds = expires_in_seconds
+
+    def as_write(self) -> ServiceAccountSecretWrite:
+        return self
+
+
+class ServiceAccountSecret(ServiceAccountSecretCore):
+    """A service account secret.
+
+    This is the read/response format of the service account secret dto.
+
+    Args:
+        id (int): Unique identifier of a service account secret
+        secret (str): A client secret for a service account. This value is sensitive, and should be stored securely.
+            It will only be shown right after creation, and will not be retrievable later.
+        created_by (PrincipalId): The ID of an organization user
+        expiration_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_token_issuance_time (str | None): The time when this secret was last used to issue a CDF access token.
+
+    """
+
+    def __init__(
+        self,
+        id: int,
+        secret: str,
+        created_by: PrincipalId,
+        expiration_time: int,
+        created_time: int,
+        last_token_issuance_time: str | None = None,
+    ) -> None:
+        self.id = id
+        self.secret = secret
+        self.created_by = created_by
+        self.expiration_time = expiration_time
+        self.created_time = created_time
+        self.last_token_issuance_time = last_token_issuance_time
+
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output["createdBy" if camel_case else "created_by"] = self.created_by.dump(camel_case)
+        return output
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            secret=resource["secret"],
+            created_by=PrincipalId._load(resource["createdBy"]),
+            expiration_time=resource["expirationTime"],
+            created_time=resource["createdTime"],
+            last_token_issuance_time=resource.get("lastTokenIssuanceTime"),
+        )
+
+
+class ServiceAccountSecretWriteList(CogniteResourceList[ServiceAccountSecretWrite]):
+    _RESOURCE = ServiceAccountSecretWrite
+
+
+class ServiceAccountSecretList(
+    WriteableCogniteResourceList[ServiceAccountSecretWrite, ServiceAccountSecret], InternalIdTransformerMixin
+):
+    _RESOURCE = ServiceAccountSecret
+
+    def as_write(self) -> NoReturn:
+        raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
+
+
+_PRINCIPAL_WRITE_CLASS_BY_TYPE: dict[str, type[PrincipalWrite]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in PrincipalWrite.__subclasses__()
+}
+
+_PRINCIPAL_CLASS_BY_TYPE: dict[str, type[Principal]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in Principal.__subclasses__()
+}
+
+_PRINCIPAL_UPDATE_BY_TYPE: dict[str, type[PrincipalUpdate]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in PrincipalUpdate.__subclasses__()
+}
