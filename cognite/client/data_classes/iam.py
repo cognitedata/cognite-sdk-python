@@ -32,9 +32,9 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     """No description.
 
     Args:
-        name (str): Name of the group
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
+        name (str): Name of the group.
+        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
@@ -80,9 +80,9 @@ class Group(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        name (str): Name of the group
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
+        name (str): Name of the group.
+        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -181,9 +181,9 @@ class GroupWrite(GroupCore):
     Groups can either be managed through the external identity provider for the project or managed by CDF.
 
     Args:
-        name (str): Name of the group
-        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users. Can not be used together with 'members'.
+        name (str): Name of the group.
+        source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
+        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
