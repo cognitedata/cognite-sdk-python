@@ -130,37 +130,23 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
         model_external_ids=[model_unique_external_id],
     )
 
-    second_version_ext_id = f"{model_revision_unique_external_id}_1"
+    revisions = [f"{model_revision_unique_external_id}_1", model_revision_unique_external_id]
 
-    if not model_revisions.get(external_id=second_version_ext_id):
-        cognite_client.simulators._post(
-            "/simulators/models/revisions",
-            json={
-                "items": [
-                    {
-                        "description": "test sim model revision description",
-                        "fileId": seed_file.id,
-                        "modelExternalId": model_unique_external_id,
-                        "externalId": second_version_ext_id,
-                    }
-                ]
-            },
-        )
-
-    if not model_revisions.get(external_id=model_revision_unique_external_id):
-        cognite_client.simulators._post(
-            "/simulators/models/revisions",
-            json={
-                "items": [
-                    {
-                        "description": "test sim model revision description",
-                        "fileId": seed_file.id,
-                        "modelExternalId": model_unique_external_id,
-                        "externalId": model_revision_unique_external_id,
-                    }
-                ]
-            },
-        )
+    for revision in revisions:
+        if not model_revisions.get(external_id=revision):
+            cognite_client.simulators._post(
+                "/simulators/models/revisions",
+                json={
+                    "items": [
+                        {
+                            "description": "test sim model revision description",
+                            "fileId": seed_file.id,
+                            "modelExternalId": model_unique_external_id,
+                            "externalId": revision,
+                        }
+                    ]
+                },
+            )
 
 
 @pytest.fixture(scope="session")
