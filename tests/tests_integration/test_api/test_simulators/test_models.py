@@ -1,7 +1,9 @@
 import pytest
+import time
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.files import FileMetadata
+from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevisionWrite,
@@ -69,6 +71,7 @@ class TestSimulatorModels:
         revisions_all_versions = cognite_client.simulators.models.revisions.list(
             all_versions=True,
             model_external_ids=[model_external_id],
+            created_time=TimestampRange(start=0, end=int(time.time() * 1000)),
         )
         revisions_all_versions_external_ids = [revision.external_id for revision in revisions_all_versions]
         revisions_default = cognite_client.simulators.models.revisions.list(
