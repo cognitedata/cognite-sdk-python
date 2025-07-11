@@ -240,6 +240,15 @@ class SummarizeDocumentAgentToolUpsert(AgentToolUpsert):
 
     _type: ClassVar[str] = "summarizeDocument"
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> SummarizeDocumentAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
+
 
 @dataclass
 class AskDocumentAgentTool(AgentTool):
@@ -276,6 +285,13 @@ class AskDocumentAgentToolUpsert(AgentToolUpsert):
     """
 
     _type: ClassVar[str] = "askDocument"
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> AskDocumentAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
 
 
 @dataclass
@@ -339,6 +355,20 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
             result["configuration"] = self.configuration.dump(camel_case=camel_case)
         return result
 
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> QueryKnowledgeGraphAgentToolUpsert:
+        configuration = None
+        if resource.get("configuration"):
+            configuration = QueryKnowledgeGraphAgentToolConfiguration._load(resource["configuration"])
+
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+            configuration=configuration,
+        )
+
 
 @dataclass
 class QueryTimeSeriesDatapointsAgentTool(AgentTool):
@@ -377,6 +407,15 @@ class QueryTimeSeriesDatapointsAgentToolUpsert(AgentToolUpsert):
     """
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
+
+    @classmethod
+    def _load(
+        cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
+    ) -> QueryTimeSeriesDatapointsAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            description=resource["description"],
+        )
 
 
 @dataclass
@@ -425,14 +464,21 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
     type: str
     configuration: dict[str, Any] | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownAgentToolUpsert:
+        return cls(
+            name=resource["name"],
+            type=resource["type"],
+            description=resource["description"],
+            configuration=resource.get("configuration"),
+        )
 
-class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert]):
+
+class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert], ABC):
     _RESOURCE = AgentToolUpsert
 
 
-class AgentToolList(
-    WriteableCogniteResourceList[AgentToolUpsert, AgentTool],
-):
+class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool], ABC):
     _RESOURCE = AgentTool
 
     def as_write(self) -> AgentToolUpsertList:
