@@ -3,19 +3,19 @@ Agents
 ======
 Create or update an agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.apply
+.. automethod:: cognite.client._api.agents.agents.AgentsAPI.upsert
 
 Retrieve an agent by external id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.agents.agents.AgentsAPI.retrieve
 
-Delete an agent by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.delete
-
 List all agents
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.agents.agents.AgentsAPI.list
+
+Delete an agent by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.agents.agents.AgentsAPI.delete
 
 Agent Data classes
 ^^^^^^^^^^^^^^^^^^
