@@ -41,14 +41,30 @@ class AgentsAPI(APIClient):
 
         Examples:
 
-            Create a new agent:
+            Create a new agent with a query knowledge graph tool to find assets:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.agents import AgentUpsert, QueryKnowledgeGraphAgentToolUpsert
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentUpsert,
+                ...     QueryKnowledgeGraphAgentToolUpsert,
+                ...     QueryKnowledgeGraphAgentToolConfiguration,
+                ...     DataModelInfo
+                ... )
                 >>> client = CogniteClient()
+                ...
                 >>> find_assets_tool = QueryKnowledgeGraphAgentToolUpsert(
                 ...     name="find assets",
                 ...     description="Use this tool to find assets",
+                ...     configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...                 view_external_ids=["CogniteAsset"],
+                ...             )
+                ...         ]
+                ...     )
                 ... )
                 >>> agent = AgentUpsert(
                 ...     external_id="my_agent",
@@ -56,6 +72,82 @@ class AgentsAPI(APIClient):
                 ...     tools=[find_assets_tool]
                 ... )
                 >>> client.agents.upsert(agents=[agent])
+
+            Create an agent with multiple different tools:
+
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentUpsert,
+                ...     QueryKnowledgeGraphAgentToolUpsert,
+                ...     QueryKnowledgeGraphAgentToolConfiguration,
+                ...     DataModelInfo,
+                ...     SummarizeDocumentAgentToolUpsert,
+                ...     AskDocumentAgentToolUpsert,
+                ...     QueryTimeSeriesDatapointsAgentToolUpsert
+                ... )
+                ...
+                >>> find_assets_tool = QueryKnowledgeGraphAgentToolUpsert(
+                ...     name="find assets",
+                ...     description="Use this tool to query the knowledge graph for assets",
+                ...     configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...                 view_external_ids=["CogniteAsset"],
+                ...             )
+                ...         ]
+                ...     )
+                ... )
+                >>> find_files_tool = QueryKnowledgeGraphAgentToolUpsert(
+                ...     name="find files",
+                ...     description="Use this tool to query the knowledge graph for files",
+                ...     configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...                 view_external_ids=["CogniteFile"],
+                ...             )
+                ...         ]
+                ...     )
+                ... )
+                >>> find_time_series_tool = QueryKnowledgeGraphAgentToolUpsert(
+                ...     name="find time series",
+                ...     description="Use this tool to query the knowledge graph for time series",
+                ...     configuration=QueryKnowledgeGraphAgentToolConfiguration(
+                ...         data_models=[
+                ...             DataModelInfo(
+                ...                 space="cdf_idm",
+                ...                 external_id="CogniteProcessIndustries",
+                ...                 version="v1",
+                ...                 view_external_ids=["CogniteTimeSeries"],
+                ...             )
+                ...         ]
+                ...     )
+                ... )
+                >>> summarize_tool = SummarizeDocumentAgentToolUpsert(
+                ...     name="summarize document",
+                ...     description="Use this tool to get a summary of a document"
+                ... )
+                >>> ask_doc_tool = AskDocumentAgentToolUpsert(
+                ...     name="ask document",
+                ...     description="Use this tool to ask questions about specific documents"
+                ... )
+                >>> ts_tool = QueryTimeSeriesDatapointsAgentToolUpsert(
+                ...     name="query time series",
+                ...     description="Use this tool to query time series data points"
+                ... )
+                >>> agent = AgentUpsert(
+                ...     external_id="my_agent",
+                ...     name="My agent",
+                ...     description="An agent with many tools",
+                ...     instructions="You are a helpful assistant that can query knowledge graphs, summarize documents, answer questions about documents, and query time series data points.",
+                ...     tools=[find_assets_tool, find_files_tool, find_time_series_tool, summarize_tool, ask_doc_tool, ts_tool]
+                ... )
+                >>> client.agents.upsert(agents=[agent])
+
 
         """
         self._warnings.warn()
