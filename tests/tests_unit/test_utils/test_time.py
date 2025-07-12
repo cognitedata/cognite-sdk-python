@@ -85,7 +85,7 @@ class TestDatetimeToMsIsoTimestamp:
     def test_timezone_unaware(self) -> None:
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
         with tmp_set_envvar("TZ", "CET"):
-            time.tzset()
+            time.tzset()  # type: ignore[attr-defined]
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
     @pytest.mark.dsl
@@ -100,7 +100,7 @@ class TestDatetimeToMsIsoTimestamp:
     def test_timezone_cet_in_local_tz(self) -> None:
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("CET"))
         with tmp_set_envvar("TZ", "UTC"):
-            time.tzset()
+            time.tzset()  # type: ignore[attr-defined]
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
     def test_incorrect_type(self) -> None:
@@ -120,7 +120,7 @@ class TestDatetimeToMs:
     )
     def test_naive_datetime_to_ms_unix(self, local_tz: str, expected_ms: int) -> None:
         with tmp_set_envvar("TZ", local_tz):
-            time.tzset()
+            time.tzset()  # type: ignore[attr-defined]
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
 
@@ -180,7 +180,7 @@ class TestTimestampToMs:
     def test_datetime(self) -> None:
         # Note: See also `TestDatetimeToMs.test_naive_datetime_to_ms`
         with tmp_set_envvar("TZ", "UTC"):
-            time.tzset()
+            time.tzset()  # type: ignore[attr-defined]
             assert 1514764800000 == timestamp_to_ms(datetime(2018, 1, 1))
             assert 1546300800000 == timestamp_to_ms(datetime(2019, 1, 1))
             assert MIN_TIMESTAMP_MS == timestamp_to_ms(datetime(1900, 1, 1))
