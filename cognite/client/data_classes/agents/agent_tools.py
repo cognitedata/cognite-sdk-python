@@ -474,11 +474,11 @@ class UnknownAgentToolUpsert(AgentToolUpsert):
         )
 
 
-class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert], ABC):
+class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert]):
     _RESOURCE = AgentToolUpsert
 
 
-class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool], ABC):
+class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
     _RESOURCE = AgentTool
 
     def as_write(self) -> AgentToolUpsertList:
