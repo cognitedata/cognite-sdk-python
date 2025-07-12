@@ -18,12 +18,12 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [Unreleased]
-### Added
-- Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
-
-
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+
+## [7.76.1] - 2025-07-12
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
 
 ## [7.76.0] - 2025-06-25
 ### Added
