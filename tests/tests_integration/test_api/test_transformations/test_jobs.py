@@ -2,9 +2,11 @@ import asyncio
 import os
 import string
 import time
+from collections.abc import Iterable
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
     OidcCredentials,
@@ -16,7 +18,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_transformation(cognite_client):
+def new_transformation(cognite_client: CogniteClient) -> Iterable[Transformation]:
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
@@ -50,7 +52,9 @@ def new_transformation(cognite_client):
 
 
 @pytest.fixture
-def new_raw_transformation(cognite_client, new_transformation):
+def new_raw_transformation(
+    cognite_client: CogniteClient, new_transformation: Transformation
+) -> Iterable[Transformation]:
     new_transformation.query = "select 1 as key, 'example2' as name, 'example' as externalId"
     new_transformation.destination = TransformationDestination.raw("my_db", "my_table")
     ts = cognite_client.transformations.update(new_transformation)
@@ -189,7 +193,9 @@ class TestTransformationJobsAPI:
         assert job.ignore_null_fields
 
     @pytest.mark.asyncio
-    async def test_run_raw_transformation(self, cognite_client, new_raw_transformation):
+    async def test_run_raw_transformation(
+        self, cognite_client: CogniteClient, new_raw_transformation: Transformation
+    ) -> None:
         job = await new_raw_transformation.run_async(timeout=60)
 
         assert job.id is not None
