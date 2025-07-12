@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Install dependencies
         run: npm install pyodide@0.26.2 # JupyterLite currently using pyodide 0.26.2
       - name: Install cognite-sdk in pyodide environment
