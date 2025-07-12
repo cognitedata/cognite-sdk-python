@@ -2,7 +2,7 @@ import asyncio
 import os
 import string
 import time
-from collections.abc import Iterable
+from collections.abc import Iterator
 
 import pytest
 
@@ -18,7 +18,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_transformation(cognite_client: CogniteClient) -> Iterable[Transformation]:
+def new_transformation(cognite_client: CogniteClient) -> Iterator[Transformation]:
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
@@ -54,7 +54,7 @@ def new_transformation(cognite_client: CogniteClient) -> Iterable[Transformation
 @pytest.fixture
 def new_raw_transformation(
     cognite_client: CogniteClient, new_transformation: Transformation
-) -> Iterable[Transformation]:
+) -> Iterator[Transformation]:
     new_transformation.query = "select 1 as key, 'example2' as name, 'example' as externalId"
     new_transformation.destination = TransformationDestination.raw("my_db", "my_table")
     ts = cognite_client.transformations.update(new_transformation)
