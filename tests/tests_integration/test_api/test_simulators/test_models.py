@@ -73,6 +73,7 @@ class TestSimulatorModels:
             all_versions=True,
             model_external_ids=[model_external_id],
             created_time=TimestampRange(start=0, end=int(time.time() * 1000)),
+            last_updated_time=TimestampRange(start=0, end=int(time.time() * 1000)),
         )
         revisions_all_versions_external_ids = [revision.external_id for revision in revisions_all_versions]
         revisions_default = cognite_client.simulators.models.revisions.list(
