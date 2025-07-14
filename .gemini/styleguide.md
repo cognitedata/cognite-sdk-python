@@ -2,9 +2,12 @@
 
 ## Key Principles
 
-- **Strong Typing**: Use type hints extensively with pyright. Avoid `Any` when possible
-- **Type Safety**: Use dataclasses and Pydantic models for complex data
+- **Strong Typing**: Use type hints extensively with MyPy. Avoid `Any` when possible
+- **Type Safety**: Use dataclasses models for complex data
   structures instead of untyped dictionaries
+- **CogniteResource**: Use `CogniteResource` for DTO (Data Transfer Object) that are request or response
+  objects to/from the Cognite API
+- **CogniteObject**: Use `CogniteObject` for objects that are within `CogniteResource` objects.
 - **IO Safety**: Always use typed data structures for file operations and data parsing
 - **Readability**: Code should be immediately understandable
 - **Maintainability**: Write code that is easy to modify and extend
@@ -88,7 +91,7 @@ if TYPE_CHECKING:
 
 ## Docstrings
 
-Use concise docstrings with Args/Returns format. Based on repository patterns:
+Use concise docstrings with Args/Returns in google-style format. Based on repository patterns:
 
 ```python
 def render_header(header: str) -> str:
@@ -124,28 +127,17 @@ def walk_sdk_documentation(content: Tag, parser: Parser[T]) -> Iterable[T]:
 - **Type safety**: Return `None` or use Union types for fallible operations
 
 ```python
-def load_llm_response(response: str) -> dict[str, Any] | None:
-    try:
-        return json.loads(response)
-    except (TypeError, json.JSONDecodeError) as e:
-        log.warning(f"Failed json load response from LLM: {e}")
-        return None
+def validate_data_modeling_identifier(space: str | None, external_id: str | None = None) -> None:
+    if space and space in {"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"}:
+        raise ValueError(f"The space ID: {space!r} is reserved. Please use another ID.")
+    if external_id and external_id in { "space", "externalId", "createdTime", "lastUpdatedTime", "deletedTime"}:
+        raise ValueError(f"The external ID: {external_id!r} is reserved. Please use another ID.")
 ```
 
 ## Tooling
 
-- **Formatter**: `poetry run ruff format --force-exclude --quiet`
-- **Linter**: `poetry run ruff check --force-exclude --fix --exit-non-zero-on-fix`
-- **Type checker**: `poetry run dmypy run -- cognite` (uses mypy)
 - **Pre-commit**: `pre-commit run --all-files` for comprehensive checks
 
-## Ruff Configuration Deviations
-
-Current project configuration deviates from PEP 8:
-
-- **Line length**: 120 characters (vs PEP 8's 79)
-- **Ignored rules**: E501 (line too long), UP017 (datetime.timezone.utc)
-- **Selected rules**: Includes bugbear (B0), pyupgrade (UP), and isort (I)
 
 ## Data Structures
 
@@ -171,5 +163,4 @@ error_data = {"function_name": "foo", "message": "bar"}
 
 - Use the `logging` module with appropriate levels
 - Include contextual information for debugging
-- Format: `log.warning(f"Description: {variable}")`
   
