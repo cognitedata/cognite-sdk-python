@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.76.0] - 2025-06-25
+### Added
+- When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names when `instance_id_headers` is `True`. Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. E.g. if the column name is of type `NodeId` it will automatically be interpreted as instance ID.
+
 ## [7.75.3] - 2025-06-25
 ### Added
 - Added new `appConfigAcl` capability.
