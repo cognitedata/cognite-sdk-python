@@ -218,7 +218,7 @@ class TimeSeries(TimeSeriesCore):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
-        return sum(dps.count)  # type: ignore [union-attr, arg-type]
+        return sum(dps.count)
 
     def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
         """Returns the latest datapoint in this time series. If empty, returns None.
@@ -230,7 +230,7 @@ class TimeSeries(TimeSeriesCore):
         """
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
-            return dps[0]  # type: ignore [return-value]
+            return dps[0]
         return None
 
     def first(self) -> Datapoint | None:
@@ -244,7 +244,7 @@ class TimeSeries(TimeSeriesCore):
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )
         if dps:
-            return dps[0]  # type: ignore [return-value]
+            return dps[0]
         return None
 
     def asset(self) -> Asset:
