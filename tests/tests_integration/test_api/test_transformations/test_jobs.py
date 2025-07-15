@@ -192,7 +192,7 @@ class TestTransformationJobsAPI:
         assert job.error is None
         assert job.ignore_null_fields
 
-    @pytest.mark.skip("The transformation API is unstable and this test fails frequently.")
+    @pytest.mark.skip("Ticket DOGE-110: The transformation API is unstable and this test fails frequently.")
     @pytest.mark.asyncio
     async def test_run_raw_transformation(
         self, cognite_client: CogniteClient, new_raw_transformation: Transformation
