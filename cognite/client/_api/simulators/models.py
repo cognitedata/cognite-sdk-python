@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, NoReturn, overload
+from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
 from cognite.client._api_client import APIClient
@@ -39,14 +39,14 @@ class SimulatorModelsAPI(APIClient):
     def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
-        filter: SimulatorModelsFilter | dict[str, Any] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
         """`Filter simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
         Retrieves a list of simulator models that match the given criteria
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
-            filter (SimulatorModelsFilter | dict[str, Any] | None): Filter to apply.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
             sort (PropertySort | None): The criteria to sort by.
         Returns:
             SimulatorModelList: List of simulator models
@@ -61,11 +61,12 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators import SimulatorModelsFilter
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
-                ...     filter=SimulatorModelsFilter(simulator_external_ids=["simulator_external_id"]),
+                ...     simulator_external_ids=["simulator_external_id"],
                 ...     sort=PropertySort(order="asc")
                 ... )
 
         """
+        model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         self._warning.warn()
         return self._list(
             method="POST",
@@ -73,7 +74,7 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             list_cls=SimulatorModelList,
             sort=[PropertySort.load(sort).dump()] if sort else None,
-            filter=filter.dump(camel_case=True) if isinstance(filter, CogniteFilter) else filter,
+            filter=model_filter.dump(),
         )
 
     @overload
