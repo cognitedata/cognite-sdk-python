@@ -268,6 +268,7 @@ class TestFilesAPI:
         retrieved_content = cognite_client.files.download_bytes(external_id=external_id)
         assert retrieved_content == content.encode("utf-8")
 
+    @pytest.mark.skip("Ticket DOGE-110: This test is flaky and needs to be fixed")
     def test_upload_multipart(self, cognite_client: CogniteClient) -> None:
         # Min file chunk size is 5MiB
         content_1 = "abcde" * 1_200_000

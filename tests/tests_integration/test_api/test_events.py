@@ -96,13 +96,17 @@ class TestEventsAPI:
             assert listed_id in res_lookup_ids
 
     def test_retrieve_unknown(self, cognite_client):
-        res = cognite_client.events.list(limit=1)
-        with pytest.raises(CogniteNotFoundError):
-            cognite_client.events.retrieve_multiple(ids=[res[0].id], external_ids=["this does not exist"])
-        retr = cognite_client.events.retrieve_multiple(
-            ids=[res[0].id], external_ids=["this does not exist"], ignore_unknown_ids=True
-        )
-        assert 1 == len(retr)
+        external_id = "retrieve_unknown" + random_string(10)
+        created_event = cognite_client.events.create(EventWrite(external_id=external_id))
+        try:
+            with pytest.raises(CogniteNotFoundError):
+                cognite_client.events.retrieve_multiple(ids=[created_event.id], external_ids=["this does not exist"])
+            retr = cognite_client.events.retrieve_multiple(
+                ids=[created_event.id], external_ids=["this does not exist"], ignore_unknown_ids=True
+            )
+            assert 1 == len(retr)
+        finally:
+            cognite_client.events.delete(id=created_event.id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("twenty_events")
     def test_list(self, cognite_client, post_spy):
