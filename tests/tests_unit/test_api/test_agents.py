@@ -167,7 +167,7 @@ class TestAgentsAPI:
     def test_upsert_ensure_retry(
         self, cognite_client: CogniteClient, rsps: MagicMock, agent_response_body: dict[str, object]
     ) -> None:
-        # Simulate a 429 response to ensure retry logic is triggered
+        # Simulate a 503 response to ensure retry logic is triggered
         url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH
         rsps.add(rsps.POST, url, status=503, json={"message": "Connection refused"})
         rsps.add(rsps.POST, url, status=200, json=agent_response_body)
