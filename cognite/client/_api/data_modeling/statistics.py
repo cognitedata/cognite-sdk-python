@@ -8,7 +8,7 @@ from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.statistics import (
     InstanceStatsList,
     InstanceStatsPerSpace,
-    ProjectStatsAndLimits,
+    ProjectStatistics,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -24,13 +24,13 @@ class StatisticsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100  # may need to be renamed, but fine for now
 
-    def project(self) -> ProjectStatsAndLimits:
+    def project(self) -> ProjectStatistics:
         """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 
         Returns:
-            ProjectStatsAndLimits: The requested statistics and limits
+            ProjectStatistics: The requested statistics and limits
 
         Examples:
 
@@ -43,7 +43,7 @@ class StatisticsAPI(APIClient):
                 >>> num_dm = stats.data_models.current
                 >>> num_dm_left = stats.data_models.limit - num_dm
         """
-        return ProjectStatsAndLimits._load(
+        return ProjectStatistics._load(
             self._get(self._RESOURCE_PATH).json(), project=self._cognite_client._config.project
         )
 

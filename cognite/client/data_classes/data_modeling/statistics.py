@@ -1,138 +1,142 @@
-from __future__ import annotations
-
-from collections import UserList
-from collections.abc import Iterable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
-from cognite.client.utils._importing import local_import
-from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
+from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from cognite.client import CogniteClient
 
 
 @dataclass
-class InstanceStatsPerSpace:
-    space: str
-    nodes: int
+class InstanceStatistics(CogniteObject):
+    """Statistics for instances in the data modeling API."""
+
     edges: int
-    soft_deleted_nodes: int
     soft_deleted_edges: int
-
-    @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
-        return cls(
-            space=data["space"],
-            nodes=data["nodes"],
-            edges=data["edges"],
-            soft_deleted_nodes=data["softDeletedNodes"],
-            soft_deleted_edges=data["softDeletedEdges"],
-        )
-
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
-
-    def to_pandas(self) -> pd.DataFrame:
-        pd = local_import("pandas")
-        space = (dumped := asdict(self)).pop("space")
-        return pd.Series(dumped).to_frame(name=space)
-
-
-class InstanceStatsList(UserList):
-    def __init__(self, items: list[InstanceStatsPerSpace]):
-        super().__init__(items)
-
-    @classmethod
-    def _load(cls, data: Iterable[dict[str, Any]]) -> Self:
-        return cls([InstanceStatsPerSpace._load(item) for item in data])
-
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
-
-    def to_pandas(self) -> pd.DataFrame:
-        pd = local_import("pandas")
-        df = pd.DataFrame([asdict(item) for item in self]).set_index("space")
-        order_by_total = (df["nodes"] + df["edges"]).sort_values(ascending=False).index
-        return df.loc[order_by_total]
-
-
-@dataclass
-class CountLimit:
-    count: int
-    limit: int
-
-    @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
-        return cls(count=data["count"], limit=data["limit"])
-
-
-@dataclass
-class InstanceStatsAndLimits:
     nodes: int
-    edges: int
+    soft_deleted_nodes: int
     instances: int
-    instances_limit: int
-    soft_deleted_nodes: int
-    soft_deleted_edges: int
     soft_deleted_instances: int
     soft_deleted_instances_limit: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            nodes=data["nodes"],
-            edges=data["edges"],
-            instances=data["instances"],
-            instances_limit=data["instancesLimit"],
-            soft_deleted_nodes=data["softDeletedNodes"],
-            soft_deleted_edges=data["softDeletedEdges"],
-            soft_deleted_instances=data["softDeletedInstances"],
-            soft_deleted_instances_limit=data["softDeletedInstancesLimit"],
+            edges=resource["edges"],
+            soft_deleted_edges=resource["softDeletedEdges"],
+            nodes=resource["nodes"],
+            soft_deleted_nodes=resource["softDeletedNodes"],
+            instances=resource["instances"],
+            soft_deleted_instances=resource["softDeletedInstances"],
+            soft_deleted_instances_limit=resource["softDeletedInstancesLimit"],
         )
-
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
-
-    def to_pandas(self) -> pd.DataFrame:
-        pd = local_import("pandas")
-        return pd.Series(asdict(self)).to_frame()
 
 
 @dataclass
-class ProjectStatsAndLimits:
-    project: str
+class CountLimit(CogniteObject):
+    count: int
+    limit: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(count=resource["count"], limit=resource["limit"])
+
+
+@dataclass
+class SpaceStatistics(CogniteResource):
+    """Statistics for a space in the data modeling API.
+
+    Attributes:
+        space (str): The space name
+        containers (int): Number of containers in the space.
+        views (int): Number of views in the space.
+        data_models (int): Number of data models in the space.
+        nodes (int): Number of nodes in the space.
+        edges (int): Number of edges in the space.
+        soft_deleted_nodes (int): Number of soft-deleted nodes in the space.
+        soft_deleted_edges (int): Number of soft-deleted edges in the space.
+
+    """
+
+    space: str
+    containers: int
+    views: int
+    data_models: int
+    edges: int
+    soft_deleted_edges: int
+    nodes: int
+    soft_deleted_nodes: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            space=resource["space"],
+            containers=resource["containers"],
+            views=resource["views"],
+            data_models=resource["dataModels"],
+            edges=resource["edges"],
+            soft_deleted_edges=resource["softDeletedEdges"],
+            nodes=resource["nodes"],
+            soft_deleted_nodes=resource["softDeletedNodes"],
+        )
+
+
+@dataclass
+class ProjectStatistics(CogniteResource):
+    """Statistics for a project in the data modeling API.
+
+    Attributes:
+        spaces (CountLimit): Usage and limits for spaces in the project
+        containers (CountLimit): Usage and limits for containers in the project
+        views (CountLimit): Usage and limits for views including all versions in the project
+        data_models (CountLimit): Usage and limits for data models including all versions in the project
+        container_properties (CountLimit): Usage and limits for sum of container properties in the project
+        instances (InstanceStatics): Usage and limits for number of instances in the project
+        concurrent_read_limit (int): Maximum number of concurrent read operations allowed in the project
+        concurrent_write_limit (int): Maximum number of concurrent write operations allowed in the project
+        concurrent_delete_limit (int): Maximum number of concurrent delete operations allowed in the project
+    """
+
     spaces: CountLimit
     containers: CountLimit
     views: CountLimit
     data_models: CountLimit
     container_properties: CountLimit
-    instances: InstanceStatsAndLimits
+    instances: InstanceStatistics
     concurrent_read_limit: int
     concurrent_write_limit: int
     concurrent_delete_limit: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any], project: str) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            project=project,
-            spaces=CountLimit._load(data["spaces"]),
-            containers=CountLimit._load(data["containers"]),
-            views=CountLimit._load(data["views"]),
-            data_models=CountLimit._load(data["dataModels"]),
-            container_properties=CountLimit._load(data["containerProperties"]),
-            instances=InstanceStatsAndLimits._load(data["instances"]),
-            concurrent_read_limit=data["concurrentReadLimit"],
-            concurrent_write_limit=data["concurrentWriteLimit"],
-            concurrent_delete_limit=data["concurrentDeleteLimit"],
+            spaces=CountLimit._load(resource["spaces"]),
+            containers=CountLimit._load(resource["containers"]),
+            views=CountLimit._load(resource["views"]),
+            data_models=CountLimit._load(resource["dataModels"]),
+            container_properties=CountLimit._load(resource["containerProperties"]),
+            instances=InstanceStatistics._load(resource["instances"]),
+            concurrent_read_limit=resource["concurrentReadLimit"],
+            concurrent_write_limit=resource["concurrentWriteLimit"],
+            concurrent_delete_limit=resource["concurrentDeleteLimit"],
         )
 
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the object to a dictionary."""
+        return {
+            "spaces": self.spaces.dump(camel_case),
+            "containers": self.containers.dump(camel_case),
+            "views": self.views.dump(camel_case),
+            "dataModels" if camel_case else "data_models": self.data_models.dump(camel_case),
+            "containerProperties" if camel_case else "container_properties": self.container_properties.dump(camel_case),
+            "instances": self.instances.dump(camel_case),
+            "concurrentReadLimit" if camel_case else "concurrent_read_limit": self.concurrent_read_limit,
+            "concurrentWriteLimit" if camel_case else "concurrent_write_limit": self.concurrent_write_limit,
+            "concurrentDeleteLimit" if camel_case else "concurrent_delete_limit": self.concurrent_delete_limit,
+        }
 
-    def to_pandas(self) -> pd.DataFrame:
-        pd = local_import("pandas")
-        project = (dumped := asdict(self)).pop("project")
-        return pd.Series(dumped).to_frame(name=project)
+
+class SpaceStatisticsList(CogniteResourceList[SpaceStatistics]):
+    _RESOURCE = SpaceStatistics
