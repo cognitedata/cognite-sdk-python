@@ -163,3 +163,15 @@ class TestAgentsAPI:
         assert cast(str, mock_agent_upsert_response.calls[-1].request.url).endswith(
             cognite_client.agents._RESOURCE_PATH
         )
+
+    def test_upsert_ensure_retry(
+        self, cognite_client: CogniteClient, rsps: MagicMock, agent_response_body: dict[str, object]
+    ) -> None:
+        # Simulate a 429 response to ensure retry logic is triggered
+        url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH
+        rsps.add(rsps.POST, url, status=503, json={"message": "Connection refused"})
+        rsps.add(rsps.POST, url, status=200, json=agent_response_body)
+
+        created = cognite_client.agents.upsert(AgentUpsert(external_id="agent_1", name="Agent 1"))
+
+        assert isinstance(created, Agent)
