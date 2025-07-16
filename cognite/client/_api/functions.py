@@ -1250,7 +1250,7 @@ class FunctionSchedulesAPI(APIClient):
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
             cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
-            function_external_id (str | None): (DEPRECATED) External id of the function to attach the schedule to.
+            function_external_id (str | None): (Not Supported) External id of the function to attach the schedule to.
                 Will be converted to (internal) ID before creating the schedule.
             client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials
                 or a dictionary containing client credentials: 'client_id' and 'client_secret'.
