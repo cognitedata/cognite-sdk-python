@@ -1312,7 +1312,7 @@ class FunctionSchedulesAPI(APIClient):
                 ...     description="A schedule just used for some temporary testing.",
                 ... )
 
-            Create a test a new function with an oneshot session:
+            Create a test a new function with an oneshot session (typically used for testing purposes):
 
                 >>> from cognite.client.data_classes.functions import FunctionScheduleWrite
                 >>> session = client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
