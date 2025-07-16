@@ -81,7 +81,7 @@ def mock_agent_upsert_response(rsps: MagicMock, cognite_client: CogniteClient, a
     yield rsps
 
 
-class TestAgentsAPIUnit:
+class TestAgentsAPI:
     def test_retrieve_single(self, cognite_client: CogniteClient, mock_agent_retrieve_response: MagicMock) -> None:
         retrieved_agent = cognite_client.agents.retrieve("agent_1")
         assert isinstance(retrieved_agent, Agent)
