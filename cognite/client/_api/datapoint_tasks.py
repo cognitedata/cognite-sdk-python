@@ -18,6 +18,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
+    overload,
 )
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
@@ -262,6 +263,16 @@ class _DpsQueryValidator:
         elif query.include_outside_points is True:
             raise ValueError("'Include outside points' is not supported for aggregates.")
         return False
+
+    @staticmethod
+    @overload
+    def _verify_and_convert_timezone(
+        tz: str | datetime.timezone | ZoneInfo, is_raw_query: bool
+    ) -> tuple[datetime.timezone | ZoneInfo, str | None]: ...
+
+    @staticmethod
+    @overload
+    def _verify_and_convert_timezone(tz: None, is_raw_query: bool) -> tuple[None, None]: ...
 
     @staticmethod
     def _verify_and_convert_timezone(
