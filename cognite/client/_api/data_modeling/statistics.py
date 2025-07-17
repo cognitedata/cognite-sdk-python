@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import itertools
-from typing import TYPE_CHECKING, Any, Literal, overload
+import urllib.parse
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.statistics import (
-    InstanceStatsList,
-    InstanceStatsPerSpace,
     ProjectStatistics,
+    SpaceStatistics,
+    SpaceStatisticsList,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -22,10 +22,10 @@ class StatisticsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._RETRIEVE_LIMIT = 100  # may need to be renamed, but fine for now
+        self._RETRIEVE_LIMIT = 100
 
     def project(self) -> ProjectStatistics:
-        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
+        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 
@@ -40,35 +40,28 @@ class StatisticsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> stats = client.data_modeling.statistics.project()
-                >>> num_dm = stats.data_models.current
-                >>> num_dm_left = stats.data_models.limit - num_dm
+                >>> data_model_count = stats.data_models.count
+                >>> available_count = stats.data_models.limit - data_model_count
         """
-        return ProjectStatistics._load(
-            self._get(self._RESOURCE_PATH).json(), project=self._cognite_client._config.project
-        )
+        return ProjectStatistics._load(self._get(self._RESOURCE_PATH).json())
 
     @overload
-    def per_space(self, space: str, return_all: Literal[False]) -> InstanceStatsPerSpace: ...
+    def retrieve(self, space: str) -> SpaceStatistics: ...
 
     @overload
-    def per_space(self, space: Any, return_all: Literal[True]) -> InstanceStatsList: ...
+    def retrieve(self, space: SequenceNotStr[str]) -> SpaceStatisticsList: ...
 
-    @overload
-    def per_space(self, space: SequenceNotStr[str], return_all: bool) -> InstanceStatsList: ...
-
-    def per_space(
-        self, space: str | SequenceNotStr[str] | None = None, return_all: bool = False
-    ) -> InstanceStatsPerSpace | InstanceStatsList:
+    def retrieve(
+        self,
+        space: str | SequenceNotStr[str],
+    ) -> SpaceStatistics | SpaceStatisticsList:
         """`Retrieve usage data and limits per space <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
-        See also: `Retrieve statistics and limits for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
-
         Args:
-            space (str | SequenceNotStr[str] | None): The space or spaces to retrieve statistics for.
-            return_all (bool): If True, fetch statistics for all spaces. If False, fetch statistics for the specified space(s).
+            space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
 
         Returns:
-            InstanceStatsPerSpace | InstanceStatsList: InstanceStatsPerSpace if a single space is given, else InstanceStatsList (which is a list of InstanceStatsPerSpace)
+            SpaceStatistics | SpaceStatisticsList: The requested statistics and limits for the specified space(s).
 
         Examples:
 
@@ -76,26 +69,40 @@ class StatisticsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.statistics.per_space("my-space")
+                >>> result = client.data_modeling.statistics.retrieve("my-space")
 
             Fetch statistics for multiple spaces:
-                >>> res = client.data_modeling.statistics.per_space(
+                >>> res = client.data_modeling.statistics.retrieve(
                 ...     ["my-space1", "my-space2"]
                 ... )
 
-            Fetch statistics for all spaces (ignores the 'space' argument):
-                >>> res = client.data_modeling.statistics.per_space(return_all=True)
         """
-        if return_all:
-            return InstanceStatsList._load(self._get(self._RESOURCE_PATH + "/spaces").json()["items"])
-
-        elif space is None:
-            raise ValueError("Either 'space' or 'return_all' must be specified")
-
-        ids = _load_space_identifier(space)
-        return InstanceStatsList._load(
-            itertools.chain.from_iterable(
-                self._post(self._RESOURCE_PATH + "/spaces/byids", json={"items": chunk.as_dicts()}).json()["items"]
-                for chunk in ids.chunked(self._RETRIEVE_LIMIT)
-            )
+        return self._retrieve_multiple(
+            SpaceStatisticsList,
+            SpaceStatistics,
+            identifiers=_load_space_identifier(space),
         )
+
+    def list(self) -> SpaceStatisticsList:
+        """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
+
+        Returns statistics for data modeling resources grouped by each space in the project.
+
+        Returns:
+            SpaceStatisticsList: The requested statistics and limits for all spaces in the project.
+
+        Examples:
+
+            Fetch statistics for all spaces in the project:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> stats = client.data_modeling.statistics.list()
+                >>> for space_stats in stats:
+                ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
+
+        """
+        url = urllib.parse.urljoin(self._RESOURCE_PATH, "spaces")
+        # None 2xx responses are handled by the _get method.
+        response = self._get(url)
+        return SpaceStatisticsList._load(response.json()["items"])
