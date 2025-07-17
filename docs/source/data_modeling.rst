@@ -290,8 +290,8 @@ List space statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.statistics.SpaceStatisticsAPI.list
 
-Statistics data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Data modeling statistics data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.statistics
     :members:
     :show-inheritance:
