@@ -93,7 +93,7 @@ class SpaceStatistics(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
-        return cls(
+        instance = cls(
             space=resource["space"],
             containers=resource["containers"],
             views=resource["views"],
@@ -103,6 +103,8 @@ class SpaceStatistics(CogniteResource):
             nodes=resource["nodes"],
             soft_deleted_nodes=resource["softDeletedNodes"],
         )
+        instance._cognite_client = cognite_client
+        return instance
 
 
 @dataclass
@@ -138,7 +140,7 @@ class ProjectStatistics(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
-        return cls(
+        instance = cls(
             spaces=CountLimit._load(resource["spaces"]),
             containers=CountLimit._load(resource["containers"]),
             views=CountLimit._load(resource["views"]),
@@ -149,6 +151,8 @@ class ProjectStatistics(CogniteResource):
             concurrent_write_limit=resource["concurrentWriteLimit"],
             concurrent_delete_limit=resource["concurrentDeleteLimit"],
         )
+        instance._cognite_client = cognite_client
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the object to a dictionary."""

@@ -83,7 +83,7 @@ class SpaceStatisticsAPI(APIClient):
         """
         # None 2xx responses are handled by the _get method.
         response = self._get(self._RESOURCE_PATH)
-        return SpaceStatisticsList._load(response.json()["items"])
+        return SpaceStatisticsList._load(response.json()["items"], self._cognite_client)
 
 
 class StatisticsAPI(APIClient):
