@@ -130,6 +130,11 @@ class ProjectStatistics(CogniteResource):
     concurrent_write_limit: int
     concurrent_delete_limit: int
 
+    @property
+    def project(self) -> str:
+        """The project name."""
+        return self._cognite_client.config.project
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
         return cls(

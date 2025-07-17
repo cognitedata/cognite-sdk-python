@@ -117,4 +117,4 @@ class StatisticsAPI(APIClient):
         """
         response = self._get(self._RESOURCE_PATH)
 
-        return ProjectStatistics._load(response.json())
+        return ProjectStatistics._load(response.json(), self._cognite_client)
