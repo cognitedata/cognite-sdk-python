@@ -275,6 +275,22 @@ Data Modeling ID data classes
     :members:
     :show-inheritance:
 
+Statistics
+------------
+
+Project
+^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.statistics.StatisticsAPI.project
+
+Retrieve space statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.statistics.SpaceStatisticsAPI.retrieve
+
+List space statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.statistics.SpaceStatisticsAPI.list
+
+
 GraphQL
 -------
 Apply DML
