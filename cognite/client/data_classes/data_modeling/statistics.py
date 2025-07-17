@@ -115,7 +115,7 @@ class ProjectStatistics(CogniteResource):
         views (CountLimit): Usage and limits for views including all versions in the project
         data_models (CountLimit): Usage and limits for data models including all versions in the project
         container_properties (CountLimit): Usage and limits for sum of container properties in the project
-        instances (InstanceStatics): Usage and limits for number of instances in the project
+        instances (InstanceStatistics): Usage and limits for number of instances in the project
         concurrent_read_limit (int): Maximum number of concurrent read operations allowed in the project
         concurrent_write_limit (int): Maximum number of concurrent write operations allowed in the project
         concurrent_delete_limit (int): Maximum number of concurrent delete operations allowed in the project

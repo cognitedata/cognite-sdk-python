@@ -55,15 +55,12 @@ class SpaceStatisticsAPI(APIClient):
                 ... )
 
         """
-        result = self._retrieve_multiple(
+        return self._retrieve_multiple(
             SpaceStatisticsList,
             SpaceStatistics,
             identifiers=_load_space_identifier(space),
             resource_path=self._RESOURCE_PATH,
         )
-        if isinstance(space, str) and isinstance(result, SpaceStatisticsList):
-            return None
-        return result
 
     def list(self) -> SpaceStatisticsList:
         """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
@@ -97,7 +94,7 @@ class StatisticsAPI(APIClient):
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
 
     def project(self) -> ProjectStatistics:
-        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
+        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
 
