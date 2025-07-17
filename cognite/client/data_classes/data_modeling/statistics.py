@@ -19,7 +19,7 @@ class InstanceStatistics(CogniteObject):
         nodes (int): Number of nodes in the project.
         soft_deleted_nodes (int): Number of soft-deleted nodes in the project.
         instances (int): Total number of instances in the project.
-        instance_limit (int): Maximum number of instances allowed in the project.
+        instances_limit (int): Maximum number of instances allowed in the project.
         soft_deleted_instances (int): Total number of soft-deleted instances in the project.
         soft_deleted_instances_limit (int): Maximum number of soft-deleted instances allowed in the project.
     """
@@ -29,7 +29,7 @@ class InstanceStatistics(CogniteObject):
     nodes: int
     soft_deleted_nodes: int
     instances: int
-    instance_limit: int
+    instances_limit: int
     soft_deleted_instances: int
     soft_deleted_instances_limit: int
 
@@ -41,7 +41,7 @@ class InstanceStatistics(CogniteObject):
             nodes=resource["nodes"],
             soft_deleted_nodes=resource["softDeletedNodes"],
             instances=resource["instances"],
-            instance_limit=resource["instanceLimit"],
+            instances_limit=resource["instancesLimit"],
             soft_deleted_instances=resource["softDeletedInstances"],
             soft_deleted_instances_limit=resource["softDeletedInstancesLimit"],
         )

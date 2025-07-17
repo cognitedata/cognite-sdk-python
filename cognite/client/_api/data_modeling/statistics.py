@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import urllib.parse
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -17,36 +16,15 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
-class StatisticsAPI(APIClient):
-    _RESOURCE_PATH = "/models/statistics"
+class SpaceStatisticsAPI(APIClient):
+    _RESOURCE_PATH = "/models/statistics/spaces"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._RETRIEVE_LIMIT = 100
 
-    def project(self) -> ProjectStatistics:
-        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
-
-        Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
-
-        Returns:
-            ProjectStatistics: The requested statistics and limits
-
-        Examples:
-
-            Fetch project statistics (and limits) and check the current number of data models vs.
-            and how many more can be created:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> stats = client.data_modeling.statistics.project()
-                >>> data_model_count = stats.data_models.count
-                >>> available_count = stats.data_models.limit - data_model_count
-        """
-        return ProjectStatistics._load(self._get(self._RESOURCE_PATH).json())
-
     @overload
-    def retrieve(self, space: str) -> SpaceStatistics: ...
+    def retrieve(self, space: str) -> SpaceStatistics | None: ...
 
     @overload
     def retrieve(self, space: SequenceNotStr[str]) -> SpaceStatisticsList: ...
@@ -54,14 +32,14 @@ class StatisticsAPI(APIClient):
     def retrieve(
         self,
         space: str | SequenceNotStr[str],
-    ) -> SpaceStatistics | SpaceStatisticsList:
+    ) -> SpaceStatistics | SpaceStatisticsList | None:
         """`Retrieve usage data and limits per space <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
 
         Args:
             space (str | SequenceNotStr[str]): The space or spaces to retrieve statistics for.
 
         Returns:
-            SpaceStatistics | SpaceStatisticsList: The requested statistics and limits for the specified space(s).
+            SpaceStatistics | SpaceStatisticsList | None: The requested statistics and limits for the specified space(s).
 
         Examples:
 
@@ -77,11 +55,15 @@ class StatisticsAPI(APIClient):
                 ... )
 
         """
-        return self._retrieve_multiple(
+        result = self._retrieve_multiple(
             SpaceStatisticsList,
             SpaceStatistics,
             identifiers=_load_space_identifier(space),
+            resource_path=self._RESOURCE_PATH,
         )
+        if isinstance(space, str) and isinstance(result, SpaceStatisticsList):
+            return None
+        return result
 
     def list(self) -> SpaceStatisticsList:
         """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
@@ -102,7 +84,37 @@ class StatisticsAPI(APIClient):
                 ...     print(f"Space: {space_stats.space}, Nodes: {space_stats.nodes}")
 
         """
-        url = urllib.parse.urljoin(self._RESOURCE_PATH, "spaces")
         # None 2xx responses are handled by the _get method.
-        response = self._get(url)
+        response = self._get(self._RESOURCE_PATH)
         return SpaceStatisticsList._load(response.json()["items"])
+
+
+class StatisticsAPI(APIClient):
+    _RESOURCE_PATH = "/models/statistics"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
+
+    def project(self) -> ProjectStatistics:
+        """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatisticsByIds>`_
+
+        Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances
+
+        Returns:
+            ProjectStatistics: The requested statistics and limits
+
+        Examples:
+
+            Fetch project statistics (and limits) and check the current number of data models vs.
+            and how many more can be created:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> stats = client.data_modeling.statistics.project()
+                >>> data_model_count = stats.data_models.count
+                >>> available_count = stats.data_models.limit - data_model_count
+        """
+        response = self._get(self._RESOURCE_PATH)
+
+        return ProjectStatistics._load(response.json())
