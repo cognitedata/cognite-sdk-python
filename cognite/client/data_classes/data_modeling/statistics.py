@@ -49,6 +49,14 @@ class InstanceStatistics(CogniteObject):
 
 @dataclass
 class CountLimit(CogniteObject):
+    """Usage and limits for a specific resource in the data modeling API.
+
+    Attributes:
+        count (int): The current usage count for the resource.
+        limit (int): The maximum allowed limit for the resource.
+
+    """
+
     count: int
     limit: int
 
