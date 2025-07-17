@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client._cognite_client import CogniteClient
@@ -151,17 +152,20 @@ class ProjectStatistics(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the object to a dictionary."""
-        return {
+        dumped = {
             "spaces": self.spaces.dump(camel_case),
             "containers": self.containers.dump(camel_case),
             "views": self.views.dump(camel_case),
-            "dataModels" if camel_case else "data_models": self.data_models.dump(camel_case),
-            "containerProperties" if camel_case else "container_properties": self.container_properties.dump(camel_case),
+            "data_models": self.data_models.dump(camel_case),
+            "container_properties": self.container_properties.dump(camel_case),
             "instances": self.instances.dump(camel_case),
-            "concurrentReadLimit" if camel_case else "concurrent_read_limit": self.concurrent_read_limit,
-            "concurrentWriteLimit" if camel_case else "concurrent_write_limit": self.concurrent_write_limit,
-            "concurrentDeleteLimit" if camel_case else "concurrent_delete_limit": self.concurrent_delete_limit,
+            "concurrent_read_limit": self.concurrent_read_limit,
+            "concurrent_write_limit": self.concurrent_write_limit,
+            "concurrent_delete_limit": self.concurrent_delete_limit,
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(dumped)
+        return dumped
 
 
 class SpaceStatisticsList(CogniteResourceList[SpaceStatistics]):
