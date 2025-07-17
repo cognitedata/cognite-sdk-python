@@ -6,29 +6,42 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client._cognite_client import CogniteClient
 
 
 @dataclass
 class InstanceStatistics(CogniteObject):
-    """Statistics for instances in the data modeling API."""
+    """Statistics for instances in the data modeling API.
+
+    Attributes:
+        edges (int): Number of edges in the project.
+        soft_deleted_edges (int): Number of soft-deleted edges in the project.
+        nodes (int): Number of nodes in the project.
+        soft_deleted_nodes (int): Number of soft-deleted nodes in the project.
+        instances (int): Total number of instances in the project.
+        instance_limit (int): Maximum number of instances allowed in the project.
+        soft_deleted_instances (int): Total number of soft-deleted instances in the project.
+        soft_deleted_instances_limit (int): Maximum number of soft-deleted instances allowed in the project.
+    """
 
     edges: int
     soft_deleted_edges: int
     nodes: int
     soft_deleted_nodes: int
     instances: int
+    instance_limit: int
     soft_deleted_instances: int
     soft_deleted_instances_limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
         return cls(
             edges=resource["edges"],
             soft_deleted_edges=resource["softDeletedEdges"],
             nodes=resource["nodes"],
             soft_deleted_nodes=resource["softDeletedNodes"],
             instances=resource["instances"],
+            instance_limit=resource["instanceLimit"],
             soft_deleted_instances=resource["softDeletedInstances"],
             soft_deleted_instances_limit=resource["softDeletedInstancesLimit"],
         )
@@ -40,7 +53,7 @@ class CountLimit(CogniteObject):
     limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
         return cls(count=resource["count"], limit=resource["limit"])
 
 
@@ -70,7 +83,7 @@ class SpaceStatistics(CogniteResource):
     soft_deleted_nodes: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
         return cls(
             space=resource["space"],
             containers=resource["containers"],
@@ -110,7 +123,7 @@ class ProjectStatistics(CogniteResource):
     concurrent_delete_limit: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any], cognite_client: "CogniteClient | None" = None) -> Self:
         return cls(
             spaces=CountLimit._load(resource["spaces"]),
             containers=CountLimit._load(resource["containers"]),
