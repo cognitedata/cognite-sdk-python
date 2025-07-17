@@ -777,6 +777,7 @@ class TestIterateDatapoints:
             assert query.identifier.as_primitive() == getattr(dps, query.identifier.name())
             assert len(dps) == exp_len
         dps = dps_lst.get(external_id=ts_xid)
+        assert isinstance(dps, Datapoints)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (-1118, -119)
 
         dps_lst = next(dps_iterator)
@@ -784,6 +785,7 @@ class TestIterateDatapoints:
         assert list(map(len, dps_lst)) == [93, 1000, 1000, 1000]
         assert dps_lst[0].external_id == all_test_time_series[104].external_id
         dps = dps_lst.get(external_id=ts_xid)
+        assert isinstance(dps, Datapoints)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (-118, 881)
 
         dps_lst = next(dps_iterator)
@@ -792,6 +794,7 @@ class TestIterateDatapoints:
         assert dps_lst[0].external_id == ts_xid
 
         dps = dps_lst.get(external_id=ts_xid)
+        assert isinstance(dps, Datapoints)
         assert (dps.timestamp[0], dps.timestamp[-1]) == (882, 1500)
 
     @pytest.mark.parametrize("retrieve_arrays", (False, True))
@@ -3412,7 +3415,7 @@ class TestInsertDatapointsAPI:
                 bad_ts = to_check.timestamp[2].item() // 1_000_000
                 assert to_check.null_timestamps
                 assert math.isnan(to_check.value[2]) and to_check.null_timestamps == {bad_ts}
-                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()  # type: ignore[assignment]
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
             assert list(to_check.value[5:]) == actual_value[4:]
             assert list(to_check.timestamp[1:]) == actual_timestamp
             exp_status_symbols = ["Good", "Good", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Bad", "Uncertain"]
@@ -3516,7 +3519,7 @@ class TestInsertDatapointsAPI:
             assert to_check is not None and to_check.value is not None and to_check.status_symbol is not None
             assert to_check.value[0] == sassy
             if isinstance(to_check, DatapointsArray):
-                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()  # type: ignore[assignment]
+                to_check.timestamp = to_check.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
             assert to_check.timestamp and list(to_check.timestamp[1:]) == actual_timestamp
             assert list(to_check.value[1:]) == actual_value
 
