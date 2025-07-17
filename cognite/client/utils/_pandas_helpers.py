@@ -7,7 +7,7 @@ from datetime import timezone
 from inspect import signature
 from itertools import chain
 from numbers import Integral
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
+    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
 NULLABLE_INT_COLS = {
@@ -87,11 +88,7 @@ def concat_dps_dataframe_list(
     return concat_dataframes_with_nullable_int_cols(dfs)
 
 
-class PandasConvertible(Protocol):
-    def to_pandas(self) -> pd.DataFrame: ...
-
-
-def notebook_display_with_fallback(inst: PandasConvertible, **kwargs: Any) -> str:
+def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceList, **kwargs: Any) -> str:
     params = signature(inst.to_pandas).parameters
     # Default of False enforced (when accepted by method):
     if "camel_case" in params:
