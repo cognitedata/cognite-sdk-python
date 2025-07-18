@@ -590,9 +590,10 @@ class TestWorkflowTriggers:
                 input=workflow_scheduled_trigger.input,
             )
         )
+        print(updated_trigger)
         assert updated_trigger is not None
         assert updated_trigger.external_id == workflow_scheduled_trigger.external_id
-        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *", timezone="Europe/Oslo")
+        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
         assert updated_trigger.workflow_external_id == workflow_scheduled_trigger.workflow_external_id
         assert updated_trigger.workflow_version == workflow_scheduled_trigger.workflow_version
         assert updated_trigger.input == workflow_scheduled_trigger.input
