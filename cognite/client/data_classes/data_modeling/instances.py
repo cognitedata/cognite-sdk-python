@@ -1177,7 +1177,7 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]
@@ -1273,7 +1273,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]

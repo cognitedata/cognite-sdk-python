@@ -337,6 +337,12 @@ class FakeCogniteResourceGenerator:
         self._cognite_client = cognite_client or CogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
+        if abc.ABC in resource_cls.__bases__:
+            subclasses = all_concrete_subclasses(resource_cls)
+            if len(subclasses) == 0:
+                raise TypeError(f"Cannot create instance of abstract class {resource_cls.__name__}")
+            resource_cls = self._random.choice(subclasses) if subclasses else resource_cls
+
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)

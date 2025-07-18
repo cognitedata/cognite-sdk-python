@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.0
+    rev: v0.12.3
     hooks:
       - id: ruff
         args:
@@ -50,7 +50,7 @@ repos:
         require_serial: true  # avoid possible race conditions
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
-    rev: 0.6.0
+    rev: 0.6.7
     hooks:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)

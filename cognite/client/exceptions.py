@@ -36,7 +36,7 @@ class CogniteProjectAccessError(CogniteException):
         # To avoid an infinte loop, we can't just use client.iam.token.inspect(), but use http_client directly:
         api_client = client.iam.token
         _, full_url = api_client._resolve_url("GET", "/api/v1/token/inspect")
-        headers = api_client._configure_headers("application/json", client._config.headers.copy())  # type: ignore [has-type]
+        headers = api_client._configure_headers("application/json", client._config.headers.copy())
         try:
             token_inspect = api_client._http_client.request("GET", url=full_url, headers=headers)
             projects = {proj["projectUrlName"] for proj in token_inspect.json()["projects"]} - {current_project}
