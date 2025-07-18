@@ -1425,7 +1425,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data["cronExpression"])
+        return cls(cron_expression=data["cronExpression"], timezone=data.get("timezone"))
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
