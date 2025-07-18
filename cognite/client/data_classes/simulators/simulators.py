@@ -99,6 +99,13 @@ class Simulator(CogniteResource):
                 item.dump(camel_case=camel_case) for item in self.unit_quantities
             ]
 
+        if isinstance(self.model_dependencies, list) and all(
+            isinstance(item, SimulatorModelDependency) for item in self.model_dependencies
+        ):
+            output["modelDependencies" if camel_case else "model_dependencies"] = [
+                item.dump(camel_case=camel_case) for item in self.model_dependencies
+            ]
+
         return output
 
 
@@ -257,6 +264,13 @@ class SimulatorModelDependency(CogniteObject):
             return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
         else:
             raise TypeError("Expected a dict or a list of dicts.")
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["fileExtensionTypes"] = self.file_extension_types
+        output["fields"] = [field_.dump(camel_case=camel_case) for field_ in self.fields]
+
+        return output
 
 
 @dataclass
