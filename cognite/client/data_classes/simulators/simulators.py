@@ -33,6 +33,7 @@ class Simulator(CogniteResource):
         name (str): Name of the simulator
         file_extension_types (Sequence[str]): File extension types supported by the simulator
         model_types (Sequence[SimulatorModelType] | None): Model types supported by the simulator
+        model_dependencies (Sequence[SimulatorModelDependency] | None): Model dependencies supported by the simulator
         step_fields (Sequence[SimulatorStep] | None): Step types supported by the simulator when creating routines
         unit_quantities (Sequence[SimulatorQuantity] | None): Quantities and their units supported by the simulator
 
@@ -45,12 +46,14 @@ class Simulator(CogniteResource):
         name: str,
         file_extension_types: Sequence[str],
         model_types: Sequence[SimulatorModelType] | None = None,
+        model_dependencies: Sequence[SimulatorModelDependency] | None = None,
         step_fields: Sequence[SimulatorStep] | None = None,
         unit_quantities: Sequence[SimulatorQuantity] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
         self.file_extension_types = file_extension_types
+        self.model_dependencies = model_dependencies
         self.model_types = model_types
         self.step_fields = step_fields
         self.unit_quantities = unit_quantities
@@ -71,6 +74,9 @@ class Simulator(CogniteResource):
             else None,
             unit_quantities=SimulatorQuantity._load_list(resource["unitQuantities"], cognite_client)
             if "unitQuantities" in resource
+            else None,
+            model_dependencies=SimulatorModelDependency._load_list(resource["modelDependencies"], cognite_client)
+            if "modelDependencies" in resource
             else None,
         )
 
@@ -202,6 +208,55 @@ class SimulatorStepField(CogniteObject):
             output["options"] = [option_.dump(camel_case=camel_case) for option_ in self.options]
 
         return output
+
+
+@dataclass
+class SimulatorModelDependencyFields(CogniteObject):
+    """
+    Represents the fields of a simulator model dependency.
+    This is used to define the specific fields that are required for a dependency between two models.
+    """
+
+    name: str
+    label: str
+    info: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            label=resource["label"],
+            info=resource["info"],
+        )
+
+
+@dataclass
+class SimulatorModelDependency(CogniteObject):
+    """
+    Represents a dependency between two simulator models.
+    This is used to define how one model depends on another in the context of a simulator.
+    """
+
+    file_extension_types: Sequence[str]
+    fields: Sequence[SimulatorModelDependencyFields]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file_extension_types=resource["fileExtensionTypes"],
+            fields=[SimulatorModelDependencyFields._load(field_, cognite_client) for field_ in resource["fields"]],
+        )
+
+    @classmethod
+    def _load_list(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> list[SimulatorModelDependency]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
 
 
 @dataclass
