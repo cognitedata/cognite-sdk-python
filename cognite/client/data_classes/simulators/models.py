@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -28,11 +30,13 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         model_external_id: str,
         file_id: int,
         description: str | None = None,
+        external_dependencies: list[SimulatorModelRevisionExternalDependency] | None = None,
     ) -> None:
         self.external_id = external_id
         self.model_external_id = model_external_id
         self.file_id = file_id
         self.description = description
+        self.external_dependencies = external_dependencies
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -41,7 +45,21 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
+            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if isinstance(self.external_dependencies, list) and all(
+            isinstance(item, SimulatorModelRevisionExternalDependency) for item in self.external_dependencies
+        ):
+            output["externalDependencies"] = [item.dump(camel_case=camel_case) for item in self.external_dependencies]
+
+        return output
 
 
 class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
@@ -58,6 +76,11 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
+            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
 
 
@@ -80,6 +103,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id (int): The id of the log associated with the simulator model revision
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status message of the simulator model revision
+        external_dependencies (list[SimulatorModelRevisionExternalDependency] | None): A list of external dependencies for the simulator model revision
     """
 
     def __init__(
@@ -98,12 +122,14 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id: int,
         description: str | None = None,
         status_message: str | None = None,
+        external_dependencies: list[SimulatorModelRevisionExternalDependency] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
             model_external_id=model_external_id,
             file_id=file_id,
             description=description,
+            external_dependencies=external_dependencies,
         )
         self.id = id
         self.created_time = created_time
@@ -133,6 +159,11 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             log_id=resource["logId"],
             description=resource.get("description"),
             status_message=resource.get("statusMessage"),
+            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
 
     def as_write(self) -> SimulatorModelRevisionWrite:
@@ -315,3 +346,54 @@ class SimulatorModelUpdate(CogniteUpdate):
             PropertySpec("name"),
             PropertySpec("description"),
         ]
+
+
+@dataclass
+class SimulatorModelExternalDependencyFileField(CogniteObject):
+    """
+    Represents a file dependency for a simulator model revision.
+    This is used to link external files to the simulator model revision.
+    """
+
+    id: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["id"] = self.id
+        return output
+
+
+@dataclass
+class SimulatorModelRevisionExternalDependency(CogniteObject):
+    file: SimulatorModelExternalDependencyFileField
+    arguments: dict[str, str]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file=SimulatorModelExternalDependencyFileField._load(resource["file"], cognite_client),
+            arguments=resource["arguments"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["file"] = self.file.dump(camel_case=camel_case)
+        output["arguments"] = self.arguments
+        return output
+
+    @classmethod
+    def _load_list(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> list[SimulatorModelRevisionExternalDependency]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
