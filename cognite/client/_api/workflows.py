@@ -85,7 +85,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone="UTC"),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
@@ -122,10 +122,14 @@ class WorkflowTriggerAPI(APIClient):
         )
         dumped = workflow_trigger.dump(camel_case=True)
         dumped["authentication"] = {"nonce": nonce}
+        print("---------")
+        print(dumped)
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [dumped]},
         )
+        print("---------")
+        print(response.json())
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     # TODO: remove method and associated data classes in next major release

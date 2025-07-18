@@ -1419,12 +1419,13 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str) -> None:
+    def __init__(self, cron_expression: str, timezone: str = None) -> None:
         self.cron_expression = cron_expression
+        self.timezone = timezone
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data["cronExpression"])
+        return cls(cron_expression=data["cronExpression"], timezone=data.get("timezone"))
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):

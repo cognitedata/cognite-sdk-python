@@ -584,15 +584,18 @@ class TestWorkflowTriggers:
         updated_trigger = cognite_client.workflows.triggers.upsert(
             WorkflowTriggerUpsert(
                 external_id=workflow_scheduled_trigger.external_id,
-                trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *"),
+                trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *", timezone="Europe/Oslo"),
                 workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
                 workflow_version=workflow_scheduled_trigger.workflow_version,
                 input=workflow_scheduled_trigger.input,
             )
         )
+        print("-------")
+        print(updated_trigger)
         assert updated_trigger is not None
         assert updated_trigger.external_id == workflow_scheduled_trigger.external_id
-        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
+        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *", timezone="Europe/Oslo")
+        print(updated_trigger.trigger_rule)
         assert updated_trigger.workflow_external_id == workflow_scheduled_trigger.workflow_external_id
         assert updated_trigger.workflow_version == workflow_scheduled_trigger.workflow_version
         assert updated_trigger.input == workflow_scheduled_trigger.input
