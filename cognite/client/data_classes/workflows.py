@@ -1424,13 +1424,14 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         self.timezone = timezone
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        item = {
+        output = super().dump(camel_case)
+        output.update({
             ("cronExpression" if camel_case else "cron_expression"): self.cron_expression,
             ("triggerType" if camel_case else "trigger_type"): self.trigger_type,
-        }
+        })
         if self.timezone:
-            item["timezone"] = self.timezone
-        return item
+            output["timezone"] = self.timezone
+        return output
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
