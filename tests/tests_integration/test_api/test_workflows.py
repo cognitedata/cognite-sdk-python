@@ -580,7 +580,8 @@ class TestWorkflowTriggers:
         assert workflow_scheduled_trigger.metadata == {"test": "integration_schedule"}
         assert workflow_scheduled_trigger.created_time is not None
         assert workflow_scheduled_trigger.last_updated_time is not None
-
+        print("before -------")
+        print(workflow_scheduled_trigger)
         updated_trigger = cognite_client.workflows.triggers.upsert(
             WorkflowTriggerUpsert(
                 external_id=workflow_scheduled_trigger.external_id,
