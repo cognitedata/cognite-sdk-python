@@ -1419,13 +1419,14 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str, timezone: str = None) -> None:
+    def __init__(self, cron_expression: str, timezone: str) -> None:
         self.cron_expression = cron_expression
         self.timezone = timezone
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         print("dumping", output)
+        print("timezone", self.timezone)
         output.update({
             ("cronExpression" if camel_case else "cron_expression"): self.cron_expression,
             ("triggerType" if camel_case else "trigger_type"): self.trigger_type,
