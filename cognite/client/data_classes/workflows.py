@@ -1425,6 +1425,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
+        print("dumping", output)
         output.update({
             ("cronExpression" if camel_case else "cron_expression"): self.cron_expression,
             ("triggerType" if camel_case else "trigger_type"): self.trigger_type,
