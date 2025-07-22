@@ -14,7 +14,7 @@ jobs:
       matrix:
         cdf_project: ["python-sdk-contributor", "python-sdk-test-prod"]
     container:
-      image: cognite/toolkit:0.4.9
+      image: cognite/toolkit:0.5.82
       env:
         CDF_CLUSTER: ${{ vars.CDF_CLUSTER_CD }}
         CDF_PROJECT: ${{ matrix.cdf_project }}
