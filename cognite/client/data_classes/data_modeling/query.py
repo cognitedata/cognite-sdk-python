@@ -187,6 +187,9 @@ class ResultSetExpression(CogniteObject, ABC):
             return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
 
 
+SyncMode = Literal["one_phase", "two_phase", "no_backfill"]
+
+
 class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
     def __init__(
         self,
@@ -197,6 +200,8 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
+        sync_mode: SyncMode | None = None,
+        backfill_sort: list[InstanceSort] | None = None,
     ):
         self.from_ = from_
         self.filter = filter
@@ -205,6 +210,32 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
         self.direction = direction
         self.chain_to = chain_to
         self.skip_already_deleted = skip_already_deleted
+        self.sync_mode = sync_mode
+        self.backfill_sort = backfill_sort
+
+    @staticmethod
+    def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
+        if sync_mode is None:
+            return None
+        elif sync_mode == "onePhase":
+            return "one_phase"
+        elif sync_mode == "twoPhase":
+            return "two_phase"
+        elif sync_mode == "noBackfill":
+            return "no_backfill"
+        else:
+            raise ValueError(f"Invalid sync mode {sync_mode}")
+
+    @staticmethod
+    def _dump_sync_mode(sync_mode: SyncMode, camel_case: bool = True) -> str:
+        if sync_mode == "one_phase":
+            return "onePhase" if camel_case else "one_phase"
+        elif sync_mode == "two_phase":
+            return "twoPhase" if camel_case else "two_phase"
+        elif sync_mode == "no_backfill":
+            return "noBackfill" if camel_case else "no_backfill"
+        else:
+            raise ValueError(f"Invalid sync mode {sync_mode}")
 
 
 class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
@@ -219,6 +250,8 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
+        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
     def __init__(
@@ -231,6 +264,8 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
+        sync_mode: SyncMode | None = None,
+        backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
             from_=from_,
@@ -240,6 +275,8 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
             direction=direction,
             chain_to=chain_to,
             skip_already_deleted=skip_already_deleted,
+            sync_mode=sync_mode,
+            backfill_sort=backfill_sort,
         )
         self.through: PropertyId | None = self._init_through(through)
 
@@ -273,6 +310,8 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
             sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+            sync_mode=cls._load_sync_mode(resource.get("mode")),
+            backfill_sort=[InstanceSort.load(sort) for sort in resource.get("backfillSort", [])],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -295,6 +334,12 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
+        if self.sync_mode:
+            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        if self.backfill_sort:
+            output["backfillSort" if camel_case else "backfill_sort"] = [
+                s.dump(camel_case=camel_case) for s in self.backfill_sort
+            ]
 
         return output
 
@@ -315,6 +360,8 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         limit (int | None): Limit the result set to this number of instances.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
+        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
     def __init__(
@@ -331,6 +378,8 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         limit: int | None = None,
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
+        sync_mode: SyncMode | None = None,
+        backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
             from_=from_,
@@ -340,6 +389,8 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             direction=direction,
             chain_to=chain_to,
             skip_already_deleted=skip_already_deleted,
+            sync_mode=sync_mode,
+            backfill_sort=backfill_sort,
         )
         self.max_distance = max_distance
         self.node_filter = node_filter
@@ -364,6 +415,8 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             post_sort=[InstanceSort.load(sort) for sort in resource.get("postSort", [])],
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
+            sync_mode=cls._load_sync_mode(resource.get("mode")),
+            backfill_sort=[InstanceSort.load(sort) for sort in resource.get("backfillSort", [])],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -394,6 +447,12 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             output["limit"] = self.limit
         if not self.skip_already_deleted:
             output["skipAlreadyDeleted" if camel_case else "skip_already_deleted"] = self.skip_already_deleted
+        if self.sync_mode:
+            output["mode"] = self._dump_sync_mode(self.sync_mode, camel_case=camel_case)
+        if self.backfill_sort:
+            output["backfillSort" if camel_case else "backfill_sort"] = [
+                s.dump(camel_case=camel_case) for s in self.backfill_sort
+            ]
         return output
 
 
