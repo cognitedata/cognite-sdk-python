@@ -254,6 +254,10 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
         else:
             raise ValueError(f"Invalid sync mode {sync_mode}")
 
+    @staticmethod
+    def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
+        return [InstanceSort.load(sort) for sort in resource.get(name, [])]
+
 
 class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
     """Describes how to query for nodes in the data model.
@@ -324,11 +328,11 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
             chain_to=query_node.get("chainTo"),
             direction=query_node.get("direction"),
             through=PropertyId.load(through) if through is not None else None,
-            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
+            sort=cls._load_sort(resource, "sort"),
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
             sync_mode=cls._load_sync_mode(resource.get("mode")),
-            backfill_sort=[InstanceSort.load(sort) for sort in resource.get("backfillSort", [])],
+            backfill_sort=cls._load_sort(resource, "backfillSort"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -428,12 +432,12 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             termination_filter=term_flt,
             limit_each=query_edge.get("limitEach"),
             chain_to=query_edge.get("chainTo"),
-            sort=[InstanceSort.load(sort) for sort in resource.get("sort", [])],
-            post_sort=[InstanceSort.load(sort) for sort in resource.get("postSort", [])],
+            sort=cls._load_sort(resource, "sort"),
+            post_sort=cls._load_sort(resource, "postSort"),
             limit=resource.get("limit"),
             skip_already_deleted=resource.get("skipAlreadyDeleted", True),
             sync_mode=cls._load_sync_mode(resource.get("mode")),
-            backfill_sort=[InstanceSort.load(sort) for sort in resource.get("backfillSort", [])],
+            backfill_sort=cls._load_sort(resource, "backfillSort"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
