@@ -159,6 +159,23 @@ class Query(CogniteObject):
         )
         return cls.load(data)
 
+    def _validate_for_query(self) -> None:
+        """Ensures that the Query object is valid for use in the query endpoint (not sync)."""
+        for key, result_set_expression in self.with_.items():
+            if isinstance(result_set_expression, NodeOrEdgeResultSetExpression):
+                if result_set_expression.sync_mode is not None:
+                    raise ValueError(
+                        f"Result set expression '{key}' has sync_mode set, which is not allowed for the query endpoint."
+                    )
+                if result_set_expression.backfill_sort:
+                    raise ValueError(
+                        f"Result set expression '{key}' has backfill_sort set, which is not allowed for the query endpoint."
+                    )
+                if not result_set_expression.skip_already_deleted:
+                    raise ValueError(
+                        f"Result set expression '{key}' has skip_already_deleted set, which is not allowed for the query endpoint."
+                    )
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         parameters = dict(resource["parameters"].items()) if "parameters" in resource else None

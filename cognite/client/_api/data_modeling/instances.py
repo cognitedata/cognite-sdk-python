@@ -1486,6 +1486,7 @@ class InstancesAPI(APIClient):
 
                 >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
         """
+        query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing)
 
     def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
