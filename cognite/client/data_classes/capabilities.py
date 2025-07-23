@@ -565,6 +565,21 @@ class UnknownAcl(Capability):
 
 
 @dataclass
+class AgentsAcl(Capability):
+    _capability_name = "agentsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | IDScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        READ = "READ"
+        WRITE = "WRITE"
+        RUN = "RUN"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
     actions: Sequence[Action]
