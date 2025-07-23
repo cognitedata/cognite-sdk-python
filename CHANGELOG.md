@@ -21,6 +21,11 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.77.0] - 2025-07-17
+### Added
+- Support for the `/models/statistics` API endpoints with methods `client.data_modeling.statistics.project()`,
+  `client.data_modeling.statistics.spaces.list()`, and `client.data_modeling.statistics.spaces.retrieve(...)`.
+
 ## [7.76.1] - 2025-07-12
 ### Added
 - [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
