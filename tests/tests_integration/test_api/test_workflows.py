@@ -279,7 +279,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
     trigger = cognite_client.workflows.triggers.upsert(
         WorkflowTriggerUpsert(
             external_id=f"scheduled-trigger_{version.workflow_external_id}",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="UTC"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
             workflow_external_id=version.workflow_external_id,
             workflow_version=version.version,
             input={"a": 1, "b": 2},
@@ -580,7 +580,6 @@ class TestWorkflowTriggers:
         assert workflow_scheduled_trigger.metadata == {"test": "integration_schedule"}
         assert workflow_scheduled_trigger.created_time is not None
         assert workflow_scheduled_trigger.last_updated_time is not None
-        print("adding the workflows")
         updated_trigger = cognite_client.workflows.triggers.upsert(
             WorkflowTriggerUpsert(
                 external_id=workflow_scheduled_trigger.external_id,
@@ -590,7 +589,6 @@ class TestWorkflowTriggers:
                 input=workflow_scheduled_trigger.input,
             )
         )
-        print("workflows added")
         assert updated_trigger is not None
         assert updated_trigger.external_id == workflow_scheduled_trigger.external_id
         assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(

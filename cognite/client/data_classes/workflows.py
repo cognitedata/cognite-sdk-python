@@ -1422,25 +1422,6 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
     def __init__(self, cron_expression: str, timezone: str | None = None) -> None:
         self.cron_expression = cron_expression
         self.timezone = timezone
-        # ADD THIS DEBUG PRINT:
-        print(f"DEBUG: WorkflowScheduledTriggerRule.__init__ called. self.timezone = '{self.timezone}'")
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        print("dumping", output)
-        print("timezone", self.timezone)
-        output.update(
-            {
-                ("cronExpression" if camel_case else "cron_expression"): self.cron_expression,
-                ("triggerType" if camel_case else "trigger_type"): self.trigger_type,
-            }
-        )
-        if self.timezone:
-            output["timezone"] = self.timezone
-        # ADD THIS DEBUG PRINT:
-        print(f"DEBUG: WorkflowScheduledTriggerRule.dump called. Output including timezone: {output.get('timezone')}")
-        print(f"DEBUG: Full dump output of WSTR: {output}")  # See the whole dictionary
-        return output
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
@@ -1552,7 +1533,6 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
             item["metadata"] = self.metadata
         if camel_case:
             return convert_all_keys_to_camel_case(item)
-        print("dumping item", item)
         return item
 
     @classmethod
