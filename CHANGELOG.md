@@ -21,7 +21,7 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
-## [7.77.1] - 2025-07-23
+## [7.78.0] - 2025-07-23
 #### Added
 - Add `timezone` param to the WorkflowScheduledTriggerRule.
 
