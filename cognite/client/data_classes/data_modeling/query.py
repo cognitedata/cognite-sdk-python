@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import UserDict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -161,20 +161,8 @@ class Query(CogniteObject):
 
     def _validate_for_query(self) -> None:
         """Ensures that the Query object is valid for use in the query endpoint (not sync)."""
-        for key, result_set_expression in self.with_.items():
-            if isinstance(result_set_expression, NodeOrEdgeResultSetExpression):
-                if result_set_expression.sync_mode is not None:
-                    raise ValueError(
-                        f"Result set expression '{key}' has sync_mode set, which is not allowed for the query endpoint."
-                    )
-                if result_set_expression.backfill_sort:
-                    raise ValueError(
-                        f"Result set expression '{key}' has backfill_sort set, which is not allowed for the query endpoint."
-                    )
-                if not result_set_expression.skip_already_deleted:
-                    raise ValueError(
-                        f"Result set expression '{key}' has skip_already_deleted set, which is not allowed for the query endpoint."
-                    )
+        for name, result_set_expression in self.with_.items():
+            result_set_expression._validate_for_query(name)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -202,6 +190,10 @@ class ResultSetExpression(CogniteObject, ABC):
             return SetOperation._load(resource, cognite_client)
         else:
             return UnknownCogniteObject.load(resource)  # type: ignore[return-value]
+
+    @abstractmethod
+    def _validate_for_query(self, name: str) -> None:
+        pass
 
 
 SyncMode = Literal["one_phase", "two_phase", "no_backfill"]
@@ -259,6 +251,20 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
     @staticmethod
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
         return [InstanceSort.load(sort) for sort in resource.get(name, [])]
+
+    def _validate_for_query(self, name: str) -> None:
+        if self.sync_mode is not None:
+            raise ValueError(
+                f"Result set expression '{name}' has sync_mode set, which is not allowed for the query endpoint."
+            )
+        if self.backfill_sort:
+            raise ValueError(
+                f"Result set expression '{name}' has backfill_sort set, which is not allowed for the query endpoint."
+            )
+        if not self.skip_already_deleted:
+            raise ValueError(
+                f"Result set expression '{name}' has skip_already_deleted set, which is not allowed for the query endpoint."
+            )
 
 
 class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
@@ -543,6 +549,9 @@ class SetOperation(ResultSetExpression, ABC):
             return Intersection._load(resource, cognite_client)
         else:
             raise ValueError(f"Unknown set operation {resource}")
+
+    def _validate_for_query(self, name: str) -> None:
+        return
 
 
 class Union(SetOperation):
