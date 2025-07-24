@@ -279,7 +279,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
     trigger = cognite_client.workflows.triggers.upsert(
         WorkflowTriggerUpsert(
             external_id=f"scheduled-trigger_{version.workflow_external_id}",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="Europe/Oslo"),
             workflow_external_id=version.workflow_external_id,
             workflow_version=version.version,
             input={"a": 1, "b": 2},
