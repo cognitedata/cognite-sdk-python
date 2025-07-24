@@ -279,7 +279,7 @@ def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre
     trigger = cognite_client.workflows.triggers.upsert(
         WorkflowTriggerUpsert(
             external_id=f"scheduled-trigger_{version.workflow_external_id}",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="Europe/Oslo"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="UTC"),
             workflow_external_id=version.workflow_external_id,
             workflow_version=version.version,
             input={"a": 1, "b": 2},
@@ -573,7 +573,7 @@ class TestWorkflowTriggers:
     ) -> None:
         assert workflow_scheduled_trigger is not None
         assert workflow_scheduled_trigger.external_id.startswith("scheduled-trigger_integration_test-workflow")
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="Europe/Oslo")
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="UTC")
         assert workflow_scheduled_trigger.workflow_external_id.startswith("integration_test-workflow_")
         assert workflow_scheduled_trigger.workflow_version == "1"
         assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
