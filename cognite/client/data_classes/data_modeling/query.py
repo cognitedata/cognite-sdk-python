@@ -302,7 +302,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         direction (Literal['outwards', 'inwards']): The direction to use when traversing direct relations. Only applicable when through is specified.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
@@ -316,7 +316,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
         direction: Literal["outwards", "inwards"] = "outwards",
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
-        sync_mode: SyncMode | None = None,
+        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] | None = None,
         backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
@@ -412,7 +412,7 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         limit (int | None): Limit the result set to this number of instances.
         chain_to (Literal['destination', 'source']): Control which side of the edge to chain to. The chain_to option is only applicable if the result rexpression referenced in `from` contains edges. `source` will chain to start if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e `direction=inwards`, it will chain to end. `destination` (default) will chain to end if you're following edges outwards i.e `direction=outwards`. If you're following edges inwards i.e, `direction=inwards`, it will chain to start.
         skip_already_deleted (bool): If set to False, the API will return instances that have been soft deleted before sync was initiated. Soft deletes that happen after the sync is initiated and a cursor generated, are always included in the result. Soft deleted instances are identified by having deletedTime set.
-        sync_mode (SyncMode | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
+        sync_mode (Literal['one_phase', 'two_phase', 'no_backfill'] | None): Specify whether to sync instances in a single phase; in a backfill phase followed by live updates, or without any backfill. Only valid for sync operations.
         backfill_sort (list[InstanceSort] | None): Sort the result set during the backfill phase of a two phase sync. Only valid with sync_mode = "two_phase". The sort must be backed by a cursorable index.
     """
 
@@ -430,7 +430,7 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
         limit: int | None = None,
         chain_to: Literal["destination", "source"] = "destination",
         skip_already_deleted: bool = True,
-        sync_mode: SyncMode | None = None,
+        sync_mode: Literal["one_phase", "two_phase", "no_backfill"] | None = None,
         backfill_sort: list[InstanceSort] | None = None,
     ) -> None:
         super().__init__(
