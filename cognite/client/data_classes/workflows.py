@@ -1415,16 +1415,18 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     Args:
         cron_expression (str): The cron specification for the scheduled trigger.
+        timezone (str | None): The timezone for the scheduled trigger. This is optional.
     """
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str) -> None:
+    def __init__(self, cron_expression: str, timezone: str | None = None) -> None:
         self.cron_expression = cron_expression
+        self.timezone = timezone
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data["cronExpression"])
+        return cls(cron_expression=data["cronExpression"], timezone=data.get("timezone"))
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
@@ -1525,6 +1527,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
         }
+
         if self.input:
             item["input"] = self.input
         if self.metadata:
