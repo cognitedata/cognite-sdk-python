@@ -1415,6 +1415,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     Args:
         cron_expression (str): The cron specification for the scheduled trigger.
+        timezone (str | None): The timezone for the scheduled trigger. Defaults to None.
     """
 
     _trigger_type = "schedule"
