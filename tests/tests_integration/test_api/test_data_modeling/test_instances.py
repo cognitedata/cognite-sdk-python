@@ -1347,9 +1347,21 @@ class TestInstancesSync:
                 Select(),
                 r"Result set expression 'result' has limit_each set, which is not allowed for the sync endpoint\.",
             ),
-            (Union(["a"]), Select(), r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\."),
-            (UnionAll(["a"]), Select(), r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\."),
-            (Intersection(["a"]), Select(), r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\."),
+            (
+                Union(["a"]),
+                Select(),
+                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
+            ),
+            (
+                UnionAll(["a"]),
+                Select(),
+                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
+            ),
+            (
+                Intersection(["a"]),
+                Select(),
+                r"Result set expression 'result' uses a set operation, which is not allowed in sync queries\.",
+            ),
             (
                 NodeResultSetExpression(),
                 Select(sort=[InstanceSort(["node", "externalId"])]),
