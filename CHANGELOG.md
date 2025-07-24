@@ -24,6 +24,8 @@ Changes are grouped as follows
 ## [7.78.0] - 2025-07-29
 ### Added
 - Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
+### Changed
+- Improved error messages when using query-specific fields in sync, and vice versa.
 
 ## [7.77.3] - 2025-07-28
 ### Added
