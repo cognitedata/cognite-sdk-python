@@ -574,7 +574,9 @@ class TestWorkflowTriggers:
         assert workflow_scheduled_trigger is not None
         assert workflow_scheduled_trigger.external_id.startswith("scheduled-trigger_integration_test-workflow")
         # 'timezone' defaults to "UTC" in API if omitted, so assert against "UTC".
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *", timezone="UTC")
+        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(
+            cron_expression="* * * * *", timezone="UTC"
+        )
         assert workflow_scheduled_trigger.workflow_external_id.startswith("integration_test-workflow_")
         assert workflow_scheduled_trigger.workflow_version == "1"
         assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
