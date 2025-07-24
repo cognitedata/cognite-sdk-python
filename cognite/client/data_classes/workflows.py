@@ -1543,13 +1543,14 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
         }
-        print("dumping item", item)
+       
         if self.input:
             item["input"] = self.input
         if self.metadata:
             item["metadata"] = self.metadata
         if camel_case:
             return convert_all_keys_to_camel_case(item)
+        print("dumping item", item)
         return item
 
     @classmethod
