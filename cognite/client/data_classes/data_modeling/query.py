@@ -107,6 +107,12 @@ class Select(CogniteObject):
             limit=resource.get("limit"),
         )
 
+    def _validate_for_sync(self, name: str) -> None:
+        if self.sort:
+            raise ValueError(f"Select expression '{name}' has sort set, which is not allowed for the sync endpoint.")
+        if self.limit is not None:
+            raise ValueError(f"Select expression '{name}' has limit set, which is not allowed for the sync endpoint.")
+
 
 class Query(CogniteObject):
     r"""Query allows you to do advanced queries on the data model.
@@ -164,6 +170,13 @@ class Query(CogniteObject):
         for name, result_set_expression in self.with_.items():
             result_set_expression._validate_for_query(name)
 
+    def _validate_for_sync(self) -> None:
+        """Ensures that the Query object is valid for use in the sync endpoint."""
+        for name, result_set_expression in self.with_.items():
+            result_set_expression._validate_for_sync(name)
+        for name, select in self.select.items():
+            select._validate_for_sync(name)
+
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         parameters = dict(resource["parameters"].items()) if "parameters" in resource else None
@@ -193,6 +206,10 @@ class ResultSetExpression(CogniteObject, ABC):
 
     @abstractmethod
     def _validate_for_query(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def _validate_for_sync(self, name: str) -> None:
         pass
 
 
@@ -264,6 +281,12 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
         if not self.skip_already_deleted:
             raise ValueError(
                 f"Result set expression '{name}' has skip_already_deleted set, which is not allowed for the query endpoint."
+            )
+
+    def _validate_for_sync(self, name: str) -> None:
+        if self.sort:
+            raise ValueError(
+                f"Result set expression '{name}' has sort set, which is not allowed for the sync endpoint."
             )
 
 
@@ -484,6 +507,17 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             ]
         return output
 
+    def _validate_for_sync(self, name: str) -> None:
+        super()._validate_for_sync(name)
+        if self.post_sort:
+            raise ValueError(
+                f"Result set expression '{name}' has post_sort set, which is not allowed for the sync endpoint."
+            )
+        if self.limit_each is not None:
+            raise ValueError(
+                f"Result set expression '{name}' has limit_each set, which is not allowed for the sync endpoint."
+            )
+
 
 class QueryResult(UserDict):
     def __getitem__(self, item: str) -> NodeListWithCursor | EdgeListWithCursor:
@@ -552,6 +586,9 @@ class SetOperation(ResultSetExpression, ABC):
 
     def _validate_for_query(self, name: str) -> None:
         return
+
+    def _validate_for_sync(self, name: str) -> None:
+        raise ValueError("Set operations are not allowed in sync queries.")
 
 
 class Union(SetOperation):

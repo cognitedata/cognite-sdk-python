@@ -54,10 +54,12 @@ from cognite.client.data_classes.data_modeling.instances import (
     TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import (
+    EdgeResultSetExpression,
     Intersection,
     NodeResultSetExpression,
     Query,
     QueryResult,
+    ResultSetExpression,
     Select,
     SourceSelector,
     SyncMode,
@@ -1322,6 +1324,55 @@ class TestInstancesAPI:
 
 
 class TestInstancesSync:
+    @pytest.mark.parametrize(
+        "result_set, select, message",
+        [
+            (
+                NodeResultSetExpression(sort=[InstanceSort(["node", "externalId"])]),
+                Select(),
+                r"Result set expression 'result' has sort set, which is not allowed for the sync endpoint.",
+            ),
+            (
+                EdgeResultSetExpression(sort=[InstanceSort(["edge", "externalId"])]),
+                Select(),
+                r"Result set expression 'result' has sort set, which is not allowed for the sync endpoint\.",
+            ),
+            (
+                EdgeResultSetExpression(post_sort=[InstanceSort(["edge", "externalId"])]),
+                Select(),
+                r"Result set expression 'result' has post_sort set, which is not allowed for the sync endpoint\.",
+            ),
+            (
+                EdgeResultSetExpression(limit_each=10),
+                Select(),
+                r"Result set expression 'result' has limit_each set, which is not allowed for the sync endpoint\.",
+            ),
+            (Union(["a"]), Select(), r"Set operations are not allowed in sync queries\."),
+            (UnionAll(["a"]), Select(), r"Set operations are not allowed in sync queries\."),
+            (Intersection(["a"]), Select(), r"Set operations are not allowed in sync queries\."),
+            (
+                NodeResultSetExpression(),
+                Select(sort=[InstanceSort(["node", "externalId"])]),
+                r"Select expression 'result' has sort set, which is not allowed for the sync endpoint\.",
+            ),
+            (
+                NodeResultSetExpression(),
+                Select(limit=10),
+                r"Select expression 'result' has limit set, which is not allowed for the sync endpoint\.",
+            ),
+        ],
+    )
+    def test_fail_with_query_fields_in_sync(
+        self, cognite_client: CogniteClient, result_set: ResultSetExpression, select: Select, message: str
+    ) -> None:
+        with pytest.raises(ValueError, match=message):
+            cognite_client.data_modeling.instances.sync(
+                Query(
+                    with_={"result": result_set},
+                    select={"result": select},
+                )
+            )
+
     @pytest.mark.parametrize("sync_mode", ("one_phase", "no_backfill"))
     def test_fail_with_backfill_sort_without_two_phase(
         self, cognite_client: CogniteClient, sync_mode: SyncMode

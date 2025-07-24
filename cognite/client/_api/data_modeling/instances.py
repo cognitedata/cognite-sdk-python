@@ -1531,6 +1531,7 @@ class InstancesAPI(APIClient):
 
             In the last example, the res_new will only contain the pumps that have been added with the new work order.
         """
+        query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing)
 
     def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool) -> QueryResult:
