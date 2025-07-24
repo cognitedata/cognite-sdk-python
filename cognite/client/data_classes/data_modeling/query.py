@@ -232,27 +232,29 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
 
     @staticmethod
     def _load_sync_mode(sync_mode: str | None) -> SyncMode | None:
-        if sync_mode is None:
-            return None
-        elif sync_mode == "onePhase":
-            return "one_phase"
-        elif sync_mode == "twoPhase":
-            return "two_phase"
-        elif sync_mode == "noBackfill":
-            return "no_backfill"
-        else:
-            raise ValueError(f"Invalid sync mode {sync_mode}")
+        match sync_mode:
+            case None:
+                return None
+            case "onePhase":
+                return "one_phase"
+            case "twoPhase":
+                return "two_phase"
+            case "noBackfill":
+                return "no_backfill"
+            case _:
+                raise ValueError(f"Invalid sync mode {sync_mode}")
 
     @staticmethod
     def _dump_sync_mode(sync_mode: SyncMode, camel_case: bool = True) -> str:
-        if sync_mode == "one_phase":
-            return "onePhase" if camel_case else "one_phase"
-        elif sync_mode == "two_phase":
-            return "twoPhase" if camel_case else "two_phase"
-        elif sync_mode == "no_backfill":
-            return "noBackfill" if camel_case else "no_backfill"
-        else:
-            raise ValueError(f"Invalid sync mode {sync_mode}")
+        match sync_mode:
+            case "one_phase":
+                return "onePhase" if camel_case else "one_phase"
+            case "two_phase":
+                return "twoPhase" if camel_case else "two_phase"
+            case "no_backfill":
+                return "noBackfill" if camel_case else "no_backfill"
+            case _:
+                raise ValueError(f"Invalid sync mode {sync_mode}")
 
     @staticmethod
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
