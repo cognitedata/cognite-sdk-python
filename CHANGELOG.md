@@ -23,7 +23,7 @@ Changes are grouped as follows
 
 ## [7.78.0] - 2025-07-23
 #### Added
-- Add `timezone` param to the WorkflowScheduledTriggerRule.
+- Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
 
 ## [7.77.0] - 2025-07-17
 ### Added
