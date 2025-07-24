@@ -588,7 +588,7 @@ class SetOperation(ResultSetExpression, ABC):
         return
 
     def _validate_for_sync(self, name: str) -> None:
-        raise ValueError("Set operations are not allowed in sync queries.")
+        raise ValueError(f"Result set expression '{name}' uses a set operation, which is not allowed in sync queries.")
 
 
 class Union(SetOperation):
