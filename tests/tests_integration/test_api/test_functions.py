@@ -18,9 +18,9 @@ def a_function(cognite_client: CogniteClient) -> Function:
     name = "python-sdk-test-function"
     external_id = "python-sdk-test-function"
     description = "test function"
-    retrieved = cognite_client.functions.retrieve_multiple(external_ids=[external_id], ignore_unknown_ids=True)
+    retrieved = cognite_client.functions.retrieve(external_id=external_id)
     if retrieved:
-        return retrieved[0]
+        return retrieved
 
     function = cognite_client.functions.create(
         name=name,
@@ -197,3 +197,4 @@ class TestFunctionSchedulesAPI:
     def test_raise_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteNotFoundError):
             cognite_client.functions.schedules.retrieve(id=[123])
+        assert cognite_client.functions.schedules.retrieve(id=123) is None
