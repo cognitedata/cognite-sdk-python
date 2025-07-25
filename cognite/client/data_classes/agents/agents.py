@@ -69,11 +69,14 @@ class AgentUpsert(AgentCore):
             external_id=external_id, name=name, description=description, instructions=instructions, model=model
         )
         self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self._unknown_properties:
+            result.update(self._unknown_properties)
         return result
 
     def as_write(self) -> AgentUpsert:
@@ -88,7 +91,7 @@ class AgentUpsert(AgentCore):
             else None
         )
 
-        return cls(
+        instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
             description=resource.get("description"),
@@ -96,6 +99,9 @@ class AgentUpsert(AgentCore):
             model=resource.get("model"),
             tools=tools,
         )
+        existing = set(instances.dump(camel_case=True).keys())
+        instances._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        return instances
 
 
 class Agent(AgentCore):
@@ -138,11 +144,14 @@ class Agent(AgentCore):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
+        self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self._unknown_properties:
+            result.update(self._unknown_properties)
         return result
 
     def as_write(self) -> AgentUpsert:
@@ -164,7 +173,7 @@ class Agent(AgentCore):
             else None
         )
 
-        return cls(
+        instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
             description=resource.get("description"),
@@ -175,6 +184,9 @@ class Agent(AgentCore):
             last_updated_time=resource.get("lastUpdatedTime"),
             owner_id=resource.get("ownerId"),
         )
+        existing = set(instance.dump(camel_case=True).keys())
+        instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        return instance
 
 
 class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMixin):
