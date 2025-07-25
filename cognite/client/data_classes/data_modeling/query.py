@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, assert_never
 
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
@@ -263,7 +263,7 @@ class NodeOrEdgeResultSetExpression(ResultSetExpression, ABC):
             case "no_backfill":
                 return "noBackfill" if camel_case else "no_backfill"
             case _:
-                raise ValueError(f"Invalid sync mode {sync_mode}")
+                assert_never(sync_mode)
 
     @staticmethod
     def _load_sort(resource: dict[str, Any], name: str) -> list[InstanceSort]:
