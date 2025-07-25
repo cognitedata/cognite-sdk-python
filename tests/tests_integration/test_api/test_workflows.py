@@ -88,22 +88,27 @@ def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
 
 
 @pytest.fixture(scope="class")
-def workflow_list(cognite_client: CogniteClient, data_set: DataSet):
+def workflow_list(cognite_client: CogniteClient, data_set: DataSet) -> WorkflowList:
     workflow_1 = WorkflowUpsert(
-        external_id=f"integration_test-workflow_1_{random_string(5)}",
+        external_id="integration_test-workflow_1",
         description="This workflow is for testing purposes",
         data_set_id=data_set.id,
     )
     workflow_2 = WorkflowUpsert(
-        external_id=f"integration_test-workflow_2_{random_string(5)}",
+        external_id="integration_test-workflow_2",
         description="This workflow is for testing purposes",
     )
-    for workflow in [workflow_1, workflow_2]:
-        cognite_client.workflows.upsert(workflow)
-    yield cognite_client.workflows.list()
-    cognite_client.workflows.delete([workflow_1.external_id, workflow_2.external_id], ignore_unknown_ids=True)
-    assert cognite_client.workflows.retrieve(workflow_1.external_id) is None
-    assert cognite_client.workflows.retrieve(workflow_2.external_id) is None
+    workflows = WorkflowList([])
+    retrieved1 = cognite_client.data_sets.retrieve(external_id=workflow_1.external_id)
+    if retrieved1 is None:
+        retrieved1 = cognite_client.workflows.upsert(workflow_1)
+    workflows.append(retrieved1)
+    retrieved2 = cognite_client.data_sets.retrieve(external_id=workflow_2.external_id)
+    if retrieved2 is None:
+        retrieved2 = cognite_client.workflows.upsert(workflow_2)
+
+    workflows.append(retrieved2)
+    return workflows
 
 
 @pytest.fixture
