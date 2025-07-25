@@ -21,6 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.77.2] - 2025-07-25
+### Added
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+  Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
+  and all properties will be sent to the API.
+
 ## [7.77.1] - 2025-07-23
 ### Added
 - Added new `agentsAcl` capability.
