@@ -568,7 +568,7 @@ class UnknownAcl(Capability):
 class AgentsAcl(Capability):
     _capability_name = "agentsAcl"
     actions: Sequence[Action]
-    scope: AllScope | IDScope
+    scope: AllScope
 
     class Action(Capability.Action):  # type: ignore [misc]
         READ = "READ"
