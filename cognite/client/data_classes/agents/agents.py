@@ -69,6 +69,8 @@ class AgentUpsert(AgentCore):
             external_id=external_id, name=name, description=description, instructions=instructions, model=model
         )
         self.tools: AgentToolUpsertList | None = AgentToolUpsertList(tools) if tools is not None else None
+        # This stores any unknown properties that are not part of the defined fields.
+        # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -144,6 +146,8 @@ class Agent(AgentCore):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
+        # This stores any unknown properties that are not part of the defined fields.
+        # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
