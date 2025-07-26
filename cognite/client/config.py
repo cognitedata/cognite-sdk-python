@@ -138,6 +138,7 @@ class ClientConfig:
         self.organization = organization
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
+        self.auth_url = "https://auth.cognite.com"
         if max_workers is not None:
             # TODO: Remove max_workers from ClientConfig in next major version
             self.max_workers = max_workers  # Will trigger a deprecation warning
