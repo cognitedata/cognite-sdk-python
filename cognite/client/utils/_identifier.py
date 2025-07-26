@@ -257,7 +257,7 @@ class DataModelingIdentifier:
 
 class PrincipalIdentifier:
     def __init__(self, id: str | None = None, external_id: str | None = None) -> None:
-        if exactly_one_is_not_none(id, external_id):
+        if not exactly_one_is_not_none(id, external_id):
             raise ValueError("Exactly one of id or external_id must be specified, got both or neither.")
         if id is not None and not isinstance(id, str):
             raise TypeError(f"Expected id to be of type str, got {type(id)}")
