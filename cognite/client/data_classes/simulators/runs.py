@@ -151,6 +151,7 @@ class SimulationRunWrite(SimulationRunCore):
 class SimulationRun(SimulationRunCore):
     """
     Every time a simulation routine executes, a simulation run object is created.
+
     This object ensures that each execution of a routine is documented and traceable.
     Each run has an associated simulation data resource, which stores the inputs and outputs of a
     simulation run, capturing the values set into and read from the simulator model to ensure
@@ -310,7 +311,6 @@ class SimulationValueBase(CogniteObject):
     """
     Base class for simulation values. This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(
@@ -355,7 +355,6 @@ class SimulationInput(SimulationValueBase):
     """
     This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(
