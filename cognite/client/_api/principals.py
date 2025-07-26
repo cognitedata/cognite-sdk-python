@@ -46,7 +46,7 @@ class PrincipalsAPI(OrgAPI):
 
     def retrieve(
         self,
-        id: str | None,
+        id: str | None = None,
         external_id: str | None = None,
     ) -> Principal | None:
         """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
