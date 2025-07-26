@@ -271,10 +271,13 @@ class APIClient:
         headers[auth_header_name] = auth_header_value
 
     def _resolve_url(self, method: str, url_path: str) -> tuple[bool, str]:
-        if not url_path.startswith("/"):
+        if url_path.startswith("http://") or url_path.startswith("https://"):
+            full_url = url_path
+        elif not url_path.startswith("/"):
             raise ValueError("URL path must start with '/'")
-        base_url = self._get_base_url_with_base_path()
-        full_url = base_url + url_path
+        else:
+            base_url = self._get_base_url_with_base_path()
+            full_url = base_url + url_path
         is_retryable = self._is_retryable(method, full_url)
         return is_retryable, full_url
 

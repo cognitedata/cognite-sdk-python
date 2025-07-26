@@ -218,6 +218,13 @@ class PrincipalList(CogniteResourceList[Principal]):
         """Returns a list of principal IDs."""
         return [principal.id for principal in self]
 
+    def _build_id_mappings(self) -> None:
+        # Overwritten as the base method does not support that only some of the Principals have external IDs.
+        self._id_to_item, self._external_id_to_item, self._instance_id_to_item = {}, {}, {}
+        if not self.data:
+            return
+        self._id_to_item = {item.id: item for item in self.data if item.id is not None}
+
 
 # Build the mapping AFTER all classes are defined
 _PRINCIPAL_CLS_BY_TYPE: dict[str, type[Principal]] = {

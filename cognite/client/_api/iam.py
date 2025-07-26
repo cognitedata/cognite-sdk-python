@@ -6,6 +6,7 @@ from itertools import groupby
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
+from cognite.client._api.principals import PrincipalsAPI
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -103,6 +104,7 @@ class IAMAPI(APIClient):
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
         self.sessions = SessionsAPI(config, api_version, cognite_client)
         self.user_profiles = UserProfilesAPI(config, api_version, cognite_client)
+        self.principals = PrincipalsAPI(config, api_version, cognite_client)
         # TokenAPI only uses base_url, so we pass `api_version=None`:
         self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
 
