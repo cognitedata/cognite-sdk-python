@@ -26,7 +26,22 @@ class PrincipalsAPI(OrgAPI):
     _RESOURCE_PATH = "/principals"
 
     def me(self) -> Principal:
-        raise NotImplementedError()
+        """`Get the current caller's information. <https://developer.cognite.com/api#tag/Principals/operation/getMe>`_
+
+        Returns:
+            Principal: The principal of the user running the code, i.e. the
+                principal *this* CogniteClient was instantiated with.
+
+        Examples:
+
+            Get your own principal:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.iam.principals.me()
+        """
+        res = self._get("https://auth.cognite.com/api/v1/principals/me")
+        return Principal._load(res.json())
 
     def retrieve(
         self,
