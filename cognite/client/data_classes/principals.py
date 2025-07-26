@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -169,7 +170,7 @@ class ServicePrincipal(Principal):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump()
+        output = super().dump(camel_case=camel_case)
         output["createdBy" if camel_case else "created_by"] = self.created_by.dump(camel_case=camel_case)
         return output
 
@@ -208,7 +209,7 @@ class UnknownPrincipal(Principal):
             "type": self.type,
         }
         output.update(self.__data)
-        return output
+        return convert_all_keys_recursive(output, camel_case=camel_case)
 
 
 class PrincipalList(CogniteResourceList[Principal]):
