@@ -52,4 +52,34 @@ class PrincipalsAPI(OrgAPI):
         raise NotImplementedError()
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
-        raise NotImplementedError()
+        """`List principals in the organization <https://developer.cognite.com/api#tag/Principals/operation/listPrincipals>`_
+
+        Args:
+            types (str | SequenceNotStr[str] | None): Filter by principal type(s). Defaults to None, which means no filtering.
+            limit (int): The maximum number of principals to return. Defaults to DEFAULT_LIMIT_READ.
+
+        Returns:
+            PrincipalList: The principal of the user running the code, i.e. the principal *this* CogniteClient was instantiated with.
+
+        Examples:
+
+            List principals in the organization:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.iam.principals.list(types="USER", limit=10)
+        """
+        other_params: dict[str, object] | None = None
+        if isinstance(types, str):
+            other_params = {"types": types}
+        elif isinstance(types, Sequence):
+            other_params = {"types": ",".join(types)}
+
+        return self._list(
+            # The Principal is abstract, but calling load on it will return a concrete instance.
+            method="GET",
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            limit=limit,
+            other_params=other_params,
+        )
