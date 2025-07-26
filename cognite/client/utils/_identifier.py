@@ -547,7 +547,8 @@ class PrincipalIdentifierSequence(IdentifierSequenceCore[PrincipalIdentifier]):
     ) -> PrincipalIdentifierSequence:
         return cls(
             identifiers=PrincipalIdentifierSequence._load_identifiers(ids, external_ids),
-            is_singleton=exactly_one_is_not_none(ids, external_ids),
+            is_singleton=(isinstance(ids, str) and external_ids is None)
+            or (isinstance(external_ids, str) and ids is None),
         )
 
     @staticmethod
