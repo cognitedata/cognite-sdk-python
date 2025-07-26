@@ -263,6 +263,7 @@ class ClientConfig:
             api_subversion=loaded.get("api_subversion"),
             base_url=loaded.get("base_url"),
             max_workers=loaded.get("max_workers"),
+            organization=loaded.get("organization"),
             headers=loaded.get("headers"),
             timeout=loaded.get("timeout"),
             file_transfer_timeout=loaded.get("file_transfer_timeout"),
