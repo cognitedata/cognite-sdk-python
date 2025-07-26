@@ -19,7 +19,7 @@ from typing import (
 from typing_extensions import Self
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, split_into_chunks
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -253,6 +253,33 @@ class DataModelingIdentifier:
 
     def as_primitive(self) -> NoReturn:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
+
+
+class PrincipalIdentifier:
+    def __init__(self, id: str | None = None, external_id: str | None = None) -> None:
+        if exactly_one_is_not_none(id, external_id):
+            raise ValueError("Exactly one of id or external_id must be specified, got both or neither.")
+        if id is not None and not isinstance(id, str):
+            raise TypeError(f"Expected id to be of type str, got {type(id)}")
+        if external_id is not None and not isinstance(external_id, str):
+            raise TypeError(f"Expected external_id to be of type str, got {type(external_id)}")
+        self.__id = id
+        self.__external_id = external_id
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        output: dict[str, str] = {}
+        if self.__id is not None:
+            output["id"] = self.__id
+        if self.__external_id is not None:
+            output["externalId" if camel_case else "external_id"] = self.__external_id
+        return output
+
+    def as_primitive(self) -> str:
+        if self.__id is not None:
+            return self.__id
+        if self.__external_id is not None:
+            return self.__external_id
+        raise ValueError("Neither id nor external_id is set, cannot return primitive value")
 
 
 class ExternalId(Identifier[str]): ...
@@ -509,3 +536,39 @@ class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionId
         if "workflowExternalId" in identifier and "version" in identifier:
             return identifier["workflowExternalId"], identifier["version"]
         raise ValueError(f"{identifier} does not contain both 'workflowExternalId' and 'version'")
+
+
+class PrincipalIdentifierSequence(IdentifierSequenceCore[PrincipalIdentifier]):
+    @classmethod
+    def load(
+        cls,
+        ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
+        external_ids: str | Sequence[str] | SequenceNotStr[str] | None = None,
+    ) -> PrincipalIdentifierSequence:
+        return cls(
+            identifiers=PrincipalIdentifierSequence._load_identifiers(ids, external_ids),
+            is_singleton=exactly_one_is_not_none(ids, external_ids),
+        )
+
+    @staticmethod
+    def _load_identifiers(
+        ids: str | Sequence[str] | SequenceNotStr[str] | None,
+        external_ids: str | Sequence[str] | SequenceNotStr[str] | None,
+    ) -> list[PrincipalIdentifier]:
+        identifiers: list[PrincipalIdentifier] = []
+        if ids is not None:
+            if isinstance(ids, str):
+                identifiers.append(PrincipalIdentifier(id=ids))
+            elif isinstance(ids, Sequence):
+                identifiers.extend([PrincipalIdentifier(id=id_) for id_ in ids])
+            else:
+                raise TypeError(f"ids must be of type str or Sequence[str]. Found {type(ids)}")
+
+        if external_ids is not None:
+            if isinstance(external_ids, str):
+                identifiers.append(PrincipalIdentifier(external_id=external_ids))
+            elif isinstance(external_ids, Sequence):
+                identifiers.extend([PrincipalIdentifier(external_id=extid) for extid in external_ids])
+            else:
+                raise TypeError(f"external_ids must be of type str or SequenceNotStr[str]. Found {type(external_ids)}")
+        return identifiers
