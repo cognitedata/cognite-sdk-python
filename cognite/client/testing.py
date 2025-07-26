@@ -45,6 +45,7 @@ from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
 from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
+from cognite.client._api.principals import PrincipalsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -150,6 +151,7 @@ class CogniteClientMock(MagicMock):
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.principals = MagicMock(spec_set=PrincipalsAPI)
         self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
