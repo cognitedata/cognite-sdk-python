@@ -46,19 +46,17 @@ class PrincipalsAPI(OrgAPI):
 
     def retrieve(
         self,
-        id: str | SequenceNotStr[str] | None,
-        external_id: str | SequenceNotStr[str] | None = None,
-        ignore_unknown_ids: bool = False,
-    ) -> Principal | PrincipalList | None:
-        """`Retrieve principals by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
+        id: str | None,
+        external_id: str | None = None,
+    ) -> Principal | None:
+        """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
 
         Args:
-            id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
-            external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal(s) to retrieve.
-            ignore_unknown_ids (bool): If True, will not raise an error if some IDs are not found. Defaults to False.
+            id (str | None): The ID(s) of the principal(s) to retrieve.
+            external_id (str | None): The external ID(s) of the principal to retrieve.
 
         Returns:
-            Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
+            Principal | None: The principal(s) with the specified ID(s) or external ID(s).
 
         Examples:
 
@@ -67,14 +65,52 @@ class PrincipalsAPI(OrgAPI):
                 >>> client = CogniteClient()
                 >>> res = client.iam.principals.retrieve(id="20u3of8-1234-5678-90ab-cdef12345678")
 
-            Retrieve multiple principals by IDs:
-                >>> res = client.iam.principals.retrieve(id=["20u3of8-1234-5678-90ab-cdef12345678", "20u3of8-1234-5678-90ab-cdef12345679"])
+            Retrieve a principal by external ID:
+                >>> res = client.iam.principals.retrieve(external_id="my_external_id")
 
         """
-        return self._retrieve(
-            identifier=PrincipalIdentifierSequence.load(ids=id, external_ids=external_id),  # type: ignore[arg-type]
-            cls=Principal,  # type: ignore[type-abstract]
-            params={"ignoreUnknownIds": ignore_unknown_ids},
+        identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            identifiers=identifier,
+            other_params={"ignoreUnknownIds": True},
+        )
+
+    def retrieve_multiple(
+        self,
+        ids: SequenceNotStr[str] | None = None,
+        external_ids: SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> PrincipalList:
+        """`Retrieve principals by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
+
+        Args:
+            ids (SequenceNotStr[str] | None): IDs of the principals to retrieve.
+            external_ids (SequenceNotStr[str] | None): External IDs of the principals to retrieve.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            PrincipalList: A list of principals with the specified IDs or external IDs.
+
+        Examples:
+
+            Get multiple principals by ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.iam.principals.retrieve_multiple(ids=["20u3of8-1234-5678-90ab-cdef12345678", "30u3of8-1234-5678-90ab-cdef12345678"])
+
+            Get multiple principals by ID and external ID:
+
+                >>> res = client.assets.retrieve_multiple(ids=["20u3of8-1234-5678-90ab-cdef12345678"], external_ids=["my_external_id_1", "my_external_id_2"])
+        """
+        identifiers = PrincipalIdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=PrincipalList,
+            resource_cls=Principal,  # type: ignore[type-abstract]
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
@@ -97,9 +133,9 @@ class PrincipalsAPI(OrgAPI):
         """
         other_params: dict[str, object] | None = None
         if isinstance(types, str):
-            other_params = {"types": types}
+            other_params = {"types": types.upper()}
         elif isinstance(types, Sequence):
-            other_params = {"types": ",".join(types)}
+            other_params = {"types": ",".join(types).upper()}
 
         return self._list(
             # The Principal is abstract, but calling load on it will return a concrete instance.
