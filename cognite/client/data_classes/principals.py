@@ -11,7 +11,6 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.utils._text import convert_all_keys_recursive
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -209,7 +208,7 @@ class UnknownPrincipal(Principal):
             "type": self.type,
         }
         output.update(self.__data)
-        return convert_all_keys_recursive(output, camel_case=camel_case)
+        return output
 
 
 class PrincipalList(CogniteResourceList[Principal]):
