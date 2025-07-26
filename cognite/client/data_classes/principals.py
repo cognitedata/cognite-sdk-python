@@ -53,6 +53,20 @@ class Principal(CogniteResource, ABC):
 
 
 class UserPrincipal(Principal):
+    """Represents a user principal in Cognite Data Fusion (CDF).
+
+    Arguments:
+        id (str): The ID of an organization user
+        name (str): Human-readable name of the principal
+        picture_url (str): URL to a picture of the principal
+        email (str | None): Do not use this to uniquely identify a user, as it can be changed
+            and is not guaranteed to be unique. Use the id field instead.
+        given_name (str | None): The given name of the user
+        middle_name (str | None): The middle name of the user
+        family_name (str | None): The family name of the user
+
+    """
+
     _type = "user"
 
     def __init__(
@@ -88,6 +102,14 @@ class UserPrincipal(Principal):
 
 @dataclass
 class ServiceAccountCreator(CogniteObject):
+    """The creator of a service account.
+
+    Arguments:
+        org_id (str): The ID of an organization.
+        user_id (str): The ID of an organization user
+
+    """
+
     org_id: str
     user_id: str
 
@@ -97,6 +119,20 @@ class ServiceAccountCreator(CogniteObject):
 
 
 class ServicePrincipal(Principal):
+    """Represents a service account principal in Cognite Data Fusion (CDF).
+
+    Arguments:
+        id (str): Unique identifier of a service account
+        name (str): Human-readable name of the service account
+        created_by (ServiceAccountCreator): The creator of the service account
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        picture_url (str): URL to a picture of the principal.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        description (str | None): A description of the service account.
+
+    """
+
     _type = "service_account"
 
     def __init__(
@@ -139,6 +175,18 @@ class ServicePrincipal(Principal):
 
 
 class UnknownPrincipal(Principal):
+    """Represents an unknown principal in Cognite Data Fusion (CDF).
+
+    This class is used when the principal type is not recognized or not defined in the SDK.
+    Typically, this can happen when a new type of principal is introduced in CDF that is not yet supported by the SDK.
+
+    Arguments:
+        id (str): Unique identifier of the principal.
+        type (str): The type of the principal, which is not recognized by the SDK.
+        data (dict[str, Any]): Additional data associated with the principal, excluding the 'id' field.
+
+    """
+
     _type = "unknown"
 
     def __init__(self, id: str, type: str, data: dict[str, Any]) -> None:
