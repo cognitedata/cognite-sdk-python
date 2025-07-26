@@ -56,8 +56,8 @@ def cognite_client_cdf_authenticated() -> CogniteClient:
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=OAuthClientCredentials(
                 token_url="https://auth.cognite.com/oauth2/token",
-                client_id=os.environ["COGNITE_CLIENT_ID"],
-                client_secret=os.environ["COGNITE_CLIENT_SECRET"],
+                client_id=os.environ["CDF_CLIENT_ID"],
+                client_secret=os.environ["CDF_CLIENT_SECRET"],
                 scopes=None,  # type: ignore[arg-type]
             ),
             organization="cog-python-sdk",
