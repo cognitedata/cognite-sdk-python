@@ -99,6 +99,7 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
+            organization="cog-python-sdk",
             credentials=credentials,
             **beta_configuration,
         )
