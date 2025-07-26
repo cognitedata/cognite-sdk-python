@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.78.0] - 2025-07-30
+### Added
+- Added support for the `/principals` API endpoint for organization service principals.
+
 ## [7.77.2] - 2025-07-26
 ### Added
 - Added `organization` to the `ClientConfig` class. This will be used in organization endpoints in the future such as
