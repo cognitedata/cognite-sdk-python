@@ -107,10 +107,11 @@ class ClientConfig:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
+        organization (str | None): ID of the organization the project belongs to. This is used in the endpoints which
+            require organization context, such as principal endpoints.
         api_subversion (str | None): API subversion
         base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int | None): DEPRECATED. Use global_config.max_workers instead.
-            Max number of workers to spawn when parallelizing data fetching. Defaults to 5.
+        max_workers (int | None): DEPRECATED. Use global_config.max_workers instead. Max number of workers to spawn when parallelizing data fetching. Defaults to 5.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
@@ -122,6 +123,7 @@ class ClientConfig:
         client_name: str,
         project: str,
         credentials: CredentialProvider,
+        organization: str | None = None,
         api_subversion: str | None = None,
         base_url: str | None = None,
         max_workers: int | None = None,
@@ -133,8 +135,10 @@ class ClientConfig:
         self.client_name = client_name
         self.project = project
         self.credentials = credentials
+        self.organization = organization
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
+        self.auth_url = "https://auth.cognite.com"
         if max_workers is not None:
             # TODO: Remove max_workers from ClientConfig in next major version
             self.max_workers = max_workers  # Will trigger a deprecation warning
