@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.principals import Principal, PrincipalList
+from cognite.client.utils._identifier import PrincipalIdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -45,11 +46,36 @@ class PrincipalsAPI(OrgAPI):
 
     def retrieve(
         self,
-        id: int | Sequence[int] | None,
+        id: str | SequenceNotStr[str] | None,
         external_id: str | SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
-        raise NotImplementedError()
+        """`Retrieve principals by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
+
+        Args:
+            id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
+            external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal(s) to retrieve.
+            ignore_unknown_ids (bool): If True, will not raise an error if some IDs are not found. Defaults to False.
+
+        Returns:
+            Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
+
+        Examples:
+
+            Retrieve a principal by ID:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.iam.principals.retrieve(id="20u3of8-1234-5678-90ab-cdef12345678")
+
+            Retrieve multiple principals by IDs:
+                >>> res = client.iam.principals.retrieve(id=["20u3of8-1234-5678-90ab-cdef12345678", "20u3of8-1234-5678-90ab-cdef12345679"])
+
+        """
+        return self._retrieve(
+            identifier=PrincipalIdentifierSequence.load(ids=id, external_ids=external_id),  # type: ignore[arg-type]
+            cls=Principal,  # type: ignore[type-abstract]
+            params={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
         """`List principals in the organization <https://developer.cognite.com/api#tag/Principals/operation/listPrincipals>`_
