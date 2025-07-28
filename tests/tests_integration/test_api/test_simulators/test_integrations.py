@@ -53,7 +53,7 @@ class TestSimulatorIntegrations:
         all_integrations = cognite_client.simulators.integrations.list(limit=None)
         assert all_integrations.get(external_id=simulator_integration["externalId"]) is not None
 
-        cognite_client.simulators.integrations.delete(external_id=simulator_integration["externalId"])
+        cognite_client.simulators.integrations.delete(external_ids=simulator_integration["externalId"])
 
         all_integrations = cognite_client.simulators.integrations.list(limit=None)
         assert all_integrations.get(external_id=simulator_integration["externalId"]) is None
