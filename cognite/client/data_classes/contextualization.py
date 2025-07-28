@@ -1043,7 +1043,7 @@ class ResourceReference(CogniteResource):
     ) -> None:
         self.id = id
         self.external_id = external_id
-        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
+        self._cognite_client = None  # Read only
 
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransformerMixin):

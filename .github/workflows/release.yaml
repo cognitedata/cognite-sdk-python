@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
     environment: CD
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: ./.github/actions/setup
         with:
           extras: '-E all'
@@ -28,7 +28,7 @@ jobs:
         # Testpaths are defined in the pytest.ini file:
         run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml

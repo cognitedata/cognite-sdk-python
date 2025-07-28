@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -488,7 +488,7 @@ class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
 
 # Build the mapping AFTER all classes are defined
 _AGENT_TOOL_CLS_BY_TYPE: dict[str, type[AgentTool]] = {
-    subclass._type: cast(type[AgentTool], subclass)
+    subclass._type: subclass  # type: ignore[type-abstract]
     for subclass in AgentTool.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }
