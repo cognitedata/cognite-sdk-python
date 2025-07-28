@@ -28,6 +28,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+from zoneinfo import ZoneInfo
 
 TaskStatus: TypeAlias = Literal[
     "in_progress",
@@ -1421,9 +1422,19 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str, timezone: str | None = None) -> None:
+    def __init__(self, cron_expression: str, timezone: ZoneInfo | None = None) -> None:
         self.cron_expression = cron_expression
         self.timezone = timezone
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "trigger_type": self.trigger_type,
+            "cron_expression": self.cron_expression,
+            "timezone": self.timezone.key if self.timezone else None,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
