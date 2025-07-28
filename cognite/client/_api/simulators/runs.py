@@ -209,7 +209,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulatorRunList | None:
-        """`Retrieve a simulation run by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
 
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
@@ -233,16 +233,16 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def create(self, run: SimulationRunWrite) -> SimulationRun: ...
+    def create(self, items: SimulationRunWrite) -> SimulationRun: ...
 
     @overload
-    def create(self, run: Sequence[SimulationRunWrite]) -> SimulatorRunList: ...
+    def create(self, items: Sequence[SimulationRunWrite]) -> SimulatorRunList: ...
 
-    def create(self, run: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunList:
+    def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulatorRunList:
         """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
-            run (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
+            items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
 
         Returns:
             SimulationRun | SimulatorRunList: Created simulation run(s)
@@ -261,12 +261,12 @@ class SimulatorRunsAPI(APIClient):
                 ... ]
                 >>> res = client.simulators.runs.create(run)
         """
-        assert_type(run, "simulation_run", [SimulationRunWrite, Sequence])
+        assert_type(items, "simulation_run", [SimulationRunWrite, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorRunList,
             resource_cls=SimulationRun,
-            items=run,
+            items=items,
             input_resource_cls=SimulationRunWrite,
             resource_path=self._RESOURCE_PATH_RUN,
         )

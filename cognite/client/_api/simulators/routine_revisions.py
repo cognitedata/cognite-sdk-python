@@ -181,19 +181,19 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, routine_revision: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
+    def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
 
     @overload
-    def create(self, routine_revision: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+    def create(self, items: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
 
     def create(
         self,
-        routine_revision: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
+        items: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList:
         """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
 
         Args:
-            routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
+            items (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
 
         Returns:
             SimulatorRoutineRevision | SimulatorRoutineRevisionList: Created simulator routine revision(s)
@@ -303,7 +303,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         """
         self._warning.warn()
         assert_type(
-            routine_revision,
+            items,
             "simulator_routine_revision",
             [SimulatorRoutineRevisionWrite, Sequence],
         )
@@ -311,7 +311,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         return self._create_multiple(
             list_cls=SimulatorRoutineRevisionList,
             resource_cls=SimulatorRoutineRevision,
-            items=routine_revision,
+            items=items,
             input_resource_cls=SimulatorRoutineRevisionWrite,
             resource_path=self._RESOURCE_PATH,
         )

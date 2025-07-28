@@ -203,7 +203,10 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.routines.list(
                 ...     simulator_integration_external_ids=["integration_ext_id"],
-                ...     sort=PropertySort(order="asc")
+                ...     sort=PropertySort(
+                ...         property="createdTime",
+                ...         order="desc"
+                ...     )
                 ... )
 
         """
