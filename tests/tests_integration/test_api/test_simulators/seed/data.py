@@ -25,6 +25,7 @@ resource_names = {
     "simulator_model_external_id": f"py_sdk_integration_tests_model_{random_str}",
     "simulator_model_revision_external_id": f"py_sdk_integration_tests_model_{random_str}_v1",
     "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
+    "simulator_model_external_dependency_file_external_id": "Prosper_simulator_model_external_dependency_file",
     "simulator_routine_external_id": f"pysdk_routine_{random_str}",
     "simulator_test_data_set_id": None,
     "simulator_test_data_set_external_id": data_set_external_id,
@@ -35,6 +36,24 @@ simulator = {
     "externalId": resource_names["simulator_external_id"],
     "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
+    "modelDependencies": [
+        {
+        "fileExtensionTypes": [
+            "txt", "out"
+        ],
+        "fields": [
+        {
+            "name": "fieldA",
+            "label": "label fieldA",
+            "info": "info fieldA"
+        },
+        {
+            "name": "fieldB",
+            "label": "label fieldB",
+            "info": "info fieldB"
+        }
+        ]},
+    ],
     "stepFields": [
         {
             "stepType": "get/set",
