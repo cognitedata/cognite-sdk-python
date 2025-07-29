@@ -239,7 +239,7 @@ class SimulationRun(SimulationRunCore):
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
+        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
     def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
