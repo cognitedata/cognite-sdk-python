@@ -267,7 +267,6 @@ class SimulatorModelDependency(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["fileExtensionTypes"] = self.file_extension_types
         output["fields"] = [field_.dump(camel_case=camel_case) for field_ in self.fields]
 
         return output

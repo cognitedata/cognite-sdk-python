@@ -365,7 +365,6 @@ class SimulatorModelExternalDependencyFileField(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["id"] = self.id
         return output
 
 
@@ -384,7 +383,6 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["file"] = self.file.dump(camel_case=camel_case)
-        output["arguments"] = self.arguments
         return output
 
     @classmethod

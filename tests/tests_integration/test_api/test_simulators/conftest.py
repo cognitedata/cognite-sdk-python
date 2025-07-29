@@ -41,7 +41,7 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
 
 def upload_file(
     cognite_client: CogniteClient, filename: str, external_id: str, seed_resource_names: dict[str, str]
-) -> Iterator[FileMetadata | None]:
+) -> FileMetadata:
     data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
