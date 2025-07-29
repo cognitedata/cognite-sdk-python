@@ -352,7 +352,7 @@ class TestWorkflows:
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         retrieved = cognite_client.workflows.retrieve(persisted_workflow_list[0].external_id)
-        assert retrieved == persisted_workflow_list[0]
+        assert retrieved.dump() == persisted_workflow_list[0].dump()
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
