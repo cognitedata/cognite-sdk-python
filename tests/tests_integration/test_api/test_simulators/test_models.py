@@ -175,7 +175,7 @@ class TestSimulatorModels:
                 }
             ],
         )
-        log = cognite_client.simulators.logs.retrieve(id=model_revision_created.log_id)
+        log = cognite_client.simulators.logs.retrieve(ids=model_revision_created.log_id)
         assert log is not None
         assert log.data is not None
         assert len(log.data) == 1
