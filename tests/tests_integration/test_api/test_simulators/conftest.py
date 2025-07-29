@@ -54,8 +54,11 @@ def upload_file(
 
     return file
 
+
 @pytest.fixture(scope="session")
-def seed_model_revision_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[FileMetadata | None]:
+def seed_model_revision_file(
+    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
+) -> Iterator[FileMetadata | None]:
     file = upload_file(
         cognite_client,
         filename="ShowerMixer.txt",
@@ -65,8 +68,11 @@ def seed_model_revision_file(cognite_client: CogniteClient, seed_resource_names:
 
     yield file
 
+
 @pytest.fixture(scope="session")
-def seed_external_dependency_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[FileMetadata | None]:
+def seed_external_dependency_file(
+    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
+) -> Iterator[FileMetadata | None]:
     file = upload_file(
         cognite_client,
         filename="ExtDependency.txt",
@@ -149,7 +155,9 @@ def seed_simulator_models(
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_model_revision_file) -> None:
+def seed_simulator_model_revisions(
+    cognite_client: CogniteClient, seed_simulator_models, seed_model_revision_file
+) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
     model_revisions = cognite_client.simulators.models.revisions.list(
