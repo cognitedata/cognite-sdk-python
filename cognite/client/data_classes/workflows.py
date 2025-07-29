@@ -1376,7 +1376,11 @@ class WorkflowTriggerRule(CogniteObject, ABC):
         # Special handling for schedule trigger with timezone
         if trigger_type == "schedule" and "timezone" in resource and resource["timezone"]:
             resource = dict(resource)  # avoid mutating input
-            resource["timezone"] = ZoneInfo(resource["timezone"])
+            timezone_value = resource["timezone"]
+            # Convert timezone to ZoneInfo if it's a string, leave as-is if already ZoneInfo
+            if isinstance(timezone_value, str):
+                resource["timezone"] = ZoneInfo(timezone_value)
+            # If it's already a ZoneInfo object, keep it as-is
             return cast(Self, WorkflowScheduledTriggerRule._load_trigger(resource))
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
