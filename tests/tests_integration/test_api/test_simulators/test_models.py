@@ -209,7 +209,7 @@ class TestSimulatorModels:
         )
         assert len(revision_with_external_dependencies) == 1
         assert revision_with_external_dependencies[0].external_dependencies == external_dependencies
-        cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
+        cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = random_string(10)
