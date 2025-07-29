@@ -21,6 +21,13 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.77.3] - 2025-07-28
+### Added
+- Comprehensive documentation for the simulators API endpoints
+
+### Changed
+- Consistency improvements across the simulators API namespace
+
 ## [7.77.2] - 2025-07-25
 ### Added
 - Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 

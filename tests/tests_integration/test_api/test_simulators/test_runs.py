@@ -94,7 +94,7 @@ class TestSimulatorRuns:
         assert created_run.id == retrieved_run.id
 
         logs_res = retrieved_run.get_logs()
-        logs_res2 = cognite_client.simulators.logs.retrieve(id=created_run.log_id)
+        logs_res2 = cognite_client.simulators.logs.retrieve(ids=created_run.log_id)
 
         assert logs_res is not None
         assert logs_res.dump() == logs_res2.dump()
