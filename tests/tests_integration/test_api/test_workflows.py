@@ -89,7 +89,7 @@ def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
 
 
 @pytest.fixture(scope="class")
-def workflow_list(cognite_client: CogniteClient, data_set: DataSet):
+def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet):
     workflow_1 = WorkflowUpsert(
         external_id=f"integration_test-workflow_1_{random_string(5)}",
         description="This workflow is for testing purposes",
@@ -346,19 +346,19 @@ class TestWorkflows:
         )
         assert cognite_client.workflows.retrieve(new_workflow.external_id) is None
 
-    def test_retrieve_workflow(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
-        retrieved = cognite_client.workflows.retrieve(workflow_list[0].external_id)
-        assert retrieved == workflow_list[0]
+    def test_retrieve_workflow(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
+        retrieved = cognite_client.workflows.retrieve(persisted_workflow_list[0].external_id)
+        assert retrieved == persisted_workflow_list[0]
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
         assert non_existing is None
 
     @pytest.mark.skip("flaky; fix underway")
-    def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
+    def test_list_workflows(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list(limit=-1)
-        assert len(listed) >= len(workflow_list)
-        assert workflow_list._external_id_to_item.keys() <= listed._external_id_to_item.keys()
+        assert len(listed) >= len(persisted_workflow_list)
+        assert persisted_workflow_list._external_id_to_item.keys() <= listed._external_id_to_item.keys()
 
 
 class TestWorkflowVersions:
