@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import unittest
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -37,7 +38,6 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import timestamp_to_ms
 from cognite.client.utils._text import random_string
-from zoneinfo import ZoneInfo
 from tests.tests_integration.test_api.test_simulators.seed.resources import (
     ensure_workflow_simint_routine,
     finish_simulation_runs,
@@ -591,14 +591,14 @@ class TestWorkflowTriggers:
         assert workflow_scheduled_trigger.last_updated_time is not None
         updated_trigger = cognite_client.workflows.triggers.upsert(
             WorkflowTriggerUpsert(
-            external_id=workflow_scheduled_trigger.external_id,
-            trigger_rule=WorkflowScheduledTriggerRule(
-                cron_expression="0 * * * *",
-                timezone=ZoneInfo("Europe/Oslo"),
-            ),
-            workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
-            workflow_version=workflow_scheduled_trigger.workflow_version,
-            input=workflow_scheduled_trigger.input,
+                external_id=workflow_scheduled_trigger.external_id,
+                trigger_rule=WorkflowScheduledTriggerRule(
+                    cron_expression="0 * * * *",
+                    timezone=ZoneInfo("Europe/Oslo"),
+                ),
+                workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
+                workflow_version=workflow_scheduled_trigger.workflow_version,
+                input=workflow_scheduled_trigger.input,
             )
         )
         assert updated_trigger is not None
