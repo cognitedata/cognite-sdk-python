@@ -249,9 +249,9 @@ def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version:
     return WorkflowExecutionList([run_1, run_2])
 
 
-NEVER_TRIGGER_CRON_EXPRESSION = (
-    "0 0 31 2 *"  # This cron expression will never trigger, as February has at most 29 days.
-)
+# We cannot use a never trigger expression as the API check for it:
+# Invalid cron expression: the provided schedule [0 0 31 2 *] will never fire.
+ALMOST_NEVER_TRIGGER_CRON_EXPRESSION = "0 0 29 2 *"
 
 
 @pytest.fixture(scope="session")
@@ -305,7 +305,7 @@ def permanent_scheduled_trigger(cognite_client: CogniteClient, permanent_workflo
 
     yield retrieved
 
-    never_trigger = _create_scheduled_trigger(version, NEVER_TRIGGER_CRON_EXPRESSION)
+    never_trigger = _create_scheduled_trigger(version, ALMOST_NEVER_TRIGGER_CRON_EXPRESSION)
     # Instead of deleting the trigger, we upsert a new one with a cron expression that will never trigger.
     # This is to avoid deleting/recreating the trigger every time the test runs, which leads to flaky tests.
     cognite_client.workflows.triggers.upsert(never_trigger)
