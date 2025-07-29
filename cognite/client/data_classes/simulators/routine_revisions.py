@@ -227,6 +227,7 @@ class SimulatorRoutineSchedule(CogniteObject):
 class SimulatorRoutineDataSampling(CogniteObject):
     """
     The data sampling configuration of the simulator routine revision.
+
     Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
 
     Args:
@@ -252,6 +253,7 @@ class SimulatorRoutineDataSampling(CogniteObject):
 class SimulatorRoutineLogicalCheck(CogniteObject):
     """
     The logical check configuration of the simulator routine revision.
+
     Learn more about logical checks <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
@@ -279,9 +281,9 @@ class SimulatorRoutineLogicalCheck(CogniteObject):
 @dataclass
 class SimulatorRoutineSteadyStateDetection(CogniteObject):
     """
-    Steady State Detection checks for steady state regions in a given time series.
-    The user specifies the time series and three parameters: min section size, var threshold, and slope threshold.
-    It returns a binary time series, with 1 for timestamps where the steady state criteria is met and 0 otherwise.
+    The steady state detection configuration of the simulator routine revision.
+
+    Learn more about steady state detection <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling/#data-validation-methods>.
 
     Args:
         aggregate (Literal["average", "interpolation", "stepInterpolation"]): The aggregation method to use for the time series.
@@ -312,6 +314,7 @@ class SimulatorRoutineSteadyStateDetection(CogniteObject):
 class SimulatorRoutineConfiguration(CogniteObject):
     """
     The simulator routine configuration defines the configuration of a simulator routine revision.
+
     Learn more about simulator routine configuration <https://docs.cognite.com/cdf/integration/guides/simulators/simulator_routines>.
 
     Args:
@@ -418,6 +421,9 @@ class SimulatorRoutineStepArguments(CogniteObject, dict, MutableMapping[str, str
 
     Depending on the step type and simulator, the arguments can be different.
     For "Get" and "Set" step type the reference ID is required.
+
+    Args:
+        data (dict[str, str]): The step arguments.
     """
 
     def __init__(self, data: dict[str, str]) -> None:
