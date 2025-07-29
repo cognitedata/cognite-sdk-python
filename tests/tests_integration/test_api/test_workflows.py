@@ -590,7 +590,7 @@ class TestWorkflowTriggers:
             external_id=workflow_scheduled_trigger.external_id,
             trigger_rule=WorkflowScheduledTriggerRule(
                 cron_expression="0 * * * *",
-                timezone=ZoneInfo("Euope/Ollo"),
+                timezone=ZoneInfo("Europe/Oslo"),
             ),
             workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
             workflow_version=workflow_scheduled_trigger.workflow_version,
