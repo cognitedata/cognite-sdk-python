@@ -678,7 +678,7 @@ class TestWorkflowTriggers:
         workflow_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
         listed = cognite_client.workflows.triggers.get_triggers(limit=-1)
-        external_ids = set(listed.as_list())
+        external_ids = set(listed.as_external_ids())
         assert permanent_scheduled_trigger.external_id in external_ids
         assert workflow_data_modeling_trigger.external_id in external_ids
 
