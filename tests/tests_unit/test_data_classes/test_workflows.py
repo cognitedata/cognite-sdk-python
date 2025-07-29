@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
 from cognite.client.data_classes.workflows import (
     CDFTaskOutput,
     DynamicTaskOutput,
