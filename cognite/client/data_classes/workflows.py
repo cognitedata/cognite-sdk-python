@@ -1425,7 +1425,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     Args:
         cron_expression (str): The cron specification for the scheduled trigger.
-        timezone (str | None): The timezone in which the scheduled trigger should be evaluated.
+        timezone (ZoneInfo | None): The timezone in which the scheduled trigger should be evaluated.
             If not provided, UTC will be used as the default timezone on the server side.
     """
 

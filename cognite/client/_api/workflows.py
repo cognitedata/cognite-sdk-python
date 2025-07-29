@@ -3,6 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from zoneinfo import ZoneInfo
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -81,11 +82,12 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
+                >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone="UTC"),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
