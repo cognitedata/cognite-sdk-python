@@ -1439,7 +1439,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         item: dict[str, Any] = {
             "trigger_type": self.trigger_type,
             "cron_expression": self.cron_expression,
-            "timezone": self.timezone.key if self.timezone else None,
+            "timezone": self.timezone.key if self.timezone else None,  # ← Sends "timezone": null
         }
         if camel_case:
             return convert_all_keys_to_camel_case(item)
