@@ -21,6 +21,28 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.77.3] - 2025-07-28
+### Added
+- Comprehensive documentation for the simulators API endpoints
+
+### Changed
+- Consistency improvements across the simulators API namespace
+
+## [7.77.2] - 2025-07-25
+### Added
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+  Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
+  and all properties will be sent to the API.
+
+## [7.77.1] - 2025-07-23
+### Added
+- Added new `agentsAcl` capability.
+
+## [7.77.0] - 2025-07-17
+### Added
+- Support for the `/models/statistics` API endpoints with methods `client.data_modeling.statistics.project()`,
+  `client.data_modeling.statistics.spaces.list()`, and `client.data_modeling.statistics.spaces.retrieve(...)`.
+
 ## [7.76.1] - 2025-07-12
 ### Added
 - [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.

@@ -87,7 +87,9 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
 class SimulatorModelRevision(SimulatorModelRevisionCore):
     """
     Simulator model revisions track changes and updates to a simulator model over time.
+
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     Args:
         id (int): Internal id of the simulator model revision
         external_id (str): External id of the simulator model revision
@@ -179,13 +181,16 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     """
     The simulator model resource represents an asset modeled in a simulator.
+
     This asset could range from a pump or well to a complete processing facility or refinery.
     The simulator model is the root of its associated revisions, routines, runs, and results.
     The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
     maintaining the integrity and hierarchy of the simulation data.
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     This is the read/response format of a simulator model.
+
     Args:
         external_id (str): External id of the simulator model
         simulator_external_id (str): External id of the associated simulator
@@ -231,13 +236,16 @@ class SimulatorModelWrite(SimulatorModelCore):
 class SimulatorModel(SimulatorModelCore):
     """
     The simulator model resource represents an asset modeled in a simulator.
+
     This asset could range from a pump or well to a complete processing facility or refinery.
     The simulator model is the root of its associated revisions, routines, runs, and results.
     The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
     maintaining the integrity and hierarchy of the simulation data.
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     This is the read/response format of a simulator model.
+
     Args:
         id (int): A unique id of a simulator model
         external_id (str): External id of the simulator model

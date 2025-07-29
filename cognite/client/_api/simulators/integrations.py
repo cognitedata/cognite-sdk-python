@@ -81,7 +81,8 @@ class SimulatorIntegrationsAPI(APIClient):
         active: bool | None = None,
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
-        Retrieves a list of simulator integrations that match the given criteria
+
+        Retrieves a list of simulator integrations that match the given criteria.
 
         Args:
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
@@ -92,14 +93,12 @@ class SimulatorIntegrationsAPI(APIClient):
             SimulatorIntegrationList: List of simulator integrations
 
         Examples:
-
             List a few simulator integrations:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.integrations.list()
+                >>> res = client.simulators.integrations.list(limit=10)
 
-            Filter integrations by active status:
-                >>> from cognite.client.data_classes.simulators import SimulatorIntegrationFilter
+            Filter simulator integrations by simulator external ids and active status:
                 >>> res = client.simulators.integrations.list(
                 ...     simulator_external_ids=["sim1", "sim2"],
                 ...     active=True,
@@ -117,24 +116,22 @@ class SimulatorIntegrationsAPI(APIClient):
 
     def delete(
         self,
-        id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
+        """`Delete simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
+            ids (int | Sequence[int] | None): Id(s) of simulator integrations to delete
+            external_ids (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
 
         Examples:
-
-            Delete integrations by id or external id:
-
+            Delete simulator integrations by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.integrations.delete(id=[1,2,3], external_id="foo")
+                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )

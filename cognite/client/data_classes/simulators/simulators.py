@@ -309,10 +309,13 @@ class SimulatorList(CogniteResourceList[Simulator], IdTransformerMixin):
 class SimulatorIntegration(CogniteResource):
     """
     The simulator integration resource represents a simulator connector in Cognite Data Fusion (CDF).
+
     It provides information about the configured connectors for a given simulator, including their status and additional
     details such as dataset, name, license status, connector version, simulator version, and more. This resource is essential
     for monitoring and managing the interactions between CDF and external simulators, ensuring proper data flow and integration.
+
     This is the read/response format of the simulator integration.
+
     Args:
         id (int): Id of the simulator integration.
         external_id (str): External id of the simulator integration
