@@ -38,21 +38,12 @@ simulator = {
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "modelDependencies": [
         {
-        "fileExtensionTypes": [
-            "txt", "out"
-        ],
-        "fields": [
-        {
-            "name": "fieldA",
-            "label": "label fieldA",
-            "info": "info fieldA"
+            "fileExtensionTypes": ["txt", "out"],
+            "fields": [
+                {"name": "fieldA", "label": "label fieldA", "info": "info fieldA"},
+                {"name": "fieldB", "label": "label fieldB", "info": "info fieldB"},
+            ],
         },
-        {
-            "name": "fieldB",
-            "label": "label fieldB",
-            "info": "info fieldB"
-        }
-        ]},
     ],
     "stepFields": [
         {
