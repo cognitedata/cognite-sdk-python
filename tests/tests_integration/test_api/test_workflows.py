@@ -89,7 +89,7 @@ def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
 
 
 @pytest.fixture(scope="class")
-def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet):
+def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet) -> WorkflowList:
     workflow_1 = WorkflowUpsert(
         external_id="integration_test-workflow_1",
         description="This workflow is for testing purposes",
