@@ -152,24 +152,24 @@ class SimulatorRoutinesAPI(APIClient):
 
     def delete(
         self,
-        id: int | Sequence[int] | None = None,
+        ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | SequenceNotStr[str] | None = None,
     ) -> None:
         """`Delete simulator routines <https://developer.cognite.com/api#tag/Simulator-Routines/operation/delete_simulator_routine_simulators_routines_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
+            ids (int | Sequence[int] | None): ids (or sequence of ids) for the routine(s) to delete.
             external_ids (str | SequenceNotStr[str] | SequenceNotStr[str] | None): external ids (or sequence of external ids) for the routine(s) to delete.
 
         Examples:
             Delete simulator routines by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.routines.delete(id=[1,2,3], external_id="foo")
+                >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
         """
         self._warning.warn()
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_ids),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )
 
