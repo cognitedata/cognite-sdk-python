@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from zoneinfo import ZoneInfo
 
 from cognite.client.data_classes.workflows import (
     CDFTaskOutput,
@@ -18,8 +19,12 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
+    WorkflowScheduledTriggerRule,
     WorkflowTask,
     WorkflowTaskOutput,
+    WorkflowTrigger,
+    WorkflowTriggerRule,
+    WorkflowTriggerUpsert,
     WorkflowVersionId,
 )
 
@@ -248,3 +253,180 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowScheduledTriggerRule:
+    def test_create_with_timezone_string(self):
+        """Test creating WorkflowScheduledTriggerRule with timezone as string."""
+        trigger = WorkflowScheduledTriggerRule(
+            cron_expression="0 12 * * *",
+            timezone=ZoneInfo("Europe/Oslo")
+        )
+        assert trigger.cron_expression == "0 12 * * *"
+        assert isinstance(trigger.timezone, ZoneInfo)
+        assert trigger.timezone.key == "Europe/Oslo"
+
+    def test_create_without_timezone(self):
+        """Test creating WorkflowScheduledTriggerRule without timezone."""
+        trigger = WorkflowScheduledTriggerRule(cron_expression="0 12 * * *")
+        assert trigger.cron_expression == "0 12 * * *"
+        assert trigger.timezone is None
+
+    def test_load_trigger_with_string_timezone(self):
+        """Test loading WorkflowScheduledTriggerRule from dict with string timezone."""
+        data = {
+            "triggerType": "schedule",
+            "cronExpression": "0 12 * * *",
+            "timezone": "America/New_York"
+        }
+        trigger = WorkflowScheduledTriggerRule._load_trigger(data)
+        assert trigger.cron_expression == "0 12 * * *"
+        assert isinstance(trigger.timezone, ZoneInfo)
+        assert trigger.timezone.key == "America/New_York"
+
+    def test_load_trigger_with_zoneinfo_timezone(self):
+        """Test loading WorkflowScheduledTriggerRule from dict with ZoneInfo timezone."""
+        data = {
+            "triggerType": "schedule", 
+            "cronExpression": "0 12 * * *",
+            "timezone": ZoneInfo("Asia/Tokyo")
+        }
+        trigger = WorkflowScheduledTriggerRule._load_trigger(data)
+        assert trigger.cron_expression == "0 12 * * *"
+        assert isinstance(trigger.timezone, ZoneInfo)
+        assert trigger.timezone.key == "Asia/Tokyo"
+
+    def test_load_trigger_without_timezone(self):
+        """Test loading WorkflowScheduledTriggerRule from dict without timezone."""
+        data = {
+            "triggerType": "schedule",
+            "cronExpression": "0 12 * * *"
+        }
+        trigger = WorkflowScheduledTriggerRule._load_trigger(data)
+        assert trigger.cron_expression == "0 12 * * *"
+        assert trigger.timezone is None
+
+    def test_dump_with_timezone(self):
+        """Test dumping WorkflowScheduledTriggerRule with timezone."""
+        trigger = WorkflowScheduledTriggerRule(
+            cron_expression="0 12 * * *",
+            timezone=ZoneInfo("Europe/London")
+        )
+        dumped = trigger.dump(camel_case=True)
+        expected = {
+            "triggerType": "schedule",
+            "cronExpression": "0 12 * * *",
+            "timezone": "Europe/London"
+        }
+        assert dumped == expected
+
+    def test_dump_without_timezone(self):
+        """Test dumping WorkflowScheduledTriggerRule without timezone."""
+        trigger = WorkflowScheduledTriggerRule(cron_expression="0 12 * * *")
+        dumped = trigger.dump(camel_case=True)
+        expected = {
+            "triggerType": "schedule",
+            "cronExpression": "0 12 * * *",
+            "timezone": None
+        }
+        assert dumped == expected
+
+    def test_dump_snake_case(self):
+        """Test dumping WorkflowScheduledTriggerRule in snake_case."""
+        trigger = WorkflowScheduledTriggerRule(
+            cron_expression="0 12 * * *",
+            timezone=ZoneInfo("UTC")
+        )
+        dumped = trigger.dump(camel_case=False)
+        expected = {
+            "trigger_type": "schedule",
+            "cron_expression": "0 12 * * *",
+            "timezone": "UTC"
+        }
+        assert dumped == expected
+
+
+class TestWorkflowTriggerRule:
+    def test_load_schedule_trigger_with_timezone(self):
+        """Test loading schedule trigger rule through base class with timezone conversion."""
+        resource = {
+            "triggerType": "schedule",
+            "cronExpression": "*/15 * * * *",
+            "timezone": "Australia/Sydney"
+        }
+        trigger_rule = WorkflowTriggerRule._load(resource)
+        assert isinstance(trigger_rule, WorkflowScheduledTriggerRule)
+        assert trigger_rule.cron_expression == "*/15 * * * *"
+        assert isinstance(trigger_rule.timezone, ZoneInfo)
+        assert trigger_rule.timezone.key == "Australia/Sydney"
+
+    def test_load_schedule_trigger_with_zoneinfo(self):
+        """Test loading schedule trigger rule with existing ZoneInfo object."""
+        resource = {
+            "triggerType": "schedule",
+            "cronExpression": "*/15 * * * *",
+            "timezone": ZoneInfo("Pacific/Auckland")
+        }
+        trigger_rule = WorkflowTriggerRule._load(resource)
+        assert isinstance(trigger_rule, WorkflowScheduledTriggerRule)
+        assert trigger_rule.cron_expression == "*/15 * * * *"
+        assert isinstance(trigger_rule.timezone, ZoneInfo)
+        assert trigger_rule.timezone.key == "Pacific/Auckland"
+
+
+class TestWorkflowTriggerWithZoneInfo:
+    def test_workflow_trigger_upsert_with_schedule_timezone(self):
+        """Test creating WorkflowTriggerUpsert with scheduled trigger containing timezone."""
+        trigger_rule = WorkflowScheduledTriggerRule(
+            cron_expression="0 9 * * MON",
+            timezone=ZoneInfo("Europe/Paris")
+        )
+        trigger = WorkflowTriggerUpsert(
+            external_id="test_trigger",
+            trigger_rule=trigger_rule,
+            workflow_external_id="test_workflow",
+            workflow_version="v1"
+        )
+        
+        assert trigger.external_id == "test_trigger"
+        assert isinstance(trigger.trigger_rule, WorkflowScheduledTriggerRule)
+        assert trigger.trigger_rule.timezone.key == "Europe/Paris"
+
+    def test_workflow_trigger_load_with_timezone(self):
+        """Test loading WorkflowTrigger from dict with timezone conversion."""
+        resource = {
+            "externalId": "test_trigger",
+            "workflowExternalId": "test_workflow", 
+            "workflowVersion": "v1",
+            "triggerRule": {
+                "triggerType": "schedule",
+                "cronExpression": "0 6 * * *",
+                "timezone": "America/Los_Angeles"
+            },
+            "createdTime": 1234567890,
+            "lastUpdatedTime": 1234567890
+        }
+        
+        trigger = WorkflowTrigger._load(resource)
+        assert trigger.external_id == "test_trigger"
+        assert isinstance(trigger.trigger_rule, WorkflowScheduledTriggerRule)
+        assert isinstance(trigger.trigger_rule.timezone, ZoneInfo)
+        assert trigger.trigger_rule.timezone.key == "America/Los_Angeles"
+
+    def test_workflow_trigger_dump_preserves_timezone(self):
+        """Test that dumping WorkflowTrigger preserves timezone as string."""
+        trigger_rule = WorkflowScheduledTriggerRule(
+            cron_expression="0 18 * * FRI",
+            timezone=ZoneInfo("Asia/Shanghai")
+        )
+        trigger = WorkflowTriggerUpsert(
+            external_id="friday_trigger",
+            trigger_rule=trigger_rule,
+            workflow_external_id="weekly_report",
+            workflow_version="v2"
+        )
+        
+        dumped = trigger.dump(camel_case=True)
+        assert dumped["triggerRule"]["timezone"] == "Asia/Shanghai"
+        assert dumped["triggerRule"]["triggerType"] == "schedule"
+        assert dumped["triggerRule"]["cronExpression"] == "0 18 * * FRI"

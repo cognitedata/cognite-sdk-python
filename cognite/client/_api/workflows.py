@@ -121,13 +121,11 @@ class WorkflowTriggerAPI(APIClient):
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
         )
         dumped = workflow_trigger.dump(camel_case=True)
-        print("----- DUMPED -----", dumped)
         dumped["authentication"] = {"nonce": nonce}
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [dumped]},
         )
-        print("----- RESPONSE -----", response.json())
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     # TODO: remove method and associated data classes in next major release
