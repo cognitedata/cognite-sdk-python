@@ -75,7 +75,7 @@ def seed_external_dependency_file(
 ) -> Iterator[FileMetadata | None]:
     file = upload_file(
         cognite_client,
-        filename="ExtDependency.txt",
+        filename="ExtDependency.out",
         external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
         seed_resource_names=seed_resource_names,
     )
