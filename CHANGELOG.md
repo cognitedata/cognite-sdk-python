@@ -21,9 +21,12 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
-## [7.78.0] - 2025-07-29
+## [7.79.0] - 2025-07-30
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
+
+## [7.78.0] - 2025-07-29
+### Added
 - Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
 ### Changed
 - Improved error messages when using query-specific fields in sync, and vice versa.
