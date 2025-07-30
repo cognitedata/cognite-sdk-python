@@ -30,7 +30,7 @@ class TestSimulatorModels:
             assert model.created_time is not None
             model_ids.append(model.id)
 
-        found_models = cognite_client.simulators.models.retrieve(id=model_ids)
+        found_models = cognite_client.simulators.models.retrieve(ids=model_ids)
 
         assert len(found_models) == len(model_ids)
 
@@ -38,7 +38,7 @@ class TestSimulatorModels:
 
     def test_retrieve_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = seed_resource_names["simulator_model_external_id"]
-        model = cognite_client.simulators.models.retrieve(external_id=model_external_id)
+        model = cognite_client.simulators.models.retrieve(external_ids=model_external_id)
         assert model is not None
         assert model.external_id == model_external_id
         assert model.created_time > 0
@@ -60,7 +60,7 @@ class TestSimulatorModels:
             assert revision.created_time is not None
             model_revision_ids.append(revision.id)
 
-        found_revisions = cognite_client.simulators.models.revisions.retrieve(id=model_revision_ids)
+        found_revisions = cognite_client.simulators.models.revisions.retrieve(ids=model_revision_ids)
         assert len(found_revisions) == len(model_revision_ids)
 
         assert len(revisions) > 0
@@ -103,7 +103,7 @@ class TestSimulatorModels:
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
-        model_revision = cognite_client.simulators.models.revisions.retrieve(external_id=model_revision_external_id)
+        model_revision = cognite_client.simulators.models.revisions.retrieve(external_ids=model_revision_external_id)
         assert model_revision is not None
         assert model_revision.model_external_id == seed_resource_names["simulator_model_external_id"]
 
@@ -175,14 +175,14 @@ class TestSimulatorModels:
                 }
             ],
         )
-        log = cognite_client.simulators.logs.retrieve(id=model_revision_created.log_id)
+        log = cognite_client.simulators.logs.retrieve(ids=model_revision_created.log_id)
         assert log is not None
         assert log.data is not None
         assert len(log.data) == 1
         assert log.data[0].message == "Testing logs update for simulator model revision"
         assert log.data[0].severity == "Information"
         assert len(multiple_model_revisions_created) == 2
-        cognite_client.simulators.models.delete(external_id=[model_external_id_1, model_external_id_2])
+        cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = random_string(10)
@@ -203,4 +203,4 @@ class TestSimulatorModels:
         assert model_updated is not None
         assert model_updated.description == "updated description"
         assert model_updated.name == "updated name"
-        cognite_client.simulators.models.delete(external_id=[model_updated.external_id])
+        cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])

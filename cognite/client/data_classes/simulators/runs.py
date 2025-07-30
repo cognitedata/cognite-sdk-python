@@ -151,6 +151,7 @@ class SimulationRunWrite(SimulationRunCore):
 class SimulationRun(SimulationRunCore):
     """
     Every time a simulation routine executes, a simulation run object is created.
+
     This object ensures that each execution of a routine is documented and traceable.
     Each run has an associated simulation data resource, which stores the inputs and outputs of a
     simulation run, capturing the values set into and read from the simulator model to ensure
@@ -238,7 +239,7 @@ class SimulationRun(SimulationRunCore):
         Returns:
             SimulatorLog | None: Log for the simulation run.
         """
-        return self._cognite_client.simulators.logs.retrieve(id=self.log_id)
+        return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
     def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
@@ -310,7 +311,6 @@ class SimulationValueBase(CogniteObject):
     """
     Base class for simulation values. This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(
@@ -355,7 +355,6 @@ class SimulationInput(SimulationValueBase):
     """
     This class is used to define the value and its type.
     The value can be a string, double, array of strings or array of doubles.
-    The maximum length is 1024 for strings and 200 for arrays.
     """
 
     def __init__(

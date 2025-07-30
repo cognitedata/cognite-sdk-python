@@ -163,7 +163,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             SimulatorRoutineRevision | SimulatorRoutineRevisionList | None: Requested simulator routine revision
 
         Examples:
-
             Get simulator routine revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -182,64 +181,86 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, routine_revision: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
+    def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
 
     @overload
-    def create(self, routine_revision: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+    def create(self, items: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
 
     def create(
         self,
-        routine_revision: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
+        items: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList:
         """`Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
+
         Args:
-            routine_revision (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
+            items (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
+
         Returns:
             SimulatorRoutineRevision | SimulatorRoutineRevisionList: Created simulator routine revision(s)
+
         Examples:
             Create new simulator routine revisions:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite, SimulatorRoutineConfiguration, SimulatorRoutineInputConstant, SimulatorRoutineOutput, SimulatorRoutineDataSampling, SimulatorRoutineStep, SimulatorRoutineStepArguments, SimulatorRoutineStage, SimulationValueUnitInput
+                >>> from cognite.client.data_classes.simulators.routine_revisions import (
+                ...     SimulatorRoutineRevisionWrite,
+                ...     SimulatorRoutineConfiguration,
+                ...     SimulatorRoutineInputConstant,
+                ...     SimulatorRoutineOutput,
+                ...     SimulatorRoutineDataSampling,
+                ...     SimulatorRoutineStep,
+                ...     SimulatorRoutineStepArguments,
+                ...     SimulatorRoutineStage,
+                ...     SimulationValueUnitInput,
+                ... )
                 >>> client = CogniteClient()
-                >>> routine_revs = [
+                >>> routine_revisions = [
                 ...     SimulatorRoutineRevisionWrite(
                 ...         external_id="routine_rev_1",
                 ...         routine_external_id="routine_1",
                 ...         configuration=SimulatorRoutineConfiguration(
-                ...             data_sampling=SimulatorRoutineDataSampling(sampling_window=15, granularity=1),
+                ...             data_sampling=SimulatorRoutineDataSampling(
+                ...                 sampling_window=15,
+                ...                 granularity=1,
+                ...             ),
                 ...             inputs=[
                 ...                 SimulatorRoutineInputConstant(
-                ...                     name="Cold Water Temperature",
-                ...                     reference_id="CWTC",
-                ...                     value=10.0,
+                ...                     name="Tubing Head Pressure",
+                ...                     reference_id="THP",
+                ...                     value=124.3,
                 ...                     value_type="DOUBLE",
-                ...                     unit=SimulationValueUnitInput(name="C", quantity="temperature"),
-                ...                     save_timeseries_external_id="TEST-ROUTINE-INPUT-CWTC",
+                ...                     unit=SimulationValueUnitInput(
+                ...                         name="bar",
+                ...                         quantity="pressure",
+                ...                     ),
+                ...                     save_timeseries_external_id="TEST-ROUTINE-INPUT-THP",
                 ...                 ),
                 ...             ],
                 ...             outputs=[
                 ...                 SimulatorRoutineOutput(
-                ...                     name="Shower Temperature",
-                ...                     reference_id="ST",
-                ...                     unit=SimulationValueUnitInput(name="C", quantity="temperature"),
+                ...                     name="Bottom Hole Pressure",
+                ...                     reference_id="BHP",
+                ...                     unit=SimulationValueUnitInput(
+                ...                         name="bar",
+                ...                         quantity="pressure",
+                ...                     ),
                 ...                     value_type="DOUBLE",
-                ...                     save_timeseries_external_id="TEST-ROUTINE-OUTPUT-ST",
+                ...                     save_timeseries_external_id="TEST-ROUTINE-OUTPUT-BHP",
                 ...                 ),
                 ...             ],
                 ...         ),
                 ...         script=[
                 ...             SimulatorRoutineStage(
                 ...                 order=1,
-                ...                 description="Set Inputs",
+                ...                 description="Define simulation inputs",
                 ...                 steps=[
                 ...                     SimulatorRoutineStep(
                 ...                         order=1,
                 ...                         step_type="Set",
                 ...                         arguments=SimulatorRoutineStepArguments(
                 ...                             {
-                ...                                 "referenceId": "CWTC",
-                ...                                 "objectName": "Cold water",
-                ...                                 "objectProperty": "Temperature",
+                ...                                 "referenceId": "THP",
+                ...                                 "objectName": "WELL",
+                ...                                 "objectProperty": "WellHeadPressure",
                 ...                             }
                 ...                         ),
                 ...                     ),
@@ -247,25 +268,29 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ...             ),
                 ...             SimulatorRoutineStage(
                 ...                 order=2,
-                ...                 description="Solve the flowsheet",
+                ...                 description="Solve",
                 ...                 steps=[
                 ...                     SimulatorRoutineStep(
-                ...                         order=1, step_type="Command", arguments=SimulatorRoutineStepArguments({"command": "Solve"})
+                ...                         order=1,
+                ...                         step_type="Command",
+                ...                         arguments=SimulatorRoutineStepArguments(
+                ...                             {"command": "Solve"}
+                ...                         ),
                 ...                     ),
                 ...                 ],
                 ...             ),
                 ...             SimulatorRoutineStage(
                 ...                 order=3,
-                ...                 description="Set simulation outputs",
+                ...                 description="Define simulation outputs",
                 ...                 steps=[
                 ...                     SimulatorRoutineStep(
                 ...                         order=1,
                 ...                         step_type="Get",
                 ...                         arguments=SimulatorRoutineStepArguments(
                 ...                             {
-                ...                                 "referenceId": "ST",
-                ...                                 "objectName": "Shower",
-                ...                                 "objectProperty": "Temperature",
+                ...                                 "referenceId": "BHP",
+                ...                                 "objectName": "WELL",
+                ...                                 "objectProperty": "BottomHolePressure",
                 ...                             }
                 ...                         ),
                 ...                     ),
@@ -274,11 +299,11 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ...         ],
                 ...     ),
                 ... ]
-                >>> res = client.simulators.routines.revisions.create(routine_revs)
+                >>> res = client.simulators.routines.revisions.create(routine_revisions)
         """
         self._warning.warn()
         assert_type(
-            routine_revision,
+            items,
             "simulator_routine_revision",
             [SimulatorRoutineRevisionWrite, Sequence],
         )
@@ -286,7 +311,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         return self._create_multiple(
             list_cls=SimulatorRoutineRevisionList,
             resource_cls=SimulatorRoutineRevision,
-            items=routine_revision,
+            items=items,
             input_resource_cls=SimulatorRoutineRevisionWrite,
             resource_path=self._RESOURCE_PATH,
         )
@@ -322,11 +347,10 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             SimulatorRoutineRevisionList: List of simulator routine revisions
 
         Examples:
-
             List simulator routine revisions:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.routines.revisions.list()
+                >>> res = client.simulators.routines.revisions.list(limit=10)
 
             List simulator routine revisions with filter:
                 >>> res = client.simulators.routines.revisions.list(

@@ -43,7 +43,9 @@ class SimulatorModelRevisionsAPI(APIClient):
         last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
         """`Filter simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
-        Retrieves a list of simulator model revisions that match the given criteria
+
+        Retrieves a list of simulator model revisions that match the given criteria.
+
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
@@ -53,11 +55,12 @@ class SimulatorModelRevisionsAPI(APIClient):
             last_updated_time (TimestampRange | None): Filter by last updated time.
         Returns:
             SimulatorModelRevisionList: List of simulator model revisions
+
         Examples:
             List simulator model revisions:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.models.revisions.list()
+                >>> res = client.simulators.models.revisions.list(limit=10)
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
@@ -89,58 +92,66 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, id: None = None, external_id: None = None) -> NoReturn: ...
+    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
 
     @overload
-    def retrieve(self, id: int, external_id: None = None) -> SimulatorModelRevision | None: ...
+    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorModelRevision | None: ...
 
     @overload
     def retrieve(
         self,
-        id: None,
-        external_id: str,
+        ids: None,
+        external_ids: str,
     ) -> SimulatorModelRevision | None: ...
 
     @overload
     def retrieve(
         self,
-        id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None: ...
 
     def retrieve(
         self,
-        id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None:
-        """`Retrieve simulator model revision(s) <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
-        Retrieve one or more simulator model revisions by ID(s) or external ID(s)
+        """`Retrieve simulator model revisions <https://developer.cognite.com/api#tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+
+        Retrieve one or more simulator model revisions by ID(s) or external ID(s).
+
         Args:
-            id (int | Sequence[int] | None): The ids of the simulator model revisions.
-            external_id (str | SequenceNotStr[str] | None): The external ids of the simulator model revisions.
+            ids (int | Sequence[int] | None): The ids of the simulator model revisions.
+            external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator model revisions.
+
         Returns:
             SimulatorModelRevision | SimulatorModelRevisionList | None: Requested simulator model revision(s)
+
         Examples:
             Get simulator model revision by id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.models.revisions.retrieve(id=1)
+                >>> res = client.simulators.models.revisions.retrieve(ids=1)
 
             Get simulator model revision by external id:
-                >>> res = client.simulators.models.revisions.retrieve(external_id="revision_external_id")
+                >>> res = client.simulators.models.revisions.retrieve(
+                ...     external_ids="revision_external_id"
+                ... )
 
             Get multiple simulator model revisions by ids:
-                >>> res = client.simulators.models.revisions.retrieve(id=[1,2])
+                >>> res = client.simulators.models.revisions.retrieve(ids=[1,2])
 
             Get multiple simulator model revisions by external ids:
-                >>> res = client.simulators.models.revisions.retrieve(external_id=["revision1", "revision2"])
+                >>> res = client.simulators.models.revisions.retrieve(
+                ...     external_ids=["revision1", "revision2"]
+                ... )
         """
         self._warning.warn()
 
         return self._retrieve_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
 
     def __iter__(self) -> Iterator[SimulatorModelRevision]:
@@ -191,36 +202,46 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, revision: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
+    def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
 
     @overload
-    def create(self, revision: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
+    def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
 
     def create(
-        self, revision: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
+        self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
-        """`Create one or more simulator model revisions. <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
-        You can create an arbitrary number of simulator model revisions.
+        """`Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
+
         Args:
-            revision (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision to create.
+            items (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision(s) to create.
+
         Returns:
-            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model(s)
+            SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model revision(s)
+
         Examples:
-            Create new simulator models:
+            Create new simulator model revisions:
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite
                 >>> client = CogniteClient()
-                >>> models = [
-                ...     SimulatorModelRevisionWrite(external_id="model1", file_id=1, model_external_id="a_1"),
-                ...     SimulatorModelRevisionWrite(external_id="model2", file_id=2, model_external_id="a_2")
+                >>> revisions = [
+                ...     SimulatorModelRevisionWrite(
+                ...         external_id="revision1",
+                ...         file_id=1,
+                ...         model_external_id="a_1",
+                ...     ),
+                ...     SimulatorModelRevisionWrite(
+                ...         external_id="revision2",
+                ...         file_id=2,
+                ...         model_external_id="a_2",
+                ...     ),
                 ... ]
-                >>> res = client.simulators.models.revisions.create(models)
+                >>> res = client.simulators.models.revisions.create(revisions)
         """
-        assert_type(revision, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
+        assert_type(items, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
         return self._create_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
-            items=revision,
+            items=items,
             input_resource_cls=SimulatorModelRevisionWrite,
         )

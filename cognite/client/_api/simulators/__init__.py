@@ -71,9 +71,7 @@ class SimulatorsAPI(APIClient):
         )
 
     def list(self, limit: int = DEFAULT_LIMIT_READ) -> SimulatorList:
-        """`List simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
-
-        List simulators
+        """`List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
@@ -82,12 +80,10 @@ class SimulatorsAPI(APIClient):
             SimulatorList: List of simulators
 
         Examples:
-
             List simulators:
-
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
-                    >>> res = client.simulators.list()
+                    >>> res = client.simulators.list(limit=10)
 
         """
         self._warning.warn()
