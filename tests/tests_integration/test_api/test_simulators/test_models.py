@@ -26,7 +26,7 @@ class TestSimulatorModels:
         )
 
         model_ids = []
-        for model in cognite_client.simulators.models(limit=2):
+        for model in cognite_client.simulators.models.list(limit=2):
             assert model.created_time is not None
             model_ids.append(model.id)
 

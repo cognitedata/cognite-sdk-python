@@ -155,16 +155,28 @@ class SimulatorModelsAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
     ) -> Iterator[SimulatorModel]: ...
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
     ) -> Iterator[SimulatorModelList]: ...
 
     def __call__(
-        self, chunk_size: int | None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+        sort: PropertySort | None = None,
     ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
         """Iterate over simulator simulator models
 
@@ -172,11 +184,12 @@ class SimulatorModelsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
-            filter (SimulatorModelsFilter | None): Filter to apply on the model revisions list.
-            limit (int | None): Maximum number of simulator models to return. Defaults to return all items.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            sort (PropertySort | None): The criteria to sort by.
 
         Returns:
-            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """
         return self._list_generator(
             list_cls=SimulatorModelList,
