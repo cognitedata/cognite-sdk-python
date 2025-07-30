@@ -208,7 +208,11 @@ def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow)
             ],
         ),
     )
-    upserted_versions = cognite_client.workflows.versions.upsert([version_1, version_2])
+
+    upserted_versions = WorkflowVersionList([])
+    for version in [version_1, version_2]:
+        upserted_version = cognite_client.workflows.versions.upsert(version)
+        upserted_versions.append(upserted_version)
     yield upserted_versions
     cognite_client.workflows.versions.delete(upserted_versions.as_ids(), ignore_unknown_ids=True)
 
