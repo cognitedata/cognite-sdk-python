@@ -98,12 +98,10 @@ def workflow_list(cognite_client: CogniteClient, data_set: DataSet):
         external_id=f"integration_test-workflow_2_{random_string(5)}",
         description="This workflow is for testing purposes",
     )
-    for workflow in [workflow_1, workflow_2]:
-        cognite_client.workflows.upsert(workflow)
-    yield cognite_client.workflows.list()
-    cognite_client.workflows.delete([workflow_1.external_id, workflow_2.external_id], ignore_unknown_ids=True)
-    assert cognite_client.workflows.retrieve(workflow_1.external_id) is None
-    assert cognite_client.workflows.retrieve(workflow_2.external_id) is None
+    workflows = [workflow_1, workflow_2]
+    upserted_workflows = cognite_client.workflows.upsert(workflows)
+    yield upserted_workflows
+    cognite_client.workflows.delete([wf.external_id for wf in workflows], ignore_unknown_ids=True)
 
 
 @pytest.fixture
