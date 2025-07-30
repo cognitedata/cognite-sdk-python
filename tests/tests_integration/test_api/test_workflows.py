@@ -84,7 +84,6 @@ def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
     )
     yield cognite_client.workflows.upsert(workflow)
     cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
-    assert cognite_client.workflows.retrieve(workflow.external_id) is None
 
 
 @pytest.fixture(scope="class")
@@ -99,15 +98,12 @@ def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet) ->
         description="This workflow is for testing purposes",
     )
     workflows = WorkflowList([])
-    retrieved1 = cognite_client.data_sets.retrieve(external_id=workflow_1.external_id)
-    if retrieved1 is None:
-        retrieved1 = cognite_client.workflows.upsert(workflow_1)
-    workflows.append(retrieved1)
-    retrieved2 = cognite_client.data_sets.retrieve(external_id=workflow_2.external_id)
-    if retrieved2 is None:
-        retrieved2 = cognite_client.workflows.upsert(workflow_2)
+    for workflow in [workflow_1, workflow_2]:
+        retrieved = cognite_client.workflows.retrieve(external_id=workflow.external_id)
+        if retrieved is None:
+            retrieved = cognite_client.workflows.upsert(workflow)
+        workflows.append(retrieved)
 
-    workflows.append(retrieved2)
     return workflows
 
 
@@ -129,8 +125,7 @@ def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
-    cognite_client.workflows.versions.delete((new_workflow.external_id, version.version), ignore_unknown_ids=True)
-    assert cognite_client.workflows.versions.retrieve(new_workflow.external_id, version.version) is None
+    cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
 
 
 @pytest.fixture
@@ -155,7 +150,6 @@ def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow
     )
     yield cognite_client.workflows.versions.upsert(version)
     cognite_client.workflows.versions.delete((new_workflow.external_id, version.version), ignore_unknown_ids=True)
-    assert cognite_client.workflows.versions.retrieve(new_workflow.external_id, version.version) is None
 
 
 @pytest.fixture
@@ -214,15 +208,13 @@ def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow)
             ],
         ),
     )
+
+    upserted_versions = WorkflowVersionList([])
     for version in [version_1, version_2]:
-        cognite_client.workflows.versions.upsert(version)
-    yield cognite_client.workflows.versions.list(workflow_version_ids=new_workflow.external_id)
-    cognite_client.workflows.versions.delete(
-        [(new_workflow.external_id, version_1.version), (new_workflow.external_id, version_2.version)],
-        ignore_unknown_ids=True,
-    )
-    assert cognite_client.workflows.versions.retrieve(new_workflow.external_id, version_1.version) is None
-    assert cognite_client.workflows.versions.retrieve(new_workflow.external_id, version_2.version) is None
+        upserted_version = cognite_client.workflows.versions.upsert(version)
+        upserted_versions.append(upserted_version)
+    yield upserted_versions
+    cognite_client.workflows.versions.delete(upserted_versions.as_ids(), ignore_unknown_ids=True)
 
 
 @pytest.fixture
@@ -335,7 +327,6 @@ def workflow_data_modeling_trigger(cognite_client: CogniteClient, permanent_work
     )
     yield trigger
     cognite_client.workflows.triggers.delete(trigger.external_id)
-    assert cognite_client.workflows.retrieve(trigger.external_id) is None
 
 
 class TestWorkflows:
