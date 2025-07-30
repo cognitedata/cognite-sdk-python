@@ -189,7 +189,7 @@ class SimulatorModelRevisionsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int,
+        chunk_size: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
@@ -211,7 +211,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             last_updated_time (TimestampRange | None): Filter by last updated time.
 
         Returns:
-            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
         """
         return self._list_generator(
             list_cls=SimulatorModelRevisionList,
