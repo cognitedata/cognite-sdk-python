@@ -141,7 +141,7 @@ class CogniteMultiException(CogniteException):
             if not isinstance(obj, dict):
                 return obj
 
-            sensitive_fields = {"nonce", "secret", "token", "clientSecret"}
+            sensitive_fields = {"nonce", "secret", "token", "clientSecret", "credentials"}
             result = {}
             for key, value in obj.items():
                 if key in sensitive_fields:
