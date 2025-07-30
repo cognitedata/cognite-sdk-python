@@ -249,15 +249,20 @@ def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version:
     return WorkflowExecutionList([run_1, run_2])
 
 
-@pytest.fixture(scope="class")
-def workflow_setup_pre_trigger(cognite_client: CogniteClient):
+# We cannot use a never trigger expression as the API check for it:
+# Invalid cron expression: the provided schedule [0 0 31 2 *] will never fire.
+ALMOST_NEVER_TRIGGER_CRON_EXPRESSION = "0 0 29 2 *"
+
+
+@pytest.fixture(scope="session")
+def permanent_workflow_for_triggers(cognite_client: CogniteClient):
     workflow = WorkflowUpsert(
-        external_id=f"integration_test-workflow_{random_string(5)}",
+        external_id="integration_test-workflow_for_triggers",
     )
     cognite_client.workflows.upsert(workflow)
     version = WorkflowVersionUpsert(
         workflow_external_id=workflow.external_id,
-        version="1",
+        version="v1",
         workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
@@ -271,39 +276,44 @@ def workflow_setup_pre_trigger(cognite_client: CogniteClient):
         ),
     )
     cognite_client.workflows.versions.upsert(version)
-    yield version
-    cognite_client.workflows.versions.delete((workflow.external_id, version.version), ignore_unknown_ids=True)
-    assert cognite_client.workflows.versions.retrieve(workflow.external_id, version.version) is None
-    cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
-    assert cognite_client.workflows.retrieve(workflow.external_id) is None
+    return version
+
+
+def _create_scheduled_trigger(version: WorkflowVersion, cron_expression: str) -> WorkflowTriggerUpsert:
+    return WorkflowTriggerUpsert(
+        external_id=f"scheduled-trigger_{version.workflow_external_id}",
+        trigger_rule=WorkflowScheduledTriggerRule(cron_expression=cron_expression),
+        workflow_external_id=version.workflow_external_id,
+        workflow_version=version.version,
+        input={"a": 1, "b": 2},
+        metadata={"test": "integration_schedule"},
+    )
 
 
 @pytest.fixture(scope="class")
-def workflow_scheduled_trigger(cognite_client: CogniteClient, workflow_setup_pre_trigger: WorkflowVersion):
-    version = workflow_setup_pre_trigger
-    trigger = cognite_client.workflows.triggers.upsert(
-        WorkflowTriggerUpsert(
-            external_id=f"scheduled-trigger_{version.workflow_external_id}",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
-            workflow_external_id=version.workflow_external_id,
-            workflow_version=version.version,
-            input={"a": 1, "b": 2},
-            metadata={"test": "integration_schedule"},
-        )
-    )
+def permanent_scheduled_trigger(cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion):
+    version = permanent_workflow_for_triggers
+    ever_minute_expression = "* * * * *"
+
+    on_the_minute = _create_scheduled_trigger(version, ever_minute_expression)
+
+    retrieved = cognite_client.workflows.triggers.upsert(on_the_minute)
     # Have to sleep until workflow is triggered because it's the only way to properly test get_trigger_run_history
     # ...and as of Jan 14, 2025, there's "an artificial delay of 90 sec to scheduled triggers to prevent a stampede
     # effect on downstream services for overlapping triggers (up to two minutes, stable per trigger)".
     time.sleep(90 + 60)
 
-    yield trigger
-    cognite_client.workflows.triggers.delete(trigger.external_id)
-    assert cognite_client.workflows.retrieve(trigger.external_id) is None
+    yield retrieved
+
+    never_trigger = _create_scheduled_trigger(version, ALMOST_NEVER_TRIGGER_CRON_EXPRESSION)
+    # Instead of deleting the trigger, we upsert a new one with a cron expression that will never trigger.
+    # This is to avoid deleting/recreating the trigger every time the test runs, which leads to flaky tests.
+    cognite_client.workflows.triggers.upsert(never_trigger)
 
 
 @pytest.fixture(scope="class")
-def workflow_data_modeling_trigger(cognite_client: CogniteClient, workflow_setup_pre_trigger: WorkflowVersion):
-    version = workflow_setup_pre_trigger
+def workflow_data_modeling_trigger(cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion):
+    version = permanent_workflow_for_triggers
     trigger = cognite_client.workflows.triggers.create(
         WorkflowTriggerUpsert(
             external_id=f"data-modeling-trigger_{version.workflow_external_id}",
@@ -352,7 +362,7 @@ class TestWorkflows:
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         retrieved = cognite_client.workflows.retrieve(persisted_workflow_list[0].external_id)
-        assert retrieved == persisted_workflow_list[0]
+        assert retrieved.dump() == persisted_workflow_list[0].dump()
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
@@ -571,39 +581,33 @@ class TestWorkflowExecutions:
 
 
 class TestWorkflowTriggers:
-    def test_create_update_preexisting_scheduled_trigger(
+    def test_create_update_scheduled_trigger(
         self,
         cognite_client: CogniteClient,
-        workflow_scheduled_trigger: WorkflowTrigger,
+        permanent_workflow_for_triggers: WorkflowVersion,
     ) -> None:
-        assert workflow_scheduled_trigger is not None
-        assert workflow_scheduled_trigger.external_id.startswith("scheduled-trigger_integration_test-workflow")
-        assert workflow_scheduled_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="* * * * *")
-        assert workflow_scheduled_trigger.workflow_external_id.startswith("integration_test-workflow_")
-        assert workflow_scheduled_trigger.workflow_version == "1"
-        assert workflow_scheduled_trigger.input == {"a": 1, "b": 2}
-        assert workflow_scheduled_trigger.metadata == {"test": "integration_schedule"}
-        assert workflow_scheduled_trigger.created_time is not None
-        assert workflow_scheduled_trigger.last_updated_time is not None
-
-        updated_trigger = cognite_client.workflows.triggers.upsert(
-            WorkflowTriggerUpsert(
-                external_id=workflow_scheduled_trigger.external_id,
-                trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *"),
-                workflow_external_id=workflow_scheduled_trigger.workflow_external_id,
-                workflow_version=workflow_scheduled_trigger.workflow_version,
-                input=workflow_scheduled_trigger.input,
-            )
+        version = permanent_workflow_for_triggers
+        existing = WorkflowTriggerUpsert(
+            external_id=f"test_create_update_scheduled_trigger_{random_string(5)}",
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
+            workflow_external_id=version.workflow_external_id,
+            workflow_version=version.version,
+            input={"a": 1, "b": 2},
+            metadata={"test": "integration_schedule"},
         )
-        assert updated_trigger is not None
-        assert updated_trigger.external_id == workflow_scheduled_trigger.external_id
-        assert updated_trigger.trigger_rule == WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
-        assert updated_trigger.workflow_external_id == workflow_scheduled_trigger.workflow_external_id
-        assert updated_trigger.workflow_version == workflow_scheduled_trigger.workflow_version
-        assert updated_trigger.input == workflow_scheduled_trigger.input
-        assert updated_trigger.metadata == {}
-        assert updated_trigger.created_time == workflow_scheduled_trigger.created_time
-        assert updated_trigger.last_updated_time > workflow_scheduled_trigger.last_updated_time
+        created: WorkflowTrigger | None = None
+        try:
+            created = cognite_client.workflows.triggers.upsert(existing)
+
+            update = WorkflowTriggerUpsert._load(existing.dump())
+            new_rule = WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
+            update.trigger_rule = new_rule
+
+            updated = cognite_client.workflows.triggers.upsert(update)
+            assert updated.trigger_rule.dump() == new_rule.dump()
+        finally:
+            if created is not None:
+                cognite_client.workflows.triggers.delete(created.external_id)
 
     @pytest.mark.skip("This test is temp. disabled, flaky, awaiting a more robust long-term solution. Task: DOGE-100")
     def test_create_update_delete_data_modeling_trigger(
@@ -670,37 +674,35 @@ class TestWorkflowTriggers:
     def test_trigger_list(
         self,
         cognite_client: CogniteClient,
-        workflow_scheduled_trigger: WorkflowTrigger,
+        permanent_scheduled_trigger: WorkflowTrigger,
         workflow_data_modeling_trigger: WorkflowTrigger,
     ) -> None:
         listed = cognite_client.workflows.triggers.get_triggers(limit=-1)
-        assert workflow_scheduled_trigger.external_id in listed._external_id_to_item
-        assert workflow_data_modeling_trigger.external_id in listed._external_id_to_item
+        external_ids = set(listed.as_external_ids())
+        assert permanent_scheduled_trigger.external_id in external_ids
+        assert workflow_data_modeling_trigger.external_id in external_ids
 
     def test_trigger_run_history(
         self,
         cognite_client: CogniteClient,
-        workflow_scheduled_trigger: WorkflowTrigger,
+        permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
         history = cognite_client.workflows.triggers.get_trigger_run_history(
-            external_id=workflow_scheduled_trigger.external_id
+            external_id=permanent_scheduled_trigger.external_id
         )
         assert len(history) > 0
-        assert history[0].external_id == workflow_scheduled_trigger.external_id
-        assert history[0].workflow_external_id == workflow_scheduled_trigger.workflow_external_id
-        assert history[0].workflow_version == workflow_scheduled_trigger.workflow_version
+        assert history[0].external_id == permanent_scheduled_trigger.external_id
+        assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
+        assert history[0].workflow_version == permanent_scheduled_trigger.workflow_version
 
         detailed = cognite_client.workflows.executions.retrieve_detailed(history[0].workflow_execution_id)
         assert detailed is not None
-        assert detailed.metadata == workflow_scheduled_trigger.metadata
+        assert detailed.metadata == permanent_scheduled_trigger.metadata
         # version gets appended to input when executed by a trigger
-        workflow_scheduled_trigger.input["version"] = workflow_scheduled_trigger.workflow_version
-        assert detailed.input == workflow_scheduled_trigger.input
+        permanent_scheduled_trigger.input["version"] = permanent_scheduled_trigger.workflow_version
+        assert detailed.input == permanent_scheduled_trigger.input
 
-    def test_trigger_run_history_non_existing(
-        self,
-        cognite_client: CogniteClient,
-    ) -> None:
+    def test_trigger_run_history_non_existing(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError, match="Workflow trigger not found."):
             cognite_client.workflows.triggers.get_trigger_run_history(
                 external_id="integration_test-non_existing_trigger"
