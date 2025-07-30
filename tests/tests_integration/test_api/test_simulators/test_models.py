@@ -198,12 +198,12 @@ class TestSimulatorModels:
         seed_external_dependency_file: FileMetadata,
         seed_resource_names,
     ) -> None:
-        model_external_id_1 = random_string(10)
+        model_external_id = random_string(10)
         models_to_create = [
             SimulatorModelWrite(
                 name="sdk-test-model1",
                 simulator_external_id=seed_resource_names["simulator_external_id"],
-                external_id=model_external_id_1,
+                external_id=model_external_id,
                 data_set_id=seed_resource_names["simulator_test_data_set_id"],
                 type="SteadyState",
             )
@@ -213,7 +213,7 @@ class TestSimulatorModels:
 
         assert models_created is not None
         assert len(models_created) == 1
-        model_revision_external_id = model_external_id_1 + "revision"
+        model_revision_external_id = model_external_id + "revision"
         external_dependencies = [
             SimulatorModelRevisionExternalDependency(
                 file=SimulatorModelExternalDependencyFileField(id=seed_external_dependency_file.id),
@@ -225,7 +225,7 @@ class TestSimulatorModels:
         ]
         model_revision_to_create = SimulatorModelRevisionWrite(
             external_id=model_revision_external_id,
-            model_external_id=model_external_id_1,
+            model_external_id=model_external_id,
             file_id=seed_model_revision_file.id,
             description="Test revision",
             external_dependencies=external_dependencies,
@@ -236,7 +236,7 @@ class TestSimulatorModels:
         assert model_revision_created is not None
         assert model_revision_created.external_id == model_revision_external_id
         assert model_revision_created.external_dependencies == external_dependencies
-        cognite_client.simulators.models.delete(external_ids=[model_external_id_1])
+        cognite_client.simulators.models.delete(external_ids=[model_external_id])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = random_string(10)
