@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorIntegration,
@@ -78,11 +77,12 @@ class SimulatorIntegrationsAPI(APIClient):
         Returns:
             Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk is not specified, else SimulatorIntegrationList objects.
         """
+        integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         return self._list_generator(
             list_cls=SimulatorIntegrationList,
             resource_cls=SimulatorIntegration,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=integrations_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )

@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import (
@@ -213,11 +212,17 @@ class SimulatorModelRevisionsAPI(APIClient):
         Returns:
             Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
         """
+        model_revisions_filter = SimulatorModelRevisionsFilter(
+            model_external_ids=model_external_ids,
+            all_versions=all_versions,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        )
         return self._list_generator(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=model_revisions_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )

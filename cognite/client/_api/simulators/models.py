@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, NoReturn, overload
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.models import (
     SimulatorModel,
@@ -191,11 +190,12 @@ class SimulatorModelsAPI(APIClient):
         Returns:
             Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """
+        model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         return self._list_generator(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=model_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )
