@@ -359,8 +359,9 @@ class SimulatorModelUpdate(CogniteUpdate):
 @dataclass
 class SimulatorModelExternalDependencyFileField(CogniteObject):
     """
-    Represents a file dependency for a simulator model revision.
-    This is used to link external files to the simulator model revision.
+    Represents the CDF file associated with the external dependency.
+    Args:
+        id (int): The id of the file associated with the external dependency.
     """
 
     id: int
@@ -378,6 +379,13 @@ class SimulatorModelExternalDependencyFileField(CogniteObject):
 
 @dataclass
 class SimulatorModelRevisionExternalDependency(CogniteObject):
+    """
+    Represents an external dependency for a simulator model revision.
+    Args:
+        file (SimulatorModelExternalDependencyFileField): The CDF file associated with the external dependency.
+        arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
+    """
+
     file: SimulatorModelExternalDependencyFileField
     arguments: dict[str, str]
 

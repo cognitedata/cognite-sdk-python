@@ -220,8 +220,11 @@ class SimulatorStepField(CogniteObject):
 @dataclass
 class SimulatorModelDependencyFields(CogniteObject):
     """
-    Represents the fields of a simulator model dependency.
-    This is used to define the specific fields that are required for a dependency between two models.
+    Represents the fields supported by the simulator for external dependencies.
+    Args:
+        name (str): The name of the field.
+        label (str): The label of the field.
+        info (str): Additional information about the field.
     """
 
     name: str
@@ -240,8 +243,10 @@ class SimulatorModelDependencyFields(CogniteObject):
 @dataclass
 class SimulatorModelDependency(CogniteObject):
     """
-    Represents a dependency between two simulator models.
-    This is used to define how one model depends on another in the context of a simulator.
+    Defines the simulator model dependency, specifying the supported fields and file extension types compatible with the simulator.
+    Args:
+        file_extension_types (Sequence[str]): A list of file extension types supported by the simulator for external dependencies.
+        fields (Sequence[SimulatorModelDependencyFields]): A list of supported fields.
     """
 
     file_extension_types: Sequence[str]
