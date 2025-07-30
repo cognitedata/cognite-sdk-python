@@ -518,7 +518,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (Source | Sequence[Source] | None): Governs which views to retrieve properties through.  Only properties specified on the provided views will be retrieved.  If not specified, only base properties (space, external id, type, ...) will be retrieved.  Connection properties (e.g. edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties) can not be retrieved/traversed using this method; use the `DataModelingGraphQLAPI.query` method instead.
+            sources (Source | Sequence[Source] | None): Defines which views to retrieve properties through. Only properties specified in the provided views will be retrieved. If not specified, only the base properties (space, external ID, type, etc.) will be retrieved. With this method, you can't retrieve connection properties (for example, edges and reverse direct properties, see https://docs.cognite.com/cdf/dm/dm_concepts/dm_containers_views_datamodels#connection-properties). Use the `DataModelingGraphQLAPI.query` method instead.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
