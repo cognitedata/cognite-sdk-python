@@ -17,8 +17,12 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
+    import pandas
+
     from cognite.client import CogniteClient
 
 
@@ -520,6 +524,57 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
         output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script] if self.script else None
 
         return output
+
+    def script_to_pandas(self) -> pandas.DataFrame:
+        pd = local_import("pandas")
+        if not self.script:
+            return pd.DataFrame()
+
+        rows = []
+        for stage in self.script:
+            for step in stage.steps:
+                row = {
+                    "stage_order": stage.order,
+                    "stage_description": stage.description,
+                    "step_order": step.order,
+                    "step_type": step.step_type,
+                    "step_description": step.description,
+                }
+                for key, value in step.arguments.items():
+                    row[f"arg_{to_snake_case(key)}"] = value
+                rows.append(row)
+
+        return pd.DataFrame(rows)
+
+    def _items_to_pandas(self, items: list | None) -> pandas.DataFrame:
+        """Helper method to convert a list of items (inputs or outputs) to pandas DataFrame"""
+        pd = local_import("pandas")
+        if not items:
+            return pd.DataFrame()
+
+        rows = []
+        for item in items:
+            row = item.dump(camel_case=False)
+            if "unit" in row and row["unit"] is not None:
+                unit_data = row.pop("unit")
+                row["unit_name"] = unit_data.get("name")
+                row["unit_quantity"] = unit_data.get("quantity")
+            else:
+                row.pop("unit", None)
+                row["unit_name"] = None
+                row["unit_quantity"] = None
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def inputs_to_pandas(self) -> pandas.DataFrame:
+        if not self.configuration:
+            return self._items_to_pandas(None)
+        return self._items_to_pandas(self.configuration.inputs)
+
+    def outputs_to_pandas(self) -> pandas.DataFrame:
+        if not self.configuration:
+            return self._items_to_pandas(None)
+        return self._items_to_pandas(self.configuration.outputs)
 
 
 class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
