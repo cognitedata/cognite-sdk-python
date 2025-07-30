@@ -44,7 +44,7 @@ class SimulatorIntegrationsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int | None = DEFAULT_LIMIT_READ,
+        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> Iterator[SimulatorIntegration]: ...
@@ -52,16 +52,16 @@ class SimulatorIntegrationsAPI(APIClient):
     @overload
     def __call__(
         self,
-        chunk_size: None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
+        chunk_size: int | None = None,
+        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
         self,
-        chunk_size: None = None,
-        limit: int | None = DEFAULT_LIMIT_READ,
+        chunk_size: int | None = None,
+        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
