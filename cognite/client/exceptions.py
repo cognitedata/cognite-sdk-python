@@ -137,8 +137,22 @@ class CogniteMultiException(CogniteException):
         return [self._unwrap_fn(elem) for elem in lst]
 
     def _truncate_elements(self, lst: list) -> str:
+        def mask_sensitive_values(obj: Any) -> Any:
+            if not isinstance(obj, dict):
+                return obj
+
+            sensitive_fields = {"nonce", "secret", "token", "clientSecret"}
+            result = {}
+            for key, value in obj.items():
+                if key in sensitive_fields:
+                    result[key] = "***"
+                else:
+                    result[key] = mask_sensitive_values(value)
+            return result
+
         truncate_at = 10
-        elements = ",".join([str(element) for element in lst[:truncate_at]])
+        masked_elements = [mask_sensitive_values(element) for element in lst[:truncate_at]]
+        elements = ",".join(str(element) for element in masked_elements)
         if len(elements) > truncate_at:
             elements += ", ..."
         return f"[{elements}]"
