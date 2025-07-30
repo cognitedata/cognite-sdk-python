@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from collections.abc import Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
-from zoneinfo import ZoneInfo
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
