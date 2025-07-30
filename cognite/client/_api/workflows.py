@@ -124,12 +124,10 @@ class WorkflowTriggerAPI(APIClient):
         )
         dumped = workflow_trigger.dump(camel_case=True)
         dumped["authentication"] = {"nonce": nonce}
-        print("----- DUMPED -----", dumped)
         response = self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [dumped]},
         )
-        print("----- RESPONSE -----", response.json())
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     # TODO: remove method and associated data classes in next major release
