@@ -99,15 +99,12 @@ def persisted_workflow_list(cognite_client: CogniteClient, data_set: DataSet) ->
         description="This workflow is for testing purposes",
     )
     workflows = WorkflowList([])
-    retrieved1 = cognite_client.data_sets.retrieve(external_id=workflow_1.external_id)
-    if retrieved1 is None:
-        retrieved1 = cognite_client.workflows.upsert(workflow_1)
-    workflows.append(retrieved1)
-    retrieved2 = cognite_client.data_sets.retrieve(external_id=workflow_2.external_id)
-    if retrieved2 is None:
-        retrieved2 = cognite_client.workflows.upsert(workflow_2)
+    for workflow in [workflow_1, workflow_2]:
+        retrieved = cognite_client.workflows.retrieve(external_id=workflow.external_id)
+        if retrieved is None:
+            retrieved = cognite_client.workflows.upsert(workflow)
+        workflows.append(retrieved)
 
-    workflows.append(retrieved2)
     return workflows
 
 
