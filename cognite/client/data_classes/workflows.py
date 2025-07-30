@@ -1436,13 +1436,12 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         self.timezone = timezone
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        item: dict[str, Any] = {
-            "trigger_type": self.trigger_type,
-            "cron_expression": self.cron_expression,
-            "timezone": self.timezone.key if self.timezone else None,  # ← Sends "timezone": null
-        }
-        if camel_case:
-            return convert_all_keys_to_camel_case(item)
+        # Override dump to handle timezone field specially:
+        # 1. Only include timezone key when it has a value (avoid "timezone": null)
+        # 2. Convert ZoneInfo object to its string key representation
+        item = super().dump(camel_case)
+        if self.timezone:
+            item["timezone"] = self.timezone.key
         return item
 
     @classmethod
