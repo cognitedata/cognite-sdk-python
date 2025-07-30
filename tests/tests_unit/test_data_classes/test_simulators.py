@@ -111,7 +111,7 @@ class TestSimulatorRoutineRevisionCore:
             configuration=sample_configuration,
         )
 
-    @pytest.mark.coredeps
+    @pytest.mark.dsl
     def test_inputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
@@ -130,7 +130,7 @@ class TestSimulatorRoutineRevisionCore:
         assert df.iloc[1]["unit_name"] == "bar"
         assert df.iloc[1]["unit_quantity"] == "pressure"
 
-    @pytest.mark.coredeps
+    @pytest.mark.dsl
     def test_outputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
@@ -150,7 +150,7 @@ class TestSimulatorRoutineRevisionCore:
         assert df.iloc[1]["unit_name"] == "%"
         assert df.iloc[1]["unit_quantity"] == "percentage"
 
-    @pytest.mark.coredeps
+    @pytest.mark.dsl
     def test_script_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
@@ -247,7 +247,7 @@ class TestSimulationRunData:
             outputs=sample_simulation_outputs,
         )
 
-    @pytest.mark.coredeps
+    @pytest.mark.dsl
     def test_simulation_run_data_item_to_pandas(self, sample_run_data_item: SimulationRunDataItem) -> None:
         pd = local_import("pandas")
 
@@ -280,7 +280,7 @@ class TestSimulationRunData:
         assert df.iloc[1]["object_name"] == "Tank1"
         assert df.iloc[1]["object_property"] == "Pressure"
 
-    @pytest.mark.coredeps
+    @pytest.mark.dsl
     def test_simulation_run_data_list_to_pandas(
         self, sample_simulation_inputs: list[SimulationInput], sample_simulation_outputs: list[SimulationOutput]
     ) -> None:
