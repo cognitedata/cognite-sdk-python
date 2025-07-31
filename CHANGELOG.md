@@ -18,6 +18,8 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [Unreleased]
+### Added
+- New convenience methods for displaying script, inputs and outputs as DataFrames in Jupyter notebooks
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
