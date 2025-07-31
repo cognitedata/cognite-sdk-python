@@ -687,6 +687,9 @@ class SimulatorRoutineRevisionList(
 class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
     """List of simulator routine stages with pandas conversion capabilities."""
 
+    def __init__(self, initlist: list[SimulatorRoutineStage] | None = None) -> None:
+        super().__init__(initlist)
+
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of stages to a pandas DataFrame.
 
@@ -723,6 +726,9 @@ class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
 class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
     """List of simulator routine inputs with pandas conversion capabilities."""
 
+    def __init__(self, initlist: list[SimulatorRoutineInput] | None = None) -> None:
+        super().__init__(initlist)
+
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of inputs to a pandas DataFrame.
 
@@ -756,6 +762,9 @@ class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
 
 class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
     """List of simulator routine outputs with pandas conversion capabilities."""
+
+    def __init__(self, initlist: list[SimulatorRoutineOutput] | None = None) -> None:
+        super().__init__(initlist)
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of outputs to a pandas DataFrame.
