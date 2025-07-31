@@ -75,6 +75,7 @@ PyYAML = "^6.0"
 pytest-icdiff = "*"  # Used for better diffs in pytest
 types-simplejson = "^3.19.0.20240801"
 types-pytz = "^2025.2.0.20250516"
+hypothesis = "^6.136.6"
 
 [build-system]
 requires = ["poetry-core"]

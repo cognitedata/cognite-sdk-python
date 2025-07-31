@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from cognite.client._cognite_client import CogniteClient
     from cognite.client.data_classes import AssetHierarchy
 
+_SENSITIVE_FIELDS = {"nonce", "secret", "token", "clientsecret", "credentials"}
+
 
 class CogniteException(Exception):
     pass
@@ -136,22 +138,19 @@ class CogniteMultiException(CogniteException):
     def _unwrap_list(self, lst: list) -> list:
         return [self._unwrap_fn(elem) for elem in lst]
 
+    def _mask_sensitive_values(self, obj: Any) -> Any:
+        if isinstance(obj, dict):
+            return {
+                key: "***" if key.lower() in _SENSITIVE_FIELDS else self._mask_sensitive_values(value)
+                for key, value in obj.items()
+            }
+        if isinstance(obj, list):
+            return [self._mask_sensitive_values(item) for item in obj]
+        return obj
+
     def _truncate_elements(self, lst: list) -> str:
-        def mask_sensitive_values(obj: Any) -> Any:
-            if not isinstance(obj, dict):
-                return obj
-
-            sensitive_fields = {"nonce", "secret", "token", "clientSecret", "credentials"}
-            result = {}
-            for key, value in obj.items():
-                if key in sensitive_fields:
-                    result[key] = "***"
-                else:
-                    result[key] = mask_sensitive_values(value)
-            return result
-
         truncate_at = 10
-        masked_elements = [mask_sensitive_values(element) for element in lst[:truncate_at]]
+        masked_elements = [self._mask_sensitive_values(element) for element in lst[:truncate_at]]
         elements = ",".join(str(element) for element in masked_elements)
         if len(elements) > truncate_at:
             elements += ", ..."
