@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.79.0] - 2025-07-31
 ### Changed
-- Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
+- [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
 
 ## [7.78.0] - 2025-07-29
 ### Added
