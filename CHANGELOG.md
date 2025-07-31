@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
+## [7.80.0] - 2025-07-31
+### Added
+- Support for external dependendencies in simulator and simulator model revisions resources.
+
 ## [7.78.0] - 2025-07-29
 ### Added
 - Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
