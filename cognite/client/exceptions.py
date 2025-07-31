@@ -138,14 +138,19 @@ class CogniteMultiException(CogniteException):
     def _unwrap_list(self, lst: list) -> list:
         return [self._unwrap_fn(elem) for elem in lst]
 
-    def _mask_sensitive_values(self, obj: Any) -> Any:
+    def _mask_sensitive_values(self, obj: Any, _depth: int = 0) -> Any:
+        # Prevent excessive recursion depth.
+        # We are anyways truncating the result afterwards, so no need to go very deep.
+        if _depth > 10:
+            return "..."
+
         if isinstance(obj, dict):
             return {
-                key: "***" if key.lower() in _SENSITIVE_FIELDS else self._mask_sensitive_values(value)
+                key: "***" if key.lower() in _SENSITIVE_FIELDS else self._mask_sensitive_values(value, _depth + 1)
                 for key, value in obj.items()
             }
         if isinstance(obj, list):
-            return [self._mask_sensitive_values(item) for item in obj]
+            return [self._mask_sensitive_values(item, _depth + 1) for item in obj]
         return obj
 
     def _truncate_elements(self, lst: list) -> str:
