@@ -39,17 +39,47 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
     return resource_names.copy()
 
 
-@pytest.fixture(scope="session")
-def seed_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[FileMetadata | None]:
+def upload_file(
+    cognite_client: CogniteClient, filename: str, external_id: str, seed_resource_names: dict[str, str]
+) -> FileMetadata:
     data_set_id = seed_resource_names["simulator_test_data_set_id"]
-    file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
+    file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
-        file = cognite_client.files.upload(
-            path=SEED_DIR / "ShowerMixer.txt",
-            external_id=seed_resource_names["simulator_model_file_external_id"],
-            name="ShowerMixer.txt",
+        return cognite_client.files.upload(
+            path=SEED_DIR / filename,
+            external_id=external_id,
+            name=filename,
             data_set_id=data_set_id,
         )
+
+    return file
+
+
+@pytest.fixture(scope="session")
+def seed_model_revision_file(
+    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
+) -> Iterator[FileMetadata | None]:
+    file = upload_file(
+        cognite_client,
+        filename="ShowerMixer.txt",
+        external_id=seed_resource_names["simulator_model_file_external_id"],
+        seed_resource_names=seed_resource_names,
+    )
+
+    yield file
+
+
+@pytest.fixture(scope="session")
+def seed_external_dependency_file(
+    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
+) -> Iterator[FileMetadata | None]:
+    file = upload_file(
+        cognite_client,
+        filename="ExtDependency.out",
+        external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
+        seed_resource_names=seed_resource_names,
+    )
+
     yield file
 
 
@@ -123,7 +153,9 @@ def seed_simulator_models(
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
+def seed_simulator_model_revisions(
+    cognite_client: CogniteClient, seed_simulator_models, seed_model_revision_file
+) -> None:
     model_unique_external_id = resource_names["simulator_model_external_id"]
     model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
     model_revisions = cognite_client.simulators.models.revisions.list(
@@ -140,7 +172,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
                     "items": [
                         {
                             "description": "test sim model revision description",
-                            "fileId": seed_file.id,
+                            "fileId": seed_model_revision_file.id,
                             "modelExternalId": model_unique_external_id,
                             "externalId": revision,
                         }

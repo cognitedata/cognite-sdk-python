@@ -7,6 +7,8 @@ from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
+    SimulatorModelExternalDependencyFileField,
+    SimulatorModelRevisionExternalDependency,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
@@ -107,9 +109,12 @@ class TestSimulatorModels:
         assert model_revision is not None
         assert model_revision.model_external_id == seed_resource_names["simulator_model_external_id"]
 
-    @pytest.mark.usefixtures("seed_file", "seed_resource_names")
+    @pytest.mark.usefixtures("seed_model_revision_file", "seed_resource_names")
     def test_create_model_and_revisions(
-        self, cognite_client: CogniteClient, seed_file: FileMetadata, seed_resource_names
+        self,
+        cognite_client: CogniteClient,
+        seed_model_revision_file: FileMetadata,
+        seed_resource_names,
     ) -> None:
         model_external_id_1 = random_string(10)
         model_external_id_2 = random_string(10)
@@ -135,23 +140,24 @@ class TestSimulatorModels:
         assert models_created is not None
         assert len(models_created) == 2
         model_revision_external_id = model_external_id_1 + "revision"
+
         model_revision_to_create = SimulatorModelRevisionWrite(
             external_id=model_revision_external_id,
             model_external_id=model_external_id_1,
-            file_id=seed_file.id,
+            file_id=seed_model_revision_file.id,
             description="Test revision",
         )
         multiple_model_revisions_to_create = [
             SimulatorModelRevisionWrite(
                 external_id=model_revision_external_id + "1",
                 model_external_id=model_external_id_1,
-                file_id=seed_file.id,
+                file_id=seed_model_revision_file.id,
                 description="Test revision",
             ),
             SimulatorModelRevisionWrite(
                 external_id=model_revision_external_id + "2",
                 model_external_id=model_external_id_2,
-                file_id=seed_file.id,
+                file_id=seed_model_revision_file.id,
                 description="Test revision",
             ),
         ]
@@ -183,6 +189,54 @@ class TestSimulatorModels:
         assert log.data[0].severity == "Information"
         assert len(multiple_model_revisions_created) == 2
         cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
+
+    @pytest.mark.usefixtures("seed_model_revision_file", "seed_external_dependency_file", "seed_resource_names")
+    def test_create_model_and_revisions_with_external_dependencies(
+        self,
+        cognite_client: CogniteClient,
+        seed_model_revision_file: FileMetadata,
+        seed_external_dependency_file: FileMetadata,
+        seed_resource_names,
+    ) -> None:
+        model_external_id = random_string(10)
+        models_to_create = [
+            SimulatorModelWrite(
+                name="sdk-test-model1",
+                simulator_external_id=seed_resource_names["simulator_external_id"],
+                external_id=model_external_id,
+                data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                type="SteadyState",
+            )
+        ]
+
+        models_created = cognite_client.simulators.models.create(models_to_create)
+
+        assert models_created is not None
+        assert len(models_created) == 1
+        model_revision_external_id = model_external_id + "revision"
+        external_dependencies = [
+            SimulatorModelRevisionExternalDependency(
+                file=SimulatorModelExternalDependencyFileField(id=seed_external_dependency_file.id),
+                arguments={
+                    "fieldA": "value1",
+                    "fieldB": "value2",
+                },
+            )
+        ]
+        model_revision_to_create = SimulatorModelRevisionWrite(
+            external_id=model_revision_external_id,
+            model_external_id=model_external_id,
+            file_id=seed_model_revision_file.id,
+            description="Test revision",
+            external_dependencies=external_dependencies,
+        )
+
+        model_revision_created = cognite_client.simulators.models.revisions.create(model_revision_to_create)
+
+        assert model_revision_created is not None
+        assert model_revision_created.external_id == model_revision_external_id
+        assert model_revision_created.external_dependencies == external_dependencies
+        cognite_client.simulators.models.delete(external_ids=[model_external_id])
 
     def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
         model_external_id = random_string(10)
