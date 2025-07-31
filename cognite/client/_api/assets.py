@@ -4,7 +4,6 @@ import functools
 import heapq
 import itertools
 import math
-import operator as op
 import threading
 import warnings
 from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -1421,13 +1420,6 @@ class _AssetHierarchyCreator:
 
     def _raise_latest_exception(self, exceptions: list[Exception], successful: list[Asset]) -> NoReturn:
         *_, latest_exception = exceptions
-        common = dict(
-            successful=AssetList(successful),
-            unknown=AssetList(self.unknown),
-            failed=AssetList(self.failed),
-            unwrap_fn=op.attrgetter("external_id"),
-            cluster=self.assets_api._config.cdf_cluster,
-        )
         err_message = "One or more errors happened during asset creation. Latest error:"
         if isinstance(latest_exception, CogniteAPIError):
             raise CogniteAPIError(
@@ -1435,7 +1427,10 @@ class _AssetHierarchyCreator:
                 x_request_id=latest_exception.x_request_id,
                 code=latest_exception.code,
                 extra=latest_exception.extra,
-                **common,  # type: ignore [arg-type]
+                successful=AssetList(successful),
+                unknown=AssetList(self.unknown),
+                failed=AssetList(self.failed),
+                cluster=self.assets_api._config.cdf_cluster,
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
         # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
@@ -1443,5 +1438,8 @@ class _AssetHierarchyCreator:
         raise CogniteAPIError(
             message=f"{err_message} {type(latest_exception).__name__}('{latest_exception}')",
             code=None,  # type: ignore [arg-type]
-            **common,  # type: ignore [arg-type]
+            successful=AssetList(successful),
+            unknown=AssetList(self.unknown),
+            failed=AssetList(self.failed),
+            cluster=self.assets_api._config.cdf_cluster,
         ) from latest_exception
