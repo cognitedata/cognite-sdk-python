@@ -17,8 +17,8 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
     SimulationRunDataItem,
-    SimulationRunDataList,
     SimulationValueUnitName,
+    SimulatorRunDataList,
 )
 from cognite.client.utils._importing import local_import
 
@@ -115,7 +115,7 @@ class TestSimulatorRoutineRevisionCore:
     def test_inputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.inputs_to_pandas()
+        df = sample_routine_revision.configuration.inputs.to_pandas()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 2
@@ -134,7 +134,7 @@ class TestSimulatorRoutineRevisionCore:
     def test_outputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.outputs_to_pandas()
+        df = sample_routine_revision.configuration.outputs.to_pandas()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 2
@@ -154,7 +154,7 @@ class TestSimulatorRoutineRevisionCore:
     def test_script_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.script_to_pandas()
+        df = sample_routine_revision.script.to_pandas()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 4  # 2 stages with 2 steps each
@@ -300,7 +300,7 @@ class TestSimulationRunData:
             ),
         ]
 
-        data_list = SimulationRunDataList(items)
+        data_list = SimulatorRunDataList(items)
         df = data_list.to_pandas()
 
         assert isinstance(df, pd.DataFrame)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABC, abstractmethod
+from collections import UserList
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
@@ -322,16 +323,16 @@ class SimulatorRoutineConfiguration(CogniteObject):
     Learn more about simulator routine configuration <https://docs.cognite.com/cdf/integration/guides/simulators/simulator_routines>.
 
     Args:
-        inputs (list[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
-        outputs (list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
+        inputs (SimulatorRoutineInputList | list[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
+        outputs (SimulatorRoutineOutputList | list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
         logical_check (list[SimulatorRoutineLogicalCheck] | None): Logical check configuration.
         steady_state_detection (list[SimulatorRoutineSteadyStateDetection] | None): Steady state detection configuration.
         schedule (SimulatorRoutineSchedule | None): Schedule configuration.
         data_sampling (SimulatorRoutineDataSampling | None): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
     """
 
-    inputs: list[SimulatorRoutineInput] | None
-    outputs: list[SimulatorRoutineOutput] | None
+    inputs: SimulatorRoutineInputList | None
+    outputs: SimulatorRoutineOutputList | None
     logical_check: list[SimulatorRoutineLogicalCheck]
     steady_state_detection: list[SimulatorRoutineSteadyStateDetection]
     schedule: SimulatorRoutineSchedule | None = None
@@ -339,15 +340,21 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
     def __init__(
         self,
-        inputs: list[SimulatorRoutineInput] | None,
-        outputs: list[SimulatorRoutineOutput] | None,
+        inputs: SimulatorRoutineInputList | list[SimulatorRoutineInput] | None,
+        outputs: SimulatorRoutineOutputList | list[SimulatorRoutineOutput] | None,
         logical_check: list[SimulatorRoutineLogicalCheck] | None = None,
         steady_state_detection: list[SimulatorRoutineSteadyStateDetection] | None = None,
         schedule: SimulatorRoutineSchedule | None = None,
         data_sampling: SimulatorRoutineDataSampling | None = None,
     ) -> None:
-        self.inputs = inputs
-        self.outputs = outputs
+        if inputs is not None and not isinstance(inputs, SimulatorRoutineInputList):
+            self.inputs = SimulatorRoutineInputList(inputs)
+        else:
+            self.inputs = inputs
+        if outputs is not None and not isinstance(outputs, SimulatorRoutineOutputList):
+            self.outputs = SimulatorRoutineOutputList(outputs)
+        else:
+            self.outputs = outputs
         self.logical_check = logical_check or []
         self.steady_state_detection = steady_state_detection or []
         self.schedule = schedule
@@ -359,20 +366,22 @@ class SimulatorRoutineConfiguration(CogniteObject):
         outputs = None
 
         if resource.get("inputs", None) is not None:
-            inputs = []
+            inputs_list = []
             for input in resource["inputs"]:
                 if issubclass(type(input), type(SimulatorRoutineInput)):
-                    inputs.append(input)
+                    inputs_list.append(input)
                 else:
-                    inputs.append(SimulatorRoutineInput._load(input, cognite_client))
+                    inputs_list.append(SimulatorRoutineInput._load(input, cognite_client))
+            inputs = SimulatorRoutineInputList(inputs_list)
 
         if resource.get("outputs", None) is not None:
-            outputs = []
+            outputs_list = []
             for output_ in resource["outputs"]:
                 if isinstance(output_, SimulatorRoutineOutput):
-                    outputs.append(output_)
+                    outputs_list.append(output_)
                 else:
-                    outputs.append(SimulatorRoutineOutput._load(output_, cognite_client))
+                    outputs_list.append(SimulatorRoutineOutput._load(output_, cognite_client))
+            outputs = SimulatorRoutineOutputList(outputs_list)
 
         schedule = resource["schedule"] if resource.get("schedule") and resource["schedule"]["enabled"] else None
         data_sampling = (
@@ -506,17 +515,22 @@ class SimulatorRoutineStage(CogniteObject):
 
 
 class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRevisionWrite"], ABC):
+    script: SimulatorRoutineStageList | None
+
     def __init__(
         self,
         external_id: str,
         routine_external_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | list[SimulatorRoutineStage] | None = None,
     ) -> None:
         self.external_id = external_id
         self.routine_external_id = routine_external_id
         self.configuration = configuration
-        self.script = script
+        if script is not None and not isinstance(script, SimulatorRoutineStageList):
+            self.script = SimulatorRoutineStageList(script)
+        else:
+            self.script = script
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -524,57 +538,6 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
         output["script"] = [stage_.dump(camel_case=camel_case) for stage_ in self.script] if self.script else None
 
         return output
-
-    def script_to_pandas(self) -> pandas.DataFrame:
-        pd = local_import("pandas")
-        if not self.script:
-            return pd.DataFrame()
-
-        rows = []
-        for stage in self.script:
-            for step in stage.steps:
-                row = {
-                    "stage_order": stage.order,
-                    "stage_description": stage.description,
-                    "step_order": step.order,
-                    "step_type": step.step_type,
-                    "step_description": step.description,
-                }
-                for key, value in step.arguments.items():
-                    row[f"arg_{to_snake_case(key)}"] = value
-                rows.append(row)
-
-        return pd.DataFrame(rows)
-
-    def _items_to_pandas(self, items: list | None) -> pandas.DataFrame:
-        """Helper method to convert a list of items (inputs or outputs) to pandas DataFrame"""
-        pd = local_import("pandas")
-        if not items:
-            return pd.DataFrame()
-
-        rows = []
-        for item in items:
-            row = item.dump(camel_case=False)
-            if "unit" in row and row["unit"] is not None:
-                unit_data = row.pop("unit")
-                row["unit_name"] = unit_data.get("name")
-                row["unit_quantity"] = unit_data.get("quantity")
-            else:
-                row.pop("unit", None)
-                row["unit_name"] = None
-                row["unit_quantity"] = None
-            rows.append(row)
-        return pd.DataFrame(rows)
-
-    def inputs_to_pandas(self) -> pandas.DataFrame:
-        if not self.configuration:
-            return self._items_to_pandas(None)
-        return self._items_to_pandas(self.configuration.inputs)
-
-    def outputs_to_pandas(self) -> pandas.DataFrame:
-        if not self.configuration:
-            return self._items_to_pandas(None)
-        return self._items_to_pandas(self.configuration.outputs)
 
 
 class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
@@ -586,7 +549,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         routine_external_id (str): The external ID of the simulator routine.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
 
     """
 
@@ -597,11 +560,11 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
             if resource.get("configuration")
             else None
         )
-        script = (
-            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
-            if resource.get("script")
-            else None
-        )
+        script = None
+        if resource.get("script"):
+            stages = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            script = SimulatorRoutineStageList(stages)
+
         return cls(
             external_id=resource["externalId"],
             routine_external_id=resource["routineExternalId"],
@@ -639,7 +602,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id (int): The ID of the data set associated with the simulator routine revision.
         created_by_user_id (str): The ID of the user who created the simulator routine revision.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
     """
 
     def __init__(
@@ -655,7 +618,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id: int,
         created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | list[SimulatorRoutineStage] | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -676,11 +639,11 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             if resource.get("configuration")
             else None
         )
-        script = (
-            [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
-            if resource.get("script")
-            else None
-        )
+        script = None
+        if resource.get("script"):
+            stages = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            script = SimulatorRoutineStageList(stages)
+
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -719,6 +682,110 @@ class SimulatorRoutineRevisionList(
         return SimulatorRoutineRevisionWriteList(
             [a.as_write() for a in self.data], cognite_client=self._get_cognite_client()
         )
+
+
+class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
+    """List of simulator routine stages with pandas conversion capabilities."""
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of stages to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with stage and step information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        for stage in self.data:
+            for step in stage.steps:
+                row = {
+                    "stage_order": stage.order,
+                    "stage_description": stage.description,
+                    "step_order": step.order,
+                    "step_type": step.step_type,
+                    "step_description": step.description,
+                }
+                for key, value in step.arguments.items():
+                    row[f"arg_{to_snake_case(key)}"] = value
+                rows.append(row)
+
+        return pd.DataFrame(rows)
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except Exception:
+            return str(self)
+
+
+class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
+    """List of simulator routine inputs with pandas conversion capabilities."""
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of inputs to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with input information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        for item in self.data:
+            row = item.dump(camel_case=False)
+            if "unit" in row and row["unit"] is not None:
+                unit_data = row.pop("unit")
+                row["unit_name"] = unit_data.get("name")
+                row["unit_quantity"] = unit_data.get("quantity")
+            else:
+                row.pop("unit", None)
+                row["unit_name"] = None
+                row["unit_quantity"] = None
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except Exception:
+            return str(self)
+
+
+class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
+    """List of simulator routine outputs with pandas conversion capabilities."""
+
+    def to_pandas(self) -> pandas.DataFrame:
+        """Convert the list of outputs to a pandas DataFrame.
+
+        Returns:
+            pandas.DataFrame: DataFrame with output information.
+        """
+        pd = local_import("pandas")
+        if not self.data:
+            return pd.DataFrame()
+
+        rows = []
+        for item in self.data:
+            row = item.dump(camel_case=False)
+            if "unit" in row and row["unit"] is not None:
+                unit_data = row.pop("unit")
+                row["unit_name"] = unit_data.get("name")
+                row["unit_quantity"] = unit_data.get("quantity")
+            else:
+                row.pop("unit", None)
+                row["unit_name"] = None
+                row["unit_quantity"] = None
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _repr_html_(self) -> str:
+        try:
+            return self.to_pandas()._repr_html_()
+        except Exception:
+            return str(self)
 
 
 _INPUT_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineInput]] = {
