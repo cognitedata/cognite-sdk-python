@@ -43,26 +43,26 @@ class SimulatorIntegrationsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorIntegration]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
@@ -70,9 +70,9 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator integrations to return in each chunk. Defaults to yielding one simulator integration a time.
-            limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
             simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
             active (bool | None): Filter on active status of the simulator integration.
+            limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
 
         Returns:
             Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk is not specified, else SimulatorIntegrationList objects.

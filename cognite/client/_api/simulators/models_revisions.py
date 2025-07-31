@@ -166,35 +166,35 @@ class SimulatorModelRevisionsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int | None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelRevisionList]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int | None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelRevision]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: int | None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]:
         """Iterate over simulator simulator model revisions
 
@@ -202,12 +202,12 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
             model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
             all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
             Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.

@@ -157,8 +157,8 @@ class SimulatorModelsAPI(APIClient):
         self,
         chunk_size: None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        limit: int | None = None,
         sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModel]: ...
 
     @overload
@@ -166,16 +166,16 @@ class SimulatorModelsAPI(APIClient):
         self,
         chunk_size: int,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        limit: int | None = None,
         sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelList]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
-        limit: int | None = None,
         sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
         """Iterate over simulator simulator models
 
@@ -184,8 +184,8 @@ class SimulatorModelsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
             simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
-            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
             Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
