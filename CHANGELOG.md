@@ -17,9 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
-### Fixed
-- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+## [7.79.0] - 2025-07-31
+### Changed
+- Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
 
 ## [7.78.0] - 2025-07-29
 ### Added
@@ -81,6 +81,8 @@ Changes are grouped as follows
 - Fixes for type annotations for Functions API
 
 ## [7.74.5] - 2025-04-08
+### Fixed
+- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 ### Fixed
 - Empty datapoint subscriptions may return timeSeriesCount=None. This is now handled.
 
