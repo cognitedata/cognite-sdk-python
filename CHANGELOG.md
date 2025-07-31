@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [Unreleased]
 ### Added
-- New convenience methods `script_to_pandas()`, `inputs_to_pandas()` and `outputs_to_pandas()` to `SimulatorRoutineRevisionCore` for displaying script, inputs and outputs as DataFrames in Jupyter notebooks
+- New convenience methods for displaying script, inputs and outputs as DataFrames in Jupyter notebooks
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 
