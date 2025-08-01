@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
 from cognite.client.data_classes.simulators.models import (
@@ -63,7 +62,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.list(limit=10)
 
             Specify filter and sort order:
-                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionsFilter
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.models.revisions.list(
@@ -166,18 +164,36 @@ class SimulatorModelRevisionsAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorModelRevisionsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int,
+        sort: PropertySort | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelRevisionList]: ...
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorModelRevisionsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        sort: PropertySort | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelRevision]: ...
 
     def __call__(
         self,
         chunk_size: int | None = None,
-        filter: SimulatorModelRevisionsFilter | None = None,
+        sort: PropertySort | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
+        all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
     ) -> Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]:
         """Iterate over simulator simulator model revisions
@@ -186,17 +202,27 @@ class SimulatorModelRevisionsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
-            filter (SimulatorModelRevisionsFilter | None): Filter to apply on the model revisions list.
-            limit (int | None): Maximum number of simulator model revisions to return. Defaults to return all items.
+            sort (PropertySort | None): The criteria to sort by.
+            model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
+            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            created_time (TimestampRange | None): Filter by created time.
+            last_updated_time (TimestampRange | None): Filter by last updated time.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
-            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            Iterator[SimulatorModelRevision] | Iterator[SimulatorModelRevisionList]: yields SimulatorModelRevision one by one if chunk is not specified, else SimulatorModelRevisionList objects.
         """
+        model_revisions_filter = SimulatorModelRevisionsFilter(
+            model_external_ids=model_external_ids,
+            all_versions=all_versions,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        )
         return self._list_generator(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=model_revisions_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )

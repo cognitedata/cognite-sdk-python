@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, NoReturn, overload
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelsFilter
 from cognite.client.data_classes.simulators.models import (
     SimulatorModel,
@@ -155,16 +154,28 @@ class SimulatorModelsAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModel]: ...
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModelList]: ...
 
     def __call__(
-        self, chunk_size: int | None = None, filter: SimulatorModelsFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        sort: PropertySort | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorModel] | Iterator[SimulatorModelList]:
         """Iterate over simulator simulator models
 
@@ -172,17 +183,19 @@ class SimulatorModelsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator models to return in each chunk. Defaults to yielding one simulator model a time.
-            filter (SimulatorModelsFilter | None): Filter to apply on the model revisions list.
-            limit (int | None): Maximum number of simulator models to return. Defaults to return all items.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
+            sort (PropertySort | None): The criteria to sort by.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
 
         Returns:
-            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """
+        model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         return self._list_generator(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=model_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )
