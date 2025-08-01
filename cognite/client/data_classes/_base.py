@@ -111,7 +111,7 @@ class _WithClientMixin:
         return self.__cognite_client
 
 
-class CogniteObject:
+class CogniteObject(ABC):
     """The Cognite Object is used to add serialization and deserialization to the data classes.
 
     It is used both by the CogniteResources and the nested classes used by the CogniteResources.
