@@ -18,6 +18,7 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from zoneinfo import ZoneInfo
 
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
@@ -538,6 +539,9 @@ class FakeCogniteResourceGenerator:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
             return self._cognite_client
+        elif type_ is ZoneInfo:
+            # Special case for ZoneInfo - provide a default timezone
+            return ZoneInfo("UTC")
         elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
             implementations = all_concrete_subclasses(type_)
             if type_ is Filter:
