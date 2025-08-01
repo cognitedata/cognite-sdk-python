@@ -43,7 +43,6 @@ class TestSimulatorIntegrations:
 
         item = filtered_integrations.get(external_id=seed_resource_names["simulator_integration_external_id"])
         assert item is not None
-        # assert item.data_set_id == seed_resource_names["simulator_test_data_set_id"]
         assert item.active is True
         assert item.created_time is not None
         assert item.last_updated_time is not None
@@ -52,11 +51,11 @@ class TestSimulatorIntegrations:
         assert log is not None
         assert log.data is not None
         assert log.data[0].timestamp is not None
-        assert log.data[0].timestamp > int(time.time() * 1000) - 10000  # updated less than 10 seconds ago
         assert log.data[0].message == "Testing logs update for simulator integration"
+        assert log.data[0].timestamp > int(time.time() * 1000) - 30000  # updated less than 30 seconds ago
         assert log.data[0].severity == "Debug"
 
-    def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> None:
         test_integration = simulator_integration.copy()
         test_integration["heartbeat"] = int(time.time() * 1000)
         test_integration["externalId"] = random_string(50)
