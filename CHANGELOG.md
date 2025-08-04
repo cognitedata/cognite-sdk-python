@@ -17,7 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [7.78.1] - 2025-08-01
+### Changed
+- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
+  underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
 - Fixed naming inconsistencies in simulators module: renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
