@@ -44,7 +44,7 @@ class SimulationValueUnitInput(CogniteObject):
 
 
 @dataclass
-class SimulatorRoutineInput(CogniteObject):
+class SimulatorRoutineInput(CogniteObject, ABC):
     """
     The input of the simulator routine revision.
 
