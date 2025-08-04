@@ -933,24 +933,8 @@ class APIClient:
             else:
                 return el
 
-        def str_format_element(el: T) -> str | dict | T:
-            if isinstance(el, CogniteResource):
-                dumped = el.dump()
-                if "external_id" in dumped:
-                    if "space" in dumped:
-                        return f"{dumped['space']}:{dumped['external_id']}"
-                    return dumped["external_id"]
-                if "externalId" in dumped:
-                    if "space" in dumped:
-                        return f"{dumped['space']}:{dumped['externalId']}"
-                    return dumped["externalId"]
-                return dumped
-            return el
-
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task[1]["items"],
-            task_list_element_unwrap_fn=unwrap_element,
-            str_format_element_fn=str_format_element,
+            task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
         )
         created_resources = summary.joined_results(lambda res: res.json()["items"])
 
@@ -1150,9 +1134,9 @@ class APIClient:
                         cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
                     )
             except CogniteAPIError as api_error:
-                successful = api_error.successful
-                unknown = api_error.unknown
-                failed = api_error.failed
+                successful = list(api_error.successful)
+                unknown = list(api_error.unknown)
+                failed = list(api_error.failed)
 
                 successful.extend(not_found_error.successful)
                 unknown.extend(not_found_error.unknown)
