@@ -17,16 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.80.0] - 2025-08-04
+### Added
+- Support for external dependendencies in simulator and simulator model revisions resources.
+
 ## [7.78.1] - 2025-08-01
 ### Changed
 - Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
   underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
-
-## [7.80.0] - 2025-07-31
-### Added
-- Support for external dependendencies in simulator and simulator model revisions resources.
 
 ## [7.78.0] - 2025-07-29
 ### Added
