@@ -51,7 +51,7 @@ class SimulatorIntegrationsAPI(APIClient):
     @overload
     def __call__(
         self,
-        chunk_size: int | None = None,
+        chunk_size: None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
