@@ -46,7 +46,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorIntegration]: ...
+    ) -> Iterator[SimulatorIntegrationList]: ...
 
     @overload
     def __call__(
