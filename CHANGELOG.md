@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.79.0] - 2025-07-30
+## [7.79.0] - 2025-08-02
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
 
