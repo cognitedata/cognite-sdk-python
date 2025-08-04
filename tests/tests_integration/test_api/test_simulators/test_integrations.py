@@ -28,7 +28,7 @@ class TestSimulatorIntegrations:
 
         assert len(integrations) > 0
 
-    def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> None:
         for integration in cognite_client.simulators.integrations(active=True):
             assert integration.active is True
 
