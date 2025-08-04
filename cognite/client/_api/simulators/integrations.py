@@ -75,7 +75,7 @@ class SimulatorIntegrationsAPI(APIClient):
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
 
         Returns:
-            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk is not specified, else SimulatorIntegrationList objects.
+            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
         """
         integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         return self._list_generator(
