@@ -39,10 +39,7 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
     return resource_names.copy()
 
 
-def upload_file(
-    cognite_client: CogniteClient, filename: str, external_id: str, seed_resource_names: dict[str, str]
-) -> FileMetadata:
-    data_set_id = seed_resource_names["simulator_test_data_set_id"]
+def upload_file(cognite_client: CogniteClient, filename: str, external_id: str, data_set_id: int) -> FileMetadata:
     file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
         return cognite_client.files.upload(
@@ -59,11 +56,12 @@ def upload_file(
 def seed_model_revision_file(
     cognite_client: CogniteClient, seed_resource_names: dict[str, str]
 ) -> Iterator[FileMetadata | None]:
+    data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = upload_file(
         cognite_client,
         filename="ShowerMixer.txt",
         external_id=seed_resource_names["simulator_model_file_external_id"],
-        seed_resource_names=seed_resource_names,
+        data_set_id=data_set_id,
     )
 
     yield file
@@ -73,11 +71,12 @@ def seed_model_revision_file(
 def seed_external_dependency_file(
     cognite_client: CogniteClient, seed_resource_names: dict[str, str]
 ) -> Iterator[FileMetadata | None]:
+    data_set_id = seed_resource_names["simulator_test_data_set_id"]
     file = upload_file(
         cognite_client,
         filename="ExtDependency.out",
         external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
-        seed_resource_names=seed_resource_names,
+        data_set_id=data_set_id,
     )
 
     yield file
