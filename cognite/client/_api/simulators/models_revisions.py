@@ -222,6 +222,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             Create new simulator model revisions:
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite
+                >>> from cognite.client.data_classes.simulators.models import SimulatorModelExternalDependencyFileField, SimulatorModelRevisionExternalDependency
                 >>> client = CogniteClient()
                 >>> revisions = [
                 ...     SimulatorModelRevisionWrite(
@@ -233,6 +234,15 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...         external_id="revision2",
                 ...         file_id=2,
                 ...         model_external_id="a_2",
+                ...         external_dependencies = [
+                ...             SimulatorModelRevisionExternalDependency(
+                ...                 file=SimulatorModelExternalDependencyFileField(id=seed_external_dependency_file.id),
+                ...                 arguments={
+                ...                     "fieldA": "value1",
+                ...                     "fieldB": "value2",
+                ...                 },
+                ...             )
+                ...         ]
                 ...     ),
                 ... ]
                 >>> res = client.simulators.models.revisions.create(revisions)
