@@ -372,10 +372,6 @@ class SimulatorModelExternalDependencyFileField(CogniteObject):
             id=resource["id"],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case=camel_case)
-        return output
-
 
 @dataclass
 class SimulatorModelRevisionExternalDependency(CogniteObject):
