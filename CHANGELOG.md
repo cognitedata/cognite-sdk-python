@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.80.0] - 2025-08-04
 ### Added
-- Support for external dependendencies in simulator and simulator model revisions resources.
+- Support for external dependencies in simulator and simulator model revisions resources.
 
 ## [7.78.1] - 2025-08-01
 ### Changed
