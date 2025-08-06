@@ -236,7 +236,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...         model_external_id="a_2",
                 ...         external_dependencies = [
                 ...             SimulatorModelRevisionExternalDependency(
-                ...                 file=SimulatorModelExternalDependencyFileField(id=seed_external_dependency_file.id),
+                ...                 file=SimulatorModelExternalDependencyFileField(id=123),
                 ...                 arguments={
                 ...                     "fieldA": "value1",
                 ...                     "fieldB": "value2",
