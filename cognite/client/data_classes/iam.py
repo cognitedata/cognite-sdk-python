@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
@@ -19,7 +20,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
 from cognite.client.utils._importing import local_import
-from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -30,20 +30,43 @@ ALL_USER_ACCOUNTS = "allUserAccounts"
 
 
 @dataclass
-class TokenAttributes(ABC):
+class TokenAttributes(CogniteObject):
     """List of applications (represented by their application ID) this group is valid for"""
 
     app_ids: list[str]
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the attributes to a dictionary"""
+        dumped = super().dump(camel_case=camel_case)
+        if self.app_ids is not None:
+            dumped["appIds"] = self.app_ids
+        return dumped
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            app_ids=resource.get("appIds", []),
+        )
+
 
 @dataclass
-class GroupAttributes(ABC):
+class GroupAttributes(CogniteObject):
     """Attributes derived from access token"""
 
     token: TokenAttributes
 
-    def dump(self, camel_case: bool = True) -> set[str | Any]:
-        return {to_camel_case(self) if camel_case else self}
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the attributes to a dictionary"""
+        dumped = super().dump(camel_case=camel_case)
+        if self.token is not None:
+            dumped["token"] = self.token.dump(camel_case=camel_case)
+        return dumped
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            token=TokenAttributes._load(resource.get("token", {}), cognite_client=cognite_client),
+        )
 
 
 class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
@@ -92,8 +115,6 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         dumped = super().dump(camel_case=camel_case)
         if self.capabilities is not None:
             dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
-        if self.attributes is not None:
-            dumped["attributes"] = self.attributes.dump()
         return dumped
 
 

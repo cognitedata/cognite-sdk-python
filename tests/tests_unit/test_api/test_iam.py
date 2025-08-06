@@ -59,8 +59,8 @@ class TestGroups:
         assert isinstance(res, GroupList)
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_with_attributes(self, cognite_client, mock_group):
-        res = cognite_client.iam.groups.list(attributes=["token"])
+    def test_list_with_attributes(self, cognite_client, mock_groups_with_attributes):
+        res = cognite_client.iam.groups.list()
         assert isinstance(res, GroupList)
         assert mock_groups_with_attributes.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
