@@ -357,7 +357,7 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
-class SimulatorModelExternalDependencyFileField(CogniteObject):
+class SimulatorModelExternalDependencyFile(CogniteObject):
     """
     Represents the CDF file associated with the external dependency.
     Args:
@@ -378,17 +378,17 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
     """
     Represents an external dependency for a simulator model revision.
     Args:
-        file (SimulatorModelExternalDependencyFileField): The CDF file associated with the external dependency.
+        file (SimulatorModelExternalDependencyFile): The CDF file associated with the external dependency.
         arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
-    file: SimulatorModelExternalDependencyFileField
+    file: SimulatorModelExternalDependencyFile
     arguments: dict[str, str]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            file=SimulatorModelExternalDependencyFileField._load(resource["file"], cognite_client),
+            file=SimulatorModelExternalDependencyFile._load(resource["file"], cognite_client),
             arguments=resource["arguments"],
         )
 

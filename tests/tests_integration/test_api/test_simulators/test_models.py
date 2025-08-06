@@ -7,7 +7,7 @@ from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
-    SimulatorModelExternalDependencyFileField,
+    SimulatorModelExternalDependencyFile,
     SimulatorModelRevisionExternalDependency,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
@@ -216,7 +216,7 @@ class TestSimulatorModels:
         model_revision_external_id = model_external_id + "revision"
         external_dependencies = [
             SimulatorModelRevisionExternalDependency(
-                file=SimulatorModelExternalDependencyFileField(id=seed_external_dependency_file.id),
+                file=SimulatorModelExternalDependencyFile(id=seed_external_dependency_file.id),
                 arguments={
                     "fieldA": "value1",
                     "fieldB": "value2",
