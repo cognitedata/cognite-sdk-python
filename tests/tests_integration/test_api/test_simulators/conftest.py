@@ -68,21 +68,6 @@ def seed_model_revision_file(
 
 
 @pytest.fixture(scope="session")
-def seed_external_dependency_file(
-    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
-) -> Iterator[FileMetadata | None]:
-    data_set_id = seed_resource_names["simulator_test_data_set_id"]
-    file = upload_file(
-        cognite_client,
-        filename="ExtDependency.xml",
-        external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
-        data_set_id=data_set_id,
-    )
-
-    yield file
-
-
-@pytest.fixture(scope="session")
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)

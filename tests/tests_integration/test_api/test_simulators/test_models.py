@@ -13,6 +13,7 @@ from cognite.client.data_classes.simulators.models import (
     SimulatorModelWrite,
 )
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_simulators.conftest import upload_file
 from tests.tests_integration.test_api.test_simulators.utils import update_logs
 
 
@@ -203,12 +204,13 @@ class TestSimulatorModels:
     ) -> None:
         try:
             model_external_id = random_string(10)
+            data_set_id = seed_resource_names["simulator_test_data_set_id"]
             models_to_create = [
                 SimulatorModelWrite(
                     name="sdk-test-model1",
                     simulator_external_id=seed_resource_names["simulator_external_id"],
                     external_id=model_external_id,
-                    data_set_id=seed_resource_names["simulator_test_data_set_id"],
+                    data_set_id=data_set_id,
                     type="SteadyState",
                 )
             ]
@@ -218,6 +220,14 @@ class TestSimulatorModels:
             assert models_created is not None
             assert len(models_created) == 1
             model_revision_external_id = model_external_id + "v1"
+
+            seed_external_dependency_file = upload_file(
+                cognite_client,
+                filename="ExtDependency.xml",
+                external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
+                data_set_id=data_set_id,
+            )
+
             external_dependencies = [
                 SimulatorModelRevisionExternalDependency(
                     file=SimulatorModelExternalDependencyFile(id=seed_external_dependency_file.id),
@@ -227,6 +237,7 @@ class TestSimulatorModels:
                     },
                 )
             ]
+
             model_revision_to_create = SimulatorModelRevisionWrite(
                 external_id=model_revision_external_id,
                 model_external_id=model_external_id,
