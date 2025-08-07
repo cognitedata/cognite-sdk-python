@@ -1649,6 +1649,20 @@ class InstancesAPI(APIClient):
 
                 >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
+
+            List instances with a view as source:
+
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> instance_list = client.data_modeling.instances.list(sources=ViewId("mySpace", "myView", "v1"))
+
+            List instances with SourceSelector:
+
+                >>> from cognite.client.data_classes.data_modeling import SourceSelector, ViewId
+                >>> source_selector = SourceSelector(
+                ...     source=ViewId("mySpace", "myView", "v1"),
+                ...     properties=["name", "description"]
+                ... )
+                >>> instance_list = client.data_modeling.instances.list(sources=source_selector)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
