@@ -1659,7 +1659,7 @@ class InstancesAPI(APIClient):
 
                 >>> df = instance_list.to_pandas(expand_properties=True, camel_case=True)
                 >>> # expand_properties=True will add the properties directly as dataframe columns
-                >>> # camel_case=True will convert property names to camel case
+                >>> # camel_case=True will convert the DataFrame column names to camel case (e.g. externalId)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
