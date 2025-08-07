@@ -28,7 +28,10 @@ class TestSimulatorModels:
         )
 
         model_ids = []
-        for model in cognite_client.simulators.models(limit=2):
+        for model in cognite_client.simulators.models(
+            limit=2,
+            simulator_external_ids=[seed_resource_names["simulator_external_id"]],
+        ):
             assert model.created_time is not None
             model_ids.append(model.id)
 
