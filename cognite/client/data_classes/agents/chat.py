@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client.data_classes._base import CogniteObject
@@ -57,7 +57,7 @@ class UnknownContent(MessageContent):
     """
 
     type: str = "unknown"
-    data: dict[str, Any] = None  # type: ignore[assignment]
+    data: dict[str, Any] = field(default_factory=dict)
 
     def __init__(self, data: dict[str, Any], type: str = "unknown") -> None:
         super().__init__(type=type)
