@@ -237,7 +237,6 @@ class TestSimulatorModels:
                     },
                 )
             ]
-
             model_revision_to_create = SimulatorModelRevisionWrite(
                 external_id=model_revision_external_id,
                 model_external_id=model_external_id,
