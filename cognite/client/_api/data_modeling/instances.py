@@ -1655,15 +1655,6 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> instance_list = client.data_modeling.instances.list(sources=ViewId("mySpace", "myView", "v1"))
 
-            List instances with SourceSelector:
-
-                >>> from cognite.client.data_classes.data_modeling import SourceSelector, ViewId
-                >>> source_selector = SourceSelector(
-                ...     source=ViewId("mySpace", "myView", "v1"),
-                ...     properties=["name", "description"]
-                ... )
-                >>> instance_list = client.data_modeling.instances.list(sources=source_selector)
-
             Convert instances to pandas DataFrame with expanded properties:
 
                 >>> df = instance_list.to_pandas(expand_properties=True, camel_case=True)
