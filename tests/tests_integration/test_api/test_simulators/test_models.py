@@ -194,12 +194,11 @@ class TestSimulatorModels:
         assert len(multiple_model_revisions_created) == 2
         cognite_client.simulators.models.delete(external_ids=[model_external_id_1, model_external_id_2])
 
-    @pytest.mark.usefixtures("seed_model_revision_file", "seed_external_dependency_file", "seed_resource_names")
+    @pytest.mark.usefixtures("seed_model_revision_file", "seed_resource_names")
     def test_create_model_and_revisions_with_external_dependencies(
         self,
         cognite_client: CogniteClient,
         seed_model_revision_file: FileMetadata,
-        seed_external_dependency_file: FileMetadata,
         seed_resource_names,
     ) -> None:
         try:
