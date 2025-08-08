@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     CogniteResponse,
@@ -29,46 +27,6 @@ if TYPE_CHECKING:
 ALL_USER_ACCOUNTS = "allUserAccounts"
 
 
-@dataclass
-class TokenAttributes(CogniteObject):
-    """List of applications (represented by their application ID) this group is valid for"""
-
-    app_ids: list[str]
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dumps the attributes to a dictionary"""
-        dumped = super().dump(camel_case=camel_case)
-        if self.app_ids is not None:
-            dumped["appIds"] = self.app_ids
-        return dumped
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            app_ids=resource.get("appIds", []),
-        )
-
-
-@dataclass
-class GroupAttributes(CogniteObject):
-    """Attributes derived from access token"""
-
-    token: TokenAttributes
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dumps the attributes to a dictionary"""
-        dumped = super().dump(camel_case=camel_case)
-        if self.token is not None:
-            dumped["token"] = self.token.dump(camel_case=camel_case)
-        return dumped
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            token=TokenAttributes._load(resource.get("token", {}), cognite_client=cognite_client),
-        )
-
-
 class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     """No description.
 
@@ -76,7 +34,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
+        attributes (dict[str, Any] | None): Attributes of the group, this scopes down access based on the attributes specified.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
@@ -86,7 +44,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
+        attributes: dict[str, Any] | None = None,
         metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
@@ -128,7 +86,7 @@ class Group(GroupCore):
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
+        attributes (dict[str, Any] | None): Attributes of the group, this scopes down access based on the attributes specified.
         id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
@@ -142,7 +100,7 @@ class Group(GroupCore):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
+        attributes: dict[str, Any] | None = None,
         id: int | None = None,
         is_deleted: bool | None = None,
         deleted_time: int | None = None,
@@ -234,7 +192,7 @@ class GroupWrite(GroupCore):
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        attributes (GroupAttributes | None): No description.
+        attributes (dict[str, Any] | None): No description.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
@@ -244,7 +202,7 @@ class GroupWrite(GroupCore):
         name: str,
         source_id: str | None = None,
         capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
+        attributes: dict[str, Any] | None = None,
         metadata: dict[str, str] | None = None,
         members: Literal["allUserAccounts"] | list[str] | None = None,
     ) -> None:
