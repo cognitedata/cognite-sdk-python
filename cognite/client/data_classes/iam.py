@@ -192,7 +192,7 @@ class GroupWrite(GroupCore):
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
         capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
-        attributes (dict[str, Any] | None): No description.
+        attributes (dict[str, Any] | None): Attributes of the group, this scopes down access based on the attributes specified.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
     """
