@@ -27,6 +27,7 @@ Changes are grouped as follows
   underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
 ### Fixed
 - Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+- Fixed naming inconsistencies in simulators module: renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
 
 ## [7.78.0] - 2025-07-29
 ### Added
