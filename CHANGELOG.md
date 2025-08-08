@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.79.1] - 2025-08-08
+- Added support for creating and listing groups with `attributes`.
+
 ## [7.79.0] - 2025-08-01
 ### Changed
 - [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
