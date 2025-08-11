@@ -17,6 +17,14 @@ class MessageContent(CogniteObject, ABC):
 
     _type: ClassVar[str]  # To be set by concrete classes
 
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> MessageContent:
+        """Dispatch to the correct concrete content class based on `type`."""
+        content_type = data.get("type", "")
+        content_class = _MESSAGE_CONTENT_CLS_BY_TYPE.get(content_type, UnknownContent)
+        # Delegate to the concrete class' loader
+        return content_class._load(data, cognite_client)
+
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the content to a dictionary."""
@@ -65,16 +73,12 @@ class UnknownContent(MessageContent):
         return cls(data=data, type=content_type)
 
 
-MessageContentType = TextContent | UnknownContent
-
-
-def load_message_content(data: dict[str, Any]) -> MessageContentType:
-    """Load message content from a dictionary."""
-    content_type = data["type"]
-    if content_type == "text":
-        return TextContent._load(data)
-    else:
-        return UnknownContent._load(data)
+# Build the mapping AFTER concrete classes are defined
+_MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
+    subclass._type: subclass  # type: ignore[type-abstract]
+    for subclass in MessageContent.__subclasses__()
+    if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
+}
 
 
 @dataclass
@@ -82,15 +86,15 @@ class Message(CogniteObject):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContentType): The message content. If a string is provided,
+        content (str | MessageContent): The message content. If a string is provided,
             it will be converted to TextContent.
         role (Literal["user"]): The role of the message sender. Defaults to "user".
     """
 
-    content: MessageContentType | None = None
+    content: MessageContent | None = None
     role: Literal["user"] = "user"
 
-    def __init__(self, content: str | MessageContentType, role: Literal["user"] = "user") -> None:
+    def __init__(self, content: str | MessageContent, role: Literal["user"] = "user") -> None:
         if isinstance(content, str):
             self.content = TextContent(text=content)
         else:
@@ -105,7 +109,7 @@ class Message(CogniteObject):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Message:
-        content = load_message_content(data["content"])
+        content = MessageContent._load(data["content"])
         return cls(content=content, role=data["role"])
 
 
@@ -146,10 +150,10 @@ class AgentReasoningItem(CogniteObject):
     """Reasoning item in agent response.
 
     Args:
-        content (list[MessageContentType]): The reasoning content.
+        content (list[MessageContent]): The reasoning content.
     """
 
-    content: list[MessageContentType]
+    content: list[MessageContent]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -158,7 +162,7 @@ class AgentReasoningItem(CogniteObject):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentReasoningItem:
-        content = [load_message_content(item) for item in data.get("content", [])]
+        content = [MessageContent._load(item) for item in data.get("content", [])]
         return cls(content=content)
 
 
@@ -167,13 +171,13 @@ class AgentMessage(CogniteObject):
     """A message from an agent.
 
     Args:
-        content (MessageContentType | None): The message content.
+        content (MessageContent | None): The message content.
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         role (Literal["agent"]): The role of the message sender.
     """
 
-    content: MessageContentType | None = None
+    content: MessageContent | None = None
     data: list[AgentDataItem] | None = None
     reasoning: list[AgentReasoningItem] | None = None
     role: Literal["agent"] = "agent"
@@ -190,7 +194,7 @@ class AgentMessage(CogniteObject):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
-        content = load_message_content(data["content"]) if "content" in data else None
+        content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
         reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
         return cls(
