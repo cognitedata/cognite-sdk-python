@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from typing_extensions import Self
@@ -33,10 +33,7 @@ ALL_USER_ACCOUNTS = "allUserAccounts"
 class GroupAttributesToken(CogniteObject):
     """List of applications (represented by their application ID) this group is valid for"""
 
-    app_ids: list[str]
-
-    def __init__(self, app_ids: list[str] | None = None) -> None:
-        self.app_ids = app_ids if app_ids is not None else []
+    app_ids: list[str] = field(default_factory=list)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
