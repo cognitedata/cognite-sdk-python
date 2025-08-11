@@ -54,9 +54,7 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        if isinstance(self.external_dependencies, list) and all(
-            isinstance(item, SimulatorModelRevisionExternalDependency) for item in self.external_dependencies
-        ):
+        if self.external_dependencies is not None:
             output["externalDependencies"] = [item.dump(camel_case=camel_case) for item in self.external_dependencies]
 
         return output
