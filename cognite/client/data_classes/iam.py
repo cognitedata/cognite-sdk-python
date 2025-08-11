@@ -53,9 +53,6 @@ class GroupAttributes(CogniteObject):
 
     token: GroupAttributesToken | None
 
-    def __init__(self, token: GroupAttributesToken | None = None) -> None:
-        self.token = token
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
         dumped = super().dump(camel_case=camel_case)
