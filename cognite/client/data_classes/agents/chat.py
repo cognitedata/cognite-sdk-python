@@ -215,23 +215,21 @@ class AgentChatResponse(CogniteResource):
     Args:
         agent_id (str): The ID of the agent.
         messages (AgentMessageList): The response messages from the agent.
-        cursor (str | None): Cursor for conversation continuation.
         type (str): The response type.
+        cursor (str | None): Cursor for conversation continuation.
     """
 
     def __init__(
         self,
         agent_id: str,
         messages: AgentMessageList,
+        type: str,
         cursor: str | None = None,
-        type: str = "result",
     ) -> None:
         self.agent_id = agent_id
         self.cursor = cursor
         self.messages = messages
         self.type = type
-        # Store unknown properties for forward compatibility
-        self._unknown_properties: dict[str, Any] = {}
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {
@@ -242,8 +240,6 @@ class AgentChatResponse(CogniteResource):
                 "type": self.type,
             },
         }
-        if self._unknown_properties:
-            result.update(self._unknown_properties)
         return result
 
     @property
@@ -268,9 +264,5 @@ class AgentChatResponse(CogniteResource):
             messages=messages_list,
             type=response_data["type"],
         )
-
-        # Store any unknown properties
-        known_keys = {"agentId", "response"}
-        instance._unknown_properties = {k: v for k, v in data.items() if k not in known_keys}
 
         return instance
