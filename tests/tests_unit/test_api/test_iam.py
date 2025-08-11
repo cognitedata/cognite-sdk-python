@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
 from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
-from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
+from cognite.client.data_classes.iam import GroupAttributes, GroupAttributesToken, ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
 
@@ -79,7 +79,7 @@ class TestGroups:
         my_group = Group(
             name="My Group",
             capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())],
-            attributes={"token": {"appIds": ["app1", "app2"]}},
+            attributes=GroupAttributes(token=GroupAttributesToken(app_ids=["app1", "app2"])),
         )
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
