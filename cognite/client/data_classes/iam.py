@@ -38,7 +38,7 @@ class GroupAttributesToken(CogniteObject):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
         dumped = super().dump(camel_case=camel_case)
-        if self.app_ids is not None:
+        if self.app_ids:
             dumped["appIds" if camel_case else "app_ids"] = self.app_ids
         return dumped
 
