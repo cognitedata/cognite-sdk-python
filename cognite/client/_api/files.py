@@ -629,13 +629,7 @@ class FilesAPI(APIClient):
             res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
         except CogniteAPIError as e:
             if e.code == 403:
-                raise CogniteAuthorizationError(
-                    message=e.message,
-                    code=e.code,
-                    x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
-                    project=self._config.project,
-                ) from e
+                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         return self._upload_bytes(content, res.json()["items"][0])
@@ -736,13 +730,7 @@ class FilesAPI(APIClient):
             if e.code == 403 and "insufficient access rights" in e.message:
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
-                raise CogniteAuthorizationError(
-                    message=msg,
-                    code=e.code,
-                    x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
-                    project=self._config.project,
-                ) from e
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         return self._upload_bytes(content, res.json())
@@ -831,13 +819,7 @@ class FilesAPI(APIClient):
             if e.code == 403 and "insufficient access rights" in e.message:
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
-                raise CogniteAuthorizationError(
-                    message=msg,
-                    code=e.code,
-                    x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
-                    project=self._config.project,
-                ) from e
+                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         returned_file_metadata = res.json()
@@ -892,13 +874,7 @@ class FilesAPI(APIClient):
             )
         except CogniteAPIError as e:
             if e.code == 403:
-                raise CogniteAuthorizationError(
-                    message=e.message,
-                    code=e.code,
-                    x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
-                    project=self._config.project,
-                ) from e
+                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
             raise
 
         returned_file_metadata = res.json()["items"][0]

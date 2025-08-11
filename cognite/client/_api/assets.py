@@ -1426,22 +1426,20 @@ class _AssetHierarchyCreator:
                 message=f"{err_message} {latest_exception.message}",
                 x_request_id=latest_exception.x_request_id,
                 code=latest_exception.code,
-                cluster=self.assets_api._config.cdf_cluster,
-                project=self.assets_api._config.project,
                 extra=latest_exception.extra,
                 successful=AssetList(successful),
                 unknown=AssetList(self.unknown),
                 failed=AssetList(self.failed),
+                cluster=self.assets_api._config.cdf_cluster,
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
         # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
         raise CogniteAPIError(
             message=f"{err_message} {type(latest_exception).__name__}('{latest_exception}')",
-            code=None,
-            cluster=self.assets_api._config.cdf_cluster,
-            project=self.assets_api._config.project,
+            code=None,  # type: ignore [arg-type]
             successful=AssetList(successful),
             unknown=AssetList(self.unknown),
             failed=AssetList(self.failed),
+            cluster=self.assets_api._config.cdf_cluster,
         ) from latest_exception
