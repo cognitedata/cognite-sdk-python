@@ -62,7 +62,7 @@ class GroupAttributes(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        token_raw = resource.get("token") if isinstance(resource, dict) else None
+        token_raw = resource.get("token")
         token = (
             GroupAttributesToken._load(token_raw, cognite_client=cognite_client)
             if isinstance(token_raw, dict)
