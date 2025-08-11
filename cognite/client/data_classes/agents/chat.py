@@ -219,11 +219,6 @@ class AgentChatResponse(CogniteResource):
         type (str): The response type.
     """
 
-    agent_id: str
-    cursor: str | None = None
-    messages: AgentMessageList | None = None
-    type: str = "result"
-
     def __init__(
         self,
         agent_id: str,
