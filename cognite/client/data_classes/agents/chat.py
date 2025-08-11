@@ -209,7 +209,6 @@ class AgentMessageList(list[AgentMessage]):
     """List of agent messages."""
 
 
-@dataclass
 class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
