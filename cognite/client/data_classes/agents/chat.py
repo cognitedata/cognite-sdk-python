@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from cognite.client.data_classes._base import CogniteObject
+from cognite.client.data_classes._base import CogniteObject, CogniteResource
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -210,7 +210,7 @@ class AgentMessageList(list[AgentMessage]):
 
 
 @dataclass
-class AgentChatResponse(CogniteObject):
+class AgentChatResponse(CogniteResource):
     """Response from agent chat.
 
     Args:
