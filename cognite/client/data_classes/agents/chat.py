@@ -214,26 +214,21 @@ class AgentChatResponse(CogniteResource):
 
     Args:
         agent_id (str): The ID of the agent.
+        messages (AgentMessageList): The response messages from the agent.
         cursor (str | None): Cursor for conversation continuation.
-        messages (list[AgentMessage] | AgentMessageList | None): The response messages from the agent.
         type (str): The response type.
     """
 
     def __init__(
         self,
         agent_id: str,
+        messages: AgentMessageList,
         cursor: str | None = None,
-        messages: list[AgentMessage] | AgentMessageList | None = None,
         type: str = "result",
     ) -> None:
         self.agent_id = agent_id
         self.cursor = cursor
-        if messages is None:
-            self.messages = AgentMessageList()
-        elif isinstance(messages, AgentMessageList):
-            self.messages = messages
-        else:
-            self.messages = AgentMessageList(messages)
+        self.messages = messages
         self.type = type
         # Store unknown properties for forward compatibility
         self._unknown_properties: dict[str, Any] = {}
@@ -262,13 +257,15 @@ class AgentChatResponse(CogniteResource):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentChatResponse:
-        response_data = data.get("response", {})
-        messages = [AgentMessage._load(msg, cognite_client) for msg in response_data.get("messages", [])]
+        response_data = data["response"]
+        raw_messages = response_data["messages"]
+        messages = [AgentMessage._load(msg, cognite_client) for msg in raw_messages]
+        messages_list = AgentMessageList(messages)
 
         instance = cls(
             agent_id=data["agentId"],
             cursor=response_data.get("cursor"),
-            messages=messages,
+            messages=messages_list,
             type=response_data["type"],
         )
 
