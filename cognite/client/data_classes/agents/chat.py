@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from cognite.client.data_classes._base import CogniteObject
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class MessageContent(CogniteObject, ABC):
     """Base class for message content types."""
 
-    type: str
+    _type: ClassVar[str]  # To be set by concrete classes
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -29,18 +29,13 @@ class TextContent(MessageContent):
 
     Args:
         text (str): The text content.
-        type (Literal["text"]): The content type. Defaults to "text".
     """
 
-    type: Literal["text"] = "text"
+    _type: ClassVar[str] = "text"
     text: str = ""
 
-    def __init__(self, text: str, type: Literal["text"] = "text") -> None:
-        super().__init__(type=type)
-        self.text = text
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"text": self.text, "type": self.type}
+        return {"text": self.text, "type": self._type}
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> TextContent:
@@ -56,12 +51,8 @@ class UnknownContent(MessageContent):
         type (str): The content type.
     """
 
-    type: str = "unknown"
+    type: str
     data: dict[str, Any] = field(default_factory=dict)
-
-    def __init__(self, data: dict[str, Any], type: str = "unknown") -> None:
-        super().__init__(type=type)
-        self.data = data
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
@@ -70,7 +61,7 @@ class UnknownContent(MessageContent):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownContent:
-        content_type = data.get("type", "unknown")
+        content_type = data.get("type", "")
         return cls(data=data, type=content_type)
 
 
@@ -79,7 +70,7 @@ MessageContentType = TextContent | UnknownContent
 
 def load_message_content(data: dict[str, Any]) -> MessageContentType:
     """Load message content from a dictionary."""
-    content_type = data.get("type")
+    content_type = data["type"]
     if content_type == "text":
         return TextContent._load(data)
     else:
@@ -115,7 +106,7 @@ class Message(CogniteObject):
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Message:
         content = load_message_content(data["content"])
-        return cls(content=content, role=data.get("role", "user"))
+        return cls(content=content, role=data["role"])
 
 
 class MessageList(list[Message]):
@@ -145,7 +136,7 @@ class AgentDataItem(CogniteObject):
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentDataItem:
-        item_type = data.get("type", "unknown")
+        item_type = data["type"]
         item_data = {k: v for k, v in data.items() if k != "type"}
         return cls(type=item_type, data=item_data)
 
@@ -206,7 +197,7 @@ class AgentMessage(CogniteObject):
             content=content,
             data=data_items if data_items else None,
             reasoning=reasoning_items if reasoning_items else None,
-            role=data.get("role", "agent"),
+            role=data["role"],
         )
 
 
@@ -280,7 +271,7 @@ class AgentChatResponse(CogniteObject):
             agent_id=data["agentId"],
             cursor=response_data.get("cursor"),
             messages=messages,
-            type=response_data.get("type", "result"),
+            type=response_data["type"],
         )
 
         # Store any unknown properties
