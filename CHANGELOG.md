@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.80.1] - 2025-08-11
+### Added
+- Support for creating and listing groups with attributes.
+
 ## [7.80.0] - 2025-08-01
 ### Added
 - Emit project name in exceptions to make it easier to gather relevant context.
