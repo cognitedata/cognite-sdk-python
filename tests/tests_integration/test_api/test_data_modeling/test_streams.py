@@ -1,23 +1,8 @@
 import string
 
-import pytest
-
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamSettings, StreamTemplate
 from cognite.client.utils._text import random_string
-
-
-@pytest.fixture
-def persisted_stream(cognite_client: CogniteClient) -> Stream:
-    external_id = "python-sdk-test-stream-persistent"
-    stream = cognite_client.data_modeling.streams.retrieve(external_id=external_id)
-    if stream is None:
-        stream = cognite_client.data_modeling.streams.apply(
-            StreamApply(
-                external_id=external_id, settings=StreamSettings(template=StreamTemplate(name="MutableTestStream"))
-            )
-        )
-    return stream
 
 
 class TestStreamsAPI:
