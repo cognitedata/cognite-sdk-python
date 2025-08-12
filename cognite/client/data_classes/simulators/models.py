@@ -397,12 +397,6 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
     ) -> list[SimulatorModelRevisionExternalDependency]:
-        if isinstance(resource, dict):
-            return [cls._load(resource, cognite_client)]
-        elif isinstance(resource, list):
-            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
-        else:
-            class_name = cls.__name__
-            raise TypeError(f"Expected a dict or a list of instances of {class_name}, but got: {type(resource)}")
+        return [cls._load(item, cognite_client) for item in resource]
