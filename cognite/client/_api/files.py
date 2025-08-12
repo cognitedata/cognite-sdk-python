@@ -437,7 +437,7 @@ class FilesAPI(APIClient):
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = client.files.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
         return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
