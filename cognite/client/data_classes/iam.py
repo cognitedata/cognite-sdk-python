@@ -102,12 +102,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         self.members = members
 
     @classmethod
-    def _load(
-        cls,
-        resource: dict,
-        cognite_client: CogniteClient | None = None,
-        allow_unknown: bool = False,
-    ) -> Self:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
@@ -209,12 +204,7 @@ class Group(GroupCore):
         return self.members is not None
 
     @classmethod
-    def _load(
-        cls,
-        resource: dict,
-        cognite_client: CogniteClient | None = None,
-        allow_unknown: bool = False,
-    ) -> Group:
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Group:
         return cls(
             name=resource["name"],
             source_id=resource.get("sourceId"),
@@ -304,11 +294,7 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
         )
 
 
-class GroupList(
-    WriteableCogniteResourceList[GroupWrite, Group],
-    NameTransformerMixin,
-    InternalIdTransformerMixin,
-):
+class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
 
     @classmethod
@@ -367,10 +353,7 @@ class SecurityCategory(SecurityCategoryCore):
     """
 
     def __init__(
-        self,
-        name: str | None = None,
-        id: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        self, name: str | None = None, id: int | None = None, cognite_client: CogniteClient | None = None
     ) -> None:
         super().__init__(name=name)
         self.id = id
@@ -456,12 +439,7 @@ class TokenInspection(CogniteResponse):
         capabilities (ProjectCapabilityList): Capabilities associated with this token.
     """
 
-    def __init__(
-        self,
-        subject: str,
-        projects: list[ProjectSpec],
-        capabilities: ProjectCapabilityList,
-    ) -> None:
+    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: ProjectCapabilityList) -> None:
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities

@@ -37,19 +37,8 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.data_modeling.query import Intersection
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
-from cognite.client.data_classes.hosted_extractors import (
-    Destination,
-    DestinationList,
-    Source,
-    SourceList,
-)
-from cognite.client.data_classes.postgres_gateway import (
-    TableList,
-    User,
-    UserCreated,
-    UserCreatedList,
-    UserList,
-)
+from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
+from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
@@ -175,11 +164,7 @@ class TestCogniteObject:
         "cognite_object_subclass",
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
-    def test_json_serialize(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
-    ):
+    def test_json_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         if not cognite_object_subclass == Intersection:
             return
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
@@ -197,9 +182,7 @@ class TestCogniteObject:
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_dump_load_only_required(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass, skip_defaulted_args=True)
@@ -221,9 +204,7 @@ class TestCogniteObject:
         ],
     )
     def test_writable_as_write(
-        self,
-        cognite_writable_cls: type[WriteableCogniteResource],
-        cognite_mock_client_placeholder,
+        self, cognite_writable_cls: type[WriteableCogniteResource], cognite_mock_client_placeholder
     ):
         instance_generator = FakeCogniteResourceGenerator(seed=69_1337, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_writable_cls)
@@ -250,9 +231,7 @@ class TestCogniteObject:
         ],
     )
     def test_writable_list_as_write(
-        self,
-        writable_list: type[WriteableCogniteResourceList],
-        cognite_mock_client_placeholder,
+        self, writable_list: type[WriteableCogniteResourceList], cognite_mock_client_placeholder
     ):
         resource_cls = writable_list._RESOURCE
         instance_generator = FakeCogniteResourceGenerator(seed=52, cognite_client=cognite_mock_client_placeholder)
@@ -269,9 +248,7 @@ class TestCogniteObject:
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_load_has_no_side_effects(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         # TODO: Fix _load methods of the following classes:
         to_skip = {
@@ -296,9 +273,7 @@ class TestCogniteObject:
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_handle_unknown_arguments_when_loading(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass)
@@ -337,11 +312,7 @@ class TestCogniteObject:
         "cognite_object_subclass",
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
-    def test_yaml_serialize(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
-    ):
+    def test_yaml_serialize(self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=65, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_object_subclass)
@@ -357,9 +328,7 @@ class TestCogniteObject:
         [pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}") for cls in all_concrete_subclasses(CogniteObject)],
     )
     def test_dump_default_camel_case_false(
-        self,
-        cognite_object_subclass: type[CogniteObject],
-        cognite_mock_client_placeholder,
+        self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
         # This test ensures all camel_case args default to False
         parameters = signature(cognite_object_subclass.dump).parameters
@@ -419,10 +388,7 @@ class TestCogniteResource:
         )
         res = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1)
         actual_df = res.to_pandas(
-            expand_metadata=True,
-            metadata_prefix="",
-            ignore=["primIgnore", "obIgnore"],
-            camel_case=True,
+            expand_metadata=True, metadata_prefix="", ignore=["primIgnore", "obIgnore"], camel_case=True
         )
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
@@ -459,11 +425,7 @@ class TestCogniteResource:
             for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_json_serialize(
-        self,
-        cognite_resource_subclass: type[CogniteResource],
-        cognite_mock_client_placeholder,
-    ):
+    def test_json_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=42, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
@@ -471,7 +433,6 @@ class TestCogniteResource:
         dumped = instance.dump(camel_case=True)
         json_serialised = _json.dumps(dumped)
         loaded = instance.load(json_serialised, cognite_client=cognite_mock_client_placeholder)
-
         assert loaded.dump() == instance.dump()
 
     @pytest.mark.dsl
@@ -482,11 +443,7 @@ class TestCogniteResource:
             for cls in all_concrete_subclasses(CogniteResource)
         ],
     )
-    def test_yaml_serialize(
-        self,
-        cognite_resource_subclass: type[CogniteResource],
-        cognite_mock_client_placeholder,
-    ):
+    def test_yaml_serialize(self, cognite_resource_subclass: type[CogniteResource], cognite_mock_client_placeholder):
         instance = FakeCogniteResourceGenerator(
             seed=64, cognite_client=cognite_mock_client_placeholder
         ).create_instance(cognite_resource_subclass)
@@ -550,11 +507,7 @@ class TestCogniteResourceList:
         )
 
         expected_df = pd.DataFrame(
-            data={
-                "external_id": ["ev1", "ev2"],
-                "metadata.value1": [1, 2],
-                "metadata.value2": ["hello", "world"],
-            },
+            data={"external_id": ["ev1", "ev2"], "metadata.value1": [1, 2], "metadata.value2": ["hello", "world"]},
         )
 
         actual_df = event_list.to_pandas(expand_metadata=True)
@@ -565,10 +518,7 @@ class TestCogniteResourceList:
         import pandas as pd
 
         event_list = EventList(
-            [
-                Event(external_id="ev1", metadata={"val1": 1}),
-                Event(external_id="ev2", metadata={"val2": 2}),
-            ]
+            [Event(external_id="ev1", metadata={"val1": 1}), Event(external_id="ev2", metadata={"val2": 2})]
         )
         expected_df = pd.DataFrame(
             data={
@@ -586,16 +536,10 @@ class TestCogniteResourceList:
 
         assert {"varA": 1, "varB": 2} == resource_list[0].dump()
         assert {"var_a": 1, "var_b": 2} == resource_list[0].dump(camel_case=False)
-        assert [
-            {"varA": 1, "varB": 2},
-            {"varA": 2, "varB": 3},
-            {"varA": 3},
-        ] == resource_list.dump()
-        assert [
-            {"var_a": 1, "var_b": 2},
-            {"var_a": 2, "var_b": 3},
-            {"var_a": 3},
-        ] == resource_list.dump(camel_case=False)
+        assert [{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}] == resource_list.dump()
+        assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump(
+            camel_case=False
+        )
 
     def test_load_unknown_attribute(self):
         assert [{"varA": 1, "varB": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
@@ -727,14 +671,7 @@ class TestCogniteResourceList:
                     [{"external_id": "ROTATING_EQUIPMENT"}],
                 ]
             },
-            index=[
-                "external_id",
-                "name",
-                "parent_external_id",
-                "description",
-                "data_set_id",
-                "labels",
-            ],
+            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 
@@ -818,10 +755,7 @@ class TestCogniteUpdate:
     def test_add_object_and_remove(self):
         update = MyUpdate(1).object.add({"key": "value"})
         update.object.remove(["key2"])
-        assert {
-            "id": 1,
-            "update": {"object": {"add": {"key": "value"}, "remove": ["key2"]}},
-        } == update.dump()
+        assert {"id": 1, "update": {"object": {"add": {"key": "value"}, "remove": ["key2"]}}} == update.dump()
         with pytest.raises(RuntimeError):
             update.object.add({"key": "overwrite"})
         with pytest.raises(RuntimeError):
@@ -836,10 +770,9 @@ class TestCogniteUpdate:
         ).dump()
 
     def test_chain_setters(self):
-        assert {
-            "id": 1,
-            "update": {"object": {"set": {"bla": "bla"}}, "string": {"set": "bla"}},
-        } == MyUpdate(id=1).object.set({"bla": "bla"}).string.set("bla").dump()
+        assert {"id": 1, "update": {"object": {"set": {"bla": "bla"}}, "string": {"set": "bla"}}} == MyUpdate(
+            id=1
+        ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
         props = {prop.name for prop in MyUpdate._get_update_properties()}
