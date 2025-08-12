@@ -13,12 +13,20 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordListWithCursor,
 )
 from cognite.client.data_classes.filters import Filter
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(
+        api_maturity="alpha",
+        sdk_maturity="alpha",
+        feature_name="Records API",
+    )
+)
 class RecordsAPI(APIClient):
     _RESOURCE_PATH = "/streams/{}/records"
 

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamList
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
@@ -13,6 +14,13 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(
+        api_maturity="alpha",
+        sdk_maturity="alpha",
+        feature_name="Records API",
+    )
+)
 class StreamsAPI(APIClient):
     _RESOURCE_PATH = "/streams"
 
