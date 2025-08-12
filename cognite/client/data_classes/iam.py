@@ -41,17 +41,24 @@ class GroupAttributes(CogniteObject):
     """Attributes derived from access token"""
 
     token: GroupAttributesToken
+    _unknown_properties: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
         dumped = super().dump(camel_case=camel_case)
         if self.token is not None:
             dumped["token"] = self.token.dump(camel_case=camel_case)
+        if self._unknown_properties:
+            dumped.update(self._unknown_properties)
         return dumped
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(token=GroupAttributesToken._load(resource["token"], cognite_client=cognite_client))
+        token = GroupAttributesToken._load(resource["token"], cognite_client=cognite_client)
+        instance = cls(token=token)
+        existing = {"token"}
+        instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
+        return instance
 
 
 class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
