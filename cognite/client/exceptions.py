@@ -162,7 +162,7 @@ class CogniteAPIError(CogniteMultiException):
 
     Args:
         message (str): The error message produced by the API.
-        code (int): The error code produced by the failure.
+        code (int | None): The error code produced by the failure.
         x_request_id (str | None): The request-id generated for the failed request.
         missing (Sequence | None): (List) List of missing identifiers.
         duplicated (Sequence | None): (List) List of duplicated identifiers.
@@ -171,6 +171,7 @@ class CogniteAPIError(CogniteMultiException):
         unknown (Sequence | None): List of items which may or may not have been successfully processed.
         skipped (Sequence | None): List of items that were skipped due to "fail fast" mode.
         cluster (str | None): Which Cognite cluster the user's project is on.
+        project (str | None): No description.
         extra (dict | None): A dict of any additional information.
 
     Examples:
@@ -196,7 +197,7 @@ class CogniteAPIError(CogniteMultiException):
     def __init__(
         self,
         message: str,
-        code: int,
+        code: int | None,
         x_request_id: str | None = None,
         missing: Sequence | None = None,
         duplicated: Sequence | None = None,
@@ -205,14 +206,16 @@ class CogniteAPIError(CogniteMultiException):
         unknown: Sequence | None = None,
         skipped: Sequence | None = None,
         cluster: str | None = None,
+        project: str | None = None,
         extra: dict | None = None,
     ) -> None:
         self.message = message
+        self.cluster = cluster
         self.code = code
+        self.project = project
         self.x_request_id = x_request_id
         self.missing = missing
         self.duplicated = duplicated
-        self.cluster = cluster
         self.extra = extra
         super().__init__(successful, failed, unknown, skipped)
 
@@ -220,6 +223,8 @@ class CogniteAPIError(CogniteMultiException):
         msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.cluster:
             msg += f" | cluster: {self.cluster}"
+        if self.project:
+            msg += f" | project: {self.project}"
         if self.missing:
             msg += f"\nMissing: {self._truncate_elements(self.missing)}"
         if self.duplicated:

@@ -36,7 +36,7 @@ class TasksSummary:
         self.not_found_error: Exception | None = None
         self.duplicated_error: Exception | None = None
         self.unknown_error: Exception | None = None
-        self.missing, self.duplicated, self.cluster = self._inspect_exceptions(exceptions)
+        self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
 
     def joined_results(self, unwrap_fn: Callable = no_op) -> list:
         joined_results: list = []
@@ -76,8 +76,9 @@ class TasksSummary:
         if self.duplicated_error:
             self._raise_duplicated_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None]:
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None, str | None]:
         cluster = None
+        project = None
         missing: list[dict] = []
         duplicated: list[dict] = []
         for exc in exceptions:
@@ -86,6 +87,7 @@ class TasksSummary:
                 continue
 
             cluster = cluster or exc.cluster
+            project = project or exc.project
             if exc.code in (400, 422) and exc.missing is not None:
                 missing.extend(exc.missing)
                 self.not_found_error = exc
@@ -95,7 +97,7 @@ class TasksSummary:
                 self.duplicated_error = exc
             else:
                 self.unknown_error = exc
-        return missing, duplicated, cluster
+        return missing, duplicated, cluster, project
 
     def _raise_basic_api_error(
         self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
@@ -109,6 +111,7 @@ class TasksSummary:
                 duplicated=self.duplicated,
                 extra=self.unknown_error.extra,
                 cluster=self.cluster,
+                project=self.project,
                 successful=successful,
                 failed=failed,
                 unknown=unknown,
@@ -351,6 +354,6 @@ def execute_tasks(
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:
-    if isinstance(err, CogniteAPIError) and err.code >= 500:
+    if isinstance(err, CogniteAPIError) and err.code and err.code >= 500:
         return "unknown"
     return "failed"
