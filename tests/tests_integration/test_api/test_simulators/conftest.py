@@ -14,7 +14,8 @@ from cognite.client.data_classes.simulators.models import SimulatorModelWrite
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
 from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
-    resource_names,
+    ResourceNames,
+    resources,
     simulator,
     simulator_integration,
     simulator_model,
@@ -27,26 +28,26 @@ SEED_DIR = Path(__file__).resolve(strict=True).parent / "seed"
 
 
 @pytest.fixture(scope="session")
-def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
-    seed_data_set_external_id = resource_names["simulator_test_data_set_external_id"]
+def seed_resource_names(cognite_client: CogniteClient) -> ResourceNames:
+    seed_data_set_external_id = resources.simulator_test_data_set_external_id
     data_set = cognite_client.data_sets.retrieve(external_id=seed_data_set_external_id)
     if not data_set:
         data_sets = cognite_client.data_sets.create(
             [DataSetWrite(external_id=seed_data_set_external_id, name=seed_data_set_external_id)]
         )
         data_set = data_sets[0]
-    resource_names["simulator_test_data_set_id"] = data_set.id
-    return resource_names.copy()
+    resources.simulator_test_data_set_id = data_set.id
+    return resources
 
 
 @pytest.fixture(scope="session")
-def seed_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[FileMetadata | None]:
-    data_set_id = seed_resource_names["simulator_test_data_set_id"]
-    file = cognite_client.files.retrieve(external_id=seed_resource_names["simulator_model_file_external_id"])
+def seed_file(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> Iterator[FileMetadata | None]:
+    data_set_id = seed_resource_names.simulator_test_data_set_id
+    file = cognite_client.files.retrieve(external_id=seed_resource_names.simulator_model_file_external_id)
     if not file:
         file = cognite_client.files.upload(
             path=SEED_DIR / "ShowerMixer.txt",
-            external_id=seed_resource_names["simulator_model_file_external_id"],
+            external_id=seed_resource_names.simulator_model_file_external_id,
             name="ShowerMixer.txt",
             data_set_id=data_set_id,
         )
@@ -54,8 +55,9 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names: dict[str, str]
 
 
 @pytest.fixture(scope="session")
-def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[None]:
-    simulator_external_id = seed_resource_names["simulator_external_id"]
+def seed_simulator(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> Iterator[None]:
+    simulator_external_id = seed_resource_names.simulator_external_id
+    cognite_client.simulators._post("/simulators/delete", json={"items": [{"externalId": simulator_external_id}]})
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
@@ -63,14 +65,14 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str,
 
 @pytest.fixture(scope="session")
 def seed_simulator_integration(
-    cognite_client: CogniteClient, seed_simulator: None, seed_resource_names: dict[str, str]
+    cognite_client: CogniteClient, seed_simulator: None, seed_resource_names: ResourceNames
 ) -> Iterator[None]:
     log_id = None
     timestamp = int(time.time() * 1000)
     simulator_integrations = cognite_client.simulators.integrations.list(limit=None)
     if not simulator_integrations.get(external_id=simulator_integration["externalId"]):
         simulator_integration["heartbeat"] = timestamp
-        simulator_integration["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
+        simulator_integration["dataSetId"] = seed_resource_names.simulator_test_data_set_id
         res = cognite_client.simulators._post(
             "/simulators/integrations",
             json={"items": [simulator_integration]},
@@ -95,14 +97,14 @@ def seed_simulator_integration(
 
 @pytest.fixture(scope="session")
 def seed_simulator_models(
-    cognite_client: CogniteClient, seed_simulator_integration: None, seed_resource_names: dict[str, str]
+    cognite_client: CogniteClient, seed_simulator_integration: None, seed_resource_names: ResourceNames
 ) -> Iterator[dict[str, Any]]:
-    model_unique_external_id = seed_resource_names["simulator_model_external_id"]
+    model_unique_external_id = seed_resource_names.simulator_model_external_id
     models = cognite_client.simulators.models.list(limit=None)
     model_exists = models.get(external_id=model_unique_external_id)
 
     if not model_exists:
-        simulator_model["dataSetId"] = seed_resource_names["simulator_test_data_set_id"]
+        simulator_model["dataSetId"] = seed_resource_names.simulator_test_data_set_id
         simulator_model["externalId"] = model_unique_external_id
 
         model = SimulatorModelWrite._load(
@@ -124,8 +126,8 @@ def seed_simulator_models(
 
 @pytest.fixture(scope="session")
 def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
-    model_unique_external_id = resource_names["simulator_model_external_id"]
-    model_revision_unique_external_id = resource_names["simulator_model_revision_external_id"]
+    model_unique_external_id = resources.simulator_model_external_id
+    model_revision_unique_external_id = resources.simulator_model_revision_external_id
     model_revisions = cognite_client.simulators.models.revisions.list(
         model_external_ids=[model_unique_external_id],
     )
@@ -151,8 +153,8 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
 
 @pytest.fixture(scope="session")
 def seed_simulator_routines(cognite_client: CogniteClient, seed_simulator_model_revisions):
-    model_unique_external_id = resource_names["simulator_model_external_id"]
-    simulator_routine_unique_external_id = resource_names["simulator_routine_external_id"]
+    model_unique_external_id = resources.simulator_model_external_id
+    simulator_routine_unique_external_id = resources.simulator_routine_external_id
 
     routines = cognite_client.simulators.routines.create(
         [
@@ -197,7 +199,7 @@ def seed_simulator_routine_revision(
 
 @pytest.fixture(scope="session")
 def seed_simulator_routine_revisions(cognite_client: CogniteClient, seed_simulator_routines):
-    simulator_routine_external_id = resource_names["simulator_routine_external_id"]
+    simulator_routine_external_id = resources.simulator_routine_external_id
 
     rev1 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v1")
     rev2 = seed_simulator_routine_revision(cognite_client, simulator_routine_external_id, "v2")
