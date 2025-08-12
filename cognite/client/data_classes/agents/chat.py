@@ -91,7 +91,7 @@ class Message(CogniteObject):
         role (Literal["user"]): The role of the message sender. Defaults to "user".
     """
 
-    content: MessageContent | None = None
+    content: MessageContent
     role: Literal["user"] = "user"
 
     def __init__(self, content: str | MessageContent, role: Literal["user"] = "user") -> None:
@@ -103,7 +103,7 @@ class Message(CogniteObject):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "content": self.content.dump(camel_case=camel_case) if self.content else None,
+            "content": self.content.dump(camel_case=camel_case),
             "role": self.role,
         }
 
