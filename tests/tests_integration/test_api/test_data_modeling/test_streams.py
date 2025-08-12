@@ -1,8 +1,16 @@
+import os
 import string
+
+import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamSettings, StreamTemplate
 from cognite.client.utils._text import random_string
+
+if os.environ["COGNITE_PROJECT"] != "erlend-test":
+    pytest.skip(
+        "Skipping all Records integration tests, only enabled in alpha for erlend-test project", allow_module_level=True
+    )
 
 
 class TestStreamsAPI:

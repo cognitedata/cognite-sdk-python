@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import os
 import string
 from collections.abc import Callable
 from random import random
 from time import sleep
 from typing import TypeVar
+
+import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Container
@@ -20,6 +23,11 @@ from cognite.client.data_classes.data_modeling.streams import Stream
 from cognite.client.utils._text import random_string
 
 T = TypeVar("T")
+
+if os.environ["COGNITE_PROJECT"] != "erlend-test":
+    pytest.skip(
+        "Skipping all Records integration tests, only enabled in alpha for erlend-test project", allow_module_level=True
+    )
 
 
 def retry_assertion_errors(func: Callable[[], T], num_retries: int = 10) -> T:
