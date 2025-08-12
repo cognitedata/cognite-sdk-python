@@ -16,8 +16,8 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-- 
-## [7.80.1] - 2025-08-11
+ 
+## [7.80.1] - 2025-08-12
 ## Added
 - Added support for creating and listing groups with `attributes`.
 
