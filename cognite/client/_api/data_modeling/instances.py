@@ -937,11 +937,12 @@ class InstancesAPI(APIClient):
 
             Create two nodes with data with a one-to-many edge
 
-                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> from cognite.client.data_classes.data_modeling import ContainerId, EdgeApply, NodeOrEdgeData, NodeApply, ViewId
                 >>> work_order = NodeApply(
                 ...     space="industrial",
                 ...     external_id="work_order:123",
                 ...     sources=[
+                ...         # Insert data through a view
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "WorkOrderView", "v1"),
                 ...             {"title": "Repair pump", "createdYear": 2023}
@@ -952,8 +953,9 @@ class InstancesAPI(APIClient):
                 ...     space="industrial",
                 ...     external_id="pump:456",
                 ...     sources=[
+                ...         # Insert data directly to the container
                 ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "PumpView", "v1"),
+                ...             ContainerId("mySpace", "PumpContainer"),
                 ...             {"name": "Pump 456", "location": "Subsea"}
                 ...         )
                 ...     ]
