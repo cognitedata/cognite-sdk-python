@@ -4,7 +4,7 @@ import pytest
 
 from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
 from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
-from cognite.client.data_classes.iam import GroupAttributes, GroupAttributesToken, ProjectSpec, TokenInspection
+from cognite.client.data_classes.iam import ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
 
 
@@ -29,40 +29,11 @@ def mock_groups(rsps, cognite_client):
     yield rsps
 
 
-@pytest.fixture
-def mock_groups_with_attributes(rsps, cognite_client):
-    response_body = {
-        "items": [
-            {
-                "name": "Production Engineers",
-                "sourceId": "b7c9a5a4-99c2-4785-bed3-5e6ad9a78603",
-                "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
-                "id": 0,
-                "isDeleted": False,
-                "deletedTime": 0,
-                "attributes": {
-                    "token": {"appIds": ["app1", "app2"]},
-                },
-            }
-        ]
-    }
-    url_pattern = re.compile(re.escape(cognite_client.iam._get_base_url_with_base_path()) + "/groups.*")
-    rsps.assert_all_requests_are_fired = False
-    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
-    rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
-    yield rsps
-
-
 class TestGroups:
     def test_list(self, cognite_client, mock_groups):
         res = cognite_client.iam.groups.list()
         assert isinstance(res, GroupList)
         assert mock_groups.calls[0].response.json()["items"] == res.dump(camel_case=True)
-
-    def test_list_with_attributes(self, cognite_client, mock_groups_with_attributes):
-        res = cognite_client.iam.groups.list()
-        assert isinstance(res, GroupList)
-        assert mock_groups_with_attributes.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_groups):
         my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
@@ -74,26 +45,6 @@ class TestGroups:
             ]
         } == jsgz_load(mock_groups.calls[0].request.body)
         assert mock_groups.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
-
-    def test_create_with_attributes(self, cognite_client, mock_groups_with_attributes):
-        my_group = Group(
-            name="My Group",
-            capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())],
-            attributes=GroupAttributes(token=GroupAttributesToken(app_ids=["app1", "app2"])),
-        )
-        res = cognite_client.iam.groups.create(my_group)
-        assert isinstance(res, Group)
-
-        assert {
-            "items": [
-                {
-                    "name": "My Group",
-                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
-                    "attributes": {"token": {"appIds": ["app1", "app2"]}},
-                },
-            ]
-        } == jsgz_load(mock_groups_with_attributes.calls[0].request.body)
-        assert mock_groups_with_attributes.calls[0].response.json()["items"][0] == res.dump()
 
     def test_create_multiple(self, cognite_client, mock_groups):
         res = cognite_client.iam.groups.create([1])
