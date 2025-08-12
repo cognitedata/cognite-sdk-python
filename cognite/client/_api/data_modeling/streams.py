@@ -15,11 +15,7 @@ if TYPE_CHECKING:
 
 
 @warn_on_all_method_invocations(
-    FeaturePreviewWarning(
-        api_maturity="alpha",
-        sdk_maturity="alpha",
-        feature_name="Records API",
-    )
+    FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Records API")
 )
 class StreamsAPI(APIClient):
     _RESOURCE_PATH = "/streams"

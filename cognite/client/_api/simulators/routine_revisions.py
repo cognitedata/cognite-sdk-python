@@ -12,7 +12,7 @@ from cognite.client.data_classes.simulators.routine_revisions import (
     SimulatorRoutineRevisionList,
     SimulatorRoutineRevisionWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -21,14 +21,14 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorRoutineRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/routines/revisions"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
         self._LIST_LIMIT = 20
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
@@ -105,7 +105,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         Returns:
             Iterator[SimulatorRoutineRevision] | Iterator[SimulatorRoutineRevisionList]: yields SimulatorRoutineRevision one by one if chunk is not specified, else SimulatorRoutineRevisionList objects.
         """
-        self._warning.warn()
         filter = SimulatorRoutineRevisionsFilter(
             all_versions=all_versions,
             routine_external_ids=routine_external_ids,
@@ -171,7 +170,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             Get simulator routine revision by external id:
                 >>> res = client.simulators.routines.revisions.retrieve(external_ids="routine_v1")
         """
-        self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
             resource_cls=SimulatorRoutineRevision,
@@ -301,7 +299,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ... ]
                 >>> res = client.simulators.routines.revisions.create(routine_revisions)
         """
-        self._warning.warn()
         assert_type(
             items,
             "simulator_routine_revision",
@@ -361,7 +358,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
                 ... )
 
         """
-        self._warning.warn()
         filter = SimulatorRoutineRevisionsFilter(
             all_versions=all_versions,
             routine_external_ids=routine_external_ids,

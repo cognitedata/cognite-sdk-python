@@ -11,13 +11,16 @@ from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.simulators.simulators import Simulator, SimulatorList
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorsAPI(APIClient):
     _RESOURCE_PATH = "/simulators"
 
@@ -28,9 +31,6 @@ class SimulatorsAPI(APIClient):
         self.runs = SimulatorRunsAPI(config, api_version, cognite_client)
         self.routines = SimulatorRoutinesAPI(config, api_version, cognite_client)
         self.logs = SimulatorLogsAPI(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
 
     def __iter__(self) -> Iterator[Simulator]:
         """Iterate over simulators
@@ -86,5 +86,4 @@ class SimulatorsAPI(APIClient):
                     >>> res = client.simulators.list(limit=10)
 
         """
-        self._warning.warn()
         return self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)

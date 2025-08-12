@@ -5,21 +5,21 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.simulators.logs import SimulatorLog, SimulatorLogList
-from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+@warn_on_all_method_invocations(
+    FeaturePreviewWarning(api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators")
+)
 class SimulatorLogsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/logs"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
         self._RETRIEVE_LIMIT = 1
 
     @overload
@@ -65,8 +65,6 @@ class SimulatorLogsAPI(APIClient):
                 >>> run = client.simulators.runs.retrieve(ids=2)
                 >>> res = run.get_logs()
         """
-        self._warning.warn()
-
         return self._retrieve_multiple(
             list_cls=SimulatorLogList,
             resource_cls=SimulatorLog,
