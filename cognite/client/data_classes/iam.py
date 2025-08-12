@@ -35,23 +35,12 @@ class GroupAttributesToken(CogniteObject):
 
     app_ids: list[str] = field(default_factory=list)
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dumps the attributes to a dictionary"""
-        dumped = super().dump(camel_case=camel_case)
-        if self.app_ids:
-            dumped["appIds" if camel_case else "app_ids"] = self.app_ids
-        return dumped
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(app_ids=resource.get("appIds", []))
-
 
 @dataclass
 class GroupAttributes(CogniteObject):
     """Attributes derived from access token"""
 
-    token: GroupAttributesToken | None
+    token: GroupAttributesToken
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
@@ -62,13 +51,7 @@ class GroupAttributes(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        token_raw = resource.get("token")
-        token = (
-            GroupAttributesToken._load(token_raw, cognite_client=cognite_client)
-            if isinstance(token_raw, dict)
-            else None
-        )
-        return cls(token=token)
+        return cls(token=GroupAttributesToken._load(resource["token"], cognite_client=cognite_client))
 
 
 class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
