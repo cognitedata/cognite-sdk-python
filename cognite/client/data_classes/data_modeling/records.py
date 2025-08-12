@@ -206,10 +206,10 @@ class Record(CogniteResource):
             "external_id": self.id.external_id,
             "created_time": self.created_time,
             "last_updated_time": self.last_updated_time,
-            "properties": [s.dump(camel_case) for s in self.properties] if self.properties else {},
+            "properties": self.properties.dump(),
         }
         if camel_case:
-            convert_all_keys_to_camel_case(out)
+            return convert_all_keys_to_camel_case(out)
         return out
 
     @classmethod

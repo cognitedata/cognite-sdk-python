@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.utils import datetime_to_ms, ms_to_datetime
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive
 
 if TYPE_CHECKING:
@@ -37,10 +38,27 @@ class StreamTemplate(CogniteObject):
 
     name: TemplateName
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(name=resource["name"])
+
 
 @dataclass
 class StreamSettings(CogniteObject):
     template: StreamTemplate
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        template = StreamTemplate._load(resource["template"], cognite_client)
+        return cls(template=template)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = {
+            "template": self.template.dump(camel_case=camel_case),
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case_recursive(dumped)
+        return dumped
 
 
 class StreamApply(WriteableCogniteResource):
@@ -112,10 +130,21 @@ class Stream(WriteableCogniteResource):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
-            created_time=datetime.fromtimestamp(resource["createdTime"] / 1000.0),
+            created_time=ms_to_datetime(resource["createdTime"]),
             type=resource["type"],
             created_from_template=resource["createdFromTemplate"],
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped = {
+            "external_id": self.external_id,
+            "created_time": datetime_to_ms(self.created_time),
+            "type": self.type,
+            "created_from_template": self.created_from_template,
+        }
+        if camel_case:
+            return convert_all_keys_to_camel_case_recursive(dumped)
+        return dumped
 
 
 class StreamApplyList(CogniteResourceList[StreamApply]):
