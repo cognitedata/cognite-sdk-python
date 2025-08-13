@@ -40,7 +40,6 @@ def seed_resource_names(cognite_client: CogniteClient) -> dict[str, str]:
 
 
 def upload_file(cognite_client: CogniteClient, filename: str, external_id: str, data_set_id: int) -> FileMetadata:
-    cognite_client.files.delete(external_id=external_id)
     file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
         return cognite_client.files.upload(
@@ -71,7 +70,6 @@ def seed_model_revision_file(
 @pytest.fixture(scope="session")
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
-    cognite_client.simulators._post("/simulators/delete", json={"items": [{"externalId": simulator_external_id}]})
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
