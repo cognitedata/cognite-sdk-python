@@ -1,26 +1,13 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from collections.abc import ItemsView, Iterator, KeysView, MutableMapping, ValuesView
 from dataclasses import dataclass
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ContainerIdentifier
-from cognite.client.data_classes.data_modeling.instances import (
-    PropertyIdentifier,
-    PropertyValue,
-    SourceData,
-)
+from cognite.client.data_classes.data_modeling.instances import Properties, SourceData
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
@@ -73,86 +60,6 @@ class RecordIngest(CogniteObject):
         id = RecordId(space=resource["space"], external_id=resource["externalId"])
         sources = [SourceData._load(source, cognite_client) for source in resource["sources"]]
         return cls(id=id, sources=sources)
-
-
-_T = TypeVar("_T")
-
-
-# TODO: Use the Properties class from cognite.client.data_classes.data_modeling.instances, and make that support
-#   both container ids and view ids. We need that for when we support containers for instances anyway.
-class Properties(MutableMapping[ContainerIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
-    def __init__(
-        self, properties: MutableMapping[ContainerId, MutableMapping[PropertyIdentifier, PropertyValue]]
-    ) -> None:
-        self.data = properties
-
-    @classmethod
-    def load(
-        cls, data: MutableMapping[str, MutableMapping[str, MutableMapping[PropertyIdentifier, PropertyValue]]]
-    ) -> Properties:
-        props: MutableMapping[ContainerId, MutableMapping[PropertyIdentifier, PropertyValue]] = {}
-        for space, container_properties in data.items():
-            for container_id_str, properties in container_properties.items():
-                container_id = ContainerId.load((space, container_id_str))
-                props[container_id] = properties
-        return cls(props)
-
-    def dump(self) -> dict[str, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
-        props: dict[str, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
-        for container_id, properties in self.data.items():
-            extid = container_id.external_id
-            props[container_id.space][extid] = cast(dict[PropertyIdentifier, PropertyValue], properties)
-        # Defaultdict is not yaml serializable
-        return dict(props)
-
-    def items(self) -> ItemsView[ContainerId, MutableMapping[PropertyIdentifier, PropertyValue]]:
-        return self.data.items()
-
-    def keys(self) -> KeysView[ContainerId]:
-        return self.data.keys()
-
-    def values(self) -> ValuesView[MutableMapping[PropertyIdentifier, PropertyValue]]:
-        return self.data.values()
-
-    def __iter__(self) -> Iterator[ContainerId]:
-        yield from self.keys()
-
-    def __getitem__(self, view: ContainerIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue]:
-        view_id = ContainerId.load(view)
-        return self.data.get(view_id, {})
-
-    def __contains__(self, item: Any) -> bool:
-        view_id = ContainerId.load(item)
-        return view_id in self.data
-
-    @overload
-    def get(self, source: ContainerIdentifier) -> MutableMapping[PropertyIdentifier, PropertyValue] | None: ...
-
-    @overload
-    def get(
-        self, source: ContainerIdentifier, default: MutableMapping[PropertyIdentifier, PropertyValue] | _T
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T: ...
-
-    def get(
-        self,
-        source: ContainerIdentifier,
-        default: MutableMapping[PropertyIdentifier, PropertyValue] | None | _T | None = None,
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | None | _T:
-        source_id = ContainerId.load(source)
-        return self.data.get(source_id, default)
-
-    def __len__(self) -> int:
-        return len(self.data)
-
-    def __delitem__(self, source: ContainerIdentifier) -> None:
-        source_id = ContainerId.load(source)
-        del self.data[source_id]
-
-    def __setitem__(
-        self, source: ContainerIdentifier, properties: MutableMapping[PropertyIdentifier, PropertyValue]
-    ) -> None:
-        source_id = ContainerId.load(source)
-        self.data[source_id] = properties
 
 
 @dataclass
