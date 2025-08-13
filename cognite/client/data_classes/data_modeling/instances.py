@@ -103,8 +103,8 @@ PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
-class NodeOrEdgeData(CogniteObject):
-    """This represents the data values of a node or edge.
+class SourceData(CogniteObject):
+    """This represents the property data for a given view/container.
 
     Args:
         source (ContainerId | ViewId): The container or view the node or edge property is in
@@ -143,6 +143,11 @@ class NodeOrEdgeData(CogniteObject):
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
         return output
+
+
+# Keep this for backwards compatibility, since we renamed NodeOrEdgeData to SourceData when we introduced records
+# into the SDK.
+NodeOrEdgeData = SourceData
 
 
 class InstanceCore(DataModelingResource, ABC):

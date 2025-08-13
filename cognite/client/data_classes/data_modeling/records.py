@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import ItemsView, Iterator, KeysView, Mapping, MutableMapping, ValuesView
+from collections.abc import ItemsView, Iterator, KeysView, MutableMapping, ValuesView
 from dataclasses import dataclass
 from datetime import datetime
 from typing import (
@@ -19,8 +19,7 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId, Container
 from cognite.client.data_classes.data_modeling.instances import (
     PropertyIdentifier,
     PropertyValue,
-    PropertyValueWrite,
-    _PropertyValueSerializer,
+    SourceData,
 )
 from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -58,48 +57,9 @@ class RecordId:
 
 
 @dataclass
-class RecordData(CogniteObject):
-    """This represents the data values of a node or edge.
-
-    Args:
-        source (ContainerId | ViewId): The container or view the node or edge property is in
-        properties (Mapping[str, PropertyValue]): The properties of the node or edge.
-    """
-
-    source: ContainerId
-    properties: Mapping[str, PropertyValueWrite]
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        try:
-            source_type = resource["source"]["type"]
-        except KeyError as e:
-            raise ValueError("source must be a dict with a type key") from e
-        source: ContainerId
-        if source_type == "container":
-            source = ContainerId.load(resource["source"])
-        else:
-            raise ValueError(f"source type must be container or view, but was {source_type}")
-        return cls(
-            source=source,
-            properties=resource["properties"],
-        )
-
-    def dump(self, camel_case: bool = True) -> dict:
-        properties = _PropertyValueSerializer.serialize_values(self.properties, camel_case)
-        output: dict[str, Any] = {"properties": properties}
-        if self.source:
-            if isinstance(self.source, ContainerId):
-                output["source"] = self.source.dump(camel_case)
-            else:
-                raise TypeError(f"source must be ContainerId, but was {type(self.source)}")
-        return output
-
-
-@dataclass
 class RecordIngest(CogniteObject):
     id: RecordId
-    sources: list[RecordData]
+    sources: list[SourceData]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -111,13 +71,15 @@ class RecordIngest(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         id = RecordId(space=resource["space"], external_id=resource["externalId"])
-        sources = [RecordData._load(source, cognite_client) for source in resource["sources"]]
+        sources = [SourceData._load(source, cognite_client) for source in resource["sources"]]
         return cls(id=id, sources=sources)
 
 
 _T = TypeVar("_T")
 
 
+# TODO: Use the Properties class from cognite.client.data_classes.data_modeling.instances, and make that support
+#   both container ids and view ids. We need that for when we support containers for instances anyway.
 class Properties(MutableMapping[ContainerIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
     def __init__(
         self, properties: MutableMapping[ContainerId, MutableMapping[PropertyIdentifier, PropertyValue]]

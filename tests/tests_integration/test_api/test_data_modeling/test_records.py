@@ -12,9 +12,9 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Container
 from cognite.client.data_classes.data_modeling.ids import ContainerId
+from cognite.client.data_classes.data_modeling.instances import SourceData
 from cognite.client.data_classes.data_modeling.records import (
     LastUpdatedRange,
-    RecordData,
     RecordId,
     RecordIngest,
     RecordListWithCursor,
@@ -54,7 +54,7 @@ class TestRecords:
         ingest = RecordIngest(
             id=record_id,
             sources=[
-                RecordData(
+                SourceData(
                     source=container,
                     properties={"text": "hello", "int32": 1},
                 )
@@ -67,7 +67,7 @@ class TestRecords:
         upsert = RecordIngest(
             id=record_id,
             sources=[
-                RecordData(
+                SourceData(
                     source=container,
                     properties={"text": "hello2", "int32": 2},
                 )
@@ -87,7 +87,7 @@ class TestRecords:
         rec_external_id = f"rec-{random_string(10, string.ascii_lowercase)}"
         ingest = RecordIngest(
             id=RecordId(space=space, external_id=rec_external_id),
-            sources=[RecordData(source=container, properties={"text": "hello", "int32": 1})],
+            sources=[SourceData(source=container, properties={"text": "hello", "int32": 1})],
         )
 
         # Ingest
@@ -119,7 +119,7 @@ class TestRecords:
         rec_external_id = f"rec-{random_string(10, string.ascii_lowercase)}"
         ingest = RecordIngest(
             id=RecordId(space=space, external_id=rec_external_id),
-            sources=[RecordData(source=container, properties={"text": "hello", "int32": 1})],
+            sources=[SourceData(source=container, properties={"text": "hello", "int32": 1})],
         )
 
         # Ingest
