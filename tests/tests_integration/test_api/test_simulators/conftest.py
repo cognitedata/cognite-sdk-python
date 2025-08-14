@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import time
 from collections.abc import Iterator
 from pathlib import Path
@@ -37,7 +38,7 @@ def seed_resource_names(cognite_client: CogniteClient) -> ResourceNames:
         )
         data_set = data_sets[0]
     resources.simulator_test_data_set_id = data_set.id
-    return resources
+    return copy.copy(resources)
 
 
 @pytest.fixture(scope="session")
