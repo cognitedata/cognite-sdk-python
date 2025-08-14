@@ -7,7 +7,6 @@ from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
-    SimulatorModelExternalDependencyFile,
     SimulatorModelRevisionExternalDependency,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
@@ -229,7 +228,7 @@ class TestSimulatorModels:
 
             external_dependencies = [
                 SimulatorModelRevisionExternalDependency(
-                    file=SimulatorModelExternalDependencyFile(id=seed_external_dependency_file.id),
+                    file=seed_external_dependency_file.id,
                     arguments={
                         "fieldA": "value1",
                         "fieldB": "value2",
@@ -248,7 +247,8 @@ class TestSimulatorModels:
 
             assert model_revision_created is not None
             assert model_revision_created.external_id == model_revision_external_id
-            assert model_revision_created.external_dependencies == external_dependencies
+            assert model_revision_created.external_dependencies[0].arguments == external_dependencies[0].arguments
+            assert model_revision_created.external_dependencies[0].file["id"] == external_dependencies[0].file
         finally:
             cognite_client.simulators.models.delete(external_ids=[model_external_id])
 

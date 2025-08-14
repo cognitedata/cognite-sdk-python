@@ -355,44 +355,27 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
-class SimulatorModelExternalDependencyFile(CogniteObject):
-    """
-    Represents the CDF file associated with the external dependency.
-    Args:
-        id (int): The id of the file associated with the external dependency.
-    """
-
-    id: int
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            id=resource["id"],
-        )
-
-
-@dataclass
 class SimulatorModelRevisionExternalDependency(CogniteObject):
     """
     Represents an external dependency for a simulator model revision.
     Args:
-        file (SimulatorModelExternalDependencyFile): The CDF file associated with the external dependency.
+        file (int): The file CdfId associated with the external dependency.
         arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
-    file: SimulatorModelExternalDependencyFile
+    file: int
     arguments: dict[str, str]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            file=SimulatorModelExternalDependencyFile._load(resource["file"], cognite_client),
+            file=resource["file"],
             arguments=resource["arguments"],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
-        output["file"] = self.file.dump(camel_case=camel_case)
+        output["file"] = {"id": self.file}
         return output
 
     @classmethod
