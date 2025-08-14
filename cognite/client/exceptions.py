@@ -162,7 +162,7 @@ class CogniteAPIError(CogniteMultiException):
 
     Args:
         message (str): The error message produced by the API.
-        code (int | None): The error code produced by the failure.
+        code (int): The error code produced by the failure.
         x_request_id (str | None): The request-id generated for the failed request.
         missing (Sequence | None): (List) List of missing identifiers.
         duplicated (Sequence | None): (List) List of duplicated identifiers.
@@ -197,7 +197,7 @@ class CogniteAPIError(CogniteMultiException):
     def __init__(
         self,
         message: str,
-        code: int | None,
+        code: int,
         x_request_id: str | None = None,
         missing: Sequence | None = None,
         duplicated: Sequence | None = None,
