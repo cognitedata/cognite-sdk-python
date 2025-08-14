@@ -57,7 +57,6 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names: ResourceNames)
 @pytest.fixture(scope="session")
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> Iterator[None]:
     simulator_external_id = seed_resource_names.simulator_external_id
-    cognite_client.simulators._post("/simulators/delete", json={"items": [{"externalId": simulator_external_id}]})
     simulators = cognite_client.simulators.list(limit=None)
     if not simulators.get(external_id=simulator_external_id):
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
