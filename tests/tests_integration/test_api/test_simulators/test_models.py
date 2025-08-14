@@ -248,7 +248,7 @@ class TestSimulatorModels:
             assert model_revision_created is not None
             assert model_revision_created.external_id == model_revision_external_id
             assert model_revision_created.external_dependencies[0].arguments == external_dependencies[0].arguments
-            assert model_revision_created.external_dependencies[0].file["id"] == external_dependencies[0].file
+            assert model_revision_created.external_dependencies[0].file == external_dependencies[0].file
         finally:
             cognite_client.simulators.models.delete(external_ids=[model_external_id])
 

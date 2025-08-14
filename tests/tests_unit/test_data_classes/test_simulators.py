@@ -20,7 +20,7 @@ class TestSimulatorModelRevisionExternalDependency:
         assert isinstance(result, list)
         assert all(isinstance(item, SimulatorModelRevisionExternalDependency) for item in result)
         assert len(result) == 2
-        assert result[0].file.id == 1111
+        assert result[0].file == 1111
         assert result[0].arguments == {"fieldA": "valueA"}
-        assert result[1].file.id == 2222
+        assert result[1].file == 2222
         assert result[1].arguments == {"fieldB": "valueB"}

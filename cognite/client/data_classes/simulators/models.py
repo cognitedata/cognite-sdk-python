@@ -369,7 +369,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            file=resource["file"],
+            file=resource["file"]["id"],
             arguments=resource["arguments"],
         )
 
