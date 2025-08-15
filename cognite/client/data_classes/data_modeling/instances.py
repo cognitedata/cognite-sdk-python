@@ -147,6 +147,7 @@ class NodeOrEdgeData(CogniteObject):
 
 class InstanceCore(DataModelingResource, ABC):
     """A node or edge
+
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
@@ -1316,6 +1317,7 @@ class EdgeListWithCursor(EdgeList):
 class InstancesApply:
     """
     This represents the write request of an instance query
+
     Args:
         nodes (NodeApplyList): A list of nodes.
         edges (EdgeApplyList): A list of edges.

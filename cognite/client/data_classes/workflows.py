@@ -252,6 +252,7 @@ _SIMULATORS_WARNING = FeaturePreviewWarning(
 class SimulationTaskParameters(WorkflowTaskParameters):
     """
     The simulation parameters are used to specify the simulation routine to be executed.
+
     Args:
         routine_external_id (str): The external ID of the simulation routine to be executed.
         run_time (int | None): Reference timestamp used for data pre-processing and data sampling.
@@ -655,6 +656,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
 class SimulationTaskOutput(WorkflowTaskOutput):
     """
     The class represent the output of Simulation execution.
+
     Args:
         run_id (int | None): The run ID of the simulation run.
         log_id (int | None): The log ID of the simulation run.
