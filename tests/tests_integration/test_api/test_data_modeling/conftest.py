@@ -31,6 +31,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     Node,
     NodeApplyList,
 )
+from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamSettings, StreamTemplate
 
 RESOURCES = Path(__file__).parent / "resources"
 
@@ -586,3 +587,16 @@ def _read_edges(views: ViewList) -> EdgeApplyList:
             )
             edges.append(edge)
     return EdgeApplyList(edges)
+
+
+@pytest.fixture
+def persisted_stream(cognite_client: CogniteClient) -> Stream:
+    external_id = "python-sdk-test-stream-persistent"
+    stream = cognite_client.data_modeling.streams.retrieve(external_id=external_id)
+    if stream is None:
+        stream = cognite_client.data_modeling.streams.apply(
+            StreamApply(
+                external_id=external_id, settings=StreamSettings(template=StreamTemplate(name="MutableTestStream"))
+            )
+        )
+    return stream

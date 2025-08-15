@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.81.0] - 2025-08-14
+### Added
+- [alpha] Alpha support for Streams & Records APIs. Note that both the SDK and API implementation may be changed at any time.
+
 ## [7.80.1] - 2025-08-14
 ### Fixed
 - Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.

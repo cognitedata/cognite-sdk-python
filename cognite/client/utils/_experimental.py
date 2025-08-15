@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import functools
 import warnings
-from typing import Literal
+from collections.abc import Callable
+from typing import Any, Literal, TypeVar, cast
 
 
 class FeaturePreviewWarning(FutureWarning):
@@ -38,3 +40,27 @@ class FeaturePreviewWarning(FutureWarning):
     def __reduce__(self) -> tuple:
         # This is needed to make the cognite client picklable as warings are stored on APIClass objects.
         return self.__class__, (self.api_version, self.sdk_version, self.feature_name)
+
+
+T_Class = TypeVar("T_Class", bound=type)
+T_Callable = TypeVar("T_Callable", bound=Callable)
+
+
+def warn_on_all_method_invocations(warning: FeaturePreviewWarning) -> Callable[[T_Class], T_Class]:
+    def _with_warning(c: T_Callable) -> T_Callable:
+        @functools.wraps(c)
+        def warning_wrapper(*args: Any, **kwargs: Any) -> Any:
+            warning.warn()
+            return c(*args, **kwargs)
+
+        return cast(T_Callable, warning_wrapper)
+
+    def _warn_on_all_method_invocations(cls: T_Class) -> T_Class:
+        for name in dir(cls):
+            if not name.startswith("_"):
+                attr = getattr(cls, name)
+                if callable(attr):
+                    setattr(cls, name, _with_warning(attr))
+        return cls
+
+    return _warn_on_all_method_invocations

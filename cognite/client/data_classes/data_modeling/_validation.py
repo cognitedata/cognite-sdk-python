@@ -43,7 +43,7 @@ RESERVED_PROPERTIES = frozenset(
 )
 
 
-def validate_data_modeling_identifier(space: str | None, external_id: str | None = None) -> None:
+def validate_data_modeling_identifier(space: str, external_id: str | None = None) -> None:
     if space and space in RESERVED_SPACE_IDS:
         raise ValueError(f"The space ID: {space!r} is reserved. Please use another ID.")
     if external_id and external_id in RESERVED_EXTERNAL_IDS:
