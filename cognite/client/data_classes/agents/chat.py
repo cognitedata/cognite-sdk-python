@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from cognite.client.data_classes._base import CogniteObject, CogniteResource
+from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -87,7 +87,7 @@ _MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
 
 
 @dataclass
-class Message(CogniteObject):
+class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
@@ -118,11 +118,10 @@ class Message(CogniteObject):
         return cls(content=content, role=data["role"])
 
 
-class MessageList(list[Message]):
+class MessageList(CogniteResourceList[Message]):
     """List of messages."""
 
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
-        return [item.dump(camel_case=camel_case) for item in self]
+    _RESOURCE = Message
 
 
 @dataclass
@@ -172,7 +171,7 @@ class AgentReasoningItem(CogniteObject):
 
 
 @dataclass
-class AgentMessage(CogniteObject):
+class AgentMessage(CogniteResource):
     """A message from an agent.
 
     Args:
@@ -210,8 +209,10 @@ class AgentMessage(CogniteObject):
         )
 
 
-class AgentMessageList(list[AgentMessage]):
+class AgentMessageList(CogniteResourceList[AgentMessage]):
     """List of agent messages."""
+
+    _RESOURCE = AgentMessage
 
 
 class AgentChatResponse(CogniteResource):
