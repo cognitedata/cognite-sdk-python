@@ -23,7 +23,12 @@ class MessageContent(CogniteObject, ABC):
         content_type = data.get("type", "")
         content_class = _MESSAGE_CONTENT_CLS_BY_TYPE.get(content_type, UnknownContent)
         # Delegate to the concrete class' loader
-        return content_class._load(data, cognite_client)
+        return content_class._load_content(data)
+
+    @classmethod
+    @abstractmethod
+    def _load_content(cls, data: dict[str, Any]) -> MessageContent:
+        raise NotImplementedError()
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -46,7 +51,7 @@ class TextContent(MessageContent):
         return {"text": self.text, "type": self._type}
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> TextContent:
+    def _load_content(cls, data: dict[str, Any]) -> TextContent:
         return cls(text=data["text"])
 
 
@@ -68,7 +73,7 @@ class UnknownContent(MessageContent):
         return result
 
     @classmethod
-    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> UnknownContent:
+    def _load_content(cls, data: dict[str, Any]) -> UnknownContent:
         content_type = data.get("type", "")
         return cls(data=data, type=content_type)
 
