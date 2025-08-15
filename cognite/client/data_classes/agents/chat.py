@@ -25,14 +25,16 @@ class MessageContent(CogniteObject, ABC):
         # Delegate to the concrete class' loader
         return content_class._load_content(data)
 
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the content to a dictionary."""
+        output = super().dump(camel_case=camel_case)
+        output["type"] = self._type
+        return output
+
     @classmethod
     @abstractmethod
     def _load_content(cls, data: dict[str, Any]) -> MessageContent:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the content to a dictionary."""
+        """Create a concrete content instance from raw data."""
         ...
 
 
@@ -46,9 +48,6 @@ class TextContent(MessageContent):
 
     _type: ClassVar[str] = "text"
     text: str = ""
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"text": self.text, "type": self._type}
 
     @classmethod
     def _load_content(cls, data: dict[str, Any]) -> TextContent:
