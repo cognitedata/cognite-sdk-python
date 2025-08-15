@@ -75,7 +75,7 @@ class RecordsAPI(APIClient):
     ) -> RecordListWithCursor:
         body: dict = {}
         if filter is not None:
-            body["filter"] = filter
+            body["filter"] = filter.dump()
         if cursor is not None:
             body["cursor"] = cursor
         if initialize_cursor is not None:
