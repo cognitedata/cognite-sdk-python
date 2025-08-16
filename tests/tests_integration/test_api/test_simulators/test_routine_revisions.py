@@ -11,6 +11,7 @@ from cognite.client.data_classes.simulators.routine_revisions import (
 )
 from cognite.client.utils._time import timestamp_to_ms
 from tests.tests_integration.test_api.test_simulators.seed.data import (
+    ResourceNames,
     create_simulator_routine_revision,
     simulator_routine_revision_config_obj,
     simulator_routine_revision_obj,
@@ -23,9 +24,9 @@ class TestSimulatorRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         seed_simulator_routine_revisions: list[dict[str, Any]],
-        seed_resource_names: dict[str, str],
+        seed_resource_names: ResourceNames,
     ) -> None:
-        simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
         one_min_ahead = timestamp_to_ms("1m-ahead")
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
             created_time=TimestampRange(min=0, max=one_min_ahead),
@@ -33,7 +34,7 @@ class TestSimulatorRoutineRevisions:
             all_versions=True,
         )
         assert len(revisions_by_routine) == 2
-        model_external_id = seed_resource_names["simulator_model_external_id"]
+        model_external_id = seed_resource_names.simulator_model_external_id
         revisions_by_model: list[SimulatorRoutineRevision] = []
 
         for revision in cognite_client.simulators.routines.revisions(
@@ -58,7 +59,7 @@ class TestSimulatorRoutineRevisions:
         seed_rev2 = seed_simulator_routine_revisions[0]
 
         last_revision = revisions_by_model[1]
-        assert last_revision.external_id == seed_resource_names["simulator_routine_external_id"] + "_v2"
+        assert last_revision.external_id == seed_resource_names.simulator_routine_external_id + "_v2"
 
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
@@ -74,9 +75,9 @@ class TestSimulatorRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         seed_simulator_routine_revisions: list[dict[str, Any]],
-        seed_resource_names: dict[str, str],
+        seed_resource_names: ResourceNames,
     ) -> None:
-        simulator_routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
         revisions_all = cognite_client.simulators.routines.revisions.list(
             routine_external_ids=[simulator_routine_external_id], all_versions=True
         )
@@ -97,9 +98,9 @@ class TestSimulatorRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         seed_simulator_routines: dict[str, Any],
-        seed_resource_names: dict[str, str],
+        seed_resource_names: ResourceNames,
     ):
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_external_id = seed_resource_names.simulator_routine_external_id
 
         revisions = cognite_client.simulators.routines.revisions.create(
             [
