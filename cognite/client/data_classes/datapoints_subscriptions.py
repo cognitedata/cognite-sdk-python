@@ -227,6 +227,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._StringDataPointSubscriptionUpdate(self, "name")
 
     @property
+    def description(self) -> _StringDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._StringDataPointSubscriptionUpdate(self, "description")
+
+    @property
     def data_set_id(self) -> _IntegerDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._IntegerDataPointSubscriptionUpdate(self, "dataSetId")
 
@@ -246,6 +250,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name"),
+            PropertySpec("description"),
             PropertySpec("time_series_ids", is_list=True),
             PropertySpec("instance_ids", is_list=True),
             PropertySpec("filter", is_nullable=False),
