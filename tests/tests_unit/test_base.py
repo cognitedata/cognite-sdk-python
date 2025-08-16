@@ -38,6 +38,7 @@ from cognite.client.data_classes.data_modeling.query import Intersection
 from cognite.client.data_classes.datapoints import DatapointsArray
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
+from cognite.client.data_classes.iam import PrincipalList, ServiceAccountSecret, ServiceAccountSecretList
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -199,8 +200,8 @@ class TestCogniteObject:
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
-            # Hosted extractors does not support the as_write method
-            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source)
+            # Hosted extractors/ServiceAccountSecret does not support the as_write method
+            if cls not in {Destination, User, UserCreated, ServiceAccountSecret} and not issubclass(cls, Source)
         ],
     )
     def test_writable_as_write(
@@ -227,6 +228,10 @@ class TestCogniteObject:
                 UserList,
                 UserCreatedList,
                 TableList,
+                ServiceAccountSecretList,
+                # Principal list have an abstract cls as resource. The FakeCogniteResourceGenerator does not support
+                # creating instances of abstract classes.
+                PrincipalList,
             }
         ],
     )
