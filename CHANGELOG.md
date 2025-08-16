@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+## [7.80.3] - 2025-08-17
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for chat.
+
 ## [7.80.2] - 2025-08-16
 ### Fixed
 - Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
