@@ -475,7 +475,7 @@ class SimulationRunDataItem(CogniteResource):
         return pd.DataFrame(rows)
 
 
-class SimulatorRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
+class SimulationRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransformerMixin):
     _RESOURCE = SimulationRunDataItem
 
     def to_pandas(  # type: ignore [override]
@@ -494,7 +494,7 @@ class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalID
     _RESOURCE = SimulationRunWrite
 
 
-class SimulatorRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
+class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
     def as_write(self) -> SimulationRunWriteList:
