@@ -1651,6 +1651,17 @@ class InstancesAPI(APIClient):
 
                 >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
+
+            List instances with a view as source:
+
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> instance_list = client.data_modeling.instances.list(sources=ViewId("mySpace", "myView", "v1"))
+
+            Convert instances to pandas DataFrame with expanded properties:
+
+                >>> df = instance_list.to_pandas(expand_properties=True, camel_case=True)
+                >>> # expand_properties=True will add the properties directly as dataframe columns
+                >>> # camel_case=True will convert the DataFrame column names to camel case (e.g. externalId)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)
