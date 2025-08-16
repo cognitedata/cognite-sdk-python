@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
+### Added
+- Emit project name in exceptions to make it easier to gather relevant context.
+
 ## [7.79.0] - 2025-08-01
 ### Changed
 - [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
