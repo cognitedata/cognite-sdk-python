@@ -20,10 +20,27 @@ from cognite.client.data_classes.agents.agent_tools import (
     UnknownAgentToolUpsert,
 )
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
+from cognite.client.data_classes.agents.chat import (
+    AgentChatResponse,
+    AgentDataItem,
+    AgentMessage,
+    AgentMessageList,
+    AgentReasoningItem,
+    Message,
+    MessageContent,
+    MessageList,
+    TextContent,
+    UnknownContent,
+)
 
 __all__ = [
     "Agent",
+    "AgentChatResponse",
+    "AgentDataItem",
     "AgentList",
+    "AgentMessage",
+    "AgentMessageList",
+    "AgentReasoningItem",
     "AgentTool",
     "AgentToolList",
     "AgentToolUpsert",
@@ -34,6 +51,9 @@ __all__ = [
     "AskDocumentAgentToolUpsert",
     "DataModelInfo",
     "InstanceSpaces",
+    "Message",
+    "MessageContent",
+    "MessageList",
     "QueryKnowledgeGraphAgentTool",
     "QueryKnowledgeGraphAgentToolConfiguration",
     "QueryKnowledgeGraphAgentToolUpsert",
@@ -41,6 +61,8 @@ __all__ = [
     "QueryTimeSeriesDatapointsAgentToolUpsert",
     "SummarizeDocumentAgentTool",
     "SummarizeDocumentAgentToolUpsert",
+    "TextContent",
     "UnknownAgentTool",
     "UnknownAgentToolUpsert",
+    "UnknownContent",
 ]
