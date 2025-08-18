@@ -40,7 +40,7 @@ class GroupAttributesToken(CogniteObject):
 class GroupAttributes(CogniteObject):
     """Attributes derived from access token"""
 
-    token: GroupAttributesToken
+    token: GroupAttributesToken | None = None
     _unknown_properties: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -54,7 +54,9 @@ class GroupAttributes(CogniteObject):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        token = GroupAttributesToken._load(resource["token"], cognite_client=cognite_client)
+        token: GroupAttributesToken | None = None
+        if "token" in resource:
+            token = GroupAttributesToken._load(resource["token"], cognite_client=cognite_client)
         instance = cls(token=token)
         existing = {"token"}
         instance._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
