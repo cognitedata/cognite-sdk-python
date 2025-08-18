@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.81.0] - 2025-08-15
+## [7.81.0] - 2025-08-18
 ### Added
 - Support for external dependencies in simulator and simulator model revisions resources.
+
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
 
 ## [7.80.1] - 2025-08-14
 ### Fixed
