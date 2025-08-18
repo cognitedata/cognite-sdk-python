@@ -17,11 +17,20 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
  
-## [7.81.0] - 2025-08-12
+## [7.81.0] - 2025-08-18
 ## Added
 - Added support for creating and listing groups with `attributes`.
 
-## [7.80.0] - 2025-08-01
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
+
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
 ### Added
 - Emit project name in exceptions to make it easier to gather relevant context.
 
