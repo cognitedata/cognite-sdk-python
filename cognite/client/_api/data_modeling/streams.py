@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamList
+from cognite.client.data_classes.data_modeling.streams import Stream, StreamList, StreamWrite
 from cognite.client.utils._experimental import FeaturePreviewWarning, warn_on_all_method_invocations
 from cognite.client.utils._identifier import Identifier
 
@@ -146,16 +146,16 @@ class StreamsAPI(APIClient):
         )
 
     @overload
-    def apply(self, streams: Sequence[StreamApply]) -> StreamList: ...
+    def create(self, streams: Sequence[StreamWrite]) -> StreamList: ...
 
     @overload
-    def apply(self, streams: StreamApply) -> Stream: ...
+    def create(self, streams: StreamWrite) -> Stream: ...
 
-    def apply(self, streams: StreamApply | Sequence[StreamApply]) -> Stream | StreamList:
-        """`Create or patch one or more streams. <https://developer.cognite.com/api#tag/Streams/operation/ApplyStreams>`_
+    def create(self, streams: StreamWrite | Sequence[StreamWrite]) -> Stream | StreamList:
+        """`Create one or more streams. <https://developer.cognite.com/api#tag/Streams/operation/ApplyStreams>`_
 
         Args:
-            streams (StreamApply | Sequence[StreamApply]): Stream | Sequence[Stream]): Stream or streams of streamsda to create or update.
+            streams (StreamWrite | Sequence[StreamWrite]): Stream | Sequence[Stream]): Stream or streams of streamsda to create or update.
 
         Returns:
             Stream | StreamList: Created stream(s)
@@ -165,16 +165,16 @@ class StreamsAPI(APIClient):
             Create new streams:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.streams import StreamApply
+                >>> from cognite.client.data_classes.data_modeling.streams import StreamWrite
                 >>> client = CogniteClient()
-                >>> streams = [StreamApply(stream="myStream", description="My first stream", name="My Stream"),
-                ... StreamApply(stream="myOtherStream", description="My second stream", name="My Other Stream")]
-                >>> res = client.data_modeling.streams.apply(streams)
+                >>> streams = [StreamWrite(stream="myStream", description="My first stream", name="My Stream"),
+                ... StreamWrite(stream="myOtherStream", description="My second stream", name="My Other Stream")]
+                >>> res = client.data_modeling.streams.create(streams)
         """
         return self._create_multiple(
             list_cls=StreamList,
             resource_cls=Stream,
             items=streams,
-            input_resource_cls=StreamApply,
+            input_resource_cls=StreamWrite,
             headers=self.__alpha_headers,
         )

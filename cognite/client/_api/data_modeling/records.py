@@ -40,8 +40,8 @@ class RecordsAPI(APIClient):
         body = {"items": [record.dump(camel_case=True) for record in records]}
         self._post(url_path=self._RESOURCE_PATH.format(stream) + "/upsert", json=body, headers=self.__alpha_headers)
 
-    def delete(self, stream: str, id: RecordId | Sequence[RecordId]) -> None:
-        items = id if isinstance(id, Sequence) else [id]
+    def delete(self, stream: str, ids: RecordId | Sequence[RecordId]) -> None:
+        items = ids if isinstance(ids, Sequence) else [ids]
         body = {"items": [item.dump(camel_case=True) for item in items]}
         self._post(url_path=self._RESOURCE_PATH.format(stream) + "/delete", json=body, headers=self.__alpha_headers)
 

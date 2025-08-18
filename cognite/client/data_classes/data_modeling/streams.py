@@ -61,7 +61,7 @@ class StreamSettings(CogniteObject):
         return dumped
 
 
-class StreamApply(WriteableCogniteResource):
+class StreamWrite(WriteableCogniteResource):
     """A stream of records. This is the write version.
 
     Args:
@@ -97,7 +97,7 @@ class StreamApply(WriteableCogniteResource):
             return convert_all_keys_to_camel_case_recursive(dumped)
         return dumped
 
-    def as_write(self) -> StreamApply:
+    def as_write(self) -> StreamWrite:
         """Returns this SpaceApply instance."""
         return self
 
@@ -117,13 +117,13 @@ class Stream(WriteableCogniteResource):
         self.type = type
         self.created_from_template = created_from_template
 
-    def as_apply(self) -> StreamApply:
-        return StreamApply(
+    def as_apply(self) -> StreamWrite:
+        return StreamWrite(
             external_id=self.external_id,
             settings=StreamSettings(template=StreamTemplate(name=self.created_from_template)),
         )
 
-    def as_write(self) -> StreamApply:
+    def as_write(self) -> StreamWrite:
         return self.as_apply()
 
     @classmethod
@@ -147,8 +147,8 @@ class Stream(WriteableCogniteResource):
         return dumped
 
 
-class StreamApplyList(CogniteResourceList[StreamApply]):
-    _RESOURCE = StreamApply
+class StreamApplyList(CogniteResourceList[StreamWrite]):
+    _RESOURCE = StreamWrite
 
     def as_ids(self) -> list[str]:
         """
@@ -160,7 +160,7 @@ class StreamApplyList(CogniteResourceList[StreamApply]):
         return [item.external_id for item in self]
 
 
-class StreamList(WriteableCogniteResourceList[StreamApply, Stream]):
+class StreamList(WriteableCogniteResourceList[StreamWrite, Stream]):
     """A list of Stream objects."""
 
     _RESOURCE = Stream

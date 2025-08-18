@@ -4,7 +4,7 @@ import string
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling.streams import Stream, StreamApply, StreamSettings, StreamTemplate
+from cognite.client.data_classes.data_modeling.streams import Stream, StreamSettings, StreamTemplate, StreamWrite
 from cognite.client.utils._text import random_string
 
 if os.environ["COGNITE_PROJECT"] != "erlend-test":
@@ -25,8 +25,8 @@ class TestStreamsAPI:
 
     def test_delete(self, cognite_client: CogniteClient, persisted_stream: Stream) -> None:
         external_id = f"python-sdk-test-stream-{random_string(10, string.ascii_lowercase)}"
-        cognite_client.data_modeling.streams.apply(
-            StreamApply(
+        cognite_client.data_modeling.streams.create(
+            StreamWrite(
                 external_id=external_id,
                 settings=StreamSettings(template=StreamTemplate(name="MutableTestStream")),
             )
