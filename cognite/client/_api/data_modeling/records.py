@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -48,14 +48,14 @@ class RecordsAPI(APIClient):
     def filter(
         self,
         stream: str,
-        last_updated_time: LastUpdatedRange,
         *,
+        last_updated_time: LastUpdatedRange | None = None,
         filter: Filter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> RecordList:
-        body: dict = {
-            "lastUpdatedTime": last_updated_time.dump(),
-        }
+        body: dict[str, Any] = {}
+        if last_updated_time is not None:
+            body["lastUpdatedTime"] = last_updated_time.dump()
         if filter is not None:
             body["filter"] = filter.dump()
         body["limit"] = limit
