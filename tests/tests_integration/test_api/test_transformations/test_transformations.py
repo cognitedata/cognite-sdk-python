@@ -3,6 +3,7 @@ import string
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials
 from cognite.client.data_classes import (
     DataSet,
@@ -23,6 +24,7 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRowsDestination,
     ViewInfo,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
 
@@ -453,6 +455,40 @@ class TestTransformationsAPI:
         query_result = cognite_client.transformations.preview(query="select 1 as id, 'asd' as name", limit=100)
         # just make sure it doesn't raise exceptions
         str(query_result)
+
+    def test_preview_too_short_execution_time(self, cognite_client: CogniteClient) -> None:
+        # Need a query that takes longer than 1 second to execute
+        metadata_key_counts = """WITH meta AS (
+         SELECT cast_to_strings(metadata) AS metadata_array
+         FROM _cdf.assets
+       ),
+       exploded AS (
+         SELECT explode(metadata_array) AS json_str
+         FROM meta
+       ),
+       parsed AS (
+         SELECT from_json(json_str, 'map<string,string>') AS json_map
+         FROM exploded
+       ),
+       keys_extracted AS (
+         SELECT map_keys(json_map) AS keys_array
+         FROM parsed
+       ),
+       all_keys AS (
+         SELECT explode(keys_array) AS key
+         FROM keys_extracted
+       )
+       SELECT key, COUNT(key) AS key_count
+       FROM all_keys
+       GROUP BY key
+       ORDER BY key_count DESC;
+"""
+        with pytest.raises(CogniteAPIError) as e:
+            _ = cognite_client.transformations.preview(
+                query=metadata_key_counts, limit=None, source_limit=None, timeout=1
+            )
+
+        assert "Query execution time exceeded the timeout" in str(e.value)
 
     def test_update_instance_nodes(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.nodes(
