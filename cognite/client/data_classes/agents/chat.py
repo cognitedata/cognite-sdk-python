@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from collections.abc import Sequence
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -271,3 +272,78 @@ class AgentChatResponse(CogniteResource):
         )
 
         return instance
+
+
+class AgentSession:
+    """A session for chatting with an agent that manages cursor state automatically.
+    
+    This class provides a higher-level interface for chatting with agents by automatically
+    managing the conversation cursor state across multiple chat interactions.
+    
+    Args:
+        agent_id (str): The external ID of the agent to chat with.
+        cognite_client (CogniteClient): The Cognite client instance.
+        cursor (str | None): Optional initial cursor for continuing an existing session.
+    """
+    
+    def __init__(self, agent_id: str, cognite_client: CogniteClient, cursor: str | None = None) -> None:
+        self.agent_id = agent_id
+        self._cognite_client = cognite_client
+        self._cursor = cursor
+    
+    def chat(self, messages: str | Message | Sequence[Message]) -> AgentChatResponse:
+        """Send a message or messages to the agent and return the response.
+        
+        The cursor state is automatically managed and updated after each interaction.
+        
+        Args:
+            messages (str | Message | Sequence[Message]): The message(s) to send to the agent.
+                If a string is provided, it will be converted to a Message.
+        
+        Returns:
+            AgentChatResponse: The response from the agent.
+            
+        Examples:
+        
+            Simple string message:
+            
+                >>> session = client.agents.start_session("my_agent")
+                >>> response = session.chat("Hello, how can you help me?")
+                >>> print(response.text)
+            
+            Follow-up message (cursor automatically managed):
+            
+                >>> followup = session.chat("Tell me more about that")
+                >>> print(followup.text)
+            
+            Multiple messages at once:
+            
+                >>> response = session.chat([
+                ...     Message("Find the temperature sensors"),
+                ...     Message("Show me their recent data")
+                ... ])
+        """
+        # Convert string to Message if needed
+        if isinstance(messages, str):
+            messages = Message(messages)
+        
+        # Call the underlying agents.chat method with current cursor
+        response = self._cognite_client.agents.chat(
+            agent_id=self.agent_id,
+            messages=messages,
+            cursor=self._cursor
+        )
+        
+        # Update the cursor for the next interaction
+        self._cursor = response.cursor
+        
+        return response
+    
+    @property
+    def cursor(self) -> str | None:
+        """Get the current cursor state for this session.
+        
+        Returns:
+            str | None: The current cursor, or None if no conversation has taken place yet.
+        """
+        return self._cursor

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
+from cognite.client.data_classes.agents.chat import AgentChatResponse, AgentSession, Message, MessageList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -313,3 +313,39 @@ class AgentsAPI(APIClient):
         )
 
         return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)
+
+    def start_session(self, agent_id: str, cursor: str | None = None) -> AgentSession:
+        """Start a new chat session with an agent.
+        
+        This creates a session object that automatically manages cursor state across
+        multiple chat interactions, providing a more convenient interface for 
+        multi-turn conversations.
+        
+        Args:
+            agent_id (str): External ID that uniquely identifies the agent.
+            cursor (str | None): Optional cursor to continue an existing conversation.
+                If None, starts a fresh session.
+        
+        Returns:
+            AgentSession: A session object for chatting with the agent.
+            
+        Examples:
+        
+            Start a new session and have a conversation:
+            
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import Message
+                >>> client = CogniteClient()
+                >>> session = client.agents.start_session("my_agent")
+                >>> response = session.chat("Hello, how can you help me?")
+                >>> print(response.text)
+                >>> followup = session.chat("Tell me more about that")
+                >>> print(followup.text)
+            
+            Continue an existing session with a cursor:
+            
+                >>> session = client.agents.start_session("my_agent", cursor="existing_cursor_123")
+                >>> response = session.chat("Continue our previous conversation")
+        """
+        self._warnings.warn()
+        return AgentSession(agent_id=agent_id, cognite_client=self._cognite_client, cursor=cursor)
