@@ -17,6 +17,10 @@ Delete an agent by external id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.agents.agents.AgentsAPI.delete
 
+Chat with an agent by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.agents.agents.AgentsAPI.chat
+
 Agent Data classes
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.agents

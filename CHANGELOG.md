@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.81.0] - 2025-08-18
+## [7.81.0] - 2025-08-19
 ### Added
 - Support for external dependencies in simulator and simulator model revisions resources.
+
+## [7.80.3] - 2025-08-17
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for chat.
 
 ## [7.80.2] - 2025-08-16
 ### Fixed
