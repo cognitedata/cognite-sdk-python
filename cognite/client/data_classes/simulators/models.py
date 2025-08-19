@@ -365,7 +365,7 @@ class SimulatorExternalDependencyFileInternalId(SimulatorExternalDependencyFileR
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            id=resource["id"],
+            id=resource.get("id"),
         )
 
 
@@ -384,7 +384,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            file=resource["file"],
+            file=SimulatorExternalDependencyFileInternalId.load(resource["file"]),
             arguments=resource["arguments"],
         )
 

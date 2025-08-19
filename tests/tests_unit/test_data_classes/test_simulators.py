@@ -1,6 +1,9 @@
 import pytest
 
-from cognite.client.data_classes.simulators.models import SimulatorModelRevisionExternalDependency
+from cognite.client.data_classes.simulators.models import (
+    SimulatorExternalDependencyFileInternalId,
+    SimulatorModelRevisionExternalDependency,
+)
 
 
 class TestSimulatorModelRevisionExternalDependency:
@@ -20,7 +23,8 @@ class TestSimulatorModelRevisionExternalDependency:
         assert isinstance(result, list)
         assert all(isinstance(item, SimulatorModelRevisionExternalDependency) for item in result)
         assert len(result) == 2
-        assert result[0].file["id"] == 1111
+        assert isinstance(result[0].file, SimulatorExternalDependencyFileInternalId)
+        assert result[0].file.id == 1111
         assert result[0].arguments == {"fieldA": "valueA"}
-        assert result[1].file["id"] == 2222
-        assert result[1].arguments == {"fieldB": "valueB"}
+        assert isinstance(result[0].file, SimulatorExternalDependencyFileInternalId)
+        assert result[1].file.id == 2222
