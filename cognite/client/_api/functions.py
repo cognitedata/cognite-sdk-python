@@ -1259,15 +1259,13 @@ class FunctionSchedulesAPI(APIClient):
         Returns:
             FunctionSchedule: Created function schedule.
 
-        Auth:
+        Note:
             There are several ways to authenticate the function schedule — the order of priority is as follows:
-                1. If a nonce is provided, the function schedule will bind to the session and use the access token
-                    associated with the session to run the function.
-                2. If client_credentials is provided, the function schedule will use the access token associated with
-                    the client credentials to run the function.
-                3. The credentials of *this* CogniteClient will be automatically used.
-                4. If neither nonce nor client_credentials are provided, and this CogniteClient was not instantiated,
-                    an CogniteAuthError will be raised.
+                1. nonce
+                2. client_credentials is provided
+                3. The credentials of *this* CogniteClient.
+
+            If neither of these are provided, the method will raise a CogniteAuthError.
 
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
@@ -1306,7 +1304,7 @@ class FunctionSchedulesAPI(APIClient):
                 ...     description="A schedule just used for some temporary testing.",
                 ... )
 
-            Create a test a new function schedule with an oneshot session (typically used for testing purposes):
+            Create a function schedule with an oneshot session (typically used for testing purposes):
 
                 >>> from cognite.client.data_classes.functions import FunctionScheduleWrite
                 >>> session = client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
@@ -1338,13 +1336,13 @@ class FunctionSchedulesAPI(APIClient):
         identifier = _get_function_identifier(item.function_id, item.function_external_id)
         if item.function_external_id is not None:
             warnings.warn(
-                "function_external_id is not supported iin the API. Replacing it with function_id instead.",
+                "'function_external_id' is not supported in the API. Looking up 'function_id' and using that instead.",
                 UserWarning,
                 stacklevel=2,
             )
         if item.function_id is None:
             item.function_id = _get_function_internal_id(self._cognite_client, identifier)
-            # API requires 'Exactly one of 'function_id' and 'function_external_id' must be set '
+            # API requires 'function_id' set and not 'function_external_id'.
             item.function_external_id = None
 
         dumped = item.dump()

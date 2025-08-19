@@ -18,10 +18,9 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [7.80.3] - 2025-08-19
-### Fixed
+### Added
 - Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
-  a custom nonce instead of letting the SDK generate it from your current credentials or the passed in client
-  ID and secret.
+  a custom nonce.
 
 ## [7.80.2] - 2025-08-16
 ### Fixed
