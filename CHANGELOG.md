@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## Unreleased
+### Added
+- New time attributes `run_time` and `simulation_time` to the list of fields that get automatically converted to timestamp format when converted to DataFrames
+
 ## [7.80.2] - 2025-08-16
 ### Fixed
 - Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
