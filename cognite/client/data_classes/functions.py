@@ -521,6 +521,10 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         function_external_id (str | None): External ID of the function.
         description (str | None): Description of the function schedule.
         data (dict | None): Input data to the function (only present if provided on the schedule). This data is passed deserialized into the function through one of the arguments called data. WARNING: Secrets or other confidential information should not be passed via the data object. There is a dedicated secrets object in the request body to "Create functions" for this purpose.
+        nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the
+                session before executing the function. The corresponding access token will be passed to the
+                function and used to instantiate the client of the handle() function. You can create a session
+                via the Sessions API.
     """
 
     def __init__(
@@ -531,6 +535,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
         function_external_id: str | None = None,
         description: str | None = None,
         data: dict | None = None,
+        nonce: str | None = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -540,6 +545,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
             cron_expression=cron_expression,
         )
         self.data = data
+        self.nonce = nonce
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FunctionScheduleWrite:
@@ -550,6 +556,7 @@ class FunctionScheduleWrite(FunctionScheduleCore):
             description=resource.get("description"),
             cron_expression=resource["cronExpression"],
             data=resource.get("data"),
+            nonce=resource.get("nonce"),
         )
 
     def as_write(self) -> FunctionScheduleWrite:
