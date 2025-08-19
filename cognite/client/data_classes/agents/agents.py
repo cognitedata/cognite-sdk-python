@@ -212,17 +212,19 @@ class Agent(AgentCore):
             Start a session from an agent instance:
             
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
                 >>> agent = client.agents.retrieve("my_agent")
                 >>> session = agent.start_session()
-                >>> response = session.chat("Hello!")
+                >>> response = session.chat(Message("Hello!"))
                 >>> print(response.text)
         """
         # Import here to avoid circular imports
         from cognite.client.data_classes.agents.chat import AgentSession
+        from cognite.client.exceptions import CogniteMissingClientError
         
         if not hasattr(self, '_cognite_client') or self._cognite_client is None:
-            raise ValueError("Agent instance must have a cognite_client to start a session")
+            raise CogniteMissingClientError(self)
         
         return AgentSession(agent_id=self.external_id, cognite_client=self._cognite_client, cursor=cursor)
 

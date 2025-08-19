@@ -11,6 +11,7 @@ from cognite.client.data_classes.agents.chat import (
     AgentMessage,
     TextContent,
 )
+from cognite.client.exceptions import CogniteMissingClientError
 
 
 @pytest.fixture
@@ -71,13 +72,13 @@ class TestAgentSession:
         assert session.agent_id == "my_agent"
         assert session.cursor == initial_cursor
 
-    def test_session_chat_with_string(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        """Test chatting with a string message."""
+    def test_session_chat_with_message(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
+        """Test chatting with a Message object."""
         # Mock the API response
         cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
         
         session = cognite_client.agents.start_session("my_agent")
-        response = session.chat("Hello")
+        response = session.chat(Message("Hello"))
         
         # Verify the underlying chat method was called correctly
         cognite_client.agents._post.assert_called_once()
@@ -92,21 +93,7 @@ class TestAgentSession:
         assert response.text == "Hello! How can I help you today?"
         assert session.cursor == "cursor_12345"  # Cursor should be updated
 
-    def test_session_chat_with_message_object(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        """Test chatting with a Message object."""
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
-        
-        session = cognite_client.agents.start_session("my_agent")
-        message = Message("Hello agent")
-        response = session.chat(message)
-        
-        # Verify the request
-        call_args = cognite_client.agents._post.call_args
-        assert call_args[1]["json"]["messages"][0]["content"]["text"] == "Hello agent"
-        
-        # Verify response and cursor update
-        assert response.text == "Hello! How can I help you today?"
-        assert session.cursor == "cursor_12345"
+
 
     def test_session_cursor_management(
         self, 
@@ -125,11 +112,11 @@ class TestAgentSession:
         session = cognite_client.agents.start_session("my_agent")
         
         # First interaction
-        response1 = session.chat("Hello")
+        response1 = session.chat(Message("Hello"))
         assert session.cursor == "cursor_12345"
         
         # Second interaction - should include cursor from first response
-        response2 = session.chat("Tell me more")
+        response2 = session.chat(Message("Tell me more"))
         assert session.cursor == "cursor_67890"  # Updated to new cursor
         
         # Verify the second call included the cursor from the first response
@@ -195,7 +182,7 @@ class TestAgentStartSession:
         )
         # Don't set _cognite_client
         
-        with pytest.raises(ValueError, match="Agent instance must have a cognite_client to start a session"):
+        with pytest.raises(CogniteMissingClientError):
             agent.start_session()
 
     def test_agent_start_session_with_none_client_raises_error(self) -> None:
@@ -206,7 +193,7 @@ class TestAgentStartSession:
         )
         agent._cognite_client = None
         
-        with pytest.raises(ValueError, match="Agent instance must have a cognite_client to start a session"):
+        with pytest.raises(CogniteMissingClientError):
             agent.start_session()
 
 

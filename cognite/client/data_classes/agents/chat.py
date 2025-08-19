@@ -291,29 +291,29 @@ class AgentSession:
         self._cognite_client = cognite_client
         self._cursor = cursor
     
-    def chat(self, messages: str | Message | Sequence[Message]) -> AgentChatResponse:
+    def chat(self, messages: Message | Sequence[Message]) -> AgentChatResponse:
         """Send a message or messages to the agent and return the response.
         
         The cursor state is automatically managed and updated after each interaction.
         
         Args:
-            messages (str | Message | Sequence[Message]): The message(s) to send to the agent.
-                If a string is provided, it will be converted to a Message.
+            messages (Message | Sequence[Message]): The message(s) to send to the agent.
         
         Returns:
             AgentChatResponse: The response from the agent.
             
         Examples:
         
-            Simple string message:
+            Simple message:
             
+                >>> from cognite.client.data_classes.agents import Message
                 >>> session = client.agents.start_session("my_agent")
-                >>> response = session.chat("Hello, how can you help me?")
+                >>> response = session.chat(Message("Hello, how can you help me?"))
                 >>> print(response.text)
             
             Follow-up message (cursor automatically managed):
             
-                >>> followup = session.chat("Tell me more about that")
+                >>> followup = session.chat(Message("Tell me more about that"))
                 >>> print(followup.text)
             
             Multiple messages at once:
@@ -323,10 +323,6 @@ class AgentSession:
                 ...     Message("Show me their recent data")
                 ... ])
         """
-        # Convert string to Message if needed
-        if isinstance(messages, str):
-            messages = Message(messages)
-        
         # Call the underlying agents.chat method with current cursor
         response = self._cognite_client.agents.chat(
             agent_id=self.agent_id,
