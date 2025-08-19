@@ -1250,8 +1250,8 @@ class FunctionSchedulesAPI(APIClient):
             name (str | FunctionScheduleWrite): Name of the schedule or FunctionSchedule object. If a function schedule object is passed, the other arguments are ignored except for the client_credentials argument.
             cron_expression (str | None): Cron expression.
             function_id (int | None): Id of the function to attach the schedule to.
-            function_external_id (str | None): (Not Supported) External id of the function to attach the schedule to.
-                Will be converted to (internal) ID before creating the schedule.
+            function_external_id (str | None): (DEPRECATED) External id of the function to attach the schedule to.
+                Note: Will be automatically converted to (internal) ID, as schedules must be bound to an ID.
             client_credentials (dict[str, str] | ClientCredentials | None): Instance of ClientCredentials
                 or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str | None): Description of the schedule.
@@ -1265,15 +1265,14 @@ class FunctionSchedulesAPI(APIClient):
             FunctionSchedule: Created function schedule.
 
         Auth:
-            The funcion schedule needs authentication and authorization to run. This is done in the following priorty,
-                1. If nonce is provided, the function schedule will bind to the session and use the access token
-                    associated with the session to run the function.
+            There are several ways to authenticate the function schedule — the order of priority is as follows:
+                1. f a nonce is provided, the function schedule will bind to the session and use the access token
+        associated with the session to run the function.
                 2. If client_credentials is provided, the function schedule will use the access token associated with
                     the client credentials to run the function.
-                3. If neither nonce nor client_credentials are provided, but this CogniteClient was instantiated
-                    with a client ID and secret, these will be used to create a session.
-                4. If neither nonce nor client_credentials are provided, and this CogniteClient was not instantiated
-                    an error will be raised.
+                3. The credentials of *this* CogniteClient will be automatically used.
+                4. If neither nonce nor client_credentials are provided, and this CogniteClient was not instantiated,
+                    an CogniteAuthError will be raised.
 
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
@@ -1312,7 +1311,7 @@ class FunctionSchedulesAPI(APIClient):
                 ...     description="A schedule just used for some temporary testing.",
                 ... )
 
-            Create a test a new function with an oneshot session (typically used for testing purposes):
+            Create a test a new function schedule with an oneshot session (typically used for testing purposes):
 
                 >>> from cognite.client.data_classes.functions import FunctionScheduleWrite
                 >>> session = client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
