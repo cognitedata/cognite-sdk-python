@@ -359,7 +359,7 @@ class SimulatorExternalDependencyFileReference(CogniteObject): ...
 
 
 @dataclass
-class SimulatorExternalDependencyFileInternalId(CogniteObject):
+class SimulatorExternalDependencyFileInternalId(SimulatorExternalDependencyFileReference):
     id: int
 
     @classmethod
