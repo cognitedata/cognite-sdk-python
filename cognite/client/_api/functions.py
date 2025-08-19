@@ -1265,8 +1265,6 @@ class FunctionSchedulesAPI(APIClient):
                 2. client_credentials is provided
                 3. The credentials of *this* CogniteClient.
 
-            If neither of these are provided, the method will raise a CogniteAuthError.
-
         Warning:
             Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
             ``secrets`` argument in FunctionsAPI.create() for this purpose.
