@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [7.80.3] - 2025-08-19
 ### Fixed
-- Added missing parameter `nonce` to the `client.functions.schedules.create` method to allow passing 
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
   a custom nonce instead of letting the SDK generate it from your current credentials or the passed in client
   ID and secret.
 
