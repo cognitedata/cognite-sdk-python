@@ -17,6 +17,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
+
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
+### Added
+- Emit project name in exceptions to make it easier to gather relevant context.
+
+## [7.79.0] - 2025-08-01
+### Changed
+- [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
+
 ## [7.78.1] - 2025-08-01
 ### Changed
 - Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
