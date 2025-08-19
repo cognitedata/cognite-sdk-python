@@ -25,8 +25,6 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
 
-    Each simulator routine can have a maximum of 10 revisions
-
     This is the read/response format of a simulator routine.
 
     Args:
@@ -70,8 +68,6 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
 
-    Each simulator routine can have a maximum of 10 revisions
-
     This is the read/response format of a simulator routine.
 
     Args:
@@ -94,8 +90,6 @@ class SimulatorRoutine(SimulatorRoutineCore):
     Simulator routines can have multiple revisions, enabling users to track changes and evolve the routine over time.
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
-
-    Each simulator routine can have a maximum of 10 revisions
 
     This is the read/response format of a simulator routine.
 

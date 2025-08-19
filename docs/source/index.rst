@@ -57,6 +57,7 @@ Contents
    data_organization
    transformations
    functions
+   simulators
    data_workflows
    unit_catalog
    filters

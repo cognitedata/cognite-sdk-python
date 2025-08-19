@@ -119,7 +119,7 @@ def seed_simulator_models(
 
     yield simulator_model
 
-    cognite_client.simulators.models.delete(external_id=model_unique_external_id)
+    cognite_client.simulators.models.delete(external_ids=model_unique_external_id)
 
 
 @pytest.fixture(scope="session")

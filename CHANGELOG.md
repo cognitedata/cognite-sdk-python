@@ -17,15 +17,63 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [Unreleased]
-### Fixed
-- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
-
-## [7.76.2] - 2025-07-16
+## [7.80.3] - 2025-08-19
 ### Fixed
 - Added missing parameter `nonce` to the `client.functions.schedules.create` method to allow passing 
   a custom nonce instead of letting the SDK generate it from your current credentials or the passed in client
   ID and secret.
+
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
+
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
+### Added
+- Emit project name in exceptions to make it easier to gather relevant context.
+
+## [7.79.0] - 2025-08-01
+### Changed
+- [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
+
+## [7.78.1] - 2025-08-01
+### Changed
+- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
+  underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
+### Fixed
+- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+
+## [7.78.0] - 2025-07-29
+### Added
+- Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
+### Changed
+- Improved error messages when using query-specific fields in sync, and vice versa.
+
+## [7.77.3] - 2025-07-28
+### Added
+- Comprehensive documentation for the simulators API endpoints
+
+### Changed
+- Consistency improvements across the simulators API namespace
+
+## [7.77.2] - 2025-07-25
+### Added
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+  Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
+  and all properties will be sent to the API.
+
+## [7.77.1] - 2025-07-23
+### Added
+- Added new `agentsAcl` capability.
+
+## [7.77.0] - 2025-07-17
+### Added
+- Support for the `/models/statistics` API endpoints with methods `client.data_modeling.statistics.project()`,
+  `client.data_modeling.statistics.spaces.list()`, and `client.data_modeling.statistics.spaces.retrieve(...)`.
 
 ## [7.76.1] - 2025-07-12
 ### Added

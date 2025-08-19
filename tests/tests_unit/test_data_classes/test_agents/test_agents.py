@@ -73,6 +73,18 @@ class TestAgentUpsert:
         dumped = agent.dump(camel_case=True)
         assert agent_upsert_dump == dumped
 
+    def test_load_dump_maintain_unknown_properties(self) -> None:
+        """Test that unknown properties are maintained in the dump."""
+        agent_data = {
+            "externalId": "test_agent",
+            "name": "Test Agent",
+            "unknownProperty": "unknown_value",
+            "labels": ["published"],
+        }
+        dumped = AgentUpsert._load(agent_data).dump(camel_case=True)
+
+        assert dumped == agent_data
+
     def test_as_write(self) -> None:
         agent_upsert = AgentUpsert(
             external_id="test_agent",
@@ -110,6 +122,17 @@ class TestAgent:
 
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
+
+    def test_load_dump_maintain_unknown_properties(self) -> None:
+        """Test that unknown properties are maintained in the dump."""
+        agent_data = {
+            "externalId": "test_agent",
+            "name": "Test Agent",
+            "unknownProperty": "unknown_value",
+        }
+        dumped = Agent._load(agent_data).dump(camel_case=True)
+
+        assert dumped == agent_data
 
     def test_tools_handling(self) -> None:
         # Test with no tools

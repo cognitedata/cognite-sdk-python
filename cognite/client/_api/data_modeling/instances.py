@@ -937,11 +937,12 @@ class InstancesAPI(APIClient):
 
             Create two nodes with data with a one-to-many edge
 
-                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> from cognite.client.data_classes.data_modeling import ContainerId, EdgeApply, NodeOrEdgeData, NodeApply, ViewId
                 >>> work_order = NodeApply(
                 ...     space="industrial",
                 ...     external_id="work_order:123",
                 ...     sources=[
+                ...         # Insert data through a view
                 ...         NodeOrEdgeData(
                 ...             ViewId("mySpace", "WorkOrderView", "v1"),
                 ...             {"title": "Repair pump", "createdYear": 2023}
@@ -952,8 +953,9 @@ class InstancesAPI(APIClient):
                 ...     space="industrial",
                 ...     external_id="pump:456",
                 ...     sources=[
+                ...         # Insert data directly to the container
                 ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "PumpView", "v1"),
+                ...             ContainerId("mySpace", "PumpContainer"),
                 ...             {"name": "Pump 456", "location": "Subsea"}
                 ...         )
                 ...     ]
@@ -1486,6 +1488,7 @@ class InstancesAPI(APIClient):
 
                 >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
         """
+        query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing)
 
     def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
@@ -1530,6 +1533,7 @@ class InstancesAPI(APIClient):
 
             In the last example, the res_new will only contain the pumps that have been added with the new work order.
         """
+        query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing)
 
     def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool) -> QueryResult:

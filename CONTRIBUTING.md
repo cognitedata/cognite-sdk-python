@@ -41,28 +41,28 @@ Set the following environment variables in a .env file:
 
 ```bash
 COGNITE_CLIENT_NAME=python-sdk-integration-tests-<your-name>
-COGNITE_PROJECT=python-sdk-test
-COGNITE_BASE_URL=https://greenfield.cognitedata.com
+COGNITE_PROJECT=python-sdk-contributor
+COGNITE_BASE_URL=https://api.cognitedata.com
 
 # There are three ways of configuring auth against the test project.
 # 1) Interactive flow. If you don't have a specific reason to do otherwise, this is the method you
 # should use.
 LOGIN_FLOW=interactive
-COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+COGNITE_TOKEN_SCOPES=https://api.cognitedata.com/.default
 COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
 COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 
 # 2) Client credentials flow. To run tests which require client credentials to be set
 # (such as transformations).
 #LOGIN_FLOW=client_credentials
-#COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+#COGNITE_TOKEN_SCOPES=https://api.cognitedata.com/.default
 #COGNITE_TOKEN_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
 #COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 #COGNITE_CLIENT_SECRET=...
 
 # 3) Client certificate flow. To run with client certificate auth.
 #LOGIN_FLOW=client_certificate
-#COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+#COGNITE_TOKEN_SCOPES=https://api.cognitedata.com/.default
 #COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
 #COGNITE_CLIENT_ID=14fd282e-f77a-457d-add5-928ec2bcbf04
 #COGNITE_CERT_THUMBPRINT=...

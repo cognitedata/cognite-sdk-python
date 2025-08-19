@@ -75,7 +75,7 @@ def fast_dict_load(
         instance = cls()
     # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
     # Accepted: {camel_case(attribute_name): attribute_name}
-    accepted = get_accepted_params(cls)  # type: ignore [arg-type]
+    accepted = get_accepted_params(cls)
     for camel_attr, value in item.items():
         try:
             setattr(instance, accepted[camel_attr], value)
