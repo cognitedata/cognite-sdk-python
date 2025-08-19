@@ -355,6 +355,10 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
+class SimulatorExternalDependencyFileReference(CogniteObject): ...
+
+
+@dataclass
 class SimulatorExternalDependencyFileInternalId(CogniteObject):
     id: int
 
@@ -374,7 +378,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
-    file: SimulatorExternalDependencyFileInternalId
+    file: SimulatorExternalDependencyFileReference
     arguments: dict[str, str]
 
     @classmethod
@@ -388,7 +392,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         output = super().dump(camel_case=camel_case)
         output["file"] = (
             self.file.dump(camel_case=camel_case)
-            if isinstance(self.file, SimulatorExternalDependencyFileInternalId)
+            if isinstance(self.file, SimulatorExternalDependencyFileReference)
             else self.file
         )
         return output
