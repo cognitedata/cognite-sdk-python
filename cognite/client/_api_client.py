@@ -96,7 +96,7 @@ class APIClient:
                     "annotations/(list|byids|reverselookup)",
                     r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
                     r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
-                    "documents/(aggregate|list|search)",
+                    "documents/(aggregate|list|search|content|status|passages/search)",
                     "profiles/(byids|search)",
                     "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
                     "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
@@ -933,24 +933,8 @@ class APIClient:
             else:
                 return el
 
-        def str_format_element(el: T) -> str | dict | T:
-            if isinstance(el, CogniteResource):
-                dumped = el.dump()
-                if "external_id" in dumped:
-                    if "space" in dumped:
-                        return f"{dumped['space']}:{dumped['external_id']}"
-                    return dumped["external_id"]
-                if "externalId" in dumped:
-                    if "space" in dumped:
-                        return f"{dumped['space']}:{dumped['externalId']}"
-                    return dumped["externalId"]
-                return dumped
-            return el
-
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: task[1]["items"],
-            task_list_element_unwrap_fn=unwrap_element,
-            str_format_element_fn=str_format_element,
+            task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
         )
         created_resources = summary.joined_results(lambda res: res.json()["items"])
 
@@ -1150,9 +1134,9 @@ class APIClient:
                         cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
                     )
             except CogniteAPIError as api_error:
-                successful = api_error.successful
-                unknown = api_error.unknown
-                failed = api_error.failed
+                successful = list(api_error.successful)
+                unknown = list(api_error.unknown)
+                failed = list(api_error.failed)
 
                 successful.extend(not_found_error.successful)
                 unknown.extend(not_found_error.unknown)
@@ -1169,6 +1153,7 @@ class APIClient:
                     failed=failed,
                     unknown=unknown,
                     cluster=self._config.cdf_cluster,
+                    project=self._config.project,
                 )
             # Need to retrieve the successful updated items from the first call.
             successful_resources: T_CogniteResourceList | None = None
@@ -1341,13 +1326,14 @@ class APIClient:
         logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
         raise CogniteAPIError(
-            msg,
-            code,
-            x_request_id,
+            message=msg,
+            code=code,
+            x_request_id=x_request_id,
             missing=missing,
             duplicated=duplicated,
             extra=extra,
             cluster=self._config.cdf_cluster,
+            project=self._config.project,
         )
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:

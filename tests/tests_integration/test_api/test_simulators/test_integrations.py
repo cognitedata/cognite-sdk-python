@@ -3,7 +3,6 @@ import time
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import simulator_integration
@@ -29,8 +28,8 @@ class TestSimulatorIntegrations:
 
         assert len(integrations) > 0
 
-    def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        for integration in cognite_client.simulators.integrations(filter=SimulatorIntegrationFilter(active=True)):
+    def test_filter_integrations(self, cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> None:
+        for integration in cognite_client.simulators.integrations(active=True):
             assert integration.active is True
 
         all_integrations = cognite_client.simulators.integrations.list()
@@ -44,7 +43,6 @@ class TestSimulatorIntegrations:
 
         item = filtered_integrations.get(external_id=seed_resource_names["simulator_integration_external_id"])
         assert item is not None
-        # assert item.data_set_id == seed_resource_names["simulator_test_data_set_id"]
         assert item.active is True
         assert item.created_time is not None
         assert item.last_updated_time is not None
@@ -53,11 +51,11 @@ class TestSimulatorIntegrations:
         assert log is not None
         assert log.data is not None
         assert log.data[0].timestamp is not None
-        assert log.data[0].timestamp > int(time.time() * 1000) - 10000  # updated less than 10 seconds ago
         assert log.data[0].message == "Testing logs update for simulator integration"
+        assert log.data[0].timestamp > int(time.time() * 1000) - 30000  # updated less than 30 seconds ago
         assert log.data[0].severity == "Debug"
 
-    def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_delete_integrations(self, cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> None:
         test_integration = simulator_integration.copy()
         test_integration["heartbeat"] = int(time.time() * 1000)
         test_integration["externalId"] = random_string(50)

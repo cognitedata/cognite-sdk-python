@@ -15,7 +15,7 @@ from cognite.client.utils._concurrency import (
 
 def i_dont_like_5(i):
     if i == 5:
-        raise CogniteAPIError("no", 5)
+        raise CogniteAPIError("no", 5, cluster="testcluster", project="testproject")
     else:
         # Yield thread control if we are not to fail - to avoid task i=5 to randomly be executed last
         time.sleep(0.01)
