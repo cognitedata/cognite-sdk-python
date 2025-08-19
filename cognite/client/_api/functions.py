@@ -1242,7 +1242,6 @@ class FunctionSchedulesAPI(APIClient):
         client_credentials: dict[str, str] | ClientCredentials | None = None,
         description: str | None = None,
         data: dict[str, object] | None = None,
-        nonce: str | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
@@ -1256,18 +1255,14 @@ class FunctionSchedulesAPI(APIClient):
                 or a dictionary containing client credentials: 'client_id' and 'client_secret'.
             description (str | None): Description of the schedule.
             data (dict[str, object] | None): Data to be passed to the scheduled run.
-            nonce (str | None): Nonce retrieved from sessions API when creating a session. This will be used to bind the
-                session before executing the function. The corresponding access token will be passed to the
-                function and used to instantiate the client of the handle() function. You can create a session
-                via the Sessions API.
 
         Returns:
             FunctionSchedule: Created function schedule.
 
         Auth:
             There are several ways to authenticate the function schedule — the order of priority is as follows:
-                1. f a nonce is provided, the function schedule will bind to the session and use the access token
-        associated with the session to run the function.
+                1. If a nonce is provided, the function schedule will bind to the session and use the access token
+                    associated with the session to run the function.
                 2. If client_credentials is provided, the function schedule will use the access token associated with
                     the client credentials to run the function.
                 3. The credentials of *this* CogniteClient will be automatically used.
@@ -1321,8 +1316,8 @@ class FunctionSchedulesAPI(APIClient):
                 ...         function_id=456,
                 ...         cron_expression="*/5 * * * *",
                 ...         description="A schedule just used for some temporary testing.",
+                ...         nonce=session.nonce
                 ...     ),
-                ...    nonce=session.nonce
                 ... )
 
         """
@@ -1353,9 +1348,7 @@ class FunctionSchedulesAPI(APIClient):
             item.function_external_id = None
 
         dumped = item.dump()
-        if nonce is not None:
-            dumped["nonce"] = nonce
-        else:
+        if "nonce" not in dumped:
             dumped["nonce"] = create_session_and_return_nonce(
                 self._cognite_client,
                 api_name="Functions API",
