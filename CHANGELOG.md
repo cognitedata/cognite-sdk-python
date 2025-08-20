@@ -18,8 +18,8 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## Unreleased
-### Added
-- New time attributes `run_time` and `simulation_time` to the list of fields that get automatically converted to timestamp format when converted to DataFrames
+### Changed
+- Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
 
 ## [7.80.2] - 2025-08-16
 ### Fixed
