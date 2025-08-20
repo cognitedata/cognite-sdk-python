@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from abc import ABC, abstractmethod
 from collections import UserList
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
@@ -323,10 +323,10 @@ class SimulatorRoutineConfiguration(CogniteObject):
     Learn more about simulator routine configuration <https://docs.cognite.com/cdf/integration/guides/simulators/simulator_routines>.
 
     Args:
-        inputs (SimulatorRoutineInputList | list[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
-        outputs (SimulatorRoutineOutputList | list[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
-        logical_check (list[SimulatorRoutineLogicalCheck] | None): Logical check configuration.
-        steady_state_detection (list[SimulatorRoutineSteadyStateDetection] | None): Steady state detection configuration.
+        inputs (SimulatorRoutineInputList | Sequence[SimulatorRoutineInput] | None): The inputs of the simulator routine revision. Each element can be either a constant or a timeseries input.
+        outputs (SimulatorRoutineOutputList | Sequence[SimulatorRoutineOutput] | None): The outputs of the simulator routine revision.
+        logical_check (Sequence[SimulatorRoutineLogicalCheck] | None): Logical check configuration.
+        steady_state_detection (Sequence[SimulatorRoutineSteadyStateDetection] | None): Steady state detection configuration.
         schedule (SimulatorRoutineSchedule | None): Schedule configuration.
         data_sampling (SimulatorRoutineDataSampling | None): Data sampling configuration. Learn more about data sampling <https://docs.cognite.com/cdf/integration/guides/simulators/about_data_sampling>.
     """
@@ -340,23 +340,23 @@ class SimulatorRoutineConfiguration(CogniteObject):
 
     def __init__(
         self,
-        inputs: SimulatorRoutineInputList | list[SimulatorRoutineInput] | None,
-        outputs: SimulatorRoutineOutputList | list[SimulatorRoutineOutput] | None,
-        logical_check: list[SimulatorRoutineLogicalCheck] | None = None,
-        steady_state_detection: list[SimulatorRoutineSteadyStateDetection] | None = None,
+        inputs: SimulatorRoutineInputList | Sequence[SimulatorRoutineInput] | None,
+        outputs: SimulatorRoutineOutputList | Sequence[SimulatorRoutineOutput] | None,
+        logical_check: Sequence[SimulatorRoutineLogicalCheck] | None = None,
+        steady_state_detection: Sequence[SimulatorRoutineSteadyStateDetection] | None = None,
         schedule: SimulatorRoutineSchedule | None = None,
         data_sampling: SimulatorRoutineDataSampling | None = None,
     ) -> None:
         if inputs is not None and not isinstance(inputs, SimulatorRoutineInputList):
-            self.inputs = SimulatorRoutineInputList(inputs)
+            self.inputs = SimulatorRoutineInputList(list(inputs))
         else:
             self.inputs = inputs
         if outputs is not None and not isinstance(outputs, SimulatorRoutineOutputList):
-            self.outputs = SimulatorRoutineOutputList(outputs)
+            self.outputs = SimulatorRoutineOutputList(list(outputs))
         else:
             self.outputs = outputs
-        self.logical_check = logical_check or []
-        self.steady_state_detection = steady_state_detection or []
+        self.logical_check = list(logical_check) if logical_check else []
+        self.steady_state_detection = list(steady_state_detection) if steady_state_detection else []
         self.schedule = schedule
         self.data_sampling = data_sampling
 
@@ -522,13 +522,13 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
         external_id: str,
         routine_external_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: SimulatorRoutineStageList | list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
     ) -> None:
         self.external_id = external_id
         self.routine_external_id = routine_external_id
         self.configuration = configuration
         if script is not None and not isinstance(script, SimulatorRoutineStageList):
-            self.script = SimulatorRoutineStageList(script)
+            self.script = SimulatorRoutineStageList(list(script))
         else:
             self.script = script
 
@@ -549,7 +549,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         routine_external_id (str): The external ID of the simulator routine.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (SimulatorRoutineStageList | list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
 
     """
 
@@ -602,7 +602,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id (int): The ID of the data set associated with the simulator routine revision.
         created_by_user_id (str): The ID of the user who created the simulator routine revision.
         configuration (SimulatorRoutineConfiguration | None): The configuration of the simulator routine revision.
-        script (SimulatorRoutineStageList | list[SimulatorRoutineStage] | None): The script of the simulator routine revision.
+        script (SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None): The script of the simulator routine revision.
     """
 
     def __init__(
@@ -618,7 +618,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         data_set_id: int,
         created_by_user_id: str,
         configuration: SimulatorRoutineConfiguration | None = None,
-        script: SimulatorRoutineStageList | list[SimulatorRoutineStage] | None = None,
+        script: SimulatorRoutineStageList | Sequence[SimulatorRoutineStage] | None = None,
     ) -> None:
         super().__init__(external_id, routine_external_id, configuration, script)
 
@@ -687,8 +687,8 @@ class SimulatorRoutineRevisionList(
 class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
     """List of simulator routine stages with pandas conversion capabilities."""
 
-    def __init__(self, initlist: list[SimulatorRoutineStage] | None = None) -> None:
-        super().__init__(initlist)
+    def __init__(self, initlist: Sequence[SimulatorRoutineStage] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else None)
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of stages to a pandas DataFrame.
@@ -726,8 +726,8 @@ class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
 class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
     """List of simulator routine inputs with pandas conversion capabilities."""
 
-    def __init__(self, initlist: list[SimulatorRoutineInput] | None = None) -> None:
-        super().__init__(initlist)
+    def __init__(self, initlist: Sequence[SimulatorRoutineInput] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else None)
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of inputs to a pandas DataFrame.
@@ -763,8 +763,8 @@ class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
 class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
     """List of simulator routine outputs with pandas conversion capabilities."""
 
-    def __init__(self, initlist: list[SimulatorRoutineOutput] | None = None) -> None:
-        super().__init__(initlist)
+    def __init__(self, initlist: Sequence[SimulatorRoutineOutput] | None = None) -> None:
+        super().__init__(list(initlist) if initlist is not None else None)
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of outputs to a pandas DataFrame.
