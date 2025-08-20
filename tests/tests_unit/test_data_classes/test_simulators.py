@@ -115,7 +115,13 @@ class TestSimulatorRoutineRevisionCore:
     def test_inputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.configuration.inputs.to_pandas()
+        if (
+            sample_routine_revision.configuration is not None
+            and sample_routine_revision.configuration.inputs is not None
+        ):
+            df = sample_routine_revision.configuration.inputs.to_pandas()
+        else:
+            df = pd.DataFrame()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 2
@@ -134,7 +140,13 @@ class TestSimulatorRoutineRevisionCore:
     def test_outputs_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.configuration.outputs.to_pandas()
+        if (
+            sample_routine_revision.configuration is not None
+            and sample_routine_revision.configuration.outputs is not None
+        ):
+            df = sample_routine_revision.configuration.outputs.to_pandas()
+        else:
+            df = pd.DataFrame()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 2
@@ -154,7 +166,10 @@ class TestSimulatorRoutineRevisionCore:
     def test_script_to_pandas(self, sample_routine_revision: SimulatorRoutineRevisionWrite) -> None:
         pd = local_import("pandas")
 
-        df = sample_routine_revision.script.to_pandas()
+        if sample_routine_revision.script is None:
+            df = pd.DataFrame()
+        else:
+            df = sample_routine_revision.script.to_pandas()
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 4  # 2 stages with 2 steps each
@@ -213,7 +228,10 @@ class TestSimulationRunData:
                 value=1.5,
                 value_type="DOUBLE",
                 unit=SimulationValueUnitName(name="bar"),
-                simulator_object_reference={"objectName": "Tank1", "objectProperty": "Pressure"},
+                simulator_object_reference={
+                    "objectName": "Tank1",
+                    "objectProperty": "Pressure",
+                },
                 overridden=True,
             ),
         ]
@@ -238,7 +256,9 @@ class TestSimulationRunData:
 
     @pytest.fixture
     def sample_run_data_item(
-        self, sample_simulation_inputs: list[SimulationInput], sample_simulation_outputs: list[SimulationOutput]
+        self,
+        sample_simulation_inputs: list[SimulationInput],
+        sample_simulation_outputs: list[SimulationOutput],
     ) -> SimulationRunDataItem:
         """Create a sample SimulationRunDataItem."""
         return SimulationRunDataItem(
@@ -282,7 +302,9 @@ class TestSimulationRunData:
 
     @pytest.mark.dsl
     def test_simulation_run_data_list_to_pandas(
-        self, sample_simulation_inputs: list[SimulationInput], sample_simulation_outputs: list[SimulationOutput]
+        self,
+        sample_simulation_inputs: list[SimulationInput],
+        sample_simulation_outputs: list[SimulationOutput],
     ) -> None:
         pd = local_import("pandas")
 
