@@ -5,10 +5,12 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import (
     Agent,
+    AgentChatResponse,
     AgentList,
     AgentUpsert,
     AskDocumentAgentToolUpsert,
     DataModelInfo,
+    Message,
     QueryKnowledgeGraphAgentToolConfiguration,
     QueryKnowledgeGraphAgentToolUpsert,
     QueryTimeSeriesDatapointsAgentToolUpsert,
@@ -130,3 +132,15 @@ class TestAgentsAPI:
         """Test retrieving a non-existing agent with error raising."""
         with pytest.raises(CogniteNotFoundError):
             cognite_client.agents.retrieve(external_ids=["notExistingAgent"], ignore_unknown_ids=False)
+
+    def test_chat_minimal(self, cognite_client: CogniteClient, permanent_agent: Agent) -> None:
+        """Minimal happy-path chat call to verify the endpoint works end-to-end."""
+        response = cognite_client.agents.chat(
+            agent_id=permanent_agent.external_id,
+            messages=Message("Hello from SDK integration test"),
+        )
+
+        assert isinstance(response, AgentChatResponse)
+        assert response.agent_id == permanent_agent.external_id
+        assert isinstance(response.type, str) and len(response.type) > 0
+        assert response.messages is not None
