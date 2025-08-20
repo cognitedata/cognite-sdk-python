@@ -195,22 +195,22 @@ class Agent(AgentCore):
 
     def start_session(self, cursor: str | None = None) -> AgentSession:
         """Start a new chat session with this agent.
-        
+
         This creates a session object that automatically manages cursor state across
-        multiple chat interactions, providing a more convenient interface for 
+        multiple chat interactions, providing a more convenient interface for
         multi-turn conversations.
-        
+
         Args:
             cursor (str | None): Optional cursor to continue an existing conversation.
                 If None, starts a fresh session.
-        
+
         Returns:
             AgentSession: A session object for chatting with this agent.
-            
+
         Examples:
-        
+
             Start a session from an agent instance:
-            
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.agents import Message
                 >>> client = CogniteClient()
@@ -222,7 +222,7 @@ class Agent(AgentCore):
         # Import here to avoid circular imports
         from cognite.client.data_classes.agents.chat import AgentSession
         from cognite.client.exceptions import CogniteMissingClientError
-        
+
         if not hasattr(self, '_cognite_client') or self._cognite_client is None:
             raise CogniteMissingClientError(self)
         

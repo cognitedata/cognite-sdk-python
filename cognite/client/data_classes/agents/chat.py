@@ -276,48 +276,48 @@ class AgentChatResponse(CogniteResource):
 
 class AgentSession:
     """A session for chatting with an agent that manages cursor state automatically.
-    
+
     This class provides a higher-level interface for chatting with agents by automatically
     managing the conversation cursor state across multiple chat interactions.
-    
+
     Args:
         agent_id (str): The external ID of the agent to chat with.
         cognite_client (CogniteClient): The Cognite client instance.
         cursor (str | None): Optional initial cursor for continuing an existing session.
     """
-    
+
     def __init__(self, agent_id: str, cognite_client: CogniteClient, cursor: str | None = None) -> None:
         self.agent_id = agent_id
         self._cognite_client = cognite_client
         self._cursor = cursor
-    
+
     def chat(self, messages: Message | Sequence[Message]) -> AgentChatResponse:
         """Send a message or messages to the agent and return the response.
-        
+
         The cursor state is automatically managed and updated after each interaction.
-        
+
         Args:
             messages (Message | Sequence[Message]): The message(s) to send to the agent.
-        
+
         Returns:
             AgentChatResponse: The response from the agent.
-            
+
         Examples:
-        
+
             Simple message:
-            
+
                 >>> from cognite.client.data_classes.agents import Message
                 >>> session = client.agents.start_session("my_agent")
                 >>> response = session.chat(Message("Hello, how can you help me?"))
                 >>> print(response.text)
-            
+
             Follow-up message (cursor automatically managed):
-            
+
                 >>> followup = session.chat(Message("Tell me more about that"))
                 >>> print(followup.text)
-            
+
             Multiple messages at once:
-            
+
                 >>> response = session.chat([
                 ...     Message("Find the temperature sensors"),
                 ...     Message("Show me their recent data")
@@ -332,13 +332,13 @@ class AgentSession:
         
         # Update the cursor for the next interaction
         self._cursor = response.cursor
-        
+
         return response
-    
+
     @property
     def cursor(self) -> str | None:
         """Get the current cursor state for this session.
-        
+
         Returns:
             str | None: The current cursor, or None if no conversation has taken place yet.
         """
