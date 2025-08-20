@@ -752,12 +752,10 @@ class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
         rows = []
         for item in self.data:
             row = item.dump(camel_case=False)
-            if "unit" in row and row["unit"] is not None:
-                unit_data = row.pop("unit")
+            if (unit_data := row.pop("unit", None)) is not None:
                 row["unit_name"] = unit_data.get("name")
                 row["unit_quantity"] = unit_data.get("quantity")
             else:
-                row.pop("unit", None)
                 row["unit_name"] = None
                 row["unit_quantity"] = None
             rows.append(row)
@@ -789,12 +787,10 @@ class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
         rows = []
         for item in self.data:
             row = item.dump(camel_case=False)
-            if "unit" in row and row["unit"] is not None:
-                unit_data = row.pop("unit")
+            if (unit_data := row.pop("unit", None)) is not None:
                 row["unit_name"] = unit_data.get("name")
                 row["unit_quantity"] = unit_data.get("quantity")
             else:
-                row.pop("unit", None)
                 row["unit_name"] = None
                 row["unit_quantity"] = None
             rows.append(row)
