@@ -73,7 +73,12 @@ class SimulatorRoutineInput(CogniteObject, ABC):
         raise NotImplementedError()
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineInput, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineInput):
+            return cast(Self, resource)
+
         is_constant = resource.get("value")
         is_timeseries = resource.get("sourceExternalId")
         type_ = "constant" if is_constant else "timeseries" if is_timeseries else None
@@ -193,7 +198,12 @@ class SimulatorRoutineOutput(CogniteObject):
     save_timeseries_external_id: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineOutput, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineOutput):
+            return cast(Self, resource)
+
         return cls(
             name=resource["name"],
             reference_id=resource["referenceId"],
@@ -366,21 +376,11 @@ class SimulatorRoutineConfiguration(CogniteObject):
         outputs = None
 
         if resource.get("inputs", None) is not None:
-            inputs_list = []
-            for input in resource["inputs"]:
-                if issubclass(type(input), type(SimulatorRoutineInput)):
-                    inputs_list.append(input)
-                else:
-                    inputs_list.append(SimulatorRoutineInput._load(input, cognite_client))
+            inputs_list = [SimulatorRoutineInput._load(input, cognite_client) for input in resource["inputs"]]
             inputs = SimulatorRoutineInputList(inputs_list)
 
         if resource.get("outputs", None) is not None:
-            outputs_list = []
-            for output_ in resource["outputs"]:
-                if isinstance(output_, SimulatorRoutineOutput):
-                    outputs_list.append(output_)
-                else:
-                    outputs_list.append(SimulatorRoutineOutput._load(output_, cognite_client))
+            outputs_list = [SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]]
             outputs = SimulatorRoutineOutputList(outputs_list)
 
         schedule = resource["schedule"] if resource.get("schedule") and resource["schedule"]["enabled"] else None
@@ -468,7 +468,12 @@ class SimulatorRoutineStep(CogniteObject):
     description: str | None = None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineStep, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineStep):
+            return cast(Self, resource)
+
         return cls(
             step_type=resource["stepType"],
             arguments=SimulatorRoutineStepArguments._load(resource["arguments"]),
@@ -498,13 +503,15 @@ class SimulatorRoutineStage(CogniteObject):
     description: str | None
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(
+        cls, resource: dict[str, Any] | SimulatorRoutineStage, cognite_client: CogniteClient | None = None
+    ) -> Self:
+        if isinstance(resource, SimulatorRoutineStage):
+            return cast(Self, resource)
+
         return cls(
             order=resource["order"],
-            steps=[
-                SimulatorRoutineStep._load(step_, cognite_client) if isinstance(step_, dict) else step_
-                for step_ in resource["steps"]
-            ],
+            steps=[SimulatorRoutineStep._load(step_, cognite_client) for step_ in resource["steps"]],
             description=resource.get("description"),
         )
 
