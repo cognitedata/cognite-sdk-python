@@ -380,7 +380,7 @@ class SimulatorRoutineConfiguration(CogniteObject):
             inputs = SimulatorRoutineInputList(inputs_list)
 
         if resource.get("outputs", None) is not None:
-            outputs_list = [SimulatorRoutineOutput._load(output_, cognite_client) for output_ in resource["outputs"]]
+            outputs_list = [SimulatorRoutineOutput._load(output, cognite_client) for output in resource["outputs"]]
             outputs = SimulatorRoutineOutputList(outputs_list)
 
         schedule = resource["schedule"] if resource.get("schedule") and resource["schedule"]["enabled"] else None
@@ -392,11 +392,11 @@ class SimulatorRoutineConfiguration(CogniteObject):
             schedule=SimulatorRoutineSchedule.load(schedule, cognite_client) if schedule else None,
             data_sampling=SimulatorRoutineDataSampling._load(data_sampling, cognite_client) if data_sampling else None,
             logical_check=[
-                SimulatorRoutineLogicalCheck._load(check_, cognite_client) for check_ in resource["logicalCheck"]
+                SimulatorRoutineLogicalCheck._load(check, cognite_client) for check in resource["logicalCheck"]
             ],
             steady_state_detection=[
-                SimulatorRoutineSteadyStateDetection._load(detection_, cognite_client)
-                for detection_ in resource["steadyStateDetection"]
+                SimulatorRoutineSteadyStateDetection._load(detection, cognite_client)
+                for detection in resource["steadyStateDetection"]
             ],
             inputs=inputs,
             outputs=outputs,
@@ -511,7 +511,7 @@ class SimulatorRoutineStage(CogniteObject):
 
         return cls(
             order=resource["order"],
-            steps=[SimulatorRoutineStep._load(step_, cognite_client) for step_ in resource["steps"]],
+            steps=[SimulatorRoutineStep._load(step, cognite_client) for step in resource["steps"]],
             description=resource.get("description"),
         )
 
@@ -569,7 +569,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
         )
         script = None
         if resource.get("script"):
-            stages = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in resource.get("script", [])]
             script = SimulatorRoutineStageList(stages)
 
         return cls(
@@ -648,7 +648,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
         )
         script = None
         if resource.get("script"):
-            stages = [SimulatorRoutineStage._load(stage_, cognite_client) for stage_ in resource.get("script", [])]
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in resource.get("script", [])]
             script = SimulatorRoutineStageList(stages)
 
         return cls(
