@@ -71,8 +71,19 @@ def seed_model_revision_file(
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str, str]) -> Iterator[None]:
     simulator_external_id = seed_resource_names["simulator_external_id"]
     simulators = cognite_client.simulators.list(limit=None)
-    if not simulators.get(external_id=simulator_external_id):
+    seeded_simulator = simulators.get(external_id=simulator_external_id)
+    fields_to_compare = ["fileExtensionTypes", "modelTypes", "modelDependencies", "stepFields", "unitQuantities"]
+    seeded_simulator_dump = seeded_simulator.dump() if seeded_simulator else None
+
+    if not seeded_simulator:
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
+    # if any field in simulator is different from the current seeded simulator, update it
+    elif any(seeded_simulator_dump[field] != simulator[field] for field in fields_to_compare if field in simulator):
+        simulator_update = {
+            "id": seeded_simulator.id,
+            "update": {field: {"set": simulator[field]} for field in fields_to_compare},
+        }
+        cognite_client.simulators._post("/simulators/update", json={"items": [simulator_update]})
 
 
 @pytest.fixture(scope="session")
