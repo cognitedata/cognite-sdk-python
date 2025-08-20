@@ -708,20 +708,23 @@ class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
             return pd.DataFrame()
 
         rows = []
+        index_data = []
         for stage in self.data:
             for step in stage.steps:
                 row = {
-                    "stage_order": stage.order,
                     "stage_description": stage.description,
-                    "step_order": step.order,
                     "step_type": step.step_type,
                     "step_description": step.description,
                 }
                 for key, value in step.arguments.items():
                     row[f"arg_{to_snake_case(key)}"] = value
                 rows.append(row)
+                index_data.append((stage.order, step.order))
 
-        return pd.DataFrame(rows)
+        df = pd.DataFrame(rows)
+        if not df.empty:
+            df.index = pd.MultiIndex.from_tuples(index_data, names=["stage_order", "step_order"])
+        return df
 
     def _repr_html_(self) -> str:
         try:

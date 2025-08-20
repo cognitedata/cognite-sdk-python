@@ -202,10 +202,12 @@ class TestSimulatorRoutineRevisionCore:
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 4  # 2 stages with 2 steps each
 
+        # Check MultiIndex structure
+        assert isinstance(df.index, pd.MultiIndex)
+        assert df.index.names == ["stage_order", "step_order"]
+
         # Check required columns
-        assert "stage_order" in df.columns
         assert "stage_description" in df.columns
-        assert "step_order" in df.columns
         assert "step_type" in df.columns
         assert "step_description" in df.columns
 
@@ -217,19 +219,18 @@ class TestSimulatorRoutineRevisionCore:
         assert "arg_timeout" in df.columns
 
         # Check values
-        assert df.iloc[0]["stage_order"] == 1
+        assert df.index[0] == (1, 1)  # stage_order=1, step_order=1
         assert df.iloc[0]["stage_description"] == "Initialization stage"
-        assert df.iloc[0]["step_order"] == 1
         assert df.iloc[0]["step_type"] == "Get"
         assert df.iloc[0]["step_description"] == "Get temperature value"
         assert df.iloc[0]["arg_reference_id"] == "temp_001"
         assert df.iloc[0]["arg_unit_id"] == "°C"
 
-        assert df.iloc[1]["stage_order"] == 1
+        assert df.index[1] == (1, 2)  # stage_order=1, step_order=2
         assert df.iloc[1]["step_type"] == "Set"
         assert df.iloc[1]["arg_value"] == "1.5"
 
-        assert df.iloc[2]["stage_order"] == 2
+        assert df.index[2] == (2, 1)  # stage_order=2, step_order=1
         assert df.iloc[2]["stage_description"] == "Execution stage"
         assert df.iloc[2]["step_type"] == "Command"
         assert df.iloc[2]["arg_command"] == "run_simulation"
