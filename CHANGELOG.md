@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## Unreleased
+## [7.80.3] - 2025-08-21
 ### Changed
 - Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
 
