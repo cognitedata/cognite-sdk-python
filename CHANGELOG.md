@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.81.1] - 2025-08-20
+### Fixed
+- [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
+
 ## [7.81.0] - 2025-08-19
 ### Added
 - Support for external dependencies in simulator and simulator model revisions resources.
