@@ -190,8 +190,12 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     def __init__(self, external_id: str) -> None:
         super().__init__(external_id=external_id)
 
-    class _PrimitiveDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> DataPointSubscriptionUpdate:
+    class _StringDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
+        def set(self, value: str) -> DataPointSubscriptionUpdate:
+            return self._set(value)
+
+    class _IntegerDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
+        def set(self, value: int) -> DataPointSubscriptionUpdate:
             return self._set(value)
 
     class _FilterDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
@@ -219,12 +223,16 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
             return self._remove([item.dump(include_instance_type=False) for item in value])
 
     @property
-    def name(self) -> _PrimitiveDataPointSubscriptionUpdate:
-        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
+    def name(self) -> _StringDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._StringDataPointSubscriptionUpdate(self, "name")
 
     @property
-    def data_set_id(self) -> _PrimitiveDataPointSubscriptionUpdate:
-        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "dataSetId")
+    def description(self) -> _StringDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._StringDataPointSubscriptionUpdate(self, "description")
+
+    @property
+    def data_set_id(self) -> _IntegerDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._IntegerDataPointSubscriptionUpdate(self, "dataSetId")
 
     @property
     def time_series_ids(self) -> _ListDataPointSubscriptionUpdate:
@@ -242,6 +250,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     def _get_update_properties(cls, item: CogniteResource | None = None) -> list[PropertySpec]:
         return [
             PropertySpec("name"),
+            PropertySpec("description"),
             PropertySpec("time_series_ids", is_list=True),
             PropertySpec("instance_ids", is_list=True),
             PropertySpec("filter", is_nullable=False),

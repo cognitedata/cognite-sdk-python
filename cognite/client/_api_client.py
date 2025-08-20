@@ -96,7 +96,7 @@ class APIClient:
                     "annotations/(list|byids|reverselookup)",
                     r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
                     r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
-                    "documents/(aggregate|list|search)",
+                    "documents/(aggregate|list|search|content|status|passages/search)",
                     "profiles/(byids|search)",
                     "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
                     "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
@@ -1153,6 +1153,7 @@ class APIClient:
                     failed=failed,
                     unknown=unknown,
                     cluster=self._config.cdf_cluster,
+                    project=self._config.project,
                 )
             # Need to retrieve the successful updated items from the first call.
             successful_resources: T_CogniteResourceList | None = None
@@ -1325,13 +1326,14 @@ class APIClient:
         logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
         raise CogniteAPIError(
-            msg,
-            code,
-            x_request_id,
+            message=msg,
+            code=code,
+            x_request_id=x_request_id,
             missing=missing,
             duplicated=duplicated,
             extra=extra,
             cluster=self._config.cdf_cluster,
+            project=self._config.project,
         )
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:

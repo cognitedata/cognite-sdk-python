@@ -6,6 +6,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
@@ -28,15 +29,23 @@ FIXED_SRID = 121111 + random.randint(0, 1_000)
 GEOSPATIAL_TEST_RESOURCES = Path(__file__).parent / "geospatial_test_resources"
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def test_crs(cognite_client):
     wkt = """GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,
     AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],
     PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,
     AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]"""
     proj_string = """+proj=longlat +a=6377276.345 +b=6356075.41314024 +no_defs"""
-    crs = cognite_client.geospatial.create_coordinate_reference_systems(
-        crs=CoordinateReferenceSystem(srid=FIXED_SRID, wkt=wkt, proj_string=proj_string)
+
+    # The request often fails with a 409 since we run this test suite with a high degree of parallelism.
+    crs = Retrying(
+        retry=retry_if_exception(lambda exc: isinstance(exc, CogniteAPIError) and exc.code == 409),
+        wait=wait_exponential_jitter(),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )(
+        cognite_client.geospatial.create_coordinate_reference_systems,
+        crs=CoordinateReferenceSystem(srid=FIXED_SRID, wkt=wkt, proj_string=proj_string),
     )
     yield crs[0]
     cognite_client.geospatial.delete_coordinate_reference_systems(srids=[FIXED_SRID])
