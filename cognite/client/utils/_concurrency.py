@@ -34,8 +34,8 @@ class TasksSummary:
         self.skipped_tasks = skipped_tasks
         self.results = results
 
-        self.not_found_error: Exception | None = None
-        self.duplicated_error: Exception | None = None
+        self.not_found_error: CogniteNotFoundError | None = None
+        self.duplicated_error: CogniteDuplicatedError | None = None
         self.unknown_error: Exception | None = None
         self.missing, self.duplicated, self.cluster, self.project = self._inspect_exceptions(exceptions)
 
@@ -72,36 +72,50 @@ class TasksSummary:
 
         if self.unknown_error:
             self._raise_basic_api_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.not_found_error:
-            self._raise_not_found_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
-        if self.duplicated_error:
-            self._raise_duplicated_error(successful=successful, failed=failed, unknown=unknown, skipped=skipped)
 
-    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[Sequence, Sequence, str | None, str | None]:
+        if self.not_found_error:
+            self._raise_specific_error(
+                cause=self.not_found_error,
+                error=CogniteNotFoundError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+        if self.duplicated_error:
+            self._raise_specific_error(
+                cause=self.duplicated_error,
+                error=CogniteDuplicatedError,
+                successful=successful,
+                failed=failed,
+                unknown=unknown,
+                skipped=skipped,
+            )
+
+    def _inspect_exceptions(self, exceptions: list[Exception]) -> tuple[list, list, str | None, str | None]:
         cluster = None
         project = None
         missing: list[dict] = []
         duplicated: list[dict] = []
         for exc in exceptions:
-            if not isinstance(exc, CogniteAPIError):
-                self.unknown_error = exc
-                continue
+            match exc:
+                case CogniteNotFoundError():
+                    missing.extend(exc.missing)
+                    self.not_found_error = exc
+                case CogniteDuplicatedError():
+                    duplicated.extend(exc.duplicated)
+                    self.duplicated_error = exc
+                case _:
+                    self.unknown_error = exc
+                    continue
 
             cluster = cluster or exc.cluster
             project = project or exc.project
-            if exc.code in (400, 422) and exc.missing is not None:
-                missing.extend(exc.missing)
-                self.not_found_error = exc
 
-            elif exc.code == 409 and exc.duplicated is not None:
-                duplicated.extend(exc.duplicated)
-                self.duplicated_error = exc
-            else:
-                self.unknown_error = exc
         return missing, duplicated, cluster, project
 
     def _raise_basic_api_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+        self, successful: list, failed: list, unknown: list, skipped: list
     ) -> NoReturn:
         if isinstance(self.unknown_error, CogniteAPIError) and (failed or unknown):
             raise CogniteAPIError(
@@ -120,19 +134,28 @@ class TasksSummary:
             )
         raise self.unknown_error  # type: ignore [misc]
 
-    def _raise_not_found_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
+    def _raise_specific_error(
+        self,
+        cause: CogniteAPIError,
+        error: type[CogniteNotFoundError | CogniteDuplicatedError],
+        successful: list,
+        failed: list,
+        unknown: list,
+        skipped: list
     ) -> NoReturn:
-        raise CogniteNotFoundError(
-            self.missing, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.not_found_error
-
-    def _raise_duplicated_error(
-        self, successful: Sequence, failed: Sequence, unknown: Sequence, skipped: Sequence
-    ) -> NoReturn:
-        raise CogniteDuplicatedError(
-            self.duplicated, successful=successful, failed=failed, unknown=unknown, skipped=skipped
-        ) from self.duplicated_error
+        raise error(
+            message=cause.message,
+            code=cause.code,
+            x_request_id=cause.x_request_id,
+            missing=self.missing,
+            duplicated=self.duplicated,
+            extra=cause.extra,
+            cluster=self.cluster,
+            successful=successful,
+            failed=failed,
+            unknown=unknown,
+            skipped=skipped,
+        ) from cause
 
 
 T_Result = TypeVar("T_Result", covariant=True)
@@ -195,9 +218,9 @@ class ConcurrencySettings:
         return cls.executor_type == "mainthread"
 
     @classmethod
-    def get_executor(cls, max_workers: int) -> TaskExecutor:
+    def get_executor(cls) -> TaskExecutor:
         if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
+            return cls.get_thread_pool_executor()
         elif cls.uses_mainthread():
             return cls.get_mainthread_executor()
         raise RuntimeError(f"Invalid executor type '{cls.executor_type}'")
@@ -207,11 +230,13 @@ class ConcurrencySettings:
         return _MAIN_THREAD_EXECUTOR_SINGLETON
 
     @classmethod
-    def get_thread_pool_executor(cls, max_workers: int) -> ThreadPoolExecutor:
+    def get_thread_pool_executor(cls) -> ThreadPoolExecutor:
+        from cognite.client import global_config
+
         assert cls.uses_threadpool(), "use get_executor instead"
         global _THREAD_POOL_EXECUTOR_SINGLETON
 
-        if max_workers < 1:
+        if (max_workers := global_config.max_workers) < 1:
             raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
         try:
             executor = _THREAD_POOL_EXECUTOR_SINGLETON
@@ -227,12 +252,13 @@ class ConcurrencySettings:
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
+        # TODO: Warning if max_workers != executor._max_workers?
         return executor
 
     @classmethod
-    def get_thread_pool_executor_or_raise(cls, max_workers: int) -> ThreadPoolExecutor:
+    def get_thread_pool_executor_or_raise(cls) -> ThreadPoolExecutor:
         if cls.uses_threadpool():
-            return cls.get_thread_pool_executor(max_workers)
+            return cls.get_thread_pool_executor()
 
         if _RUNNING_IN_BROWSER:
             raise RuntimeError("The method you tried to use is not available in Pyodide/WASM")
@@ -296,7 +322,6 @@ def execute_tasks_serially(
 def execute_tasks(
     func: Callable[..., T_Result],
     tasks: Sequence[tuple | dict],
-    max_workers: int,
     fail_fast: bool = False,
     executor: TaskExecutor | None = None,
 ) -> TasksSummary:
@@ -313,7 +338,7 @@ def execute_tasks(
     else:
         raise TypeError("executor must be a ThreadPoolExecutor or MainThreadExecutor")
 
-    executor = executor or ConcurrencySettings.get_thread_pool_executor(max_workers)
+    executor = executor or ConcurrencySettings.get_thread_pool_executor()
     task_order = [id(task) for task in tasks]
 
     futures_dct: dict[Future, tuple | dict] = {}

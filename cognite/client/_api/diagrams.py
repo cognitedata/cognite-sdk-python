@@ -4,8 +4,6 @@ from collections.abc import Sequence
 from math import ceil
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
-from requests import Response
-
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
@@ -23,6 +21,8 @@ from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
+    from httpx import Response
+
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
