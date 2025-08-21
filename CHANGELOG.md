@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.82.0] - 2025-08-22
+### Added
+- New convenience methods for displaying Simulator Routine Revision script, inputs and outputs as DataFrames in Jupyter notebooks
+
 ## [7.81.1] - 2025-08-20
 ### Fixed
 - [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`

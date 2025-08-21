@@ -378,7 +378,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
-    file: SimulatorExternalDependencyFileReference
+    file: SimulatorExternalDependencyFileInternalId
     arguments: dict[str, str]
 
     @classmethod
@@ -394,7 +394,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         output = super().dump(camel_case=camel_case)
         output["file"] = (
             self.file.dump(camel_case=camel_case)
-            if isinstance(self.file, SimulatorExternalDependencyFileReference)
+            if isinstance(self.file, SimulatorExternalDependencyFileInternalId)
             else self.file
         )
         return output
