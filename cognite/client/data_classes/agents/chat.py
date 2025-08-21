@@ -176,12 +176,14 @@ class AgentMessage(CogniteResource):
     Args:
         content (MessageContent | None): The message content.
         data (list[AgentDataItem] | None): Data items in the response.
+        actions (list[ClientToolAction] | None): Actions in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         role (Literal["agent"]): The role of the message sender.
     """
 
     content: MessageContent | None = None
     data: list[AgentDataItem] | None = None
+    actions: list[ClientToolAction] | None = None
     reasoning: list[AgentReasoningItem] | None = None
     role: Literal["agent"] = "agent"
 
@@ -191,6 +193,8 @@ class AgentMessage(CogniteResource):
             result["content"] = self.content.dump(camel_case=camel_case)
         if self.data is not None:
             result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
+        if self.actions is not None:
+            result["actions"] = [action.dump(camel_case=camel_case) for action in self.actions]
         if self.reasoning is not None:
             result["reasoning"] = [item.dump(camel_case=camel_case) for item in self.reasoning]
         return result
@@ -199,10 +203,12 @@ class AgentMessage(CogniteResource):
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
         content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
+        action_items = [ClientToolAction._load(item, cognite_client) for item in data.get("actions", [])]
         reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
         return cls(
             content=content,
             data=data_items if data_items else None,
+            actions=action_items if action_items else None,
             reasoning=reasoning_items if reasoning_items else None,
             role=data["role"],
         )
@@ -271,3 +277,133 @@ class AgentChatResponse(CogniteResource):
         )
 
         return instance
+
+
+@dataclass
+class ClientTool(CogniteObject):
+    """Client tool definition for actions.
+    
+    Args:
+        name (str): The name of the client tool.
+        description (str): Description of what the tool does.
+        parameters (dict[str, Any]): JSON schema defining the tool's parameters.
+    """
+    
+    name: str
+    description: str
+    parameters: dict[str, Any]
+    
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": self.parameters,
+        }
+    
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientTool:
+        return cls(
+            name=data["name"],
+            description=data["description"],
+            parameters=data["parameters"],
+        )
+
+
+@dataclass
+class Action(CogniteObject):
+    """Action definition for agent chat.
+    
+    Args:
+        type (Literal["clientTool"]): The type of action.
+        client_tool (ClientTool): The client tool definition.
+    """
+    
+    type: Literal["clientTool"]
+    client_tool: ClientTool
+    
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "clientTool" if camel_case else "client_tool"
+        return {
+            "type": self.type,
+            key: self.client_tool.dump(camel_case=camel_case),
+        }
+    
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
+        client_tool_data = data.get("clientTool") or data.get("client_tool")
+        client_tool = ClientTool._load(client_tool_data, cognite_client)
+        return cls(
+            type=data["type"],
+            client_tool=client_tool,
+        )
+
+
+@dataclass
+class ActionMessage(CogniteResource):
+    """A message representing an action result.
+    
+    Args:
+        action_id (str): The ID of the action.
+        content (MessageContent): The message content.
+        data (list[Any] | None): Optional data payload.
+        role (Literal["action"]): The role of the message sender.
+    """
+    
+    action_id: str
+    content: MessageContent
+    data: list[Any] | None = None
+    role: Literal["action"] = "action"
+    
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "actionId" if camel_case else "action_id"
+        result = {
+            key: self.action_id,
+            "role": self.role,
+            "content": self.content.dump(camel_case=camel_case),
+        }
+        if self.data is not None:
+            result["data"] = self.data
+        return result
+    
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ActionMessage:
+        action_id = data.get("actionId") or data.get("action_id")
+        content = MessageContent._load(data["content"])
+        return cls(
+            action_id=action_id,
+            content=content,
+            data=data.get("data"),
+            role=data["role"],
+        )
+
+
+@dataclass
+class ClientToolAction(CogniteObject):
+    """Client tool action in agent response.
+    
+    Args:
+        id (str): The action ID.
+        client_tool (dict[str, Any]): The client tool call details.
+        type (Literal["clientTool"]): The action type.
+    """
+    
+    id: str
+    client_tool: dict[str, Any]
+    type: Literal["clientTool"]
+    
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "clientTool" if camel_case else "client_tool"
+        return {
+            "id": self.id,
+            key: self.client_tool,
+            "type": self.type,
+        }
+    
+    @classmethod
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
+        client_tool = data.get("clientTool") or data.get("client_tool")
+        return cls(
+            id=data["id"],
+            client_tool=client_tool,
+            type=data["type"],
+        )

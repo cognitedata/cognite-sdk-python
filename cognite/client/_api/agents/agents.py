@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
+from cognite.client.data_classes.agents.chat import Action, ActionMessage, AgentChatResponse, Message, MessageList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -243,8 +243,9 @@ class AgentsAPI(APIClient):
     def chat(
         self,
         agent_id: str,
-        messages: Message | Sequence[Message],
+        messages: Message | ActionMessage | Sequence[Message | ActionMessage],
         cursor: str | None = None,
+        actions: Sequence[Action] | None = None,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_session_api_v1_projects__projectName__ai_agents_chat_post>`_
 
@@ -253,9 +254,10 @@ class AgentsAPI(APIClient):
 
         Args:
             agent_id (str): External ID that uniquely identifies the agent.
-            messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
+            messages (Message | ActionMessage | Sequence[Message | ActionMessage]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (Sequence[Action] | None): Optional list of actions (client tools) that the agent can use.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -290,21 +292,75 @@ class AgentsAPI(APIClient):
                 ...         Message("Once you have found it, find related time series.")
                 ...     ]
                 ... )
+
+            Chat with actions (client tools):
+
+                >>> from cognite.client.data_classes.agents import Action, ClientTool
+                >>> # Define a client tool for custom processing
+                >>> calculate_tool = ClientTool(
+                ...     name="calculate_average",
+                ...     description="Calculate the average of a list of numbers",
+                ...     parameters={
+                ...         "type": "object",
+                ...         "properties": {
+                ...             "numbers": {
+                ...                 "type": "array",
+                ...                 "items": {"type": "number"},
+                ...                 "description": "List of numbers to average"
+                ...             }
+                ...         },
+                ...         "required": ["numbers"]
+                ...     }
+                ... )
+                >>> action = Action(type="clientTool", client_tool=calculate_tool)
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("Calculate the average of these values: 10, 20, 30"),
+                ...     actions=[action]
+                ... )
+
+            Handle action responses from the agent:
+
+                >>> # If the agent responds with an action, you can extract it
+                >>> if response.messages and response.messages[0].actions:
+                ...     for action in response.messages[0].actions:
+                ...         if action.type == "clientTool":
+                ...             tool_name = action.client_tool["name"]
+                ...             tool_args = action.client_tool["arguments"]
+                ...             print(f"Agent wants to call: {tool_name} with {tool_args}")
+                ...             # Execute your function here and send result back
+                ...             result = your_function(**eval(tool_args))
+                ...             # Continue conversation with action result
+                ...             follow_up = client.agents.chat(
+                ...                 agent_id="my_agent",
+                ...                 messages=ActionMessage(
+                ...                     action_id=action.id,
+                ...                     content=f"Result: {result}"
+                ...                 ),
+                ...                 cursor=response.cursor
+                ...             )
         """
         self._warnings.warn()
 
         # Convert single message to list
-        if isinstance(messages, Message):
+        if isinstance(messages, (Message, ActionMessage)):
             messages = [messages]
 
-        # Build request body
+        # Build request body - serialize messages manually to handle mixed types
+        serialized_messages = []
+        for msg in messages:
+            serialized_messages.append(msg.dump(camel_case=True))
+
         body = {
             "agentId": agent_id,
-            "messages": MessageList(messages).dump(camel_case=True),
+            "messages": serialized_messages,
         }
 
         if cursor is not None:
             body["cursor"] = cursor
+
+        if actions is not None:
+            body["actions"] = [action.dump(camel_case=True) for action in actions]
 
         # Make the API call
         response = self._post(
