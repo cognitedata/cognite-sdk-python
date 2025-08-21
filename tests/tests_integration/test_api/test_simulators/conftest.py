@@ -78,7 +78,7 @@ def seed_simulator(cognite_client: CogniteClient, seed_resource_names: dict[str,
     if not seeded_simulator:
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
     # if any field in simulator is different from the current seeded simulator, update it
-    elif any(seeded_simulator_dump[field] != simulator[field] for field in fields_to_compare if field in simulator):
+    elif any(seeded_simulator_dump.get(field) != simulator[field] for field in fields_to_compare if field in simulator):
         simulator_update = {
             "id": seeded_simulator.id,
             "update": {field: {"set": simulator[field]} for field in fields_to_compare},
