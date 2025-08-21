@@ -293,13 +293,6 @@ class ClientTool(CogniteObject):
     description: str
     parameters: dict[str, Any]
     
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters,
-        }
-    
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientTool:
         return cls(
@@ -322,11 +315,10 @@ class Action(CogniteObject):
     client_tool: ClientTool
     
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
         key = "clientTool" if camel_case else "client_tool"
-        return {
-            "type": self.type,
-            key: self.client_tool.dump(camel_case=camel_case),
-        }
+        result[key] = self.client_tool.dump(camel_case=camel_case)
+        return result
     
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Action:
@@ -355,12 +347,10 @@ class ActionMessage(CogniteResource):
     role: Literal["action"] = "action"
     
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
         key = "actionId" if camel_case else "action_id"
-        result = {
-            key: self.action_id,
-            "role": self.role,
-            "content": self.content.dump(camel_case=camel_case),
-        }
+        result[key] = self.action_id
+        result["content"] = self.content.dump(camel_case=camel_case)
         if self.data is not None:
             result["data"] = self.data
         return result
@@ -392,12 +382,10 @@ class ClientToolAction(CogniteObject):
     type: Literal["clientTool"]
     
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
         key = "clientTool" if camel_case else "client_tool"
-        return {
-            "id": self.id,
-            key: self.client_tool,
-            "type": self.type,
-        }
+        result[key] = self.client_tool
+        return result
     
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> ClientToolAction:
