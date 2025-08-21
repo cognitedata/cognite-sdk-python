@@ -9,6 +9,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.agents.agent_actions import _load_response_action
 
 
 @dataclass
@@ -92,29 +93,51 @@ class Message(CogniteResource):
     Args:
         content (str | MessageContent): The message content. If a string is provided,
             it will be converted to TextContent.
-        role (Literal["user"]): The role of the message sender. Defaults to "user".
+        role (Literal["user", "action"]): The role of the message sender. Defaults to "user".
+        action_id (str | None): The ID of the action (required when role is "action").
+        data (list[AgentDataItem] | None): Optional data items for the message.
     """
 
     content: MessageContent
-    role: Literal["user"] = "user"
+    role: Literal["user", "action"] = "user"
+    action_id: str | None = None
+    data: list[AgentDataItem] | None = None
 
-    def __init__(self, content: str | MessageContent, role: Literal["user"] = "user") -> None:
+    def __init__(
+        self,
+        content: str | MessageContent,
+        role: Literal["user", "action"] = "user",
+        action_id: str | None = None,
+        data: list[AgentDataItem] | None = None,
+    ) -> None:
         if isinstance(content, str):
             self.content = TextContent(text=content)
         else:
             self.content = content
         self.role = role
+        self.action_id = action_id
+        self.data = data
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
+        result = {
             "content": self.content.dump(camel_case=camel_case),
             "role": self.role,
         }
+        if self.action_id is not None:
+            key = "actionId" if camel_case else "action_id"
+            result[key] = self.action_id
+        if self.data is not None:
+            result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
+        return result
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Message:
         content = MessageContent._load(data["content"])
-        return cls(content=content, role=data["role"])
+        action_id = data.get("actionId")
+        data_items = None
+        if "data" in data:
+            data_items = [AgentDataItem._load(item, cognite_client) for item in data["data"]]
+        return cls(content=content, role=data["role"], action_id=action_id, data=data_items)
 
 
 class MessageList(CogniteResourceList[Message]):
@@ -177,12 +200,14 @@ class AgentMessage(CogniteResource):
         content (MessageContent | None): The message content.
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
+        actions (list[CogniteResource] | None): Actions in the response.
         role (Literal["agent"]): The role of the message sender.
     """
 
     content: MessageContent | None = None
     data: list[AgentDataItem] | None = None
     reasoning: list[AgentReasoningItem] | None = None
+    actions: list[CogniteResource] | None = None
     role: Literal["agent"] = "agent"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -193,17 +218,28 @@ class AgentMessage(CogniteResource):
             result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
         if self.reasoning is not None:
             result["reasoning"] = [item.dump(camel_case=camel_case) for item in self.reasoning]
+        if self.actions is not None:
+            result["actions"] = [action.dump(camel_case=camel_case) for action in self.actions]
         return result
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
+        # Import here to avoid circular imports
+        from cognite.client.data_classes.agents.agent_actions import _load_response_action
+        
         content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
         reasoning_items = [AgentReasoningItem._load(item, cognite_client) for item in data.get("reasoning", [])]
+        
+        actions = None
+        if "actions" in data:
+            actions = [_load_response_action(action, cognite_client) for action in data["actions"]]
+        
         return cls(
             content=content,
             data=data_items if data_items else None,
             reasoning=reasoning_items if reasoning_items else None,
+            actions=actions,
             role=data["role"],
         )
 
