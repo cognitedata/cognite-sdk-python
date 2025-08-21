@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.agent_actions import AgentActionWrite, AgentActionWriteList
+from cognite.client.data_classes.agents.agent_actions import ActionList, ClientToolAction, UnknownAction
 from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -246,7 +246,7 @@ class AgentsAPI(APIClient):
         agent_id: str,
         messages: Message | Sequence[Message],
         cursor: str | None = None,
-        actions: AgentActionWrite | Sequence[AgentActionWrite] | None = None,
+        actions: ClientToolAction | UnknownAction | Sequence[ClientToolAction | UnknownAction] | list[dict[str, Any]] | None = None,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_session_api_v1_projects__projectName__ai_agents_chat_post>`_
 
@@ -258,7 +258,7 @@ class AgentsAPI(APIClient):
             messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
-            actions (AgentActionWrite | Sequence[AgentActionWrite] | None): Client-side actions that the agent can request.
+            actions (ClientToolAction | UnknownAction | Sequence[ClientToolAction | UnknownAction] | list[dict[str, Any]] | None): Client-side actions that the agent can request. Can be action objects or raw dictionaries.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -296,41 +296,52 @@ class AgentsAPI(APIClient):
 
             Use client-side actions that can be called by the agent:
 
-                >>> from cognite.client.data_classes.agents import (
-                ...     ClientToolAgentActionWrite,
-                ...     ClientToolDetails,
-                ...     JSONSchemaParameters,
-                ...     JSONSchemaParameterProperty
-                ... )
-                >>> 
-                >>> # Define a client-side tool that updates order status
-                >>> update_status_tool = ClientToolAgentActionWrite(
-                ...     client_tool=ClientToolDetails(
-                ...         name="update_order_status",
-                ...         description="Update the status of an order in the system",
-                ...         parameters=JSONSchemaParameters(
-                ...             type="object",
-                ...             properties={
-                ...                 "order_id": JSONSchemaParameterProperty(
-                ...                     type="string",
-                ...                     description="The ID of the order to update"
-                ...                 ),
-                ...                 "status": JSONSchemaParameterProperty(
-                ...                     type="string",
-                ...                     description="The new status of the order",
-                ...                     enum=["processing", "shipped", "delivered", "cancelled"]
-                ...                 )
+                >>> # Define a client-side tool using a simple dict
+                >>> update_status_tool = {
+                ...     "type": "clientTool",
+                ...     "clientTool": {
+                ...         "name": "update_order_status",
+                ...         "description": "Update the status of an order in the system",
+                ...         "parameters": {
+                ...             "type": "object",
+                ...             "properties": {
+                ...                 "order_id": {
+                ...                     "type": "string",
+                ...                     "description": "The ID of the order to update"
+                ...                 },
+                ...                 "status": {
+                ...                     "type": "string",
+                ...                     "description": "The new status of the order",
+                ...                     "enum": ["processing", "shipped", "delivered", "cancelled"]
+                ...                 }
                 ...             },
-                ...             required=["order_id", "status"]
-                ...         )
-                ...     )
-                ... )
+                ...             "required": ["order_id", "status"]
+                ...         }
+                ...     }
+                ... }
                 >>> 
                 >>> # Chat with the agent, providing the action
                 >>> response = client.agents.chat(
                 ...     agent_id="my_agent",
                 ...     messages=Message("Update order ABC123 to shipped status"),
                 ...     actions=[update_status_tool]
+                ... )
+                >>> 
+                >>> # Alternatively, use the ClientToolAction class
+                >>> from cognite.client.data_classes.agents import ClientToolAction
+                >>> 
+                >>> action = ClientToolAction(
+                ...     client_tool={
+                ...         "name": "get_weather",
+                ...         "description": "Get weather for a location",
+                ...         "parameters": {
+                ...             "type": "object",
+                ...             "properties": {
+                ...                 "location": {"type": "string", "description": "City name"}
+                ...             },
+                ...             "required": ["location"]
+                ...         }
+                ...     }
                 ... )
                 >>> 
                 >>> # Check if the agent wants to use the client tool
@@ -377,7 +388,7 @@ class AgentsAPI(APIClient):
             messages = [messages]
 
         # Convert single action to list
-        if actions is not None and isinstance(actions, AgentActionWrite):
+        if actions is not None and not isinstance(actions, list):
             actions = [actions]
 
         # Build request body
@@ -390,7 +401,11 @@ class AgentsAPI(APIClient):
             body["cursor"] = cursor
 
         if actions is not None:
-            body["actions"] = AgentActionWriteList(actions).dump(camel_case=True)
+            # Handle both action objects and raw dicts
+            if all(isinstance(a, dict) for a in actions):
+                body["actions"] = actions
+            else:
+                body["actions"] = ActionList(actions).dump(camel_case=True)
 
         # Make the API call
         response = self._post(

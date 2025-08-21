@@ -225,7 +225,7 @@ class AgentMessage(CogniteResource):
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> AgentMessage:
         # Import here to avoid circular imports
-        from cognite.client.data_classes.agents.agent_actions import _load_response_action
+        from cognite.client.data_classes.agents.agent_actions import ResponseActionList
         
         content = MessageContent._load(data["content"]) if "content" in data else None
         data_items = [AgentDataItem._load(item, cognite_client) for item in data.get("data", [])]
@@ -233,7 +233,7 @@ class AgentMessage(CogniteResource):
         
         actions = None
         if "actions" in data:
-            actions = [_load_response_action(action, cognite_client) for action in data["actions"]]
+            actions = ResponseActionList._load_list(data["actions"], cognite_client).data
         
         return cls(
             content=content,
