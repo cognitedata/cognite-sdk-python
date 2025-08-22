@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.81.2] - 2025-08-22
+### Fixed
+- Filter.load() will not raise RunTimeError on empty dict anymore, rather return UnknownFilter.
+
 ## [7.81.1] - 2025-08-20
 ### Fixed
 - [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
