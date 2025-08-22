@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client.data_classes.filters import Filter, In
+from cognite.client.data_classes.filters import Filter, In, UnknownFilter
 
 
 @pytest.mark.parametrize(
@@ -25,3 +25,8 @@ from cognite.client.data_classes.filters import Filter, In
 )
 def test_filter_property_case_conversion(user_filter: Filter, expected: dict) -> None:
     assert user_filter.dump(camel_case_property=True) == expected
+
+
+def test_load_empty_filter() -> None:
+    filter = Filter.load({})
+    assert isinstance(filter, UnknownFilter)

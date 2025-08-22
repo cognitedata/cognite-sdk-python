@@ -195,7 +195,7 @@ class Filter(ABC):
         elif (filter_body := filter_.get(InstanceReferences._filter_name)) is not None:
             return InstanceReferences(references=filter_body)
         else:
-            filter_name, filter_body = next(iter(filter_.items()))
+            filter_name, filter_body = next(iter(filter_.items()), ("empty filter", {}))
             return UnknownFilter(filter_name, filter_body)
 
     @abstractmethod
