@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
-from collections.abc import Sequence
 
 from cognite.client.data_classes._base import CogniteObject, CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -324,12 +324,8 @@ class AgentSession:
                 ... ])
         """
         # Call the underlying agents.chat method with current cursor
-        response = self._cognite_client.agents.chat(
-            agent_id=self.agent_id,
-            messages=messages,
-            cursor=self._cursor
-        )
-        
+        response = self._cognite_client.agents.chat(agent_id=self.agent_id, messages=messages, cursor=self._cursor)
+
         # Update the cursor for the next interaction
         self._cursor = response.cursor
 

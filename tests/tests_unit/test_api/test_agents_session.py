@@ -8,8 +8,6 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import Agent, AgentSession, Message
 from cognite.client.data_classes.agents.chat import (
     AgentChatResponse,
-    AgentMessage,
-    TextContent,
 )
 from cognite.client.exceptions import CogniteMissingClientError
 
@@ -93,13 +91,8 @@ class TestAgentSession:
         assert response.text == "Hello! How can I help you today?"
         assert session.cursor == "cursor_12345"  # Cursor should be updated
 
-
-
     def test_session_cursor_management(
-        self,
-        cognite_client: CogniteClient,
-        chat_response_body: dict,
-        followup_response_body: dict
+        self, cognite_client: CogniteClient, chat_response_body: dict, followup_response_body: dict
     ) -> None:
         """Test that cursor is automatically managed across multiple interactions."""
         # Set up mock responses for two consecutive calls
@@ -129,10 +122,7 @@ class TestAgentSession:
         cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
 
         session = cognite_client.agents.start_session("my_agent")
-        messages = [
-            Message("Find temperature sensors"),
-            Message("Show me their recent data")
-        ]
+        messages = [Message("Find temperature sensors"), Message("Show me their recent data")]
         session.chat(messages)
 
         # Verify multiple messages were sent
@@ -146,11 +136,7 @@ class TestAgentStartSession:
     def test_agent_start_session(self, cognite_client: CogniteClient) -> None:
         """Test starting a session from an Agent instance."""
         # Create an agent instance with a cognite client
-        agent = Agent(
-            external_id="my_agent",
-            name="My Agent",
-            description="Test agent"
-        )
+        agent = Agent(external_id="my_agent", name="My Agent", description="Test agent")
         agent._cognite_client = cognite_client
 
         session = agent.start_session()
@@ -162,10 +148,7 @@ class TestAgentStartSession:
 
     def test_agent_start_session_with_cursor(self, cognite_client: CogniteClient) -> None:
         """Test starting a session from an Agent instance with a cursor."""
-        agent = Agent(
-            external_id="my_agent",
-            name="My Agent"
-        )
+        agent = Agent(external_id="my_agent", name="My Agent")
         agent._cognite_client = cognite_client
 
         initial_cursor = "existing_cursor_456"
@@ -176,10 +159,7 @@ class TestAgentStartSession:
 
     def test_agent_start_session_without_client_raises_error(self) -> None:
         """Test that starting a session without a cognite client raises an error."""
-        agent = Agent(
-            external_id="my_agent",
-            name="My Agent"
-        )
+        agent = Agent(external_id="my_agent", name="My Agent")
         # Don't set _cognite_client
 
         with pytest.raises(CogniteMissingClientError):
@@ -187,10 +167,7 @@ class TestAgentStartSession:
 
     def test_agent_start_session_with_none_client_raises_error(self) -> None:
         """Test that starting a session with None cognite client raises an error."""
-        agent = Agent(
-            external_id="my_agent",
-            name="My Agent"
-        )
+        agent = Agent(external_id="my_agent", name="My Agent")
         agent._cognite_client = None
 
         with pytest.raises(CogniteMissingClientError):
@@ -199,10 +176,7 @@ class TestAgentStartSession:
 
 class TestIntegrationWorkflow:
     def test_complete_workflow(
-        self,
-        cognite_client: CogniteClient,
-        chat_response_body: dict,
-        followup_response_body: dict
+        self, cognite_client: CogniteClient, chat_response_body: dict, followup_response_body: dict
     ) -> None:
         """Test the complete workflow as described in the user requirements."""
         # Set up mock responses

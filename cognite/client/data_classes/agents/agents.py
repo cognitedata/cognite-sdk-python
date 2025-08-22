@@ -223,9 +223,9 @@ class Agent(AgentCore):
         from cognite.client.data_classes.agents.chat import AgentSession
         from cognite.client.exceptions import CogniteMissingClientError
 
-        if not hasattr(self, '_cognite_client') or self._cognite_client is None:
+        if not hasattr(self, "_cognite_client") or self._cognite_client is None:
             raise CogniteMissingClientError(self)
-        
+
         return AgentSession(agent_id=self.external_id, cognite_client=self._cognite_client, cursor=cursor)
 
 
