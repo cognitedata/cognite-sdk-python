@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+### Added
+- [alpha] Support for running simulations using routine and model revision external IDs. The `SimulationRunWrite` class now supports two modes: running with `routine_external_id` only, or with both `routine_revision_external_id` and `model_revision_external_id`.
+
 ## [7.81.1] - 2025-08-20
 ### Fixed
 - [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`

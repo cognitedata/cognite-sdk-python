@@ -46,3 +46,27 @@ class TestSimulatorRoutines:
         assert len(routines_asc) > 1
         for i in range(1, len(routines_asc)):
             assert routines_asc[i].created_time >= routines_asc[i - 1].created_time
+
+
+@pytest.mark.usefixtures(
+    "seed_resource_names",
+    "seed_simulator_routine_revisions",
+)
+class TestSimulatorRoutinesRunWithRevisions:
+    def test_run_with_revisions(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+        """Test running a simulation using routine and model revision external IDs."""
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_revision_external_id = f"{routine_external_id}_v1"
+        model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
+
+        # Run simulation using revision external IDs
+        run = cognite_client.simulators.routines.run(
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
+            wait=False,  # Don't wait to avoid timeout in tests
+        )
+
+        assert run is not None
+        assert run.id is not None
+        assert run.routine_revision_external_id == routine_revision_external_id
+        assert run.model_revision_external_id == model_revision_external_id

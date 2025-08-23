@@ -248,13 +248,24 @@ class SimulatorRunsAPI(APIClient):
             SimulationRun | SimulationRunList: Created simulation run(s)
 
         Examples:
-            Create new simulation run:
+            Create new simulation run using routine external ID:
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
                 >>> client = CogniteClient()
                 >>> run = [
                 ...     SimulationRunWrite(
                 ...         routine_external_id="routine1",
+                ...         log_severity="Debug",
+                ...         run_type="external",
+                ...     ),
+                ... ]
+                >>> res = client.simulators.runs.create(run)
+
+            Create new simulation run using routine and model revision external IDs:
+                >>> run = [
+                ...     SimulationRunWrite(
+                ...         routine_revision_external_id="routine_revision1",
+                ...         model_revision_external_id="model_revision1",
                 ...         log_severity="Debug",
                 ...         run_type="external",
                 ...     ),

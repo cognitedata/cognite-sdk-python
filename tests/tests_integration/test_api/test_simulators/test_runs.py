@@ -180,3 +180,83 @@ class TestSimulatorRuns:
         assert get_run_data[0].run_id == created_run[0].id
         assert get_run_data[0].inputs[0].dump() == inputs[0]
         assert get_run_data[0].outputs[0].dump() == outputs[0]
+
+    def test_create_run_with_revisions(
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+    ) -> None:
+        """Test creating a simulation run using routine and model revision external IDs."""
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_revision_external_id = f"{routine_external_id}_v1"
+        model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
+
+        # Create run using revision external IDs
+        created_runs = cognite_client.simulators.runs.create(
+            [
+                SimulationRunWrite(
+                    run_type="external",
+                    routine_revision_external_id=routine_revision_external_id,
+                    model_revision_external_id=model_revision_external_id,
+                )
+            ]
+        )
+
+        assert len(created_runs) == 1
+        assert created_runs[0].routine_revision_external_id == routine_revision_external_id
+        assert created_runs[0].model_revision_external_id == model_revision_external_id
+        assert created_runs[0].id is not None
+
+    @pytest.mark.asyncio
+    async def test_run_with_revisions_wait_and_retrieve(
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+    ) -> None:
+        """Test running a simulation using routine and model revision external IDs with wait."""
+        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_revision_external_id = f"{routine_external_id}_v1"
+        model_revision_external_id = seed_resource_names["simulator_model_revision_external_id"]
+
+        run_task = asyncio.create_task(
+            asyncio.to_thread(
+                lambda: cognite_client.simulators.routines.run(
+                    routine_revision_external_id=routine_revision_external_id,
+                    model_revision_external_id=model_revision_external_id,
+                )
+            )
+        )
+
+        run_to_update: SimulationRun | None = None
+        start_time = time.time()
+
+        # Wait for the run to be created and then emulate it being finished
+        while run_to_update is None and time.time() - start_time < 30:
+            runs_to_update = cognite_client.simulators.runs.list(
+                routine_revision_external_ids=[routine_revision_external_id],
+                model_revision_external_ids=[model_revision_external_id],
+                status="ready",
+                limit=5,
+            )
+            if len(runs_to_update) == 1:
+                run_to_update = runs_to_update[0]
+            else:
+                await asyncio.sleep(1)
+
+        assert run_to_update is not None
+
+        cognite_client.simulators._post(
+            "/simulators/run/callback",
+            json={
+                "items": [
+                    {
+                        "id": run_to_update.id,
+                        "status": "success",
+                    }
+                ]
+            },
+        )
+
+        created_run = await run_task
+
+        retrieved_run = cognite_client.simulators.runs.retrieve(ids=created_run.id)
+        assert retrieved_run is not None
+        assert created_run.id == retrieved_run.id
+        assert retrieved_run.routine_revision_external_id == routine_revision_external_id
+        assert retrieved_run.model_revision_external_id == model_revision_external_id
