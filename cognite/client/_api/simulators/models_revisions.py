@@ -6,9 +6,14 @@ from typing import TYPE_CHECKING, NoReturn, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.simulators.filters import PropertySort, SimulatorModelRevisionsFilter
+from cognite.client.data_classes.simulators.filters import (
+    PropertySort,
+    SimulatorModelRevisionsDataFilter,
+    SimulatorModelRevisionsFilter,
+)
 from cognite.client.data_classes.simulators.models import (
     SimulatorModelRevision,
+    SimulatorModelRevisionDataList,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
 )
@@ -21,6 +26,32 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
+class SimulatorModelRevisionsDataAPI(APIClient):
+    _RESOURCE_PATH = "/simulators/models/revisions/data"
+
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._warning = FeaturePreviewWarning(
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
+        )
+
+        self._RETRIEVE_LIMIT = 1
+
+    def list(self, model_revision_external_id: str | None = None) -> SimulatorModelRevisionDataList:
+        model_revisions_data_filter = SimulatorModelRevisionsDataFilter(
+            model_revision_external_id=model_revision_external_id,
+        )
+        self._warning.warn()
+
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/list",
+            headers={"cdf-version": "alpha"},
+            json={"items": [model_revisions_data_filter.dump()]},
+        )
+        items = response.json()["items"]
+        return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)
+
+
 class SimulatorModelRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models/revisions"
 
@@ -29,6 +60,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
+        self.data = SimulatorModelRevisionsDataAPI(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 100
 
