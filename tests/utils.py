@@ -473,6 +473,21 @@ class FakeCogniteResourceGenerator:
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
+        elif resource_cls.__name__ == "SimulationRunWrite":
+            # SimulationRunWrite requires either routine_external_id alone OR both routine_revision_external_id and model_revision_external_id
+            if self._random.choice([True, False]):
+                # Use routine_external_id only
+                keyword_arguments = {
+                    k: v
+                    for k, v in keyword_arguments.items()
+                    if k not in ["routine_revision_external_id", "model_revision_external_id"]
+                }
+                keyword_arguments["routine_external_id"] = self._random_string(50)
+            else:
+                # Use revision-based parameters
+                keyword_arguments = {k: v for k, v in keyword_arguments.items() if k != "routine_external_id"}
+                keyword_arguments["routine_revision_external_id"] = self._random_string(50)
+                keyword_arguments["model_revision_external_id"] = self._random_string(50)
 
         return resource_cls(*positional_arguments, **keyword_arguments)
 
