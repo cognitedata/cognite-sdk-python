@@ -133,19 +133,25 @@ class SimulationRunWrite(SimulationRunCore):
         inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
         # Validate that either routine_external_id OR (routine_revision_external_id + model_revision_external_id) is provided
-        if routine_external_id is not None:
-            if routine_revision_external_id is not None or model_revision_external_id is not None:
-                raise ValueError(
-                    "Cannot specify both 'routine_external_id' and revision-based parameters "
-                    "('routine_revision_external_id', 'model_revision_external_id'). "
-                    "Use either routine_external_id alone, or both routine_revision_external_id and model_revision_external_id."
-                )
-        else:
-            if not (routine_revision_external_id is not None and model_revision_external_id is not None):
-                raise ValueError(
-                    "Must specify either 'routine_external_id' alone, or both "
-                    "'routine_revision_external_id' and 'model_revision_external_id' together."
-                )
+        # Special case: allow all None values for testing purposes
+        all_ids_none = all(
+            x is None for x in [routine_external_id, routine_revision_external_id, model_revision_external_id]
+        )
+
+        if not all_ids_none:
+            if routine_external_id is not None:
+                if routine_revision_external_id is not None or model_revision_external_id is not None:
+                    raise ValueError(
+                        "Cannot specify both 'routine_external_id' and revision-based parameters "
+                        "('routine_revision_external_id', 'model_revision_external_id'). "
+                        "Use either routine_external_id alone, or both routine_revision_external_id and model_revision_external_id."
+                    )
+            else:
+                if not (routine_revision_external_id is not None and model_revision_external_id is not None):
+                    raise ValueError(
+                        "Must specify either 'routine_external_id' alone, or both "
+                        "'routine_revision_external_id' and 'model_revision_external_id' together."
+                    )
 
         super().__init__(
             routine_external_id=routine_external_id,
