@@ -32,6 +32,8 @@ def runtime_type_checked_method(f: T_Callable) -> T_Callable:
 
 def runtime_type_checked(c: T_Class) -> T_Class:
     for name in dir(c):
-        if not name.startswith("_") or (name == "__init__" and isfunction(getattr(c, name))):
+        if not name.startswith("_") or (
+            (name == "__init__" and isfunction(getattr(c, name))) and callable(getattr(c, name))
+        ):
             setattr(c, name, runtime_type_checked_method(getattr(c, name)))
     return c

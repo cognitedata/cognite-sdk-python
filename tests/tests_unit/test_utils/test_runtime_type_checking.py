@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import overload
+from typing import Any, overload
 
 import pytest
 
@@ -154,3 +154,25 @@ class TestOverloads:
 
         # Technically should raise a CogniteTypeError, but beartype isn't very good with overloads yet
         self.WithOverload().foo(1, "1")
+
+
+class TestTypeCheckSubclasses:
+    class Base:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            super().__init_subclass__(**kwargs)
+            runtime_type_checked(cls)
+
+    class Sub(Base):
+        def foo(self, x: int) -> None: ...
+
+    def test_subclass_is_type_checked(self) -> None:
+        with pytest.raises(
+            CogniteTypeError,
+            match=re.escape(
+                "Method tests.tests_unit.test_utils.test_runtime_type_checking.TestTypeCheckSubclasses.Sub.foo() "
+                "parameter x='1' violates type hint <class 'int'>, as str '1' not instance of int."
+            ),
+        ):
+            self.Sub().foo("1")
+
+        self.Sub().foo(1)
