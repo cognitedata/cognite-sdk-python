@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import Self
 
@@ -40,17 +40,13 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            external_id=resource["externalId"],
-            model_external_id=resource["modelExternalId"],
-            file_id=resource["fileId"],
-            description=resource.get("description"),
-            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
-                resource["externalDependencies"], cognite_client
-            )
+        resource["external_dependencies"] = (
+            SimulatorModelRevisionExternalDependency._load_list(resource["externalDependencies"], cognite_client)
             if "externalDependencies" in resource
-            else None,
+            else None
         )
+        instance = super()._load(resource, cognite_client)
+        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -104,6 +100,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status message of the simulator model revision
         external_dependencies (list[SimulatorModelRevisionExternalDependency] | None): A list of external dependencies for the simulator model revision
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -123,6 +120,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         description: str | None = None,
         status_message: str | None = None,
         external_dependencies: list[SimulatorModelRevisionExternalDependency] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -141,6 +139,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         self.log_id = log_id
         self.status_message = status_message
         self.simulator_external_id = simulator_external_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -164,6 +163,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             )
             if "externalDependencies" in resource
             else None,
+            cognite_client=cognite_client,
         )
 
     def as_write(self) -> SimulatorModelRevisionWrite:
@@ -174,6 +174,9 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             file_id=self.file_id,
             description=self.description,
         )
+
+    def get_data(self) -> SimulatorModelRevisionDataList:
+        return self._cognite_client.simulators.models.revisions.data.list(model_revision_external_id=self.external_id)
 
 
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
@@ -404,3 +407,36 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
     ) -> list[SimulatorModelRevisionExternalDependency]:
         return [cls._load(item, cognite_client) for item in resource]
+
+
+class SimulatorModelRevisionData(CogniteResource):
+    def __init__(
+        self,
+        model_revision_external_id: str,
+        flowsheet: dict[str, Any],
+        info: dict[str, str],
+        created_time: int,
+        last_updated_time: int,
+        data_set_id: int,
+    ) -> None:
+        self.model_revision_external_id = model_revision_external_id
+        self.flowsheet = flowsheet
+        self.info = info
+        self.data_set_id = data_set_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            model_revision_external_id=resource["modelRevisionExternalId"],
+            flowsheet=resource.get("flowsheet"),
+            info=resource.get("info"),
+            data_set_id=resource["dataSetId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+        )
+
+
+class SimulatorModelRevisionDataList(CogniteResourceList[SimulatorModelRevisionData], ExternalIDTransformerMixin):
+    _RESOURCE = SimulatorModelRevisionData
