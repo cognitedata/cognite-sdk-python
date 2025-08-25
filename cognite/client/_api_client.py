@@ -60,6 +60,7 @@ from cognite.client.utils._identifier import (
     SingletonIdentifierSequence,
 )
 from cognite.client.utils._json import JSONDecodeError
+from cognite.client.utils._runtime_type_checking import runtime_type_checked
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -113,6 +114,10 @@ class APIClient:
             )
         ]
     )
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        runtime_type_checked(cls)
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         self._config = config
