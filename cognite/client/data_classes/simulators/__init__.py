@@ -16,9 +16,9 @@ from cognite.client.data_classes.simulators.models import (
 )
 from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
+    SimulationRunList,
     SimulationRunWrite,
     SimulationRunWriteList,
-    SimulatorRunList,
 )
 from cognite.client.data_classes.simulators.simulators import (
     Simulator,
@@ -35,6 +35,7 @@ __all__ = [
     "PropertySort",
     "PropertySort",
     "SimulationRun",
+    "SimulationRunList",
     "SimulationRunWrite",
     "SimulationRunWriteList",
     "Simulator",
@@ -50,7 +51,6 @@ __all__ = [
     "SimulatorModelRevisionsFilter",
     "SimulatorModelWrite",
     "SimulatorModelsFilter",
-    "SimulatorRunList",
     "SimulatorStep",
     "SimulatorStepField",
     "SimulatorStepOption",

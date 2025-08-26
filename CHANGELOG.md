@@ -17,10 +17,26 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.80.3] - 2025-08-19
+## [7.81.3] - 2025-08-26
 ### Added
 - Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
   a custom nonce.
+
+## [7.81.2] - 2025-08-21
+### Changed
+- Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
+
+## [7.81.1] - 2025-08-20
+### Fixed
+- [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
+
+## [7.81.0] - 2025-08-19
+### Added
+- Support for external dependencies in simulator and simulator model revisions resources.
+
+## [7.80.3] - 2025-08-17
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for chat.
 
 ## [7.80.2] - 2025-08-16
 ### Fixed

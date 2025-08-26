@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import warnings
 from collections import UserList
 from collections.abc import Callable, Sequence
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
@@ -214,6 +215,15 @@ class ConcurrencySettings:
             raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
         try:
             executor = _THREAD_POOL_EXECUTOR_SINGLETON
+            # Users often want to test performance with different 'max_workers' settings. Since we use a singleton for
+            # the thread pool executor, the setting can not be changed after initialization, which again leads to users
+            # not seeing any performance difference -> hence we throw a warning:
+            if max_workers != executor._max_workers:
+                warnings.warn(
+                    f"Unable to change `max_workers` after the first API call has been made."
+                    f"(current: {executor._max_workers}, requested {max_workers})",
+                    RuntimeWarning,
+                )
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
