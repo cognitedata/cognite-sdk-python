@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.81.3] - 2025-08-26
+### Added
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
+  a custom nonce.
+
 ## [7.81.2] - 2025-08-21
 ### Changed
 - Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)

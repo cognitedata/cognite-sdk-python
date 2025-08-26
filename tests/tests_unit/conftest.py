@@ -13,7 +13,7 @@ collect_ignore = ["test_api/function_test_resources"]
 
 # TODO: This class-scoped client causes side-effects between tests...
 @pytest.fixture(scope="class")
-def cognite_client():
+def cognite_client() -> CogniteClient:
     cnf = ClientConfig(client_name="any", project="dummy", credentials=Token("bla"))
     yield CogniteClient(cnf)
 

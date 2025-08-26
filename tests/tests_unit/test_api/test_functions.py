@@ -1,4 +1,5 @@
 import io
+import json
 import operator as op
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
 import pytest
+import responses
 from requests import PreparedRequest
 
 from cognite.client import ClientConfig, CogniteClient
@@ -18,6 +20,7 @@ from cognite.client._api.functions import (
 )
 from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import (
+    ClientCredentials,
     FileMetadata,
     Function,
     FunctionCall,
@@ -26,6 +29,7 @@ from cognite.client.data_classes import (
     FunctionList,
     FunctionSchedule,
     FunctionSchedulesList,
+    FunctionScheduleWrite,
     FunctionsLimits,
 )
 from cognite.client.data_classes.functions import FunctionsStatus
@@ -946,6 +950,90 @@ class TestFunctionSchedulesAPI:
         assert isinstance(res, FunctionSchedule)
         expected = mock_function_schedules_response_oidc_client_credentials.calls[1].response.json()["items"][0]
         assert expected == res.dump(camel_case=True)
+
+    @pytest.mark.usefixtures("disable_gzip")
+    @pytest.mark.parametrize(
+        "nonce, client_credentials, expected_call_count, expected_client_id, expected_nonce",
+        [
+            pytest.param(
+                "nonce_direct",
+                ClientCredentials(
+                    client_id="should-not-be-used",
+                    client_secret="should-not-be-used",
+                ),
+                1,
+                None,
+                "nonce_direct",
+                id="First priority nonce",
+            ),
+            pytest.param(
+                None,
+                ClientCredentials("should-be-used", "should-be-used"),
+                2,
+                "should-be-used",
+                "credentials_nonce",
+                id="Second priority client credentials",
+            ),
+            pytest.param(None, None, 2, "client_id", "credentials_nonce", id="Third priority THIS client credentials"),
+        ],
+    )
+    def test_create_schedule_nonce_prioritization(
+        self,
+        nonce: str | None,
+        client_credentials: ClientCredentials | None,
+        expected_call_count: int,
+        expected_client_id: str | None,
+        expected_nonce: str,
+    ) -> None:
+        credentials = MagicMock(spec=OAuthClientCredentials)
+        credentials.client_id = "client_id"
+        credentials.client_secret = "client_secret"
+        credentials.authorization_header.return_value = "Bearer token", "42"
+
+        config = ClientConfig(client_name="test_client", project="dummy_project", credentials=credentials)
+        cognite_client = CogniteClient(config)
+        base_url = f"{config.base_url}/api/v1/projects/{config.project}"
+        schedule = FunctionScheduleWrite(
+            name="my-schedule",
+            cron_expression="*/5 * * * *",
+            function_id=123,
+            nonce=nonce,
+        )
+        with responses.RequestsMock() as rsps:
+            if expected_call_count > 1:
+                rsps.add(
+                    responses.POST,
+                    f"{base_url}/sessions",
+                    status=200,
+                    json={"items": [{"id": 456, "nonce": "credentials_nonce", "status": "READY"}]},
+                )
+            rsps.add(
+                responses.POST,
+                f"{base_url}/functions/schedules",
+                status=200,
+                json={
+                    "items": [
+                        {
+                            "id": 123,
+                            "createdTime": 0,
+                            "lastUpdatedTime": 0,
+                            "when": "Next Monday",
+                            "sessionId": 123,
+                            **schedule.dump(),
+                        }
+                    ]
+                },
+            )
+            result = cognite_client.functions.schedules.create(schedule, client_credentials=client_credentials)
+            assert len(rsps.calls) == expected_call_count
+            if expected_call_count > 1:
+                first_body = json.loads(rsps.calls[0].request.body)
+                assert first_body["items"][0]["clientId"] == expected_client_id
+
+            body = json.loads(rsps.calls[-1].request.body)
+            assert body["items"][0]["nonce"] == expected_nonce
+
+        assert isinstance(result, FunctionSchedule)
 
     def test_create_schedules_with_data(self, mock_function_schedules_response, cognite_client):
         res = cognite_client.functions.schedules.create(
