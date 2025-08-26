@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.82.0] - 2025-08-26
+### Added
+- Added support for specifying `max_text_size` in DMS text properties.
+
 ## [7.81.3] - 2025-08-26
 ### Added
 - Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
