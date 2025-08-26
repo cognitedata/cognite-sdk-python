@@ -1,15 +1,15 @@
 import time
 from json import JSONDecodeError
 from types import MappingProxyType
-from typing import ClassVar
-from unittest.mock import Mock, patch
+from typing import Any, ClassVar
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 import requests
+from authlib.integrations.httpx_client import OAuthError
 
 from cognite.client.credentials import (
     CredentialProvider,
-    OAuth2Error,
     OAuthClientCertificate,
     OAuthClientCredentials,
     OAuthDeviceCode,
@@ -146,7 +146,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_load(self, mock_public_client):
+    def test_load(self, mock_public_client: MagicMock) -> None:
         creds = OAuthDeviceCode.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthDeviceCode)
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
@@ -159,7 +159,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_oauth_discovery_url_device_flow(self, mock_public_client):
+    def test_oauth_discovery_url_device_flow(self, mock_public_client: MagicMock) -> None:
         mock_oidc_response = Mock()
         mock_oidc_response.json.return_value = {
             "device_authorization_endpoint": "https://auth0.example.com/oauth/device/code",
@@ -176,7 +176,7 @@ class TestOAuthDeviceCode:
         }
 
         # Configure http_client to return different responses for GET (discovery) and POST (device code)
-        def http_client_side_effect(url, **kwargs):
+        def http_client_side_effect(url: str, **kwargs: Any) -> Mock:
             if "openid-configuration" in url:
                 return mock_oidc_response
             return mock_device_response
@@ -216,7 +216,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer auth0_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_device_code_msal_response(self, mock_public_client):
+    def test_device_code_msal_response(self, mock_public_client: MagicMock) -> None:
         class NormalizedResponse:
             """Simulate MSAL NormalizedResponse which exposes .text but no .json()."""
 
@@ -245,7 +245,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_oidc_discovery_url_failure_error(self, mock_public_client):
+    def test_oidc_discovery_url_failure_error(self, mock_public_client: MagicMock) -> None:
         mock_public_client().http_client.get.side_effect = requests.exceptions.HTTPError("404 Client Error")
         mock_authority = Mock()
         mock_authority.instance = None
@@ -263,22 +263,22 @@ class TestOAuthDeviceCode:
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_device_flow_missing_endpoint(self, mock_public_client):
+    def test_device_flow_missing_endpoint(self, mock_public_client: MagicMock) -> None:
         mock_public_client().authority = Mock()
         mock_public_client().oauth_discovery_url = None
         mock_public_client().authority.device_authorization_endpoint = None
 
         # Bypass __init__ validation to simulate an object without authority_url or oauth_discovery_url
         creds = object.__new__(OAuthDeviceCode)
-        creds._OAuthDeviceCode__authority_url = None
-        creds._OAuthDeviceCode__oauth_discovery_url = None
-        creds._OAuthDeviceCode__app = mock_public_client()
+        creds._OAuthDeviceCode__authority_url = None  # type: ignore[attr-defined]
+        creds._OAuthDeviceCode__oauth_discovery_url = None  # type: ignore[attr-defined]
+        creds._OAuthDeviceCode__app = mock_public_client()  # type: ignore[attr-defined]
 
         with pytest.raises(CogniteAuthError, match="Unable to determine device authorization endpoint"):
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_device_failed_discovery_error(self, mock_public_client):
+    def test_device_failed_discovery_error(self, mock_public_client: MagicMock) -> None:
         mock_public_client().http_client.get.side_effect = requests.exceptions.HTTPError("404 Client Error")
         mock_authority = Mock()
         mock_authority.instance = None
@@ -297,7 +297,7 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     @pytest.mark.parametrize("error_type", (JSONDecodeError, TypeError, AttributeError))
-    def test_device_discovery_invalid_json(self, mock_public_client, error_type):
+    def test_device_discovery_invalid_json(self, mock_public_client: MagicMock, error_type: type[Exception]) -> None:
         mock_response = Mock()
         mock_response.json.side_effect = error_type("Expecting value", "", 0)
         mock_public_client().http_client.get.return_value = mock_response
@@ -317,7 +317,7 @@ class TestOAuthDeviceCode:
             creds._get_device_authorization_endpoint()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_device_flow_response_invalid_client(self, mock_public_client):
+    def test_device_flow_response_invalid_client(self, mock_public_client: MagicMock) -> None:
         mock_device_response = Mock()
         mock_device_response.json.return_value = {
             "error": "invalid_client",
@@ -335,7 +335,7 @@ class TestOAuthDeviceCode:
             creds._refresh_access_token()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_refresh_token_from_cache(self, mock_public_client):
+    def test_refresh_token_from_cache(self, mock_public_client: MagicMock) -> None:
         # Mock a valid refresh token in cache
         mock_refresh_token = {
             "secret": "refresh_token_secret",
@@ -356,7 +356,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer new_access_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_access_token_from_cache(self, mock_public_client):
+    def test_access_token_from_cache(self, mock_public_client: MagicMock) -> None:
         # Mock no refresh token, but valid access token
         mock_public_client().token_cache.search.side_effect = [
             [],  # No refresh tokens
@@ -431,10 +431,10 @@ class TestOauthClientCredentials:
 
     @patch("cognite.client.credentials.OAuth2Client")
     def test_access_token_not_generated_due_to_error(self, mock_oauth_client):
-        mock_oauth_client().fetch_token.side_effect = OAuth2Error("Invalid client_id parameter value.", status_code=400)
+        mock_oauth_client().fetch_token.side_effect = OAuthError("very_invalid", "Invalid client_id parameter value.")
         with pytest.raises(
             CogniteAuthError,
-            match="Error generating access token: None, 400, Invalid client_id parameter value.",
+            match="Error generating access token: 'very_invalid'. Description: Invalid client_id parameter value.",
         ):
             creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()

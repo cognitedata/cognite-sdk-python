@@ -14,11 +14,10 @@ from types import MappingProxyType
 from typing import Any, Protocol, runtime_checkable
 
 import requests
+from authlib.integrations.httpx_client import OAuth2Client, OAuthError
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
-from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
-from requests_oauthlib import OAuth2Session
 
-from cognite.client.exceptions import CogniteAuthError
+from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
@@ -180,9 +179,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
 
         # 'error_description' includes Windows-style newlines \r\n meant to print nicely. Prettify for exception:
         err_descr = " ".join(credentials.get("error_description", "").splitlines())
-        raise CogniteAuthError(
-            f"Error generating access token! Error: {credentials['error']}, error description: {err_descr}"
-        )
+        raise CogniteOAuthError(credentials["error"], err_descr)
 
     def authorization_header(self) -> tuple[str, str]:
         # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
@@ -504,15 +501,16 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
                     f"Device code: {device_flow_response.get('message', device_flow_response.get('user_code', 'ERROR'))}"
                 )
             else:
-                raise CogniteAuthError(
-                    f"Error initiating device flow: {device_flow_response.get('error')} - {device_flow_response.get('error_description')}"
+                raise CogniteOAuthError(
+                    device_flow_response.get("error", ""), device_flow_response.get("error_description", "")
                 )
+
             if "interval" not in device_flow_response:
                 # Set default interval according to standard
                 device_flow_response["interval"] = 5
             if "expires_in" in device_flow_response:
                 # msal library uses expires_at instead of the standard expires_in
-                device_flow_response["expires_at"] = device_flow_response["expires_in"] + time.time()
+                device_flow_response["expires_at"] = float(device_flow_response["expires_in"]) + time.time()
             # Poll for token
             credentials = self.__app.client.obtain_token_by_device_flow(
                 flow=device_flow_response,
@@ -804,11 +802,13 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: dict[str, Any] = token_custom_args
-        self.__oauth = self._create_oauth_session()
+        self.__oauth = self._create_oauth_client()
         self._validate_token_custom_args()
 
-    def _create_oauth_session(self) -> OAuth2Session:
-        return OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
+    def _create_oauth_client(self) -> OAuth2Client:
+        from cognite.client.config import global_config
+
+        return OAuth2Client(client_id=self.__client_id, scope=self.__scopes, verify=not global_config.disable_ssl)
 
     def _validate_token_custom_args(self) -> None:
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
@@ -821,7 +821,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             )
 
     def __getstate__(self) -> dict[str, Any]:
-        # OAuth2Session is not picklable, temporarily remove:
+        # OAuth2Client is not picklable, temporarily remove:
         oauth_session_tmp, self.__oauth = self.__oauth, None
         state = super().__getstate__()
         self.__oauth = oauth_session_tmp
@@ -829,7 +829,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         super().__setstate__(state)
-        self.__oauth = self._create_oauth_session()
+        self.__oauth = self._create_oauth_client()
 
     @property
     def token_url(self) -> str:
@@ -852,22 +852,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__token_custom_args
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        from cognite.client.config import global_config
-
         try:
             credentials = self.__oauth.fetch_token(
-                token_url=self.__token_url,
-                verify=not global_config.disable_ssl,
-                client_secret=self.__client_secret,
-                **self.__token_custom_args,
+                url=self.__token_url, client_secret=self.__client_secret, **self.__token_custom_args
             )
             # Azure gives 'expires_at' directly, but it's not a part of the RFC:
             return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
-        except OAuth2Error as oauth_err:
-            raise CogniteAuthError(
-                f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
-            ) from oauth_err
+        except OAuthError as err:
+            raise CogniteOAuthError(err.error, err.description) from err
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
