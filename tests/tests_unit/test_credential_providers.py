@@ -3,10 +3,10 @@ from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import pytest
+from authlib.integrations.httpx_client import OAuthError
 
 from cognite.client.credentials import (
     CredentialProvider,
-    OAuth2Error,
     OAuthClientCertificate,
     OAuthClientCredentials,
     OAuthDeviceCode,
@@ -180,10 +180,10 @@ class TestOauthClientCredentials:
 
     @patch("cognite.client.credentials.OAuth2Client")
     def test_access_token_not_generated_due_to_error(self, mock_oauth_client):
-        mock_oauth_client().fetch_token.side_effect = OAuth2Error("Invalid client_id parameter value.", status_code=400)
+        mock_oauth_client().fetch_token.side_effect = OAuthError("very_invalid", "Invalid client_id parameter value.")
         with pytest.raises(
             CogniteAuthError,
-            match="Error generating access token: None, 400, Invalid client_id parameter value.",
+            match="Error generating access token: 'very_invalid'. Description: Invalid client_id parameter value.",
         ):
             creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()
