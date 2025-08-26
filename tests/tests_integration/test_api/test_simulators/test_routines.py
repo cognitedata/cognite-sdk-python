@@ -13,7 +13,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import ResourceN
 )
 class TestSimulatorRoutines:
     def test_list_routines(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        model_unique_external_id = seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
+        model_unique_external_id = seed_resource_names.simulator_model_external_id
 
         routines = cognite_client.simulators.routines.list(model_external_ids=[model_unique_external_id])
 
@@ -24,8 +24,8 @@ class TestSimulatorRoutines:
 
         routine_to_create = SimulatorRoutineWrite(
             name="sdk-test-routine",
-            model_external_id=seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID,
-            simulator_integration_external_id=seed_resource_names.SIMULATOR_INTEGRATION_EXTERNAL_ID,
+            model_external_id=seed_resource_names.simulator_model_external_id,
+            simulator_integration_external_id=seed_resource_names.simulator_integration_external_id,
             external_id=routine_external_id_new,
         )
 
@@ -39,7 +39,7 @@ class TestSimulatorRoutines:
     def test_sort(
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames, seed_simulator_routines
     ) -> None:
-        simulator_integration_unique_external_id = seed_resource_names.SIMULATOR_INTEGRATION_EXTERNAL_ID
+        simulator_integration_unique_external_id = seed_resource_names.simulator_integration_external_id
 
         routines_asc = cognite_client.simulators.routines.list(
             simulator_integration_external_ids=[simulator_integration_unique_external_id],

@@ -24,32 +24,32 @@ random_str = random_string(10)
 
 @dataclass
 class ResourceNames:
-    SIMULATOR_EXTERNAL_ID: str
-    SIMULATOR_INTEGRATION_EXTERNAL_ID: str
-    SIMULATOR_MODEL_EXTERNAL_ID: str
-    SIMULATOR_MODEL_REVISION_EXTERNAL_ID: str
-    SIMULATOR_MODEL_FILE_EXTERNAL_ID: str
-    SIMULATOR_ROUTINE_EXTERNAL_ID: str
-    SIMULATOR_TEST_DATA_SET_ID: str | None
-    SIMULATOR_TEST_DATA_SET_EXTERNAL_ID: str
-    SIMULATOR_MODEL_EXTERNAL_DEPENDENCY_FILE_EXTERNAL_ID: str
+    simulator_external_id: str
+    simulator_integration_external_id: str
+    simulator_model_external_id: str
+    simulator_model_revision_external_id: str
+    simulator_model_file_external_id: str
+    simulator_routine_external_id: str
+    simulator_test_data_set_id: str | None
+    simulator_test_data_set_external_id: str
+    simulator_model_external_dependency_file_external_id: str
 
 
 resources = ResourceNames(
-    SIMULATOR_EXTERNAL_ID="py_sdk_integration_tests",
-    SIMULATOR_INTEGRATION_EXTERNAL_ID="py_sdk_integration_tests_connector",
-    SIMULATOR_MODEL_EXTERNAL_ID=f"py_sdk_integration_tests_model_{random_str}",
-    SIMULATOR_MODEL_REVISION_EXTERNAL_ID=f"py_sdk_integration_tests_model_{random_str}_v1",
-    SIMULATOR_MODEL_FILE_EXTERNAL_ID="ShowerMixer_simulator_model_file_5",
-    SIMULATOR_ROUTINE_EXTERNAL_ID=f"pysdk_routine_{random_str}",
-    SIMULATOR_TEST_DATA_SET_ID=None,
-    SIMULATOR_TEST_DATA_SET_EXTERNAL_ID=data_set_external_id,
-    SIMULATOR_MODEL_EXTERNAL_DEPENDENCY_FILE_EXTERNAL_ID="ExtDependency_simulator_model_external_dependency_file",
+    simulator_external_id="py_sdk_integration_tests",
+    simulator_integration_external_id="py_sdk_integration_tests_connector",
+    simulator_model_external_id=f"py_sdk_integration_tests_model_{random_str}",
+    simulator_model_revision_external_id=f"py_sdk_integration_tests_model_{random_str}_v1",
+    simulator_model_file_external_id="ShowerMixer_simulator_model_file_5",
+    simulator_routine_external_id=f"pysdk_routine_{random_str}",
+    simulator_test_data_set_id=None,
+    simulator_test_data_set_external_id=data_set_external_id,
+    simulator_model_external_dependency_file_external_id="ExtDependency_simulator_model_external_dependency_file",
 )
 
-simulator = {
-    "name": resources.SIMULATOR_EXTERNAL_ID,
-    "externalId": resources.SIMULATOR_EXTERNAL_ID,
+SIMULATOR = {
+    "name": resources.simulator_external_id,
+    "externalId": resources.simulator_external_id,
     "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "modelDependencies": [
@@ -245,11 +245,11 @@ simulator = {
     ],
 }
 
-simulator_integration = {
-    "externalId": resources.SIMULATOR_INTEGRATION_EXTERNAL_ID,
-    "simulatorExternalId": resources.SIMULATOR_EXTERNAL_ID,
+SIMULATOR_INTEGRATION = {
+    "externalId": resources.simulator_integration_external_id,
+    "simulatorExternalId": resources.simulator_external_id,
     "heartbeat": 0,
-    "dataSetId": resources.SIMULATOR_TEST_DATA_SET_ID,
+    "dataSetId": resources.simulator_test_data_set_id,
     "connectorVersion": "1.0.0",
     "simulatorVersion": "1.0.0",
     "licenseStatus": "AVAILABLE",
@@ -258,25 +258,25 @@ simulator_integration = {
     "connectorStatusUpdatedTime": 0,
 }
 
-simulator_model = {
-    "externalId": resources.SIMULATOR_MODEL_EXTERNAL_ID,
-    "simulatorExternalId": resources.SIMULATOR_EXTERNAL_ID,
+SIMULATOR_MODEL = {
+    "externalId": resources.simulator_model_external_id,
+    "simulatorExternalId": resources.simulator_external_id,
     "name": "Test Simulator Model",
     "description": "Test Simulator Model Desc",
-    "dataSetId": resources.SIMULATOR_TEST_DATA_SET_ID,
+    "dataSetId": resources.simulator_test_data_set_id,
     "type": "SteadyState",
 }
 
 
-simulator_routine = {
-    "externalId": resources.SIMULATOR_ROUTINE_EXTERNAL_ID,
-    "modelExternalId": resources.SIMULATOR_MODEL_EXTERNAL_ID,
-    "simulatorIntegrationExternalId": resources.SIMULATOR_INTEGRATION_EXTERNAL_ID,
+SIMULATOR_ROUTINE = {
+    "externalId": resources.simulator_routine_external_id,
+    "modelExternalId": resources.simulator_model_external_id,
+    "simulatorIntegrationExternalId": resources.simulator_integration_external_id,
     "name": "Simulator Routine - Test",
     "description": "Simulator Routine - Description Test",
 }
 
-simulator_routine_revision_config_obj = {
+SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ = {
     "schedule": {"enabled": True, "cronExpression": "*/10 * * * *"},
     "dataSampling": {"enabled": True, "samplingWindow": 15, "granularity": 1, "validationWindow": 5},
     "logicalCheck": [
@@ -332,7 +332,7 @@ simulator_routine_revision_config_obj = {
     ],
 }
 
-simulator_routine_revision_script_obj = [
+SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ = [
     {
         "order": 1,
         "description": "Set Inputs",
@@ -374,11 +374,11 @@ simulator_routine_revision_script_obj = [
     },
 ]
 
-simulator_routine_revision_obj = {
+SIMULATOR_ROUTINE_REVISION_OBJ = {
     "externalId": None,
-    "routineExternalId": resources.SIMULATOR_ROUTINE_EXTERNAL_ID,
-    "configuration": simulator_routine_revision_config_obj,
-    "script": simulator_routine_revision_script_obj,
+    "routineExternalId": resources.simulator_routine_external_id,
+    "configuration": SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ,
+    "script": SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ,
 }
 
 
@@ -392,12 +392,12 @@ def create_simulator_routine_revision(
         routine_external_id=routine_external_id,
         configuration=SimulatorRoutineConfiguration(
             schedule=SimulatorRoutineSchedule(
-                cron_expression=simulator_routine_revision_config_obj["schedule"]["cronExpression"],
+                cron_expression=SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["schedule"]["cronExpression"],
             ),
             data_sampling=SimulatorRoutineDataSampling(
-                sampling_window=simulator_routine_revision_config_obj["dataSampling"]["samplingWindow"],
-                granularity=simulator_routine_revision_config_obj["dataSampling"]["granularity"],
-                validation_window=simulator_routine_revision_config_obj["dataSampling"]["validationWindow"],
+                sampling_window=SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["dataSampling"]["samplingWindow"],
+                granularity=SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["dataSampling"]["granularity"],
+                validation_window=SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["dataSampling"]["validationWindow"],
             ),
             logical_check=[
                 SimulatorRoutineLogicalCheck(
@@ -406,7 +406,7 @@ def create_simulator_routine_revision(
                     value=logical_check["value"],
                     timeseries_external_id=logical_check["timeseriesExternalId"],
                 )
-                for logical_check in simulator_routine_revision_config_obj["logicalCheck"]
+                for logical_check in SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["logicalCheck"]
             ],
             steady_state_detection=[
                 SimulatorRoutineSteadyStateDetection(
@@ -416,7 +416,7 @@ def create_simulator_routine_revision(
                     slope_threshold=steady_state_detection["slopeThreshold"],
                     timeseries_external_id=steady_state_detection["timeseriesExternalId"],
                 )
-                for steady_state_detection in simulator_routine_revision_config_obj["steadyStateDetection"]
+                for steady_state_detection in SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["steadyStateDetection"]
             ],
             inputs=[
                 SimulatorRoutineInputConstant(
@@ -430,7 +430,7 @@ def create_simulator_routine_revision(
                     ),
                     save_timeseries_external_id=input_cfg.get("saveTimeseriesExternalId"),
                 )
-                for input_cfg in simulator_routine_revision_config_obj["inputs"]
+                for input_cfg in SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["inputs"]
             ],
             outputs=[
                 SimulatorRoutineOutput(
@@ -443,7 +443,7 @@ def create_simulator_routine_revision(
                     value_type=output_cfg["valueType"],
                     save_timeseries_external_id=output_cfg.get("saveTimeseriesExternalId"),
                 )
-                for output_cfg in simulator_routine_revision_config_obj["outputs"]
+                for output_cfg in SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ["outputs"]
             ],
         ),
         script=[
@@ -460,6 +460,6 @@ def create_simulator_routine_revision(
                     for step_cfg in stage_cfg["steps"]
                 ],
             )
-            for stage_cfg in simulator_routine_revision_script_obj
+            for stage_cfg in SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ
         ],
     )

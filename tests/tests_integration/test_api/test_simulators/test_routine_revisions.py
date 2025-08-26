@@ -11,11 +11,11 @@ from cognite.client.data_classes.simulators.routine_revisions import (
 )
 from cognite.client.utils._time import timestamp_to_ms
 from tests.tests_integration.test_api.test_simulators.seed.data import (
+    SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ,
+    SIMULATOR_ROUTINE_REVISION_OBJ,
+    SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ,
     ResourceNames,
     create_simulator_routine_revision,
-    simulator_routine_revision_config_obj,
-    simulator_routine_revision_obj,
-    simulator_routine_revision_script_obj,
 )
 
 
@@ -26,7 +26,7 @@ class TestSimulatorRoutineRevisions:
         seed_simulator_routine_revisions: list[dict[str, Any]],
         seed_resource_names: ResourceNames,
     ) -> None:
-        simulator_routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
+        simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
         one_min_ahead = timestamp_to_ms("1m-ahead")
         revisions_by_routine = cognite_client.simulators.routines.revisions.list(
             created_time=TimestampRange(min=0, max=one_min_ahead),
@@ -34,7 +34,7 @@ class TestSimulatorRoutineRevisions:
             all_versions=True,
         )
         assert len(revisions_by_routine) == 2
-        model_external_id = seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
+        model_external_id = seed_resource_names.simulator_model_external_id
         revisions_by_model: list[SimulatorRoutineRevision] = []
 
         for revision in cognite_client.simulators.routines.revisions(
@@ -59,7 +59,7 @@ class TestSimulatorRoutineRevisions:
         seed_rev2 = seed_simulator_routine_revisions[0]
 
         last_revision = revisions_by_model[1]
-        assert last_revision.external_id == seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID + "_v2"
+        assert last_revision.external_id == seed_resource_names.simulator_routine_external_id + "_v2"
 
         last_revision_script_json = [item.dump() for item in last_revision.script]
         assert last_revision_script_json == seed_rev2["script"]
@@ -77,7 +77,7 @@ class TestSimulatorRoutineRevisions:
         seed_simulator_routine_revisions: list[dict[str, Any]],
         seed_resource_names: ResourceNames,
     ) -> None:
-        simulator_routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
+        simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
         revisions_all = cognite_client.simulators.routines.revisions.list(
             routine_external_ids=[simulator_routine_external_id], all_versions=True
         )
@@ -100,7 +100,7 @@ class TestSimulatorRoutineRevisions:
         seed_simulator_routines: dict[str, Any],
         seed_resource_names: ResourceNames,
     ):
-        routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
+        routine_external_id = seed_resource_names.simulator_routine_external_id
 
         revisions = cognite_client.simulators.routines.revisions.create(
             [
@@ -110,7 +110,7 @@ class TestSimulatorRoutineRevisions:
                 ),
                 SimulatorRoutineRevisionWrite.load(
                     {
-                        **simulator_routine_revision_obj,
+                        **SIMULATOR_ROUTINE_REVISION_OBJ,
                         "externalId": f"{routine_external_id}_1_v1",
                         "routineExternalId": f"{routine_external_id}_1",
                     }
@@ -122,8 +122,8 @@ class TestSimulatorRoutineRevisions:
         revision_1 = revisions[0]
         assert revision_1 is not None
         assert revision_1.external_id == f"{routine_external_id}_v3"
-        assert revision_1.configuration.dump() == simulator_routine_revision_config_obj
-        assert [item.dump(camel_case=True) for item in revision_1.script] == simulator_routine_revision_script_obj
+        assert revision_1.configuration.dump() == SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ
+        assert [item.dump(camel_case=True) for item in revision_1.script] == SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ
         assert revision_1.created_time
         assert revision_1.created_time > int(time.time() - 60) * 1000
 
