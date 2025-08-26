@@ -301,6 +301,15 @@ class CogniteMissingClientError(CogniteException):
 class CogniteAuthError(CogniteException): ...
 
 
+class CogniteOAuthError(CogniteAuthError):
+    def __init__(self, error: str, description: str) -> None:
+        self.error = error
+        self.description = description
+
+    def __str__(self) -> str:
+        return f"Error generating access token: {self.error!r}. Description: {self.description}"
+
+
 class CogniteAssetHierarchyError(CogniteException):
     """Cognite Asset Hierarchy validation Error.
 
