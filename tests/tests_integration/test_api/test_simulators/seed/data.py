@@ -24,41 +24,32 @@ random_str = random_string(10)
 
 @dataclass
 class ResourceNames:
-    simulator_external_id: str
-    simulator_integration_external_id: str
-    simulator_model_external_id: str
-    simulator_model_revision_external_id: str
-    simulator_model_file_external_id: str
-    simulator_routine_external_id: str
-    simulator_test_data_set_id: str | None
-    simulator_test_data_set_external_id: str
+    SIMULATOR_EXTERNAL_ID: str
+    SIMULATOR_INTEGRATION_EXTERNAL_ID: str
+    SIMULATOR_MODEL_EXTERNAL_ID: str
+    SIMULATOR_MODEL_REVISION_EXTERNAL_ID: str
+    SIMULATOR_MODEL_FILE_EXTERNAL_ID: str
+    SIMULATOR_ROUTINE_EXTERNAL_ID: str
+    SIMULATOR_TEST_DATA_SET_ID: str | None
+    SIMULATOR_TEST_DATA_SET_EXTERNAL_ID: str
+    SIMULATOR_MODEL_EXTERNAL_DEPENDENCY_FILE_EXTERNAL_ID: str
 
 
 resources = ResourceNames(
-    simulator_external_id="py_sdk_integration_tests",
-    simulator_integration_external_id="py_sdk_integration_tests_connector",
-    simulator_model_external_id=f"py_sdk_integration_tests_model_{random_str}",
-    simulator_model_revision_external_id=f"py_sdk_integration_tests_model_{random_str}_v1",
-    simulator_model_file_external_id="ShowerMixer_simulator_model_file_5",
-    simulator_routine_external_id=f"pysdk_routine_{random_str}",
-    simulator_test_data_set_id=None,
-    simulator_test_data_set_external_id=data_set_external_id,
+    SIMULATOR_EXTERNAL_ID="py_sdk_integration_tests",
+    SIMULATOR_INTEGRATION_EXTERNAL_ID="py_sdk_integration_tests_connector",
+    SIMULATOR_MODEL_EXTERNAL_ID=f"py_sdk_integration_tests_model_{random_str}",
+    SIMULATOR_MODEL_REVISION_EXTERNAL_ID=f"py_sdk_integration_tests_model_{random_str}_v1",
+    SIMULATOR_MODEL_FILE_EXTERNAL_ID="ShowerMixer_simulator_model_file_5",
+    SIMULATOR_ROUTINE_EXTERNAL_ID=f"pysdk_routine_{random_str}",
+    SIMULATOR_TEST_DATA_SET_ID=None,
+    SIMULATOR_TEST_DATA_SET_EXTERNAL_ID=data_set_external_id,
+    SIMULATOR_MODEL_EXTERNAL_DEPENDENCY_FILE_EXTERNAL_ID="ExtDependency_simulator_model_external_dependency_file",
 )
-resource_names = {
-    "simulator_external_id": "py_sdk_integration_tests",
-    "simulator_integration_external_id": "py_sdk_integration_tests_connector",
-    "simulator_model_external_id": f"py_sdk_integration_tests_model_{random_str}",
-    "simulator_model_revision_external_id": f"py_sdk_integration_tests_model_{random_str}_v1",
-    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
-    "simulator_model_external_dependency_file_external_id": "ExtDependency_simulator_model_external_dependency_file",
-    "simulator_routine_external_id": f"pysdk_routine_{random_str}",
-    "simulator_test_data_set_id": None,
-    "simulator_test_data_set_external_id": data_set_external_id,
-}
 
 simulator = {
-    "name": resources.simulator_external_id,
-    "externalId": resources.simulator_external_id,
+    "name": resources.SIMULATOR_EXTERNAL_ID,
+    "externalId": resources.SIMULATOR_EXTERNAL_ID,
     "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "modelDependencies": [
@@ -255,10 +246,10 @@ simulator = {
 }
 
 simulator_integration = {
-    "externalId": resources.simulator_integration_external_id,
-    "simulatorExternalId": resources.simulator_external_id,
+    "externalId": resources.SIMULATOR_INTEGRATION_EXTERNAL_ID,
+    "simulatorExternalId": resources.SIMULATOR_EXTERNAL_ID,
     "heartbeat": 0,
-    "dataSetId": resources.simulator_test_data_set_id,
+    "dataSetId": resources.SIMULATOR_TEST_DATA_SET_ID,
     "connectorVersion": "1.0.0",
     "simulatorVersion": "1.0.0",
     "licenseStatus": "AVAILABLE",
@@ -268,19 +259,19 @@ simulator_integration = {
 }
 
 simulator_model = {
-    "externalId": resources.simulator_model_external_id,
-    "simulatorExternalId": resources.simulator_external_id,
+    "externalId": resources.SIMULATOR_MODEL_EXTERNAL_ID,
+    "simulatorExternalId": resources.SIMULATOR_EXTERNAL_ID,
     "name": "Test Simulator Model",
     "description": "Test Simulator Model Desc",
-    "dataSetId": resources.simulator_test_data_set_id,
+    "dataSetId": resources.SIMULATOR_TEST_DATA_SET_ID,
     "type": "SteadyState",
 }
 
 
 simulator_routine = {
-    "externalId": resources.simulator_routine_external_id,
-    "modelExternalId": resources.simulator_model_external_id,
-    "simulatorIntegrationExternalId": resources.simulator_integration_external_id,
+    "externalId": resources.SIMULATOR_ROUTINE_EXTERNAL_ID,
+    "modelExternalId": resources.SIMULATOR_MODEL_EXTERNAL_ID,
+    "simulatorIntegrationExternalId": resources.SIMULATOR_INTEGRATION_EXTERNAL_ID,
     "name": "Simulator Routine - Test",
     "description": "Simulator Routine - Description Test",
 }
@@ -385,7 +376,7 @@ simulator_routine_revision_script_obj = [
 
 simulator_routine_revision_obj = {
     "externalId": None,
-    "routineExternalId": resources.simulator_routine_external_id,
+    "routineExternalId": resources.SIMULATOR_ROUTINE_EXTERNAL_ID,
     "configuration": simulator_routine_revision_config_obj,
     "script": simulator_routine_revision_script_obj,
 }

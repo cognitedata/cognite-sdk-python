@@ -26,7 +26,7 @@ class TestSimulatorModels:
     def test_list_models(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         models = cognite_client.simulators.models.list(
             limit=5,
-            simulator_external_ids=[seed_resource_names.simulator_external_id],
+            simulator_external_ids=[seed_resource_names.SIMULATOR_EXTERNAL_ID],
         )
 
         model_ids = []
@@ -41,18 +41,18 @@ class TestSimulatorModels:
         assert len(models) > 0
 
     def test_retrieve_model(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        model_external_id = seed_resource_names.simulator_model_external_id
+        model_external_id = seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
         model = cognite_client.simulators.models.retrieve(external_ids=model_external_id)
         assert model is not None
         assert model.external_id == model_external_id
         assert model.created_time > 0
         assert model.last_updated_time >= model.created_time
         assert model.type == "SteadyState"
-        assert model.data_set_id == seed_resource_names.simulator_test_data_set_id
+        assert model.data_set_id == seed_resource_names.SIMULATOR_TEST_DATA_SET_ID
         assert model.name == "Test Simulator Model"
 
     def test_list_model_revisions(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        model_external_id = seed_resource_names.simulator_model_external_id
+        model_external_id = seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
 
         revisions = cognite_client.simulators.models.revisions.list(
             limit=5,
@@ -72,7 +72,7 @@ class TestSimulatorModels:
     def test_list_model_revisions_filtering_all_versions(
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
-        model_external_id = seed_resource_names.simulator_model_external_id
+        model_external_id = seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
         revisions_all_versions = cognite_client.simulators.models.revisions.list(
             all_versions=True,
             model_external_ids=[model_external_id],
@@ -81,7 +81,7 @@ class TestSimulatorModels:
         )
         revisions_all_versions_external_ids = [revision.external_id for revision in revisions_all_versions]
         revisions_default = cognite_client.simulators.models.revisions.list(
-            model_external_ids=[seed_resource_names.simulator_model_external_id]
+            model_external_ids=[seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID]
         )
 
         assert len(revisions_default) == 1
@@ -93,13 +93,13 @@ class TestSimulatorModels:
     ) -> None:
         revisions_asc = cognite_client.simulators.models.revisions.list(
             sort=PropertySort(order="asc", property="createdTime"),
-            model_external_ids=[seed_resource_names.simulator_model_external_id],
+            model_external_ids=[seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID],
             all_versions=True,
         )
 
         revisions_desc = cognite_client.simulators.models.revisions.list(
             sort=PropertySort(order="desc", property="createdTime"),
-            model_external_ids=[seed_resource_names.simulator_model_external_id],
+            model_external_ids=[seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID],
             all_versions=True,
         )
         assert len(revisions_asc) > 0
@@ -108,10 +108,10 @@ class TestSimulatorModels:
         assert revisions_desc[0].created_time == revisions_asc[-1].created_time
 
     def test_retrieve_model_revision(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        model_revision_external_id = seed_resource_names.simulator_model_revision_external_id
+        model_revision_external_id = seed_resource_names.SIMULATOR_MODEL_REVISION_EXTERNAL_ID
         model_revision = cognite_client.simulators.models.revisions.retrieve(external_ids=model_revision_external_id)
         assert model_revision is not None
-        assert model_revision.model_external_id == seed_resource_names.simulator_model_external_id
+        assert model_revision.model_external_id == seed_resource_names.SIMULATOR_MODEL_EXTERNAL_ID
 
     @pytest.mark.usefixtures("seed_model_revision_file", "seed_resource_names")
     def test_create_model_and_revisions(
@@ -125,16 +125,16 @@ class TestSimulatorModels:
         models_to_create = [
             SimulatorModelWrite(
                 name="sdk-test-model1",
-                simulator_external_id=seed_resource_names.simulator_external_id,
+                simulator_external_id=seed_resource_names.SIMULATOR_EXTERNAL_ID,
                 external_id=model_external_id_1,
-                data_set_id=seed_resource_names.simulator_test_data_set_id,
+                data_set_id=seed_resource_names.SIMULATOR_TEST_DATA_SET_ID,
                 type="SteadyState",
             ),
             SimulatorModelWrite(
                 name="sdk-test-model2",
-                simulator_external_id=seed_resource_names.simulator_external_id,
+                simulator_external_id=seed_resource_names.SIMULATOR_EXTERNAL_ID,
                 external_id=model_external_id_2,
-                data_set_id=seed_resource_names.simulator_test_data_set_id,
+                data_set_id=seed_resource_names.SIMULATOR_TEST_DATA_SET_ID,
                 type="SteadyState",
             ),
         ]
@@ -199,15 +199,15 @@ class TestSimulatorModels:
         self,
         cognite_client: CogniteClient,
         seed_model_revision_file: FileMetadata,
-        seed_resource_names,
+        seed_resource_names: ResourceNames,
     ) -> None:
         try:
             model_external_id = random_string(10)
-            data_set_id = seed_resource_names["simulator_test_data_set_id"]
+            data_set_id = seed_resource_names.SIMULATOR_TEST_DATA_SET_ID
             models_to_create = [
                 SimulatorModelWrite(
                     name="sdk-test-model1",
-                    simulator_external_id=seed_resource_names["simulator_external_id"],
+                    simulator_external_id=seed_resource_names.SIMULATOR_EXTERNAL_ID,
                     external_id=model_external_id,
                     data_set_id=data_set_id,
                     type="SteadyState",
@@ -223,7 +223,7 @@ class TestSimulatorModels:
             seed_external_dependency_file = upload_file(
                 cognite_client,
                 filename="ExtDependency.xml",
-                external_id=seed_resource_names["simulator_model_external_dependency_file_external_id"],
+                external_id=seed_resource_names.SIMULATOR_MODEL_EXTERNAL_DEPENDENCY_FILE_EXTERNAL_ID,
                 data_set_id=data_set_id,
             )
 
@@ -259,9 +259,9 @@ class TestSimulatorModels:
         model_external_id = random_string(10)
         models_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
-            simulator_external_id=seed_resource_names.simulator_external_id,
+            simulator_external_id=seed_resource_names.SIMULATOR_EXTERNAL_ID,
             external_id=model_external_id,
-            data_set_id=seed_resource_names.simulator_test_data_set_id,
+            data_set_id=seed_resource_names.SIMULATOR_TEST_DATA_SET_ID,
             type="SteadyState",
         )
 

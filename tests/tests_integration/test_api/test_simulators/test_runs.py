@@ -17,7 +17,7 @@ from tests.tests_integration.test_api.test_simulators.seed.data import ResourceN
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
     def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
+        routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
             created_runs = cognite_client.simulators.runs.create(
@@ -55,7 +55,7 @@ class TestSimulatorRuns:
     async def test_run_with_wait_and_retrieve(
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
+        routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
 
         run_task = asyncio.create_task(
             asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
@@ -110,7 +110,7 @@ class TestSimulatorRuns:
     def test_create_run(
         self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names: ResourceNames
     ) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
+        routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
         created_runs = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
@@ -124,7 +124,7 @@ class TestSimulatorRuns:
         assert created_runs[0].id is not None
 
     def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
-        routine_external_id = seed_resource_names.simulator_routine_external_id
+        routine_external_id = seed_resource_names.SIMULATOR_ROUTINE_EXTERNAL_ID
         created_run = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(

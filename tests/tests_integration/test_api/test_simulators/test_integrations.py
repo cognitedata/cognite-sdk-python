@@ -35,13 +35,13 @@ class TestSimulatorIntegrations:
         all_integrations = cognite_client.simulators.integrations.list()
         active_integrations = cognite_client.simulators.integrations.list(active=True)
         filtered_integrations = cognite_client.simulators.integrations.list(
-            simulator_external_ids=[seed_resource_names.simulator_external_id],
+            simulator_external_ids=[seed_resource_names.SIMULATOR_EXTERNAL_ID],
         )
         assert len(all_integrations) > 0
         assert len(active_integrations) > 0
         assert len(filtered_integrations) > 0
 
-        item = filtered_integrations.get(external_id=seed_resource_names.simulator_integration_external_id)
+        item = filtered_integrations.get(external_id=seed_resource_names.SIMULATOR_INTEGRATION_EXTERNAL_ID)
         assert item is not None
         assert item.active is True
         assert item.created_time is not None
@@ -59,7 +59,7 @@ class TestSimulatorIntegrations:
         test_integration = simulator_integration.copy()
         test_integration["heartbeat"] = int(time.time() * 1000)
         test_integration["externalId"] = random_string(50)
-        test_integration["dataSetId"] = seed_resource_names.simulator_test_data_set_id
+        test_integration["dataSetId"] = seed_resource_names.SIMULATOR_TEST_DATA_SET_ID
 
         try:
             cognite_client.simulators._post("/simulators/integrations", json={"items": [test_integration]})
@@ -72,4 +72,4 @@ class TestSimulatorIntegrations:
             all_integrations = cognite_client.simulators.integrations.list(limit=None)
             assert all_integrations.get(external_id=test_integration["externalId"]) is None
         finally:
-            cleanup_inactive_integrations(cognite_client, seed_resource_names.simulator_integration_external_id)
+            cleanup_inactive_integrations(cognite_client, seed_resource_names.SIMULATOR_INTEGRATION_EXTERNAL_ID)
