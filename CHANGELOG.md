@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.81.4] - 2025-08-26
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
 ## [7.81.3] - 2025-08-26
 ### Added
 - Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 

@@ -450,7 +450,7 @@ class FilesAPI(APIClient):
         """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
-            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            path (str): Path to the file you wish to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | None): Instance ID of the file.
         Returns:
@@ -464,8 +464,9 @@ class FilesAPI(APIClient):
                     fh = fh.read()
                 file_metadata = self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
             return file_metadata
-
-        raise ValueError(f"The path '{path}' must exist and be a file")
+        if os.path.isdir(path):
+            raise IsADirectoryError(f"The path '{path}' is a directory, you may try to use the upload method instead")
+        raise FileNotFoundError(f"No such file or directory: '{path}'")
 
     def upload(
         self,
