@@ -11,20 +11,11 @@ from cognite.client.credentials import Token
 collect_ignore = ["test_api/function_test_resources"]
 
 
-@pytest.fixture(scope="session")
-def client_config() -> ClientConfig:
-    """Fixture to provide a CogniteClient configuration."""
-    return ClientConfig(
-        client_name="test_client",
-        project="dummy_project",
-        credentials=Token("dummy_token"),
-    )
-
-
 # TODO: This class-scoped client causes side-effects between tests...
 @pytest.fixture(scope="class")
-def cognite_client(client_config: ClientConfig) -> CogniteClient:
-    yield CogniteClient(client_config)
+def cognite_client() -> CogniteClient:
+    cnf = ClientConfig(client_name="any", project="dummy", credentials=Token("bla"))
+    yield CogniteClient(cnf)
 
 
 @pytest.fixture(scope="session")
