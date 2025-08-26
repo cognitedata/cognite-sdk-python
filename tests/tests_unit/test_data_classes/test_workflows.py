@@ -19,6 +19,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecutionDetailed,
     WorkflowIds,
     WorkflowTask,
+    WorkflowTaskExecution,
     WorkflowTaskOutput,
     WorkflowVersionId,
 )
@@ -248,3 +249,108 @@ class TestWorkflowTask:
     def test_serialization(self, raw: dict):
         loaded = WorkflowTask._load(raw)
         assert loaded.dump() == raw
+
+
+class TestWorkflowTaskExecution:
+    def test_load_with_parent_task_external_id(self):
+        """Test loading WorkflowTaskExecution from JSON with parentTaskExternalId field."""
+        raw_data = {
+            "id": "task-123",
+            "externalId": "child-task",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {"function": {"externalId": "my-function"}, "asyncComplete": False},
+            "output": {"callId": 12345, "functionId": 67890, "response": {"result": "success"}},
+            "startTime": 1696240547972,
+            "endTime": 1696240548972,
+            "parentTaskExternalId": "parent-task",
+        }
+
+        task_execution = WorkflowTaskExecution._load(raw_data)
+
+        assert task_execution.id == "task-123"
+        assert task_execution.external_id == "child-task"
+        assert task_execution.status == "completed"
+        assert task_execution.parent_task_external_id == "parent-task"
+
+    def test_load_without_parent_task_external_id(self):
+        """Test loading WorkflowTaskExecution from JSON without parentTaskExternalId field."""
+        raw_data = {
+            "id": "task-456",
+            "externalId": "regular-task",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {"function": {"externalId": "my-function"}, "asyncComplete": False},
+            "output": {"callId": 54321, "functionId": 98765, "response": {"result": "success"}},
+            "startTime": 1696240547972,
+            "endTime": 1696240548972,
+        }
+
+        task_execution = WorkflowTaskExecution._load(raw_data)
+
+        assert task_execution.id == "task-456"
+        assert task_execution.external_id == "regular-task"
+        assert task_execution.status == "completed"
+        assert task_execution.parent_task_external_id is None
+
+    def test_dump_with_parent_task_external_id(self):
+        """Test dumping WorkflowTaskExecution to JSON with parentTaskExternalId field."""
+        task_execution = WorkflowTaskExecution(
+            id="task-789",
+            external_id="sub-workflow-task",
+            status="completed",
+            input=FunctionTaskParameters(external_id="test-function"),
+            output=FunctionTaskOutput(call_id=11111, function_id=22222, response={"data": "test"}),
+            parent_task_external_id="main-workflow-task",
+        )
+
+        dumped = task_execution.dump(camel_case=True)
+        assert dumped["parentTaskExternalId"] == "main-workflow-task"
+
+        dumped_snake = task_execution.dump(camel_case=False)
+        assert dumped_snake["parent_task_external_id"] == "main-workflow-task"
+
+    def test_dump_without_parent_task_external_id(self):
+        """Test dumping WorkflowTaskExecution to JSON without parentTaskExternalId field."""
+        task_execution = WorkflowTaskExecution(
+            id="task-000",
+            external_id="standalone-task",
+            status="completed",
+            input=FunctionTaskParameters(external_id="test-function"),
+            output=FunctionTaskOutput(call_id=33333, function_id=44444, response={"data": "test"}),
+        )
+
+        dumped = task_execution.dump(camel_case=True)
+        # When None, it should still be included in the dump with null value
+        assert "parentTaskExternalId" in dumped
+        assert dumped["parentTaskExternalId"] is None
+
+        dumped_snake = task_execution.dump(camel_case=False)
+        assert "parent_task_external_id" in dumped_snake
+        assert dumped_snake["parent_task_external_id"] is None
+
+    def test_roundtrip_serialization_with_parent_task(self):
+        """Test that we can load and dump with consistent results for sub workflow tasks."""
+        original_data = {
+            "id": "subflow-task-123",
+            "externalId": "dynamic-subtask",
+            "status": "COMPLETED",
+            "taskType": "function",
+            "input": {"function": {"externalId": "subtask-function"}, "asyncComplete": False},
+            "output": {"callId": 99999, "functionId": 88888, "response": {"subtask_result": "done"}},
+            "startTime": 1696240547972,
+            "endTime": 1696240548972,
+            "parentTaskExternalId": "dynamic-parent-task",
+        }
+
+        # Load from original data
+        task_execution = WorkflowTaskExecution._load(original_data)
+
+        # Dump back to dict
+        dumped = task_execution.dump(camel_case=True)
+
+        # Key fields should match
+        assert dumped["id"] == original_data["id"]
+        assert dumped["externalId"] == original_data["externalId"]
+        assert dumped["parentTaskExternalId"] == original_data["parentTaskExternalId"]
+        assert dumped["status"] == "COMPLETED"  # Status gets uppercased in dump

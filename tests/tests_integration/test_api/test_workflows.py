@@ -572,6 +572,103 @@ class TestWorkflowExecutions:
         retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
         assert retried_workflow_execution.status == "running"
 
+    def test_parent_task_external_id_in_subworkflow_tasks(
+        self,
+        cognite_client: CogniteClient,
+        new_workflow: Workflow,
+    ) -> None:
+        """Test that tasks from sub-workflows have parent_task_external_id populated correctly."""
+        subworkflow_version = WorkflowVersionUpsert(
+            workflow_external_id=new_workflow.external_id,
+            version="subworkflow-test",
+            workflow_definition=WorkflowDefinitionUpsert(
+                tasks=[
+                    WorkflowTask(
+                        external_id="main_subworkflow",
+                        parameters=SubworkflowTaskParameters(
+                            tasks=[
+                                WorkflowTask(
+                                    external_id="sub_task_1",
+                                    parameters=CDFTaskParameters(
+                                        resource_path="/timeseries",
+                                        method="GET",
+                                    ),
+                                ),
+                                WorkflowTask(
+                                    external_id="sub_task_2",
+                                    parameters=CDFTaskParameters(
+                                        resource_path="/assets",
+                                        method="GET",
+                                    ),
+                                ),
+                            ]
+                        ),
+                    ),
+                    WorkflowTask(
+                        external_id="regular_task",
+                        parameters=CDFTaskParameters(
+                            resource_path="/events",
+                            method="GET",
+                        ),
+                    ),
+                ]
+            ),
+        )
+
+        created_version = None
+        try:
+            # Create the workflow version
+            created_version = cognite_client.workflows.versions.upsert(subworkflow_version)
+
+            # Execute the workflow
+            execution = cognite_client.workflows.executions.run(
+                created_version.workflow_external_id,
+                created_version.version,
+            )
+
+            # Wait for completion (with timeout)
+            total_sleep = 0.0
+            while execution.status == "running" and total_sleep < 30:
+                time.sleep(1)
+                total_sleep += 1
+                execution = cognite_client.workflows.executions.retrieve_detailed(execution.id).as_execution()
+
+            # Get detailed execution with task executions
+            execution_detailed = cognite_client.workflows.executions.retrieve_detailed(execution.id)
+
+            # Verify we have executed tasks
+            assert len(execution_detailed.executed_tasks) > 0
+
+            # Check that sub-workflow tasks have correct parent_task_external_id
+            subworkflow_tasks = [
+                task for task in execution_detailed.executed_tasks if task.external_id in ["sub_task_1", "sub_task_2"]
+            ]
+
+            # Should have found our sub-workflow tasks
+            assert len(subworkflow_tasks) >= 1, "Expected to find sub-workflow tasks in execution"
+
+            for subtask in subworkflow_tasks:
+                # Tasks from subworkflow should have parent_task_external_id set to the subworkflow's external_id
+                assert subtask.parent_task_external_id == "main_subworkflow", (
+                    f"Expected subtask '{subtask.external_id}' to have parent_task_external_id='main_subworkflow', "
+                    f"but got '{subtask.parent_task_external_id}'"
+                )
+
+            # Regular tasks should NOT have parent_task_external_id set
+            regular_tasks = [task for task in execution_detailed.executed_tasks if task.external_id == "regular_task"]
+
+            if regular_tasks:
+                regular_task = regular_tasks[0]
+                assert regular_task.parent_task_external_id is None, (
+                    f"Expected regular task '{regular_task.external_id}' to have parent_task_external_id=None, "
+                    f"but got '{regular_task.parent_task_external_id}'"
+                )
+
+        finally:
+            # Clean up
+            if created_version is not None:
+                cognite_client.workflows.versions.delete(created_version.as_id(), ignore_unknown_ids=True)
+
 
 class TestWorkflowTriggers:
     def test_create_update_scheduled_trigger(

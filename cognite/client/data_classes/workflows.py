@@ -790,6 +790,7 @@ class WorkflowTaskExecution(CogniteObject):
         start_time (int | None): The start time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         end_time (int | None): The end time of the task execution. Unix timestamp in milliseconds. Defaults to None.
         reason_for_incompletion (str | None): Provides the reason if the workflow did not complete successfully. Defaults to None.
+        parent_task_external_id (str | None): The external ID of the parent task. Defaults to None.
     """
 
     def __init__(
@@ -803,6 +804,7 @@ class WorkflowTaskExecution(CogniteObject):
         start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
+        parent_task_external_id: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -813,6 +815,7 @@ class WorkflowTaskExecution(CogniteObject):
         self.start_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
+        self.parent_task_external_id = parent_task_external_id
 
     @property
     def task_type(self) -> ValidTaskType:
@@ -830,6 +833,7 @@ class WorkflowTaskExecution(CogniteObject):
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
             reason_for_incompletion=resource.get("reasonForIncompletion"),
+            parent_task_external_id=resource.get("parentTaskExternalId"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
