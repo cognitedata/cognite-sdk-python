@@ -75,10 +75,10 @@ logging on and off by setting the :code:`debug` attribute on the :ref:`ClientCon
 
 HTTP Request logging
 --------------------
-Internally this library uses the `requests <https://pypi.org/project/requests/>`_ library to perform network calls to the Cognite API service endpoints.
-The ``requests`` library is in turn built on `urllib3 <https://pypi.org/project/urllib3/>`_, which means that you can enable DEBUG level logging for
-the ``urllib3`` module to log HTTP requests to and from the Cognite API.
+Internally this library uses the ``httpx`` library to perform network calls to the Cognite API service endpoints. For authentication and
+token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
+the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
 
-Please be advised that doing so may cause sensitive information such as authentication credentials and sensitive
-data to be logged, and this is not recommended in production environments, or where credentials cannot be easily disabled or rotated, or where
-log data may be accessed by others.
+If you are enabling DEBUG level logging, please be advised that requests going through ``urllib3`` will not be sanitized at all, meaning
+sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not recommended in production
+environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.
