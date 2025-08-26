@@ -1261,8 +1261,8 @@ class FunctionSchedulesAPI(APIClient):
 
         Note:
             There are several ways to authenticate the function schedule — the order of priority is as follows:
-                1. nonce
-                2. client_credentials is provided
+                1. ``nonce`` (if provided in the ``FunctionScheduleWrite`` object)
+                2. ``client_credentials`` (if provided)
                 3. The credentials of *this* CogniteClient.
 
         Warning:
