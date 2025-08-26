@@ -465,8 +465,8 @@ class FilesAPI(APIClient):
                 file_metadata = self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
             return file_metadata
         if os.path.isdir(path):
-            raise IsADirectoryError(f"The path '{path}' is a directory, you may try to use the upload method instead")
-        raise FileNotFoundError(f"No such file or directory: '{path}'")
+            raise IsADirectoryError(path)
+        raise FileNotFoundError(path)
 
     def upload(
         self,
