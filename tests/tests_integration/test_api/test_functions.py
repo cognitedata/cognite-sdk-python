@@ -198,3 +198,25 @@ class TestFunctionSchedulesAPI:
         with pytest.raises(CogniteNotFoundError):
             cognite_client.functions.schedules.retrieve(id=[123])
         assert cognite_client.functions.schedules.retrieve(id=123) is None
+
+    def test_create_with_nonce(self, cognite_client: CogniteClient, dummy_function: Function) -> None:
+        session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
+        schedule = FunctionScheduleWrite(
+            name="test_create_with_nonce",
+            cron_expression="0 0 * * *",
+            function_id=dummy_function.id,
+            data={"key": "value"},
+            nonce=session.nonce,
+        )
+        created: FunctionSchedule | None = None
+        try:
+            created = cognite_client.functions.schedules.create(schedule)
+
+            expected = schedule.dump()
+            # Nonce is not returned
+            expected.pop("nonce", None)
+            assert created.as_write().dump() == expected
+            assert created.session_id == session.id
+        finally:
+            if created:
+                cognite_client.functions.schedules.delete(created.id)

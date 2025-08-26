@@ -74,6 +74,7 @@ class PropertyType(CogniteObject, ABC):
                     is_list=resource["list"],
                     max_list_size=resource.get("maxListSize"),
                     collation=resource.get("collation", "ucs_basic"),
+                    max_text_size=resource.get("maxTextSize"),
                 )
             case "boolean":
                 return Boolean(
@@ -140,6 +141,7 @@ class ListablePropertyType(PropertyType, ABC):
 class Text(ListablePropertyType):
     _type = "text"
     collation: str = "ucs_basic"
+    max_text_size: int | None = None
 
 
 @dataclass

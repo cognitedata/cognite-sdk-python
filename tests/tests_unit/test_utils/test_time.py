@@ -329,6 +329,10 @@ class TestObjectTimeConversion:
             ([{"source_modified_time": 0}], [{"source_modified_time": "1970-01-01 00:00:00.000+00:00"}]),
             ([{"not_a_time": 0}], [{"not_a_time": 0}]),
             ([{"created_time": int(1e15)}], [{"created_time": int(1e15)}]),
+            ({"run_time": 1609459200000}, {"run_time": "2021-01-01 00:00:00.000+00:00"}),
+            ({"simulation_time": 1609459200000}, {"simulation_time": "2021-01-01 00:00:00.000+00:00"}),
+            ({"runTime": 1609459200000}, {"runTime": "2021-01-01 00:00:00.000+00:00"}),
+            ({"simulationTime": 1609459200000}, {"simulationTime": "2021-01-01 00:00:00.000+00:00"}),
         ],
     )
     def test_convert_and_isoformat_time_attrs(self, item: dict[str, int], expected_output: dict[str, str]) -> None:
