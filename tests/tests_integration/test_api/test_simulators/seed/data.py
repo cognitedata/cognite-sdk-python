@@ -35,7 +35,7 @@ class ResourceNames:
     simulator_model_external_dependency_file_external_id: str
 
 
-resources = ResourceNames(
+RESOURCES = ResourceNames(
     simulator_external_id="py_sdk_integration_tests",
     simulator_integration_external_id="py_sdk_integration_tests_connector",
     simulator_model_external_id=f"py_sdk_integration_tests_model_{random_str}",
@@ -48,8 +48,8 @@ resources = ResourceNames(
 )
 
 SIMULATOR = {
-    "name": resources.simulator_external_id,
-    "externalId": resources.simulator_external_id,
+    "name": RESOURCES.simulator_external_id,
+    "externalId": RESOURCES.simulator_external_id,
     "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
     "modelDependencies": [
@@ -246,10 +246,10 @@ SIMULATOR = {
 }
 
 SIMULATOR_INTEGRATION = {
-    "externalId": resources.simulator_integration_external_id,
-    "simulatorExternalId": resources.simulator_external_id,
+    "externalId": RESOURCES.simulator_integration_external_id,
+    "simulatorExternalId": RESOURCES.simulator_external_id,
     "heartbeat": 0,
-    "dataSetId": resources.simulator_test_data_set_id,
+    "dataSetId": RESOURCES.simulator_test_data_set_id,
     "connectorVersion": "1.0.0",
     "simulatorVersion": "1.0.0",
     "licenseStatus": "AVAILABLE",
@@ -259,19 +259,19 @@ SIMULATOR_INTEGRATION = {
 }
 
 SIMULATOR_MODEL = {
-    "externalId": resources.simulator_model_external_id,
-    "simulatorExternalId": resources.simulator_external_id,
+    "externalId": RESOURCES.simulator_model_external_id,
+    "simulatorExternalId": RESOURCES.simulator_external_id,
     "name": "Test Simulator Model",
     "description": "Test Simulator Model Desc",
-    "dataSetId": resources.simulator_test_data_set_id,
+    "dataSetId": RESOURCES.simulator_test_data_set_id,
     "type": "SteadyState",
 }
 
 
 SIMULATOR_ROUTINE = {
-    "externalId": resources.simulator_routine_external_id,
-    "modelExternalId": resources.simulator_model_external_id,
-    "simulatorIntegrationExternalId": resources.simulator_integration_external_id,
+    "externalId": RESOURCES.simulator_routine_external_id,
+    "modelExternalId": RESOURCES.simulator_model_external_id,
+    "simulatorIntegrationExternalId": RESOURCES.simulator_integration_external_id,
     "name": "Simulator Routine - Test",
     "description": "Simulator Routine - Description Test",
 }
@@ -376,7 +376,7 @@ SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ = [
 
 SIMULATOR_ROUTINE_REVISION_OBJ = {
     "externalId": None,
-    "routineExternalId": resources.simulator_routine_external_id,
+    "routineExternalId": RESOURCES.simulator_routine_external_id,
     "configuration": SIMULATOR_ROUTINE_REVISION_CONFIG_OBJ,
     "script": SIMULATOR_ROUTINE_REVISION_SCRIPT_OBJ,
 }
