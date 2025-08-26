@@ -114,11 +114,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
         if self.capabilities is not None:
             dumped["capabilities"] = [c.dump(camel_case=camel_case) for c in self.capabilities]
         if self.attributes is not None:
-            dumped["attributes"] = (
-                self.attributes.dump(camel_case=camel_case)
-                if isinstance(self.attributes, CogniteObject)
-                else self.attributes
-            )
+            dumped["attributes"] = self.attributes.dump(camel_case=camel_case)
         return dumped
 
 
