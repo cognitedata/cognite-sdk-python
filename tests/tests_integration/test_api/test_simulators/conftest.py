@@ -41,17 +41,31 @@ def seed_resource_names(cognite_client: CogniteClient) -> ResourceNames:
     return copy.copy(resources)
 
 
-@pytest.fixture(scope="session")
-def seed_file(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> Iterator[FileMetadata | None]:
-    data_set_id = seed_resource_names.simulator_test_data_set_id
-    file = cognite_client.files.retrieve(external_id=seed_resource_names.simulator_model_file_external_id)
+def upload_file(cognite_client: CogniteClient, filename: str, external_id: str, data_set_id: int) -> FileMetadata:
+    file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
-        file = cognite_client.files.upload(
-            path=SEED_DIR / "ShowerMixer.txt",
-            external_id=seed_resource_names.simulator_model_file_external_id,
-            name="ShowerMixer.txt",
+        return cognite_client.files.upload(
+            path=SEED_DIR / filename,
+            external_id=external_id,
+            name=filename,
             data_set_id=data_set_id,
         )
+
+    return file
+
+
+@pytest.fixture(scope="session")
+def seed_model_revision_file(
+    cognite_client: CogniteClient, seed_resource_names: dict[str, str]
+) -> Iterator[FileMetadata | None]:
+    data_set_id = seed_resource_names["simulator_test_data_set_id"]
+    file = upload_file(
+        cognite_client,
+        filename="ShowerMixer.txt",
+        external_id=seed_resource_names["simulator_model_file_external_id"],
+        data_set_id=data_set_id,
+    )
+
     yield file
 
 
@@ -59,8 +73,19 @@ def seed_file(cognite_client: CogniteClient, seed_resource_names: ResourceNames)
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> Iterator[None]:
     simulator_external_id = seed_resource_names.simulator_external_id
     simulators = cognite_client.simulators.list(limit=None)
-    if not simulators.get(external_id=simulator_external_id):
+    seeded_simulator = simulators.get(external_id=simulator_external_id)
+    fields_to_compare = ["fileExtensionTypes", "modelTypes", "modelDependencies", "stepFields", "unitQuantities"]
+    seeded_simulator_dump = seeded_simulator.dump() if seeded_simulator else None
+
+    if not seeded_simulator:
         cognite_client.simulators._post("/simulators", json={"items": [simulator]})
+    # if any field in simulator is different from the current seeded simulator, update it
+    elif any(seeded_simulator_dump.get(field) != simulator[field] for field in fields_to_compare if field in simulator):
+        simulator_update = {
+            "id": seeded_simulator.id,
+            "update": {field: {"set": simulator[field]} for field in fields_to_compare},
+        }
+        cognite_client.simulators._post("/simulators/update", json={"items": [simulator_update]})
 
 
 @pytest.fixture(scope="session")
@@ -125,9 +150,11 @@ def seed_simulator_models(
 
 
 @pytest.fixture(scope="session")
-def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator_models, seed_file) -> None:
-    model_unique_external_id = resources.simulator_model_external_id
-    model_revision_unique_external_id = resources.simulator_model_revision_external_id
+def seed_simulator_model_revisions(
+    cognite_client: CogniteClient, seed_simulator_models, seed_model_revision_file, seed_resource_names: ResourceNames
+) -> None:
+    model_unique_external_id = seed_resource_names.simulator_model_external_id
+    model_revision_unique_external_id = seed_resource_names.simulator_model_revision_external_id
     model_revisions = cognite_client.simulators.models.revisions.list(
         model_external_ids=[model_unique_external_id],
     )
@@ -142,7 +169,7 @@ def seed_simulator_model_revisions(cognite_client: CogniteClient, seed_simulator
                     "items": [
                         {
                             "description": "test sim model revision description",
-                            "fileId": seed_file.id,
+                            "fileId": seed_model_revision_file.id,
                             "modelExternalId": model_unique_external_id,
                             "externalId": revision,
                         }

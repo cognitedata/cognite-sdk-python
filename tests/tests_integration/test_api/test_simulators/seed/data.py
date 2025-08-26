@@ -44,12 +44,32 @@ resources = ResourceNames(
     simulator_test_data_set_id=None,
     simulator_test_data_set_external_id=data_set_external_id,
 )
+resource_names = {
+    "simulator_external_id": "py_sdk_integration_tests",
+    "simulator_integration_external_id": "py_sdk_integration_tests_connector",
+    "simulator_model_external_id": f"py_sdk_integration_tests_model_{random_str}",
+    "simulator_model_revision_external_id": f"py_sdk_integration_tests_model_{random_str}_v1",
+    "simulator_model_file_external_id": "ShowerMixer_simulator_model_file_5",
+    "simulator_model_external_dependency_file_external_id": "ExtDependency_simulator_model_external_dependency_file",
+    "simulator_routine_external_id": f"pysdk_routine_{random_str}",
+    "simulator_test_data_set_id": None,
+    "simulator_test_data_set_external_id": data_set_external_id,
+}
 
 simulator = {
     "name": resources.simulator_external_id,
     "externalId": resources.simulator_external_id,
     "fileExtensionTypes": ["txt"],
     "modelTypes": [{"name": "Steady State", "key": "SteadyState"}],
+    "modelDependencies": [
+        {
+            "fileExtensionTypes": ["txt", "xml"],
+            "fields": [
+                {"name": "fieldA", "label": "label fieldA", "info": "info fieldA"},
+                {"name": "fieldB", "label": "label fieldB", "info": "info fieldB"},
+            ],
+        },
+    ],
     "stepFields": [
         {
             "stepType": "get/set",

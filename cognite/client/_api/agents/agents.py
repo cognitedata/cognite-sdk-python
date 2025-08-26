@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
+from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -238,3 +239,77 @@ class AgentsAPI(APIClient):
         self._warnings.warn()
         res = self._get(url_path=self._RESOURCE_PATH)
         return AgentList._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    def chat(
+        self,
+        agent_id: str,
+        messages: Message | Sequence[Message],
+        cursor: str | None = None,
+    ) -> AgentChatResponse:
+        """`Chat with an agent. <https://api-docs.cognite.com/20230101-alpha/tag/Agents/operation/agent_session_api_v1_projects__projectName__ai_agents_chat_post>`_
+
+        Given a user query, the Atlas AI agent responds by reasoning and using the tools associated with it.
+        Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
+
+        Args:
+            agent_id (str): External ID that uniquely identifies the agent.
+            messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
+            cursor (str | None): The cursor to use for continuation of a conversation. Use this to
+                create multi-turn conversations, as the cursor will keep track of the conversation state.
+
+        Returns:
+            AgentChatResponse: The response from the agent.
+
+        Examples:
+
+            Start a simple chat with an agent:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import Message
+                >>> client = CogniteClient()
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("What can you help me with?")
+                ... )
+                >>> print(response.text)
+
+            Continue a conversation using the cursor:
+
+                >>> follow_up = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("Tell me more about that"),
+                ...     cursor=response.cursor
+                ... )
+
+            Send multiple messages at once:
+
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=[
+                ...         Message("Help me find the 1st stage compressor."),
+                ...         Message("Once you have found it, find related time series.")
+                ...     ]
+                ... )
+        """
+        self._warnings.warn()
+
+        # Convert single message to list
+        if isinstance(messages, Message):
+            messages = [messages]
+
+        # Build request body
+        body = {
+            "agentId": agent_id,
+            "messages": MessageList(messages).dump(camel_case=True),
+        }
+
+        if cursor is not None:
+            body["cursor"] = cursor
+
+        # Make the API call
+        response = self._post(
+            url_path=self._RESOURCE_PATH + "/chat",
+            json=body,
+        )
+
+        return AgentChatResponse._load(response.json(), cognite_client=self._cognite_client)
