@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import functools
+import threading
 import warnings
 from collections import UserList
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
 from typing import (
     Any,
@@ -198,10 +200,48 @@ class MainThreadExecutor(TaskExecutor):
         return SyncFuture(fn, *args, **kwargs)
 
 
+_T = TypeVar("_T")
+
+
+class EventLoopThreadExecutor(threading.Thread):
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None, daemon: bool = True) -> None:
+        super().__init__(name=type(self).__name__, daemon=daemon)
+        self._event_loop = loop or asyncio.new_event_loop()
+        # So, you may wonder, where in the seven kingdoms may I find the Semaphore(global_config.max_workers)
+        # to ensure we don't spam http requests like crazy?!
+        # Nowhere to be exact! The way we use concurrency is to let the existing thread pool executor (TPE) use
+        # its worker threads to call `run_coro(...)`. Since these calls blocks until completion - and the TPE
+        # already obeys the max_workers limit, we don't need it (the semaphore).
+        #
+        # The even longer story is this:
+        # In the current major version when requests was switched to httpx, we additionally (or better, pre-emptively)
+        # also changed to using an async http client. This was to avoid a second major version release when the async
+        # client was added later (and to avoid having duplicate logic for sync & async). This way we got to keep
+        # a loooot of the current concurrency logic, while still verifying that the async client works. Nice.
+
+    def run(self) -> None:
+        asyncio.set_event_loop(self._event_loop)
+        self._event_loop.run_forever()
+
+    def stop(self) -> None:
+        self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+        self.join()
+
+    def run_coro(self, coro: Coroutine[Any, Any, _T], timeout: float | None = None) -> _T:
+        return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
+
+
 _DATA_MODELING_MAX_WORKERS = 1
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 _DATA_MODELING_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
+# Note: In the future when we'll have "general async support" in the SDK, a 'similar looking' event loop executor
+# may be used "widespread". For now, we just use it internally to run async tasks. The flow is as follows:
+# 1. User calls an SDK method
+# 2. The method directly calls our http client OR uses exectute_tasks to do the same but concurrently
+# 3. Either way, the call(s) eventually reaches httpx.AsyncClient and these coroutines are run using
+#    the event loop thread executor
+_INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON: EventLoopThreadExecutor
 
 
 class ConcurrencySettings:
@@ -251,6 +291,21 @@ class ConcurrencySettings:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
         return executor
+
+    @classmethod
+    def _get_event_loop_executor(cls) -> EventLoopThreadExecutor:
+        global _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+        try:
+            return _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON
+        except NameError:
+            # First time we need to initialize:
+            from cognite.client import global_config
+
+            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = EventLoopThreadExecutor(
+                global_config.event_loop
+            )
+            executor.start()
+            return executor
 
     @classmethod
     def get_thread_pool_executor_or_raise(cls) -> ThreadPoolExecutor:
