@@ -11,12 +11,13 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunWrite,
     SimulationValueUnitName,
 )
+from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
-    def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
             created_runs = cognite_client.simulators.runs.create(
@@ -51,8 +52,10 @@ class TestSimulatorRuns:
         )
 
     @pytest.mark.asyncio
-    async def test_run_with_wait_and_retrieve(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    async def test_run_with_wait_and_retrieve(
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
 
         run_task = asyncio.create_task(
             asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
@@ -105,9 +108,9 @@ class TestSimulatorRuns:
         assert data_res.dump() == data_res2.dump()
 
     def test_create_run(
-        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names: ResourceNames
     ) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         created_runs = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
@@ -120,8 +123,8 @@ class TestSimulatorRuns:
         assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
 
-    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         created_run = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
