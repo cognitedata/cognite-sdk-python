@@ -278,14 +278,26 @@ class SimulatorRoutinesAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        run_object = SimulationRunWrite(
-            routine_external_id=routine_external_id,
-            routine_revision_external_id=routine_revision_external_id,
-            model_revision_external_id=model_revision_external_id,
-            inputs=list(inputs) if inputs is not None else None,
-            run_time=run_time,
-            queue=queue,
-            log_severity=log_severity,
+
+        is_run_by_revisions = routine_revision_external_id is not None and model_revision_external_id is not None
+
+        run_object = (
+            SimulationRunWrite(
+                inputs=list(inputs) if inputs is not None else None,
+                run_time=run_time,
+                queue=queue,
+                log_severity=log_severity,
+                routine_revision_external_id=routine_revision_external_id,
+                model_revision_external_id=model_revision_external_id,
+            )
+            if is_run_by_revisions
+            else SimulationRunWrite(
+                routine_external_id=routine_external_id,
+                run_time=run_time,
+                queue=queue,
+                log_severity=log_severity,
+                inputs=list(inputs) if inputs is not None else None,
+            )
         )
 
         simulation_run = self._cognite_client.simulators.runs.create(run_object)

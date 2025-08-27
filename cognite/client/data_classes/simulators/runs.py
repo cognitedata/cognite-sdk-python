@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from typing_extensions import Self
 
@@ -121,6 +121,31 @@ class SimulationRunWrite(SimulationRunCore):
         inputs (list[SimulationInputOverride] | None): List of input overrides
     """
 
+    @overload
+    def __init__(
+        self,
+        *,
+        routine_external_id: str | None = None,
+        run_type: str | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: str | None = None,
+        inputs: list[SimulationInputOverride] | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        *,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
+        run_type: str | None = None,
+        run_time: int | None = None,
+        queue: bool | None = None,
+        log_severity: str | None = None,
+        inputs: list[SimulationInputOverride] | None = None,
+    ) -> None: ...
+
     def __init__(
         self,
         routine_external_id: str | None = None,
@@ -161,15 +186,32 @@ class SimulationRunWrite(SimulationRunCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> SimulationRunWrite:
         inputs = resource.get("inputs", None)
+        routine_revision_external_id = resource.get("routineRevisionExternalId", None)
+        model_revision_external_id = resource.get("modelRevisionExternalId", None)
+        routine_external_id = resource.get("routineExternalId", None)
+        is_run_by_revisions = routine_revision_external_id is not None and model_revision_external_id is not None
+
+        run_args: dict[str, str] = {}
+
+        if is_run_by_revisions:
+            run_args.update(
+                routine_revision_external_id=routine_revision_external_id,
+                model_revision_external_id=model_revision_external_id,
+                **run_args,
+            )
+        else:
+            run_args.update(
+                routine_external_id=routine_external_id,
+                **run_args,
+            )
+
         return cls(
             run_type=resource.get("runType"),
-            routine_external_id=resource.get("routineExternalId"),
-            routine_revision_external_id=resource.get("routineRevisionExternalId"),
-            model_revision_external_id=resource.get("modelRevisionExternalId"),
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
             inputs=([SimulationInputOverride._load(_input) for _input in inputs] if inputs else None),
+            **run_args,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -272,20 +314,23 @@ class SimulationRun(SimulationRunCore):
 
     def as_write(self) -> SimulationRunWrite:
         # Check if we have revision-based fields in the run
-        if hasattr(self, "routine_revision_external_id") and hasattr(self, "model_revision_external_id"):
-            if self.routine_revision_external_id and self.model_revision_external_id:
-                return SimulationRunWrite(
-                    routine_revision_external_id=self.routine_revision_external_id,
-                    model_revision_external_id=self.model_revision_external_id,
-                    run_type=self.run_type,
-                    run_time=self.run_time,
-                )
+        routine_revision_external_id = self.routine_revision_external_id
+        model_revision_external_id = self.model_revision_external_id
+        routine_external_id = self.routine_external_id
+        is_run_by_routine = routine_external_id is not None
 
-        # Default to routine-based
+        if is_run_by_routine:
+            SimulationRunWrite(
+                routine_external_id=routine_external_id,
+                run_type=self.run_type,
+                run_time=self.run_time,
+            )
+
         return SimulationRunWrite(
-            routine_external_id=self.routine_external_id,
             run_type=self.run_type,
             run_time=self.run_time,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
         )
 
     def get_logs(self) -> SimulatorLog | None:
