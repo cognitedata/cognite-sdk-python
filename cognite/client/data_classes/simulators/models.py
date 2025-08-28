@@ -449,14 +449,6 @@ class SimulatorModelRevisionDataThermodynamic(CogniteObject):
 
 @dataclass
 class SimulationValueUnitQuantity(CogniteObject):
-    """
-    The unit of the simulation value.
-
-    Args:
-        name (str): The name of the unit.
-        quantity (str | None): The quantity of the unit.
-    """
-
     name: str
     quantity: str | None = None
     external_id: str | None = None
@@ -618,6 +610,23 @@ class SimulatorModelRevisionFlowsheet(CogniteObject):
 
 @dataclass
 class SimulatorModelRevisionData(CogniteResource):
+    """
+    The model revision data resource stores flowsheet simulators information to provide valuable
+    context about the associated model revision such as functional blocks, process
+    equipment, block properties, operating parameters, physical properties and configuration
+    settings, connections between blocks, and graphical information for visualization processes.
+
+    This is the read/response format of a simulator model revision data.
+
+    Args:
+        model_revision_external_id (str): External id of the associated model revision
+        created_time (int): The time when the simulator model revision data was created
+        last_updated_time (int): The time when the simulator model revision data was last updated
+        data_set_id (int): The id of the dataset associated with the simulator model revision data
+        flowsheets (list[SimulatorModelRevisionFlowsheet] | None): The flowsheets associated with the simulator model revision data
+        info (dict[str, str] | None): Additional information about the simulator model revision data
+    """
+
     def __init__(
         self,
         model_revision_external_id: str,

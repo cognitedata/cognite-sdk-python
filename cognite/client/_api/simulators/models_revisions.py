@@ -37,7 +37,22 @@ class SimulatorModelRevisionsDataAPI(APIClient):
 
         self._RETRIEVE_LIMIT = 1
 
-    def list(self, model_revision_external_id: str | None = None) -> SimulatorModelRevisionDataList:
+    def list(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
+        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+
+        Retrieves a list of simulator model revisions data that match the given criteria.
+
+        Args:
+            model_revision_external_id (str): The external id of the simulator model revision to filter by.
+        Returns:
+            SimulatorModelRevisionDataList: List of simulator model revision data
+
+        Examples:
+            List simulator model revision data:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.data.list(model_revision_external_id="model_revision_1")
+        """
         model_revisions_data_filter = SimulatorModelRevisionsDataFilter(
             model_revision_external_id=model_revision_external_id,
         )
@@ -175,6 +190,10 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.retrieve(
                 ...     external_ids=["revision1", "revision2"]
                 ... )
+
+            Get revision data using the model revision reference:
+                >>> res = client.simulators.models.revisions.retrieve(ids=[1])
+                >>> res[0].get_data()
         """
         self._warning.warn()
 
