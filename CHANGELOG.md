@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Added
 - [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
 
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
 ## [7.82.0] - 2025-08-26
 ### Added
 - Added support for specifying `max_text_size` in DMS text properties.
