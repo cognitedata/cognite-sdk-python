@@ -28,6 +28,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+from zoneinfo import ZoneInfo
 
 TaskStatus: TypeAlias = Literal[
     "in_progress",
@@ -1372,6 +1373,15 @@ class WorkflowTriggerRule(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         trigger_type = resource["triggerType"]
+        # Special handling for schedule trigger with timezone
+        if trigger_type == "schedule" and "timezone" in resource and resource["timezone"]:
+            resource = dict(resource)  # avoid mutating input
+            timezone_value = resource["timezone"]
+            # Convert timezone to ZoneInfo if it's a string, leave as-is if already ZoneInfo
+            if isinstance(timezone_value, str):
+                resource["timezone"] = ZoneInfo(timezone_value)
+            # If it's already a ZoneInfo object, keep it as-is
+            return cast(Self, WorkflowScheduledTriggerRule._load_trigger(resource))
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
         # If more triggers are added in the future, this ensures that the SDK does not break.
@@ -1415,16 +1425,28 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     Args:
         cron_expression (str): The cron specification for the scheduled trigger.
+        timezone (ZoneInfo | None): The timezone in which the scheduled trigger should be evaluated.
+            If not provided, UTC will be used as the default timezone on the server side.
     """
 
     _trigger_type = "schedule"
 
-    def __init__(self, cron_expression: str) -> None:
+    def __init__(self, cron_expression: str, timezone: ZoneInfo | None = None) -> None:
         self.cron_expression = cron_expression
+        self.timezone = timezone
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        # Override dump to handle timezone field specially:
+        # 1. Only include timezone key when it has a value (avoid "timezone": null)
+        # 2. Convert ZoneInfo object to its string key representation
+        item = super().dump(camel_case)
+        if self.timezone:
+            item["timezone"] = self.timezone.key
+        return item
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data["cronExpression"])
+        return cls(cron_expression=data["cronExpression"], timezone=data.get("timezone"))
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
@@ -1525,6 +1547,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
         }
+
         if self.input:
             item["input"] = self.input
         if self.metadata:
