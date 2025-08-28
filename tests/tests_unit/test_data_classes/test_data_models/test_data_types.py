@@ -27,6 +27,7 @@ class TestPropertyType:
         "data",
         [
             {"type": "text", "collation": "ucs_basic", "list": False},
+            {"type": "text", "collation": "ucs_basic", "list": False, "maxTextSize": 10},
             {"type": "boolean", "list": False},
             {"type": "float32", "list": False},
             {"type": "float64", "list": False},
