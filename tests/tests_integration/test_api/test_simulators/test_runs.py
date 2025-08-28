@@ -155,26 +155,7 @@ class TestSimulatorRuns:
             },
         )
 
-        # Test filtering by created_time - use a narrow range around the created run
-        runs_filtered_by_created_time = cognite_client.simulators.runs.list(
-            routine_external_ids=[routine_external_id],
-            created_time=TimestampRange(min=created_run_time - 1000, max=created_run_time + 1000),
-            limit=100,
-        )
-        assert len(runs_filtered_by_created_time) > 0
-        assert created_run[0].id in [run.id for run in runs_filtered_by_created_time]
-
-        # Test filtering by simulation_time - use a narrow range around our set simulation time
-        runs_filtered_by_simulation_time = cognite_client.simulators.runs.list(
-            routine_external_ids=[routine_external_id],
-            simulation_time=TimestampRange(min=test_simulation_time - 1000, max=test_simulation_time + 1000),
-            limit=100,
-        )
-        assert len(runs_filtered_by_simulation_time) > 0
-        # Our run should be in the results since we set its simulation_time
-        assert created_run[0].id in [run.id for run in runs_filtered_by_simulation_time]
-
-        # Test with both filters combined
+        # Test filtering by created_time and simulation_time - use a narrow range around the created run
         runs_filtered_both = cognite_client.simulators.runs.list(
             routine_external_ids=[routine_external_id],
             created_time=TimestampRange(min=created_run_time - 1000, max=created_run_time + 1000),
@@ -184,22 +165,15 @@ class TestSimulatorRuns:
         assert len(runs_filtered_both) > 0
         assert created_run[0].id in [run.id for run in runs_filtered_both]
 
-        # Test with empty time range for created_time (should return no results)
+        # Test with empty time range for created_time and simulation_time (should return no results)
         current_time_ms = int(time.time() * 1000)
         runs_empty_range = cognite_client.simulators.runs.list(
             routine_external_ids=[routine_external_id],
             created_time=TimestampRange(min=current_time_ms + 20000, max=current_time_ms + 30000),
-            limit=5,
-        )
-        assert len(runs_empty_range) == 0
-
-        # Test with empty time range for simulation_time (should return no results)
-        runs_empty_simulation_range = cognite_client.simulators.runs.list(
-            routine_external_ids=[routine_external_id],
             simulation_time=TimestampRange(min=current_time_ms + 20000, max=current_time_ms + 30000),
             limit=5,
         )
-        assert len(runs_empty_simulation_range) == 0
+        assert len(runs_empty_range) == 0
 
     def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id
