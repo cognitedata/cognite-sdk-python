@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
 ## [7.82.0] - 2025-08-26
 ### Added
 - Added support for specifying `max_text_size` in DMS text properties.
