@@ -261,7 +261,7 @@ class TestSimulatorModels:
         finally:
             cognite_client.simulators.models.delete(external_ids=[model_external_id])
 
-    def test_update_model(self, cognite_client: CogniteClient, seed_resource_names) -> None:
+    def test_update_model(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
         model_external_id = random_string(10)
         models_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
@@ -287,14 +287,14 @@ class TestSimulatorModels:
         self,
         cognite_client: CogniteClient,
         seed_model_revision_file: FileMetadata,
-        seed_resource_names,
+        seed_resource_names: ResourceNames,
     ) -> None:
         model_external_id = random_string(10)
         model_to_create = SimulatorModelWrite(
             name="sdk-test-model1",
-            simulator_external_id=seed_resource_names["simulator_external_id"],
+            simulator_external_id=seed_resource_names.simulator_external_id,
             external_id=model_external_id,
-            data_set_id=seed_resource_names["simulator_test_data_set_id"],
+            data_set_id=seed_resource_names.simulator_test_data_set_id,
             type="SteadyState",
         )
 
