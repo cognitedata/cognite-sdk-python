@@ -1,0 +1,15 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: python
+          package-name: cognite-sdk   # used for changelog headings
