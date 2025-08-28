@@ -1373,15 +1373,6 @@ class WorkflowTriggerRule(CogniteObject, ABC):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         trigger_type = resource["triggerType"]
-        # Special handling for schedule trigger with timezone
-        if trigger_type == "schedule" and "timezone" in resource and resource["timezone"]:
-            resource = dict(resource)  # avoid mutating input
-            timezone_value = resource["timezone"]
-            # Convert timezone to ZoneInfo if it's a string, leave as-is if already ZoneInfo
-            if isinstance(timezone_value, str):
-                resource["timezone"] = ZoneInfo(timezone_value)
-            # If it's already a ZoneInfo object, keep it as-is
-            return cast(Self, WorkflowScheduledTriggerRule._load_trigger(resource))
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
         # If more triggers are added in the future, this ensures that the SDK does not break.
@@ -1446,7 +1437,9 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
 
     @classmethod
     def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
-        return cls(cron_expression=data["cronExpression"], timezone=data.get("timezone"))
+        # Convert timezone to ZoneInfo
+        timezone = ZoneInfo(data["timezone"]) if "timezone" in data else None
+        return cls(cron_expression=data["cronExpression"], timezone=timezone)
 
 
 class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
