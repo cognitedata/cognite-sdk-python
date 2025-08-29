@@ -611,20 +611,30 @@ class SimulatorModelRevisionFlowsheet(CogniteObject):
 @dataclass
 class SimulatorModelRevisionData(CogniteResource):
     """
-    The model revision data resource stores flowsheet simulators information to provide valuable
-    context about the associated model revision such as functional blocks, process
-    equipment, block properties, operating parameters, physical properties and configuration
-    settings, connections between blocks, and graphical information for visualization processes.
-
-    This is the read/response format of a simulator model revision data.
+    Extracted metadata from a simulator model file associated with a model revision.
+    
+    When a model revision is created, connectors can optionally parse the simulator file
+    to extract structured information about the model's internal structure and configuration.
+    This data resource stores the parsed information, which may include flowsheet details,
+    process equipment, operating parameters, connections between blocks, and visualization data.
+    
+    Note: The availability and extent of this data depends entirely on the connector 
+    implementation and simulator type. Some connectors may:
+    - Not implement this feature at all (no data extraction)
+    - Partially implement it (e.g., only populate 'info' or only 'flowsheets')
+    - Fully implement it with comprehensive model details
+    
+    This is the read/response format for simulator model revision data.
 
     Args:
         model_revision_external_id (str): External id of the associated model revision
         created_time (int): The time when the simulator model revision data was created
         last_updated_time (int): The time when the simulator model revision data was last updated
         data_set_id (int): The id of the dataset associated with the simulator model revision data
-        flowsheets (list[SimulatorModelRevisionFlowsheet] | None): The flowsheets associated with the simulator model revision data
-        info (dict[str, str] | None): Additional information about the simulator model revision data
+        flowsheets (list[SimulatorModelRevisionFlowsheet] | None): Extracted flowsheet information,
+            if supported by the connector. May include blocks, equipment, properties, and connections
+        info (dict[str, str] | None): Additional metadata extracted from the simulator file,
+            if supported by the connector
     """
 
     def __init__(
