@@ -465,55 +465,51 @@ def create_simulator_routine_revision(
     )
 
 
-SIMULATOR_MODEL_REVISION_DATA_UPDATE = {
-    "flowsheets": {
-        "set": [
+SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET = [
+    {
+        "thermodynamics": {"propertyPackages": ["abcdef", "123456"], "components": ["abcdef", "123456"]},
+        "simulatorObjectEdges": [
             {
-                "thermodynamics": {"propertyPackages": ["abcdef", "123456"], "components": ["abcdef", "123456"]},
-                "simulatorObjectEdges": [
-                    {
-                        "id": "edge-1",
-                        "name": "edge-name",
-                        "source_id": "edge-1",
-                        "target_id": "edge-2",
-                        "connectionType": "Energy",
-                    }
-                ],
-                "simulatorObjectNodes": [
-                    {
-                        "id": "node-1",
-                        "name": "node-name",
-                        "type": "input",
-                        "properties": [
-                            {
-                                "name": "node-property-name-1",
-                                "referenceObject": {"a": "b"},
-                                "valueType": "STRING",
-                                "value": "node-property-value-1",
-                                "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
-                                "readOnly": True,
-                            },
-                            {
-                                "name": "node-property-name-1",
-                                "referenceObject": {"a": "b"},
-                                "valueType": "STRING",
-                                "value": "node-property-value-1",
-                                "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
-                                "readOnly": True,
-                            },
-                        ],
-                        "graphicalObject": {
-                            "height": 50,
-                            "width": 100,
-                            "scaleX": True,
-                            "scaleY": True,
-                            "active": True,
-                            "angle": 90,
-                            "position": {"x": 100, "y": 100},
-                        },
-                    }
-                ],
+                "id": "edge-1",
+                "name": "edge-name",
+                "source_id": "edge-1",
+                "target_id": "edge-2",
+                "connectionType": "Energy",
             }
-        ]
+        ],
+        "simulatorObjectNodes": [
+            {
+                "id": "node-1",
+                "name": "node-name",
+                "type": "input",
+                "properties": [
+                    {
+                        "name": "node-property-name-1",
+                        "referenceObject": {"a": "b"},
+                        "valueType": "STRING",
+                        "value": "node-property-value-1",
+                        "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
+                        "readOnly": True,
+                    },
+                    {
+                        "name": "node-property-name-1",
+                        "referenceObject": {"a": "b"},
+                        "valueType": "STRING",
+                        "value": "node-property-value-1",
+                        "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
+                        "readOnly": True,
+                    },
+                ],
+                "graphicalObject": {
+                    "height": 50,
+                    "width": 100,
+                    "scaleX": True,
+                    "scaleY": True,
+                    "active": True,
+                    "angle": 90,
+                    "position": {"x": 100, "y": 100},
+                },
+            }
+        ],
     }
-}
+]

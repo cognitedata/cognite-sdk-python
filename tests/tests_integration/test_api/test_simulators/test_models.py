@@ -15,7 +15,7 @@ from cognite.client.data_classes.simulators.models import (
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
 from tests.tests_integration.test_api.test_simulators.seed.data import (
-    SIMULATOR_MODEL_REVISION_DATA_UPDATE,
+    SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET,
     ResourceNames,
 )
 from tests.tests_integration.test_api.test_simulators.utils import update_logs
@@ -306,7 +306,7 @@ class TestSimulatorModels:
                 "items": [
                     {
                         "modelRevisionExternalId": model_revision.external_id,
-                        "update": SIMULATOR_MODEL_REVISION_DATA_UPDATE,
+                        "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
                     }
                 ]
             },
