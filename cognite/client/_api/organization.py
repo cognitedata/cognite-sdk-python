@@ -5,6 +5,7 @@ from functools import cached_property
 from urllib.parse import urljoin
 
 from cognite.client._api_client import APIClient
+from cognite.client.exceptions import CogniteAPIError
 
 
 class OrgAPI(APIClient, ABC):
@@ -27,7 +28,10 @@ class OrgAPI(APIClient, ABC):
         # This is an internal endpoint, not part of the public API
         full_url = urljoin(self._config.base_url, f"/api/v1/projects/{self._config.project}")
         response = self._http_client.request(method="GET", url=full_url, headers=headers)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise CogniteAPIError(
+                "Could not look-up organization", response.status_code, response.headers.get("x-request-id")
+            )
         try:
             return response.json()["organization"]
         except KeyError as e:
