@@ -9,9 +9,12 @@ from cognite.client._api_client import APIClient
 
 class OrgAPI(APIClient, ABC):
     def _get_base_url_with_base_path(self) -> str:
+        """Get base URL with base path including organization and api version if applicable"""
         base_path = ""
         if self._api_version:
             base_path = f"/api/{self._api_version}/orgs/{self._organization}"
+        # The OrganizationAPi uses the auth_url as the base for these endpoints instead of the
+        # base_url like the rest of the SDK.
         return urljoin(self._config.auth_url, base_path)
 
     @cached_property
