@@ -1,7 +1,6 @@
 name: conventional-pr-title
 
 on:
-  merge_group:
   pull_request:
     types: [opened, edited, synchronize, reopened]
     branches: [master]
