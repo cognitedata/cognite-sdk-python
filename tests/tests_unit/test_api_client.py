@@ -1193,9 +1193,8 @@ class TestRetryableEndpoints:
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/list", True),
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/byids", True),
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/aggregate", True),
-                # Should not retry POST /create and /update as they are not idempotent
+                # Should not retry CREATE endpoints as they are not idempotent
                 ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}", False),
-                ("POST", f"https://api.cognitedata.com/api/v1/projects/bla/{resource}/update", False),
             ]
         ],
     )
@@ -1254,7 +1253,6 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/byids", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/delete", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/update", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config", False),
@@ -1264,7 +1262,6 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/byids", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/run", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/update", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/cancel", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/notifications", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/schedules", False),
@@ -1298,7 +1295,6 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/crs/byids", True),
                 ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes", False),
                 ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/list", True),
-                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/update", False),
                 ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/delete", False),
                 *[
                     (
@@ -1309,7 +1305,6 @@ class TestRetryableEndpoints:
                     for endpoint in ("aggregate", "list", "byids", "search-streaming", "search")
                 ],
                 ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/delete", False),
-                ("POST", "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/update", False),
                 (
                     "POST",
                     "https://api.c.com/api/v1/projects/bla/geospatial/featuretypes/a_1/features/b_2/rasters/c_3",

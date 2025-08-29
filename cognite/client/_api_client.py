@@ -77,7 +77,7 @@ VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "un
 
 class APIClient:
     _RESOURCE_PATH: str
-    __NON_RETRYABLE_UPDATE_CREATE_DELETE_RESOURCE_PATHS: ClassVar[list[str]] = [
+    __NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: ClassVar[list[str]] = [
         "annotations",
         "assets",
         "context/entitymatching",
@@ -118,7 +118,7 @@ class APIClient:
     _NON_RETRYABLE_POST_ENDPOINT_REGEX_PATTERN: ClassVar[str] = r"|".join(
         rf"^/{path}(\?.*)?$"
         for path in (
-            f"({r'|'.join(__NON_RETRYABLE_UPDATE_CREATE_DELETE_RESOURCE_PATHS)})(/update|/delete)?$",
+            f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
             "ai/tools/documents/task",
             "annotations/suggest",
             "extpipes/config/revert",
