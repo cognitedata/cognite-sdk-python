@@ -24,6 +24,7 @@ class OrgAPI(APIClient, ABC):
             additional_headers=self._config.headers.copy(),
             api_subversion=self._api_subversion,
         )
+        # This is an internal endpoint, not part of the public API
         full_url = urljoin(self._config.base_url, f"/api/v1/projects/{self._config.project}")
         response = self._http_client.request(method="GET", url=full_url, headers=headers)
         response.raise_for_status()
