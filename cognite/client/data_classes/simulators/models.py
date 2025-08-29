@@ -612,18 +612,18 @@ class SimulatorModelRevisionFlowsheet(CogniteObject):
 class SimulatorModelRevisionData(CogniteResource):
     """
     Extracted metadata from a simulator model file associated with a model revision.
-    
+
     When a model revision is created, connectors can optionally parse the simulator file
     to extract structured information about the model's internal structure and configuration.
     This data resource stores the parsed information, which may include flowsheet details,
     process equipment, operating parameters, connections between blocks, and visualization data.
-    
-    Note: The availability and extent of this data depends entirely on the connector 
+
+    Note: The availability and extent of this data depends entirely on the connector
     implementation and simulator type. Some connectors may:
     - Not implement this feature at all (no data extraction)
     - Partially implement it (e.g., only populate 'info' or only 'flowsheets')
     - Fully implement it with comprehensive model details
-    
+
     This is the read/response format for simulator model revision data.
 
     Args:
