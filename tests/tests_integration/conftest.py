@@ -103,3 +103,23 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
             **beta_configuration,
         )
     )
+
+
+@pytest.fixture(scope="session")
+def cognite_client_cdf_authenticated() -> CogniteClient:
+    load_dotenv(REPO_ROOT / "cdf_principal.env")
+    if "CDF_CLIENT_ID" not in os.environ or "CDF_CLIENT_SECRET" not in os.environ:
+        pytest.skip("CDF environment variables not set. Skipping tests that require CDF authenticated client.")
+    return CogniteClient(
+        config=ClientConfig(
+            client_name=os.environ["COGNITE_CLIENT_NAME"],
+            project=os.environ["COGNITE_PROJECT"],
+            base_url=os.environ["COGNITE_BASE_URL"],
+            credentials=OAuthClientCredentials(
+                token_url="https://auth.cognite.com/oauth2/token",
+                client_id=os.environ["CDF_CLIENT_ID"],
+                client_secret=os.environ["CDF_CLIENT_SECRET"],
+                scopes=None,  # type: ignore[arg-type]
+            ),
+        )
+    )
