@@ -1,8 +1,7 @@
 {
   "packages": {
     ".": {
-      "release-type": "python",
-      "package-name": "cognite-client",
+      "package-name": "cognite-sdk",
       "bump-files": [
         "pyproject.toml",
         {
