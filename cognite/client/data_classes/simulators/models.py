@@ -176,7 +176,9 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         )
 
     def get_data(self) -> SimulatorModelRevisionDataList:
-        return self._cognite_client.simulators.models.revisions.data.list(model_revision_external_id=self.external_id)
+        return self._cognite_client.simulators.models.revisions.retrieve_data(
+            model_revision_external_id=self.external_id
+        )
 
 
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):

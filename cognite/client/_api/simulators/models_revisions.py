@@ -26,47 +26,6 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class SimulatorModelRevisionsDataAPI(APIClient):
-    _RESOURCE_PATH = "/simulators/models/revisions/data"
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
-        )
-
-        self._RETRIEVE_LIMIT = 1
-
-    def list(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
-        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
-
-        Retrieves a list of simulator model revisions data that match the given criteria.
-
-        Args:
-            model_revision_external_id (str): The external id of the simulator model revision to filter by.
-        Returns:
-            SimulatorModelRevisionDataList: List of simulator model revision data
-
-        Examples:
-            List simulator model revision data:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> res = client.simulators.models.revisions.data.list(model_revision_external_id="model_revision_1")
-        """
-        model_revisions_data_filter = SimulatorModelRevisionsDataFilter(
-            model_revision_external_id=model_revision_external_id,
-        )
-        self._warning.warn()
-
-        response = self._post(
-            url_path=f"{self._RESOURCE_PATH}/list",
-            headers={"cdf-version": "alpha"},
-            json={"items": [model_revisions_data_filter.dump()]},
-        )
-        items = response.json()["items"]
-        return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)
-
-
 class SimulatorModelRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/models/revisions"
 
@@ -75,7 +34,6 @@ class SimulatorModelRevisionsAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
-        self.data = SimulatorModelRevisionsDataAPI(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 100
 
@@ -332,3 +290,32 @@ class SimulatorModelRevisionsAPI(APIClient):
             items=items,
             input_resource_cls=SimulatorModelRevisionWrite,
         )
+
+    def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
+        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+
+        Retrieves a list of simulator model revisions data that match the given criteria.
+
+        Args:
+            model_revision_external_id (str): The external id of the simulator model revision to filter by.
+        Returns:
+            SimulatorModelRevisionDataList: List of simulator model revision data
+
+        Examples:
+            List simulator model revision data:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.simulators.models.revisions.retrieve_data(model_revision_external_id="model_revision_1")
+        """
+        model_revisions_data_filter = SimulatorModelRevisionsDataFilter(
+            model_revision_external_id=model_revision_external_id,
+        )
+        self._warning.warn()
+
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/data/list",
+            headers={"cdf-version": "alpha"},
+            json={"items": [model_revisions_data_filter.dump()]},
+        )
+        items = response.json()["items"]
+        return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)

@@ -308,7 +308,7 @@ class TestSimulatorModels:
         model_revision_data = model_revisions[0].get_data()
         assert model_revision_data is not None
 
-        model_revision_data_list = cognite_client.simulators.models.revisions.data.list(
+        model_revision_data_list = cognite_client.simulators.models.revisions.retrieve_data(
             model_revision_external_id=model_revisions[0].external_id
         )
         assert model_revision_data == model_revision_data_list

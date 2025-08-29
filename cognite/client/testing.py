@@ -52,7 +52,7 @@ from cognite.client._api.simulators import SimulatorsAPI
 from cognite.client._api.simulators.integrations import SimulatorIntegrationsAPI
 from cognite.client._api.simulators.logs import SimulatorLogsAPI
 from cognite.client._api.simulators.models import SimulatorModelsAPI
-from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI, SimulatorModelRevisionsDataAPI
+from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
 from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRevisionsAPI
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
@@ -165,8 +165,7 @@ class CogniteClientMock(MagicMock):
         self.simulators = MagicMock(spec=SimulatorsAPI)
         self.simulators.integrations = MagicMock(spec_set=SimulatorIntegrationsAPI)
         self.simulators.models = MagicMock(spec=SimulatorModelsAPI)
-        self.simulators.models.revisions = MagicMock(spec=SimulatorModelRevisionsAPI)
-        self.simulators.models.revisions.data = MagicMock(spec_set=SimulatorModelRevisionsDataAPI)
+        self.simulators.models.revisions = MagicMock(spec_set=SimulatorModelRevisionsAPI)
         self.simulators.runs = MagicMock(spec_set=SimulatorRunsAPI)
         self.simulators.routines = MagicMock(spec=SimulatorRoutinesAPI)
         self.simulators.routines.revisions = MagicMock(spec_set=SimulatorRoutineRevisionsAPI)
