@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [7.83.1] - 2025-08-29
+### Changed
+- [alpha] Breaking change: rename `SimulatorModelRevisionExternalDependency` to `SimulatorModelRevisionDependency`, `SimulatorExternalDependencyFileInternalId` to `SimulatorModelDependencyFileId` in `external_dependencies` field in `SimulatorModelRevision`.
+
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
