@@ -9,13 +9,9 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
 Changes are grouped as follows
-- `Added` for new features.
-- `Changed` for changes in existing functionality.
-- `Deprecated` for soon-to-be removed features.
-- `Improved` for transparent changes, e.g. better performance.
-- `Removed` for now removed features.
-- `Fixed` for any bug fixes.
-- `Security` in case of vulnerabilities.
+- ✨ Features: New features or additions to existing features.
+- 🐛 Bug Fixes: Bug fixes.
+- ⚡ Improvements: Transparent changes, e.g. better performance.
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
