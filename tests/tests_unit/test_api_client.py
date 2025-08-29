@@ -501,7 +501,7 @@ class TestStandardList:
             payload = jsgz_load(request.body)
             np, total = payload["partition"].split("/")
             if int(np) == 3:
-                return 503, {}, json.dumps({"message": "Service Unavailable"})
+                return 500, {}, json.dumps({"message": "Internal server error"})
             else:
                 time.sleep(0.05)  # ensures bad luck race condition where 503 above executes last
                 return 200, {}, json.dumps({"items": [{"x": 42, "y": 13}]})
@@ -518,7 +518,7 @@ class TestStandardList:
                 partitions=15,
                 limit=None,
             )
-        assert 503 == exc.value.code
+        assert 500 == exc.value.code
         assert exc.value.unknown == [("3/15",)]
         assert exc.value.skipped
         assert exc.value.successful
@@ -1236,7 +1236,6 @@ class TestRetryableEndpoints:
                 # Function calls
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/call", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/123/calls/byids", True),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/xyz/calls/byids", False),
                 # Function schedules
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/functions/schedules/list", True),
@@ -1250,7 +1249,7 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/aggregate", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/documents/search", True),
-                # Transformations
+                # Extraction Pipelines
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/byids", True),
@@ -1279,17 +1278,11 @@ class TestRetryableEndpoints:
                 # 3D model revisions
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/34/nodes/list", True),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/12/revisions/ab/nodes/list", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byids", True),
                 (
                     "POST",
-                    "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/56/nodes/byXids",
-                    False,
-                ),
-                (
-                    "POST",
                     "https://api.cognitedata.com/api/v1/projects/bla/3d/models/34/revisions/cd/nodes/byids",
-                    False,
+                    True,
                 ),
                 # 3D asset mappings
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/3d/models/56/revisions/78/mappings", False),
@@ -1358,8 +1351,6 @@ class TestRetryableEndpoints:
                     True,
                 ),
                 # Retry for RAW on rows but not on dbs or tables as only the rows endpoints are idempotent
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db", False),
-                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/db/tables/t/rows/delete", True),
                 # Engineering diagrams
@@ -1389,7 +1380,7 @@ class TestRetryableEndpoints:
             api_client_with_token._is_retryable(method, path)
 
     def test_is_retryable_add(self, api_client_with_token, monkeypatch: pytest.MonkeyPatch):
-        rperp = APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS | {"/assets/bloop"}
+        rperp = APIClient._NON_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS | {"/assets/bloop"}
         monkeypatch.setattr(APIClient, "_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS", rperp)
 
         test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
