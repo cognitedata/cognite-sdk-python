@@ -134,3 +134,15 @@ It is then built and released when changes are merged into master.
 ### Release version conventions
 
 See https://semver.org/
+
+### Automated release process
+We automate the release process using [release-please](https://github.com/googleapis/release-please).
+
+With this, all PRs must use the Conventional Commit spec for the title. If a fix/feat/perf commit is merged to master, release-please creates a PR to bump versions and update the changelog accordingly.
+
+The following commit types will cause a release-please PR to be created:
+```
+fix -> patch bump
+feat -> minor bump
+feat!/fix!/perf! -> major bump (! indicates breaking change)
+```
