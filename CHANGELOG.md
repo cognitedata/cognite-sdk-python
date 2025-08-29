@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [7.84.0] - 2025-08-29
 ### Added
-- Support for the `/simulators/models/revisions/data` API endpoint.
+- [alpha] Support for the `/simulators/models/revisions/data` API endpoint.
 
 ## [7.83.0] - 2025-08-28
 ### Added
