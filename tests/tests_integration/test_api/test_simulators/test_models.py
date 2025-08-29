@@ -282,37 +282,22 @@ class TestSimulatorModels:
         assert model_updated.name == "updated name"
         cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])
 
-    @pytest.mark.usefixtures("seed_model_revision_file", "seed_resource_names")
     def test_create_model_and_revisions_with_data(
-        self,
-        cognite_client: CogniteClient,
-        seed_model_revision_file: FileMetadata,
-        seed_resource_names: ResourceNames,
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
-        model_external_id = random_string(10)
-        model_to_create = SimulatorModelWrite(
-            name="sdk-test-model1",
-            simulator_external_id=seed_resource_names.simulator_external_id,
-            external_id=model_external_id,
-            data_set_id=seed_resource_names.simulator_test_data_set_id,
-            type="SteadyState",
+        models = cognite_client.simulators.models.list(
+            simulator_external_ids=seed_resource_names.simulator_external_id, limit=1
         )
 
-        model_created = cognite_client.simulators.models.create(model_to_create)
-
-        assert model_created.external_id == model_external_id
-        model_revision_external_id = model_external_id + "revision_data"
-
-        model_revision_to_create = SimulatorModelRevisionWrite(
-            external_id=model_revision_external_id,
-            model_external_id=model_external_id,
-            file_id=seed_model_revision_file.id,
-            description="Test revision",
+        model_revisions = cognite_client.simulators.models.revisions.list(
+            limit=1, model_external_ids=models[0].external_id
         )
 
-        model_revision_created = cognite_client.simulators.models.revisions.create(model_revision_to_create)
+        model_revision = model_revisions[0]
 
-        assert model_revision_created.external_id == model_revision_external_id
+        model_revision_data_list = cognite_client.simulators.models.revisions.data.list(
+            model_revision_external_id=model_revision.external_id
+        )
 
         revision_data = cognite_client.simulators._post(
             "/simulators/models/revisions/data/update",
@@ -320,7 +305,7 @@ class TestSimulatorModels:
             json={
                 "items": [
                     {
-                        "modelRevisionExternalId": model_revision_external_id,
+                        "modelRevisionExternalId": model_revision.external_id,
                         "update": SIMULATOR_MODEL_REVISION_DATA_UPDATE,
                     }
                 ]
@@ -329,9 +314,9 @@ class TestSimulatorModels:
 
         assert revision_data.status_code == 200
 
-        model_revision_data = model_revision_created.get_data()
+        model_revision_data = model_revision.get_data()
         model_revision_data_list = cognite_client.simulators.models.revisions.data.list(
-            model_revision_external_id=model_revision_external_id
+            model_revision_external_id=model_revision.external_id
         )
         assert model_revision_data == model_revision_data_list
 
@@ -343,5 +328,3 @@ class TestSimulatorModels:
 
         assert flowsheet_item.simulator_object_edges is not None
         assert flowsheet_item.simulator_object_nodes is not None
-
-        cognite_client.simulators.models.delete(external_ids=[model_external_id])
