@@ -8,10 +8,15 @@ from cognite.client.data_classes.simulators.filters import (
 )
 from cognite.client.data_classes.simulators.models import (
     SimulatorModel,
+    SimulatorModelDependencyFileId,
+    SimulatorModelDependencyFileReference,
     SimulatorModelList,
     SimulatorModelRevision,
+    SimulatorModelRevisionDependency,
     SimulatorModelRevisionList,
     SimulatorModelRevisionWrite,
+    SimulatorModelRevisionWriteList,
+    SimulatorModelUpdate,
     SimulatorModelWrite,
 )
 from cognite.client.data_classes.simulators.runs import (
@@ -44,11 +49,16 @@ __all__ = [
     "SimulatorIntegrationList",
     "SimulatorList",
     "SimulatorModel",
+    "SimulatorModelDependencyFileId",
+    "SimulatorModelDependencyFileReference",
     "SimulatorModelList",
     "SimulatorModelRevision",
+    "SimulatorModelRevisionDependency",
     "SimulatorModelRevisionList",
     "SimulatorModelRevisionWrite",
+    "SimulatorModelRevisionWriteList",
     "SimulatorModelRevisionsFilter",
+    "SimulatorModelUpdate",
     "SimulatorModelWrite",
     "SimulatorModelsFilter",
     "SimulatorStep",

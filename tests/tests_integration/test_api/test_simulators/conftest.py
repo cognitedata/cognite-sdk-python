@@ -11,7 +11,7 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.models import SimulatorModelWrite
+from cognite.client.data_classes.simulators import SimulatorModelWrite
 from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevisionWrite
 from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
 from tests.tests_integration.test_api.test_simulators.seed.data import (
