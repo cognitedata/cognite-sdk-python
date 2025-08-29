@@ -17,9 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
  
-## [7.82.0] - 2025-08-26
+## [7.84.0] - 2025-08-29
 ## Added
 - Added support for creating and listing groups with `attributes`.
+
+## [7.83.0] - 2025-08-28
+### Added
+- Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
+
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
+## [7.82.0] - 2025-08-26
+### Added
+- Added support for specifying `max_text_size` in DMS text properties.
 
 ## [7.81.3] - 2025-08-26
 ### Added
