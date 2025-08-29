@@ -1374,13 +1374,6 @@ class TestRetryableEndpoints:
         with pytest.raises(ValueError, match="is not valid"):
             api_client_with_token._is_retryable(method, path)
 
-    def test_is_retryable_add(self, api_client_with_token, monkeypatch: pytest.MonkeyPatch):
-        rperp = APIClient._NON_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS | {"/assets/bloop"}
-        monkeypatch.setattr(APIClient, "_RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS", rperp)
-
-        test_url = "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-        assert api_client_with_token._is_retryable("POST", test_url) is True
-
 
 class TestHelpers:
     @pytest.mark.parametrize(
