@@ -20,7 +20,7 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     Patches,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._importing import local_import
 from tests.utils import set_request_limit
 
@@ -54,6 +54,17 @@ def test_crs(cognite_client):
 @pytest.fixture(params=[True, False])
 def allow_crs_transformation(request):
     yield request.param
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_old_feature_types(cognite_client):
+    res = cognite_client.geospatial.list_feature_types()
+    old_feature_types = [ft.external_id for ft in res if ((time.time() * 1000 - ft.created_time) / 1000 / 60 / 60) > 1]
+    for i in range(0, len(old_feature_types), 10):
+        try:
+            cognite_client.geospatial.delete_feature_types(old_feature_types[i : i + 10], recursive=True)
+        except CogniteNotFoundError:
+            ...
 
 
 @pytest.fixture()
