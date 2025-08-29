@@ -472,8 +472,8 @@ SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET = [
             {
                 "id": "edge-1",
                 "name": "edge-name",
-                "source_id": "edge-1",
-                "target_id": "edge-2",
+                "sourceId": "edge-1",
+                "targetId": "edge-2",
                 "connectionType": "Energy",
             }
         ],

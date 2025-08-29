@@ -9,6 +9,7 @@ from cognite.client.data_classes.simulators.filters import PropertySort
 from cognite.client.data_classes.simulators.models import (
     SimulatorExternalDependencyFileInternalId,
     SimulatorModelRevisionExternalDependency,
+    SimulatorModelRevisionFlowsheet,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
@@ -285,27 +286,13 @@ class TestSimulatorModels:
     def test_create_model_and_revisions_with_data(
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
-        models = cognite_client.simulators.models.list(
-            simulator_external_ids=seed_resource_names.simulator_external_id, limit=1
-        )
-
-        model_revisions = cognite_client.simulators.models.revisions.list(
-            limit=1, model_external_ids=models[0].external_id
-        )
-
-        model_revision = model_revisions[0]
-
-        model_revision_data_list = cognite_client.simulators.models.revisions.data.list(
-            model_revision_external_id=model_revision.external_id
-        )
-
         revision_data = cognite_client.simulators._post(
             "/simulators/models/revisions/data/update",
             headers={"cdf-version": "alpha"},
             json={
                 "items": [
                     {
-                        "modelRevisionExternalId": model_revision.external_id,
+                        "modelRevisionExternalId": seed_resource_names.simulator_model_revision_external_id,
                         "update": {"flowsheets": {"set": SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET}},
                     }
                 ]
@@ -314,17 +301,22 @@ class TestSimulatorModels:
 
         assert revision_data.status_code == 200
 
-        model_revision_data = model_revision.get_data()
+        model_revisions = cognite_client.simulators.models.revisions.list(
+            model_external_ids=seed_resource_names.simulator_model_external_id
+        )
+
+        model_revision_data = model_revisions[0].get_data()
+        assert model_revision_data is not None
+
         model_revision_data_list = cognite_client.simulators.models.revisions.data.list(
-            model_revision_external_id=model_revision.external_id
+            model_revision_external_id=model_revisions[0].external_id
         )
         assert model_revision_data == model_revision_data_list
 
         model_revision_data_item = model_revision_data[0]
-        assert len(model_revision_data_item.flowsheets) == 1
-
-        flowsheet_item = model_revision_data_item.flowsheets[0]
-        assert len(flowsheet_item.thermodynamics.property_packages) == 2
-
-        assert flowsheet_item.simulator_object_edges is not None
-        assert flowsheet_item.simulator_object_nodes is not None
+        assert (
+            model_revision_data_item.flowsheets[0].dump()
+            == SimulatorModelRevisionFlowsheet._load(
+                SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0], cognite_client=cognite_client
+            ).dump()
+        )
