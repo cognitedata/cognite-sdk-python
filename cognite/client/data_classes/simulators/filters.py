@@ -38,6 +38,11 @@ class SimulatorModelsFilter(CogniteFilter):
         )
 
 
+class SimulatorModelRevisionsDataFilter(CogniteFilter):
+    def __init__(self, model_revision_external_id: str | None = None) -> None:
+        self.model_revision_external_id = model_revision_external_id
+
+
 class SimulatorModelRevisionsFilter(CogniteFilter):
     def __init__(
         self,
