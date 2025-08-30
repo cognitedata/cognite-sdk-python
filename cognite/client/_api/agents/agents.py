@@ -20,7 +20,7 @@ class AgentsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warnings = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Agents")
+        self._warnings = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="beta", feature_name="Agents")
         self._api_subversion = "beta"
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1

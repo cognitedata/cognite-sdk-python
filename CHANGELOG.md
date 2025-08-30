@@ -15,7 +15,7 @@ As of 2025-08-29, changes are grouped as follows
 
 ## [Unreleased]
 ### Changed
-- [beta] Updated agents API to use beta version instead of alpha. API maturity changed from alpha to beta while SDK implementation remains alpha.
+- [beta] Updated agents API to use beta version instead of alpha. Both API maturity and SDK maturity changed from alpha to beta.
 - [beta] Updated warning system to show beta warnings for agents instead of alpha warnings, reflecting the API's promotion to beta status.
 
 ## [7.83.0] - 2025-08-28
