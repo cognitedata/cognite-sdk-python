@@ -13,9 +13,9 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
-## [Unreleased]
+## [7.84.0] - 2025-08-30
 ### Changed
-- [beta] Updated agents API to use beta version instead of alpha. API maturity changed from alpha to beta while SDK implementation remains alpha.
+- [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
 
 ## [7.83.0] - 2025-08-28
 ### Added
