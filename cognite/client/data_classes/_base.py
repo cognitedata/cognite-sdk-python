@@ -172,6 +172,17 @@ class CogniteObject(ABC):
         """
         return fast_dict_load(cls, resource, cognite_client=cognite_client)
 
+    @classmethod
+    def _load_list(
+        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> list[Self]:
+        if isinstance(resource, dict):
+            return [cls._load(resource, cognite_client)]
+        elif isinstance(resource, list):
+            return [cls._load(res, cognite_client) for res in resource if isinstance(res, dict)]
+        else:
+            raise TypeError("Expected a dict or a list of dicts.")
+
 
 class UnknownCogniteObject(CogniteObject):
     def __init__(self, data: dict[str, Any]) -> None:
