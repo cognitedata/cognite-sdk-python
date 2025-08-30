@@ -44,6 +44,7 @@ class EntityMatchingAPI(APIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """`Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
+
         Args:
             id (int | None): id of the model to retrieve.
             external_id (str | None): external id of the model to retrieve.
