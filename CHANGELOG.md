@@ -13,6 +13,11 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [Unreleased]
+### Changed
+- [beta] Updated agents API to use beta version instead of alpha. API maturity changed from alpha to beta while SDK implementation remains alpha.
+- [beta] Updated warning system to show beta warnings for agents instead of alpha warnings, reflecting the API's promotion to beta status.
+
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.

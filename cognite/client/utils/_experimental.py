@@ -16,9 +16,15 @@ class FeaturePreviewWarning(FutureWarning):
         self.feature_name = feature_name
 
     def __str__(self) -> str:
-        if self.api_version == "alpha" or self.sdk_version == "alpha":
+        if self.api_version == "alpha":
             return (
                 f"{self.feature_name} is in alpha and is subject to breaking changes without prior notice. "
+                f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
+                "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
+            )
+        elif self.api_version == "beta" or self.sdk_version == "alpha":
+            return (
+                f"{self.feature_name} is in beta, breaking changes may occur but will be preceded by a DeprecationWarning. "
                 f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
                 "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
             )
