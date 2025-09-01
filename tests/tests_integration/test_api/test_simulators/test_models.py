@@ -5,14 +5,14 @@ import pytest
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.models import (
-    SimulatorExternalDependencyFileInternalId,
-    SimulatorModelRevisionExternalDependency,
-    SimulatorModelRevisionFlowsheet,
+from cognite.client.data_classes.simulators import (
+    SimulatorModelDependencyFileId,
+    SimulatorModelRevisionDependency,
     SimulatorModelRevisionWrite,
     SimulatorModelWrite,
 )
+from cognite.client.data_classes.simulators.filters import PropertySort
+from cognite.client.data_classes.simulators.models import SimulatorModelRevisionFlowsheet
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -235,8 +235,8 @@ class TestSimulatorModels:
             )
 
             external_dependencies = [
-                SimulatorModelRevisionExternalDependency(
-                    file=SimulatorExternalDependencyFileInternalId(id=seed_external_dependency_file.id),
+                SimulatorModelRevisionDependency(
+                    file=SimulatorModelDependencyFileId(id=seed_external_dependency_file.id),
                     arguments={
                         "fieldA": "value1",
                         "fieldB": "value2",
@@ -255,9 +255,7 @@ class TestSimulatorModels:
 
             assert model_revision_created is not None
             assert model_revision_created.external_id == model_revision_external_id
-            assert isinstance(
-                model_revision_created.external_dependencies[0].file, SimulatorExternalDependencyFileInternalId
-            )
+            assert isinstance(model_revision_created.external_dependencies[0].file, SimulatorModelDependencyFileId)
             assert model_revision_created.external_dependencies[0].file.id == external_dependencies[0].file.id
         finally:
             cognite_client.simulators.models.delete(external_ids=[model_external_id])
