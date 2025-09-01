@@ -13,6 +13,14 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.84.0](https://github.com/cognitedata/cognite-sdk-python/compare/v7.83.1...v7.84.0) (2025-09-01)
+
+
+### Features
+
+* **simint-alpha:** change mouthfull class names ([#2277](https://github.com/cognitedata/cognite-sdk-python/issues/2277)) ([15bc400](https://github.com/cognitedata/cognite-sdk-python/commit/15bc4001e2c310667092759856360ba7bc9f8ebd))
+* **simulators:** Add created_time and simulation_time filters to simulation runs list method ([#2274](https://github.com/cognitedata/cognite-sdk-python/issues/2274)) ([e54c6eb](https://github.com/cognitedata/cognite-sdk-python/commit/e54c6eb4776e8f3879ef3db4ea1f2ca3e8ff0a8b))
+
 ## [7.83.1] - 2025-08-30
 ### Changed
 - [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
