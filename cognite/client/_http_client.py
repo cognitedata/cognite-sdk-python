@@ -4,11 +4,11 @@ import functools
 import logging
 import random
 import time
-from collections.abc import AsyncIterable, Callable, Iterable, Mapping, MutableMapping
-from contextlib import AbstractContextManager, suppress
+from collections.abc import AsyncIterable, Callable, Coroutine, Iterable, Mapping, MutableMapping
+from contextlib import suppress
 from http.cookiejar import Cookie, CookieJar
 from json import JSONDecodeError
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal
 
 import httpx
 
@@ -19,10 +19,9 @@ from cognite.client.exceptions import (
     CogniteReadTimeout,
     CogniteRequestError,
 )
+from cognite.client.utils._concurrency import ConcurrencySettings
 
 logger = logging.getLogger(__name__)
-
-_T = TypeVar("_T", httpx.Response, AbstractContextManager[httpx.Response])
 
 
 class NoCookiesPlease(CookieJar):
@@ -30,10 +29,10 @@ class NoCookiesPlease(CookieJar):
         pass
 
 
-def _get_default_transport() -> httpx.BaseTransport:
-    # This is split from 'get_global_httpx_client' to allow for easier monkeypatching in pyodide.
+def _get_default_async_transport() -> httpx.AsyncBaseTransport:
+    # This is split from 'get_global_async_httpx_client' to allow for easier monkeypatching in pyodide.
     # Most comments are copied from the underlying code for visibility with our own settings.
-    return httpx.HTTPTransport(
+    return httpx.AsyncHTTPTransport(
         proxy=global_config.proxy,
         retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
         verify=not global_config.disable_ssl,
@@ -53,9 +52,9 @@ def _get_default_transport() -> httpx.BaseTransport:
 
 
 @functools.cache
-def get_global_httpx_client() -> httpx.Client:
-    return httpx.Client(
-        transport=_get_default_transport(),
+def get_global_async_httpx_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        transport=_get_default_async_transport(),
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
         # Below should not be needed when we pass transport, but... :)
@@ -174,11 +173,12 @@ class HTTPClientWithRetry:
         self,
         config: HTTPClientWithRetryConfig,
         refresh_auth_header: Callable[[MutableMapping[str, str]], None],
-        httpx_client: httpx.Client | None = None,
+        httpx_client: httpx.AsyncClient | None = None,
     ) -> None:
         self.config = config
         self.refresh_auth_header = refresh_auth_header
-        self.httpx_client = httpx_client or get_global_httpx_client()
+        self.httpx_client = httpx_client or get_global_async_httpx_client()
+        self._event_loop_executor = ConcurrencySettings._get_event_loop_executor()
 
     def __call__(
         self,
@@ -194,8 +194,7 @@ class HTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
     ) -> httpx.Response:
-        fn: Callable[..., httpx.Response] = functools.partial(
-            self.httpx_client.request,
+        fn: Coroutine[Any, Any, httpx.Response] = self.httpx_client.request(
             method,
             url,
             content=content,
@@ -217,7 +216,8 @@ class HTTPClientWithRetry:
         json: Any = None,
         headers: MutableMapping[str, str] | None = None,
         timeout: float | None = None,
-    ) -> AbstractContextManager[httpx.Response]:
+    ) -> AbstractAsyncContextManager[httpx.Response]:
+        # TODO: This requires some more thought...
         fn: Callable[..., AbstractContextManager[httpx.Response]] = functools.partial(
             self.httpx_client.stream, method, url, json=json, headers=headers, timeout=timeout
         )
@@ -225,25 +225,22 @@ class HTTPClientWithRetry:
 
     def _with_retry(
         self,
-        fn: Callable[..., _T],
+        coro: Coroutine[Any, Any, httpx.Response],
         *,
         url: str,
         headers: MutableMapping[str, str] | None,
         is_auto_retryable: bool = False,
-        stream: bool = False,
-    ) -> _T:
+    ) -> httpx.Response:
         retry_tracker = RetryTracker(self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
-                if stream:
-                    return fn()
-                res: httpx.Response = fn()  # type: ignore
+                res = self._event_loop_executor.run_coro(coro)
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?
                     res.json = functools.cache(res.json)  # type: ignore [method-assign]
-                return res.raise_for_status()  # type: ignore [return-value]
+                return res.raise_for_status()
 
             except httpx.HTTPStatusError:
                 if accepts_json:
