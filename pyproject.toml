@@ -57,7 +57,7 @@ geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 yaml = ["PyYAML"]
-pyodide = ["pyodide-http", "tzdata"]  # keep pyodide related dependencies outside of 'all'
+pyodide = ["pyodide-http", "tzdata", "anyio"]  # keep pyodide related dependencies outside of 'all'
 all = ["numpy", "pandas", "geopandas", "shapely", "sympy", "pip", "PyYAML"]
 
 [tool.poetry.group.dev.dependencies]
