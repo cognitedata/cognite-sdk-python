@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
 // Start the server and listen on the defined port. Then try to install the SDK in Python
 server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}. Now trying to install sdk.`);
-  
+
   async function test_cognite_sdk() {
     let pyodide = await loadPyodide();
     await pyodide.loadPackage("micropip");
@@ -44,7 +44,7 @@ server.listen(PORT, () => {
       await micropip.install(pkg);
     }
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
-    
+
     return pyodide.runPythonAsync('"Python SDK successfully installed and imported!"');
   }
 
