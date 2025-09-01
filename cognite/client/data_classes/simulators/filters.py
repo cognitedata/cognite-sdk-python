@@ -63,6 +63,8 @@ class SimulatorRunsFilter(CogniteFilter):
         routine_external_ids: str | SequenceNotStr[str] | None = None,
         routine_revision_external_ids: str | SequenceNotStr[str] | None = None,
         model_revision_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = _parse_str_or_sequence(model_external_ids)
         self.simulator_integration_external_ids = _parse_str_or_sequence(simulator_integration_external_ids)
@@ -72,6 +74,8 @@ class SimulatorRunsFilter(CogniteFilter):
         self.model_revision_external_ids = _parse_str_or_sequence(model_revision_external_ids)
         self.status = status
         self.run_type = run_type
+        self.created_time = created_time
+        self.simulation_time = simulation_time
 
 
 class SimulatorRoutinesFilter(CogniteFilter):
