@@ -41,11 +41,10 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         instance = super()._load(resource, cognite_client)
-        instance.external_dependencies = (
-            SimulatorModelRevisionExternalDependency._load_list(instance.external_dependencies, cognite_client)
-            if "external_dependencies" in instance
-            else None
-        )
+        if instance.external_dependencies:
+            instance.external_dependencies = SimulatorModelRevisionExternalDependency._load_list(
+                instance.external_dependencies, cognite_client
+            )
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
