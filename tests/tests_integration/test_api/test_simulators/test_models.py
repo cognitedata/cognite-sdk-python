@@ -12,7 +12,7 @@ from cognite.client.data_classes.simulators import (
     SimulatorModelWrite,
 )
 from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.models import SimulatorModelRevisionFlowsheet
+from cognite.client.data_classes.simulators.models import SimulatorFlowsheet
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.conftest import upload_file
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -314,7 +314,7 @@ class TestSimulatorModels:
         model_revision_data_item = model_revision_data[0]
         assert (
             model_revision_data_item.flowsheets[0].dump()
-            == SimulatorModelRevisionFlowsheet._load(
+            == SimulatorFlowsheet._load(
                 SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET[0], cognite_client=cognite_client
             ).dump()
         )

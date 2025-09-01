@@ -402,7 +402,7 @@ class SimulatorModelRevisionDependency(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionDataObjectEdge(CogniteObject):
+class SimulatorFlowsheetObjectEdge(CogniteObject):
     id: str
     name: str | None
     source_id: str
@@ -422,12 +422,12 @@ class SimulatorModelRevisionDataObjectEdge(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> list[SimulatorModelRevisionDataObjectEdge]:
+    ) -> list[SimulatorFlowsheetObjectEdge]:
         return [cls._load(item, cognite_client) for item in resource]
 
 
 @dataclass
-class SimulatorModelRevisionDataThermodynamic(CogniteObject):
+class SimulatorFlowsheetThermodynamic(CogniteObject):
     property_packages: list[str]
     components: list[str]
 
@@ -455,7 +455,7 @@ class SimulationValueUnitReference(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionDataProperty(CogniteObject):
+class SimulatorFlowsheetProperty(CogniteObject):
     name: str
     reference_object: dict[str, str]
     value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
@@ -477,7 +477,7 @@ class SimulatorModelRevisionDataProperty(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> list[SimulatorModelRevisionDataProperty]:
+    ) -> list[SimulatorFlowsheetProperty]:
         return [cls._load(item, cognite_client) for item in resource]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -489,7 +489,7 @@ class SimulatorModelRevisionDataProperty(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionDataPosition(CogniteObject):
+class SimulatorFlowsheetPosition(CogniteObject):
     x: float
     y: float
 
@@ -502,8 +502,8 @@ class SimulatorModelRevisionDataPosition(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionDataGraphicalObject(CogniteObject):
-    position: SimulatorModelRevisionDataPosition | None
+class SimulatorFlowsheetGraphicalObject(CogniteObject):
+    position: SimulatorFlowsheetPosition | None
     height: float | None
     width: float | None
     scale_x: bool | None
@@ -514,7 +514,7 @@ class SimulatorModelRevisionDataGraphicalObject(CogniteObject):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            position=SimulatorModelRevisionDataPosition._load(resource["position"]) if "position" in resource else None,
+            position=SimulatorFlowsheetPosition._load(resource["position"]) if "position" in resource else None,
             height=resource.get("height"),
             width=resource.get("width"),
             scale_x=resource.get("scaleX"),
@@ -532,17 +532,17 @@ class SimulatorModelRevisionDataGraphicalObject(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionDataObjectNode(CogniteObject):
+class SimulatorFlowsheetObjectNode(CogniteObject):
     id: int
     name: str | None
     type: str
-    graphical_object: SimulatorModelRevisionDataGraphicalObject | None
-    properties: list[SimulatorModelRevisionDataProperty]
+    graphical_object: SimulatorFlowsheetGraphicalObject | None
+    properties: list[SimulatorFlowsheetProperty]
 
     @classmethod
     def _load_list(
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> list[SimulatorModelRevisionDataObjectNode]:
+    ) -> list[SimulatorFlowsheetObjectNode]:
         return [cls._load(item, cognite_client) for item in resource]
 
     @classmethod
@@ -551,10 +551,10 @@ class SimulatorModelRevisionDataObjectNode(CogniteObject):
             id=resource["id"],
             name=resource.get("name"),
             type=resource["type"],
-            graphical_object=SimulatorModelRevisionDataGraphicalObject._load(resource["graphicalObject"])
+            graphical_object=SimulatorFlowsheetGraphicalObject._load(resource["graphicalObject"])
             if "graphicalObject" in resource
             else None,
-            properties=SimulatorModelRevisionDataProperty._load_list(resource["properties"], cognite_client),
+            properties=SimulatorFlowsheetProperty._load_list(resource["properties"], cognite_client),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -567,27 +567,27 @@ class SimulatorModelRevisionDataObjectNode(CogniteObject):
 
 
 @dataclass
-class SimulatorModelRevisionFlowsheet(CogniteObject):
-    simulator_object_nodes: list[SimulatorModelRevisionDataObjectNode]
-    simulator_object_edges: list[SimulatorModelRevisionDataObjectEdge]
-    thermodynamics: SimulatorModelRevisionDataThermodynamic
+class SimulatorFlowsheet(CogniteObject):
+    simulator_object_nodes: list[SimulatorFlowsheetObjectNode]
+    simulator_object_edges: list[SimulatorFlowsheetObjectEdge]
+    thermodynamics: SimulatorFlowsheetThermodynamic
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            simulator_object_nodes=SimulatorModelRevisionDataObjectNode._load_list(
+            simulator_object_nodes=SimulatorFlowsheetObjectNode._load_list(
                 resource["simulatorObjectNodes"], cognite_client
             ),
-            simulator_object_edges=SimulatorModelRevisionDataObjectEdge._load_list(
+            simulator_object_edges=SimulatorFlowsheetObjectEdge._load_list(
                 resource["simulatorObjectEdges"], cognite_client
             ),
-            thermodynamics=SimulatorModelRevisionDataThermodynamic._load(resource["thermodynamics"], cognite_client),
+            thermodynamics=SimulatorFlowsheetThermodynamic._load(resource["thermodynamics"], cognite_client),
         )
 
     @classmethod
     def _load_list(
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> list[SimulatorModelRevisionFlowsheet]:
+    ) -> list[SimulatorFlowsheet]:
         return [cls._load(item, cognite_client) for item in resource]
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -621,7 +621,7 @@ class SimulatorModelRevisionData(CogniteResource):
         created_time (int): The time when the simulator model revision data was created
         last_updated_time (int): The time when the simulator model revision data was last updated
         data_set_id (int): The id of the dataset associated with the simulator model revision data
-        flowsheets (list[SimulatorModelRevisionFlowsheet] | None): Extracted flowsheet information,
+        flowsheets (list[SimulatorFlowsheet] | None): Extracted flowsheet information,
             if supported by the connector. May include blocks, equipment, properties, and connections
         info (dict[str, str] | None): Additional metadata extracted from the simulator file,
             if supported by the connector
@@ -633,7 +633,7 @@ class SimulatorModelRevisionData(CogniteResource):
         created_time: int,
         last_updated_time: int,
         data_set_id: int,
-        flowsheets: list[SimulatorModelRevisionFlowsheet] | None,
+        flowsheets: list[SimulatorFlowsheet] | None,
         info: dict[str, str] | None,
     ) -> None:
         self.model_revision_external_id = model_revision_external_id
@@ -647,7 +647,7 @@ class SimulatorModelRevisionData(CogniteResource):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             model_revision_external_id=resource["modelRevisionExternalId"],
-            flowsheets=SimulatorModelRevisionFlowsheet._load_list(resource["flowsheets"], cognite_client)
+            flowsheets=SimulatorFlowsheet._load_list(resource["flowsheets"], cognite_client)
             if resource.get("flowsheets")
             else None,
             info=resource.get("info"),
@@ -660,7 +660,7 @@ class SimulatorModelRevisionData(CogniteResource):
         output = super().dump(camel_case=camel_case)
         if self.flowsheets is not None:
             output["flowsheets"] = [
-                item.dump(camel_case=camel_case) if isinstance(item, SimulatorModelRevisionFlowsheet) else item
+                item.dump(camel_case=camel_case) if isinstance(item, SimulatorFlowsheet) else item
                 for item in self.flowsheets
             ]
 
