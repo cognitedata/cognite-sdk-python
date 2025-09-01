@@ -305,6 +305,8 @@ TIME_ATTRIBUTES = {
     "start_time",
     "timestamp",
     "uploaded_time",
+    "run_time",
+    "simulation_time",
 }
 TIME_ATTRIBUTES |= set(map(to_camel_case, TIME_ATTRIBUTES))
 

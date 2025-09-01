@@ -1,0 +1,25 @@
+{
+  "packages": {
+    ".": {
+      "package-name": "cognite/client",
+      "release-type": "python",
+      "bump-files": [
+        "pyproject.toml",
+        {
+          "filename": "cognite/client/_version.py",
+          "search-regex": "__version__ = \"(.*)\""
+        }
+      ]
+    }
+  },
+  "changelog-types": [
+    { "type": "feat", "section": "✨ Features", "hidden": false },
+    { "type": "fix", "section": "🐛 Bug Fixes", "hidden": false },
+    { "type": "perf", "section": "⚡ Improvements", "hidden": false },
+    { "type": "docs", "section": "📚 Documentation", "hidden": true },
+    { "type": "style", "section": "🎨 Styles", "hidden": true },
+    { "type": "refactor", "section": "🛠 Refactoring", "hidden": true },
+    { "type": "test", "section": "✅ Tests", "hidden": true },
+    { "type": "chore", "section": "🔧 Chores", "hidden": true }
+  ]
+}

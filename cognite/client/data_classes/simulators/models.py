@@ -30,7 +30,7 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         model_external_id: str,
         file_id: int,
         description: str | None = None,
-        external_dependencies: list[SimulatorModelRevisionExternalDependency] | None = None,
+        external_dependencies: list[SimulatorModelRevisionDependency] | None = None,
     ) -> None:
         self.external_id = external_id
         self.model_external_id = model_external_id
@@ -45,7 +45,7 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
-            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
                 resource["externalDependencies"], cognite_client
             )
             if "externalDependencies" in resource
@@ -74,7 +74,7 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
-            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
                 resource["externalDependencies"], cognite_client
             )
             if "externalDependencies" in resource
@@ -103,7 +103,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id (int): The id of the log associated with the simulator model revision
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status message of the simulator model revision
-        external_dependencies (list[SimulatorModelRevisionExternalDependency] | None): A list of external dependencies for the simulator model revision
+        external_dependencies (list[SimulatorModelRevisionDependency] | None): A list of external dependencies for the simulator model revision
     """
 
     def __init__(
@@ -122,7 +122,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id: int,
         description: str | None = None,
         status_message: str | None = None,
-        external_dependencies: list[SimulatorModelRevisionExternalDependency] | None = None,
+        external_dependencies: list[SimulatorModelRevisionDependency] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -159,7 +159,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             log_id=resource["logId"],
             description=resource.get("description"),
             status_message=resource.get("statusMessage"),
-            external_dependencies=SimulatorModelRevisionExternalDependency._load_list(
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
                 resource["externalDependencies"], cognite_client
             )
             if "externalDependencies" in resource
@@ -355,11 +355,11 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
-class SimulatorExternalDependencyFileReference(CogniteObject): ...
+class SimulatorModelDependencyFileReference(CogniteObject): ...
 
 
 @dataclass
-class SimulatorExternalDependencyFileInternalId(SimulatorExternalDependencyFileReference):
+class SimulatorModelDependencyFileId(SimulatorModelDependencyFileReference):
     id: int
 
     @classmethod
@@ -370,7 +370,7 @@ class SimulatorExternalDependencyFileInternalId(SimulatorExternalDependencyFileR
 
 
 @dataclass
-class SimulatorModelRevisionExternalDependency(CogniteObject):
+class SimulatorModelRevisionDependency(CogniteObject):
     """
     Represents an external dependency for a simulator model revision.
     Args:
@@ -378,13 +378,13 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
     """
 
-    file: SimulatorExternalDependencyFileInternalId
+    file: SimulatorModelDependencyFileReference
     arguments: dict[str, str]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
-            file=SimulatorExternalDependencyFileInternalId.load(resource["file"])
+            file=SimulatorModelDependencyFileId.load(resource["file"])
             if "id" in resource["file"]
             else resource["file"],
             arguments=resource["arguments"],
@@ -394,7 +394,7 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
         output = super().dump(camel_case=camel_case)
         output["file"] = (
             self.file.dump(camel_case=camel_case)
-            if isinstance(self.file, SimulatorExternalDependencyFileInternalId)
+            if isinstance(self.file, SimulatorModelDependencyFileReference)
             else self.file
         )
         return output
@@ -402,5 +402,5 @@ class SimulatorModelRevisionExternalDependency(CogniteObject):
     @classmethod
     def _load_list(
         cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
-    ) -> list[SimulatorModelRevisionExternalDependency]:
+    ) -> list[SimulatorModelRevisionDependency]:
         return [cls._load(item, cognite_client) for item in resource]

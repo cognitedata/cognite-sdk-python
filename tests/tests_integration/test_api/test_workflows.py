@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import unittest
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -115,7 +116,7 @@ def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
         workflow_definition=WorkflowDefinitionUpsert(
             tasks=[
                 WorkflowTask(
-                    external_id=f"{new_workflow.external_id}-1-task1",
+                    external_id=f"{new_workflow.external_id}-1-task1-{random_string(5)}",
                     parameters=CDFTaskParameters(
                         resource_path="/timeseries",
                         method="GET",
@@ -593,7 +594,7 @@ class TestWorkflowTriggers:
             created = cognite_client.workflows.triggers.upsert(existing)
 
             update = WorkflowTriggerUpsert._load(existing.dump())
-            new_rule = WorkflowScheduledTriggerRule(cron_expression="0 * * * *")
+            new_rule = WorkflowScheduledTriggerRule(cron_expression="0 * * * *", timezone=ZoneInfo("Europe/Oslo"))
             update.trigger_rule = new_rule
 
             updated = cognite_client.workflows.triggers.upsert(update)

@@ -4,6 +4,7 @@ import time
 import pytest
 
 from cognite.client._cognite_client import CogniteClient
+from cognite.client.data_classes import TimestampRange
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
@@ -11,12 +12,13 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunWrite,
     SimulationValueUnitName,
 )
+from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
 
 
 @pytest.mark.usefixtures("seed_resource_names", "seed_simulator_routine_revisions")
 class TestSimulatorRuns:
-    def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    def test_list_filtering(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         runs_filtered_by_status = []
         for current_status in ["running", "success", "failure"]:
             created_runs = cognite_client.simulators.runs.create(
@@ -51,8 +53,10 @@ class TestSimulatorRuns:
         )
 
     @pytest.mark.asyncio
-    async def test_run_with_wait_and_retrieve(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    async def test_run_with_wait_and_retrieve(
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
 
         run_task = asyncio.create_task(
             asyncio.to_thread(lambda: cognite_client.simulators.routines.run(routine_external_id=routine_external_id))
@@ -105,9 +109,9 @@ class TestSimulatorRuns:
         assert data_res.dump() == data_res2.dump()
 
     def test_create_run(
-        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names
+        self, cognite_client: CogniteClient, seed_simulator_routine_revisions, seed_resource_names: ResourceNames
     ) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         created_runs = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
@@ -120,8 +124,59 @@ class TestSimulatorRuns:
         assert created_runs[0].routine_external_id == routine_external_id
         assert created_runs[0].id is not None
 
-    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names) -> None:
-        routine_external_id = seed_resource_names["simulator_routine_external_id"]
+    def test_list_filtering_timestamp_ranges(
+        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
+    ) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
+
+        # Create a run to ensure we have something to filter
+        created_run = cognite_client.simulators.runs.create(
+            [
+                SimulationRunWrite(
+                    run_type="external",
+                    routine_external_id=routine_external_id,
+                )
+            ]
+        )
+        created_run_time = created_run[0].created_time
+
+        # Set a specific simulation time for our test run
+        test_simulation_time = int(time.time() * 1000) - 5000  # 5 seconds ago
+        cognite_client.simulators._post(
+            "/simulators/run/callback",
+            json={
+                "items": [
+                    {
+                        "id": created_run[0].id,
+                        "status": "success",
+                        "simulationTime": test_simulation_time,
+                    }
+                ]
+            },
+        )
+
+        # Test filtering by created_time and simulation_time - use a narrow range around the created run
+        runs_filtered_both = cognite_client.simulators.runs.list(
+            routine_external_ids=[routine_external_id],
+            created_time=TimestampRange(min=created_run_time - 1000, max=created_run_time + 1000),
+            simulation_time=TimestampRange(min=test_simulation_time - 1000, max=test_simulation_time + 1000),
+            limit=100,
+        )
+        assert len(runs_filtered_both) > 0
+        assert created_run[0].id in [run.id for run in runs_filtered_both]
+
+        # Test with empty time range for created_time and simulation_time (should return no results)
+        current_time_ms = int(time.time() * 1000)
+        runs_empty_range = cognite_client.simulators.runs.list(
+            routine_external_ids=[routine_external_id],
+            created_time=TimestampRange(min=current_time_ms + 20000, max=current_time_ms + 30000),
+            simulation_time=TimestampRange(min=current_time_ms + 20000, max=current_time_ms + 30000),
+            limit=5,
+        )
+        assert len(runs_empty_range) == 0
+
+    def test_list_run_data(self, cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+        routine_external_id = seed_resource_names.simulator_routine_external_id
         created_run = cognite_client.simulators.runs.create(
             [
                 SimulationRunWrite(
