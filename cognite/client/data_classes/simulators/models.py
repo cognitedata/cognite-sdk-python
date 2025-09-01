@@ -40,12 +40,12 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        resource["external_dependencies"] = (
-            SimulatorModelRevisionExternalDependency._load_list(resource["externalDependencies"], cognite_client)
-            if "externalDependencies" in resource
+        instance = super()._load(resource, cognite_client)
+        instance.external_dependencies = (
+            SimulatorModelRevisionExternalDependency._load_list(instance.external_dependencies, cognite_client)
+            if "external_dependencies" in instance
             else None
         )
-        instance = super()._load(resource, cognite_client)
         return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -450,7 +450,7 @@ class SimulatorModelRevisionDataThermodynamic(CogniteObject):
 
 
 @dataclass
-class SimulationValueUnitQuantity(CogniteObject):
+class SimulationValueUnitReference(CogniteObject):
     name: str
     quantity: str | None = None
     external_id: str | None = None
@@ -470,7 +470,7 @@ class SimulatorModelRevisionDataProperty(CogniteObject):
     reference_object: dict[str, str]
     value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
     value: str | float | list[str] | list[float]
-    unit: SimulationValueUnitQuantity | None
+    unit: SimulationValueUnitReference | None
     read_only: bool | None
 
     @classmethod
@@ -480,7 +480,7 @@ class SimulatorModelRevisionDataProperty(CogniteObject):
             reference_object=resource["referenceObject"],
             value_type=resource["valueType"],
             value=resource["value"],
-            unit=SimulationValueUnitQuantity._load(resource["unit"]) if "unit" in resource else None,
+            unit=SimulationValueUnitReference._load(resource["unit"]) if "unit" in resource else None,
             read_only=resource.get("readOnly"),
         )
 
