@@ -17,6 +17,8 @@ class TestOrganizationAPI:
         assert organization != ""
         if org_api._config.project in {"python-sdk-contributor", "python-sdk-test", "python-sdk-test-prod"}:
             assert organization == "cog-python-sdk"
+        else:
+            pytest.skip("Organization not supported")
 
     def test_get_request_org_endpoint(self, org_api: OrgAPI) -> None:
         response = org_api._get("/principals")

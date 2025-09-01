@@ -12,7 +12,7 @@ def test_ensure_all_apis_are_available_on_cognite_mock():
     mocked_apis = all_mock_children(CogniteClientMock())
     available = {v.__class__ for v in mocked_apis.values()}
     # OrgAPI is a base API and should not mocked directly.
-    expected = set(all_subclasses(APIClient)) - {OrgAPI}
+    expected = set(all_subclasses(APIClient, exclude={OrgAPI}))
     # Any new APIs that have not been added to CogniteClientMock?
     assert not expected.difference(available), f"Missing APIs: {expected.difference(available)}"
     # Any removed APIs that are still available on CogniteClientMock?

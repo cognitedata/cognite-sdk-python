@@ -9,6 +9,8 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 class OrgAPI(APIClient, ABC):
+    _auth_url = "https://auth.cognite.com"
+
     def _get_base_url_with_base_path(self) -> str:
         """Get base URL with base path including organization and api version if applicable"""
         base_path = ""
@@ -16,7 +18,7 @@ class OrgAPI(APIClient, ABC):
             base_path = f"/api/{self._api_version}/orgs/{self._organization}"
         # The OrganizationAPi uses the auth_url as the base for these endpoints instead of the
         # base_url like the rest of the SDK.
-        return urljoin(self._config.auth_url, base_path)
+        return urljoin(self._auth_url, base_path)
 
     @cached_property
     def _organization(self) -> str:
@@ -27,12 +29,9 @@ class OrgAPI(APIClient, ABC):
         )
         # This is an internal endpoint, not part of the public API
         full_url = urljoin(self._config.base_url, f"/api/v1/projects/{self._config.project}")
-        response = self._http_client.request(method="GET", url=full_url, headers=headers)
+        response = self._http_client_with_retry.request(method="GET", url=full_url, headers=headers)
         if response.status_code != 200:
             raise CogniteAPIError(
                 "Could not look-up organization", response.status_code, response.headers.get("x-request-id")
             )
-        try:
-            return response.json()["organization"]
-        except KeyError as e:
-            raise RuntimeError(f"Could not find 'organization' in response: {response.text}") from e
+        return response.json()["organization"]

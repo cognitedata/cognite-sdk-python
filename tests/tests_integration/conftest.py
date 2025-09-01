@@ -107,6 +107,13 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
 
 @pytest.fixture(scope="session")
 def cognite_client_cdf_authenticated() -> CogniteClient:
+    """Some endpoints require a CDF authenticated client, for example, the principal endpoints:
+    https://api-docs.cognite.com/20230101/tag/Principals#section/Authentication-for-this-API
+
+    Thus, we cannot use a service principal that is authenticated with Entra ID, but need to use a CDF client id
+    and secret.
+    """
+
     load_dotenv(REPO_ROOT / "cdf_principal.env")
     if "CDF_CLIENT_ID" not in os.environ or "CDF_CLIENT_SECRET" not in os.environ:
         pytest.skip("CDF environment variables not set. Skipping tests that require CDF authenticated client.")
