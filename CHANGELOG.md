@@ -24,6 +24,7 @@ As of 2025-08-29, changes are grouped as follows
 ## [Unreleased]
 ### Added
 - [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
