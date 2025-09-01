@@ -283,7 +283,7 @@ class TestSimulatorModels:
         assert model_updated.name == "updated name"
         cognite_client.simulators.models.delete(external_ids=[model_updated.external_id])
 
-    def test_create_model_and_revisions_with_data(
+    def test_model_revision_retrieve_data(
         self, cognite_client: CogniteClient, seed_resource_names: ResourceNames
     ) -> None:
         revision_data = cognite_client.simulators._post(

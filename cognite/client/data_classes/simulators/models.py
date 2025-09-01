@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
 
@@ -417,7 +417,7 @@ class SimulatorModelRevisionDataObjectEdge(CogniteObject):
     name: str | None
     source_id: str
     target_id: str
-    connection_type: str
+    connection_type: Literal["Material", "Energy", "Information"]
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -468,7 +468,7 @@ class SimulationValueUnitQuantity(CogniteObject):
 class SimulatorModelRevisionDataProperty(CogniteObject):
     name: str
     reference_object: dict[str, str]
-    value_type: str
+    value_type: Literal["STRING", "DOUBLE", "STRING_ARRAY", "DOUBLE_ARRAY"]
     value: str | float | list[str] | list[float]
     unit: SimulationValueUnitQuantity | None
     read_only: bool | None
@@ -625,8 +625,6 @@ class SimulatorModelRevisionData(CogniteResource):
     - Not implement this feature at all (no data extraction)
     - Partially implement it (e.g., only populate 'info' or only 'flowsheets')
     - Fully implement it with comprehensive model details
-
-    This is the read/response format for simulator model revision data.
 
     Args:
         model_revision_external_id (str): External id of the associated model revision

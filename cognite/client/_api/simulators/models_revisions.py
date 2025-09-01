@@ -147,10 +147,6 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> res = client.simulators.models.revisions.retrieve(
                 ...     external_ids=["revision1", "revision2"]
                 ... )
-
-            Get revision data using the model revision reference:
-                >>> res = client.simulators.models.revisions.retrieve(ids=[1])
-                >>> res[0].get_data()
         """
         self._warning.warn()
 
@@ -304,7 +300,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             List simulator model revision data:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.models.revisions.retrieve_data(model_revision_external_id="model_revision_1")
+                >>> res = client.simulators.models.revisions.retrieve_data("model_revision_1")
         """
         self._warning.warn()
 
