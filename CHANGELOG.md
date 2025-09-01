@@ -13,6 +13,11 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.83.2] - 2025-09-02
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- [alpha] New convenience methods for displaying Simulator Routine Revision script, inputs and outputs as DataFrames in Jupyter notebooks.
+
 ## [7.83.1] - 2025-08-30
 ### Changed
 - [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
@@ -20,10 +25,6 @@ As of 2025-08-29, changes are grouped as follows
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
-
-## [Unreleased]
-### Added
-- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
@@ -41,10 +42,6 @@ As of 2025-08-29, changes are grouped as follows
 ## [7.81.2] - 2025-08-21
 ### Changed
 - Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
-
-## [7.82.0] - 2025-08-22
-### Added
-- New convenience methods for displaying Simulator Routine Revision script, inputs and outputs as DataFrames in Jupyter notebooks
 
 ## [7.81.1] - 2025-08-20
 ### Fixed
