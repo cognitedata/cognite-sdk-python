@@ -52,7 +52,7 @@ def patch_sdk_for_pyodide() -> None:
     # -------------------
     # Patch Pyodide related issues
     # - Patch 'httpx' as it does not work natively in emscripten/pyodide, by using a special transport:
-    cc._http_client._get_default_transport = _get_default_transport_pyodide
+    cc._http_client._get_default_async_transport = _get_default_transport_pyodide
 
     # -----------------
     # Patch Cognite SDK
@@ -124,8 +124,8 @@ class FusionNotebookConfig(ClientConfig):
         )
 
 
-def _get_default_transport_pyodide() -> BaseTransport:
-    return JavascriptFetchTransport()
+def _get_default_transport_pyodide() -> AsyncBaseTransport:
+    return AsyncJavascriptFetchTransport()
 
 
 # -------------------
