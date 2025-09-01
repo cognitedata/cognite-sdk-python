@@ -8,7 +8,6 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import (
     PropertySort,
-    SimulatorModelRevisionsDataFilter,
     SimulatorModelRevisionsFilter,
 )
 from cognite.client.data_classes.simulators.models import (
@@ -307,15 +306,12 @@ class SimulatorModelRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.revisions.retrieve_data(model_revision_external_id="model_revision_1")
         """
-        model_revisions_data_filter = SimulatorModelRevisionsDataFilter(
-            model_revision_external_id=model_revision_external_id,
-        )
         self._warning.warn()
 
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             headers={"cdf-version": "alpha"},
-            json={"items": [model_revisions_data_filter.dump()]},
+            json={"items": [{"modelRevisionExternalId": model_revision_external_id}]},
         )
         items = response.json()["items"]
         return SimulatorModelRevisionDataList._load(items, cognite_client=self._cognite_client)
