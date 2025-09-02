@@ -5,14 +5,18 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
+    AssetWrite,
     DataSetWrite,
     Label,
     LabelDefinition,
+    LabelDefinitionWrite,
     LabelFilter,
     Relationship,
     RelationshipList,
     RelationshipUpdate,
+    RelationshipWrite,
     TimeSeries,
+    TimeSeriesWrite,
 )
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
@@ -29,7 +33,7 @@ def new_relationship(new_label, cognite_client):
         )
 
     relationship = cognite_client.relationships.create(
-        Relationship(
+        RelationshipWrite(
             external_id=external_id,
             source_external_id=external_id,
             source_type="asset",
@@ -49,7 +53,7 @@ def new_relationship(new_label, cognite_client):
 def new_label(cognite_client):
     # create a label to use in relationships
     external_id = uuid.uuid4().hex[:20]
-    tp = cognite_client.labels.create(LabelDefinition(external_id=external_id, name="mandatory"))
+    tp = cognite_client.labels.create(LabelDefinitionWrite(external_id=external_id, name="mandatory"))
     assert isinstance(tp, LabelDefinition)
     yield tp
     cognite_client.labels.delete(external_id=tp.external_id)
@@ -59,7 +63,7 @@ def new_label(cognite_client):
 def new_asset(cognite_client):
     # create an asset to use in relationships
     external_id = uuid.uuid4().hex[:20]
-    tp = cognite_client.assets.create(Asset(external_id=external_id, name="mandatory"))
+    tp = cognite_client.assets.create(AssetWrite(external_id=external_id, name="mandatory"))
     assert isinstance(tp, Asset)
     yield tp
     cognite_client.assets.delete(external_id=tp.external_id)
@@ -69,7 +73,7 @@ def new_asset(cognite_client):
 def new_time_series(cognite_client):
     # create a time series to use in relationships
     external_id = uuid.uuid4().hex[:20]
-    tp = cognite_client.time_series.create(TimeSeries(external_id=external_id, name="mandatory"))
+    tp = cognite_client.time_series.create(TimeSeriesWrite(external_id=external_id, name="mandatory"))
     assert isinstance(tp, TimeSeries)
     yield tp
     cognite_client.time_series.delete(external_id=tp.external_id)
@@ -81,7 +85,7 @@ def create_multiple_relationships(new_label, cognite_client):
     relationships_ext_id = [uuid.uuid4().hex[:20] for i in range(5)]
     random_ext_id = [uuid.uuid4().hex[:20] for i in range(5)]
     relationship_list = [
-        Relationship(
+        RelationshipWrite(
             external_id=relationships_ext_id[0],
             source_type="asset",
             source_external_id=random_ext_id[0],
@@ -89,15 +93,15 @@ def create_multiple_relationships(new_label, cognite_client):
             target_external_id=random_ext_id[1],
             labels=[Label(ext_id)],
         ),
-        Relationship(
+        RelationshipWrite(
             external_id=relationships_ext_id[1],
-            source_type="timeSeries",
+            source_type="timeseries",
             source_external_id=random_ext_id[3],
             target_type="asset",
             target_external_id=random_ext_id[2],
             confidence=1,
         ),
-        Relationship(
+        RelationshipWrite(
             external_id=relationships_ext_id[2],
             source_type="event",
             source_external_id=random_ext_id[2],
@@ -105,7 +109,7 @@ def create_multiple_relationships(new_label, cognite_client):
             target_external_id=random_ext_id[3],
             labels=[Label(ext_id)],
         ),
-        Relationship(
+        RelationshipWrite(
             external_id=relationships_ext_id[3],
             source_type="sequence",
             source_external_id=random_ext_id[3],
@@ -113,7 +117,7 @@ def create_multiple_relationships(new_label, cognite_client):
             target_external_id=random_ext_id[4],
             labels=[Label(ext_id)],
         ),
-        Relationship(
+        RelationshipWrite(
             external_id=relationships_ext_id[4],
             source_type="file",
             source_external_id=random_ext_id[4],
@@ -136,7 +140,7 @@ def relationship_with_resources(new_asset, new_time_series, cognite_client):
     asset_ext_id = new_asset.external_id
     time_series_ext_id = new_time_series.external_id
     relationship = cognite_client.relationships.create(
-        Relationship(
+        RelationshipWrite(
             external_id=external_id,
             source_external_id=asset_ext_id,
             source_type="asset",
@@ -247,26 +251,24 @@ class TestRelationshipscognite_client:
         assert {a.external_id for a in res_generator} == {a.external_id for a in res_list}
 
     def test_upsert_2_relationships_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        asset1 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset1" + random_string(5), name="asset1")
-        asset2 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset2" + random_string(5), name="asset2")
-        asset3 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset3" + random_string(5), name="asset3")
+        asset1 = AssetWrite(external_id="test_upsert_2_asset_one_preexisting:asset1" + random_string(5), name="asset1")
+        asset2 = AssetWrite(external_id="test_upsert_2_asset_one_preexisting:asset2" + random_string(5), name="asset2")
+        asset3 = AssetWrite(external_id="test_upsert_2_asset_one_preexisting:asset3" + random_string(5), name="asset3")
 
-        new_relationship = Relationship(
+        new_relationship = RelationshipWrite(
             external_id=f"test_upsert_2_relationships_one_preexisting:new:{random_string(5)}",
             source_external_id=asset1.external_id,
             target_external_id=asset2.external_id,
             source_type="asset",
             target_type="asset",
         )
-        preexisting = Relationship(
+        preexisting = RelationshipWrite(
             external_id=f"test_upsert_2_relationships_one_preexisting:preexisting:{random_string(5)}",
             source_external_id=asset2.external_id,
             target_external_id=asset3.external_id,
             source_type="asset",
             target_type="asset",
         )
-        preexisting_update = Relationship.load(preexisting.dump(camel_case=True))
-        preexisting_update.target_external_id = asset1.external_id
 
         try:
             created_assets = cognite_client.assets.create([asset1, asset2, asset3])
@@ -274,6 +276,9 @@ class TestRelationshipscognite_client:
 
             created_existing = cognite_client.relationships.create(preexisting)
             assert created_existing.created_time
+
+            preexisting_update = Relationship.load(created_existing.dump(camel_case=True))
+            preexisting_update.target_external_id = asset1.external_id
 
             res = cognite_client.relationships.upsert([new_relationship, preexisting_update], mode="replace")
 
