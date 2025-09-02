@@ -567,8 +567,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
             if resource.get("configuration")
             else None
         )
-        script = None
-        if resource.get("script"):
+        if script := resource.get("script"):
             stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in resource.get("script", [])]
             script = SimulatorRoutineStageList(stages)
 
