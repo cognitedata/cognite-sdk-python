@@ -3,7 +3,15 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import DataSet, TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
+from cognite.client.data_classes import (
+    DataSet,
+    TimeSeries,
+    TimeSeriesFilter,
+    TimeSeriesList,
+    TimeSeriesUpdate,
+    TimeSeriesWrite,
+    filters,
+)
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._text import random_string
@@ -13,7 +21,7 @@ from tests.utils import set_request_limit
 
 @pytest.fixture(scope="class")
 def new_ts(cognite_client):
-    ts = cognite_client.time_series.create(TimeSeries(name="any", metadata={"a": "b"}))
+    ts = cognite_client.time_series.create(TimeSeriesWrite(name="any", metadata={"a": "b"}))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
     assert cognite_client.time_series.retrieve(ts.id) is None
@@ -50,21 +58,19 @@ def test_ts_string(test_tss):
 @pytest.fixture
 def time_series_list(cognite_client: CogniteClient) -> TimeSeriesList:
     prefix = "integration_test:"
-    time_series = TimeSeriesList(
-        [
-            TimeSeries(
-                external_id=f"{prefix}timeseries1",
-                unit="$",
-                metadata={"market": "Nordpool", "timezone": "Europe/Oslo"},
-            ),
-            TimeSeries(
-                external_id=f"{prefix}timeseries2",
-                metadata={"market": "Balancing", "timezone": "Europe/London"},
-            ),
-        ]
-    )
+    time_series = [
+        TimeSeriesWrite(
+            external_id=f"{prefix}timeseries1",
+            unit="$",
+            metadata={"market": "Nordpool", "timezone": "Europe/Oslo"},
+        ),
+        TimeSeriesWrite(
+            external_id=f"{prefix}timeseries2",
+            metadata={"market": "Balancing", "timezone": "Europe/London"},
+        ),
+    ]
     retrieved = cognite_client.time_series.retrieve_multiple(
-        external_ids=time_series.as_external_ids(), ignore_unknown_ids=True
+        external_ids=[ts.external_id for ts in time_series], ignore_unknown_ids=True
     )
     if len(retrieved) == len(time_series):
         return retrieved
@@ -114,11 +120,15 @@ class TestTimeSeriesAPI:
         assert 1 == cognite_client.time_series._post.call_count
 
     def test_list_timeseries_with_target_unit(self, cognite_client: CogniteClient) -> None:
-        ts1 = TimeSeries(external_id="test_list_timeseries_with_target_unit:1", unit_external_id="temperature:deg_c")
-        ts2 = TimeSeries(external_id="test_list_timeseries_with_target_unit:2", unit_external_id="temperature:deg_f")
-        new_ts = TimeSeriesList([ts1, ts2])
+        ts1 = TimeSeriesWrite(
+            external_id="test_list_timeseries_with_target_unit:1", unit_external_id="temperature:deg_c"
+        )
+        ts2 = TimeSeriesWrite(
+            external_id="test_list_timeseries_with_target_unit:2", unit_external_id="temperature:deg_f"
+        )
+        new_ts = [ts1, ts2]
         retrieved = cognite_client.time_series.retrieve_multiple(
-            external_ids=new_ts.as_external_ids(), ignore_unknown_ids=True
+            external_ids=[ts.external_id for ts in new_ts], ignore_unknown_ids=True
         )
         if not retrieved:
             cognite_client.time_series.upsert(new_ts, mode="replace")
@@ -166,24 +176,25 @@ class TestTimeSeriesAPI:
         assert "temperature:deg_c" == retrieved.unit_external_id
 
     def test_delete_with_nonexisting(self, cognite_client):
-        a = cognite_client.time_series.create(TimeSeries(name="any"))
+        a = cognite_client.time_series.create(TimeSeriesWrite(name="any"))
         cognite_client.assets.delete(id=a.id, external_id="this ts does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
 
     def test_upsert_2_time_series_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_times_series = TimeSeries(
+        new_times_series = TimeSeriesWrite(
             external_id="test_upsert_2_time_series_one_preexisting:new" + random_string(5), name="my new time series"
         )
-        preexisting = TimeSeries(
+        preexisting = TimeSeriesWrite(
             external_id="test_upsert_2_time_series_one_preexisting:preexisting" + random_string(5),
             name="my preexisting time series",
         )
-        preexisting_update = TimeSeries.load(preexisting.dump(camel_case=True))
-        preexisting_update.name = "my preexisting time series updated"
 
         try:
             created_existing = cognite_client.time_series.create(preexisting)
             assert created_existing.id is not None
+
+            preexisting_update = TimeSeries.load(created_existing.dump(camel_case=True))
+            preexisting_update.name = "my preexisting time series updated"
 
             res = cognite_client.time_series.upsert([new_times_series, preexisting_update], mode="replace")
 

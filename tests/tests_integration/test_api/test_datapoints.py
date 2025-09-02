@@ -39,6 +39,7 @@ from cognite.client.data_classes import (
     StatusCode,
     TimeSeries,
     TimeSeriesList,
+    TimeSeriesWrite,
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
@@ -185,7 +186,7 @@ def ts_status_codes(all_test_time_series: TimeSeriesList) -> TimeSeriesList:
 
 @pytest.fixture(scope="session")
 def new_ts(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
-    ts = cognite_client.time_series.create(TimeSeries(is_string=False))
+    ts = cognite_client.time_series.create(TimeSeriesWrite(is_string=False))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
     assert cognite_client.time_series.retrieve(ts.id) is None
@@ -193,7 +194,7 @@ def new_ts(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
 
 @pytest.fixture(scope="session")
 def new_ts_string(cognite_client: CogniteClient) -> Iterator[TimeSeries]:
-    ts = cognite_client.time_series.create(TimeSeries(is_string=True))
+    ts = cognite_client.time_series.create(TimeSeriesWrite(is_string=True))
     yield ts
     cognite_client.time_series.delete(id=ts.id)
     assert cognite_client.time_series.retrieve(ts.id) is None
@@ -426,7 +427,7 @@ def parametrized_values_uniform_index_fails(testrun_uid: str) -> tuple:
 
 @pytest.fixture(scope="module")
 def timeseries_degree_c_minus40_0_100(cognite_client: CogniteClient) -> TimeSeries:
-    ts = TimeSeries(
+    ts = TimeSeriesWrite(
         external_id="test_retrieve_datapoints_in_target_unit",
         name="test_retrieve_datapoints_in_target_unit",
         is_string=False,
