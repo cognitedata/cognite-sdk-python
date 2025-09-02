@@ -16,7 +16,7 @@ from tests.utils import set_request_limit
 
 @pytest.fixture
 def new_event(cognite_client):
-    event = cognite_client.events.create(Event(type="test__py__sdk"))
+    event = cognite_client.events.create(EventWrite(type="test__py__sdk"))
     yield event
     cognite_client.events.delete(id=event.id)
     assert cognite_client.events.retrieve(event.id) is None
@@ -25,29 +25,29 @@ def new_event(cognite_client):
 @pytest.fixture
 def event_list(cognite_client: CogniteClient) -> EventList:
     prefix = "integration_test:"
-    events = EventList(
-        [
-            Event(
-                external_id=f"{prefix}event1_lorem_ipsum",
-                description="This is a a test event with some lorem ipsum text.",
-                start_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
-                metadata={
-                    "timezone": "Europe/Oslo",
-                },
-            ),
-            Event(
-                external_id=f"{prefix}event2",
-                description="This is also a test event, this time without the same text as the other one.",
-                end_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
-                type="lorem ipsum",
-                metadata={
-                    "timezone": "America/New_York",
-                    "some_other_key": "some_other_value",
-                },
-            ),
-        ]
+    events = [
+        EventWrite(
+            external_id=f"{prefix}event1_lorem_ipsum",
+            description="This is a a test event with some lorem ipsum text.",
+            start_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+            metadata={
+                "timezone": "Europe/Oslo",
+            },
+        ),
+        EventWrite(
+            external_id=f"{prefix}event2",
+            description="This is also a test event, this time without the same text as the other one.",
+            end_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
+            type="lorem ipsum",
+            metadata={
+                "timezone": "America/New_York",
+                "some_other_key": "some_other_value",
+            },
+        ),
+    ]
+    retrieved = cognite_client.events.retrieve_multiple(
+        external_ids=[ev.external_id for ev in events], ignore_unknown_ids=True
     )
-    retrieved = cognite_client.events.retrieve_multiple(external_ids=events.as_external_ids(), ignore_unknown_ids=True)
     if len(retrieved) == len(events):
         return retrieved
     return cognite_client.events.upsert(events, mode="replace")
@@ -160,31 +160,32 @@ class TestEventsAPI:
         assert res2.metadata == {}
 
     def test_delete_with_nonexisting(self, cognite_client):
-        a = cognite_client.events.create(Event())
+        a = cognite_client.events.create(EventWrite())
         cognite_client.events.delete(id=a.id, external_id="this event does not exist", ignore_unknown_ids=True)
         assert cognite_client.events.retrieve(id=a.id) is None
 
     def test_upsert_2_events_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_event = Event(
+        new_event = EventWrite(
             external_id="test_upsert2_one_preexisting:new" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType1",
         )
-        preexisting = Event(
+        preexisting = EventWrite(
             external_id="test_upsert2_one_preexisting:preexisting" + random_string(5),
             type="test__py__sdk",
             start_time=0,
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event.load(preexisting.dump(camel_case=True))
-        preexisting_update.subtype = "mySubType1"
 
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
+
+            preexisting_update = Event.load(created_existing.dump(camel_case=True))
+            preexisting_update.subtype = "mySubType1"
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
