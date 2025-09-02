@@ -26,7 +26,7 @@ from typing_extensions import Self
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import fast_dict_load, load_resource_to_dict, load_yaml_or_json
+from cognite.client.utils._auxiliary import load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import (
@@ -170,7 +170,7 @@ class CogniteObject(ABC):
         Returns:
             Self: The loaded resource.
         """
-        return fast_dict_load(cls, resource, cognite_client=cognite_client)
+        raise NotImplementedError
 
 
 class UnknownCogniteObject(CogniteObject):
