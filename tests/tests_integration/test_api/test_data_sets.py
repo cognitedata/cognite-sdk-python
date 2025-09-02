@@ -2,14 +2,14 @@ from unittest import mock
 
 import pytest
 
-from cognite.client.data_classes import DataSet, DataSetFilter, DataSetUpdate
+from cognite.client.data_classes import DataSetFilter, DataSetUpdate, DataSetWrite
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
 
 @pytest.fixture(scope="class")
 def new_dataset(cognite_client):
-    dataset = cognite_client.data_sets.create(DataSet())
+    dataset = cognite_client.data_sets.create(DataSetWrite())
     yield dataset
     # todo: uncomment when delete is implemented
     # cognite_client.data_sets.delete(id=dataset.id)
