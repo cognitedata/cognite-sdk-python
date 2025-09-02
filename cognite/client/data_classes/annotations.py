@@ -88,6 +88,9 @@ class Annotation(AnnotationCore):
     This is the reading version of the Annotation class. It is never to be used when creating new annotations.
 
     Args:
+        id (int): A server-generated ID for the object.
+        created_time (int): The timestamp for when the annotation was created, in milliseconds since epoch.
+        last_updated_time (int): The timestamp for when the annotation was last updated, in milliseconds since epoch.
         annotation_type (str): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
         data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
@@ -96,14 +99,14 @@ class Annotation(AnnotationCore):
         creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int | None): The internal ID of the annotated resource.
-        id (int | None): A server-generated ID for the object.
-        created_time (int | None): The timestamp for when the annotation was created, in milliseconds since epoch.
-        last_updated_time (int | None): The timestamp for when the annotation was last updated, in milliseconds since epoch.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
         annotation_type: str,
         data: dict,
         status: str,
@@ -111,10 +114,7 @@ class Annotation(AnnotationCore):
         creating_app_version: str,
         creating_user: str | None,
         annotated_resource_type: str,
-        annotated_resource_id: int | None = None,
-        id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        annotated_resource_id: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -127,14 +127,9 @@ class Annotation(AnnotationCore):
             annotated_resource_type,
             annotated_resource_id,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
@@ -154,9 +149,9 @@ class Annotation(AnnotationCore):
             creating_user=data.get("creating_user"),
             annotated_resource_type=data["annotated_resource_type"],
             annotated_resource_id=data.get("annotated_resource_id"),
-            id=data.get("id"),
-            created_time=data.get("created_time"),
-            last_updated_time=data.get("last_updated_time"),
+            id=data["id"],
+            created_time=data["created_time"],
+            last_updated_time=data["last_updated_time"],
             cognite_client=cognite_client,
         )
 
