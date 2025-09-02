@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import MutableMapping, Sequence
@@ -18,6 +19,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import to_snake_case
 
@@ -568,7 +570,7 @@ class SimulatorRoutineRevisionWrite(SimulatorRoutineRevisionCore):
             else None
         )
         if script := resource.get("script"):
-            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in resource.get("script", [])]
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in script]
             script = SimulatorRoutineStageList(stages)
 
         return cls(
@@ -646,7 +648,7 @@ class SimulatorRoutineRevision(SimulatorRoutineRevisionCore):
             else None
         )
         if script := resource.get("script"):
-            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in resource.get("script", [])]
+            stages = [SimulatorRoutineStage._load(stage, cognite_client) for stage in script]
             script = SimulatorRoutineStageList(stages)
 
         return cls(
@@ -693,7 +695,7 @@ class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
     """List of simulator routine stages with pandas conversion capabilities."""
 
     def __init__(self, initlist: Sequence[SimulatorRoutineStage] | None = None) -> None:
-        super().__init__(list(initlist) if initlist is not None else None)
+        super().__init__(list(initlist) if initlist is not None else [])
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of stages to a pandas DataFrame.
@@ -727,7 +729,12 @@ class SimulatorRoutineStageList(UserList[SimulatorRoutineStage]):
     def _repr_html_(self) -> str:
         try:
             return self.to_pandas()._repr_html_()
-        except Exception:
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
             return str(self)
 
 
@@ -735,7 +742,7 @@ class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
     """List of simulator routine inputs with pandas conversion capabilities."""
 
     def __init__(self, initlist: Sequence[SimulatorRoutineInput] | None = None) -> None:
-        super().__init__(list(initlist) if initlist is not None else None)
+        super().__init__(list(initlist) if initlist is not None else [])
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of inputs to a pandas DataFrame.
@@ -762,7 +769,12 @@ class SimulatorRoutineInputList(UserList[SimulatorRoutineInput]):
     def _repr_html_(self) -> str:
         try:
             return self.to_pandas()._repr_html_()
-        except Exception:
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
             return str(self)
 
 
@@ -770,7 +782,7 @@ class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
     """List of simulator routine outputs with pandas conversion capabilities."""
 
     def __init__(self, initlist: Sequence[SimulatorRoutineOutput] | None = None) -> None:
-        super().__init__(list(initlist) if initlist is not None else None)
+        super().__init__(list(initlist) if initlist is not None else [])
 
     def to_pandas(self) -> pandas.DataFrame:
         """Convert the list of outputs to a pandas DataFrame.
@@ -797,7 +809,12 @@ class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
     def _repr_html_(self) -> str:
         try:
             return self.to_pandas()._repr_html_()
-        except Exception:
+        except CogniteImportError:
+            warnings.warn(
+                "The 'cognite-sdk' depends on 'pandas' for pretty-printing objects like 'Asset' or 'DatapointsList' in "
+                "(Jupyter) notebooks and similar environments. Consider installing it! Using fallback method.",
+                UserWarning,
+            )
             return str(self)
 
 
