@@ -163,4 +163,22 @@ error_data = {"function_name": "foo", "message": "bar"}
 
 - Use the `logging` module with appropriate levels
 - Include contextual information for debugging
-  
+
+
+## Conventional Commit PR Title
+- The PR title should follow the [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) spec.
+- The type of the conventional commit (fix, feat, docs, perf, chore, etc.) should reflect the type of change made in the PR.
+- If the PR contains a breaking change, it should be indicated in the PR title with a `!` after the type/scope, e.g., `feat!: ...` or `fix(core)!: ...`.
+- Examples:
+  - `fix(core): correct data parsing issue`
+  - `feat(api): add new endpoint for data retrieval`
+  - `docs: update README with new examples`
+  - `chore: bump version to 1.2.3`
+  - `refactor(utils): simplify helper functions`
+  - `test: add unit tests for new features`
+  - `style: reformat code with black`
+  - `perf: improve performance of data processing`
+
+## Breaking Changes
+- Breaking changes must be clearly indicated in the PR title and description.
+- PRs with breaking changes should be labeled with the next major version label (e.g., `v8` if current version is 7.x.x).
