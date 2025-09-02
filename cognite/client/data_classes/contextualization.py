@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from typing_extensions import Self
 
-from cognite.client.data_classes import Annotation
+from cognite.client.data_classes import Annotation, AnnotationWrite
 from cognite.client.data_classes._base import (
     CogniteObject,
     CognitePrimitiveUpdate,
@@ -26,7 +26,7 @@ from cognite.client.data_classes.annotation_types.images import (
     TextRegion,
 )
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
-from cognite.client.data_classes.annotations import AnnotationList
+from cognite.client.data_classes.annotations import AnnotationList, AnnotationType
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
@@ -966,7 +966,7 @@ class VisionExtractJob(VisionJob):
         creating_user: str | None = None,
         creating_app: str | None = None,
         creating_app_version: str | None = None,
-    ) -> list[Annotation]:
+    ) -> list[AnnotationWrite]:
         annotations = []
 
         for item in self.items or []:
@@ -977,9 +977,9 @@ class VisionExtractJob(VisionJob):
                         annotation_type = VISION_ANNOTATION_TYPE_MAP[prediction_type]
                         if isinstance(annotation_type, dict):
                             for key, value in annotation_type.items():
-                                annotation = Annotation(
-                                    annotated_resource_id=item.file_id,
-                                    annotation_type=value,
+                                annotation = AnnotationWrite(
+                                    annotated_resource_id=item.file_id,  # type: ignore[arg-type]
+                                    annotation_type=cast(AnnotationType, value),
                                     data=data[key],
                                     annotated_resource_type="file",
                                     status="suggested",
@@ -989,9 +989,9 @@ class VisionExtractJob(VisionJob):
                                 )
                                 annotations.append(annotation)
                         elif isinstance(annotation_type, str):
-                            annotation = Annotation(
-                                annotated_resource_id=item.file_id,
-                                annotation_type=annotation_type,
+                            annotation = AnnotationWrite(
+                                annotated_resource_id=item.file_id,  # type: ignore[arg-type]
+                                annotation_type=cast(AnnotationType, annotation_type),
                                 data=data,
                                 annotated_resource_type="file",
                                 status="suggested",
@@ -1043,6 +1043,14 @@ class ResourceReference(CogniteResource):
         self.id = id
         self.external_id = external_id
         self._cognite_client = None  # Read only
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransformerMixin):
