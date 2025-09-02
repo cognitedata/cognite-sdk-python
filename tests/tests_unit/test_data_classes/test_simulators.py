@@ -24,13 +24,12 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationValueUnitName,
 )
-from cognite.client.utils._importing import local_import
-
 from cognite.client.data_classes.simulators.simulators import (
     Simulator,
     SimulatorQuantity,
     SimulatorUnitEntry,
 )
+from cognite.client.utils._importing import local_import
 
 
 class TestSimulatorModelRevisionDependency:
@@ -363,6 +362,7 @@ class TestSimulationRunData:
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 4  # 2 items with 2 rows each
         assert list(df["run_id"].unique()) == [12345, 12346]
+
 
 class TestSimulator:
     @pytest.fixture
