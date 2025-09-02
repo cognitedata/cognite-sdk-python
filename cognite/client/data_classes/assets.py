@@ -23,6 +23,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -41,7 +43,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order, split_into_chunks
@@ -71,14 +73,22 @@ class AggregateResultItem(CogniteObject):
 
     def __init__(
         self,
-        child_count: int | None = None,
-        depth: int | None = None,
-        path: list[dict[str, Any]] | None = None,
+        child_count: int | None,
+        depth: int | None,
+        path: list[dict[str, Any]] | None,
         **_: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
         self.path = path
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            child_count=resource.get("childCount"),
+            depth=resource.get("depth"),
+            path=resource.get("path"),
+        )
 
 
 class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
@@ -124,14 +134,6 @@ class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
         self.labels = labels
         self.geo_location = geo_location
 
-    @classmethod
-    def _load(cls: type[T_Asset], resource: dict, cognite_client: CogniteClient | None = None) -> T_Asset:
-        instance = super()._load(resource, cognite_client)
-        instance.labels = Label._load_list(instance.labels)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
-        return instance
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
@@ -149,6 +151,9 @@ class Asset(AssetCore):
     is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
 
     Args:
+        id (int): A server-generated ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): The name of the asset.
         parent_id (int | None): The parent of the node, null if it is the root node.
@@ -157,34 +162,31 @@ class Asset(AssetCore):
         data_set_id (int | None): The id of the dataset this asset belongs to.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): The source of the asset.
-        labels (list[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        labels (list[Label] | None): A list of the labels associated with this resource item.
         geo_location (GeoLocation | None): The geographic metadata of the asset.
-        id (int | None): A server-generated ID for the object.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int | None): ID of the root asset.
-        aggregates (AggregateResultItem | dict[str, Any] | None): Aggregated metrics of the asset
+        aggregates (AggregateResultItem | None): Aggregated metrics of the asset
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        parent_id: int | None = None,
-        parent_external_id: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        labels: list[Label | str | LabelDefinition | dict] | None = None,
-        geo_location: GeoLocation | None = None,
-        id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        root_id: int | None = None,
-        aggregates: AggregateResultItem | dict[str, Any] | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
+        external_id: str | None,
+        name: str | None,
+        parent_id: int | None,
+        parent_external_id: str | None,
+        description: str | None,
+        data_set_id: int | None,
+        metadata: dict[str, str] | None,
+        source: str | None,
+        labels: list[Label] | None,
+        geo_location: GeoLocation | None,
+        root_id: int | None,
+        aggregates: AggregateResultItem | None,
+        cognite_client: CogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -195,27 +197,36 @@ class Asset(AssetCore):
             data_set_id=data_set_id,
             metadata=metadata,
             source=source,
-            labels=Label._load_list(labels),
+            labels=labels,
             geo_location=geo_location,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Asset:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.aggregates, dict):
-            instance.aggregates = AggregateResultItem._load(instance.aggregates)
-        return instance
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+            parent_id=resource.get("parentId"),
+            parent_external_id=resource.get("parentExternalId"),
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+            metadata=resource.get("metadata"),
+            source=resource.get("source"),
+            labels=Label._load_list(resource.get("labels")),
+            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            root_id=resource.get("rootId"),
+            aggregates=(aggregates := resource.get("aggregates")) and AggregateResultItem._load(aggregates),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> AssetWrite:
         """Returns this Asset in its writing version."""
