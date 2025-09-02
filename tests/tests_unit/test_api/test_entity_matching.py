@@ -132,14 +132,53 @@ class TestEntityMatching:
         assert 123 == model.id
 
     def test_fit_cognite_resource(self, cognite_client, mock_fit):
-        entities_from = [TimeSeries(id=1, name="x", metadata={"ka": "va"})]
-        entities_to = [Asset(id=1, external_id="abc", name="x")]
+        entities_from = [
+            TimeSeries(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                is_step=False,
+                is_string=False,
+                external_id=None,
+                instance_id=None,
+                name="x",
+                metadata={"ka": "va"},
+                unit=None,
+                unit_external_id=None,
+                asset_id=None,
+                description=None,
+                security_categories=None,
+                data_set_id=None,
+                legacy_name=None,
+                cognite_client=None,
+            )
+        ]
+        entities_to = [
+            Asset(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                external_id="abc",
+                name="x",
+                metadata=None,
+                description=None,
+                data_set_id=None,
+                cognite_client=None,
+                parent_id=None,
+                parent_external_id=None,
+                source=None,
+                labels=None,
+                geo_location=None,
+                root_id=None,
+                aggregates=None,
+            )
+        ]
         cognite_client.entity_matching.fit(
             sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram"
         )
         assert {
             "sources": [{"id": 1, "name": "x", "metadata.ka": "va"}],
-            "targets": [entities_to[0].dump(camel_case=True)],
+            "targets": [{"externalId": "abc", "id": 1, "name": "x"}],
             "trueMatches": [{"sourceId": 1, "targetExternalId": "abc"}],
             "featureType": "bigram",
             "ignoreMissingFields": False,
