@@ -16,7 +16,7 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
     Label,
-    LabelDefinition,
+    LabelDefinitionWrite,
 )
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
 from cognite.client.utils._text import random_string
@@ -66,7 +66,7 @@ def new_file_with_geo_location(mock_geo_location, cognite_client):
 @pytest.fixture(scope="class")
 def new_file_with_label(cognite_client):
     label_external_id = uuid.uuid4().hex[0:20]
-    label = cognite_client.labels.create(LabelDefinition(external_id=label_external_id, name="mandatory"))
+    label = cognite_client.labels.create(LabelDefinitionWrite(external_id=label_external_id, name="mandatory"))
     file = cognite_client.files.upload_bytes(
         content="blabla",
         name="myspecialfile",
@@ -132,13 +132,13 @@ A_WHILE_AGO = {"max": int(time.time() - 1800) * 1000}
 
 class TestFilesAPI:
     def test_create(self, cognite_client):
-        file_metadata = FileMetadata(name="mytestfile")
+        file_metadata = FileMetadataWrite(name="mytestfile")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert returned_file_metadata.uploaded is False
         cognite_client.files.delete(id=returned_file_metadata.id)
 
     def test_create_with_geo_location(self, cognite_client, mock_geo_location):
-        file_metadata = FileMetadata(name="mytestfile", geo_location=mock_geo_location)
+        file_metadata = FileMetadataWrite(name="mytestfile", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert returned_file_metadata.uploaded is False
         assert returned_file_metadata.geo_location == mock_geo_location
@@ -219,7 +219,7 @@ class TestFilesAPI:
 
     def test_update_directory(self, cognite_client, new_file):
         dir = "/some/directory"
-        res = cognite_client.files.update(FileMetadata(id=new_file.id, directory=dir))
+        res = cognite_client.files.update(FileMetadataUpdate(id=new_file.id).directory.set(dir))
         assert res.directory == dir
 
     def test_download(self, cognite_client: CogniteClient, test_files: dict[str, FileMetadata]) -> None:
@@ -359,6 +359,6 @@ class TestFilesAPI:
             cognite_client.data_modeling.instances.delete(nodes=instance_id)
 
     def test_create_delete_ignore_unknown_ids(self, cognite_client: CogniteClient) -> None:
-        file_metadata = FileMetadata(name="mytestfile")
+        file_metadata = FileMetadataWrite(name="mytestfile")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         cognite_client.files.delete(id=[returned_file_metadata.id, 1], ignore_unknown_ids=True)
