@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate
+from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, TimeSeriesWrite
 from tests.utils import get_url, jsgz_load
 
 
@@ -89,12 +89,12 @@ class TestTimeSeries:
             assert [1] == jsgz_load(httpx_mock.get_requests()[i].content)["filter"]["assetIds"]
 
     def test_create_single(self, cognite_client, mock_ts_response):
-        res = cognite_client.time_series.create(TimeSeries(external_id="1", name="blabla"))
+        res = cognite_client.time_series.create(TimeSeriesWrite(external_id="1", name="blabla"))
         assert isinstance(res, TimeSeries)
         assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_ts_response):
-        res = cognite_client.time_series.create([TimeSeries(external_id="1", name="blabla")])
+        res = cognite_client.time_series.create([TimeSeriesWrite(external_id="1", name="blabla")])
         assert isinstance(res, TimeSeriesList)
         assert mock_ts_response["items"] == res.dump(camel_case=True)
 
@@ -122,7 +122,27 @@ class TestTimeSeries:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_ts_response):
-        res = cognite_client.time_series.update(TimeSeries(id=1))
+        res = cognite_client.time_series.update(
+            TimeSeries(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                is_step=False,
+                is_string=False,
+                external_id=None,
+                instance_id=None,
+                name=None,
+                metadata=None,
+                unit=None,
+                unit_external_id=None,
+                asset_id=None,
+                description=None,
+                security_categories=None,
+                data_set_id=None,
+                legacy_name=None,
+                cognite_client=None,
+            )
+        )
         assert isinstance(res, TimeSeries)
         assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 
