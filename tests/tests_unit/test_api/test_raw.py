@@ -12,7 +12,7 @@ from tests.utils import assert_all_value_types_equal, jsgz_load
 
 @pytest.fixture
 def mock_raw_db_response(rsps, cognite_client):
-    response_body = {"items": [{"name": "db1"}]}
+    response_body = {"items": [{"name": "db1", "createdTime": 123}]}
 
     url_pattern = re.compile(
         re.escape(cognite_client.raw._get_base_url_with_base_path()) + r"/raw/dbs(?:/delete|$|\?.+)"
@@ -26,7 +26,7 @@ def mock_raw_db_response(rsps, cognite_client):
 
 @pytest.fixture
 def mock_raw_table_response(rsps, cognite_client):
-    response_body = {"items": [{"name": "table1"}]}
+    response_body = {"items": [{"name": "table1", "createdTime": 123}]}
 
     url_pattern = re.compile(
         re.escape(cognite_client.raw._get_base_url_with_base_path()) + r"/raw/dbs/db1/tables(?:/delete|$|\?.+)"
@@ -40,7 +40,7 @@ def mock_raw_table_response(rsps, cognite_client):
 
 @pytest.fixture
 def mock_raw_row_response(rsps, cognite_client):
-    response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]}
+    response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}]}
 
     raw_path_prefix = re.escape(cognite_client.raw._get_base_url_with_base_path()) + "/raw/dbs/db1/tables/table1"
     url_pattern = re.compile(raw_path_prefix + r"/rows(?:/delete|/row1|$|\?.+)")
@@ -55,7 +55,7 @@ def mock_raw_row_response(rsps, cognite_client):
 
 @pytest.fixture
 def mock_retrieve_raw_row_response(rsps, cognite_client):
-    response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}}
+    response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}
     rsps.add(
         rsps.GET,
         cognite_client.raw._get_base_url_with_base_path() + "/raw/dbs/db1/tables/table1/rows/row1",
@@ -148,7 +148,7 @@ class TestRawDatabases:
 
     def test_list(self, cognite_client, mock_raw_db_response):
         res_list = cognite_client.raw.databases.list()
-        assert DatabaseList([Database("db1")]) == res_list
+        assert DatabaseList([Database("db1", created_time=123)]) == res_list
 
     def test_iter_single(self, cognite_client, mock_raw_db_response):
         for db in cognite_client.raw.databases:
@@ -182,7 +182,7 @@ class TestRawDatabases:
     def test_get_tables_in_db(self, cognite_client, mock_raw_db_response, mock_raw_table_response):
         db = cognite_client.raw.databases.list()[0]
         tables = db.tables()
-        assert TableList([Table(name="table1")]) == tables
+        assert TableList([Table(name="table1", created_time=123)]) == tables
 
 
 class TestRawTables:
@@ -209,7 +209,7 @@ class TestRawTables:
         for res in res_list:
             assert "db1" == res._db_name
             assert cognite_client == res._cognite_client
-        assert TableList([Table("table1")]) == res_list
+        assert TableList([Table("table1", created_time=123)]) == res_list
 
     def test_iter_single(self, cognite_client, mock_raw_table_response):
         for table in cognite_client.raw.tables(db_name="db1"):
@@ -245,7 +245,7 @@ class TestRawTables:
 
     def test_get_rows_in_table(self, cognite_client, mock_raw_table_response, mock_raw_row_response):
         tables = cognite_client.raw.tables.list(db_name="db1")
-        exp_rows = RowList.load([{"key": "row1", "columns": {"c1": 1, "c2": "2"}}])
+        exp_rows = RowList.load([{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}])
         assert tables[0].rows() == exp_rows
 
 
@@ -266,7 +266,10 @@ class TestRawRows:
 
     def test_insert_single_DTO(self, cognite_client, mock_raw_row_response):
         res = cognite_client.raw.rows.insert(
-            db_name="db1", table_name="table1", row=Row(key="row1", columns={"c1": 1, "c2": "2"}), ensure_parent=False
+            db_name="db1",
+            table_name="table1",
+            row=RowWrite(key="row1", columns={"c1": 1, "c2": "2"}),
+            ensure_parent=False,
         )
         assert res is None
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
@@ -274,7 +277,7 @@ class TestRawRows:
         )["items"]
 
     def test_insert_multiple_DTO(self, cognite_client, mock_raw_row_response):
-        res = cognite_client.raw.rows.insert("db1", "table1", row=[Row(key="row1", columns={"c1": 1, "c2": "2"})])
+        res = cognite_client.raw.rows.insert("db1", "table1", row=[RowWrite(key="row1", columns={"c1": 1, "c2": "2"})])
         assert res is None
         assert [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}] == jsgz_load(
             mock_raw_row_response.calls[0].request.body
@@ -293,7 +296,7 @@ class TestRawRows:
 
     def test_list(self, cognite_client, mock_raw_row_response):
         res_list = cognite_client.raw.rows.list(db_name="db1", table_name="table1")
-        assert RowList([Row(key="row1", columns={"c1": 1, "c2": "2"})]) == res_list
+        assert RowList([Row(key="row1", columns={"c1": 1, "c2": "2"}, last_updated_time=123)]) == res_list
         assert "columns=" not in mock_raw_row_response.calls[0].request.path_url
 
     def test_list_cols(self, cognite_client, mock_raw_row_response):
@@ -340,7 +343,7 @@ class TestRawRows:
     def test_iter(self, cognite_client, mock_raw_row_response):
         res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1")
         row = next(res_generator)
-        assert Row(key="row1", columns={"c1": 1, "c2": "2"}) == row
+        assert Row(key="row1", columns={"c1": 1, "c2": "2"}, last_updated_time=123) == row
         assert "columns=" not in mock_raw_row_response.calls[0].request.path_url
 
     def test_iter_cols(self, cognite_client, mock_raw_row_response):
@@ -420,7 +423,10 @@ class TestRawRowsDataframe:
 def test_raw_row__direct_column_access(raw_cls):
     # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
     key = "itsamee"
-    row = raw_cls(key="foo", columns={"bar": 42, key: "mario"})
+    if raw_cls is Row:
+        row = Row(key="foo", columns={"bar": 42, key: "mario"}, last_updated_time=123)
+    else:
+        row = RowWrite(key="foo", columns={"bar": 42, key: "mario"})
     assert row[key] == row.columns[key] == row.get(key) == "mario"
 
     row[key] = "luigi?"
@@ -497,23 +503,40 @@ class TestPandasIntegration:
     def test_dbs_to_pandas(self):
         import pandas as pd
 
-        db_list = DatabaseList([Database("kar"), Database("car"), Database("dar")])
+        db_list = DatabaseList(
+            [Database("kar", created_time=123), Database("car", created_time=123), Database("dar", created_time=123)]
+        )
 
-        pd.testing.assert_frame_equal(pd.DataFrame({"name": ["kar", "car", "dar"]}), db_list.to_pandas())
-        pd.testing.assert_frame_equal(pd.DataFrame({"value": ["kar"]}, index=["name"]), db_list[0].to_pandas())
+        pd.testing.assert_frame_equal(
+            pd.DataFrame({"name": ["kar", "car", "dar"]}), db_list.to_pandas().drop("created_time", axis=1)
+        )
+        pd.testing.assert_frame_equal(
+            pd.DataFrame({"value": ["kar"]}, index=["name"]), db_list[0].to_pandas().drop("created_time")
+        )
 
     def test_tables_to_pandas(self):
         import pandas as pd
 
-        table_list = TableList([Table("kar"), Table("car"), Table("dar")])
+        table_list = TableList(
+            [Table("kar", created_time=123), Table("car", created_time=123), Table("dar", created_time=123)]
+        )
 
-        pd.testing.assert_frame_equal(pd.DataFrame({"name": ["kar", "car", "dar"]}), table_list.to_pandas())
-        pd.testing.assert_frame_equal(pd.DataFrame({"value": ["kar"]}, index=["name"]), table_list[0].to_pandas())
+        pd.testing.assert_frame_equal(
+            pd.DataFrame({"name": ["kar", "car", "dar"]}), table_list.to_pandas().drop("created_time", axis=1)
+        )
+        pd.testing.assert_frame_equal(
+            pd.DataFrame({"value": ["kar"]}, index=["name"]), table_list[0].to_pandas().drop("created_time")
+        )
 
     def test_rows_to_pandas(self):
         import pandas as pd
 
-        row_list = RowList([Row("k1", {"c1": "v1", "c2": "v1"}), Row("k2", {"c1": "v2", "c2": "v2"})])
+        row_list = RowList(
+            [
+                Row("k1", {"c1": "v1", "c2": "v1"}, last_updated_time=123),
+                Row("k2", {"c1": "v2", "c2": "v2"}, last_updated_time=123),
+            ]
+        )
         pd.testing.assert_frame_equal(
             pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"]}, index=["k1", "k2"]),
             row_list.to_pandas().sort_index(axis=1),
@@ -523,7 +546,12 @@ class TestPandasIntegration:
     def test_rows_to_pandas_missing_cols(self):
         import pandas as pd
 
-        row_list = RowList([Row("k1", {"c1": "v1", "c2": "v1"}), Row("k2", {"c1": "v2", "c2": "v2", "c3": "v2"})])
+        row_list = RowList(
+            [
+                Row("k1", {"c1": "v1", "c2": "v1"}, last_updated_time=123),
+                Row("k2", {"c1": "v2", "c2": "v2", "c3": "v2"}, last_updated_time=123),
+            ]
+        )
         pd.testing.assert_frame_equal(
             pd.DataFrame({"c1": ["v1", "v2"], "c2": ["v1", "v2"], "c3": [None, "v2"]}, index=["k1", "k2"]),
             row_list.to_pandas().sort_index(axis=1),
@@ -545,7 +573,10 @@ class TestPandasIntegration:
         import pandas as pd
 
         keys = [f"row-{i}" for i in range(n_rows)]
-        row_list = lst_cls([lst_cls._RESOURCE(k, {}) for k in keys])
+        if lst_cls is RowList:
+            row_list = RowList([Row(k, {}, last_updated_time=123) for k in keys])
+        else:
+            row_list = RowWriteList([RowWrite(k, {}) for k in keys])
         row_df = row_list.to_pandas()
         assert row_df.shape == (n_rows, 0)
         pd.testing.assert_frame_equal(row_df, pd.DataFrame(columns=[], index=keys))
