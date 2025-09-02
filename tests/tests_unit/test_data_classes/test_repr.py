@@ -41,11 +41,32 @@ class TestRepr:
     @pytest.mark.parametrize(
         "lst",
         (
-            AssetList([AssetList._RESOURCE()]),
-            DatapointsList([DatapointsList._RESOURCE(id=1)]),
-            DatapointsList([DatapointsList._RESOURCE(instance_id=NodeId("space", "xid"))]),
-            TableList([TableList._RESOURCE()]),
-            RowList([RowList._RESOURCE("row", columns={})]),
+            AssetList(
+                [
+                    Asset(
+                        id=123,
+                        created_time=123,
+                        last_updated_time=123,
+                        name="",
+                        external_id="foo",
+                        parent_id=None,
+                        parent_external_id=None,
+                        description=None,
+                        data_set_id=None,
+                        metadata=None,
+                        source=None,
+                        geo_location=None,
+                        root_id=None,
+                        aggregates=None,
+                        labels=None,
+                        cognite_client=None,
+                    )
+                ]
+            ),
+            DatapointsList([Datapoints(id=1)]),
+            DatapointsList([Datapoints(instance_id=NodeId("space", "xid"))]),
+            TableList([Table(name="bla", created_time=123)]),
+            RowList([Row("row", columns={}, last_updated_time=123)]),
         ),
     )
     def test_repr_html_list(self, lst):
