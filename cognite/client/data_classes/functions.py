@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, TypeAlias, cast
 
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (
@@ -80,11 +80,11 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
     """A representation of a Cognite Function.
 
     Args:
-        name (str | None): Name of the function.
+        name (str): Name of the function.
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
-        file_id (int | None): File id of the code represented by this object.
+        file_id (int): File id of the code represented by this object.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
@@ -96,26 +96,21 @@ class FunctionCore(WriteableCogniteResource["FunctionWrite"], ABC):
 
     def __init__(
         self,
-        name: str | None = None,
-        external_id: str | None = None,
-        description: str | None = None,
-        owner: str | None = None,
-        file_id: int | None = None,
-        function_path: str = HANDLER_FILE_NAME,
-        secrets: dict[str, str] | None = None,
-        env_vars: dict[str, str] | None = None,
-        cpu: float | None = None,
-        memory: float | None = None,
-        runtime: RunTime | None = None,
-        metadata: dict[str, str] | None = None,
+        name: str,
+        external_id: str | None,
+        description: str | None,
+        owner: str | None,
+        file_id: int,
+        function_path: str,
+        secrets: dict[str, str] | None,
+        env_vars: dict[str, str] | None,
+        cpu: float | None,
+        memory: float | None,
+        runtime: RunTime | None,
+        metadata: dict[str, str] | None,
     ) -> None:
-        # name/file_id are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.name: str = name  # type: ignore
-        self.file_id: int = file_id  # type: ignore
+        self.name: str = name
+        self.file_id: int = file_id
         self.external_id = external_id
         self.description = description
         self.owner = owner
@@ -133,15 +128,15 @@ class Function(FunctionCore):
     This is the reading version, which is used when retrieving a function.
 
     Args:
-        id (int | None): ID of the function.
-        name (str | None): Name of the function.
+        id (int): ID of the function.
+        created_time (int): Created time in UNIX.
+        name (str): Name of the function.
         external_id (str | None): External id of the function.
         description (str | None): Description of the function.
         owner (str | None): Owner of the function.
-        status (str | None): Status of the function.
-        file_id (int | None): File id of the code represented by this object.
+        status (str): Status of the function.
+        file_id (int): File id of the code represented by this object.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        created_time (int | None): Created time in UNIX.
         secrets (dict[str, str] | None): Secrets attached to the function ((key, value) pairs).
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
@@ -156,25 +151,25 @@ class Function(FunctionCore):
 
     def __init__(
         self,
-        id: int | None = None,
-        name: str | None = None,
-        external_id: str | None = None,
-        description: str | None = None,
-        owner: str | None = None,
-        status: str | None = None,
-        file_id: int | None = None,
-        function_path: str = HANDLER_FILE_NAME,
-        created_time: int | None = None,
-        secrets: dict[str, str] | None = None,
-        env_vars: dict[str, str] | None = None,
-        cpu: float | None = None,
-        memory: float | None = None,
-        runtime: RunTime | None = None,
-        runtime_version: str | None = None,
-        metadata: dict[str, str] | None = None,
-        error: dict | None = None,
-        cognite_client: CogniteClient | None = None,
-        last_called: int | None = None,
+        id: int,
+        created_time: int,
+        name: str,
+        external_id: str | None,
+        description: str | None,
+        owner: str | None,
+        status: str,
+        file_id: int,
+        function_path: str,
+        secrets: dict[str, str] | None,
+        env_vars: dict[str, str] | None,
+        cpu: float | None,
+        memory: float | None,
+        runtime: RunTime | None,
+        runtime_version: str | None,
+        metadata: dict[str, str] | None,
+        error: dict | None,
+        cognite_client: CogniteClient | None,
+        last_called: int | None,
     ) -> None:
         super().__init__(
             name=name,
@@ -190,18 +185,37 @@ class Function(FunctionCore):
             runtime=runtime,
             metadata=metadata,
         )
-        # id/created_time/status are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.status: str = status  # type: ignore
-        self.runtime_version: str | None = runtime_version
+        self.id = id
+        self.created_time = created_time
+        self.status = status
+        self.runtime_version = runtime_version
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.last_called = last_called
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            name=resource["name"],
+            external_id=resource.get("externalId"),
+            description=resource.get("description"),
+            owner=resource.get("owner"),
+            status=resource["status"],
+            file_id=resource["fileId"],
+            function_path=resource.get("functionPath", HANDLER_FILE_NAME),
+            secrets=resource.get("secrets"),
+            env_vars=resource.get("envVars"),
+            cpu=resource.get("cpu"),
+            memory=resource.get("memory"),
+            runtime=resource.get("runtime"),
+            runtime_version=resource.get("runtimeVersion"),
+            metadata=resource.get("metadata"),
+            error=resource.get("error"),
+            cognite_client=cognite_client,
+            last_called=resource.get("lastCalled"),
+        )
 
     def as_write(self) -> FunctionWrite:
         """Returns a writeable version of this function."""
@@ -286,7 +300,7 @@ class Function(FunctionCore):
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
     def update(self) -> None:
-        """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
+        """Update the function object. Can be useful to check for the latest status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
         latest = self._cognite_client.functions.retrieve(id=self.id)
         if latest is None:
             return None
@@ -415,31 +429,26 @@ class FunctionScheduleCore(WriteableCogniteResource["FunctionScheduleWrite"], AB
     """A representation of a Cognite Function Schedule.
 
     Args:
-        name (str | None): Name of the function schedule.
+        name (str): Name of the function schedule.
         function_id (int | None): Id of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
-        cron_expression (str | None): Cron expression
+        cron_expression (str): Cron expression
     """
 
     def __init__(
         self,
-        name: str | None = None,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
-        description: str | None = None,
-        cron_expression: str | None = None,
+        name: str,
+        function_id: int | None,
+        function_external_id: str | None,
+        description: str | None,
+        cron_expression: str,
     ) -> None:
-        # name/function_id is required when using the class to read,
-        # but doesn't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.name: str = name  # type: ignore
-        self.function_id: int = function_id  # type: ignore
+        self.name: str = name
+        self.function_id = function_id
         self.function_external_id = function_external_id
         self.description = description
-        self.cron_expression: str = cron_expression  # type: ignore
+        self.cron_expression: str = cron_expression
 
 
 class FunctionSchedule(FunctionScheduleCore):
@@ -447,29 +456,29 @@ class FunctionSchedule(FunctionScheduleCore):
     This is the reading version, which is used when retrieving a function schedule.
 
     Args:
-        id (int | None): ID of the schedule.
-        name (str | None): Name of the function schedule.
+        id (int): ID of the schedule.
+        name (str): Name of the function schedule.
         function_id (int | None): ID of the function.
         function_external_id (str | None): External id of the function.
         description (str | None): Description of the function schedule.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cron_expression (str | None): Cron expression
-        session_id (int | None): ID of the session running with the schedule.
-        when (str | None): When the schedule will trigger, in human readable text (server generated from cron_expression).
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cron_expression (str): Cron expression
+        session_id (int): ID of the session running with the schedule.
+        when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        name: str | None = None,
-        function_id: int | None = None,
-        function_external_id: str | None = None,
-        description: str | None = None,
-        created_time: int | None = None,
-        cron_expression: str | None = None,
-        session_id: int | None = None,
-        when: str | None = None,
+        id: int,
+        name: str,
+        function_id: int | None,
+        function_external_id: str | None,
+        description: str | None,
+        created_time: int,
+        cron_expression: str,
+        session_id: int,
+        when: str,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -479,16 +488,26 @@ class FunctionSchedule(FunctionScheduleCore):
             description=description,
             cron_expression=cron_expression,
         )
-        # id/created_time/when are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
         self.session_id = session_id
-        self.when: str = when  # type: ignore
+        self.when: str = when
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            name=resource["name"],
+            function_id=resource.get("functionId"),
+            function_external_id=resource.get("functionExternalId"),
+            description=resource.get("description"),
+            created_time=resource["createdTime"],
+            cron_expression=resource["cronExpression"],
+            session_id=resource["sessionId"],
+            when=resource["when"],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> FunctionScheduleWrite:
         """Returns a writeable version of this function schedule."""
@@ -543,11 +562,12 @@ class FunctionScheduleWrite(FunctionScheduleCore):
     ) -> None:
         super().__init__(
             name=name,
-            function_id=function_id,
             function_external_id=function_external_id,
             description=description,
             cron_expression=cron_expression,
+            function_id=function_id,
         )
+        self.function_id = function_id
         self.data = data
         self.nonce = nonce
 
@@ -615,43 +635,52 @@ class FunctionCall(CogniteResource):
     """A representation of a Cognite Function call.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        start_time (int | None): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        id (int): A server-generated ID for the object.
+        start_time (int): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (str | None): Status of the function call ("Running", "Completed" or "Failed").
+        status (str): Status of the function call ("Running", "Completed" or "Failed").
         schedule_id (int | None): The schedule id belonging to the call.
         error (dict | None): Error from the function call. It contains an error message and the stack trace.
-        function_id (int | None): No description.
+        function_id (int): No description.
         cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        start_time: int | None = None,
-        end_time: int | None = None,
-        scheduled_time: int | None = None,
-        status: str | None = None,
-        schedule_id: int | None = None,
-        error: dict | None = None,
-        function_id: int | None = None,
+        id: int,
+        start_time: int,
+        end_time: int | None,
+        scheduled_time: int | None,
+        status: str,
+        schedule_id: int | None,
+        error: dict | None,
+        function_id: int,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        # id/start_time/status/function_id is required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.start_time: int = start_time  # type: ignore
+        self.id: int = id
+        self.start_time: int = start_time
         self.end_time = end_time
         self.scheduled_time = scheduled_time
-        self.status: str = status  # type: ignore
+        self.status: str = status
         self.schedule_id = schedule_id
         self.error = error
-        self.function_id: int = function_id  # type: ignore
+        self.function_id: int = function_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            start_time=resource["startTime"],
+            end_time=resource.get("endTime"),
+            scheduled_time=resource.get("scheduledTime"),
+            status=resource["status"],
+            schedule_id=resource.get("scheduleId"),
+            error=resource.get("error"),
+            function_id=resource["functionId"],
+            cognite_client=cognite_client,
+        )
 
     def get_response(self) -> dict[str, object] | None:
         """Retrieve the response from this function call.
@@ -704,19 +733,27 @@ class FunctionCallLogEntry(CogniteResource):
 
     Args:
         timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        message (str | None): Single line from stdout / stderr.
+        message (str): Single line from stdout / stderr.
         cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        timestamp: int | None = None,
-        message: str | None = None,
+        timestamp: int | None,
+        message: str,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.message = message
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            timestamp=resource.get("timestamp"),
+            message=resource["message"],
+            cognite_client=cognite_client,
+        )
 
     def _format(self, with_timestamps: bool = False) -> str:
         ts = ""
