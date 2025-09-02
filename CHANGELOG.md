@@ -8,18 +8,22 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-Changes are grouped as follows
-- `Added` for new features.
-- `Changed` for changes in existing functionality.
-- `Deprecated` for soon-to-be removed features.
-- `Improved` for transparent changes, e.g. better performance.
-- `Removed` for now removed features.
-- `Fixed` for any bug fixes.
-- `Security` in case of vulnerabilities.
+As of 2025-08-29, changes are grouped as follows
+- ✨ Features: New features or additions to existing features.
+- 🐛 Bug Fixes: Bug fixes.
+- ⚡ Improvements: Transparent changes, e.g. better performance.
+
+## [7.83.1] - 2025-08-30
+### Changed
+- [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
 
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
+
+## [Unreleased]
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
