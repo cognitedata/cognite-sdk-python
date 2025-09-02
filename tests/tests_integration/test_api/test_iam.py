@@ -73,7 +73,7 @@ class TestSecurityCategoriesAPI:
 
     def test_create_and_delete(self, cognite_client):
         random_name = "test_" + random_string(10)
-        res = cognite_client.iam.security_categories.create(SecurityCategory(name=random_name))
+        res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name=random_name))
         assert res.id in {s.id for s in cognite_client.iam.security_categories.list()}
         cognite_client.iam.security_categories.delete(res.id)
         assert res.id not in {s.id for s in cognite_client.iam.security_categories.list()}
