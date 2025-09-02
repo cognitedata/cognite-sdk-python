@@ -4,7 +4,14 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Label, LabelFilter, Relationship, RelationshipList, RelationshipUpdate
+from cognite.client.data_classes import (
+    Label,
+    LabelFilter,
+    Relationship,
+    RelationshipList,
+    RelationshipUpdate,
+    RelationshipWrite,
+)
 from tests.utils import get_url, jsgz_load
 
 
@@ -74,7 +81,7 @@ class TestRelationships:
 
     def test_create_single(self, cognite_client, mock_rel_response):
         res = cognite_client.relationships.create(
-            Relationship(
+            RelationshipWrite(
                 external_id="1",
                 confidence=0.5,
                 labels=[Label("belongsTo")],
@@ -92,7 +99,7 @@ class TestRelationships:
         types = ["asset", "timeSeries", "file", "event", "sequence"]
         for cls_string in types:
             res = cognite_client.relationships.create(
-                Relationship(
+                RelationshipWrite(
                     external_id="1",
                     confidence=0.5,
                     labels=[Label("belongsTo")],
@@ -104,7 +111,7 @@ class TestRelationships:
             )
             assert isinstance(res, Relationship)
             res = cognite_client.relationships.create(
-                Relationship(
+                RelationshipWrite(
                     external_id="1",
                     confidence=0.5,
                     labels=[Label("belongsTo")],
@@ -116,7 +123,7 @@ class TestRelationships:
             )
             assert isinstance(res, Relationship)
             res = cognite_client.relationships.create(
-                Relationship(
+                RelationshipWrite(
                     external_id="1",
                     confidence=0.5,
                     labels=[Label("belongsTo")],
@@ -149,7 +156,7 @@ class TestRelationships:
             )
 
     def test_create_multiple(self, cognite_client, mock_rel_response):
-        rel1 = Relationship(
+        rel1 = RelationshipWrite(
             external_id="new1",
             confidence=0.5,
             labels=[Label("flowsTo")],
@@ -158,7 +165,7 @@ class TestRelationships:
             target_type="asset",
             target_external_id="bar",
         )
-        rel2 = Relationship(
+        rel2 = RelationshipWrite(
             external_id="new2",
             confidence=0.1,
             labels=[Label("flowsTo")],
@@ -172,7 +179,25 @@ class TestRelationships:
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
     def test_update_with_resource_class(self, cognite_client, mock_rel_response):
-        res = cognite_client.relationships.update(Relationship(external_id="test_1"))
+        res = cognite_client.relationships.update(
+            Relationship(
+                external_id="test1",
+                created_time=123,
+                last_updated_time=123,
+                source_external_id="source1",
+                source_type="bla",
+                source=None,
+                target_external_id="bla",
+                target_type="bla",
+                target=None,
+                start_time=None,
+                end_time=None,
+                confidence=None,
+                data_set_id=None,
+                labels=[Label(external_id="Pump")],
+                cognite_client=None,
+            )
+        )
         assert isinstance(res, Relationship)
         assert mock_rel_response["items"][0] == res.dump(camel_case=True)
 
@@ -216,9 +241,31 @@ class TestRelationships:
 
     def test_update_labels_resource_class(self, cognite_client, mock_rel_response, httpx_mock):
         cognite_client.relationships.update(
-            Relationship(external_id="test1", labels=[Label(external_id="Pump")], source_external_id="source1")
+            Relationship(
+                external_id="test1",
+                created_time=123,
+                last_updated_time=123,
+                source_external_id="source1",
+                source_type="bla",
+                source=None,
+                target_external_id="bla",
+                target_type="bla",
+                target=None,
+                start_time=None,
+                end_time=None,
+                confidence=None,
+                data_set_id=None,
+                labels=[Label(external_id="Pump")],
+                cognite_client=None,
+            )
         )
-        expected = {"sourceExternalId": {"set": "source1"}, "labels": {"set": [{"externalId": "Pump"}]}}
+        expected = {
+            "labels": {"set": [{"externalId": "Pump"}]},
+            "sourceExternalId": {"set": "source1"},
+            "sourceType": {"set": "bla"},
+            "targetExternalId": {"set": "bla"},
+            "targetType": {"set": "bla"},
+        }
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
     def test_iter_single(self, cognite_client, mock_rel_response):
