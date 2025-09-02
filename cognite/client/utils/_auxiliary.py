@@ -26,7 +26,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import httpx
 
-    from cognite.client import CogniteClient
     from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
 
 T = TypeVar("T")
@@ -77,24 +76,6 @@ def load_resource_to_dict(resource: dict[str, Any] | str) -> dict[str, Any]:
             return resource
 
     raise TypeError(f"Resource must be json or yaml str, or dict, not {type(resource)}")
-
-
-def fast_dict_load(
-    cls: type[T_CogniteObject], item: dict[str, Any], cognite_client: CogniteClient | None
-) -> T_CogniteObject:
-    try:
-        instance = cls(cognite_client=cognite_client)  # type: ignore [call-arg]
-    except TypeError:
-        instance = cls()
-    # Note: Do not use cast(Hashable, cls) here as this is often called in a hot loop
-    # Accepted: {camel_case(attribute_name): attribute_name}
-    accepted = get_accepted_params(cls)
-    for camel_attr, value in item.items():
-        try:
-            setattr(instance, accepted[camel_attr], value)
-        except KeyError:
-            pass
-    return instance
 
 
 def load_yaml_or_json(resource: str) -> Any:

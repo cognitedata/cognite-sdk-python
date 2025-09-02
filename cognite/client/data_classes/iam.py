@@ -497,23 +497,23 @@ class Session(CogniteResource):
     """Session status
 
     Args:
-        id (int | None): ID of the session.
-        type (SessionType | None): Credentials kind used to create the session.
-        status (SessionStatus | None): Current status of the session.
-        creation_time (int | None): Session creation time, in milliseconds since 1970
-        expiration_time (int | None): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        id (int): ID of the session.
+        type (SessionType): Credentials kind used to create the session.
+        status (SessionStatus): Current status of the session.
+        creation_time (int): Session creation time, in milliseconds since 1970
+        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
         cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        type: SessionType | None = None,
-        status: SessionStatus | None = None,
-        creation_time: int | None = None,
-        expiration_time: int | None = None,
-        client_id: str | None = None,
+        id: int,
+        type: SessionType,
+        status: SessionStatus,
+        creation_time: int,
+        expiration_time: int,
+        client_id: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
@@ -522,6 +522,18 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            type=resource["type"],
+            status=resource["status"],
+            creation_time=resource["creationTime"],
+            expiration_time=resource["expirationTime"],
+            client_id=resource.get("clientId"),
+            cognite_client=cognite_client,
+        )
 
 
 class SessionList(CogniteResourceList[Session], IdTransformerMixin):
