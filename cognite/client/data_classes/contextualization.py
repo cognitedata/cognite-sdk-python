@@ -205,10 +205,10 @@ class EntityMatchingModel(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
+        id: int,
+        created_time: int,
         status: str | None = None,
         error_message: str | None = None,
-        created_time: int | None = None,
         start_time: int | None = None,
         status_time: int | None = None,
         classifier: str | None = None,
@@ -220,13 +220,8 @@ class EntityMatchingModel(CogniteResource):
         external_id: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        # id/created_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
+        self.id = id
+        self.created_time = created_time
         self.status = status
         self.start_time = start_time
         self.status_time = status_time
@@ -239,6 +234,25 @@ class EntityMatchingModel(CogniteResource):
         self.description = description
         self.external_id = external_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            status=resource.get("status"),
+            error_message=resource.get("errorMessage"),
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource.get("statusTime"),
+            classifier=resource.get("classifier"),
+            feature_type=resource.get("featureType"),
+            match_fields=resource.get("matchFields"),
+            model_type=resource.get("modelType"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
