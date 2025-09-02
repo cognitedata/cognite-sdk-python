@@ -3,7 +3,7 @@ import random
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Row
+from cognite.client.data_classes import Row, RowWrite
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
@@ -74,7 +74,7 @@ class TestRawRowsAPI:
     def test_rows_with_parallel_cursors(self, cognite_client):
         randstr = random_string(32)
         num_rows = random.randint(1500, 3000)
-        rows_to_insert = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
+        rows_to_insert = [RowWrite(key=str(i), columns={"a": 1}) for i in range(num_rows)]
         try:
             cognite_client.raw.rows.insert(randstr, randstr, row=rows_to_insert, ensure_parent=True)
 
