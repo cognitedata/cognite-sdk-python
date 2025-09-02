@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Annotation
+from cognite.client.data_classes import AnnotationWrite
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
     KeypointCollection,
@@ -465,7 +465,7 @@ class TestVisionExtractJob:
                 },
                 {"creating_user": None, "creating_app": None, "creating_app_version": None},
                 [
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={
@@ -476,10 +476,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.AssetLink",
                         data={
@@ -489,10 +489,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.ObjectDetection",
                         data={
@@ -502,10 +502,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.KeypointCollection",
                         data={
@@ -517,10 +517,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.ObjectDetection",
                         data={
@@ -530,7 +530,7 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
                 ],
@@ -548,7 +548,7 @@ class TestVisionExtractJob:
                 },
                 {"creating_user": "foo", "creating_app": "bar", "creating_app_version": "1.0.0"},
                 [
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={

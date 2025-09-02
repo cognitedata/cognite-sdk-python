@@ -150,16 +150,16 @@ class TestAssetList:
 
 def basic_issue_assets():
     return [
-        Asset(name="a1", external_id="i am groot", parent_external_id=None),
+        AssetWrite(name="a1", external_id="i am groot", parent_external_id=None),
         # Duplicated XIDs:
-        Asset(name="a2", external_id="a", parent_external_id="i am groot"),
+        AssetWrite(name="a2", external_id="a", parent_external_id="i am groot"),
         AssetWrite(name="a3", external_id="a", parent_external_id="i am groot"),
         # Duplicated AND orphan:
-        Asset(name="a4", external_id="a", parent_external_id="i am orphan"),
+        AssetWrite(name="a4", external_id="a", parent_external_id="i am orphan"),
         # Orphan:
         AssetWrite(name="a5", external_id="b", parent_external_id="i am orphan"),
         # Invalid (missing XIDs):
-        Asset(name="a6", external_id=None, parent_external_id="i am groot"),
+        AssetWrite(name="a6", external_id=None, parent_external_id="i am groot"),
         # Doubly defined parent asset:
         AssetWrite(name="a7", external_id="c", parent_external_id="i am groot", parent_id=42),
     ]
@@ -202,18 +202,18 @@ def basic_issue_output():
 
 def cycles_issue_assets():
     mostly_cycles = [  # Add two normal assets
-        Asset(name="no-cycle", external_id="", parent_external_id=None),
-        Asset(name="no-cycle-too", external_id="not-empty", parent_external_id=""),
+        AssetWrite(name="no-cycle", external_id="", parent_external_id=None),
+        AssetWrite(name="no-cycle-too", external_id="not-empty", parent_external_id=""),
     ]
     # Make cycles of various lengths (4, 9, 16, 25, 36, 49, 64):
     for n, s in enumerate("abcdefg", 2):
         n **= 2
         mostly_cycles.extend(
-            Asset(name="R2D2", external_id=f"{s}{i}", parent_external_id=f"{s}{j}")
+            AssetWrite(name="R2D2", external_id=f"{s}{i}", parent_external_id=f"{s}{j}")
             for i, j in itertools.zip_longest(range(n), range(1, n), fillvalue=0)
         )
         # Add a child asset to a "cycle" asset (i.e. not directly part of the loop):
-        mostly_cycles.append(Asset(name="D2R2", external_id=f"{s}-infinity", parent_external_id=f"{s}{1}"))
+        mostly_cycles.append(AssetWrite(name="D2R2", external_id=f"{s}-infinity", parent_external_id=f"{s}{1}"))
     with rng_context(round(time.time(), -3)):  # make parallel test-runners agree on 'random'
         random.shuffle(mostly_cycles)
     return mostly_cycles
@@ -237,12 +237,29 @@ class TestAssetHierarchy:
         "asset",
         (
             # Invalid name:
-            Asset(name="", external_id="foo"),
+            AssetWrite(name="", external_id="foo"),
             AssetWrite(name=None, external_id="foo"),
             # Invalid external_id (empty str allowed):
             AssetWrite(name="a", external_id=None),
             # Id given:
-            Asset(name="a", external_id="", id=123),
+            Asset(
+                id=123,
+                created_time=123,
+                last_updated_time=123,
+                name="",
+                external_id="foo",
+                parent_id=None,
+                parent_external_id=None,
+                description=None,
+                data_set_id=None,
+                metadata=None,
+                source=None,
+                geo_location=None,
+                root_id=None,
+                aggregates=None,
+                labels=None,
+                cognite_client=None,
+            ),
         ),
     )
     def test_validate_asset_hierarchy___invalid_assets(self, asset):

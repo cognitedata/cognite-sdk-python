@@ -7,6 +7,7 @@ from cognite.client.data_classes import (
     AggregateResult,
     EndTimeFilter,
     EventFilter,
+    EventWrite,
     TimestampRange,
 )
 from tests.utils import get_url, jsgz_load
@@ -24,6 +25,7 @@ def example_event():
         "source": "string",
         "id": 1,
         "lastUpdatedTime": 0,
+        "createdTime": 0,
     }
 
 
@@ -133,12 +135,12 @@ class TestEvents:
             EndTimeFilter(is_null=True, max=100)
 
     def test_create_single(self, cognite_client, mock_events_response, example_event):
-        res = cognite_client.events.create(Event(external_id="1"))
+        res = cognite_client.events.create(EventWrite(external_id="1"))
         assert isinstance(res, Event)
         assert example_event == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_events_response, example_event):
-        res = cognite_client.events.create([Event(external_id="1")])
+        res = cognite_client.events.create([EventWrite(external_id="1")])
         assert isinstance(res, EventList)
         assert [example_event] == res.dump(camel_case=True)
 
@@ -165,7 +167,24 @@ class TestEvents:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_events_response, example_event):
-        res = cognite_client.events.update(Event(id=1))
+        res = cognite_client.events.update(
+            Event(
+                id=1,
+                last_updated_time=123,
+                created_time=123,
+                external_id=None,
+                data_set_id=None,
+                start_time=None,
+                end_time=None,
+                type=None,
+                subtype=None,
+                description=None,
+                metadata=None,
+                asset_ids=None,
+                source=None,
+                cognite_client=None,
+            )
+        )
         assert isinstance(res, Event)
         assert example_event == res.dump(camel_case=True)
 
