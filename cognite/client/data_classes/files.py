@@ -5,6 +5,8 @@ from collections.abc import Sequence
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar, cast
 
+from typing_extensions import Self
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -118,6 +120,11 @@ class FileMetadata(FileMetadataCore):
     This is the reading version of FileMetadata, and it is used when retrieving from CDF.
 
     Args:
+        id (int): A server-generated ID for the object.
+        uploaded (bool): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
         name (str | None): Name of the file.
@@ -132,36 +139,31 @@ class FileMetadata(FileMetadataCore):
         source_created_time (int | None): The timestamp for when the file was originally created in the source system.
         source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
         security_categories (Sequence[int] | None): The security category IDs required to access this file.
-        id (int | None): A server-generated ID for the object.
-        uploaded (bool | None): Whether the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        instance_id: NodeId | None = None,
-        name: str | None = None,
-        source: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        directory: str | None = None,
-        asset_ids: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-        labels: Sequence[Label] | None = None,
-        geo_location: GeoLocation | None = None,
-        source_created_time: int | None = None,
-        source_modified_time: int | None = None,
-        security_categories: Sequence[int] | None = None,
-        id: int | None = None,
-        uploaded: bool | None = None,
-        uploaded_time: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        uploaded: bool,
+        created_time: int,
+        last_updated_time: int,
+        uploaded_time: int | None,
+        external_id: str | None,
+        instance_id: NodeId | None,
+        name: str | None,
+        source: str | None,
+        mime_type: str | None,
+        metadata: dict[str, str] | None,
+        directory: str | None,
+        asset_ids: Sequence[int] | None,
+        data_set_id: int | None,
+        labels: Sequence[Label] | None,
+        geo_location: GeoLocation | None,
+        source_created_time: int | None,
+        source_modified_time: int | None,
+        security_categories: Sequence[int] | None,
+        cognite_client: CogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -179,17 +181,37 @@ class FileMetadata(FileMetadataCore):
             source_modified_time=source_modified_time,
             security_categories=security_categories,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            uploaded=resource["uploaded"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            uploaded_time=resource.get("uploadedTime"),
+            external_id=resource.get("externalId"),
+            instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
+            name=resource.get("name"),
+            directory=resource.get("directory"),
+            source=resource.get("source"),
+            mime_type=resource.get("mimeType"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            data_set_id=resource.get("dataSetId"),
+            labels=(labels := resource.get("labels")) and Label._load_list(labels),
+            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            source_created_time=resource.get("sourceCreatedTime"),
+            source_modified_time=resource.get("sourceModifiedTime"),
+            security_categories=resource.get("securityCategories"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> FileMetadataWrite:
         """Returns this FileMetadata in its writing format."""
