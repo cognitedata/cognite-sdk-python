@@ -76,24 +76,24 @@ class SequenceColumn(SequenceColumnCore):
     """This represents a column in a sequence. It is used for reading only.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        created_time (int): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
         name (str | None): Name of the column
         description (str | None): Description of the column
         value_type (ValueType): The type of the column. It can be String, Double or Long.
         metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        created_time (int | None): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int | None): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        value_type: ValueType = "Double",
-        metadata: dict[str, Any] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        external_id: str,
+        created_time: int,
+        last_updated_time: int,
+        name: str | None,
+        description: str | None,
+        value_type: ValueType,
+        metadata: dict[str, Any] | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -104,6 +104,18 @@ class SequenceColumn(SequenceColumnCore):
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            name=resource.get("name"),
+            description=resource.get("description"),
+            value_type=cast(ValueType, resource["valueType"]),
+            metadata=resource.get("metadata"),
+        )
 
     def as_write(self) -> SequenceColumnWrite:
         """Returns a writeable version of this column."""
@@ -225,31 +237,31 @@ class Sequence(SequenceCore):
     This is the reading version of the class, it is used for retrieving data from the CDF.
 
     Args:
-        id (int | None): Unique cognite-provided identifier for the sequence
+        id (int): Unique cognite-provided identifier for the sequence
+        created_time (int): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
         name (str | None): Name of the sequence
         description (str | None): Description of the sequence
         asset_id (int | None): Optional asset this sequence is associated with
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         metadata (dict[str, Any] | None): Custom, application-specific metadata. String key -> String value. The maximum length of the key is 32 bytes, the value 512 bytes, with up to 16 key-value pairs.
-        columns (typing.Sequence[SequenceColumn] | None): List of column definitions
-        created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        columns (typing.Sequence[SequenceColumn]): List of column definitions
         data_set_id (int | None): Data set that this sequence belongs to
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        asset_id: int | None = None,
-        external_id: str | None = None,
-        metadata: dict[str, Any] | None = None,
-        columns: typing.Sequence[SequenceColumn] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        data_set_id: int | None = None,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
+        name: str | None,
+        description: str | None,
+        asset_id: int | None,
+        external_id: str | None,
+        metadata: dict[str, Any] | None,
+        columns: typing.Sequence[SequenceColumn],
+        data_set_id: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -260,14 +272,9 @@ class Sequence(SequenceCore):
             metadata=metadata,
             data_set_id=data_set_id,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
 
         self.columns: SequenceColumnList | None
         if columns is None or isinstance(columns, SequenceColumnList):
@@ -286,10 +293,19 @@ class Sequence(SequenceCore):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        loaded = super()._load(resource, cognite_client)
-        if loaded.columns is not None:
-            loaded.columns = SequenceColumnList._load(loaded.columns)
-        return loaded
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            name=resource.get("name"),
+            description=resource.get("description"),
+            asset_id=resource.get("assetId"),
+            external_id=resource.get("externalId"),
+            metadata=resource.get("metadata"),
+            columns=SequenceColumnList._load(resource["columns"] if "columns" in resource else []),
+            data_set_id=resource.get("dataSetId"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> SequenceWrite:
         """Returns a writeable version of this sequence."""
