@@ -79,6 +79,7 @@ class RawTablesAPI(APIClient):
         tb = self._create_multiple(
             list_cls=raw.TableList,
             resource_cls=raw.Table,
+            input_resource_cls=raw.TableWrite,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             items=items,
         )
