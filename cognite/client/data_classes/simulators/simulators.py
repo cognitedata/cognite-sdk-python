@@ -108,6 +108,38 @@ class Simulator(CogniteResource):
 
         return output
 
+    def get_quantities(self) -> list[str]:
+        """Get a list of quantity names available for this simulator.
+
+        Returns:
+            list[str]: List of quantity names from the simulator's unit_quantities.
+        """
+        if not self.unit_quantities:
+            return []
+        return [quantity.name for quantity in self.unit_quantities]
+
+    def get_units(self, quantity: str) -> list[str]:
+        """Get a list of unit names for a specific quantity.
+
+        Args:
+            quantity (str): The name of the quantity to get units for.
+
+        Returns:
+            list[str]: List of unit names for the specified quantity.
+
+        Raises:
+            ValueError: If the specified quantity does not exist for this simulator.
+        """
+        if not self.unit_quantities:
+            raise ValueError(f"Quantity '{quantity}' not found. This simulator has no unit quantities defined.")
+
+        for q in self.unit_quantities:
+            if q.name == quantity:
+                return [unit.name for unit in q.units]
+
+        available_quantities = self.get_quantities()
+        raise ValueError(f"Quantity '{quantity}' not found. Available quantities: {', '.join(available_quantities)}")
+
 
 @dataclass
 class SimulatorUnitEntry(CogniteObject):
@@ -149,7 +181,9 @@ class SimulatorModelType(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorModelType]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -175,7 +209,9 @@ class SimulatorQuantity(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorQuantity]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -261,7 +297,9 @@ class SimulatorModelDependency(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorModelDependency]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
@@ -291,7 +329,9 @@ class SimulatorStep(CogniteObject):
 
     @classmethod
     def _load_list(
-        cls, resource: dict[str, Any] | list[dict[str, Any]], cognite_client: CogniteClient | None = None
+        cls,
+        resource: dict[str, Any] | list[dict[str, Any]],
+        cognite_client: CogniteClient | None = None,
     ) -> list[SimulatorStep]:
         if isinstance(resource, dict):
             return [cls._load(resource, cognite_client)]
