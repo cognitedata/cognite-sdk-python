@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, TimestampRange
+from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, DataSetWrite, TimestampRange
 from tests.utils import jsgz_load
 
 
@@ -66,12 +66,12 @@ class TestDataset:
         assert {"cursor": None, "limit": 10, "filter": {"writeProtected": True}} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, cognite_client, mock_ds_response):
-        res = cognite_client.data_sets.create(DataSet(external_id="1", name="blabla"))
+        res = cognite_client.data_sets.create(DataSetWrite(external_id="1", name="blabla"))
         assert isinstance(res, DataSet)
         assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_ds_response):
-        res = cognite_client.data_sets.create([DataSet(external_id="1")])
+        res = cognite_client.data_sets.create([DataSetWrite(external_id="1")])
         assert isinstance(res, DataSetList)
         assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
@@ -92,7 +92,19 @@ class TestDataset:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_ds_response):
-        res = cognite_client.data_sets.update(DataSet(id=1))
+        res = cognite_client.data_sets.update(
+            DataSet(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                name=None,
+                write_protected=False,
+                external_id=None,
+                description=None,
+                metadata=None,
+                cognite_client=None,
+            )
+        )
         assert isinstance(res, DataSet)
         assert mock_ds_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 

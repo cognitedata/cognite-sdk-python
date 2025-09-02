@@ -3,7 +3,14 @@ import re
 import pytest
 
 from cognite.client._api.assets import Asset, AssetList, AssetUpdate
-from cognite.client.data_classes import AggregateResultItem, AssetFilter, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes import (
+    AggregateResultItem,
+    AssetFilter,
+    AssetWrite,
+    Label,
+    LabelFilter,
+    TimestampRange,
+)
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 from tests.utils import jsgz_load
@@ -19,6 +26,7 @@ EXAMPLE_ASSET = {
     "id": 1,
     "lastUpdatedTime": 0,
     "rootId": 1,
+    "createdTime": 0,
 }
 
 
@@ -36,31 +44,52 @@ def mock_get_subtree_base(rsps, cognite_client):
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/byids",
         status=200,
-        json={"items": [{"id": 1}]},
+        json={"items": [{"id": 1, "createdTime": 123, "lastUpdatedTime": 123}]},
     )
     rsps.add(
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 2, "parentId": 1}, {"id": 3, "parentId": 1}, {"id": 4, "parentId": 1}]},
+        json={
+            "items": [
+                {"id": 2, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 3, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 4, "parentId": 1, "createdTime": 123, "lastUpdatedTime": 123},
+            ]
+        },
     )
     rsps.add(
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 5, "parentId": 2}, {"id": 6, "parentId": 2}]},
+        json={
+            "items": [
+                {"id": 5, "parentId": 2, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 6, "parentId": 2, "createdTime": 123, "lastUpdatedTime": 123},
+            ]
+        },
     )
     rsps.add(
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 7, "parentId": 3}, {"id": 8, "parentId": 3}]},
+        json={
+            "items": [
+                {"id": 7, "parentId": 3, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 8, "parentId": 3, "createdTime": 123, "lastUpdatedTime": 123},
+            ]
+        },
     )
     rsps.add(
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
         status=200,
-        json={"items": [{"id": 9, "parentId": 4}, {"id": 10, "parentId": 4}]},
+        json={
+            "items": [
+                {"id": 9, "parentId": 4, "createdTime": 123, "lastUpdatedTime": 123},
+                {"id": 10, "parentId": 4, "createdTime": 123, "lastUpdatedTime": 123},
+            ]
+        },
     )
     yield rsps
 
@@ -148,12 +177,12 @@ class TestAssets:
         assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
 
     def test_create_single(self, cognite_client, mock_assets_response):
-        res = cognite_client.assets.create(Asset(external_id="1", name="blabla"))
+        res = cognite_client.assets.create(AssetWrite(external_id="1", name="blabla"))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_assets_response):
-        res = cognite_client.assets.create([Asset(external_id="1", name="blabla")])
+        res = cognite_client.assets.create([AssetWrite(external_id="1", name="blabla")])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
@@ -187,7 +216,7 @@ class TestAssets:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_assets_response):
-        res = cognite_client.assets.update(Asset(id=1))
+        res = cognite_client.assets.update(Asset._load(EXAMPLE_ASSET))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
@@ -229,8 +258,20 @@ class TestAssets:
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     def test_update_labels_resource_class(self, cognite_client, mock_assets_response):
-        cognite_client.assets.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
-        expected = {"name": {"set": "Abc"}, "labels": {"set": [{"externalId": "Pump"}]}}
+        asset = Asset.load(EXAMPLE_ASSET)
+        asset.labels = [Label(external_id="Pump")]
+        asset.id = 1
+        asset.name = "Abc"
+        cognite_client.assets.update(asset)
+        expected = {
+            "description": {"set": "string"},
+            "externalId": {"set": "string"},
+            "labels": {"set": [{"externalId": "Pump"}]},
+            "metadata": {"set": {"metadata-key": "metadata-value"}},
+            "name": {"set": "Abc"},
+            "parentId": {"set": 1},
+            "source": {"set": "string"},
+        }
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, cognite_client, mock_assets_response):
@@ -248,12 +289,20 @@ class TestAssets:
         )["filter"]["labels"]
 
     def test_create_asset_with_label(self, cognite_client, mock_assets_response):
-        cognite_client.assets.create(
-            Asset(name="test", labels=[Label(external_id="PUMP"), Label(external_id="VERIFIED")])
-        )
-        assert {"name": "test", "labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]} == jsgz_load(
-            mock_assets_response.calls[0].request.body
-        )["items"][0]
+        asset = Asset.load(EXAMPLE_ASSET)
+        asset.name = "test"
+        asset.labels = [Label(external_id="PUMP"), Label(external_id="VERIFIED")]
+        cognite_client.assets.create(asset)
+
+        assert {
+            "description": "string",
+            "externalId": "string",
+            "labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}],
+            "metadata": {"metadata-key": "metadata-value"},
+            "name": "test",
+            "parentId": 1,
+            "source": "string",
+        } == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]
 
     def test_search(self, cognite_client, mock_assets_response):
         res = cognite_client.assets.search(filter=AssetFilter(name="1"))
@@ -347,7 +396,10 @@ class TestPandasIntegration:
 
     def test_expand_aggregates(self):
         agg_props = {"childCount": 0, "depth": 4, "path": [{"id": 35927223}, {"id": 20283836}, {"id": 296}]}
-        asset = Asset(name="foo", aggregates=AggregateResultItem._load(agg_props))
+        asset = Asset.load(EXAMPLE_ASSET)
+        asset.name = "foo"
+        asset.aggregates = AggregateResultItem._load(agg_props)
+
         expanded = asset.to_pandas(expand_aggregates=True)
         not_expanded = asset.to_pandas(expand_aggregates=False)
 

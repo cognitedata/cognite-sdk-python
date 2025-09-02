@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Label, LabelDefinition, LabelDefinitionList
+from cognite.client.data_classes import Label, LabelDefinition, LabelDefinitionList, LabelDefinitionWrite
 from tests.utils import jsgz_load
 
 
@@ -42,7 +42,7 @@ class TestLabels:
         assert {"cursor": None, "limit": 10} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, cognite_client, mock_labels_response):
-        res = cognite_client.labels.create(LabelDefinition(external_id="1", name="my_label", description="text"))
+        res = cognite_client.labels.create(LabelDefinitionWrite(external_id="1", name="my_label", description="text"))
         assert isinstance(res, LabelDefinition)
         assert mock_labels_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
         assert {"items": [{"externalId": "1", "name": "my_label", "description": "text"}]} == jsgz_load(
@@ -52,8 +52,8 @@ class TestLabels:
     def test_create_multiple(self, cognite_client, mock_labels_response):
         res = cognite_client.labels.create(
             [
-                LabelDefinition(external_id="1", name="Rotating"),
-                LabelDefinition(external_id="2", name="Positive Displacement"),
+                LabelDefinitionWrite(external_id="1", name="Rotating"),
+                LabelDefinitionWrite(external_id="2", name="Positive Displacement"),
             ]
         )
         assert isinstance(res, LabelDefinitionList)
@@ -82,7 +82,12 @@ class TestLabels:
 
     def test_load_list(self):
         assert Label._load_list(None) is None
-        labels = [{"externalId": "a"}, "b", Label("c"), LabelDefinition("d")]
+        labels = [
+            {"externalId": "a"},
+            "b",
+            Label("c"),
+            LabelDefinition("d", name="bla", created_time=123, description=None, data_set_id=None, cognite_client=None),
+        ]
         assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
 
     def test_list_with_dataset_ids(self, cognite_client, mock_labels_response):

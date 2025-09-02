@@ -3,15 +3,18 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Iterator, Sequence
 from io import BufferedReader
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes import (
     FileMetadataFilter,
+    FileMetadataWrite,
     GeoLocation,
     GeoLocationFilter,
     Geometry,
@@ -26,7 +29,7 @@ from tests.utils import jsgz_load, set_request_limit
 
 
 @pytest.fixture
-def mock_geo_location() -> GeoLocation:
+def mock_geo_location() -> Iterator[GeoLocation]:
     geometry = Geometry(type="Point", coordinates=[35, 10])
     yield GeoLocation(type="Feature", geometry=geometry)
 
@@ -135,7 +138,19 @@ def mock_file_download_response(rsps, cognite_client):
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
         status=200,
-        json={"items": [{"id": 1, "name": "file1"}, {"id": 10, "externalId": "2", "name": "file2"}]},
+        json={
+            "items": [
+                {"id": 1, "name": "file1", "uploaded": False, "createdTime": 123, "lastUpdatedTime": 123},
+                {
+                    "id": 10,
+                    "externalId": "2",
+                    "name": "file2",
+                    "uploaded": False,
+                    "createdTime": 123,
+                    "lastUpdatedTime": 123,
+                },
+            ]
+        },
     )
 
     def download_link_callback(request):
@@ -166,8 +181,22 @@ def mock_file_download_response_with_folder_structure_same_name(rsps, cognite_cl
         status=200,
         json={
             "items": [
-                {"id": 1, "name": "file_a", "directory": "/rootdir/subdir"},
-                {"id": 10, "externalId": "2", "name": "file_a"},
+                {
+                    "id": 1,
+                    "name": "file_a",
+                    "directory": "/rootdir/subdir",
+                    "uploaded": False,
+                    "createdTime": 123,
+                    "lastUpdatedTime": 123,
+                },
+                {
+                    "id": 10,
+                    "externalId": "2",
+                    "name": "file_a",
+                    "uploaded": False,
+                    "createdTime": 123,
+                    "lastUpdatedTime": 123,
+                },
             ]
         },
     )
@@ -200,8 +229,22 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
         status=200,
         json={
             "items": [
-                {"id": 1, "externalId": "success", "name": "file1"},
-                {"externalId": "fail", "id": 2, "name": "file2"},
+                {
+                    "id": 1,
+                    "externalId": "success",
+                    "name": "file1",
+                    "uploaded": False,
+                    "createdTime": 123,
+                    "lastUpdatedTime": 123,
+                },
+                {
+                    "externalId": "fail",
+                    "id": 2,
+                    "name": "file2",
+                    "uploaded": False,
+                    "createdTime": 123,
+                    "lastUpdatedTime": 123,
+                },
             ]
         },
     )
@@ -223,16 +266,62 @@ def mock_file_download_response_one_fails(rsps, cognite_client):
     yield rsps
 
 
+def create_default_file_metadata(
+    id: int = 1,
+    uploaded: bool = True,
+    created_time: int = 123,
+    last_updated_time: int = 123,
+    uploaded_time: int | None = None,
+    external_id: str | None = None,
+    instance_id: NodeId | None = None,
+    name: str | None = None,
+    source: str | None = None,
+    mime_type: str | None = None,
+    metadata: dict[str, str] | None = None,
+    directory: str | None = None,
+    asset_ids: Sequence[int] | None = None,
+    data_set_id: int | None = None,
+    labels: Sequence[Label] | None = None,
+    geo_location: GeoLocation | None = None,
+    source_created_time: int | None = None,
+    source_modified_time: int | None = None,
+    security_categories: Sequence[int] | None = None,
+    cognite_client: CogniteClient | None = None,
+) -> FileMetadata:
+    return FileMetadata(
+        id=id,
+        uploaded=uploaded,
+        created_time=created_time,
+        last_updated_time=last_updated_time,
+        uploaded_time=uploaded_time,
+        external_id=external_id,
+        instance_id=instance_id,
+        name=name,
+        source=source,
+        mime_type=mime_type,
+        metadata=metadata,
+        directory=directory,
+        asset_ids=asset_ids,
+        data_set_id=data_set_id,
+        labels=labels,
+        geo_location=geo_location,
+        source_created_time=source_created_time,
+        source_modified_time=source_modified_time,
+        security_categories=security_categories,
+        cognite_client=cognite_client,
+    )
+
+
 class TestFilesAPI:
     def test_create(self, cognite_client, mock_file_create_response):
-        file_metadata = FileMetadata(name="bla")
+        file_metadata = FileMetadataWrite(name="bla")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
         assert response_body["uploadUrl"] == upload_url
 
     def test_create_with_label(self, cognite_client, mock_file_create_response):
-        file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
+        file_metadata = FileMetadataWrite(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
@@ -240,7 +329,7 @@ class TestFilesAPI:
         assert response_body["labels"][0]["externalId"] == "WELL LOG"
 
     def test_create_with_label_request(self, cognite_client, mock_file_create_response):
-        file_metadata = FileMetadata(name="bla", labels=[Label(external_id="WELL LOG")])
+        file_metadata = FileMetadataWrite(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
@@ -248,7 +337,7 @@ class TestFilesAPI:
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, response_body])
 
     def test_create_with_geoLocation(self, cognite_client, mock_file_create_response, mock_geo_location):
-        file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
+        file_metadata = FileMetadataWrite(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         assert FileMetadata.load(response_body) == returned_file_metadata
@@ -264,7 +353,7 @@ class TestFilesAPI:
             _ = GeoLocation(type="FeatureCollection", geometry=g)
 
     def test_create_with_geoLocation_request(self, cognite_client, mock_file_create_response, mock_geo_location):
-        file_metadata = FileMetadata(name="bla", geo_location=mock_geo_location)
+        file_metadata = FileMetadataWrite(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         response_body = mock_file_create_response.calls[0].response.json()
         request_body = jsgz_load(mock_file_create_response.calls[0].request.body)
@@ -352,7 +441,7 @@ class TestFilesAPI:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_files_response):
-        res = cognite_client.files.update(FileMetadata(id=1, source="bla"))
+        res = cognite_client.files.update(create_default_file_metadata(source="bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             mock_files_response.calls[0].request.body
@@ -397,7 +486,9 @@ class TestFilesAPI:
         assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
 
     def test_update_labels_resource_class(self, cognite_client, mock_files_response):
-        cognite_client.files.update(FileMetadata(id=1, labels=[Label(external_id="Pump")], external_id="newId"))
+        cognite_client.files.update(
+            create_default_file_metadata(id=1, labels=[Label(external_id="Pump")], external_id="newId")
+        )
         expected = {"externalId": {"set": "newId"}, "labels": {"set": [{"externalId": "Pump"}]}}
         assert expected == jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"]
 
@@ -417,13 +508,13 @@ class TestFilesAPI:
 
     def test_update_multiple(self, cognite_client, mock_files_response):
         res = cognite_client.files.update(
-            [FileMetadataUpdate(id=1).source.set(None), FileMetadata(external_id="2", source="bla")]
+            [FileMetadataUpdate(id=1).source.set(None), create_default_file_metadata(id=2, source="bla")]
         )
         assert isinstance(res, FileMetadataList)
         assert {
             "items": [
                 {"id": 1, "update": {"source": {"setNull": True}}},
-                {"externalId": "2", "update": {"source": {"set": "bla"}}},
+                {"id": 2, "update": {"source": {"set": "bla"}}},
             ]
         } == jsgz_load(mock_files_response.calls[0].request.body)
 
@@ -660,7 +751,17 @@ class TestFilesAPI:
             rsps.POST,
             cognite_client.files._get_base_url_with_base_path() + "/files/byids",
             status=200,
-            json={"items": [{"id": 1, "name": filename}]},
+            json={
+                "items": [
+                    {
+                        "id": 1,
+                        "name": filename,
+                        "uploaded": False,
+                        "createdTime": 123,
+                        "lastUpdatedTime": 123,
+                    }
+                ]
+            },
         )
         yield rsps
 
@@ -673,8 +774,12 @@ class TestFilesAPI:
         with TemporaryDirectory() as dir:
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.files.download(directory=dir, id=[1], external_id="fail")
-            assert [FileMetadata(id=1, name="file1", external_id="success")] == e.value.successful
-            assert [FileMetadata(id=2, name="file2", external_id="fail")] == e.value.failed
+            assert [
+                create_default_file_metadata(id=1, name="file1", external_id="success", uploaded=False)
+            ] == e.value.successful
+            assert [
+                create_default_file_metadata(id=2, name="file2", external_id="fail", uploaded=False)
+            ] == e.value.failed
             assert os.path.isfile(os.path.join(dir, "file1"))
 
     def test_download_file_to_path(self, cognite_client, mock_file_download_response):

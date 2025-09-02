@@ -6,7 +6,7 @@ import random
 import time
 import unittest
 from collections import namedtuple
-from typing import Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, Self, cast
 
 import pytest
 from requests import Response
@@ -225,6 +225,16 @@ class SomeResource(CogniteResource):
         self.id = id
         self.external_id = external_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            x=resource.get("x"),
+            y=resource.get("y"),
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
 
 class SomeResourceList(CogniteResourceList):
@@ -1422,10 +1432,29 @@ class TestHelpers:
         "resource, update_obj, mode, expected_update_object",
         [
             pytest.param(
-                TimeSeries(id=42, name="bla", metadata={"myNew": "metadataValue"}),
+                TimeSeries(
+                    id=42,
+                    name="bla",
+                    metadata={"myNew": "metadataValue"},
+                    created_time=123,
+                    last_updated_time=123,
+                    unit=None,
+                    unit_external_id=None,
+                    asset_id=None,
+                    description=None,
+                    security_categories=None,
+                    data_set_id=None,
+                    legacy_name=None,
+                    cognite_client=None,
+                    is_step=False,
+                    is_string=False,
+                    external_id=None,
+                    instance_id=None,
+                ),
                 TimeSeriesUpdate,
                 "replace_ignore_null",
                 {
+                    "isStep": {"set": False},
                     "name": {"set": "bla"},
                     "metadata": {"set": {"myNew": "metadataValue"}},
                 },
@@ -1433,20 +1462,58 @@ class TestHelpers:
             ),
             pytest.param(
                 # is_string is ignored as it cannot be updated.
-                TimeSeries(id=42, name="bla", is_string=False, metadata={"myNew": "metadataValue"}),
+                TimeSeries(
+                    id=42,
+                    name="bla",
+                    is_string=False,
+                    metadata={"myNew": "metadataValue"},
+                    created_time=123,
+                    last_updated_time=123,
+                    unit=None,
+                    unit_external_id=None,
+                    asset_id=None,
+                    description=None,
+                    security_categories=None,
+                    data_set_id=None,
+                    legacy_name=None,
+                    cognite_client=None,
+                    is_step=False,
+                    external_id=None,
+                    instance_id=None,
+                ),
                 TimeSeriesUpdate,
                 "patch",
                 {
+                    "isStep": {"set": False},
                     "name": {"set": "bla"},
                     "metadata": {"add": {"myNew": "metadataValue"}},
                 },
                 id="patch",
             ),
             pytest.param(
-                TimeSeries(id=42, name="bla"),
+                TimeSeries(
+                    id=42,
+                    name="bla",
+                    metadata=None,
+                    created_time=123,
+                    last_updated_time=123,
+                    unit=None,
+                    unit_external_id=None,
+                    asset_id=None,
+                    description=None,
+                    security_categories=None,
+                    data_set_id=None,
+                    legacy_name=None,
+                    cognite_client=None,
+                    is_step=False,
+                    is_string=False,
+                    external_id=None,
+                    instance_id=None,
+                ),
                 TimeSeriesUpdate,
                 "replace",
                 {
+                    "isStep": {"set": False},
                     "assetId": {"setNull": True},
                     "dataSetId": {"setNull": True},
                     "description": {"setNull": True},
@@ -1502,7 +1569,7 @@ class TestConnectionPooling:
 def test_worker_in_backoff_loop_gets_new_token(rsps):
     url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
     rsps.add(rsps.POST, url, status=429, json={"error": "Backoff plz"})
-    rsps.add(rsps.POST, url, status=200, json={"items": [{"id": 123}]})
+    rsps.add(rsps.POST, url, status=200, json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]})
 
     call_count = 0
 

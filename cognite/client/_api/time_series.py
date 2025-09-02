@@ -663,11 +663,11 @@ class TimeSeriesAPI(APIClient):
             Upsert for TimeSeries:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TimeSeries
+                >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> client = CogniteClient()
                 >>> existing_time_series = client.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
-                >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
+                >>> new_time_series = TimeSeriesWrite(external_id="new_timeSeries", description="New timeSeries")
                 >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
 
