@@ -2,7 +2,14 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
+from cognite.client.data_classes import (
+    Group,
+    GroupList,
+    GroupWrite,
+    SecurityCategory,
+    SecurityCategoryList,
+    SecurityCategoryWrite,
+)
 from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
 from cognite.client.data_classes.iam import GroupAttributes, ProjectSpec, TokenInspection
 from tests.utils import get_url, jsgz_load
@@ -69,7 +76,7 @@ class TestGroups:
         assert res.dump(camel_case=True) == [group_with_attributes]
 
     def test_create(self, cognite_client, mock_groups_response, httpx_mock):
-        my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
+        my_group = GroupWrite(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
         assert {
@@ -87,7 +94,7 @@ class TestGroups:
                 "unknownProperty": "unknownValue",
             }
         )
-        my_group = Group(
+        my_group = GroupWrite(
             name="My Group",
             capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())],
             attributes=attributes,
@@ -138,7 +145,7 @@ class TestSecurityCategories:
         assert mock_security_cats_response["items"] == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_security_cats_response, httpx_mock):
-        res = cognite_client.iam.security_categories.create(SecurityCategory(name="My Category"))
+        res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name="My Category"))
         assert isinstance(res, SecurityCategory)
         assert {"items": [{"name": "My Category"}]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_security_cats_response["items"][0] == res.dump(camel_case=True)
