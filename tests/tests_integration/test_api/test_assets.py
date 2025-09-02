@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     GeoLocationFilter,
     Geometry,
     GeometryFilter,
+    LabelDefinitionWrite,
 )
 from cognite.client.data_classes import filters as flt
 from cognite.client.data_classes.assets import AssetProperty, AssetWrite, AssetWriteList
@@ -36,14 +37,15 @@ def test_label(cognite_client):
     if label is not None:
         return label
     # Recreate if someone has deleted it
-    from cognite.client.data_classes import LabelDefinition
 
-    return cognite_client.labels.create(LabelDefinition(external_id=TEST_LABEL, name="integration test label"))
+    return cognite_client.labels.create(LabelDefinitionWrite(external_id=TEST_LABEL, name="integration test label"))
 
 
 @pytest.fixture
 def new_asset(cognite_client, test_label):
-    ts = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}, labels=[test_label]))
+    ts = cognite_client.assets.create(
+        AssetWrite(name="any", description="haha", metadata={"a": "b"}, labels=[test_label])
+    )
     yield ts
     cognite_client.assets.delete(id=ts.id)
     assert cognite_client.assets.retrieve(ts.id) is None
@@ -129,28 +131,26 @@ def root_test_asset_subtree(cognite_client, root_test_asset):
 @pytest.fixture(scope="session")
 def asset_list(cognite_client: CogniteClient) -> AssetList:
     prefix = "integration_test:"
-    assets = AssetList(
-        [
-            Asset(
-                external_id=f"{prefix}asset1",
-                name="asset1",
-            ),
-            Asset(
-                external_id=f"{prefix}asset2",
-                parent_external_id=f"{prefix}asset1",
-                name="asset2",
-                metadata={
-                    "timezone": "Europe/Oslo",
-                },
-            ),
-            Asset(
-                external_id=f"{prefix}asset3",
-                parent_external_id=f"{prefix}asset1",
-                name="asset3",
-                metadata={"timezone": "America/New_York"},
-            ),
-        ]
-    )
+    assets = [
+        AssetWrite(
+            external_id=f"{prefix}asset1",
+            name="asset1",
+        ),
+        AssetWrite(
+            external_id=f"{prefix}asset2",
+            parent_external_id=f"{prefix}asset1",
+            name="asset2",
+            metadata={
+                "timezone": "Europe/Oslo",
+            },
+        ),
+        AssetWrite(
+            external_id=f"{prefix}asset3",
+            parent_external_id=f"{prefix}asset1",
+            name="asset3",
+            metadata={"timezone": "America/New_York"},
+        ),
+    ]
     return cognite_client.assets.upsert(assets, mode="replace")
 
 
@@ -254,7 +254,7 @@ class TestAssetsAPI:
         assert updated_asset.labels[0].external_id == test_label.external_id
 
     def test_delete_with_nonexisting(self, cognite_client):
-        a = cognite_client.assets.create(Asset(name="any"))
+        a = cognite_client.assets.create(AssetWrite(name="any"))
         cognite_client.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
 
@@ -276,7 +276,7 @@ class TestAssetsAPI:
         )
         a = None
         try:
-            a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
+            a = cognite_client.assets.create(AssetWrite(name="any", geo_location=geo_location))
 
             result_asset = cognite_client.assets.retrieve(id=a.id)
             assert result_asset is not None
@@ -296,7 +296,7 @@ class TestAssetsAPI:
             properties={},
         )
         try:
-            a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
+            a = cognite_client.assets.create(AssetWrite(name="any", geo_location=geo_location))
             result_assets = cognite_client.assets.list(
                 geo_location=GeoLocationFilter(
                     relation="WITHIN",
@@ -311,16 +311,19 @@ class TestAssetsAPI:
             cognite_client.assets.delete(id=a.id)
 
     def test_upsert_2_asset_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_asset = Asset(external_id="test_upsert_2_asset_one_preexisting:new" + random_string(5), name="my new asset")
-        preexisting = Asset(
+        new_asset = AssetWrite(
+            external_id="test_upsert_2_asset_one_preexisting:new" + random_string(5), name="my new asset"
+        )
+        preexisting = AssetWrite(
             external_id="test_upsert_2_asset_one_preexisting:preexisting" + random_string(5),
             name="my preexisting asset",
         )
-        preexisting_update = Asset.load(preexisting.dump(camel_case=True))
-        preexisting_update.name = "my preexisting asset updated"
         try:
             created_existing = cognite_client.assets.create(preexisting)
             assert created_existing.id is not None
+
+            preexisting_update = Asset.load(created_existing.dump(camel_case=True))
+            preexisting_update.name = "my preexisting asset updated"
 
             res = cognite_client.assets.upsert([new_asset, preexisting_update], mode="replace")
 
