@@ -58,21 +58,23 @@ class AnnotationsAPI(APIClient):
         )
 
     @overload
-    def suggest(self, annotations: Annotation) -> Annotation: ...
+    def suggest(self, annotations: Annotation | AnnotationWrite) -> Annotation: ...
 
     @overload
-    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList: ...
+    def suggest(self, annotations: Sequence[Annotation] | Sequence[AnnotationWrite]) -> AnnotationList: ...
 
-    def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
+    def suggest(
+        self, annotations: Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]
+    ) -> Annotation | AnnotationList:
         """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
 
         Args:
-            annotations (Annotation | Sequence[Annotation]): annotation(s) to suggest. They must have status set to "suggested".
+            annotations (Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]): annotation(s) to suggest. They must have status set to "suggested".
 
         Returns:
             Annotation | AnnotationList: suggested annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, Sequence])
+        assert_type(annotations, "annotations", [Annotation, AnnotationWrite, Sequence])
         # Deal with status fields in both cases: Single item and list of items
         items: list[dict[str, Any]] | dict[str, Any] = (
             [self._sanitize_suggest_item(ann) for ann in annotations]
@@ -87,9 +89,9 @@ class AnnotationsAPI(APIClient):
         )
 
     @staticmethod
-    def _sanitize_suggest_item(annotation: Annotation | dict[str, Any]) -> dict[str, Any]:
+    def _sanitize_suggest_item(annotation: Annotation | AnnotationWrite | dict[str, Any]) -> dict[str, Any]:
         # Check that status is set to suggested if it is set and afterwards remove it
-        item = annotation.dump(camel_case=True) if isinstance(annotation, Annotation) else deepcopy(annotation)
+        item = annotation.dump(camel_case=True) if isinstance(annotation, AnnotationCore) else deepcopy(annotation)
         if "status" in item:
             if item["status"] != "suggested":
                 raise ValueError("status field for Annotation suggestions must be set to 'suggested'")
