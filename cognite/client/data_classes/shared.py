@@ -29,24 +29,32 @@ class AggregateResult(CogniteObject):
     """Aggregation group
 
     Args:
-        count (int | None): Size of the aggregation group
+        count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int | None = None) -> None:
+    def __init__(self, count: int) -> None:
         self.count = count
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(count=resource["count"])
 
 
 class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (int | None): Size of the aggregation group
+        count (int): Size of the aggregation group
         value (int | str | None): A unique value from the requested field
     """
 
-    def __init__(self, count: int | None = None, value: int | str | None = None) -> None:
+    def __init__(self, count: int, value: int | str | None) -> None:
         super().__init__(count=count)
         self.value = value
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(count=resource["count"], value=resource.get("value"))
 
 
 class GeometryFilter(CogniteFilter):
