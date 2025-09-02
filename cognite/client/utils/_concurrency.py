@@ -13,6 +13,7 @@ from typing import (
     NoReturn,
     Protocol,
     TypeVar,
+    cast,
 )
 
 from cognite.client._constants import _RUNNING_IN_BROWSER
@@ -231,6 +232,32 @@ class EventLoopThreadExecutor(threading.Thread):
         return asyncio.run_coroutine_threadsafe(coro, self._event_loop).result(timeout)
 
 
+class _PyodideEventLoopExecutor:
+    def __init__(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        import warnings
+
+        import pyodide  # type: ignore [import-not-found]
+
+        if loop is not None:
+            raise RuntimeError("Overriding the event loop is possible in the browser")
+
+        elif not pyodide.ffi.can_run_sync():
+            warnings.warn(
+                RuntimeWarning(
+                    "Browser most likely not supported, please use Chrome. Reason: WebAssembly stack "
+                    "switching is not supported in this JavaScript runtime"
+                )
+            )
+
+    def start(self) -> None:
+        pass
+
+    def run_coro(self, coro: Coroutine[Any, Any, _T], timeout: float | None = None) -> _T:
+        from pyodide.ffi import run_sync  # type: ignore [import-not-found]
+
+        return run_sync(coro)
+
+
 _DATA_MODELING_MAX_WORKERS = 1
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
@@ -301,9 +328,11 @@ class ConcurrencySettings:
             # First time we need to initialize:
             from cognite.client import global_config
 
-            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = EventLoopThreadExecutor(
-                global_config.event_loop
-            )
+            ex_cls = EventLoopThreadExecutor
+            if _RUNNING_IN_BROWSER:
+                ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
+
+            executor = _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls(global_config.event_loop)
             executor.start()
             return executor
 
