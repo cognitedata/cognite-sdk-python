@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from unittest import TestCase, mock
 
 import pytest
@@ -5,9 +6,8 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
+    AssetWrite,
     Sequence,
-    SequenceColumn,
-    SequenceColumnList,
     SequenceColumnUpdate,
     SequenceFilter,
     SequenceList,
@@ -28,15 +28,13 @@ from tests.utils import set_request_limit
 
 
 @pytest.fixture
-def new_seq(cognite_client: CogniteClient) -> Sequence:
-    column_def = SequenceColumnList(
-        [
-            SequenceColumn(value_type="String", external_id="user", description="some description"),
-            SequenceColumn(value_type="Double", external_id="amount"),
-            SequenceColumn(value_type="Long", external_id="age"),
-        ]
-    )
-    seq = cognite_client.sequences.create(Sequence(name="test_temp", columns=column_def, metadata={"a": "b"}))
+def new_seq(cognite_client: CogniteClient) -> Iterator[Sequence]:
+    column_def = [
+        SequenceColumnWrite(value_type="String", external_id="user", description="some description"),
+        SequenceColumnWrite(value_type="Double", external_id="amount"),
+        SequenceColumnWrite(value_type="Long", external_id="age"),
+    ]
+    seq = cognite_client.sequences.create(SequenceWrite(name="test_temp", columns=column_def, metadata={"a": "b"}))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(id=seq.id) is None
@@ -56,7 +54,7 @@ def post_spy(cognite_client):
 
 @pytest.fixture()
 def root_asset(cognite_client: CogniteClient) -> Asset:
-    root_asset = Asset(
+    root_asset = AssetWrite(
         name="integration_test:root_asset",
         external_id="integration_test:root_asset",
     )
@@ -70,29 +68,25 @@ def root_asset(cognite_client: CogniteClient) -> Asset:
 @pytest.fixture
 def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceList:
     prefix = "integration_test:"
-    columns = SequenceColumnList(
-        [
-            SequenceColumn(external_id="text", value_type="String"),
-            SequenceColumn(external_id="value", value_type="Double"),
-        ]
-    )
-    sequences = SequenceList(
-        [
-            Sequence(
-                external_id=f"{prefix}sequence1",
-                columns=columns,
-                asset_id=root_asset.id,
-                metadata={"unit": "m/s"},
-            ),
-            Sequence(
-                external_id=f"{prefix}sequence2",
-                columns=columns,
-                metadata={"unit": "km/h"},
-            ),
-        ]
-    )
+    columns = [
+        SequenceColumnWrite(external_id="text", value_type="String"),
+        SequenceColumnWrite(external_id="value", value_type="Double"),
+    ]
+    sequences = [
+        SequenceWrite(
+            external_id=f"{prefix}sequence1",
+            columns=columns,
+            asset_id=root_asset.id,
+            metadata={"unit": "m/s"},
+        ),
+        SequenceWrite(
+            external_id=f"{prefix}sequence2",
+            columns=columns,
+            metadata={"unit": "km/h"},
+        ),
+    ]
     retrieved = cognite_client.sequences.retrieve_multiple(
-        external_ids=sequences.as_external_ids(), ignore_unknown_ids=True
+        external_ids=[s.external_id for s in sequences], ignore_unknown_ids=True
     )
     if len(retrieved) == len(sequences):
         return retrieved
@@ -245,22 +239,23 @@ class TestSequencesAPI:
         assert len(new_seq.columns) == 3
 
     def test_upsert_2_sequence_one_preexisting(self, cognite_client: CogniteClient) -> None:
-        new_sequence = Sequence(
+        new_sequence = SequenceWrite(
             external_id="test_upsert_2_sequence_one_preexisting:new" + random_string(5),
             name="my new sequence",
-            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
+            columns=[SequenceColumnWrite(external_id="col1", value_type="String")],
         )
-        preexisting = Sequence(
+        preexisting = SequenceWrite(
             external_id="test_upsert_2_sequence_one_preexisting:preexisting" + random_string(5),
             name="my preexisting sequence",
-            columns=SequenceColumnList([SequenceColumn(external_id="col1", value_type="String")]),
+            columns=[SequenceColumnWrite(external_id="col1", value_type="String")],
         )
-        preexisting_update = Sequence.load(preexisting.dump(camel_case=True))
-        preexisting_update.name = "my preexisting sequence updated"
 
         try:
             created_existing = cognite_client.sequences.create(preexisting)
             assert created_existing.id is not None
+
+            preexisting_update = Sequence.load(created_existing.dump(camel_case=True))
+            preexisting_update.name = "my preexisting sequence updated"
 
             res = cognite_client.sequences.upsert([new_sequence, preexisting_update], mode="replace")
 
