@@ -11,7 +11,26 @@ from tests.utils import get_url, jsgz_load
 
 @pytest.fixture
 def empty_function(cognite_mock_client_placeholder: CogniteClient):
-    return Function(id=123, cognite_client=cognite_mock_client_placeholder)
+    return Function(
+        id=123,
+        created_time=123,
+        name="bla",
+        external_id=None,
+        description=None,
+        owner=None,
+        status="bla",
+        file_id=123,
+        function_path="bla",
+        secrets=None,
+        env_vars=None,
+        cpu=None,
+        memory=None,
+        runtime=None,
+        runtime_version=None,
+        metadata=None,
+        error=None,
+        cognite_client=cognite_mock_client_placeholder,
+    )
 
 
 @pytest.fixture
@@ -25,8 +44,15 @@ def function(cognite_mock_client_placeholder: CogniteClient):
         status="Deploying",
         file_id=456,
         function_path="handler.py",
-        created_time="2020-06-19 08:49:37",
+        created_time=123,
         secrets={},
+        env_vars=None,
+        metadata=None,
+        cpu=None,
+        memory=None,
+        runtime=None,
+        runtime_version=None,
+        error=None,
         cognite_client=cognite_mock_client_placeholder,
     )
 
