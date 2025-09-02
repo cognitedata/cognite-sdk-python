@@ -538,8 +538,9 @@ class FilesAPI(APIClient):
                 >>> res = client.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
 
         """
-        file_metadata = FileMetadata(
-            name=name,
+        file_metadata = FileMetadataWrite(
+            # If a file is provided, we set name below based on the file name
+            name=name,  # type: ignore[arg-type]
             directory=directory,
             external_id=external_id,
             source=source,
@@ -579,7 +580,7 @@ class FilesAPI(APIClient):
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
 
-    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
+    def _upload_file_from_path(self, file: FileMetadataWrite, file_path: str, overwrite: bool) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
@@ -715,7 +716,7 @@ class FilesAPI(APIClient):
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        file_metadata = FileMetadata(
+        file_metadata = FileMetadataWrite(
             name=name,
             external_id=external_id,
             source=source,
@@ -808,7 +809,7 @@ class FilesAPI(APIClient):
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
         """
-        file_metadata = FileMetadata(
+        file_metadata = FileMetadataWrite(
             name=name,
             external_id=external_id,
             source=source,
