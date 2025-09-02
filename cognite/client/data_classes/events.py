@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -95,6 +95,9 @@ class Event(EventCore):
     This is the reading version of the Event class. It is used when retrieving existing events.
 
     Args:
+        id (int): A server-generated ID for the object.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         data_set_id (int | None): The id of the dataset this event belongs to.
         start_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -105,28 +108,25 @@ class Event(EventCore):
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
         asset_ids (Sequence[int] | None): Asset IDs of equipment that this event relates to.
         source (str | None): The source of this event.
-        id (int | None): A server-generated ID for the object.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        data_set_id: int | None = None,
-        start_time: int | None = None,
-        end_time: int | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        description: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        source: str | None = None,
-        id: int | None = None,
-        last_updated_time: int | None = None,
-        created_time: int | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        last_updated_time: int,
+        created_time: int,
+        external_id: str | None,
+        data_set_id: int | None,
+        start_time: int | None,
+        end_time: int | None,
+        type: str | None,
+        subtype: str | None,
+        description: str | None,
+        metadata: dict[str, str] | None,
+        asset_ids: Sequence[int] | None,
+        source: str | None,
+        cognite_client: CogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -140,15 +140,29 @@ class Event(EventCore):
             asset_ids=asset_ids,
             source=source,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource["createdTime"],
+            external_id=resource.get("externalId"),
+            data_set_id=resource.get("dataSetId"),
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            type=resource.get("type"),
+            subtype=resource.get("subtype"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            source=resource.get("source"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> EventWrite:
         """Returns this Event in its writing version."""
