@@ -245,12 +245,12 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
         In this example we can run the following code without actually executing the underlying API calls::
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import TimeSeries
+            >>> from cognite.client.data_classes import TimeSeriesWrite
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
             >>>     client = CogniteClient()
-            >>>     client.time_series.create(TimeSeries(external_id="blabla"))
+            >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
 
