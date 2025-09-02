@@ -13,6 +13,11 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [Unreleased]
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
+
 ## [7.83.1] - 2025-08-30
 ### Changed
 - [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
@@ -20,11 +25,6 @@ As of 2025-08-29, changes are grouped as follows
 ## [7.83.0] - 2025-08-28
 ### Added
 - Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
-
-## [Unreleased]
-### Added
-- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
-- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
 
 ## [7.82.1] - 2025-08-28
 ### Fixed
