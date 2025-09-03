@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
