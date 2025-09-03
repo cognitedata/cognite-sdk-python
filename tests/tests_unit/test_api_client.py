@@ -6,11 +6,12 @@ import random
 import time
 import unittest
 from collections import namedtuple
-from typing import Any, ClassVar, Literal, Self, cast
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 from requests import Response
 from responses import matchers
+from typing_extensions import Self
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
