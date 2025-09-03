@@ -136,11 +136,7 @@ class VisionAPI(APIClient):
                 ...     predictions = item.predictions
                 ...     # do something with the predictions
         """
-        job = VisionExtractJob(
-            job_id=job_id,
-            status_path=f"{self._RESOURCE_PATH}/extract/",
-            cognite_client=self._cognite_client,
-        )
-        job.update_status()
-
+        result = self._get(f"{self._RESOURCE_PATH}/extract/{job_id}")
+        job: VisionExtractJob = VisionExtractJob.load(result.json(), cognite_client=self._cognite_client)
+        job._status_path = f"{self._RESOURCE_PATH}/extract/{job_id}"
         return job
