@@ -17,6 +17,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._retry import Backoff
 from cognite.client.utils._time import ms_to_datetime
 
 if TYPE_CHECKING:
@@ -685,9 +686,10 @@ class FunctionCall(CogniteResource):
         return call_id, function_id
 
     def wait(self) -> None:
+        backoff = Backoff(max_wait=5, base=1)
         while self.status == "Running":
             self.update()
-            time.sleep(1.0)
+            time.sleep(next(backoff))
 
 
 class FunctionCallList(CogniteResourceList[FunctionCall], InternalIdTransformerMixin):
