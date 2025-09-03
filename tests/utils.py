@@ -75,14 +75,23 @@ T_Type = TypeVar("T_Type", bound=type)
 UNION_TYPES = {typing.Union, UnionType}
 
 
-def all_subclasses(base: T_Type) -> list[T_Type]:
+def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
     Ignores classes not part of the main library, e.g. subclasses part of tests.
+
+    Args:
+        base: The base class to find subclasses of.
+        exclude: A set of classes to exclude from the results.
+
+    Returns:
+        A list of subclasses.
+
     """
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c))
+            - (exclude or set()),
         ),
         key=str,
     )
