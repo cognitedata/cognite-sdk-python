@@ -5,8 +5,8 @@ from cognite.client._api.organization import OrgAPI
 
 
 @pytest.fixture(scope="session")
-def org_api(cognite_client_cdf_authenticated: CogniteClient) -> OrgAPI:
-    client = cognite_client_cdf_authenticated
+def org_api(cognite_client_cog_idp: CogniteClient) -> OrgAPI:
+    client = cognite_client_cog_idp
     return OrgAPI(client.config, client._API_VERSION, client)
 
 

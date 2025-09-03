@@ -106,7 +106,7 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
 
 
 @pytest.fixture(scope="session")
-def cognite_client_cdf_authenticated() -> CogniteClient:
+def cognite_client_cog_idp() -> CogniteClient:
     """Some endpoints require a CDF authenticated client, for example, the principal endpoints:
     https://api-docs.cognite.com/20230101/tag/Principals#section/Authentication-for-this-API
 
