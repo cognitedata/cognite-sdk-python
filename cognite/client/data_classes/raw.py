@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Self, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
