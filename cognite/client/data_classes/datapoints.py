@@ -12,15 +12,7 @@ from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    NoReturn,
-    TypedDict,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypedDict, overload
 
 from typing_extensions import NotRequired, Self
 
@@ -226,18 +218,12 @@ class MaxDatapointWithStatus(MaxDatapoint):
         }
 
 
-def _select_min_or_max_datapoint_cls(dct: dict[str, Any], is_minimum: bool) -> type[MaxOrMinDatapoint]:
-    match is_minimum, "statusCode" in dct:
-        case True, True:
-            return MinDatapointWithStatus
-        case True, False:
-            return MinDatapoint
-        case False, True:
-            return MaxDatapointWithStatus
-        case False, False:
-            return MaxDatapoint
-        case _:
-            assert False
+def _min_dp_class(dct: dict[str, Any]) -> type[MinDatapoint | MinDatapointWithStatus]:
+    return MinDatapointWithStatus if "statusCode" in dct else MinDatapoint
+
+
+def _max_dp_class(dct: dict[str, Any]) -> type[MaxDatapoint | MaxDatapointWithStatus]:
+    return MaxDatapointWithStatus if "statusCode" in dct else MaxDatapoint
 
 
 class _DatapointsPayloadItem(TypedDict, total=False):
@@ -505,7 +491,7 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (int | None): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (str | float | None): The raw data value. Can be string or numeric.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
@@ -532,7 +518,7 @@ class Datapoint(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int | None = None,
+        timestamp: int,
         value: str | float | None = None,
         average: float | None = None,
         max: float | None = None,
@@ -556,7 +542,7 @@ class Datapoint(CogniteResource):
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
-        self.timestamp: int = timestamp  # type: ignore
+        self.timestamp: int = timestamp
         self.value = value
         self.average = average
         self.max = max
@@ -607,15 +593,52 @@ class Datapoint(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        instance = super()._load(resource, cognite_client=cognite_client)
-        if isinstance(max_dp := instance.max_datapoint, dict):
-            instance.max_datapoint = _select_min_or_max_datapoint_cls(max_dp, is_minimum=False)._load(max_dp)
-        if isinstance(min_dp := instance.min_datapoint, dict):
-            instance.min_datapoint = _select_min_or_max_datapoint_cls(min_dp, is_minimum=True)._load(min_dp)
-        if isinstance(instance.timezone, str):
-            with contextlib.suppress(ValueError):  # Dont fail load if invalid
-                instance.timezone = parse_str_timezone(instance.timezone)
-        return instance
+        match max_dp_raw := resource.get("maxDatapoint"):
+            case dict():
+                max_datapoint: MaxDatapoint | None = _max_dp_class(max_dp_raw)._load(max_dp_raw)
+            case MaxDatapoint() | None:
+                max_datapoint = max_dp_raw
+            case _:
+                raise TypeError(f"Expected dict or MaxDatapoint, got {type(max_dp_raw)}")
+
+        match min_dp_raw := resource.get("minDatapoint"):
+            case dict():
+                min_datapoint: MinDatapoint | None = _min_dp_class(min_dp_raw)._load(min_dp_raw)
+            case MinDatapoint() | None:
+                min_datapoint = min_dp_raw
+            case _:
+                raise TypeError(f"Expected dict or MinDatapoint, got {type(min_dp_raw)}")
+
+        timezone = None
+        if (raw_timezone := resource.get("timezone")) is not None:
+            with contextlib.suppress(ValueError):
+                timezone = parse_str_timezone(raw_timezone)
+
+        return cls(
+            timestamp=resource["timestamp"],
+            value=resource.get("value"),
+            average=resource.get("average"),
+            max=resource.get("max"),
+            max_datapoint=max_datapoint,
+            min=resource.get("min"),
+            min_datapoint=min_datapoint,
+            count=resource.get("count"),
+            sum=resource.get("sum"),
+            interpolation=resource.get("interpolation"),
+            step_interpolation=resource.get("stepInterpolation"),
+            continuous_variance=resource.get("continuousVariance"),
+            discrete_variance=resource.get("discreteVariance"),
+            total_variation=resource.get("totalVariation"),
+            count_bad=resource.get("countBad"),
+            count_good=resource.get("countGood"),
+            count_uncertain=resource.get("countUncertain"),
+            duration_bad=resource.get("durationBad"),
+            duration_good=resource.get("durationGood"),
+            duration_uncertain=resource.get("durationUncertain"),
+            status_code=resource.get("statusCode"),
+            status_symbol=resource.get("statusSymbol"),
+            timezone=timezone,
+        )
 
     def dump(self, camel_case: bool = True, include_timezone: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
@@ -1323,11 +1346,9 @@ class Datapoints(CogniteResource):
             data_lists["status_code"] = [s["code"] for s in status]
             data_lists["status_symbol"] = [s["symbol"] for s in status]
         if min_dp := data_lists.get("minDatapoint"):
-            min_load_cls = _select_min_or_max_datapoint_cls(min_dp[0], is_minimum=True)
-            data_lists["minDatapoint"] = list(map(min_load_cls._load, min_dp))
+            data_lists["minDatapoint"] = list(map(_min_dp_class(min_dp[0])._load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
-            max_load_cls = _select_min_or_max_datapoint_cls(max_dp[0], is_minimum=False)
-            data_lists["maxDatapoint"] = list(map(max_load_cls._load, max_dp))
+            data_lists["maxDatapoint"] = list(map(_max_dp_class(max_dp[0])._load, max_dp))
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
