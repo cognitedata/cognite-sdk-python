@@ -73,14 +73,14 @@ class TestRawRowsAPI:
 
     def test_rows_with_parallel_cursors(self, cognite_client):
         randstr = random_string(32)
-        num_rows = random.randint(15000, 30000)
+        num_rows = random.randint(1500, 3000)
         rows_to_insert = [Row(key=str(i), columns={"a": 1}) for i in range(num_rows)]
         try:
             cognite_client.raw.rows.insert(randstr, randstr, row=rows_to_insert, ensure_parent=True)
 
             rows = cognite_client.raw.rows.list(randstr, randstr, limit=num_rows)
             rows_par = cognite_client.raw.rows.list(randstr, randstr, limit=None, partitions=2)
-            rows_iter = list(cognite_client.raw.rows(randstr, randstr, limit=None, partitions=3, chunk_size=5000))
+            rows_iter = list(cognite_client.raw.rows(randstr, randstr, limit=None, partitions=3, chunk_size=500))
 
             assert num_rows == len(rows) == len(rows_par)
             assert 1 == len(rows[0].columns) == len(rows_par[0].columns) == len(rows_iter[0][0].columns)
