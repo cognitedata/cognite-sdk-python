@@ -7,10 +7,11 @@ import re
 import time
 import unittest
 from collections import namedtuple
-from typing import Any, ClassVar, Literal, Self, cast
+from typing import Any, ClassVar, Literal, cast
 
 import pytest
 from httpx import Headers, Response
+from typing_extensions import Self
 
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
