@@ -2,7 +2,11 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import ExtractionPipelineConfig, ExtractionPipelineConfigRevisionList
+from cognite.client.data_classes import (
+    ExtractionPipelineConfig,
+    ExtractionPipelineConfigRevisionList,
+    ExtractionPipelineConfigWrite,
+)
 
 
 @pytest.fixture
@@ -92,7 +96,7 @@ class TestExtractionPipelines:
 
     def test_new_config(self, cognite_client, mock_config_response):
         res = cognite_client.extraction_pipelines.config.create(
-            ExtractionPipelineConfig(external_id="int-123", config="config abc 123", description="description")
+            ExtractionPipelineConfigWrite(external_id="int-123", config="config abc 123", description="description")
         )
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response.calls[0].response.json() == res.dump(camel_case=True)
