@@ -5,7 +5,7 @@ import warnings
 from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast
 
 from typing_extensions import Self
 
@@ -88,13 +88,13 @@ class ContextualizationJob(CogniteResource):
 
     def __init__(
         self,
-        job_id: int | None = None,
-        model_id: int | None = None,
-        status: str | None = None,
-        error_message: str | None = None,
-        created_time: int | None = None,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
         start_time: int | None = None,
-        status_time: int | None = None,
+        model_id: int | None = None,
+        error_message: str | None = None,
         status_path: str | None = None,
         job_token: str | None = None,
         cognite_client: CogniteClient | None = None,
@@ -110,6 +110,21 @@ class ContextualizationJob(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: dict[str, Any] | None = None
         self._status_path = status_path
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            job_token=resource.get("jobToken"),
+            status_path=None,
+            cognite_client=cognite_client,
+        )
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -145,7 +160,7 @@ class ContextualizationJob(CogniteResource):
                 break
             time.sleep(interval)
         if JobStatus(self.status) is JobStatus.FAILED:
-            raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
+            raise ModelFailedException(self.__class__.__name__, self.job_id, cast(str, self.error_message))
 
     @property
     def result(self) -> dict[str, Any]:
@@ -389,15 +404,24 @@ class FileReference:
 class DiagramConvertPage(CogniteResource):
     def __init__(
         self,
-        page: int | None = None,
-        png_url: str | None = None,
-        svg_url: str | None = None,
+        page: int,
+        png_url: str,
+        svg_url: str,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            page=resource["page"],
+            png_url=resource["pngUrl"],
+            svg_url=resource["svgUrl"],
+            cognite_client=cognite_client,
+        )
 
 
 class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
@@ -407,9 +431,9 @@ class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
 class DiagramConvertItem(CogniteResource):
     def __init__(
         self,
-        file_id: int | None = None,
-        file_external_id: str | None = None,
-        results: list | None = None,
+        file_id: int,
+        file_external_id: str | None,
+        results: list[dict[str, object]],
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
@@ -417,13 +441,21 @@ class DiagramConvertItem(CogniteResource):
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file_id=resource["fileId"],
+            file_external_id=resource.get("fileExternalId"),
+            results=resource["results"],
+            cognite_client=cognite_client,
+        )
+
     def __len__(self) -> int:
         assert self.results
         return len(self.results)
 
     @property
     def pages(self) -> DiagramConvertPageList:
-        assert self.results is not None
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
@@ -443,8 +475,31 @@ class DiagramConvertItem(CogniteResource):
 class DiagramConvertResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        start_time: int | None = None,
+        model_id: int | None = None,
+        error_message: str | None = None,
+        status_path: str | None = None,
+        job_token: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            start_time=start_time,
+            model_id=model_id,
+            error_message=error_message,
+            status_path=status_path,
+            job_token=job_token,
+            cognite_client=cognite_client,
+        )
         self._items: list | None = None
 
     def __getitem__(self, find_id: Any) -> DiagramConvertItem:
@@ -477,11 +532,10 @@ class DiagramConvertResults(ContextualizationJob):
 class DiagramDetectItem(CogniteResource):
     def __init__(
         self,
-        file_id: int | None = None,
-        file_external_id: str | None = None,
-        file_instance_id: dict[str, str] | None = None,
-        annotations: list | None = None,
-        error_message: str | None = None,
+        file_id: int,
+        file_external_id: str | None,
+        file_instance_id: dict[str, str] | None,
+        annotations: list[dict[str, object]],
         cognite_client: CogniteClient | None = None,
         page_range: dict[str, int] | None = None,
         page_count: int | None = None,
@@ -490,10 +544,21 @@ class DiagramDetectItem(CogniteResource):
         self.file_external_id = file_external_id
         self.file_instance_id = file_instance_id
         self.annotations = annotations
-        self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
         self.page_count = page_count
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file_id=resource["fileId"],
+            file_external_id=resource.get("fileExternalId"),
+            file_instance_id=resource.get("fileInstanceId"),
+            annotations=resource["annotations"],
+            cognite_client=cognite_client,
+            page_range=resource.get("pageRange"),
+            page_count=resource.get("pageCount"),
+        )
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -681,6 +746,14 @@ class ThresholdParameter:
 class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
     partial_match: bool | None = None
     asset_subtree_ids: list[int] | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            partial_match=resource.get("partialMatch"),
+            asset_subtree_ids=resource.get("assetSubtreeIds"),
+        )
 
 
 @dataclass
@@ -875,10 +948,10 @@ class VisionExtractItem(CogniteResource):
 
     def __init__(
         self,
-        file_id: int | None = None,
-        predictions: dict[str, Any] | None = None,
-        file_external_id: str | None = None,
-        error_message: str | None = None,
+        file_id: int,
+        predictions: dict[str, Any],
+        file_external_id: str | None,
+        error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
@@ -891,12 +964,13 @@ class VisionExtractItem(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
-        """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super()._load(resource, cognite_client=cognite_client)
-        if isinstance(extracted_item.predictions, dict):
-            extracted_item._predictions_dict = extracted_item.predictions
-            extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
-        return extracted_item
+        return cls(
+            file_id=resource["fileId"],
+            predictions=resource["predictions"],
+            file_external_id=resource.get("fileExternalId"),
+            error_message=resource.get("errorMessage"),
+            cognite_client=cognite_client,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
@@ -929,11 +1003,37 @@ class VisionExtractItem(CogniteResource):
         return resource
 
 
-class VisionExtractJob(VisionJob):
+P = ParamSpec("P")
+
+
+class VisionExtractJob(VisionJob, Generic[P]):
     _JOB_TYPE = ContextualizationJobType.VISION
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        start_time: int | None = None,
+        model_id: int | None = None,
+        error_message: str | None = None,
+        status_path: str | None = None,
+        job_token: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            start_time=start_time,
+            model_id=model_id,
+            error_message=error_message,
+            status_path=status_path,
+            job_token=job_token,
+            cognite_client=cognite_client,
+        )
         self._items: list[VisionExtractItem] | None = None
 
     def __getitem__(self, file_id: int) -> VisionExtractItem:
@@ -978,7 +1078,7 @@ class VisionExtractJob(VisionJob):
                         if isinstance(annotation_type, dict):
                             for key, value in annotation_type.items():
                                 annotation = AnnotationWrite(
-                                    annotated_resource_id=item.file_id,  # type: ignore[arg-type]
+                                    annotated_resource_id=item.file_id,
                                     annotation_type=cast(AnnotationType, value),
                                     data=data[key],
                                     annotated_resource_type="file",
@@ -990,7 +1090,7 @@ class VisionExtractJob(VisionJob):
                                 annotations.append(annotation)
                         elif isinstance(annotation_type, str):
                             annotation = AnnotationWrite(
-                                annotated_resource_id=item.file_id,  # type: ignore[arg-type]
+                                annotated_resource_id=item.file_id,
                                 annotation_type=cast(AnnotationType, annotation_type),
                                 data=data,
                                 annotated_resource_type="file",
