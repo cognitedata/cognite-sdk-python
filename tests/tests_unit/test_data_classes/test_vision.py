@@ -324,15 +324,13 @@ class TestVisionExtractItem:
         "resource, expected_item",
         [
             (
-                {"fileId": 1, "fileExternalId": "a", "predictions": None},
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=None),
-            ),
-            (
                 {"fileId": 1, "predictions": mock_vision_predictions_dict},
-                VisionExtractItem(file_id=1, predictions=mock_vision_predictions_dict),
+                VisionExtractItem(
+                    file_id=1, file_external_id=None, predictions=mock_vision_predictions_dict, error_message=None
+                ),
             ),
         ],
-        ids=["valid_vision_extract_item_no_predictions", "valid_vision_extract_item"],
+        ids=["valid_vision_extract_item"],
     )
     def test_load(self, resource: dict[str, Any], expected_item: VisionExtractItem) -> None:
         vision_extract_item = VisionExtractItem.load(resource)
@@ -342,12 +340,9 @@ class TestVisionExtractItem:
         "item, expected_dump, camel_case",
         [
             (
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=None),
-                {"file_id": 1, "file_external_id": "a"},
-                False,
-            ),
-            (
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=mock_vision_predictions_dict),
+                VisionExtractItem(
+                    file_id=1, file_external_id="a", predictions=mock_vision_predictions_dict, error_message=None
+                ),
                 {
                     "fileId": 1,
                     "fileExternalId": "a",
@@ -356,7 +351,7 @@ class TestVisionExtractItem:
                 True,
             ),
         ],
-        ids=["valid_dump_no_predictions", "valid_dump_with_predictions_camel_case"],
+        ids=["valid_dump_with_predictions_camel_case"],
     )
     def test_dump(self, item: VisionExtractItem, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
@@ -371,7 +366,11 @@ class TestVisionExtractJob:
             (
                 JobStatus.COMPLETED,
                 {"items": [{"fileId": 1, "predictions": mock_vision_predictions_dict}]},
-                [VisionExtractItem(file_id=1, predictions=mock_vision_predictions_dict)],
+                [
+                    VisionExtractItem(
+                        file_id=1, file_external_id=None, predictions=mock_vision_predictions_dict, error_message=None
+                    )
+                ],
             ),
         ],
         ids=["non_completed_job", "completed_job"],
@@ -381,14 +380,22 @@ class TestVisionExtractJob:
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         mock_result.return_value = result
-        job = VisionExtractJob(status=status.value, cognite_client=cognite_client)
+        job = VisionExtractJob(
+            job_id=1, status=status.value, status_time=123, created_time=123, cognite_client=cognite_client
+        )
         assert job.items == expected_items
 
     @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "file_id, expected_item, error_message",
         [
-            (1, VisionExtractItem(file_id=1, file_external_id="foo", predictions=mock_vision_predictions_dict), None),
+            (
+                1,
+                VisionExtractItem(
+                    file_id=1, file_external_id="foo", predictions=mock_vision_predictions_dict, error_message=None
+                ),
+                None,
+            ),
             (1337, None, "File with id 1337 not found in results"),
         ],
         ids=["valid_unique_id", "non_existing_id"],
@@ -411,7 +418,7 @@ class TestVisionExtractJob:
                 for i in range(2)
             ]
         }
-        job = VisionExtractJob(cognite_client=cognite_client)
+        job = VisionExtractJob(job_id=1, status="bla", status_time=123, created_time=123, cognite_client=cognite_client)
         if error_message is not None:
             with pytest.raises(IndexError, match=error_message):
                 job[file_id]
@@ -573,9 +580,12 @@ class TestVisionExtractJob:
         expected_items: list | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
-        cognite_client.version = (params or {}).get("creating_app_version") or 1
+        cognite_client.version = (params or {}).get("creating_app_version") or "1"
         mock_result.return_value = result
-        job = VisionExtractJob(status=JobStatus.COMPLETED.value, cognite_client=cognite_client)
+
+        job = VisionExtractJob(
+            job_id=1, status=JobStatus.COMPLETED.value, status_time=123, created_time=123, cognite_client=cognite_client
+        )
         assert job._predictions_to_annotations(**(params or {})) == expected_items
 
 

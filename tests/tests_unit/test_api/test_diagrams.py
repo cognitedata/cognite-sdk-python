@@ -24,7 +24,20 @@ def base_job_response() -> dict[str, Any]:
 class TestPNIDParsingUnit:
     @patch.object(DiagramsAPI, "_post")
     @patch.object(
-        DiagramsAPI, "_run_job", return_value=ContextualizationJob(job_id=1, model_id=101, status="Completed")
+        DiagramsAPI,
+        "_run_job",
+        return_value=ContextualizationJob(
+            job_id=1,
+            model_id=101,
+            status="Completed",
+            created_time=1,
+            start_time=1,
+            status_time=1,
+            error_message=None,
+            status_path=None,
+            job_token=None,
+            cognite_client=None,
+        ),
     )
     @patch.object(DiagramsAPI, "_get")
     def test_run_diagram_detect(
