@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, cast
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
