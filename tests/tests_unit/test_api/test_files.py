@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from io import BufferedReader
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,7 +10,6 @@ from tempfile import TemporaryDirectory
 import pytest
 from httpx import Response
 
-from cognite.client import CogniteClient
 from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
 from cognite.client.data_classes import (
     FileMetadataFilter,
@@ -25,6 +24,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load, set_request_limit
 
 
@@ -295,52 +295,6 @@ def mock_file_download_response_one_fails(httpx_mock, cognite_client):
     yield httpx_mock
 
 
-def create_default_file_metadata(
-    id: int = 1,
-    uploaded: bool = True,
-    created_time: int = 123,
-    last_updated_time: int = 123,
-    uploaded_time: int | None = None,
-    external_id: str | None = None,
-    instance_id: NodeId | None = None,
-    name: str | None = None,
-    source: str | None = None,
-    mime_type: str | None = None,
-    metadata: dict[str, str] | None = None,
-    directory: str | None = None,
-    asset_ids: Sequence[int] | None = None,
-    data_set_id: int | None = None,
-    labels: Sequence[Label] | None = None,
-    geo_location: GeoLocation | None = None,
-    source_created_time: int | None = None,
-    source_modified_time: int | None = None,
-    security_categories: Sequence[int] | None = None,
-    cognite_client: CogniteClient | None = None,
-) -> FileMetadata:
-    return FileMetadata(
-        id=id,
-        uploaded=uploaded,
-        created_time=created_time,
-        last_updated_time=last_updated_time,
-        uploaded_time=uploaded_time,
-        external_id=external_id,
-        instance_id=instance_id,
-        name=name,
-        source=source,
-        mime_type=mime_type,
-        metadata=metadata,
-        directory=directory,
-        asset_ids=asset_ids,
-        data_set_id=data_set_id,
-        labels=labels,
-        geo_location=geo_location,
-        source_created_time=source_created_time,
-        source_modified_time=source_modified_time,
-        security_categories=security_categories,
-        cognite_client=cognite_client,
-    )
-
-
 class TestFilesAPI:
     def test_create(self, cognite_client, mock_file_create_response):
         file_metadata = FileMetadataWrite(name="bla")
@@ -466,7 +420,7 @@ class TestFilesAPI:
         assert exp == jsgz_load(httpx_mock.get_requests()[0].content)
 
     def test_update_with_resource_class(self, cognite_client, mock_files_response, httpx_mock):
-        res = cognite_client.files.update(create_default_file_metadata(source="bla"))
+        res = cognite_client.files.update(DefaultResourceGenerator.file_metadata(source="bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             httpx_mock.get_requests()[0].content
@@ -512,7 +466,7 @@ class TestFilesAPI:
 
     def test_update_labels_resource_class(self, cognite_client, mock_files_response, httpx_mock):
         cognite_client.files.update(
-            create_default_file_metadata(id=1, labels=[Label(external_id="Pump")], external_id="newId")
+            DefaultResourceGenerator.file_metadata(id=1, labels=[Label(external_id="Pump")], external_id="newId")
         )
         expected = {"externalId": {"set": "newId"}, "labels": {"set": [{"externalId": "Pump"}]}}
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
@@ -533,7 +487,7 @@ class TestFilesAPI:
 
     def test_update_multiple(self, cognite_client, mock_files_response, httpx_mock):
         res = cognite_client.files.update(
-            [FileMetadataUpdate(id=1).source.set(None), create_default_file_metadata(id=2, source="bla")]
+            [FileMetadataUpdate(id=1).source.set(None), DefaultResourceGenerator.file_metadata(id=2, source="bla")]
         )
         assert isinstance(res, FileMetadataList)
         assert {
@@ -817,10 +771,10 @@ class TestFilesAPI:
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.files.download(directory=directory, id=[1], external_id="fail")
             assert [
-                create_default_file_metadata(id=1, name="file1", external_id="success", uploaded=False)
+                DefaultResourceGenerator.file_metadata(id=1, name="file1", external_id="success", uploaded=False)
             ] == e.value.successful
             assert [
-                create_default_file_metadata(id=2, name="file2", external_id="fail", uploaded=False)
+                DefaultResourceGenerator.file_metadata(id=2, name="file2", external_id="fail", uploaded=False)
             ] == e.value.failed
             assert os.path.isfile(os.path.join(directory, "file1"))
 
