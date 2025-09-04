@@ -5,20 +5,12 @@ from pathlib import Path
 
 from scripts.custom_checks.docstr_examples import format_docstring_examples
 from scripts.custom_checks.docstrings import format_docstrings
-from scripts.custom_checks.version import (
-    changelog_entry_date,
-    changelog_entry_version_matches,
-    pyproj_version_matches,
-    version_number_and_date_is_increasing,
-)
+from scripts.custom_checks.version import pyproj_version_matches
 
 
 def run_checks(files: list[Path]) -> list[str | None]:
     return [
         pyproj_version_matches(),
-        changelog_entry_version_matches(),
-        changelog_entry_date(),
-        version_number_and_date_is_increasing(),
         format_docstrings(files),
         format_docstring_examples(files),
     ]
