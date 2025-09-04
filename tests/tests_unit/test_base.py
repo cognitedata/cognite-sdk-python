@@ -42,6 +42,7 @@ from cognite.client.data_classes.postgres_gateway import TableList, User, UserCr
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses
 
 
@@ -501,8 +502,8 @@ class TestCogniteResourceList:
 
         event_list = EventList(
             [
-                Event(external_id="ev1", metadata={"value1": 1, "value2": "hello"}),
-                Event(external_id="ev2", metadata={"value1": 2, "value2": "world"}),
+                DefaultResourceGenerator.event(external_id="ev1", metadata={"value1": 1, "value2": "hello"}),
+                DefaultResourceGenerator.event(external_id="ev2", metadata={"value1": 2, "value2": "world"}),
             ]
         )
 
