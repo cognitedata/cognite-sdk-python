@@ -3,7 +3,9 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, cast
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
