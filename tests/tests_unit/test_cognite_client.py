@@ -8,8 +8,9 @@ from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
 from cognite.client.credentials import OAuthClientCredentials, Token
-from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
+from cognite.client.data_classes import Asset, Event, EventList, FileMetadata, TimeSeries
 from cognite.client.utils._logging import DebugLogFormatter
+from tests.tests_unit.conftest import DefaultResourceGenerator
 
 BASE_URL = "http://blabla.cognitedata.com"
 TOKEN_URL = "https://test.com/token"
@@ -134,9 +135,15 @@ class TestInstantiateWithClient:
     @pytest.mark.parametrize("cls", [Asset, Event, FileMetadata, TimeSeries])
     def test_instantiate_resources_with_cognite_client(self, cls, client_config_w_token_factory):
         client = CogniteClient(client_config_w_token_factory)
-        assert cls(cognite_client=client)._cognite_client == client
+        instance = {
+            Asset: DefaultResourceGenerator.asset(cognite_client=client),
+            Event: DefaultResourceGenerator.event(cognite_client=client),
+            FileMetadata: DefaultResourceGenerator.file_metadata(cognite_client=client),
+            TimeSeries: DefaultResourceGenerator.time_series(cognite_client=client),
+        }[cls]
+        assert instance._cognite_client == client
 
-    @pytest.mark.parametrize("cls", [AssetList, Event, FileMetadataList, TimeSeriesList])
+    @pytest.mark.parametrize("cls", [AssetList, EventList, FileMetadataList, TimeSeriesList])
     def test_instantiate_resource_lists_with_cognite_client(self, cls, client_config_w_token_factory):
         client = CogniteClient(client_config_w_token_factory)
         assert cls([], cognite_client=client)._cognite_client == client
