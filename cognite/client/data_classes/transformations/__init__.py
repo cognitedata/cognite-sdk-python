@@ -234,8 +234,6 @@ class Transformation(TransformationCore):
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         owner (str): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        has_source_oidc_credentials (bool): Indicates if the transformation is configured with a source oidc credentials set.
-        has_destination_oidc_credentials (bool): Indicates if the transformation is configured with a destination oidc credentials set.
         running_job (TransformationJob | None): Details for the job of this transformation currently running.
         last_finished_job (TransformationJob | None): Details for the last finished job of this transformation.
         blocked (TransformationBlockedInfo | None): Provides reason and time if the transformation is blocked.
@@ -265,8 +263,6 @@ class Transformation(TransformationCore):
         last_updated_time: int,
         owner: str,
         owner_is_current_user: bool,
-        has_source_oidc_credentials: bool,
-        has_destination_oidc_credentials: bool,
         running_job: TransformationJob | None,
         last_finished_job: TransformationJob | None,
         blocked: TransformationBlockedInfo | None,
@@ -307,7 +303,7 @@ class Transformation(TransformationCore):
         self.destination_session = destination_session
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-        if has_source_oidc_credentials or has_destination_oidc_credentials:
+        if self.has_source_oidc_credentials or self.has_destination_oidc_credentials:
             warnings.warn(
                 "The arguments 'has_source_oidc_credentials' and 'has_destination_oidc_credentials' are "
                 "deprecated and will be removed in a future version."
@@ -375,8 +371,6 @@ class Transformation(TransformationCore):
             last_updated_time=self.last_updated_time,
             owner=self.owner,
             owner_is_current_user=self.owner_is_current_user,
-            has_source_oidc_credentials=self.has_source_oidc_credentials,
-            has_destination_oidc_credentials=self.has_destination_oidc_credentials,
             running_job=self.running_job,
             last_finished_job=self.last_finished_job,
             blocked=self.blocked,
@@ -428,8 +422,6 @@ class Transformation(TransformationCore):
             last_updated_time=resource["lastUpdatedTime"],
             owner=resource["owner"],
             owner_is_current_user=resource["ownerIsCurrentUser"],
-            has_source_oidc_credentials=resource["hasSourceOidcCredentials"],
-            has_destination_oidc_credentials=resource["hasDestinationOidcCredentials"],
             running_job=(job := resource.get("runningJob"))
             and TransformationJob._load(job, cognite_client=cognite_client),
             last_finished_job=(job := resource.get("lastFinishedJob"))

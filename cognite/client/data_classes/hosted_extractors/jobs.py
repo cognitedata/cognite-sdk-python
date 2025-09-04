@@ -68,6 +68,13 @@ class Prefix(CogniteObject):
     from_topic: bool | None = None
     prefix: str | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            from_topic=resource.get("fromTopic"),
+            prefix=resource.get("prefix"),
+        )
+
 
 @dataclass
 class ValueFormat(JobFormat):

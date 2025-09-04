@@ -30,7 +30,7 @@ def unknown_schema(struct_schema):
 
 def test_transformation_schema_column__struct(struct_schema):
     # TODO: TransformationSchemaArrayType & TransformationSchemaMapType
-    api_response = {"name": "foo", "sql_type": "bar", "type": struct_schema, "nullable": False}
+    api_response = {"name": "foo", "sqlType": "bar", "type": struct_schema, "nullable": False}
 
     col = TransformationSchemaColumn.load(api_response)
     assert isinstance(col, TransformationSchemaColumn)
@@ -39,7 +39,7 @@ def test_transformation_schema_column__struct(struct_schema):
 
 
 def test_transformation_schema_column__unknown_schema(unknown_schema):
-    api_response = {"name": "foo", "sql_type": "bar", "type": unknown_schema, "nullable": False}
+    api_response = {"name": "foo", "sqlType": "bar", "type": unknown_schema, "nullable": False}
 
     col = TransformationSchemaColumn.load(api_response)
     assert isinstance(col, TransformationSchemaColumn)

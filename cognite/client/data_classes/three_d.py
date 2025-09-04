@@ -666,7 +666,7 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ThreeDAssetMappingWrite:
         return cls(
             node_id=resource["nodeId"],
-            asset_id=resource["assetId"],
+            asset_id=resource.get("assetId"),
         )
 
     def as_write(self) -> ThreeDAssetMappingWrite:
