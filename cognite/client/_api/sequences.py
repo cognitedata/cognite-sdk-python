@@ -608,18 +608,21 @@ class SequencesAPI(APIClient):
 
             Add a single new column:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
+                >>> my_update = SequenceUpdate(id=1).columns.add(
+                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description")
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             Add multiple new columns:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...     SequenceColumn(value_type="Double", external_id="amount")]
+                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description"),
+                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
