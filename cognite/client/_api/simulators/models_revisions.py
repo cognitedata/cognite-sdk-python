@@ -98,8 +98,8 @@ class SimulatorModelRevisionsAPI(APIClient):
     @overload
     def retrieve(
         self,
-        ids: None,
-        external_ids: str,
+        ids: None = None,
+        external_ids: str = ...,
     ) -> SimulatorModelRevision | None: ...
 
     @overload

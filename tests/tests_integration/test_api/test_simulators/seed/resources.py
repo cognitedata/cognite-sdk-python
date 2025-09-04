@@ -3,12 +3,13 @@ from pathlib import Path
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.data_sets import DataSet
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 
 SEED_DIR = Path(__file__).parent.resolve(strict=True)
 
 
-def get_workflow_seed_data(data_set_id: int, file_id: int):
+def get_workflow_seed_data(data_set_id: int, file_id: int) -> dict[str, dict]:
     timestamp = int(time.time() * 1000)
     simulator = {
         "name": "test_sim_for_workflow",
@@ -158,22 +159,11 @@ def get_workflow_seed_data(data_set_id: int, file_id: int):
     }
 
 
-def update_seed_integration(integration_id: int, cognite_client: CogniteClient):
+def update_seed_integration(cognite_client: CogniteClient, integration_id: int) -> None:
     cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/update",
         json={"items": [{"id": integration_id, "update": {"heartbeat": {"set": int(time.time() * 1000)}}}]},
     )
-
-
-def get_seed_simulator_integration(cognite_client: CogniteClient):
-    integrations_list = cognite_client.post(
-        f"/api/v1/projects/{cognite_client.config.project}/simulators/integrations/list",
-        json={},
-    ).json()["items"]
-    integrations = [item for item in integrations_list if item["externalId"] == "integration_tests_workflow_connector"]
-    if len(integrations) == 0:
-        return None
-    return integrations[0]
 
 
 def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
@@ -191,14 +181,16 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
     file = cognite_client.files.retrieve(external_id="integration_tests_workflow_model_file")
 
     if file is None:
-        file = cognite_client.files.upload(
-            path=SEED_DIR / "empty_model.json",
+        uploaded_file = cognite_client.files.upload(
+            path=str(SEED_DIR / "empty_model.json"),
             external_id="integration_tests_workflow_model_file",
             name="seed_mode.json",
             data_set_id=data_set.id,
         )
+        assert isinstance(uploaded_file, FileMetadata)
+        file = uploaded_file
 
-    integration = get_seed_simulator_integration(cognite_client)
+    integration = cognite_client.simulators.integrations.list().get(external_id="integration_tests_workflow_connector")
 
     seed_data = get_workflow_seed_data(data_set.id, file.id)
     if integration is None:
@@ -211,13 +203,14 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
             except CogniteAPIError:
                 pass
 
-    integration = get_seed_simulator_integration(cognite_client)
-    update_seed_integration(integration["id"], cognite_client)
+    integration = cognite_client.simulators.integrations.list().get(external_id="integration_tests_workflow_connector")
+    assert integration is not None
+    update_seed_integration(cognite_client, integration.id)
 
     return seed_data["/routines"]["externalId"]
 
 
-def finish_simulation_runs(cognite_client: CogniteClient, routine_external_id: str):
+def finish_simulation_runs(cognite_client: CogniteClient, routine_external_id: str) -> None:
     list_runs = cognite_client.post(
         f"/api/v1/projects/{cognite_client.config.project}/simulators/runs/list",
         json={
