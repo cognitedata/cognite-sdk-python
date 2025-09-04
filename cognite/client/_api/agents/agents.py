@@ -257,6 +257,12 @@ class AgentsAPI(APIClient):
         Given a user query, the Atlas AI agent responds by reasoning and using the tools associated with it.
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
+        Note:
+            Agents can take time to execute and may not finish within the default timeout (30 seconds).
+            If you experience timeout errors, you can increase the timeout by setting:
+
+                >>> client.config.timeout = 60  # Set timeout to 60 seconds
+
         Args:
             agent_external_id (str): External ID that uniquely identifies the agent.
             messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
