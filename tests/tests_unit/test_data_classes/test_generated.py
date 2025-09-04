@@ -22,6 +22,6 @@ class TestGenerated:
         assert {"max": 4} == tsr.dump()
 
     def test_camels(self):
-        ag = AggregateResultItem(child_count=23)
+        ag = AggregateResultItem(child_count=23, depth=1, path=[])
         assert 23 == ag.child_count
-        assert {"childCount": 23} == ag.dump(camel_case=True)
+        assert {"childCount": 23, "depth": 1, "path": []} == ag.dump(camel_case=True)
