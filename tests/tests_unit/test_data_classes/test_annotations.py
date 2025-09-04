@@ -23,6 +23,9 @@ def annotation() -> Annotation:
         creating_user=None,
         annotated_resource_type="file",
         annotated_resource_id=1,
+        id=1,
+        created_time=1,
+        last_updated_time=1,
     )
 
 
