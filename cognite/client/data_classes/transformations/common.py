@@ -18,10 +18,10 @@ class TransformationDestination(CogniteObject):
     """TransformationDestination has static methods to define the target resource type of a transformation
 
     Args:
-        type (str | None): Used as data type identifier on transformation creation/retrieval.
+        type (str): Used as data type identifier on transformation creation/retrieval.
     """
 
-    def __init__(self, type: str | None = None) -> None:
+    def __init__(self, type: str) -> None:
         self.type = type
 
     def __hash__(self) -> int:
@@ -175,11 +175,11 @@ class TransformationDestination(CogniteObject):
             return Edges._load(resource)
         elif type_ == "instances":
             return Instances._load(resource)
-        return TransformationDestination(type_)
+        return cls(type_)
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, database: str | None = None, table: str | None = None) -> None:
+    def __init__(self, database: str, table: str) -> None:
         super().__init__(type="raw")
         self.database = database
         self.table = table
@@ -193,7 +193,7 @@ class RawTable(TransformationDestination):
 
 
 class SequenceRowsDestination(TransformationDestination):
-    def __init__(self, external_id: str | None = None) -> None:
+    def __init__(self, external_id: str) -> None:
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
@@ -271,8 +271,8 @@ class DataModelInfo(CogniteObject):
 class Nodes(TransformationDestination):
     def __init__(
         self,
-        view: ViewInfo | None = None,
-        instance_space: str | None = None,
+        view: ViewInfo | None,
+        instance_space: str | None,
     ) -> None:
         super().__init__(type="nodes")
         self.view = view
@@ -289,9 +289,9 @@ class Nodes(TransformationDestination):
 class Edges(TransformationDestination):
     def __init__(
         self,
-        view: ViewInfo | None = None,
-        instance_space: str | None = None,
-        edge_type: EdgeType | None = None,
+        view: ViewInfo | None,
+        instance_space: str | None,
+        edge_type: EdgeType | None,
     ) -> None:
         super().__init__(type="edges")
         self.view = view
