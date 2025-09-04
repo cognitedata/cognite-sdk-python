@@ -17,7 +17,7 @@ from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
-from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
+from cognite.client.data_classes import TimeSeriesUpdate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -30,6 +30,7 @@ from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQT
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._url import validate_url_and_return_retryability
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
@@ -1568,25 +1569,7 @@ class TestHelpers:
         "resource, update_obj, mode, expected_update_object",
         [
             pytest.param(
-                TimeSeries(
-                    id=42,
-                    name="bla",
-                    metadata={"myNew": "metadataValue"},
-                    created_time=123,
-                    last_updated_time=123,
-                    unit=None,
-                    unit_external_id=None,
-                    asset_id=None,
-                    description=None,
-                    security_categories=None,
-                    data_set_id=None,
-                    legacy_name=None,
-                    cognite_client=None,
-                    is_step=False,
-                    is_string=False,
-                    external_id=None,
-                    instance_id=None,
-                ),
+                DefaultResourceGenerator.time_series(id=42, name="bla", metadata={"myNew": "metadataValue"}),
                 TimeSeriesUpdate,
                 "replace_ignore_null",
                 {
@@ -1598,25 +1581,7 @@ class TestHelpers:
             ),
             pytest.param(
                 # is_string is ignored as it cannot be updated.
-                TimeSeries(
-                    id=42,
-                    name="bla",
-                    is_string=False,
-                    metadata={"myNew": "metadataValue"},
-                    created_time=123,
-                    last_updated_time=123,
-                    unit=None,
-                    unit_external_id=None,
-                    asset_id=None,
-                    description=None,
-                    security_categories=None,
-                    data_set_id=None,
-                    legacy_name=None,
-                    cognite_client=None,
-                    is_step=False,
-                    external_id=None,
-                    instance_id=None,
-                ),
+                DefaultResourceGenerator.time_series(id=42, name="bla", metadata={"myNew": "metadataValue"}),
                 TimeSeriesUpdate,
                 "patch",
                 {
@@ -1627,25 +1592,7 @@ class TestHelpers:
                 id="patch",
             ),
             pytest.param(
-                TimeSeries(
-                    id=42,
-                    name="bla",
-                    metadata=None,
-                    created_time=123,
-                    last_updated_time=123,
-                    unit=None,
-                    unit_external_id=None,
-                    asset_id=None,
-                    description=None,
-                    security_categories=None,
-                    data_set_id=None,
-                    legacy_name=None,
-                    cognite_client=None,
-                    is_step=False,
-                    is_string=False,
-                    external_id=None,
-                    instance_id=None,
-                ),
+                DefaultResourceGenerator.time_series(id=42, name="bla"),
                 TimeSeriesUpdate,
                 "replace",
                 {
