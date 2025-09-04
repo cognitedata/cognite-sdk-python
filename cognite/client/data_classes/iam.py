@@ -128,7 +128,6 @@ class Group(GroupCore):
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
         capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
-        id (int | None): No description.
         is_deleted (bool | None): No description.
         deleted_time (int | None): No description.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
