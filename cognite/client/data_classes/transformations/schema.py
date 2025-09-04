@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from typing_extensions import Self
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class TransformationSchemaType(CogniteObject):
+class TransformationSchemaType(CogniteObject, ABC):
     def __init__(self, type: str) -> None:
         self.type = type
 
@@ -128,7 +129,7 @@ class TransformationSchemaColumn(CogniteResource):
 
         return cls(
             name=resource["name"],
-            sql_type=resource["sql_type"],
+            sql_type=resource["sqlType"],
             type=type_,
             nullable=resource["nullable"],
             cognite_client=cognite_client,
