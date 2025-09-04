@@ -4,10 +4,11 @@ from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any, Self
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from typing_extensions import Self
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
