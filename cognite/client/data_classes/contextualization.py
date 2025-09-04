@@ -447,7 +447,7 @@ class DiagramConvertItem(CogniteResource):
         self,
         file_id: int,
         file_external_id: str | None,
-        results: list[dict[str, object]],
+        results: list[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.file_id = file_id
@@ -549,18 +549,18 @@ class DiagramDetectItem(CogniteResource):
         file_id: int,
         file_external_id: str | None,
         file_instance_id: dict[str, str] | None,
-        annotations: list[dict[str, object]],
+        annotations: list[dict[str, Any]],
+        page_range: dict[str, int] | None,
+        page_count: int | None,
         cognite_client: CogniteClient | None = None,
-        page_range: dict[str, int] | None = None,
-        page_count: int | None = None,
     ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.file_instance_id = file_instance_id
         self.annotations = annotations
-        self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
         self.page_count = page_count
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -591,8 +591,31 @@ class DiagramDetectItem(CogniteResource):
 class DiagramDetectResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        start_time: int | None = None,
+        model_id: int | None = None,
+        error_message: str | None = None,
+        status_path: str | None = None,
+        job_token: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            start_time=start_time,
+            model_id=model_id,
+            error_message=error_message,
+            status_path=status_path,
+            job_token=job_token,
+            cognite_client=cognite_client,
+        )
         self._items: list[DiagramDetectItem] | None = None
 
     def __getitem__(self, find_id: Any) -> DiagramDetectItem:
@@ -772,22 +795,30 @@ class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
 
 @dataclass
 class TextDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PeopleDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 @dataclass
@@ -797,11 +828,29 @@ class DialGaugeDetection(VisionResource, ThresholdParameter):
     dead_angle: float | None = None
     non_linear_angle: float | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            min_level=resource.get("minLevel"),
+            max_level=resource.get("maxLevel"),
+            dead_angle=resource.get("deadAngle"),
+            non_linear_angle=resource.get("nonLinearAngle"),
+        )
+
 
 @dataclass
 class LevelGaugeDetection(VisionResource, ThresholdParameter):
     min_level: float | None = None
     max_level: float | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            min_level=resource.get("minLevel"),
+            max_level=resource.get("maxLevel"),
+        )
 
 
 @dataclass
@@ -810,10 +859,21 @@ class DigitalGaugeDetection(VisionResource, ThresholdParameter):
     min_num_digits: int | None = None
     max_num_digits: int | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            threshold=resource.get("threshold"),
+            comma_position=resource.get("commaPosition"),
+            min_num_digits=resource.get("minNumDigits"),
+            max_num_digits=resource.get("maxNumDigits"),
+        )
+
 
 @dataclass
 class ValveDetection(VisionResource, ThresholdParameter):
-    pass
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(threshold=resource.get("threshold"))
 
 
 class DetectJobBundle:

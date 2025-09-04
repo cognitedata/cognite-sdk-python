@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeAlias, cast
 
 from cognite.client.data_classes._base import (
     CogniteObjectUpdate,
@@ -57,29 +57,41 @@ class TemplateGroup(TemplateGroupCore):
     GraphQL schema definition language is used as the language to describe the structure of the templates and data types.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         description (str | None): The description of the template groups.
         owners (list[str] | None): The list of owners for the template groups.
         data_set_id (int | None): The dataSet which this Template Group belongs to
-        created_time (int | None): No description.
-        last_updated_time (int | None): No description.
+        created_time (int): No description.
+        last_updated_time (int): No description.
         cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        description: str | None = None,
-        owners: list[str] | None = None,
-        data_set_id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        external_id: str,
+        description: str | None,
+        owners: list[str] | None,
+        data_set_id: int | None,
+        created_time: int,
+        last_updated_time: int,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(external_id, description, owners, data_set_id)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource["externalId"],
+            description=resource.get("description"),
+            owners=resource.get("owners"),
+            data_set_id=resource.get("dataSetId"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> TemplateGroupWrite:
         return TemplateGroupWrite(
@@ -117,6 +129,15 @@ class TemplateGroupWrite(TemplateGroupCore):
 
     def as_write(self) -> TemplateGroupWrite:
         return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            description=resource.get("description"),
+            owners=resource.get("owners"),
+            data_set_id=resource.get("dataSetId"),
+        )
 
 
 class TemplateGroupWriteList(CogniteResourceList[TemplateGroupWrite], ExternalIDTransformerMixin):
@@ -164,6 +185,17 @@ class TemplateGroupVersion(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            schema=resource.get("schema"),
+            version=resource.get("version"),
+            conflict_mode=resource.get("conflictMode"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            cognite_client=cognite_client,
+        )
+
 
 class TemplateGroupVersionList(CogniteResourceList[TemplateGroupVersion]):
     _RESOURCE = TemplateGroupVersion
@@ -182,13 +214,20 @@ class ConstantResolver(CogniteResource):
         self.value = value
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            value=resource.get("value"),
+            cognite_client=cognite_client,
+        )
+
 
 class RawResolver(CogniteResource):
     """Resolves a field to a RAW column.
 
     Args:
-        db_name (str | None): The database name.
-        table_name (str | None): The table name.
+        db_name (str): The database name.
+        table_name (str): The table name.
         row_key (str | None): The row key.
         column_name (str | None): The column to fetch the value from.
         cognite_client (CogniteClient | None): No description.
@@ -196,8 +235,8 @@ class RawResolver(CogniteResource):
 
     def __init__(
         self,
-        db_name: str | None = None,
-        table_name: str | None = None,
+        db_name: str,
+        table_name: str,
         row_key: str | None = None,
         column_name: str | None = None,
         cognite_client: CogniteClient | None = None,
@@ -208,6 +247,16 @@ class RawResolver(CogniteResource):
         self.row_key = row_key
         self.column_name = column_name
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            db_name=resource["dbName"],
+            table_name=resource["tableName"],
+            row_key=resource.get("rowKey"),
+            column_name=resource.get("columnName"),
+            cognite_client=cognite_client,
+        )
 
 
 class SyntheticTimeSeriesResolver(CogniteResource):
@@ -245,6 +294,19 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         self.unit = unit
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            expression=resource.get("expression"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            is_step=resource.get("isStep"),
+            is_string=resource.get("isString"),
+            unit=resource.get("unit"),
+            cognite_client=cognite_client,
+        )
+
 
 class ViewResolver(CogniteResource):
     """Resolves the field by loading the data from a view.
@@ -257,14 +319,22 @@ class ViewResolver(CogniteResource):
 
     def __init__(
         self,
-        external_id: str | None = None,
-        input: dict[str, Any] | None = None,
+        external_id: str | None,
+        input: dict[str, Any] | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.type = "view"
         self.external_id = external_id
         self.input = input
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            input=resource.get("input"),
+            cognite_client=cognite_client,
+        )
 
 
 FieldResolvers: TypeAlias = ConstantResolver | RawResolver | SyntheticTimeSeriesResolver | str | ViewResolver
@@ -462,7 +532,7 @@ class Source(CogniteResource):
     A source defines the data source with filters and a mapping table.
 
     Args:
-        type (str | None): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
+        type (str): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
         filter (dict[str, Any] | None): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
         mappings (dict[str, str] | None): The mapping between source result and expected schema.
         cognite_client (CogniteClient | None): No description.
@@ -470,7 +540,7 @@ class Source(CogniteResource):
 
     def __init__(
         self,
-        type: str | None = None,
+        type: str,
         filter: dict[str, Any] | None = None,
         mappings: dict[str, str] | None = None,
         cognite_client: CogniteClient | None = None,
@@ -479,6 +549,15 @@ class Source(CogniteResource):
         self.filter = filter
         self.mappings = mappings
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            type=resource["type"],
+            filter=resource.get("filter"),
+            mappings=resource.get("mappings"),
+            cognite_client=cognite_client,
+        )
 
 
 class ViewCore(WriteableCogniteResource["ViewWrite"], ABC):
@@ -633,6 +712,15 @@ class GraphQlError(CogniteResource):
         self.path = path
         self.locations = locations
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            message=resource.get("message"),
+            path=resource.get("path"),
+            locations=resource.get("locations"),
+            cognite_client=cognite_client,
+        )
 
 
 class GraphQlResponse(CogniteResource):
