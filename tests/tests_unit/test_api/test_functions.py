@@ -37,8 +37,34 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.tests_unit.test_api.test_files import create_default_file_metadata
 from tests.utils import get_url, jsgz_load
+
+
+def full_url(client, resource_path, api="functions"):
+    # getattr does not support nested dots, i.e. `iam.sessions`:
+    return op.attrgetter(api)(client)._get_base_url_with_base_path() + resource_path
+
+
+def post_body_matcher(params):
+    """Used for verifying post-bodies to mocked endpoints. See the `match`-argument in `rsps.add()`"""
+
+    def match(request_body):
+        if request_body is None:
+            return params is None, None
+        else:
+            if isinstance(request_body, PreparedRequest):
+                decompressed_body = jsgz_load(request_body.body)
+            else:
+                decompressed_body = jsgz_load(request_body)
+            sorted_params = sorted(params.items())
+            sorted_body = sorted(decompressed_body.items())
+
+            res = sorted_params == sorted_body
+            return res, None
+
+    return match
 
 FUNCTION_ID = 1234
 CALL_ID = 5678
@@ -1189,7 +1215,7 @@ def fns_api_with_mock_client(cognite_client):
 )
 def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = create_default_file_metadata(id=123)
+    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
     file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle, name="name", external_id=xid)
     assert file_id == 123
 
@@ -1226,7 +1252,7 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
                 ]
                 # We use splitlines to ignore line ending differences between OSs:
                 assert py_file.read().decode("utf-8").splitlines() == expected_lines
-        return create_default_file_metadata(id=123)
+        return DefaultResourceGenerator.file_metadata(id=123)
 
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes = validate_file_upload_call
@@ -1245,7 +1271,7 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
 )
 def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = create_default_file_metadata(id=123)
+    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
@@ -1284,7 +1310,7 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
                 ]
                 # We use splitlines to ignore line ending differences between OSs:
                 assert py_file.read().decode("utf-8").splitlines() == expected_lines
-        return create_default_file_metadata(id=123, data_set_id=None)
+        return DefaultResourceGenerator.file_metadata(id=123, data_set_id=None)
 
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes = validate_file_upload_call
