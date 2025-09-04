@@ -821,43 +821,6 @@ class SequenceRows(CogniteResource):
         return self.columns.value_types
 
 
-class SequenceData(SequenceRows):
-    def __init__(
-        self,
-        id: int | None = None,
-        external_id: str | None = None,
-        rows: typing.Sequence[dict] | typing.Sequence[SequenceRow] | None = None,
-        row_numbers: typing.Sequence[int] | None = None,
-        values: typing.Sequence[typing.Sequence[int | str | float]] | None = None,
-        columns: typing.Sequence[dict[str, Any]] | SequenceColumnList | None = None,
-    ):
-        # Conversion for backwards compatibility
-        rows_parsed: list[SequenceRow]
-        if rows and isinstance(rows, list) and rows and isinstance(rows[0], dict):
-            rows_parsed = [SequenceRow._load(r) for r in rows]
-        elif rows and isinstance(rows, list) and rows and isinstance(rows[0], SequenceRow):
-            rows_parsed = rows
-        elif (row_numbers and values) and not rows:
-            if len(row_numbers) != len(values):
-                raise ValueError(
-                    f"row_numbers and values must have same length, got {len(row_numbers)} and {len(values)}"
-                )
-            warnings.warn("row_numbers and values are deprecated, use rows instead", DeprecationWarning, stacklevel=2)
-            rows_parsed = [SequenceRow(row_number, value) for row_number, value in zip(row_numbers, values)]
-        else:
-            raise ValueError("Either rows or both row_numbers and values must be specified")
-
-        if columns is None:
-            raise ValueError("columns must be specified")
-        is_column_loaded = isinstance(columns, typing.Sequence) and columns and isinstance(columns[0], SequenceColumn)
-        super().__init__(
-            id=id,
-            external_id=external_id,
-            columns=SequenceColumnList._load(columns) if not is_column_loaded else SequenceColumnList(columns),
-            rows=rows_parsed,
-        )
-
-
 class SequenceRowsList(CogniteResourceList[SequenceRows], IdTransformerMixin):
     _RESOURCE = SequenceRows
 

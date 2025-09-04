@@ -24,6 +24,10 @@ class TimestampRange(CogniteObject):
         self.max = max
         self.min = min
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(max=resource.get("max"), min=resource.get("min"))
+
 
 class AggregateResult(CogniteObject):
     """Aggregation group
