@@ -37,7 +37,7 @@ class SimulatorModelsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
@@ -46,7 +46,7 @@ class SimulatorModelsAPI(APIClient):
         Retrieves a list of simulator models that match the given criteria.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
             sort (PropertySort | None): The criteria to sort by.
 

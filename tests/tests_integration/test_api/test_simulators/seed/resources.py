@@ -190,7 +190,9 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
         assert isinstance(uploaded_file, FileMetadata)
         file = uploaded_file
 
-    integration = cognite_client.simulators.integrations.list().get(external_id="integration_tests_workflow_connector")
+    integration = cognite_client.simulators.integrations.list(limit=None).get(
+        external_id="integration_tests_workflow_connector"
+    )
 
     seed_data = get_workflow_seed_data(data_set.id, file.id)
     if integration is None:
@@ -203,7 +205,9 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
             except CogniteAPIError:
                 pass
 
-    integration = cognite_client.simulators.integrations.list().get(external_id="integration_tests_workflow_connector")
+    integration = cognite_client.simulators.integrations.list(limit=None).get(
+        external_id="integration_tests_workflow_connector"
+    )
     assert integration is not None
     update_seed_integration(cognite_client, integration.id)
 

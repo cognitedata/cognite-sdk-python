@@ -5,6 +5,7 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes import TimestampRange
+from cognite.client.data_classes.simulators.routine_revisions import SimulatorRoutineRevision
 from cognite.client.data_classes.simulators.runs import (
     SimulationInput,
     SimulationOutput,
@@ -113,7 +114,7 @@ class TestSimulatorRuns:
     def test_create_run(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: list[dict],
+        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
         seed_resource_names: ResourceNames,
     ) -> None:
         routine_external_id = seed_resource_names.simulator_routine_external_id

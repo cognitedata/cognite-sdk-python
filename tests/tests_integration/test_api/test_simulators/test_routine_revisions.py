@@ -23,7 +23,7 @@ class TestSimulatorRoutineRevisions:
     def test_list_and_filtering_routine_revisions(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: list[SimulatorRoutineRevision],
+        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
         seed_resource_names: ResourceNames,
     ) -> None:
         simulator_routine_external_id = seed_resource_names.simulator_routine_external_id
@@ -70,7 +70,7 @@ class TestSimulatorRoutineRevisions:
     def test_retrieve_routine_revision(
         self,
         cognite_client: CogniteClient,
-        seed_simulator_routine_revisions: list[SimulatorRoutineRevision],
+        seed_simulator_routine_revisions: tuple[SimulatorRoutineRevision, SimulatorRoutineRevision],
         seed_resource_names: ResourceNames,
     ) -> None:
         simulator_routine_external_id = seed_resource_names.simulator_routine_external_id

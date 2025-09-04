@@ -82,7 +82,7 @@ def seed_model_revision_file(
 @pytest.fixture(scope="session")
 def seed_simulator(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
     simulator_external_id = seed_resource_names.simulator_external_id
-    simulators = cognite_client.simulators.list()
+    simulators = cognite_client.simulators.list(limit=None)
     seeded_simulator = simulators.get(external_id=simulator_external_id)
     fields_to_compare = ["fileExtensionTypes", "modelTypes", "modelDependencies", "stepFields", "unitQuantities"]
 
@@ -103,7 +103,7 @@ def seed_simulator_integration(
 ) -> None:
     log_id = None
     timestamp = int(time.time() * 1000)
-    simulator_integrations = cognite_client.simulators.integrations.list()
+    simulator_integrations = cognite_client.simulators.integrations.list(limit=None)
     existing_integration = simulator_integrations.get(external_id=seed_resource_names.simulator_integration_external_id)
     if not existing_integration:
         new_integration = {
@@ -136,7 +136,7 @@ def seed_simulator_models(
     cognite_client: CogniteClient, seed_simulator_integration: None, seed_resource_names: ResourceNames
 ) -> Iterator[SimulatorModel]:
     model_unique_external_id = seed_resource_names.simulator_model_external_id
-    models = cognite_client.simulators.models.list()
+    models = cognite_client.simulators.models.list(limit=None)
     model = models.get(external_id=model_unique_external_id)
 
     if not model:
