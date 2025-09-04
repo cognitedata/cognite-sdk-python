@@ -24,7 +24,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import httpx
 
-    from cognite.client.data_classes._base import T_CogniteObject, T_CogniteResource
+    from cognite.client.data_classes._base import T_CogniteResource
 
 T = TypeVar("T")
 K = TypeVar("K")
