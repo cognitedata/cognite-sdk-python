@@ -614,18 +614,21 @@ class SequencesAPI(APIClient):
 
             Add a single new column:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
+                >>> my_update = SequenceUpdate(id=1).columns.add(
+                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description")
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             Add multiple new columns:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...     SequenceColumn(value_type="Double", external_id="amount")]
+                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description"),
+                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
@@ -1061,10 +1064,16 @@ class SequencesDataAPI(APIClient):
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
-                >>> seq = client.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
-                ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
+                >>> seq = client.sequences.create(
+                ...     SequenceWrite(
+                ...         columns=[
+                ...             SequenceColumnWrite(value_type="String", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="Double", external_id ="col_b")
+                ...         ],
+                ...     )
+                ... )
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
