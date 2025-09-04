@@ -3,6 +3,7 @@ import re
 import pytest
 
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, TimeSeriesWrite
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
 
@@ -122,27 +123,7 @@ class TestTimeSeries:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_ts_response):
-        res = cognite_client.time_series.update(
-            TimeSeries(
-                id=1,
-                created_time=123,
-                last_updated_time=123,
-                is_step=False,
-                is_string=False,
-                external_id=None,
-                instance_id=None,
-                name=None,
-                metadata=None,
-                unit=None,
-                unit_external_id=None,
-                asset_id=None,
-                description=None,
-                security_categories=None,
-                data_set_id=None,
-                legacy_name=None,
-                cognite_client=None,
-            )
-        )
+        res = cognite_client.time_series.update(DefaultResourceGenerator.time_series(id=1))
         assert isinstance(res, TimeSeries)
         assert mock_ts_response["items"][0] == res.dump(camel_case=True)
 

@@ -2,8 +2,9 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Asset, EntityMatchingModel, TimeSeries
+from cognite.client.data_classes import EntityMatchingModel
 from cognite.client.exceptions import ModelFailedException
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
 
@@ -133,45 +134,18 @@ class TestEntityMatching:
 
     def test_fit_cognite_resource(self, cognite_client, mock_fit):
         entities_from = [
-            TimeSeries(
+            DefaultResourceGenerator.time_series(
                 id=1,
                 created_time=123,
                 last_updated_time=123,
                 is_step=False,
                 is_string=False,
-                external_id=None,
-                instance_id=None,
                 name="x",
                 metadata={"ka": "va"},
-                unit=None,
-                unit_external_id=None,
-                asset_id=None,
-                description=None,
-                security_categories=None,
-                data_set_id=None,
-                legacy_name=None,
-                cognite_client=None,
             )
         ]
         entities_to = [
-            Asset(
-                id=1,
-                created_time=123,
-                last_updated_time=123,
-                external_id="abc",
-                name="x",
-                metadata=None,
-                description=None,
-                data_set_id=None,
-                cognite_client=None,
-                parent_id=None,
-                parent_external_id=None,
-                source=None,
-                labels=None,
-                geo_location=None,
-                root_id=None,
-                aggregates=None,
-            )
+            DefaultResourceGenerator.asset(id=1, created_time=123, last_updated_time=123, external_id="abc", name="x")
         ]
         cognite_client.entity_matching.fit(
             sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram"
