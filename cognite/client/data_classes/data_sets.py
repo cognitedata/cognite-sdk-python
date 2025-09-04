@@ -148,6 +148,16 @@ class DataSetWrite(DataSetCore):
         """Returns this DataSetWrite instance."""
         return self
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            write_protected=resource.get("writeProtected"),
+        )
+
 
 class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
