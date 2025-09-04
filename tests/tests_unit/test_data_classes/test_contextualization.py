@@ -29,7 +29,9 @@ def mock_base_job_response() -> dict[str, Any]:
 
 @pytest.fixture()
 def job(cognite_client):
-    return ContextualizationJob(job_id=123, status="Queued", cognite_client=cognite_client)
+    return ContextualizationJob(
+        job_id=123, status="Queued", cognite_client=cognite_client, status_time=1, created_time=1
+    )
 
 
 def mock_update_status_running(self):

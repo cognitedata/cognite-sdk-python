@@ -1,13 +1,27 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient, global_config
 from cognite.client.credentials import Token
-from cognite.client.data_classes import AggregateResultItem, Asset, Event, FileMetadata, GeoLocation, Label, TimeSeries
+from cognite.client.data_classes import (
+    AggregateResultItem,
+    Asset,
+    Event,
+    FileMetadata,
+    GeoLocation,
+    Label,
+    Row,
+    SequenceColumn,
+    Table,
+    ThreeDModel,
+    TimeSeries,
+)
+from cognite.client.data_classes import Sequence as CogniteSequence
 from cognite.client.data_classes.data_modeling import NodeId
 
 # Files to exclude test directories or modules
@@ -208,5 +222,77 @@ class DefaultResourceGenerator:
             legacy_name=legacy_name,
             created_time=created_time,
             last_updated_time=last_updated_time,
+            cognite_client=cognite_client,
+        )
+
+    @staticmethod
+    def sequence(
+        id: int = 1,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        created_time: int = 123,
+        last_updated_time: int = 123,
+        asset_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+        columns: Sequence[SequenceColumn] | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> CogniteSequence:
+        return CogniteSequence(
+            id=id,
+            external_id=external_id,
+            name=name,
+            description=description,
+            data_set_id=data_set_id,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            cognite_client=cognite_client,
+            asset_id=asset_id,
+            metadata=metadata,
+            columns=columns,
+        )
+
+    @staticmethod
+    def raw_row(
+        key: str = "default_key",
+        columns: dict[str, Any] | None = None,
+        last_updated_time: int = 123,
+        cognite_client: CogniteClient | None = None,
+    ) -> Row:
+        return Row(
+            key=key,
+            columns=columns,
+            last_updated_time=last_updated_time,
+            cognite_client=cognite_client,
+        )
+
+    @staticmethod
+    def raw_table(
+        name: str = "default_table",
+        created_time: int = 123,
+        cognite_client: CogniteClient | None = None,
+    ) -> Table:
+        return Table(
+            name=name,
+            created_time=created_time,
+            cognite_client=cognite_client,
+        )
+
+    @staticmethod
+    def threed_model(
+        id: int = 1,
+        name: str | None = "default_3dmodel",
+        data_set_id: int | None = None,
+        created_time: int = 123,
+        metadata: dict[str, str] | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> ThreeDModel:
+        return ThreeDModel(
+            id=id,
+            name=name,
+            data_set_id=data_set_id,
+            created_time=created_time,
+            metadata=metadata,
             cognite_client=cognite_client,
         )
