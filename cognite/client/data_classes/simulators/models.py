@@ -533,7 +533,7 @@ class SimulatorFlowsheetGraphicalObject(CogniteObject):
 
 @dataclass
 class SimulatorFlowsheetObjectNode(CogniteObject):
-    id: int
+    id: str
     name: str | None
     type: str
     graphical_object: SimulatorFlowsheetGraphicalObject | None
