@@ -27,10 +27,6 @@ from cognite.client.data_classes import (
     DataPointSubscriptionWrite,
     EndTimeFilter,
     Relationship,
-    SequenceColumn,
-    SequenceColumnList,
-    SequenceData,
-    SequenceRow,
     SequenceRows,
     Transformation,
     filters,
@@ -442,23 +438,10 @@ class FakeCogniteResourceGenerator:
             keyword_arguments["columns"] = keyword_arguments["columns"][:1]
             for row in keyword_arguments["rows"]:
                 row.values = row.values[:1]
-        elif resource_cls is SequenceData:
-            if skip_defaulted_args:
-                # At least external_id or id must be set
-                keyword_arguments["external_id"] = "my_sequence"
-                keyword_arguments["rows"] = [SequenceRow(row_number=1, values=[1])]
-                keyword_arguments["columns"] = SequenceColumnList([SequenceColumn("my_column")])
-            else:
-                # All row values must match the number of columns
-                keyword_arguments.pop("rows", None)
-                keyword_arguments["columns"] = keyword_arguments["columns"][:1]
-                keyword_arguments["row_numbers"] = keyword_arguments["row_numbers"][:1]
-                keyword_arguments["values"] = keyword_arguments["values"][:1]
-                keyword_arguments["values"][0] = keyword_arguments["values"][0][:1]
         elif resource_cls is EndTimeFilter:
             # EndTimeFilter requires either is null or (max and/or min)
             keyword_arguments.pop("is_null", None)
-        elif resource_cls is Transformation and not skip_defaulted_args:
+        elif resource_cls is Transformation:
             # schedule and jobs must match external id and id
             keyword_arguments["schedule"].external_id = keyword_arguments["external_id"]
             keyword_arguments["schedule"].id = keyword_arguments["id"]

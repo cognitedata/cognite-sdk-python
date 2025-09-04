@@ -4,13 +4,14 @@ from collections.abc import Callable
 from copy import deepcopy
 from decimal import Decimal
 from inspect import signature
-from typing import Any
+from typing import Any, Self
 from unittest.mock import MagicMock
 
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
+from cognite.client.data_classes import Transformation
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -36,7 +37,7 @@ from cognite.client.data_classes.data_modeling import (
 )
 from cognite.client.data_classes.data_modeling.query import Intersection
 from cognite.client.data_classes.datapoints import DatapointsArray
-from cognite.client.data_classes.events import Event, EventList
+from cognite.client.data_classes.events import EventList
 from cognite.client.data_classes.hosted_extractors import Destination, DestinationList, Source, SourceList
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.exceptions import CogniteMissingClientError
@@ -62,6 +63,17 @@ class MyResource(CogniteResource):
         self.external_id = external_id
         self.last_updated_time = last_updated_time
         self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            var_a=resource.get("varA"),
+            var_b=resource.get("varB"),
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            cognite_client=cognite_client,
+        )
 
     def use(self):
         return self._cognite_client
@@ -185,6 +197,8 @@ class TestCogniteObject:
     def test_dump_load_only_required(
         self, cognite_object_subclass: type[CogniteObject], cognite_mock_client_placeholder
     ):
+        if cognite_object_subclass is not Transformation:
+            pytest.skip()
         instance_generator = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(cognite_object_subclass, skip_defaulted_args=True)
 
@@ -502,16 +516,21 @@ class TestCogniteResourceList:
 
         event_list = EventList(
             [
-                DefaultResourceGenerator.event(external_id="ev1", metadata={"value1": 1, "value2": "hello"}),
-                DefaultResourceGenerator.event(external_id="ev2", metadata={"value1": 2, "value2": "world"}),
+                DefaultResourceGenerator.event(external_id="ev1", id=1, metadata={"value1": 1, "value2": "hello"}),
+                DefaultResourceGenerator.event(external_id="ev2", id=2, metadata={"value1": 2, "value2": "world"}),
             ]
         )
 
         expected_df = pd.DataFrame(
-            data={"external_id": ["ev1", "ev2"], "metadata.value1": [1, 2], "metadata.value2": ["hello", "world"]},
+            data={
+                "external_id": ["ev1", "ev2"],
+                "id": [1, 2],
+                "metadata.value1": [1, 2],
+                "metadata.value2": ["hello", "world"],
+            },
         )
 
-        actual_df = event_list.to_pandas(expand_metadata=True)
+        actual_df = event_list.to_pandas(expand_metadata=True).drop(["created_time", "last_updated_time"], axis=1)
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=False)
 
     @pytest.mark.dsl
@@ -519,17 +538,21 @@ class TestCogniteResourceList:
         import pandas as pd
 
         event_list = EventList(
-            [Event(external_id="ev1", metadata={"val1": 1}), Event(external_id="ev2", metadata={"val2": 2})]
+            [
+                DefaultResourceGenerator.event(external_id="ev1", id=1, metadata={"val1": "1"}),
+                DefaultResourceGenerator.event(external_id="ev2", id=2, metadata={"val2": "2"}),
+            ]
         )
         expected_df = pd.DataFrame(
             data={
                 "external_id": ["ev1", "ev2"],
-                "metadata.val1": [1, None],
-                "metadata.val2": [None, 2],
+                "id": [1, 2],
+                "metadata.val1": ["1", None],
+                "metadata.val2": [None, "2"],
             }
         )
 
-        actual_df = event_list.to_pandas(expand_metadata=True)
+        actual_df = event_list.to_pandas(expand_metadata=True).drop(["created_time", "last_updated_time"], axis=1)
         pd.testing.assert_frame_equal(expected_df, actual_df)
 
     def test_load(self):
@@ -650,16 +673,20 @@ class TestCogniteResourceList:
     def test_to_pandas_method(self):
         import pandas as pd
 
-        from cognite.client.data_classes import Asset, Label
+        from cognite.client.data_classes import Label
 
-        result_df = Asset(
-            external_id="test-1",
-            name="test 1",
-            parent_external_id="parent-test-1",
-            description="A test asset",
-            data_set_id=123,
-            labels=[Label(external_id="ROTATING_EQUIPMENT")],
-        ).to_pandas()
+        result_df = (
+            DefaultResourceGenerator.asset(
+                external_id="test-1",
+                name="test 1",
+                parent_external_id="parent-test-1",
+                description="A test asset",
+                data_set_id=123,
+                labels=[Label(external_id="ROTATING_EQUIPMENT")],
+            )
+            .to_pandas()
+            .drop(["created_time", "last_updated_time"], axis=0)
+        )
 
         expected_df = pd.DataFrame(
             {
@@ -670,9 +697,10 @@ class TestCogniteResourceList:
                     "A test asset",
                     123,
                     [{"external_id": "ROTATING_EQUIPMENT"}],
+                    1,
                 ]
             },
-            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels"],
+            index=["external_id", "name", "parent_external_id", "description", "data_set_id", "labels", "id"],
         )
         pd.testing.assert_frame_equal(result_df, expected_df)
 

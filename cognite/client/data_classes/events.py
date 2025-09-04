@@ -39,16 +39,23 @@ class EndTimeFilter(CogniteObject):
         max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_null (bool | None): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
-        **_ (Any): No description.
     """
 
-    def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **_: Any) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, is_null: bool | None = None) -> None:
         if is_null is not None and (max is not None or min is not None):
             raise ValueError("is_null cannot be used with min or max values")
 
         self.max = max
         self.min = min
         self.is_null = is_null
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            max=resource.get("max"),
+            min=resource.get("min"),
+            is_null=resource.get("isNull"),
+        )
 
 
 class EventCore(WriteableCogniteResource["EventWrite"], ABC):
@@ -228,6 +235,21 @@ class EventWrite(EventCore):
     def as_write(self) -> EventWrite:
         """Returns self."""
         return self
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            external_id=resource.get("externalId"),
+            data_set_id=resource.get("dataSetId"),
+            start_time=resource.get("startTime"),
+            end_time=resource.get("endTime"),
+            type=resource.get("type"),
+            subtype=resource.get("subtype"),
+            description=resource.get("description"),
+            metadata=resource.get("metadata"),
+            asset_ids=resource.get("assetIds"),
+            source=resource.get("source"),
+        )
 
 
 class EventFilter(CogniteFilter):

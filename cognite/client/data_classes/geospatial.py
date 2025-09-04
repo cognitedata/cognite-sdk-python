@@ -166,11 +166,25 @@ class PropertyAndSearchSpec(CogniteObject):
     properties: dict[str, Any] | list[str] | None = None
     search_spec: dict[str, Any] | list[str] | None = None
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            properties=resource.get("properties"),
+            search_spec=resource.get("searchSpec"),
+        )
+
 
 @dataclass
 class Patches(CogniteObject):
     add: dict[str, Any] | None = None
     remove: list[str] | None = None
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            add=resource.get("add"),
+            remove=resource.get("remove"),
+        )
 
 
 @dataclass
