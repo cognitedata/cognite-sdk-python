@@ -35,33 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.tests_unit.test_api.test_files import create_default_file_metadata
 from tests.utils import get_url, jsgz_load
-
-
-def full_url(client, resource_path, api="functions"):
-    # getattr does not support nested dots, i.e. `iam.sessions`:
-    return op.attrgetter(api)(client)._get_base_url_with_base_path() + resource_path
-
-
-def post_body_matcher(params):
-    """Used for verifying post-bodies to mocked endpoints. See the `match`-argument in `rsps.add()`"""
-
-    def match(request_body):
-        if request_body is None:
-            return params is None, None
-        else:
-            if isinstance(request_body, PreparedRequest):
-                decompressed_body = jsgz_load(request_body.body)
-            else:
-                decompressed_body = jsgz_load(request_body)
-            sorted_params = sorted(params.items())
-            sorted_body = sorted(decompressed_body.items())
-
-            res = sorted_params == sorted_body
-            return res, None
-
-    return match
 
 FUNCTION_ID = 1234
 CALL_ID = 5678
