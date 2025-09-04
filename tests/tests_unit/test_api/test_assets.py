@@ -1,18 +1,16 @@
 import re
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
+from responses import RequestsMock
 
-from cognite.client._api.assets import Asset, AssetList, AssetUpdate
-from cognite.client.data_classes import (
-    AggregateResultItem,
-    AssetFilter,
-    AssetWrite,
-    Label,
-    LabelFilter,
-    TimestampRange,
-)
+from cognite.client import CogniteClient
+from cognite.client.data_classes import AggregateResultItem, Label, LabelFilter, TimestampRange
+from cognite.client.data_classes.assets import Asset, AssetFilter, AssetList, AssetUpdate, AssetWrite
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import jsgz_load
 
 EXAMPLE_ASSET = {
@@ -31,7 +29,7 @@ EXAMPLE_ASSET = {
 
 
 @pytest.fixture
-def mock_assets_response(rsps, cognite_client):
+def mock_assets_response(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     response_body = {"items": [EXAMPLE_ASSET]}
     url_pattern = re.compile(re.escape(cognite_client.assets._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
@@ -39,7 +37,7 @@ def mock_assets_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_get_subtree_base(rsps, cognite_client):
+def mock_get_subtree_base(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     rsps.add(
         rsps.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/byids",
@@ -95,7 +93,7 @@ def mock_get_subtree_base(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_get_subtree(mock_get_subtree_base, cognite_client):
+def mock_get_subtree(mock_get_subtree_base: Any, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     mock_get_subtree_base.add(
         mock_get_subtree_base.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
@@ -106,7 +104,9 @@ def mock_get_subtree(mock_get_subtree_base, cognite_client):
 
 
 @pytest.fixture
-def mock_get_subtree_w_request_failure(mock_get_subtree_base, cognite_client):
+def mock_get_subtree_w_request_failure(
+    mock_get_subtree_base: RequestsMock, cognite_client: CogniteClient
+) -> Iterator[RequestsMock]:
     mock_get_subtree_base.add(
         mock_get_subtree_base.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
@@ -117,36 +117,40 @@ def mock_get_subtree_w_request_failure(mock_get_subtree_base, cognite_client):
 
 
 class TestAssets:
-    def test_retrieve_single(self, cognite_client, mock_assets_response):
+    def test_retrieve_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.retrieve(id=1)
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple(self, cognite_client, mock_assets_response):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.retrieve_multiple(ids=[1])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list(self, cognite_client, mock_assets_response):
+    def test_list(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.list(name="bla")
         assert "bla" == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["name"]
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_with_aggregated_properties_param(self, cognite_client, mock_assets_response):
-        cognite_client.assets.list(name="bla", aggregated_properties=["childCount"])
-        assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
-
-    def test_list_with_aggregated_properties_param_when_snake_cased(self, cognite_client, mock_assets_response):
+    def test_list_with_aggregated_properties_param(
+        self, cognite_client: CogniteClient, mock_assets_response: Any
+    ) -> None:
         cognite_client.assets.list(name="bla", aggregated_properties=["child_count"])
         assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
 
-    def test_list_with_dataset_ids(self, cognite_client, mock_assets_response):
+    def test_list_with_aggregated_properties_param_when_snake_cased(
+        self, cognite_client: CogniteClient, mock_assets_response: Any
+    ) -> None:
+        cognite_client.assets.list(name="bla", aggregated_properties=["child_count"])
+        assert ["childCount"] == jsgz_load(mock_assets_response.calls[0].request.body)["aggregatedProperties"]
+
+    def test_list_with_dataset_ids(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.list(name="bla", data_set_ids=[1], data_set_external_ids=["x"])
         assert [{"id": 1}, {"externalId": "x"}] == jsgz_load(mock_assets_response.calls[0].request.body)["filter"][
             "dataSetIds"
         ]
 
-    def test_list_parent(self, cognite_client, mock_assets_response):
+    def test_list_parent(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.list(parent_ids=[1, 2], parent_external_ids=["abc"], limit=10)
         calls = mock_assets_response.calls
         assert 1 == len(calls)
@@ -156,7 +160,7 @@ class TestAssets:
             "filter": {"parentIds": [1, 2], "parentExternalIds": ["abc"]},
         } == jsgz_load(calls[0].request.body)
 
-    def test_list_subtree(self, cognite_client, mock_assets_response):
+    def test_list_subtree(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.list(asset_subtree_ids=1, asset_subtree_external_ids=["a"], limit=10)
         calls = mock_assets_response.calls
         assert 1 == len(calls)
@@ -166,76 +170,76 @@ class TestAssets:
             "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
-    def test_list_with_time_dict(self, cognite_client, mock_assets_response):
+    def test_list_with_time_dict(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.list(created_time={"min": 20})
         assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
 
-    def test_list_with_timestamp_range(self, cognite_client, mock_assets_response):
+    def test_list_with_timestamp_range(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.list(created_time=TimestampRange(min=20))
         assert 20 == jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(mock_assets_response.calls[0].request.body)["filter"]["createdTime"]
 
-    def test_create_single(self, cognite_client, mock_assets_response):
+    def test_create_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.create(AssetWrite(external_id="1", name="blabla"))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_assets_response):
+    def test_create_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.create([AssetWrite(external_id="1", name="blabla")])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_iter_single(self, cognite_client, mock_assets_response):
+    def test_iter_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         for asset in cognite_client.assets:
             assert mock_assets_response.calls[0].response.json()["items"][0] == asset.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_assets_response):
+    def test_iter_chunk(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         for assets in cognite_client.assets(chunk_size=1):
             assert mock_assets_response.calls[0].response.json()["items"] == assets.dump(camel_case=True)
 
-    def test_delete_single(self, cognite_client, mock_assets_response):
+    def test_delete_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.delete(id=1)
         assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": False} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )
         assert res is None
 
-    def test_delete_single_recursive(self, cognite_client, mock_assets_response):
+    def test_delete_single_recursive(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.delete(id=1, recursive=True)
         assert {"items": [{"id": 1}], "recursive": True, "ignoreUnknownIds": False} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_assets_response):
+    def test_delete_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.delete(id=[1], ignore_unknown_ids=True)
         assert {"items": [{"id": 1}], "recursive": False, "ignoreUnknownIds": True} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )
         assert res is None
 
-    def test_update_with_resource_class(self, cognite_client, mock_assets_response):
+    def test_update_with_resource_class(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.update(Asset._load(EXAMPLE_ASSET))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_with_update_class(self, cognite_client, mock_assets_response):
+    def test_update_with_update_class(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.update(AssetUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Asset)
         assert mock_assets_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_multiple(self, cognite_client, mock_assets_response):
+    def test_update_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.update([AssetUpdate(id=1).description.set("blabla")])
         assert isinstance(res, AssetList)
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_update_labels_single(self, cognite_client, mock_assets_response):
+    def test_update_labels_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.update([AssetUpdate(id=1).labels.add("PUMP").labels.remove("VALVE")])
         expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "VALVE"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    def test_update_labels_multiple(self, cognite_client, mock_assets_response):
+    def test_update_labels_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.update(
             [AssetUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["VALVE", "VERIFIED"])]
         )
@@ -247,64 +251,46 @@ class TestAssets:
         }
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    def test_update_labels_set_single(self, cognite_client, mock_assets_response):
+    def test_update_labels_set_single(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.update([AssetUpdate(id=1).labels.set("PUMP")])
         expected = {"labels": {"set": [{"externalId": "PUMP"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    def test_update_labels_set_multiple(self, cognite_client, mock_assets_response):
+    def test_update_labels_set_multiple(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         cognite_client.assets.update([AssetUpdate(id=1).labels.set(["PUMP", "VALVE"])])
         expected = {"labels": {"set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    def test_update_labels_resource_class(self, cognite_client, mock_assets_response):
-        asset = Asset.load(EXAMPLE_ASSET)
-        asset.labels = [Label(external_id="Pump")]
-        asset.id = 1
-        asset.name = "Abc"
+    def test_update_labels_resource_class(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
+        asset = DefaultResourceGenerator.asset(id=1, labels=[Label(external_id="Pump")], name="Abc")
         cognite_client.assets.update(asset)
-        expected = {
-            "description": {"set": "string"},
-            "externalId": {"set": "string"},
-            "labels": {"set": [{"externalId": "Pump"}]},
-            "metadata": {"set": {"metadata-key": "metadata-value"}},
-            "name": {"set": "Abc"},
-            "parentId": {"set": 1},
-            "source": {"set": "string"},
-        }
+        expected = {"labels": {"set": [{"externalId": "Pump"}]}, "name": {"set": "Abc"}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    def test_labels_filter_contains_all(self, cognite_client, mock_assets_response):
+    def test_labels_filter_contains_all(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
         cognite_client.assets.list(labels=my_label_filter)
         assert {"containsAll": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}]} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )["filter"]["labels"]
 
-    def test_labels_filter_contains_any(self, cognite_client, mock_assets_response):
+    def test_labels_filter_contains_any(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
         cognite_client.assets.list(labels=my_label_filter)
         assert {"containsAny": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]} == jsgz_load(
             mock_assets_response.calls[0].request.body
         )["filter"]["labels"]
 
-    def test_create_asset_with_label(self, cognite_client, mock_assets_response):
-        asset = Asset.load(EXAMPLE_ASSET)
-        asset.name = "test"
-        asset.labels = [Label(external_id="PUMP"), Label(external_id="VERIFIED")]
+    def test_create_asset_with_label(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
+        asset = DefaultResourceGenerator.asset(
+            name="test", labels=[Label(external_id="PUMP"), Label(external_id="VERIFIED")]
+        )
         cognite_client.assets.create(asset)
+        assert {"labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}], "name": "test"} == jsgz_load(
+            mock_assets_response.calls[0].request.body
+        )["items"][0]
 
-        assert {
-            "description": "string",
-            "externalId": "string",
-            "labels": [{"externalId": "PUMP"}, {"externalId": "VERIFIED"}],
-            "metadata": {"metadata-key": "metadata-value"},
-            "name": "test",
-            "parentId": 1,
-            "source": "string",
-        } == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]
-
-    def test_search(self, cognite_client, mock_assets_response):
+    def test_search(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         res = cognite_client.assets.search(filter=AssetFilter(name="1"))
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
@@ -314,7 +300,9 @@ class TestAssets:
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
-    def test_search_dict_filter(self, cognite_client, mock_assets_response, filter_field):
+    def test_search_dict_filter(
+        self, cognite_client: CogniteClient, mock_assets_response: Any, filter_field: str
+    ) -> None:
         res = cognite_client.assets.search(filter={filter_field: "bla"})
         assert mock_assets_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {
@@ -323,24 +311,24 @@ class TestAssets:
             "limit": 25,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
-    def test_get_subtree(self, cognite_client, mock_get_subtree):
+    def test_get_subtree(self, cognite_client: CogniteClient, mock_get_subtree: Any) -> None:
         assets = cognite_client.assets.retrieve_subtree(id=1)
         assert len(assets) == 10
         for i, asset in enumerate(assets):
             assert asset.id == i + 1
 
-    def test_get_subtree_w_depth(self, cognite_client, mock_get_subtree):
+    def test_get_subtree_w_depth(self, cognite_client: CogniteClient, mock_get_subtree: Any) -> None:
         mock_get_subtree.assert_all_requests_are_fired = False
         assets = cognite_client.assets.retrieve_subtree(id=1, depth=1)
         assert len(assets) == 4
         for i, asset in enumerate(assets):
             assert asset.id == i + 1
 
-    def test_get_subtree_w_error(self, cognite_client, mock_get_subtree_w_request_failure):
+    def test_get_subtree_w_error(self, cognite_client: CogniteClient, mock_get_subtree_w_request_failure: Any) -> None:
         with pytest.raises(CogniteAPIError):
             cognite_client.assets.retrieve_subtree(id=1)
 
-    def test_assets_update_object(self):
+    def test_assets_update_object(self) -> None:
         assert isinstance(
             AssetUpdate(1)
             .description.set("")
@@ -348,7 +336,6 @@ class TestAssets:
             .external_id.set("1")
             .external_id.set(None)
             .metadata.set({})
-            .metadata.set(None)
             .labels.add(["PUMP"])
             .labels.remove(["VALVE"])
             .name.set("")
@@ -361,7 +348,7 @@ class TestAssets:
 
 
 @pytest.fixture
-def mock_assets_empty(rsps, cognite_client):
+def mock_assets_empty(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     url_pattern = re.compile(re.escape(cognite_client.assets._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
@@ -369,7 +356,7 @@ def mock_assets_empty(rsps, cognite_client):
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_asset_list_to_pandas(self, cognite_client, mock_assets_response):
+    def test_asset_list_to_pandas(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         import pandas as pd
 
         df = cognite_client.assets.list().to_pandas()
@@ -377,29 +364,26 @@ class TestPandasIntegration:
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
-    def test_asset_list_to_pandas_empty(self, cognite_client, mock_assets_empty):
+    def test_asset_list_to_pandas_empty(self, cognite_client: CogniteClient, mock_assets_empty: Any) -> None:
         import pandas as pd
 
         df = cognite_client.assets.list().to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    def test_asset_to_pandas(self, cognite_client, mock_assets_response):
+    def test_asset_to_pandas(self, cognite_client: CogniteClient, mock_assets_response: Any) -> None:
         import pandas as pd
 
         asset = cognite_client.assets.retrieve(id=1)
-        df = asset.to_pandas(expand_metadata=True, metadata_prefix="")
+        df = asset and asset.to_pandas(expand_metadata=True, metadata_prefix="")
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert 1 == df.loc["id"][0]
         assert "metadata-value" == df.loc["metadata-key"][0]
 
-    def test_expand_aggregates(self):
+    def test_expand_aggregates(self) -> None:
         agg_props = {"childCount": 0, "depth": 4, "path": [{"id": 35927223}, {"id": 20283836}, {"id": 296}]}
-        asset = Asset.load(EXAMPLE_ASSET)
-        asset.name = "foo"
-        asset.aggregates = AggregateResultItem._load(agg_props)
-
+        asset = DefaultResourceGenerator.asset(name="foo", aggregates=AggregateResultItem._load(agg_props))
         expanded = asset.to_pandas(expand_aggregates=True)
         not_expanded = asset.to_pandas(expand_aggregates=False)
 
@@ -411,6 +395,6 @@ class TestPandasIntegration:
         assert agg_props["path"] == expanded.loc["aggregates.path"].item()
 
     # need subtree here to get list, since to_pandas on a single Asset gives int for id, but on AssetList it gives int64
-    def test_asset_id_from_to_pandas(self, cognite_client, mock_get_subtree):
+    def test_asset_id_from_to_pandas(self, cognite_client: CogniteClient, mock_get_subtree: Any) -> None:
         df = cognite_client.assets.retrieve_subtree(id=1).to_pandas()
         cognite_client.assets.retrieve(id=df.iloc[0]["id"])
