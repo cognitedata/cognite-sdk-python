@@ -258,7 +258,7 @@ class AgentsAPI(APIClient):
         Users can ensure conversation continuity by including the cursor from the previous response in subsequent requests.
 
         Note:
-            Agents can take time to execute and may not finish within the default timeout (30 seconds).
+            Agents can take time to execute and may not finish within the default timeout.
             If you experience timeout errors, you can increase the timeout by setting:
 
                 >>> client.config.timeout = 60  # Set timeout to 60 seconds
