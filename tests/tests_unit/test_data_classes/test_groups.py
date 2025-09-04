@@ -70,7 +70,9 @@ def raw_groups():
 class TestGroups:
     def test_group_init__accept_single_acl(self) -> None:
         acl = DataModelInstancesAcl([DataModelInstancesAcl.Action.Write], DataModelInstancesAcl.Scope.All())
-        assert Group(name="a", capabilities=acl) == Group(name="a", capabilities=[acl])
+        assert Group(name="a", capabilities=acl, id=1, source_id="bla", is_deleted=False, deleted_time=None) == Group(
+            name="a", capabilities=[acl], id=1, source_id="bla", is_deleted=False, deleted_time=None
+        )
 
     @pytest.mark.parametrize("raw", list(raw_groups()))
     def test_load_dump_unknown_group(self, raw: dict[str, Any]) -> None:
