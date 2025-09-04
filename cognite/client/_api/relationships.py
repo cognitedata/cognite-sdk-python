@@ -372,9 +372,9 @@ class RelationshipsAPI(APIClient):
             Create a new relationship specifying object type and external id for source and target:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Relationship
+                >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
-                >>> flowrel1 = Relationship(
+                >>> flowrel1 = RelationshipWrite(
                 ...     external_id="flow_1",
                 ...     source_external_id="source_ext_id",
                 ...     source_type="asset",
@@ -383,7 +383,7 @@ class RelationshipsAPI(APIClient):
                 ...     confidence=0.1,
                 ...     data_set_id=1234
                 ... )
-                >>> flowrel2 = Relationship(
+                >>> flowrel2 = RelationshipWrite(
                 ...     external_id="flow_2",
                 ...     source_external_id="source_ext_id",
                 ...     source_type="asset",
@@ -498,11 +498,17 @@ class RelationshipsAPI(APIClient):
             Upsert for relationships:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Relationship
+                >>> from cognite.client.data_classes import RelationshipWrite
                 >>> client = CogniteClient()
                 >>> existing_relationship = client.relationships.retrieve(id=1)
                 >>> existing_relationship.description = "New description"
-                >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
+                >>> new_relationship = RelationshipWrite(
+                ...     external_id="new_relationship",
+                ...     source_external_id="new_source",
+                ...     source_type="asset",
+                ...     target_external_id="new_target",
+                ...     target_type="event"
+                ... )
                 >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
         """
         return self._upsert_multiple(
