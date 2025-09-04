@@ -25,7 +25,7 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
     This is the parent for the reading and writing versions.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): Name of the label.
         description (str | None): Description of the label.
         data_set_id (int | None): The id of the dataset this label belongs to.
@@ -33,10 +33,10 @@ class LabelDefinitionCore(WriteableCogniteResource["LabelDefinitionWrite"], ABC)
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
+        external_id: str,
+        name: str | None,
+        description: str | None,
+        data_set_id: int | None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -180,12 +180,15 @@ class Label(CogniteObject):
     """A label assigned to a resource.
 
     Args:
-        external_id (str | None): The external id to the attached label.
-        **_ (Any): No description.
+        external_id (str): The external id to the attached label.
     """
 
-    def __init__(self, external_id: str | None = None, **_: Any) -> None:
+    def __init__(self, external_id: str) -> None:
         self.external_id = external_id
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(external_id=resource["externalId"])
 
     @classmethod
     def _load_list(
