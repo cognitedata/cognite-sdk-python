@@ -29,28 +29,40 @@ class RevisionCameraProperties(CogniteObject):
     """Initial camera position and target.
 
     Args:
-        target (list[float] | None): Initial camera target.
-        position (list[float] | None): Initial camera position.
-        **_ (Any): No description.
+        target (list[float]): Initial camera target.
+        position (list[float]): Initial camera position.
     """
 
-    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **_: Any) -> None:
+    def __init__(self, target: list[float], position: list[float]) -> None:
         self.target = target
         self.position = position
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            target=resource["target"],
+            position=resource["position"],
+        )
 
 
 class BoundingBox3D(CogniteObject):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
-        max (list[float] | None): No description.
-        min (list[float] | None): No description.
-        **_ (Any): No description.
+        max (list[float]): No description.
+        min (list[float]): No description.
     """
 
-    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **_: Any) -> None:
+    def __init__(self, max: list[float], min: list[float]) -> None:
         self.max = max
         self.min = min
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            max=resource["max"],
+            min=resource["min"],
+        )
 
 
 class ThreeDModelCore(WriteableCogniteResource["ThreeDModelWrite"], ABC):
@@ -58,16 +70,16 @@ class ThreeDModelCore(WriteableCogniteResource["ThreeDModelWrite"], ABC):
 
 
     Args:
-        name (str | None): The name of the model.
+        name (str): The name of the model.
         data_set_id (int | None): The id of the dataset this 3D model belongs to.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
     """
 
     def __init__(
         self,
-        name: str | None = None,
-        data_set_id: int | None = None,
-        metadata: dict[str, str] | None = None,
+        name: str,
+        data_set_id: int | None,
+        metadata: dict[str, str] | None,
     ) -> None:
         self.name = name
         self.data_set_id = data_set_id
@@ -79,9 +91,9 @@ class ThreeDModel(ThreeDModelCore):
     This is the reading version of ThreeDModel, which is used when retrieving 3D models.
 
     Args:
-        name (str | None): The name of the model.
-        id (int | None): The ID of the model.
-        created_time (int | None): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        name (str): The name of the model.
+        id (int): The ID of the model.
+        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         data_set_id (int | None): The id of the dataset this 3D model belongs to.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         cognite_client (CogniteClient | None): The client to associate with this object.
@@ -89,11 +101,11 @@ class ThreeDModel(ThreeDModelCore):
 
     def __init__(
         self,
-        name: str | None = None,
-        id: int | None = None,
-        created_time: int | None = None,
-        data_set_id: int | None = None,
-        metadata: dict[str, str] | None = None,
+        name: str,
+        id: int,
+        created_time: int,
+        data_set_id: int | None,
+        metadata: dict[str, str] | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -101,14 +113,20 @@ class ThreeDModel(ThreeDModelCore):
             data_set_id=data_set_id,
             metadata=metadata,
         )
-        # id/created_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            name=resource["name"],
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            data_set_id=resource.get("dataSetId"),
+            metadata=resource.get("metadata"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> ThreeDModelWrite:
         """Returns this ThreedModel in a writing version."""
@@ -280,37 +298,37 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
     This is the read version of ThreeDModelRevision, which is used when retrieving 3D model revisions.
 
     Args:
-        id (int | None): The ID of the revision.
-        file_id (int | None): The file id.
-        published (bool | None): True if the revision is marked as published.
+        id (int): The ID of the revision.
+        file_id (int): The file id.
+        published (bool): True if the revision is marked as published.
         rotation (list[float] | None): No description.
         scale (list[float] | None): Scale of 3D model in directions X,Y and Z. Should be uniform.
         translation (list[float] | None): 3D offset of the model.
-        camera (RevisionCameraProperties | dict[str, Any] | None): Initial camera position and target.
-        status (str | None): The status of the revision.
+        camera (RevisionCameraProperties | None): Initial camera position and target.
+        status (str): The status of the revision.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         thumbnail_threed_file_id (int | None): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
         thumbnail_url (str | None): The URL of a thumbnail for the revision.
-        asset_mapping_count (int | None): The number of asset mappings for this revision.
-        created_time (int | None): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        asset_mapping_count (int): The number of asset mappings for this revision.
+        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        file_id: int | None = None,
-        published: bool | None = None,
-        rotation: list[float] | None = None,
-        scale: list[float] | None = None,
-        translation: list[float] | None = None,
-        camera: RevisionCameraProperties | dict[str, Any] | None = None,
-        status: str | None = None,
-        metadata: dict[str, str] | None = None,
-        thumbnail_threed_file_id: int | None = None,
-        thumbnail_url: str | None = None,
-        asset_mapping_count: int | None = None,
-        created_time: int | None = None,
+        id: int,
+        file_id: int,
+        published: bool,
+        rotation: list[float] | None,
+        scale: list[float] | None,
+        translation: list[float] | None,
+        camera: RevisionCameraProperties | None,
+        status: str,
+        metadata: dict[str, str] | None,
+        thumbnail_threed_file_id: int | None,
+        thumbnail_url: str | None,
+        asset_mapping_count: int,
+        created_time: int,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -322,18 +340,32 @@ class ThreeDModelRevision(ThreeDModelRevisionCore):
             camera=camera,
             metadata=metadata,
         )
-        # id/created_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
         self.status = status
         self.thumbnail_threed_file_id = thumbnail_threed_file_id
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            file_id=resource["fileId"],
+            published=resource["published"],
+            rotation=resource.get("rotation"),
+            scale=resource.get("scale"),
+            translation=resource.get("translation"),
+            camera=(camera := resource.get("camera")) and RevisionCameraProperties._load(camera),
+            status=resource["status"],
+            metadata=resource.get("metadata"),
+            thumbnail_threed_file_id=resource.get("thumbnailThreedFileId"),
+            thumbnail_url=resource.get("thumbnailUrl"),
+            asset_mapping_count=resource["assetMappingCount"],
+            created_time=resource["createdTime"],
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> ThreeDModelRevisionWrite:
         """Returns this ThreedModelRevision in a writing version."""
@@ -495,27 +527,27 @@ class ThreeDNode(CogniteResource):
     """No description.
 
     Args:
-        id (int | None): The ID of the node.
-        tree_index (int | None): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        id (int): The ID of the node.
+        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
         parent_id (int | None): The parent of the node, null if it is the root node.
-        depth (int | None): The depth of the node in the tree, starting from 0 at the root node.
-        name (str | None): The name of the node.
-        subtree_size (int | None): The number of descendants of the node, plus one (counting itself).
+        depth (int): The depth of the node in the tree, starting from 0 at the root node.
+        name (str): The name of the node.
+        subtree_size (int): The number of descendants of the node, plus one (counting itself).
         properties (dict[str, dict[str, str]] | None): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (BoundingBox3D | dict[str, Any] | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        bounding_box (BoundingBox3D | None): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        tree_index: int | None = None,
-        parent_id: int | None = None,
-        depth: int | None = None,
-        name: str | None = None,
-        subtree_size: int | None = None,
-        properties: dict[str, dict[str, str]] | None = None,
-        bounding_box: BoundingBox3D | dict[str, Any] | None = None,
+        id: int,
+        tree_index: int,
+        parent_id: int | None,
+        depth: int,
+        name: str,
+        subtree_size: int,
+        properties: dict[str, dict[str, str]] | None,
+        bounding_box: BoundingBox3D | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
@@ -530,10 +562,17 @@ class ThreeDNode(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> ThreeDNode:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.bounding_box, dict):
-            instance.bounding_box = BoundingBox3D._load(instance.bounding_box)
-        return instance
+        return cls(
+            id=resource["id"],
+            tree_index=resource["treeIndex"],
+            parent_id=resource.get("parentId"),
+            depth=resource["depth"],
+            name=resource["name"],
+            subtree_size=resource["subtreeSize"],
+            properties=resource.get("properties"),
+            bounding_box=(bbox := resource.get("boundingBox")) and BoundingBox3D._load(bbox),
+            cognite_client=cognite_client,
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -550,14 +589,14 @@ class ThreeDAssetMappingCore(WriteableCogniteResource["ThreeDAssetMappingWrite"]
     """No description.
 
     Args:
-        node_id (int | None): The ID of the node.
+        node_id (int): The ID of the node.
         asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
     """
 
     def __init__(
         self,
-        node_id: int | None = None,
-        asset_id: int | None = None,
+        node_id: int,
+        asset_id: int | None,
     ) -> None:
         self.node_id = node_id
         self.asset_id = asset_id
@@ -568,7 +607,7 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
     This is the reading version of ThreeDAssetMapping, which is used when retrieving 3D asset mappings.
 
     Args:
-        node_id (int | None): The ID of the node.
+        node_id (int): The ID of the node.
         asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
         tree_index (int | None): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
         subtree_size (int | None): The number of nodes in the subtree of this node (this number included the node itself).
@@ -577,10 +616,10 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
 
     def __init__(
         self,
-        node_id: int | None = None,
-        asset_id: int | None = None,
-        tree_index: int | None = None,
-        subtree_size: int | None = None,
+        node_id: int,
+        asset_id: int | None,
+        tree_index: int | None,
+        subtree_size: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -590,6 +629,16 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
         self.tree_index = tree_index
         self.subtree_size = subtree_size
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            node_id=resource["nodeId"],
+            asset_id=resource.get("assetId"),
+            tree_index=resource.get("treeIndex"),
+            subtree_size=resource.get("subtreeSize"),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> ThreeDAssetMappingWrite:
         """Returns this ThreedAssetMapping in a writing version."""
@@ -607,18 +656,11 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
 
     Args:
         node_id (int): The ID of the node.
-        asset_id (int): The ID of the associated asset (Cognite's Assets API).
+        asset_id (int | None): The ID of the associated asset (Cognite's Assets API).
     """
 
-    def __init__(
-        self,
-        node_id: int,
-        asset_id: int,
-    ) -> None:
-        super().__init__(
-            node_id=node_id,
-            asset_id=asset_id,
-        )
+    def __init__(self, node_id: int, asset_id: int | None = None) -> None:
+        super().__init__(node_id=node_id, asset_id=asset_id)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> ThreeDAssetMappingWrite:

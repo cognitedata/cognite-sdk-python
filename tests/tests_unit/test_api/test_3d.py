@@ -14,7 +14,7 @@ from cognite.client._api.three_d import (
     ThreeDModelUpdate,
     ThreeDNodeList,
 )
-from cognite.client.data_classes import BoundingBox3D
+from cognite.client.data_classes import BoundingBox3D, ThreeDAssetMappingWrite, ThreeDModelRevisionWrite
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
@@ -75,7 +75,9 @@ class Test3DModels:
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_update_with_resource_object(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.update(ThreeDModel(id=1, name="bla", created_time=123))
+        res = cognite_client.three_d.models.update(
+            ThreeDModel(id=1, name="bla", created_time=123, data_set_id=None, metadata=None, cognite_client=None)
+        )
         assert {"id": 1, "update": {"name": {"set": "bla"}}} == jsgz_load(mock_3d_model_response.calls[0].request.body)[
             "items"
         ][0]
@@ -227,7 +229,24 @@ class Test3DModelRevisions:
         )["items"][0]
 
     def test_update_with_resource_object(self, cognite_client, mock_3d_model_revision_response):
-        cognite_client.three_d.revisions.update(1, ThreeDModelRevision(id=1, published=False, created_time=123))
+        cognite_client.three_d.revisions.update(
+            1,
+            ThreeDModelRevision(
+                id=1,
+                published=False,
+                created_time=123,
+                file_id=1,
+                rotation=None,
+                scale=None,
+                translation=None,
+                camera=None,
+                status="bla",
+                metadata=None,
+                thumbnail_threed_file_id=None,
+                thumbnail_url=None,
+                asset_mapping_count=1,
+            ),
+        )
         assert {"id": 1, "update": {"published": {"set": False}}} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
         )["items"][0]
@@ -246,7 +265,7 @@ class Test3DModelRevisions:
         assert mock_retrieve_3d_model_revision_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_3d_model_revision_response):
-        res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevision(file_id=123))
+        res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevisionWrite(file_id=123))
         assert isinstance(res, ThreeDModelRevision)
         assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
@@ -254,7 +273,7 @@ class Test3DModelRevisions:
         assert mock_3d_model_revision_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_model_revision_response):
-        res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevision(file_id=123)])
+        res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevisionWrite(file_id=123)])
         assert isinstance(res, ThreeDModelRevisionList)
         assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
@@ -329,21 +348,23 @@ class Test3DAssetMappings:
 
     def test_create(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMapping(node_id=1, asset_id=1)
+            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMappingWrite(node_id=1, asset_id=1)
         )
         assert isinstance(res, ThreeDAssetMapping)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
     def test_create_multiple(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(node_id=1, asset_id=1)]
+            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMappingWrite(node_id=1, asset_id=1)]
         )
         assert isinstance(res, ThreeDAssetMappingList)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_delete(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.delete(
-            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMapping(1, 1)
+            model_id=1,
+            revision_id=1,
+            asset_mapping=ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None),
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
@@ -352,7 +373,9 @@ class Test3DAssetMappings:
 
     def test_delete_multiple(self, cognite_client, mock_3d_asset_mappings_response):
         res = cognite_client.three_d.asset_mappings.delete(
-            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
+            model_id=1,
+            revision_id=1,
+            asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
@@ -368,6 +391,8 @@ class Test3DAssetMappings:
         )
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.three_d.asset_mappings.delete(
-                model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
+                model_id=1,
+                revision_id=1,
+                asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
             )
         assert e.value.unknown == [ThreeDAssetMapping.load({"assetId": 1, "nodeId": 1})]
