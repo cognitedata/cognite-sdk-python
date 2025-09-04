@@ -16,6 +16,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import DatapointsArray
+from tests.tests_unit.conftest import DefaultResourceGenerator
 
 
 @pytest.mark.dsl
@@ -23,7 +24,15 @@ class TestRepr:
     # TODO: We should auto-create these tests for all subclasses impl. _repr_html_:
     @pytest.mark.parametrize("cls", (Asset, Sequence, FileMetadata, Row, Table, ThreeDModel))
     def test_repr_html(self, cls):
-        assert len(cls()._repr_html_()) > 0
+        instance = {
+            Asset: DefaultResourceGenerator.asset(),
+            Sequence: DefaultResourceGenerator.sequence(),
+            FileMetadata: DefaultResourceGenerator.file_metadata(),
+            Row: DefaultResourceGenerator.raw_row(),
+            Table: DefaultResourceGenerator.raw_table(),
+            ThreeDModel: DefaultResourceGenerator.threed_model(),
+        }[cls]
+        assert len(instance._repr_html_()) > 0
 
     @pytest.mark.parametrize(
         "inst",

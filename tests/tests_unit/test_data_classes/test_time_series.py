@@ -31,7 +31,7 @@ def mock_ts_by_ids_response(rsps, cognite_client):
 
 @pytest.fixture
 def mock_asset_by_ids_response(rsps, cognite_client):
-    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname"}]}
+    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname", "createdTime": 0, "lastUpdatedTime": 0}]}
     rsps.add(
         rsps.POST, cognite_client.time_series._get_base_url_with_base_path() + "/assets/byids", status=200, json=res
     )
