@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 from collections.abc import Iterator
-from io import BufferedReader
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
