@@ -12,26 +12,38 @@ if TYPE_CHECKING:
 
 
 class TransformationSchemaType(CogniteObject):
-    def __init__(self, type: str | None = None) -> None:
+    def __init__(self, type: str) -> None:
         self.type = type
 
 
 class TransformationSchemaArrayType(TransformationSchemaType):
-    def __init__(self, type: str | None = None, element_type: str | None = None, contains_null: bool = False) -> None:
+    def __init__(self, type: str, element_type: str | None, contains_null: bool) -> None:
         super().__init__(type=type)
         self.element_type = element_type
         self.contains_null = contains_null
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            type=resource["type"],
+            element_type=resource.get("elementType"),
+            contains_null=resource["containsNull"],
+        )
+
 
 class TransformationSchemaStructType(TransformationSchemaType):
     # TODO: Fields should probably be translated into an object
-    def __init__(self, type: str | None = None, fields: list[dict[str, Any]] | None = None) -> None:
+    def __init__(self, type: str, fields: list[dict[str, Any]] | None) -> None:
         super().__init__(type=type)
         self.fields = fields
 
     def dump(self, camel_case: bool = True) -> dict:
         dumped = super().dump(camel_case=camel_case)
         return convert_all_keys_recursive(dumped, camel_case=camel_case)  # <-- 'fields' is a nested object
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(type=resource["type"], fields=resource.get("fields"))
 
 
 class TransformationSchemaMapType(TransformationSchemaType):
@@ -77,19 +89,19 @@ class TransformationSchemaColumn(CogniteResource):
     """Represents a column of the expected sql structure for a destination type.
 
     Args:
-        name (str | None): Column name
-        sql_type (str | None): Type of the column in sql format.
-        type (TransformationSchemaType | None): Type of the column in json format.
+        name (str): Column name
+        sql_type (str): Type of the column in sql format.
+        type (TransformationSchemaType): Type of the column in json format.
         nullable (bool): Values for the column can be null or not
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: str | None = None,
-        sql_type: str | None = None,
-        type: TransformationSchemaType | None = None,
-        nullable: bool = False,
+        name: str,
+        sql_type: str,
+        type: TransformationSchemaType,
+        nullable: bool,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
@@ -106,17 +118,21 @@ class TransformationSchemaColumn(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.type, dict):
-            instance.type = {
-                "array": TransformationSchemaArrayType,
-                "map": TransformationSchemaMapType,
-                "struct": TransformationSchemaStructType,
-            }.get(instance.type["type"], TransformationSchemaUnknownType)._load(instance.type)
+        resource_type = resource["type"]
+        type_classes: dict[str, type[TransformationSchemaType]] = {
+            "array": TransformationSchemaArrayType,
+            "map": TransformationSchemaMapType,
+            "struct": TransformationSchemaStructType,
+        }
+        type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType).load(resource_type)
 
-        elif isinstance(instance.type, str):
-            instance.type = TransformationSchemaType(type=instance.type)
-        return instance
+        return cls(
+            name=resource["name"],
+            sql_type=resource["sql_type"],
+            type=type_,
+            nullable=resource["nullable"],
+            cognite_client=cognite_client,
+        )
 
 
 class TransformationSchemaColumnList(CogniteResourceList[TransformationSchemaColumn]):

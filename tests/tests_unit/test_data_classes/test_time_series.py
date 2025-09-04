@@ -34,7 +34,7 @@ def mock_ts_by_ids_response(httpx_mock, cognite_client):
 
 @pytest.fixture
 def mock_asset_by_ids_response(httpx_mock, cognite_client):
-    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname"}]}
+    res = {"items": [{"id": 1, "externalId": "1", "name": "assetname", "createdTime": 0, "lastUpdatedTime": 0}]}
     httpx_mock.add_response(
         method="POST", url=get_url(cognite_client.time_series) + "/assets/byids", status_code=200, json=res
     )
