@@ -643,11 +643,11 @@ class EventsAPI(APIClient):
             Upsert for events:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Event
+                >>> from cognite.client.data_classes import EventWrite
                 >>> client = CogniteClient()
                 >>> existing_event = client.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
-                >>> new_event = Event(external_id="new_event", description="New event")
+                >>> new_event = EventWrite(external_id="new_event", description="New event")
                 >>> res = client.events.upsert([existing_event, new_event], mode="replace")
         """
         return self._upsert_multiple(
