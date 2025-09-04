@@ -69,7 +69,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     Args:
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
         metadata (dict[str, str] | None): Custom, immutable application specific metadata. String key -> String value. Limits: Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         members (Literal['allUserAccounts'] | list[str] | None): Specifies which users are members of the group. Can not be used together with 'source_id'.
@@ -78,17 +78,15 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
     def __init__(
         self,
         name: str,
-        source_id: str | None = None,
-        capabilities: list[Capability] | None = None,
-        attributes: GroupAttributes | None = None,
-        metadata: dict[str, str] | None = None,
-        members: Literal["allUserAccounts"] | list[str] | None = None,
+        source_id: str | None,
+        capabilities: list[Capability] | Capability | None,
+        attributes: GroupAttributes | None,
+        metadata: dict[str, str] | None,
+        members: Literal["allUserAccounts"] | list[str] | None,
     ) -> None:
         self.name = name
         self.source_id = source_id
-        self.capabilities = capabilities
-        if isinstance(self.capabilities, Capability):
-            self.capabilities = [capabilities]
+        self.capabilities = [capabilities] if isinstance(capabilities, Capability) else capabilities
         self.attributes = attributes
         self.metadata = metadata
         self.members = members
@@ -128,7 +126,7 @@ class Group(GroupCore):
         id (int): No description.
         name (str): Name of the group.
         source_id (str | None): ID of the group in the source. If this is the same ID as a group in the IdP, a service account in that group will implicitly be a part of this group as well. Can not be used together with 'members'.
-        capabilities (list[Capability] | None): List of capabilities (acls) this group should grant its users.
+        capabilities (list[Capability] | Capability | None): List of capabilities (acls) this group should grant its users.
         attributes (GroupAttributes | None): Attributes of the group, this scopes down access based on the attributes specified.
         id (int | None): No description.
         is_deleted (bool | None): No description.
@@ -143,7 +141,7 @@ class Group(GroupCore):
         id: int,
         name: str,
         source_id: str | None,
-        capabilities: list[Capability] | None,
+        capabilities: list[Capability] | Capability | None,
         attributes: GroupAttributes | None,
         is_deleted: bool | None,
         deleted_time: int | None,
