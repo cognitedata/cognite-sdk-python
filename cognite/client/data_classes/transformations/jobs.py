@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -28,25 +28,32 @@ class TransformationJobMetric(CogniteResource):
     """The transformation job metric resource allows following details of execution of a transformation run.
 
     Args:
-        id (int | None): No description.
-        timestamp (int | None): Time of the last metric update.
-        name (str | None): Name of the metric.
-        count (int | None): Value of the metric.
+        timestamp (int): Time of the last metric update.
+        name (str): Name of the metric.
+        count (int): Value of the metric.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: int | None = None,
-        timestamp: int | None = None,
-        name: str | None = None,
-        count: int | None = None,
+        timestamp: int,
+        name: str,
+        count: int,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.name = name
         self.count = count
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            timestamp=resource["timestamp"],
+            name=resource["name"],
+            count=resource["count"],
+            cognite_client=cognite_client,
+        )
 
 
 class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric], InternalIdTransformerMixin):
@@ -57,15 +64,15 @@ class TransformationJob(CogniteResource):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
-        id (int | None): A server-generated ID for the object.
-        status (TransformationJobStatus | None): Status of the job.
-        transformation_id (int | None): Server-generated ID of the transformation.
-        transformation_external_id (str | None): external ID of the transformation.
-        source_project (str | None): Name of the CDF project the data will be read from.
-        destination_project (str | None): Name of the CDF project the data will be written to.
-        destination (TransformationDestination | None): No description.
-        conflict_mode (str | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
-        query (str | None): Query of the transformation that is being executed.
+        id (int): A server-generated ID for the object.
+        status (TransformationJobStatus): Status of the job.
+        transformation_id (int): Server-generated ID of the transformation.
+        transformation_external_id (str): external ID of the transformation.
+        source_project (str): Name of the CDF project the data will be read from.
+        destination_project (str): Name of the CDF project the data will be written to.
+        destination (TransformationDestination): No description.
+        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        query (str): Query of the transformation that is being executed.
         error (str | None): Error message from the server.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
         created_time (int | None): Time when the job was created.
@@ -77,21 +84,21 @@ class TransformationJob(CogniteResource):
 
     def __init__(
         self,
-        id: int | None = None,
-        status: TransformationJobStatus | None = None,
-        transformation_id: int | None = None,
-        transformation_external_id: str | None = None,
-        source_project: str | None = None,
-        destination_project: str | None = None,
-        destination: TransformationDestination | None = None,
-        conflict_mode: str | None = None,
-        query: str | None = None,
-        error: str | None = None,
-        ignore_null_fields: bool = False,
-        created_time: int | None = None,
-        started_time: int | None = None,
-        finished_time: int | None = None,
-        last_seen_time: int | None = None,
+        id: int,
+        status: TransformationJobStatus,
+        transformation_id: int,
+        transformation_external_id: str,
+        source_project: str,
+        destination_project: str,
+        destination: TransformationDestination,
+        conflict_mode: str,
+        query: str,
+        error: str | None,
+        ignore_null_fields: bool,
+        created_time: int | None,
+        started_time: int | None,
+        finished_time: int | None,
+        last_seen_time: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
@@ -256,14 +263,26 @@ class TransformationJob(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationJob:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.destination, dict):
-            instance.destination = TransformationDestination._load(instance.destination)
-        elif isinstance(instance.destination, str):
-            instance.destination = TransformationDestination(type=instance.destination)
-        if isinstance(instance.status, str):
-            instance.status = TransformationJobStatus(instance.status)
-        return instance
+        return cls(
+            id=resource["id"],
+            status=TransformationJobStatus(resource["status"]),
+            transformation_id=resource["transformationId"],
+            transformation_external_id=resource["transformationExternalId"],
+            source_project=resource["sourceProject"],
+            destination_project=resource["destinationProject"],
+            destination=TransformationDestination._load(resource["destination"])
+            if isinstance(resource["destination"], dict)
+            else TransformationDestination(type=resource["destination"]),
+            conflict_mode=resource["conflictMode"],
+            query=resource["query"],
+            error=resource.get("error"),
+            ignore_null_fields=resource["ignoreNullFields"],
+            created_time=resource.get("createdTime"),
+            started_time=resource.get("startedTime"),
+            finished_time=resource.get("finishedTime"),
+            last_seen_time=resource.get("lastSeenTime"),
+            cognite_client=cognite_client,
+        )
 
     def __hash__(self) -> int:
         return hash(self.id)
