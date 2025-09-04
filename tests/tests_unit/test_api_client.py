@@ -1652,7 +1652,12 @@ class TestConnectionPooling:
 def test_worker_in_backoff_loop_gets_new_token(httpx_mock):
     url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
     httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]})
+    httpx_mock.add_response(
+        method="POST",
+        url=url,
+        status_code=200,
+        json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]},
+    )
 
     call_count = 0
 
