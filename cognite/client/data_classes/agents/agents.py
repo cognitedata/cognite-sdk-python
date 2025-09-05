@@ -117,27 +117,22 @@ class Agent(AgentCore):
         instructions (str | None): Instructions for the agent.
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet".
         tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         owner_id (str | None): The ID of the user who owns the agent.
     """
-
-    tools: Sequence[AgentTool] | None = None
-    created_time: int | None = None
-    last_updated_time: int | None = None
-    owner_id: str | None = None
 
     def __init__(
         self,
         external_id: str,
         name: str,
-        description: str | None = None,
-        instructions: str | None = None,
-        model: str | None = None,
-        tools: Sequence[AgentTool] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
+        description: str | None,
+        instructions: str | None,
+        model: str | None,
+        tools: Sequence[AgentTool] | None,
+        created_time: int,
+        last_updated_time: int,
+        owner_id: str | None,
     ) -> None:
         super().__init__(
             external_id=external_id, name=name, description=description, instructions=instructions, model=model
@@ -171,21 +166,15 @@ class Agent(AgentCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
-        tools = (
-            [AgentTool._load(item) for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
-            else None
-        )
-
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
             description=resource.get("description"),
             instructions=resource.get("instructions"),
             model=resource.get("model"),
-            tools=tools,
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            tools=(tools := resource.get("tools")) and [AgentTool._load(item) for item in tools],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource.get("ownerId"),
         )
         existing = set(instance.dump(camel_case=True).keys())

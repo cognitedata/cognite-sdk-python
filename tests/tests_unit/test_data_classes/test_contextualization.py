@@ -5,13 +5,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import ContextualizationJob
 from cognite.client.data_classes.contextualization import (
-    VISION_FEATURE_MAP,
     ConnectionFlags,
     DetectJobBundle,
     DiagramDetectConfig,
-    VisionExtractPredictions,
 )
 from cognite.client.testing import monkeypatch_cognite_client
 
@@ -28,57 +27,38 @@ def mock_base_job_response() -> dict[str, Any]:
 
 
 @pytest.fixture()
-def job(cognite_client):
+def job(cognite_client: CogniteClient) -> ContextualizationJob:
     return ContextualizationJob(
         job_id=123, status="Queued", cognite_client=cognite_client, status_time=1, created_time=1
     )
 
 
-def mock_update_status_running(self):
+def mock_update_status_running(self: ContextualizationJob) -> str:
     self.status = "Running"
     return self.status
 
 
-def mock_update_status_completed(self):
+def mock_update_status_completed(self: ContextualizationJob) -> str:
     self.status = "Completed"
     return self.status
 
 
-class TestVisionExtractPredictions:
-    def test_visionextractpredictions_in_sync_with_vision_feature_map(self) -> None:
-        """This test ensures that the mapping and VisionExtractPredictions class is 'in sync'"""
-
-        # Needed in local namespace for type lookup:
-        from cognite.client.data_classes.annotation_types.images import (  # noqa F401
-            AssetLink,
-            ObjectDetection,
-            TextRegion,
-            KeypointCollectionWithObjectDetection,
-        )
-
-        local_namespace = locals()
-        annots_as_set = {
-            (k, local_namespace.get(v.replace("list[", "").replace("] | None", "")))
-            for k, v in VisionExtractPredictions.__annotations__.items()
-        }
-        mapping_as_set = set(VISION_FEATURE_MAP.items())
-        assert mapping_as_set == annots_as_set, "type annots. must follow this pattern: <list[SomeCls] | None>"
-
-
 class TestContextualizationJob:
     @patch("cognite.client.data_classes.ContextualizationJob.update_status", new=mock_update_status_running)
-    def test_wait_for_completion_running(self, job):
-        job.wait_for_completion(timeout=1)
+    def test_wait_for_completion_running(self, job: ContextualizationJob) -> None:
+        assert job.status == "Queued"
+        job.wait_for_completion(timeout=0.01, interval=0.01)
         assert job.status == "Running"
 
     @patch("cognite.client.data_classes.ContextualizationJob.update_status", new=mock_update_status_completed)
-    def test_wait_for_completion_completed(self, job):
-        job.wait_for_completion(timeout=1)
+    def test_wait_for_completion_completed(self, job: ContextualizationJob) -> None:
+        assert job.status == "Queued"
+        job.wait_for_completion()
         assert job.status == "Completed"
 
 
 class TestJobBundle:
-    def test_DetectJobBundle_completed(self, mock_base_job_response) -> None:
+    def test_DetectJobBundle_completed(self, mock_base_job_response: dict[str, Any]) -> None:
         _job_ids = [1, 2]
         completed_job_mock = mock_base_job_response
         with monkeypatch_cognite_client() as mock_client:
@@ -110,7 +90,7 @@ class TestJobBundle:
             assert s[1]["status"] == "Completed"
 
     @patch("cognite.client.data_classes.contextualization.DetectJobBundle._WAIT_TIME", 0)
-    def test_DetectJobBundle_one_running(self, mock_base_job_response) -> None:
+    def test_DetectJobBundle_one_running(self, mock_base_job_response: dict[str, Any]) -> None:
         completed_job_mock = mock_base_job_response
         running_job_mock = {**mock_base_job_response, **{"status": "Running", "jobId": 2}}
         running_job_completed_mock = {**mock_base_job_response, **{"status": "Completed", "jobId": 2}}
@@ -138,7 +118,7 @@ class TestJobBundle:
             assert job_bundle._WAIT_TIME == 2  # NOTE: Overwritten to 0, then added 2
             assert mock_client.diagrams._post.call_count == 2
 
-    def test_DetectJobBundle_failing(self, mock_base_job_response) -> None:
+    def test_DetectJobBundle_failing(self, mock_base_job_response: dict[str, Any]) -> None:
         completed_job_mock = mock_base_job_response
         failed_job_mock = {
             **mock_base_job_response,
@@ -216,7 +196,7 @@ class TestDiagramDetectConfig:
             "minFuzzyScore",
         ],
     )
-    def test_overlapping_parameter_name(self, param_name: str):
-        kwargs = {param_name: True}
+    def test_overlapping_parameter_name(self, param_name: str) -> None:
+        kwargs: dict = {param_name: True}
         with pytest.raises(ValueError):
             DiagramDetectConfig(**kwargs)

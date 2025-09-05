@@ -1,7 +1,9 @@
 import datetime
 import re
+from collections.abc import Iterator
 
 import pytest
+from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
@@ -10,7 +12,7 @@ from tests.utils import get_url, jsgz_load
 
 
 @pytest.fixture
-def empty_function(cognite_mock_client_placeholder: CogniteClient):
+def empty_function(cognite_mock_client_placeholder: CogniteClient) -> Function:
     return Function(
         id=123,
         created_time=123,
@@ -34,7 +36,7 @@ def empty_function(cognite_mock_client_placeholder: CogniteClient):
 
 
 @pytest.fixture
-def function(cognite_mock_client_placeholder: CogniteClient):
+def function(cognite_mock_client_placeholder: CogniteClient) -> Function:
     return Function(
         id=123,
         name="my-function",
@@ -58,7 +60,7 @@ def function(cognite_mock_client_placeholder: CogniteClient):
 
 
 @pytest.fixture
-def mock_function_call_resp(httpx_mock, cognite_client):
+def mock_function_call_resp(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
             {
@@ -76,19 +78,21 @@ def mock_function_call_resp(httpx_mock, cognite_client):
 
 
 class TestFunction:
-    def test_update(self, empty_function, function):
-        empty_function._cognite_client.functions.retrieve.return_value = function
+    def test_update(self, empty_function: Function, function: Function) -> None:
+        empty_function._cognite_client.functions.retrieve.return_value = function  # type: ignore[attr-defined]
 
         empty_function.update()
         assert function == empty_function
 
-    def test_update_on_deleted_function(self, empty_function):
-        empty_function._cognite_client.functions.retrieve.return_value = None
+    def test_update_on_deleted_function(self, empty_function: Function) -> None:
+        empty_function._cognite_client.functions.retrieve.return_value = None  # type: ignore[attr-defined]
         empty_function.update()
 
 
 class TestFunctionCall:
-    def test_get_function_call_no_filter(self, cognite_client, mock_function_call_resp):
+    def test_get_function_call_no_filter(
+        self, cognite_client: CogniteClient, mock_function_call_resp: HTTPXMock
+    ) -> None:
         cognite_client.functions.calls.list(function_id=2586071956285058)
         calls = mock_function_call_resp.get_requests()
         assert 1 == len(calls)
@@ -96,7 +100,9 @@ class TestFunctionCall:
             "limit": 25,
         } == jsgz_load(calls[0].content)
 
-    def test_get_function_call_with_filter(self, cognite_client, mock_function_call_resp):
+    def test_get_function_call_with_filter(
+        self, cognite_client: CogniteClient, mock_function_call_resp: HTTPXMock
+    ) -> None:
         cognite_client.functions.calls.list(
             function_id=2586071956285058, status="Completed", schedule_id=395335920687780
         )
@@ -118,12 +124,14 @@ class TestFunctionCallLog:
         ms_delta = datetime.timedelta(milliseconds=100)
         return [(start_ts + i * ms_delta, f"line {i}") for i in range(10)]
 
-    def test_to_text_without_timestamps(self, entries):
-        log = FunctionCallLog(resources=[FunctionCallLogEntry(timestamp=ts, message=msg) for (ts, msg) in entries])
+    def test_to_text_without_timestamps(self, entries: list[tuple[datetime.datetime, str]]) -> None:
+        log = FunctionCallLog(
+            resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries]
+        )
         expected = "\n".join([msg for (_, msg) in entries])
         assert log.to_text() == expected
 
-    def test_to_text_with_timestamps(self, entries):
+    def test_to_text_with_timestamps(self, entries: list[tuple[datetime.datetime, str]]) -> None:
         log = FunctionCallLog(
             resources=[FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message=msg) for (ts, msg) in entries]
         )
@@ -132,19 +140,19 @@ class TestFunctionCallLog:
 
 
 class TestFunctionCallLogEntry:
-    def test_format_with_timestamp(self):
+    def test_format_with_timestamp(self) -> None:
         ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
         entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
 
         assert entry._format(with_timestamps=True) == f"[{ts}] line one"
 
-    def test_format_without_timestamp(self):
+    def test_format_without_timestamp(self) -> None:
         ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123)
         entry = FunctionCallLogEntry(timestamp=datetime_to_ms(ts), message="line one")
 
         assert entry._format(with_timestamps=False) == "line one"
 
-    def test_format_with_none_timestamp(self):
+    def test_format_with_none_timestamp(self) -> None:
         entry = FunctionCallLogEntry(timestamp=None, message="line one")
 
         assert entry._format(with_timestamps=True) == "line one"

@@ -1,4 +1,5 @@
 from string import ascii_lowercase
+from typing import Any
 
 import pytest
 
@@ -14,7 +15,7 @@ from cognite.client.utils._text import (
 from tests.utils import rng_context
 
 
-def test_random_string():
+def test_random_string() -> None:
     # Truly pointless, but the things we do for coverage
     with rng_context(7_999_878):
         assert "abcde" == random_string(5, sample_from=ascii_lowercase)
@@ -30,12 +31,12 @@ def test_random_string():
         ([1, 2, 3], 8, "...]", "[1, ...]"),
     ),
 )
-def test_shorten(obj, width, placeholder, expected):
+def test_shorten(obj: list, width: int, placeholder: str, expected: str) -> None:
     assert expected == shorten(obj, width, placeholder)
 
 
-def test_shorten__fails():
-    with pytest.raises(ValueError, match=r"^Width must be larger than "):
+def test_shorten__fails() -> None:
+    with pytest.raises(ValueError, match="^Width must be larger than "):
         shorten(object(), width=2, placeholder="...")
 
 
@@ -47,7 +48,7 @@ def test_shorten__fails():
         ("a", "a"),
     ),
 )
-def test_to_camel_case(inp, expected):
+def test_to_camel_case(inp: str, expected: str) -> None:
     assert expected == to_camel_case(inp)
 
 
@@ -59,7 +60,7 @@ def test_to_camel_case(inp, expected):
         ("a", "a"),
     ),
 )
-def test_to_snake_case(inp, expected):
+def test_to_snake_case(inp: str, expected: str) -> None:
     assert expected == to_snake_case(inp)
 
 
@@ -74,15 +75,15 @@ def test_to_snake_case(inp, expected):
         (tuple, False, (s for s in ("a", "a_a", "aA")), ("a", "a_a", "a_a")),
     ),
 )
-def test_iterable_to_case(inp_type, camel_case, inp, expected):
+def test_iterable_to_case(inp_type: type, camel_case: bool, inp: Any, expected: Any) -> None:
     assert inp_type(iterable_to_case(inp, camel_case)) == expected
 
 
-def test_convert_all_keys_to_camel_case():
+def test_convert_all_keys_to_camel_case() -> None:
     inp = {"foo": 1, "f_o_o": 2, "fOo": 3}
     assert convert_all_keys_to_camel_case(inp) == {"foo": 1, "fOO": 2, "fOo": 3}
 
 
-def test_convert_all_keys_to_snake_case():
+def test_convert_all_keys_to_snake_case() -> None:
     inp = {"foo": 1, "f_o_o": 2, "fOo": 3}
     assert convert_all_keys_to_snake_case(inp) == {"foo": 1, "f_o_o": 2, "f_oo": 3}
