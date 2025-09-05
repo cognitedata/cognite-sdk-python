@@ -830,11 +830,11 @@ class AssetsAPI(APIClient):
             Upsert for assets:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
-                >>> new_asset = Asset(external_id="new_asset", description="New asset")
+                >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
         return self._upsert_multiple(

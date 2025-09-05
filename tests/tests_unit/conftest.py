@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -30,7 +30,7 @@ collect_ignore = ["test_api/function_test_resources"]
 
 # TODO: This class-scoped client causes side-effects between tests...
 @pytest.fixture(scope="class")
-def cognite_client() -> CogniteClient:
+def cognite_client() -> Iterator[CogniteClient]:
     cnf = ClientConfig(client_name="any", project="dummy", credentials=Token("bla"))
     yield CogniteClient(cnf)
 
