@@ -11,12 +11,13 @@ from typing import Any, ClassVar, Literal, cast
 import pytest
 from requests import Response
 from responses import matchers
+from typing_extensions import Self
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
-from cognite.client.data_classes import TimeSeries, TimeSeriesUpdate
+from cognite.client.data_classes import TimeSeriesUpdate
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -28,6 +29,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQTT5SourceWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
@@ -225,6 +227,16 @@ class SomeResource(CogniteResource):
         self.id = id
         self.external_id = external_id
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            x=resource.get("x"),
+            y=resource.get("y"),
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            cognite_client=cognite_client,
+        )
 
 
 class SomeResourceList(CogniteResourceList):
@@ -1422,10 +1434,11 @@ class TestHelpers:
         "resource, update_obj, mode, expected_update_object",
         [
             pytest.param(
-                TimeSeries(id=42, name="bla", metadata={"myNew": "metadataValue"}),
+                DefaultResourceGenerator.time_series(id=42, name="bla", metadata={"myNew": "metadataValue"}),
                 TimeSeriesUpdate,
                 "replace_ignore_null",
                 {
+                    "isStep": {"set": False},
                     "name": {"set": "bla"},
                     "metadata": {"set": {"myNew": "metadataValue"}},
                 },
@@ -1433,20 +1446,22 @@ class TestHelpers:
             ),
             pytest.param(
                 # is_string is ignored as it cannot be updated.
-                TimeSeries(id=42, name="bla", is_string=False, metadata={"myNew": "metadataValue"}),
+                DefaultResourceGenerator.time_series(id=42, name="bla", metadata={"myNew": "metadataValue"}),
                 TimeSeriesUpdate,
                 "patch",
                 {
+                    "isStep": {"set": False},
                     "name": {"set": "bla"},
                     "metadata": {"add": {"myNew": "metadataValue"}},
                 },
                 id="patch",
             ),
             pytest.param(
-                TimeSeries(id=42, name="bla"),
+                DefaultResourceGenerator.time_series(id=42, name="bla"),
                 TimeSeriesUpdate,
                 "replace",
                 {
+                    "isStep": {"set": False},
                     "assetId": {"setNull": True},
                     "dataSetId": {"setNull": True},
                     "description": {"setNull": True},
@@ -1502,7 +1517,7 @@ class TestConnectionPooling:
 def test_worker_in_backoff_loop_gets_new_token(rsps):
     url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
     rsps.add(rsps.POST, url, status=429, json={"error": "Backoff plz"})
-    rsps.add(rsps.POST, url, status=200, json={"items": [{"id": 123}]})
+    rsps.add(rsps.POST, url, status=200, json={"items": [{"id": 123, "createdTime": 123, "lastUpdatedTime": 123}]})
 
     call_count = 0
 

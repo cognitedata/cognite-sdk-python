@@ -10,7 +10,7 @@ import pytest
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset
+from cognite.client.data_classes import AssetWrite, FeatureWrite
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     Feature,
@@ -99,7 +99,7 @@ def test_feature_type_test_scoped(cognite_client):
 
 
 @pytest.fixture(scope="session")
-def large_feature_type(cognite_client):
+def large_feature_type(cognite_client) -> Iterator[FeatureType]:
     external_id = f"FT_{uuid.uuid4().hex[:10]}"
     feature_type_spec = FeatureType(
         external_id=external_id, properties={f"attr{i}": {"type": "LONG"} for i in range(80)}
@@ -122,7 +122,7 @@ def _new_feature(cognite_client: CogniteClient, test_feature_type: FeatureType) 
     external_id = f"F_{uuid.uuid4().hex[:10]}"
     feature = cognite_client.geospatial.create_features(
         test_feature_type.external_id,
-        Feature(
+        FeatureWrite(
             external_id=external_id,
             position={"wkt": "POINT(2.2768485 48.8589506)"},
             temperature=12.4,
@@ -159,31 +159,31 @@ def test_feature_with_raster(cognite_client, test_feature_type, test_feature):
     yield test_feature
 
 
-def _new_feature_list(cognite_client, test_feature_type):
+def _new_feature_list(cognite_client, test_feature_type) -> Iterator[FeatureList]:
     external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
     features = [
-        Feature(
+        FeatureWrite(
             external_id=external_ids[0],
             position={"wkt": "POINT(2.2768485 48.8589506)"},
             temperature=12.4,
             volume=1212.0,
             pressure=2121.0,
         ),
-        Feature(
+        FeatureWrite(
             external_id=external_ids[1],
             position={"wkt": "POLYGON((10.689 -25.092, 38.814 -35.639, 13.502 -39.155, 10.689 -25.092))"},
             temperature=13.4,
             volume=1212.0,
             pressure=2121.0,
         ),
-        Feature(
+        FeatureWrite(
             external_id=external_ids[2],
             position={"wkt": "LINESTRING (30 10, 10 30, 40 40)"},
             temperature=3.4,
             volume=1212.0,
             pressure=2121.0,
         ),
-        Feature(
+        FeatureWrite(
             external_id=external_ids[3],
             position={"wkt": "MULTILINESTRING ((10 10, 20 20, 10 40), (40 40, 30 30, 40 20, 30 10))"},
             temperature=23.4,
@@ -217,16 +217,16 @@ def another_test_feature(cognite_client, test_feature_type):
     external_id = f"F_{uuid.uuid4().hex[:10]}"
     feature = cognite_client.geospatial.create_features(
         test_feature_type.external_id,
-        Feature(external_id=external_id, temperature=-10.8, pressure=123.456, volume=654.2),
+        FeatureWrite(external_id=external_id, temperature=-10.8, pressure=123.456, volume=654.2),
     )
     yield feature
     cognite_client.geospatial.delete_features(test_feature_type.external_id, external_id=external_id)
 
 
 @pytest.fixture
-def many_features(cognite_client, large_feature_type):
+def many_features(cognite_client: CogniteClient, large_feature_type: FeatureType) -> Iterator[FeatureList]:
     specs = [
-        Feature(
+        FeatureWrite(
             external_id=f"F_{uuid.uuid4().hex[:10]}", **{f"attr{i}": random.randint(10000, 20000) for i in range(80)}
         )
         for _ in range(2000)
@@ -265,7 +265,7 @@ def clean_old_custom_crs(cognite_client):
 
 @pytest.fixture(autouse=True, scope="session")
 def new_asset(cognite_client):
-    asset = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
+    asset = cognite_client.assets.create(AssetWrite(name="any", description="haha", metadata={"a": "b"}))
     yield asset
     cognite_client.assets.delete(id=asset.id)
 
@@ -275,7 +275,7 @@ class TestGeospatialAPI:
         external_id = f"F_{uuid.uuid4().hex[:10]}"
         cognite_client.geospatial.create_features(
             test_feature_type_test_scoped.external_id,
-            Feature(
+            FeatureWrite(
                 external_id=external_id,
                 position={"wkt": "POINT(50 50)"},
                 temperature=12.4,
@@ -312,7 +312,7 @@ class TestGeospatialAPI:
     ):
         res = cognite_client.geospatial.update_features(
             feature_type_external_id=test_feature_type_test_scoped.external_id,
-            feature=Feature(
+            feature=FeatureWrite(
                 external_id=test_feature_test_scoped.external_id,
                 temperature=6.237,
                 pressure=12.21,
@@ -449,12 +449,16 @@ class TestGeospatialAPI:
             FeatureType(external_id=external_id, properties={"temperature": {"type": "DOUBLE"}})
         )
         cognite_client.geospatial.create_features(
-            feature_type.external_id, Feature(external_id=f"F_{uuid.uuid4().hex[:10]}", temperature=12.4)
+            feature_type.external_id, FeatureWrite(external_id=f"F_{uuid.uuid4().hex[:10]}", temperature=12.4)
         )
         cognite_client.geospatial.delete_feature_types(external_id=external_id, recursive=True)
 
     def test_get_features_by_ids_with_output_selection(
-        self, cognite_client, test_feature_type, test_feature, another_test_feature
+        self,
+        cognite_client: CogniteClient,
+        test_feature_type: FeatureType,
+        test_feature: Feature,
+        another_test_feature: Feature,
     ):
         res = cognite_client.geospatial.retrieve_features(
             feature_type_external_id=test_feature_type.external_id,

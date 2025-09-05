@@ -4,11 +4,13 @@ import pytest
 
 from cognite.client.data_classes import (
     Sequence,
+    SequenceColumnWrite,
     SequenceFilter,
     SequenceList,
     SequenceRows,
     SequenceRowsList,
     SequenceUpdate,
+    SequenceWrite,
 )
 from tests.utils import jsgz_load
 
@@ -84,7 +86,7 @@ def mock_get_sequence_data(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid", "valueType": "Double"}],
+        "columns": [{"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Double"}],
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
     rsps.add(
@@ -98,7 +100,15 @@ def mock_get_sequence_data(rsps, cognite_client):
 
 @pytest.fixture
 def mock_get_sequence_empty_data(rsps, cognite_client):
-    json = {"id": 0, "externalId": "eid", "columns": [{"externalId": "ceid"}, {"externalId": "ceid2"}], "rows": []}
+    json = {
+        "id": 0,
+        "externalId": "eid",
+        "columns": [
+            {"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
+            {"externalId": "ceid2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
+        ],
+        "rows": [],
+    }
     rsps.add(
         rsps.POST,
         cognite_client.sequences._get_base_url_with_base_path() + "/sequences/data/list",
@@ -113,7 +123,10 @@ def mock_get_sequence_data_many_columns(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": f"ceid{i}"} for i in range(200)],
+        "columns": [
+            {"externalId": f"ceid{i}", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"}
+            for i in range(200)
+        ],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
     rsps.add(
@@ -130,7 +143,10 @@ def mock_get_sequence_data_two_col(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "col1"}, {"externalId": "col2"}],
+        "columns": [
+            {"externalId": "col1", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+            {"externalId": "col2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+        ],
         "rows": [{"rowNumber": 0, "values": [1, 2]}],
     }
     rsps.add(
@@ -147,7 +163,10 @@ def mock_get_sequence_data_two_col_with_zero(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "str"}, {"externalId": "lon"}],
+        "columns": [
+            {"externalId": "str", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
+            {"externalId": "lon", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+        ],
         "rows": [{"rowNumber": 12, "values": ["string-12", 0]}],
     }
     rsps.add(
@@ -164,7 +183,10 @@ def mock_get_sequence_data_with_null(rsps, cognite_client):
     json = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"id": 0, "externalId": "intcol"}, {"id": 1, "externalId": "strcol"}],
+        "columns": [
+            {"id": 0, "externalId": "intcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+            {"id": 1, "externalId": "strcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+        ],
         "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 1, "values": [None, "blah"]}],
     }
     rsps.add(
@@ -231,7 +253,7 @@ class TestSequences:
 
     def test_create_single(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
-            Sequence(external_id="1", name="blabla", columns=[{"externalId": "column0"}])
+            SequenceWrite(external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="column0")])
         )
         assert isinstance(res, Sequence)
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
@@ -243,10 +265,13 @@ class TestSequences:
 
     def test_create_single_multicol(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
-            Sequence(
+            SequenceWrite(
                 external_id="1",
                 name="blabla",
-                columns=[{"valueType": "String", "externalId": "column0"}, {"externalId": "c2"}],
+                columns=[
+                    SequenceColumnWrite(value_type="String", external_id="column0"),
+                    SequenceColumnWrite(external_id="c2"),
+                ],
             )
         )
         assert isinstance(res, Sequence)
@@ -266,25 +291,18 @@ class TestSequences:
 
     def test_create_columnid_passed(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
-            Sequence(external_id="1", name="blabla", columns=[{"externalId": "a", "valueType": "STRING"}])
+            SequenceWrite(
+                external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="a", value_type="String")]
+            )
         )
         assert isinstance(res, Sequence)
         assert {
-            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
-        } == jsgz_load(mock_seq_response.calls[0].request.body)
-
-    def test_create_column_snake_cased(self, cognite_client, mock_seq_response):
-        res = cognite_client.sequences.create(
-            Sequence(external_id="1", name="blabla", columns=[{"external_id": "a", "value_type": "STRING"}])
-        )
-        assert isinstance(res, Sequence)
-        assert {
-            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
+            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "String", "externalId": "a"}]}]
         } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_create_multiple(self, cognite_client, mock_seq_response):
         res = cognite_client.sequences.create(
-            [Sequence(external_id="1", name="blabla", columns=[{"externalId": "cid"}])]
+            [SequenceWrite(external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="cid")])]
         )
         assert isinstance(res, SequenceList)
         assert mock_seq_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
@@ -308,7 +326,21 @@ class TestSequences:
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client, mock_seq_response):
-        res = cognite_client.sequences.update(Sequence(id=1))
+        res = cognite_client.sequences.update(
+            Sequence(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                name=None,
+                description=None,
+                asset_id=None,
+                external_id=None,
+                metadata=None,
+                columns=[],
+                data_set_id=None,
+                cognite_client=None,
+            )
+        )
         assert isinstance(res, Sequence)
         assert mock_seq_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 

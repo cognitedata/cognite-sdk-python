@@ -1,56 +1,61 @@
 import re
+from typing import Any
 from urllib.parse import unquote_plus
 
 import pytest
+from responses import RequestsMock
 
-from cognite.client._api.three_d import (
+from cognite.client import CogniteClient
+from cognite.client.data_classes.three_d import (
+    BoundingBox3D,
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
+    ThreeDAssetMappingWrite,
     ThreeDModel,
     ThreeDModelList,
     ThreeDModelRevision,
     ThreeDModelRevisionList,
     ThreeDModelRevisionUpdate,
+    ThreeDModelRevisionWrite,
     ThreeDModelUpdate,
     ThreeDNodeList,
 )
-from cognite.client.data_classes import BoundingBox3D
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_3d_model_response(rsps, cognite_client):
+def mock_3d_model_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     response_body = {"items": [{"name": "My Model", "id": 1000, "createdTime": 0}]}
     url_pattern = re.compile(re.escape(cognite_client.three_d._get_base_url_with_base_path()) + "/3d/models.*")
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     rsps.assert_all_requests_are_fired = False
-    yield rsps
+    return rsps
 
 
 @pytest.fixture
-def mock_retrieve_3d_model_response(rsps, cognite_client):
+def mock_retrieve_3d_model_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     response_body = {"name": "My Model", "id": 1000, "createdTime": 0}
     rsps.add(
         rsps.GET, cognite_client.three_d._get_base_url_with_base_path() + "/3d/models/1", status=200, json=response_body
     )
-    yield rsps
+    return rsps
 
 
 class Test3DModels:
-    def test_list(self, cognite_client, mock_3d_model_response):
+    def test_list(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.list(published=True, limit=100)
         assert isinstance(res, ThreeDModelList)
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_published_default(self, cognite_client, mock_3d_model_response):
+    def test_list_published_default(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.list(limit=100)
         assert isinstance(res, ThreeDModelList)
         assert mock_3d_model_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert "published" not in mock_3d_model_response.calls[0].request.path_url
 
-    def test_update_with_update_object(self, cognite_client, mock_3d_model_response):
+    def test_update_with_update_object(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         update = ThreeDModelUpdate(id=1).name.set("bla")
         res = cognite_client.three_d.models.update(update)
         assert {"id": 1, "update": {"name": {"set": "bla"}}} == jsgz_load(mock_3d_model_response.calls[0].request.body)[
@@ -58,7 +63,7 @@ class Test3DModels:
         ][0]
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_dataset(self, cognite_client, mock_3d_model_response):
+    def test_update_dataset(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         update = ThreeDModelUpdate(id=1).data_set_id.set(2)
         res = cognite_client.three_d.models.update(update)
         assert {"id": 1, "update": {"dataSetId": {"set": 2}}} == jsgz_load(
@@ -66,7 +71,7 @@ class Test3DModels:
         )["items"][0]
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_reset_dataset(self, cognite_client, mock_3d_model_response):
+    def test_reset_dataset(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         update = ThreeDModelUpdate(id=1).data_set_id.set(None)
         res = cognite_client.three_d.models.update(update)
         assert {"id": 1, "update": {"dataSetId": {"setNull": True}}} == jsgz_load(
@@ -74,14 +79,16 @@ class Test3DModels:
         )["items"][0]
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_with_resource_object(self, cognite_client, mock_3d_model_response):
-        res = cognite_client.three_d.models.update(ThreeDModel(id=1, name="bla", created_time=123))
+    def test_update_with_resource_object(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
+        res = cognite_client.three_d.models.update(
+            ThreeDModel(id=1, name="bla", created_time=123, data_set_id=None, metadata=None, cognite_client=None)
+        )
         assert {"id": 1, "update": {"name": {"set": "bla"}}} == jsgz_load(mock_3d_model_response.calls[0].request.body)[
             "items"
         ][0]
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_3d_model_response):
+    def test_delete(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_response.calls[0].request.body)
         assert res is None
@@ -89,12 +96,12 @@ class Test3DModels:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_response.calls[1].request.body)
         assert res is None
 
-    def test_retrieve(self, cognite_client, mock_retrieve_3d_model_response):
+    def test_retrieve(self, cognite_client: CogniteClient, mock_retrieve_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.retrieve(id=1)
         assert isinstance(res, ThreeDModel)
         assert mock_retrieve_3d_model_response.calls[0].response.json() == res.dump(camel_case=True)
 
-    def test_create(self, cognite_client, mock_3d_model_response):
+    def test_create(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.create(name="My Model")
         assert isinstance(res, ThreeDModel)
 
@@ -102,7 +109,7 @@ class Test3DModels:
         assert request_body == {"items": [{"name": "My Model"}]}
         assert mock_3d_model_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_3d_model_response):
+    def test_create_multiple(self, cognite_client: CogniteClient, mock_3d_model_response: Any) -> None:
         res = cognite_client.three_d.models.create(name=["My Model"])
         assert isinstance(res, ThreeDModelList)
 
@@ -112,7 +119,7 @@ class Test3DModels:
 
 
 @pytest.fixture
-def mock_3d_model_revision_response(rsps, cognite_client):
+def mock_3d_model_revision_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     response_body = {
         "items": [
             {
@@ -137,11 +144,11 @@ def mock_3d_model_revision_response(rsps, cognite_client):
     rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
     rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
     rsps.assert_all_requests_are_fired = False
-    yield rsps
+    return rsps
 
 
 @pytest.fixture
-def mock_retrieve_3d_model_revision_response(rsps, cognite_client):
+def mock_retrieve_3d_model_revision_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     res = {
         "id": 1000,
         "fileId": 1000,
@@ -162,22 +169,22 @@ def mock_retrieve_3d_model_revision_response(rsps, cognite_client):
         status=200,
         json=res,
     )
-    yield rsps
+    return rsps
 
 
 @pytest.fixture
-def mock_3d_model_revision_thumbnail_response(rsps, cognite_client):
+def mock_3d_model_revision_thumbnail_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     rsps.add(
         rsps.POST,
         cognite_client.three_d._get_base_url_with_base_path() + "/3d/models/1/revisions/1/thumbnail",
         status=200,
         json={},
     )
-    yield rsps
+    return rsps
 
 
 @pytest.fixture
-def mock_3d_model_revision_node_response(rsps, cognite_client):
+def mock_3d_model_revision_node_response(rsps: RequestsMock, cognite_client: CogniteClient) -> RequestsMock:
     response_body = {
         "items": [
             {
@@ -210,29 +217,50 @@ def mock_3d_model_revision_node_response(rsps, cognite_client):
         json=response_body,
     )
     rsps.assert_all_requests_are_fired = False
-    yield rsps
+    return rsps
 
 
 class Test3DModelRevisions:
-    def test_list(self, cognite_client, mock_3d_model_revision_response):
+    def test_list(self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any) -> None:
         res = cognite_client.three_d.revisions.list(model_id=1, published=True, limit=100)
         assert isinstance(res, ThreeDModelRevisionList)
         assert mock_3d_model_revision_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_update_with_update_object(self, cognite_client, mock_3d_model_revision_response):
+    def test_update_with_update_object(
+        self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any
+    ) -> None:
         update = ThreeDModelRevisionUpdate(id=1).published.set(False)
         cognite_client.three_d.revisions.update(1, update)
         assert {"id": 1, "update": {"published": {"set": False}}} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
         )["items"][0]
 
-    def test_update_with_resource_object(self, cognite_client, mock_3d_model_revision_response):
-        cognite_client.three_d.revisions.update(1, ThreeDModelRevision(id=1, published=False, created_time=123))
+    def test_update_with_resource_object(
+        self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any
+    ) -> None:
+        cognite_client.three_d.revisions.update(
+            1,
+            ThreeDModelRevision(
+                id=1,
+                published=False,
+                created_time=123,
+                file_id=1,
+                rotation=None,
+                scale=None,
+                translation=None,
+                camera=None,
+                status="bla",
+                metadata=None,
+                thumbnail_threed_file_id=None,
+                thumbnail_url=None,
+                asset_mapping_count=1,
+            ),
+        )
         assert {"id": 1, "update": {"published": {"set": False}}} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
         )["items"][0]
 
-    def test_delete(self, cognite_client, mock_3d_model_revision_response):
+    def test_delete(self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any) -> None:
         res = cognite_client.three_d.revisions.delete(1, id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_revision_response.calls[0].request.body)
         assert res is None
@@ -240,45 +268,49 @@ class Test3DModelRevisions:
         assert {"items": [{"id": 1}]} == jsgz_load(mock_3d_model_revision_response.calls[1].request.body)
         assert res is None
 
-    def test_retrieve(self, cognite_client, mock_retrieve_3d_model_revision_response):
+    def test_retrieve(self, cognite_client: CogniteClient, mock_retrieve_3d_model_revision_response: Any) -> None:
         res = cognite_client.three_d.revisions.retrieve(model_id=1, id=1)
         assert isinstance(res, ThreeDModelRevision)
         assert mock_retrieve_3d_model_revision_response.calls[0].response.json() == res.dump(camel_case=True)
 
-    def test_create(self, cognite_client, mock_3d_model_revision_response):
-        res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevision(file_id=123))
+    def test_create(self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any) -> None:
+        res = cognite_client.three_d.revisions.create(model_id=1, revision=ThreeDModelRevisionWrite(file_id=123))
         assert isinstance(res, ThreeDModelRevision)
         assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
         )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_3d_model_revision_response):
-        res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevision(file_id=123)])
+    def test_create_multiple(self, cognite_client: CogniteClient, mock_3d_model_revision_response: Any) -> None:
+        res = cognite_client.three_d.revisions.create(model_id=1, revision=[ThreeDModelRevisionWrite(file_id=123)])
         assert isinstance(res, ThreeDModelRevisionList)
         assert {"items": [{"fileId": 123, "published": False}]} == jsgz_load(
             mock_3d_model_revision_response.calls[0].request.body
         )
         assert mock_3d_model_revision_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_update_thumbnail(self, cognite_client, mock_3d_model_revision_thumbnail_response):
+    def test_update_thumbnail(
+        self, cognite_client: CogniteClient, mock_3d_model_revision_thumbnail_response: Any
+    ) -> None:
         res = cognite_client.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         assert {"fileId": 1} == jsgz_load(mock_3d_model_revision_thumbnail_response.calls[0].request.body)
         assert res is None
 
-    def test_list_3d_nodes(self, cognite_client, mock_3d_model_revision_node_response):
+    def test_list_3d_nodes(self, cognite_client: CogniteClient, mock_3d_model_revision_node_response: Any) -> None:
         res = cognite_client.three_d.revisions.list_nodes(model_id=1, revision_id=1, node_id=None, depth=None, limit=10)
         assert isinstance(res, ThreeDNodeList)
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_filter_3d_nodes(self, cognite_client, mock_3d_model_revision_node_response):
+    def test_filter_3d_nodes(self, cognite_client: CogniteClient, mock_3d_model_revision_node_response: Any) -> None:
         res = cognite_client.three_d.revisions.filter_nodes(
             model_id=1, revision_id=1, properties={"Item": {"Type": ["Group"]}}, limit=10
         )
         assert isinstance(res, ThreeDNodeList)
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_3d_ancestor_nodes(self, cognite_client, mock_3d_model_revision_node_response):
+    def test_list_3d_ancestor_nodes(
+        self, cognite_client: CogniteClient, mock_3d_model_revision_node_response: Any
+    ) -> None:
         res = cognite_client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=None, limit=10)
         assert isinstance(res, ThreeDNodeList)
         assert mock_3d_model_revision_node_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
@@ -286,16 +318,16 @@ class Test3DModelRevisions:
 
 class Test3DFiles:
     @pytest.fixture
-    def mock_3d_files_response(self, cognite_client, rsps):
+    def mock_3d_files_response(self, cognite_client: CogniteClient, rsps: RequestsMock) -> None:
         rsps.add(rsps.GET, cognite_client.three_d._get_base_url_with_base_path() + "/3d/files/1", body="bla")
 
-    def test_retrieve(self, cognite_client, mock_3d_files_response):
+    def test_retrieve(self, cognite_client: CogniteClient, mock_3d_files_response: Any) -> None:
         assert b"bla" == cognite_client.three_d.files.retrieve(1)
 
 
 class Test3DAssetMappings:
     @pytest.fixture
-    def mock_3d_asset_mappings_response(self, cognite_client, rsps):
+    def mock_3d_asset_mappings_response(self, cognite_client: CogniteClient, rsps: RequestsMock) -> RequestsMock:
         response_body = {"items": [{"nodeId": 1003, "assetId": 3001, "treeIndex": 5, "subtreeSize": 7}]}
         url_pattern = re.compile(
             re.escape(cognite_client.three_d._get_base_url_with_base_path()) + "/3d/models/1/revisions/1/mappings.*"
@@ -304,9 +336,9 @@ class Test3DAssetMappings:
         rsps.add(rsps.GET, url_pattern, status=200, json=response_body)
         rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
         rsps.assert_all_requests_are_fired = False
-        yield rsps
+        return rsps
 
-    def test_list(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_list(self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any) -> None:
         res = cognite_client.three_d.asset_mappings.list(
             model_id=1, revision_id=1, node_id=None, asset_id=None, intersects_bounding_box=None, limit=None
         )
@@ -316,7 +348,9 @@ class Test3DAssetMappings:
         url = mock_3d_asset_mappings_response.calls[0].request.url
         assert "intersectsBoundingBox" not in unquote_plus(url)
 
-    def test_list__with_intersects_bounding_box(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_list__with_intersects_bounding_box(
+        self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any
+    ) -> None:
         bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
         res = cognite_client.three_d.asset_mappings.list(
             model_id=1, revision_id=1, node_id=None, asset_id=None, intersects_bounding_box=bbox, limit=None
@@ -327,39 +361,43 @@ class Test3DAssetMappings:
         url = mock_3d_asset_mappings_response.calls[0].request.url
         assert 'intersectsBoundingBox={"max": [1.0, 1.0, 1.0], "min": [0.0, 0.0, 0.0]}' in unquote_plus(url)
 
-    def test_create(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_create(self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any) -> None:
         res = cognite_client.three_d.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMapping(node_id=1, asset_id=1)
+            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMappingWrite(node_id=1, asset_id=1)
         )
         assert isinstance(res, ThreeDAssetMapping)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_create_multiple(self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any) -> None:
         res = cognite_client.three_d.asset_mappings.create(
-            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(node_id=1, asset_id=1)]
+            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMappingWrite(node_id=1, asset_id=1)]
         )
         assert isinstance(res, ThreeDAssetMappingList)
         assert mock_3d_asset_mappings_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_delete(self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any) -> None:
         res = cognite_client.three_d.asset_mappings.delete(
-            model_id=1, revision_id=1, asset_mapping=ThreeDAssetMapping(1, 1)
+            model_id=1,
+            revision_id=1,
+            asset_mapping=ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None),
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
             "items"
         ]
 
-    def test_delete_multiple(self, cognite_client, mock_3d_asset_mappings_response):
+    def test_delete_multiple(self, cognite_client: CogniteClient, mock_3d_asset_mappings_response: Any) -> None:
         res = cognite_client.three_d.asset_mappings.delete(
-            model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
+            model_id=1,
+            revision_id=1,
+            asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
         )
         assert res is None
         assert [{"nodeId": 1, "assetId": 1}] == jsgz_load(mock_3d_asset_mappings_response.calls[0].request.body)[
             "items"
         ]
 
-    def test_delete_fails(self, cognite_client, rsps):
+    def test_delete_fails(self, cognite_client: CogniteClient, rsps: RequestsMock) -> None:
         rsps.add(
             rsps.POST,
             cognite_client.three_d._get_base_url_with_base_path() + "/3d/models/1/revisions/1/mappings/delete",
@@ -368,6 +406,8 @@ class Test3DAssetMappings:
         )
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.three_d.asset_mappings.delete(
-                model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
+                model_id=1,
+                revision_id=1,
+                asset_mapping=[ThreeDAssetMapping(1, 1, tree_index=None, subtree_size=None, cognite_client=None)],
             )
         assert e.value.unknown == [ThreeDAssetMapping.load({"assetId": 1, "nodeId": 1})]

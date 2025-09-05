@@ -1,5 +1,6 @@
 import random
 import string
+from collections.abc import Iterator
 from unittest import mock
 
 import numpy as np
@@ -124,7 +125,7 @@ def pretend_timeseries(cognite_client: CogniteClient) -> Sequence:
 
 
 @pytest.fixture(scope="session")
-def new_seq(cognite_client: CogniteClient) -> Sequence:
+def new_seq(cognite_client: CogniteClient) -> Iterator[Sequence]:
     created = cognite_client.sequences.create(SequenceWrite(columns=[SequenceColumnWrite("col0", value_type="String")]))
     yield created
     cognite_client.sequences.delete(id=created.id)
@@ -132,7 +133,8 @@ def new_seq(cognite_client: CogniteClient) -> Sequence:
 
 
 @pytest.fixture(scope="session")
-def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence) -> Sequence:
+def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence) -> Iterator[Sequence]:
+    assert small_sequence.columns
     seq = cognite_client.sequences.create(SequenceWrite(columns=small_sequence.columns.as_write()))
     yield seq
     cognite_client.sequences.delete(id=seq.id)
@@ -141,7 +143,9 @@ def new_small_seq(cognite_client: CogniteClient, small_sequence: Sequence) -> Se
 
 @pytest.fixture(scope="session")
 def new_seq_long(cognite_client):
-    seq = cognite_client.sequences.create(Sequence(columns=[{"valueType": "LONG", "externalId": "a"}]))
+    seq = cognite_client.sequences.create(
+        SequenceWrite(columns=[SequenceColumnWrite(value_type="Long", external_id="a")])
+    )
     yield seq
     cognite_client.sequences.delete(id=seq.id)
     assert cognite_client.sequences.retrieve(id=seq.id) is None

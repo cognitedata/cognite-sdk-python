@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeries, filters
+from cognite.client.data_classes import TimeSeries, TimeSeriesWrite, filters
 from cognite.client.data_classes.data_modeling import NodeId, SpaceApply
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
 from cognite.client.data_classes.datapoints_subscriptions import (
@@ -49,7 +49,7 @@ def all_time_series_external_ids(cognite_client: CogniteClient, os_and_py_versio
 
     return cognite_client.time_series.upsert(
         [
-            TimeSeries(external_id=external_id, name=external_id, is_string=False)
+            TimeSeriesWrite(external_id=external_id, name=external_id, is_string=False)
             for external_id in timeseries_external_ids
         ],
         mode="replace",

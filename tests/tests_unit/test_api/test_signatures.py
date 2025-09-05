@@ -127,14 +127,8 @@ class TestFileMetadataUploadSignatures:
         del upload_from_memory_parameters["overwrite"]
         del upload_from_memory_parameters["name"]
         del upload_from_memory_parameters["security_categories"]
-        file_metadata_parameters = dict(inspect.signature(files.FileMetadata.__init__).parameters)
-        del file_metadata_parameters["id"]
+        file_metadata_parameters = dict(inspect.signature(files.FileMetadataWrite.__init__).parameters)
         del file_metadata_parameters["instance_id"]
-        del file_metadata_parameters["uploaded_time"]
-        del file_metadata_parameters["created_time"]
-        del file_metadata_parameters["last_updated_time"]
-        del file_metadata_parameters["uploaded"]
-        del file_metadata_parameters["cognite_client"]
         del file_metadata_parameters["name"]
         del file_metadata_parameters["security_categories"]
 

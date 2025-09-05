@@ -6,13 +6,12 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Annotation
+from cognite.client.data_classes import AnnotationWrite
 from cognite.client.data_classes.annotation_types.images import (
     AssetLink,
     KeypointCollection,
     KeypointCollectionWithObjectDetection,
     ObjectDetection,
-    Polygon,
     TextRegion,
 )
 from cognite.client.data_classes.annotation_types.primitives import (
@@ -21,6 +20,7 @@ from cognite.client.data_classes.annotation_types.primitives import (
     CdfResourceRef,
     Keypoint,
     Point,
+    Polygon,
     Polyline,
     VisionResource,
 )
@@ -42,7 +42,7 @@ object_detection_sample = ObjectDetection(
     bounding_box=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
     attributes={
         "foo": Attribute(type="boolean", value=True),
-        "bar": {"type": "numerical", "value": 0.1},
+        "bar": Attribute(type="numerical", value=0.1),
     },
 )
 
@@ -114,8 +114,8 @@ mock_vision_extract_predictions = VisionExtractPredictions(
     asset_tag_predictions=[
         AssetLink(
             text="foo",
-            text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4},
-            asset_ref={"id": 1},
+            text_region=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
+            asset_ref=CdfResourceRef(id=1),
         )
     ],
     industrial_object_predictions=[object_detection_sample],
@@ -143,12 +143,12 @@ class TestVisionResource:
                 True,
             ),
             (
-                Polygon([Point(1, 2), Point(3, 4), {"x": -1, "y": 0}]),
+                Polygon([Point(1, 2), Point(3, 4), Point(-1, 0)]),
                 {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}, {"x": -1, "y": 0}]},
                 False,
             ),
             (
-                Polyline([Point(1, 2), Point(3, 4), {"x": -1, "y": 0}]),
+                Polyline([Point(1, 2), Point(3, 4), Point(-1, 0)]),
                 {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}, {"x": -1, "y": 0}]},
                 False,
             ),
@@ -169,7 +169,7 @@ class TestVisionResource:
             ),
             (
                 TextRegion(
-                    text="foo", text_region={"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4}, confidence=None
+                    text="foo", text_region=BoundingBox(x_min=0.1, x_max=0.2, y_min=0.3, y_max=0.4), confidence=None
                 ),
                 {"text": "foo", "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4}},
                 False,
@@ -177,8 +177,8 @@ class TestVisionResource:
             (
                 AssetLink(
                     text="foo",
-                    text_region={"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
-                    asset_ref={"id": 1},
+                    text_region=BoundingBox(x_min=0.1, x_max=0.2, y_min=0.3, y_max=0.4),
+                    asset_ref=CdfResourceRef(id=1),
                 ),
                 {
                     "text": "foo",
@@ -194,7 +194,7 @@ class TestVisionResource:
                     confidence=0.1,
                     attributes={
                         "foo": Attribute(type="boolean", value=True),
-                        "bar": {"type": "numerical", "value": 0.1},
+                        "bar": Attribute(type="numerical", value=0.1),
                     },
                 ),
                 {
@@ -249,7 +249,7 @@ class TestVisionResource:
             ),
             (
                 TextRegion(
-                    text="foo", text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4}, confidence=None
+                    text="foo", text_region=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4), confidence=None
                 ),
                 {"value": ["foo", {"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4}]},
                 ["text", "text_region"],
@@ -260,7 +260,7 @@ class TestVisionResource:
                     text_predictions=[
                         TextRegion(
                             text="foo",
-                            text_region={"x_min": 0.1, "y_min": 0.2, "x_max": 0.3, "y_max": 0.4},
+                            text_region=BoundingBox(x_min=0.1, y_min=0.2, x_max=0.3, y_max=0.4),
                             confidence=None,
                         )
                     ],
@@ -304,7 +304,9 @@ class TestVisionResource:
         ],
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
-    def test_to_pandas(self, item: VisionResource, exp_df_data, exp_df_index, camel_case: bool) -> None:
+    def test_to_pandas(
+        self, item: VisionResource, exp_df_data: dict, exp_df_index: list[str], camel_case: bool
+    ) -> None:
         pd = local_import("pandas")
 
         res = item.to_pandas(camel_case)
@@ -313,41 +315,35 @@ class TestVisionResource:
 
 
 class TestVisionExtractItem:
-    def test_process_predictions_dict(self) -> None:
-        useless_kwargs = {"foo": 1, "bar": "baz"}  # these should be ignored
-        assert (
-            VisionExtractItem._process_predictions_dict({**mock_vision_predictions_dict, **useless_kwargs})
-            == mock_vision_extract_predictions
-        )
-
     @pytest.mark.parametrize(
         "resource, expected_item",
         [
             (
-                {"fileId": 1, "fileExternalId": "a", "predictions": None},
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=None),
-            ),
-            (
                 {"fileId": 1, "predictions": mock_vision_predictions_dict},
-                VisionExtractItem(file_id=1, predictions=mock_vision_predictions_dict),
+                VisionExtractItem(
+                    file_id=1,
+                    file_external_id=None,
+                    predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
+                    error_message=None,
+                ),
             ),
         ],
-        ids=["valid_vision_extract_item_no_predictions", "valid_vision_extract_item"],
+        ids=["valid_vision_extract_item"],
     )
     def test_load(self, resource: dict[str, Any], expected_item: VisionExtractItem) -> None:
-        vision_extract_item = VisionExtractItem.load(resource)
-        assert vision_extract_item == expected_item
+        vision_extract_item = VisionExtractItem._load(resource)
+        assert vision_extract_item.dump() == expected_item.dump()
 
     @pytest.mark.parametrize(
         "item, expected_dump, camel_case",
         [
             (
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=None),
-                {"file_id": 1, "file_external_id": "a"},
-                False,
-            ),
-            (
-                VisionExtractItem(file_id=1, file_external_id="a", predictions=mock_vision_predictions_dict),
+                VisionExtractItem(
+                    file_id=1,
+                    file_external_id="a",
+                    predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
+                    error_message=None,
+                ),
                 {
                     "fileId": 1,
                     "fileExternalId": "a",
@@ -356,7 +352,7 @@ class TestVisionExtractItem:
                 True,
             ),
         ],
-        ids=["valid_dump_no_predictions", "valid_dump_with_predictions_camel_case"],
+        ids=["valid_dump_with_predictions_camel_case"],
     )
     def test_dump(self, item: VisionExtractItem, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
@@ -371,7 +367,14 @@ class TestVisionExtractJob:
             (
                 JobStatus.COMPLETED,
                 {"items": [{"fileId": 1, "predictions": mock_vision_predictions_dict}]},
-                [VisionExtractItem(file_id=1, predictions=mock_vision_predictions_dict)],
+                [
+                    VisionExtractItem(
+                        file_id=1,
+                        file_external_id=None,
+                        predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
+                        error_message=None,
+                    )
+                ],
             ),
         ],
         ids=["non_completed_job", "completed_job"],
@@ -381,14 +384,25 @@ class TestVisionExtractJob:
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         mock_result.return_value = result
-        job = VisionExtractJob(status=status.value, cognite_client=cognite_client)
+        job: VisionExtractJob = VisionExtractJob(
+            job_id=1, status=status.value, status_time=123, created_time=123, cognite_client=cognite_client
+        )
         assert job.items == expected_items
 
     @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "file_id, expected_item, error_message",
         [
-            (1, VisionExtractItem(file_id=1, file_external_id="foo", predictions=mock_vision_predictions_dict), None),
+            (
+                1,
+                VisionExtractItem(
+                    file_id=1,
+                    file_external_id="foo",
+                    predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
+                    error_message=None,
+                ),
+                None,
+            ),
             (1337, None, "File with id 1337 not found in results"),
         ],
         ids=["valid_unique_id", "non_existing_id"],
@@ -411,7 +425,9 @@ class TestVisionExtractJob:
                 for i in range(2)
             ]
         }
-        job = VisionExtractJob(cognite_client=cognite_client)
+        job: VisionExtractJob = VisionExtractJob(
+            job_id=1, status="bla", status_time=123, created_time=123, cognite_client=cognite_client
+        )
         if error_message is not None:
             with pytest.raises(IndexError, match=error_message):
                 job[file_id]
@@ -458,7 +474,7 @@ class TestVisionExtractJob:
                 },
                 {"creating_user": None, "creating_app": None, "creating_app_version": None},
                 [
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={
@@ -469,10 +485,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.AssetLink",
                         data={
@@ -482,10 +498,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.ObjectDetection",
                         data={
@@ -495,10 +511,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.KeypointCollection",
                         data={
@@ -510,10 +526,10 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.ObjectDetection",
                         data={
@@ -523,7 +539,7 @@ class TestVisionExtractJob:
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
-                        creating_app_version=1,
+                        creating_app_version="1",
                         creating_user=None,
                     ),
                 ],
@@ -541,7 +557,7 @@ class TestVisionExtractJob:
                 },
                 {"creating_user": "foo", "creating_app": "bar", "creating_app_version": "1.0.0"},
                 [
-                    Annotation(
+                    AnnotationWrite(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
                         data={
@@ -573,9 +589,12 @@ class TestVisionExtractJob:
         expected_items: list | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
-        cognite_client.version = (params or {}).get("creating_app_version") or 1
+        cognite_client.version = (params or {}).get("creating_app_version") or "1"
         mock_result.return_value = result
-        job = VisionExtractJob(status=JobStatus.COMPLETED.value, cognite_client=cognite_client)
+
+        job: VisionExtractJob = VisionExtractJob(
+            job_id=1, status=JobStatus.COMPLETED.value, status_time=123, created_time=123, cognite_client=cognite_client
+        )
         assert job._predictions_to_annotations(**(params or {})) == expected_items
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from contextlib import nullcontext as does_not_raise
 from copy import deepcopy
 from typing import Any
@@ -72,7 +73,7 @@ def mock_get_response_body_ok() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_post_extract(rsps: RequestsMock, mock_post_response_body: dict[str, Any]) -> RequestsMock:
+def mock_post_extract(rsps: RequestsMock, mock_post_response_body: dict[str, Any]) -> Iterator[RequestsMock]:
     rsps.add(
         rsps.POST,
         re.compile(".*?/context/vision/extract"),
@@ -83,7 +84,7 @@ def mock_post_extract(rsps: RequestsMock, mock_post_response_body: dict[str, Any
 
 
 @pytest.fixture
-def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
+def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> Iterator[RequestsMock]:
     rsps.add(
         rsps.GET,
         re.compile(".*?/context/vision/extract/\\d+"),
@@ -94,7 +95,9 @@ def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: dict[str, An
 
 
 @pytest.fixture
-def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]) -> RequestsMock:
+def mock_get_extract_empty_predictions(
+    rsps: RequestsMock, mock_get_response_body_ok: dict[str, Any]
+) -> Iterator[RequestsMock]:
     response_copy = deepcopy(mock_get_response_body_ok)
     response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
     rsps.add(
@@ -108,7 +111,7 @@ def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_bod
 
 class TestJobStatusEnum:
     @pytest.mark.parametrize("job_status", list(JobStatus))
-    def test_job_status_methods(self, job_status):
+    def test_job_status_methods(self, job_status: JobStatus) -> None:
         v1 = job_status.is_finished()
         v2 = job_status.is_not_finished()
         assert sorted([v1, v2]) == [False, True]
@@ -168,7 +171,7 @@ class TestVisionExtract:
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
-        file_external_ids = []
+        file_external_ids: list[str] = []
         if error_message is not None:
             with pytest.raises(TypeError, match=error_message):
                 # GET request will not be executed due to invalid parameters in POST
@@ -179,7 +182,7 @@ class TestVisionExtract:
             is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
             error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
-            with error_handling:
+            with error_handling:  # type: ignore[union-attr]
                 job = VAPI.extract(
                     features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
                 )
@@ -202,7 +205,7 @@ class TestVisionExtract:
 
             num_post_requests, num_get_requests = 0, 0
             for call in mock_post_extract.calls:
-                if "extract" in call.request.url and call.request.method == "POST":
+                if "extract" in (call.request.url or "") and call.request.method == "POST":
                     num_post_requests += 1
 
                     expected_features_and_items = {
@@ -219,7 +222,7 @@ class TestVisionExtract:
                     assert expected_request_body == jsgz_load(call.request.body)
                 else:
                     num_get_requests += 1
-                    assert f"/{expected_job_id}" in call.request.url
+                    assert f"/{expected_job_id}" in (call.request.url or "")
             assert 1 == num_post_requests
             assert 1 == num_get_requests
 
@@ -228,7 +231,7 @@ class TestVisionExtract:
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
-        file_external_ids = []
+        file_external_ids: list[str] = []
 
         job = VAPI.extract(
             features=VisionFeature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
@@ -242,9 +245,9 @@ class TestVisionExtract:
 
         num_get_requests = 0
         for call in mock_get_extract.calls:
-            if "extract" in call.request.url and call.request.method == "GET":
+            if "extract" in (call.request.url or "") and call.request.method == "GET":
                 num_get_requests += 1
-                assert f"/{job.job_id}" in call.request.url
+                assert f"/{job.job_id}" in (call.request.url or "")
         assert 1 == num_get_requests
 
     def test_save_empty_predictions(
@@ -255,7 +258,7 @@ class TestVisionExtract:
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1]
-        file_external_ids = []
+        file_external_ids: list[str] = []
 
         job = VAPI.extract(
             features=VisionFeature.ASSET_TAG_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids

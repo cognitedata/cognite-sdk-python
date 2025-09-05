@@ -2,8 +2,9 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Asset, EntityMatchingModel, TimeSeries
+from cognite.client.data_classes import EntityMatchingModel
 from cognite.client.exceptions import ModelFailedException
+from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import jsgz_load
 
 
@@ -134,14 +135,26 @@ class TestEntityMatching:
         assert 123 == model.id
 
     def test_fit_cognite_resource(self, cognite_client, mock_fit):
-        entities_from = [TimeSeries(id=1, name="x", metadata={"ka": "va"})]
-        entities_to = [Asset(id=1, external_id="abc", name="x")]
+        entities_from = [
+            DefaultResourceGenerator.time_series(
+                id=1,
+                created_time=123,
+                last_updated_time=123,
+                is_step=False,
+                is_string=False,
+                name="x",
+                metadata={"ka": "va"},
+            )
+        ]
+        entities_to = [
+            DefaultResourceGenerator.asset(id=1, created_time=123, last_updated_time=123, external_id="abc", name="x")
+        ]
         cognite_client.entity_matching.fit(
             sources=entities_from, targets=entities_to, true_matches=[(1, "abc")], feature_type="bigram"
         )
         assert {
             "sources": [{"id": 1, "name": "x", "metadata.ka": "va"}],
-            "targets": [entities_to[0].dump(camel_case=True)],
+            "targets": [{"externalId": "abc", "id": 1, "name": "x"}],
             "trueMatches": [{"sourceId": 1, "targetExternalId": "abc"}],
             "featureType": "bigram",
             "ignoreMissingFields": False,

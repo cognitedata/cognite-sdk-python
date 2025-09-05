@@ -57,13 +57,6 @@ from cognite.client._api.simulators.routine_revisions import SimulatorRoutineRev
 from cognite.client._api.simulators.routines import SimulatorRoutinesAPI
 from cognite.client._api.simulators.runs import SimulatorRunsAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-from cognite.client._api.templates import (
-    TemplateGroupsAPI,
-    TemplateGroupVersionsAPI,
-    TemplateInstancesAPI,
-    TemplatesAPI,
-    TemplateViewsAPI,
-)
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -185,12 +178,6 @@ class CogniteClientMock(MagicMock):
         self.postgres_gateway.users = MagicMock(spec_set=PostgresUsersAPI)
         self.postgres_gateway.tables = MagicMock(spec_set=PostgresTablesAPI)
 
-        self.templates = MagicMock(spec=TemplatesAPI)
-        self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
-        self.templates.instances = MagicMock(spec_set=TemplateInstancesAPI)
-        self.templates.versions = MagicMock(spec_set=TemplateGroupVersionsAPI)
-        self.templates.views = MagicMock(spec_set=TemplateViewsAPI)
-
         self.three_d = MagicMock(spec=ThreeDAPI)
         self.three_d.asset_mappings = MagicMock(spec_set=ThreeDAssetMappingAPI)
         self.three_d.files = MagicMock(spec_set=ThreeDFilesAPI)
@@ -234,12 +221,12 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
         In this example we can run the following code without actually executing the underlying API calls::
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import TimeSeries
+            >>> from cognite.client.data_classes import TimeSeriesWrite
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client():
             >>>     client = CogniteClient()
-            >>>     client.time_series.create(TimeSeries(external_id="blabla"))
+            >>>     client.time_series.create(TimeSeriesWrite(external_id="blabla"))
 
         This example shows how to set the return value of a given method::
 

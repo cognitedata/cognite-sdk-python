@@ -8,7 +8,7 @@ from cognite.client.data_classes.transformations.schema import (
 
 
 @pytest.fixture
-def struct_schema():
+def struct_schema() -> dict:
     return {
         "type": "struct",
         "fields": [
@@ -20,7 +20,7 @@ def struct_schema():
 
 
 @pytest.fixture
-def unknown_schema(struct_schema):
+def unknown_schema(struct_schema: dict) -> dict:
     return {
         "type": "something-unknown",
         "fooBar": True,
@@ -28,9 +28,9 @@ def unknown_schema(struct_schema):
     }
 
 
-def test_transformation_schema_column__struct(struct_schema):
+def test_transformation_schema_column__struct(struct_schema: dict) -> None:
     # TODO: TransformationSchemaArrayType & TransformationSchemaMapType
-    api_response = {"name": "foo", "sql_type": "bar", "type": struct_schema, "nullable": False}
+    api_response = {"name": "foo", "sqlType": "bar", "type": struct_schema, "nullable": False}
 
     col = TransformationSchemaColumn.load(api_response)
     assert isinstance(col, TransformationSchemaColumn)
@@ -38,8 +38,8 @@ def test_transformation_schema_column__struct(struct_schema):
     assert col.type.type == "struct"
 
 
-def test_transformation_schema_column__unknown_schema(unknown_schema):
-    api_response = {"name": "foo", "sql_type": "bar", "type": unknown_schema, "nullable": False}
+def test_transformation_schema_column__unknown_schema(unknown_schema: dict) -> None:
+    api_response = {"name": "foo", "sqlType": "bar", "type": unknown_schema, "nullable": False}
 
     col = TransformationSchemaColumn.load(api_response)
     assert isinstance(col, TransformationSchemaColumn)

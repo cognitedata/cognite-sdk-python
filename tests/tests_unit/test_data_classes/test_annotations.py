@@ -5,7 +5,7 @@ import json
 import pytest
 
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationUpdate
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 
 @pytest.fixture
@@ -23,6 +23,9 @@ def annotation() -> Annotation:
         creating_user=None,
         annotated_resource_type="file",
         annotated_resource_id=1,
+        id=1,
+        created_time=1,
+        last_updated_time=1,
     )
 
 
@@ -94,7 +97,7 @@ class TestAnnotationFilter:
 
 
 class TestAnnotationUpdate:
-    def test_set_chain(self):
+    def test_set_chain(self) -> None:
         update = {
             "data": {"assetRef": {"id": 1}, "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0}},
             "status": "rejected",

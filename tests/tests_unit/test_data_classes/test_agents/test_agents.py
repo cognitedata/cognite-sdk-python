@@ -9,6 +9,7 @@ from cognite.client.data_classes.agents.agent_tools import (
     SummarizeDocumentAgentTool,
 )
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
+from tests.tests_unit.conftest import DefaultResourceGenerator
 
 
 @pytest.fixture
@@ -55,6 +56,8 @@ def agent_minimal_dump() -> dict:
     return {
         "externalId": "test_agent",
         "name": "Test Agent",
+        "createdTime": 667008000000,
+        "lastUpdatedTime": 667008000001,
     }
 
 
@@ -66,6 +69,7 @@ class TestAgentUpsert:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentToolUpsert)
         assert agent.tools[0].name == "test_tool"
@@ -101,6 +105,7 @@ class TestAgent:
         assert agent.description == "A test agent"
         assert agent.instructions == "Test instructions"
         assert agent.model == "gpt-4"
+        assert agent.tools
         assert len(agent.tools) == 1
         assert isinstance(agent.tools[0], AgentTool)
         assert agent.tools[0].name == "test_tool"
@@ -128,6 +133,8 @@ class TestAgent:
         agent_data = {
             "externalId": "test_agent",
             "name": "Test Agent",
+            "createdTime": 667008000000,
+            "lastUpdatedTime": 667008000001,
             "unknownProperty": "unknown_value",
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
@@ -136,11 +143,11 @@ class TestAgent:
 
     def test_tools_handling(self) -> None:
         # Test with no tools
-        agent = Agent(external_id="test_agent", name="Test Agent")
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent")
         assert agent.tools is None
 
         # Test with an empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
         assert agent.tools == []
 
         # Test with list of tools
@@ -148,38 +155,38 @@ class TestAgent:
             SummarizeDocumentAgentTool(name="test_tool1", description="A test tool"),
             AskDocumentAgentTool(name="test_tool2", description="Another test tool"),
         ]
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=tools_list)
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=tools_list)
         assert len(agent.tools) == 2
         assert all(isinstance(tool, AgentTool) for tool in agent.tools)
         assert agent.tools[0].name == "test_tool1"
         assert agent.tools[1].name == "test_tool2"
 
         # Test with empty list of tools
-        agent = Agent(external_id="test_agent", name="Test Agent", tools=[])
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
         assert agent.tools == []
 
     def test_agent_with_empty_tools_list(self) -> None:
         """Test agent creation with empty tools list."""
-        agent = Agent(external_id="test", name="test", tools=[])
+        agent = DefaultResourceGenerator.agent(external_id="test", name="test", tools=[])
         assert agent.tools == []
         assert not agent.tools  # Should be falsy
 
     def test_agent_with_none_tools(self) -> None:
         """Test agent creation with None tools."""
-        agent = Agent(external_id="test", name="test", tools=None)
+        agent = DefaultResourceGenerator.agent(external_id="test", name="test", tools=None)
         assert agent.tools is None
 
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type
         with pytest.raises(TypeError):
-            Agent(
+            DefaultResourceGenerator.agent(
                 external_id="test_agent",
                 name="Test Agent",
-                tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],
+                tools=[{"name": "test_tool", "type": "test_type", "description": "A test tool"}],  # type: ignore[list-item]
             )
 
     def test_as_write(self) -> None:
-        agent = Agent(
+        agent = DefaultResourceGenerator.agent(
             external_id="test_agent",
             name="Test Agent",
             description="A test agent",
@@ -195,6 +202,7 @@ class TestAgent:
         assert write_agent.description == agent.description
         assert write_agent.instructions == agent.instructions
         assert write_agent.model == agent.model
+        assert write_agent.tools
         assert len(write_agent.tools) == 1
         assert isinstance(write_agent.tools[0], AgentToolUpsert)
         assert write_agent.tools[0].name == "test_tool"
@@ -203,8 +211,8 @@ class TestAgent:
 class TestAgentList:
     def test_as_write(self) -> None:
         agents = [
-            Agent(external_id="agent1", name="Agent 1"),
-            Agent(external_id="agent2", name="Agent 2"),
+            DefaultResourceGenerator.agent(external_id="agent1", name="Agent 1"),
+            DefaultResourceGenerator.agent(external_id="agent2", name="Agent 2"),
         ]
         agent_list = AgentList(agents)
 
@@ -216,13 +224,13 @@ class TestAgentList:
         assert write_list[1].external_id == "agent2"
 
 
-def test_load_with_missing_required_fields():
+def test_load_with_missing_required_fields() -> None:
     """Test that loading fails gracefully with missing required fields."""
     with pytest.raises(KeyError):
         AgentTool._load({"type": "askDocument"})  # Missing name and description
 
 
-def test_load_with_invalid_tool_type():
+def test_load_with_invalid_tool_type() -> None:
     """Test handling of completely invalid tool data."""
     with pytest.raises(KeyError):
         AgentTool._load({"name": "test", "description": "test"})  # Missing type

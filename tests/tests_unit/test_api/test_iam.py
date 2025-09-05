@@ -2,7 +2,14 @@ import re
 
 import pytest
 
-from cognite.client.data_classes import Group, GroupList, SecurityCategory, SecurityCategoryList
+from cognite.client.data_classes import (
+    Group,
+    GroupList,
+    GroupWrite,
+    SecurityCategory,
+    SecurityCategoryList,
+    SecurityCategoryWrite,
+)
 from cognite.client.data_classes.capabilities import AllScope, GroupsAcl, ProjectCapability, ProjectCapabilityList
 from cognite.client.data_classes.iam import GroupAttributes, ProjectSpec, TokenInspection
 from tests.utils import jsgz_load
@@ -74,7 +81,7 @@ class TestGroups:
         }
 
     def test_create(self, cognite_client, mock_groups):
-        my_group = Group(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
+        my_group = GroupWrite(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
         assert {
@@ -96,15 +103,20 @@ class TestGroups:
             name="My Group",
             capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())],
             attributes=attributes,
+            id=1,
+            source_id="sourceId",
+            is_deleted=False,
+            deleted_time=None,
         )
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
         assert {
             "items": [
                 {
-                    "name": "My Group",
-                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
                     "attributes": {"token": {"appIds": ["app1", "app2"]}, "unknownProperty": "unknownValue"},
+                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+                    "name": "My Group",
+                    "sourceId": "sourceId",
                 }
             ]
         } == jsgz_load(mock_groups_with_attributes.calls[0].request.body)
@@ -143,7 +155,7 @@ class TestSecurityCategories:
         assert mock_security_categories.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_create(self, cognite_client, mock_security_categories):
-        res = cognite_client.iam.security_categories.create(SecurityCategory(name="My Category"))
+        res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name="My Category"))
         assert isinstance(res, SecurityCategory)
         assert {"items": [{"name": "My Category"}]} == jsgz_load(mock_security_categories.calls[0].request.body)
         assert mock_security_categories.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
