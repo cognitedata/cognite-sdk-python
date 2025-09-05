@@ -10,7 +10,6 @@ from abc import ABC
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from enum import auto
-from functools import lru_cache
 from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import (
@@ -438,6 +437,9 @@ class AssetWrite(AssetCore):
         """Returns self."""
         return self
 
+    def __hash__(self) -> int:
+        return hash(self.external_id)
+
 
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
@@ -692,7 +694,7 @@ class AssetHierarchy:
     any asset providing a parent link by ID instead of external ID, are assumed valid.
 
     Args:
-        assets (Sequence[Asset | AssetWrite]): Sequence of assets to be inspected for validity.
+        assets (Sequence[AssetWrite]): Sequence of assets to be inspected for validity.
         ignore_orphans (bool): If true, orphan assets are assumed valid and won't raise.
 
     Examples:
@@ -730,28 +732,20 @@ class AssetHierarchy:
         ...     report = file_like.getvalue()
     """
 
-    def __init__(self, assets: Sequence[Asset | AssetWrite], ignore_orphans: bool = False) -> None:
-        self._assets = self._convert_to_read(assets)
-        self._roots: list[Asset] | None = None
-        self._orphans: list[Asset] | None = None
+    def __init__(self, assets: Sequence[AssetWrite], ignore_orphans: bool = False) -> None:
+        self._assets = list(assets)
+        self._roots: list[AssetWrite] | None = None
+        self._orphans: list[AssetWrite] | None = None
         self._ignore_orphans = ignore_orphans
-        self._invalid: list[Asset] | None = None
-        self._unsure_parents: list[Asset] | None = None
-        self._duplicates: dict[str, list[Asset]] | None = None
+        self._invalid: list[AssetWrite] | None = None
+        self._unsure_parents: list[AssetWrite] | None = None
+        self._duplicates: dict[str, list[AssetWrite]] | None = None
         self._cycles: list[list[str]] | None = None
 
         self.__validation_has_run = False
 
     def __len__(self) -> int:
         return len(self._assets)
-
-    @staticmethod
-    def _convert_to_read(assets: Sequence[Asset | AssetWrite]) -> Sequence[Asset]:
-        # TODO: AssetHierarchy doesn't work with AssetWrite (or more correctly, _AssetHierarchyCreator...)
-        #       and as we don't have a reverse of "as_write", we dump-load the write into a read:
-        return [
-            Asset._load(asset.dump(camel_case=True)) if isinstance(asset, AssetWrite) else asset for asset in assets
-        ]
 
     def is_valid(self, on_error: Literal["ignore", "warn", "raise"] = "ignore") -> bool:
         if not self.__validation_has_run:
@@ -765,34 +759,34 @@ class AssetHierarchy:
         return False
 
     @property
-    def roots(self) -> AssetList:
+    def roots(self) -> AssetWriteList:
         if self._roots is None:
             raise RuntimeError("Unable to list root assets before validation has run")
-        return AssetList(self._roots)
+        return AssetWriteList(self._roots)
 
     @property
-    def orphans(self) -> AssetList:
+    def orphans(self) -> AssetWriteList:
         if self._orphans is None:  # Note: The option 'ignore_orphans' has no impact on this
             raise RuntimeError("Unable to list orphan assets before validation has run")
-        return AssetList(self._orphans)
+        return AssetWriteList(self._orphans)
 
     @property
-    def invalid(self) -> AssetList:
+    def invalid(self) -> AssetWriteList:
         if self._invalid is None:
             raise RuntimeError("Unable to list assets invalid attributes before validation has run")
-        return AssetList(self._invalid)
+        return AssetWriteList(self._invalid)
 
     @property
-    def unsure_parents(self) -> AssetList:
+    def unsure_parents(self) -> AssetWriteList:
         if self._unsure_parents is None:
             raise RuntimeError("Unable to list assets with unsure parent link before validation has run")
-        return AssetList(self._unsure_parents)
+        return AssetWriteList(self._unsure_parents)
 
     @property
-    def duplicates(self) -> dict[str, list[Asset]]:
+    def duplicates(self) -> dict[str, list[AssetWrite]]:
         if self._duplicates is None:
             raise RuntimeError("Unable to list duplicate assets before validation has run")
-        # NB: Do not return AssetList (as it does not handle duplicates well):
+        # NB: Do not return AssetWriteList (as it does not handle duplicates well):
         return {xid: assets for xid, assets in self._duplicates.items()}
 
     @property
@@ -829,7 +823,7 @@ class AssetHierarchy:
     def validate_and_report(self, output_file: Path | None = None) -> AssetHierarchy:
         return self.validate(verbose=True, output_file=output_file, on_error="ignore")
 
-    def groupby_parent_xid(self) -> dict[str | None, list[Asset]]:
+    def groupby_parent_xid(self) -> dict[str | None, list[AssetWrite]]:
         """Returns a mapping from parent external ID to a list of its direct children.
 
         Note:
@@ -839,14 +833,14 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
 
         Returns:
-            dict[str | None, list[Asset]]: No description."""
+            dict[str | None, list[AssetWrite]]: No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
         # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
         # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
 
-        def parent_sort_fn(asset: Asset) -> str:
+        def parent_sort_fn(asset: AssetWrite) -> str:
             # All assets using 'parent_id' will be grouped together with the root assets:
             if (pxid := asset.parent_external_id) is None:
                 return ""
@@ -870,11 +864,11 @@ class AssetHierarchy:
         )
         return mapping
 
-    def count_subtree(self, mapping: dict[str | None, list[Asset]]) -> dict[str, int]:
+    def count_subtree(self, mapping: dict[str | None, list[AssetWrite]]) -> dict[str, int]:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
-            mapping (dict[str | None, list[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping (dict[str | None, list[AssetWrite]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
             dict[str, int]: Lookup from external ID to descendant count.
@@ -882,7 +876,7 @@ class AssetHierarchy:
         if mapping is None:
             mapping = self.groupby_parent_xid()
 
-        @lru_cache(None)
+        @functools.cache
         def _count_subtree(xid: str, count: int = 0) -> int:
             for child in mapping.get(xid, []):
                 count += 1 + _count_subtree(child.external_id)
@@ -909,14 +903,16 @@ class AssetHierarchy:
             self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
         )
 
-    def _inspect_attributes(self) -> tuple[list[Asset], list[Asset], list[Asset], list[Asset], dict[str, list[Asset]]]:
-        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[Asset], list[Asset], list[Asset], list[Asset]]
-        duplicates: defaultdict[str, list[Asset]] = defaultdict(list)
+    def _inspect_attributes(
+        self,
+    ) -> tuple[list[AssetWrite], list[AssetWrite], list[AssetWrite], list[AssetWrite], dict[str, list[AssetWrite]]]:
+        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[AssetWrite], list[AssetWrite], list[AssetWrite], list[AssetWrite]]
+        duplicates: defaultdict[str, list[AssetWrite]] = defaultdict(list)
         xid_count = Counter(a.external_id for a in self._assets)
 
         for asset in self._assets:
-            id_, xid, name = asset.id, asset.external_id, asset.name
-            if xid is None or name is None or len(name) < 1 or id_ is not None:
+            xid, name = asset.external_id, asset.name
+            if xid is None or name is None or len(name) < 1:
                 invalid.append(asset)
                 continue  # Don't report invalid as part of any other group
 
@@ -936,7 +932,7 @@ class AssetHierarchy:
                 elif parent_xid not in xid_count:  # Only parent XID given, but not part of assets given
                     orphans.append(asset)
 
-            # Only case left is when parent is only given by ID, which we assume is valid
+            # else -> Only case left is when parent is only given by ID, which we assume is valid
 
         return roots, orphans, invalid, unsure_parents, dict(duplicates)
 
@@ -952,7 +948,7 @@ class AssetHierarchy:
         edges = cast(dict[str, str | None], {a.external_id: a.parent_external_id for a in self._assets})
 
         if self._ignore_orphans:
-            no_cycles |= {a.parent_external_id for a in cast(list[Asset], self._orphans)}
+            no_cycles |= {a.parent_external_id for a in self._orphans or []}
 
         for xid, parent in edges.items():
             if parent in no_cycles:
@@ -1010,7 +1006,7 @@ class AssetHierarchy:
                 DrawTables.XLINE.join(DrawTables.HLINE * 20 for _ in columns),
             )
 
-        def print_table(lst: list[Asset], columns: list[str]) -> None:
+        def print_table(lst: list[AssetWrite], columns: list[str]) -> None:
             for entry in lst:
                 cols = (f"{shorten(getattr(entry, col)):<20}" for col in columns)
                 print_fn(DrawTables.VLINE.join(cols))
