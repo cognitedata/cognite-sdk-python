@@ -165,7 +165,7 @@ class TestAssets:
     def test_list_with_aggregated_properties_param(
         self, cognite_client: CogniteClient, mock_assets_response: HTTPXMock, expected_asset: dict[str, Any]
     ) -> None:
-        cognite_client.assets.list(name="bla", aggregated_properties=["childCount"])
+        cognite_client.assets.list(name="bla", aggregated_properties=["child_count"])
         assert ["childCount"] == jsgz_load(mock_assets_response.get_requests()[0].content)["aggregatedProperties"]
 
     def test_list_with_aggregated_properties_param_when_snake_cased(
