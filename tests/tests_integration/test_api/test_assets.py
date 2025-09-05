@@ -30,7 +30,6 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import rng_context, set_max_workers, set_request_limit
 
 TEST_LABEL = "integration test label, dont delete"
@@ -454,18 +453,16 @@ class TestAssetsAPI:
             cognite_client.assets.delete(external_id="my_new_asset", ignore_unknown_ids=True)
 
 
-def generate_orphan_assets(n_id: int, n_xid: int, sample_from: AssetList) -> list[Asset]:
+def generate_orphan_assets(n_id: int, n_xid: int, sample_from: AssetList) -> list[AssetWrite]:
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):
     # Note however that orphans linking with parent ID are ignored!
     s = random_string(20)
     id_assets = [
-        DefaultResourceGenerator.asset(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
+        AssetWrite(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
         for i, parent in enumerate(random.sample(sample_from, k=n_id))
     ]
     xid_assets = [
-        DefaultResourceGenerator.asset(
-            name="a", external_id=f"child-by-xid-{i}-{s}", parent_external_id=parent.external_id
-        )
+        AssetWrite(name="a", external_id=f"child-by-xid-{i}-{s}", parent_external_id=parent.external_id)
         for i, parent in enumerate(random.sample(sample_from, k=n_xid))
     ]
     # Shuffle for good measure ;)
@@ -473,7 +470,7 @@ def generate_orphan_assets(n_id: int, n_xid: int, sample_from: AssetList) -> lis
     return assets
 
 
-def create_asset_tower(n: int) -> list[Asset]:
+def create_asset_tower(n: int) -> list[AssetWrite]:
     xid = f"test-tower-{{}}-{random_string(15)}"
     props: dict[str, Any] = dict(
         name=random_string(10),
@@ -482,18 +479,15 @@ def create_asset_tower(n: int) -> list[Asset]:
         source=random_string(10),
     )
     return [
-        DefaultResourceGenerator.asset(external_id=xid.format(0), **props),
-        *(
-            DefaultResourceGenerator.asset(external_id=xid.format(i), parent_external_id=xid.format(i - 1), **props)
-            for i in range(1, n)
-        ),
+        AssetWrite(external_id=xid.format(0), **props),
+        *(AssetWrite(external_id=xid.format(i), parent_external_id=xid.format(i - 1), **props) for i in range(1, n)),
     ]
 
 
 @contextmanager
 def create_hierarchy_with_cleanup(
     client: CogniteClient,
-    assets: AssetHierarchy | Sequence[Asset | AssetWrite],
+    assets: AssetHierarchy | Sequence[AssetWrite],
     upsert: bool = False,
     upsert_mode: Literal["patch", "replace"] = "patch",
 ) -> Iterator[AssetList]:
@@ -526,23 +520,16 @@ class TestAssetsAPICreateHierarchy:
         s = random_string(10)
         assets = []
         for i in range(n_roots):
-            assets.append(DefaultResourceGenerator.asset(name="a", external_id=f"root-{i}-{s}"))
-            assets.append(
-                DefaultResourceGenerator.asset(
-                    name="a", external_id=f"child-{i}-{s}", parent_external_id=f"root-{i}-{s}"
-                )
-            )
+            assets.append(AssetWrite(name="a", external_id=f"root-{i}-{s}"))
+            assets.append(AssetWrite(name="a", external_id=f"child-{i}-{s}", parent_external_id=f"root-{i}-{s}"))
         if not assets:
             assets.append(
-                DefaultResourceGenerator.asset(
-                    name="a", external_id=f"child-1-{s}", parent_external_id=root_test_asset.external_id
-                )
+                AssetWrite(name="a", external_id=f"child-1-{s}", parent_external_id=root_test_asset.external_id)
             )
 
         with create_hierarchy_with_cleanup(cognite_client, assets) as created:
             assert len(assets) == len(created)
-            # Make sure `.get` has the exact same mapping keys:
-            assert set(AssetList(assets)._external_id_to_item) == set(created._external_id_to_item)
+            assert set(a.external_id for a in assets) == set(created._external_id_to_item)
 
     @pytest.mark.parametrize(
         "n_id, n_xid, pass_hierarchy",
@@ -564,8 +551,8 @@ class TestAssetsAPICreateHierarchy:
         cognite_client: CogniteClient,
         root_test_asset_subtree: AssetList,
     ) -> None:
-        assets: list[Asset] = generate_orphan_assets(n_id, n_xid, sample_from=root_test_asset_subtree)
-        expected = set(AssetList(assets)._external_id_to_item)
+        assets = generate_orphan_assets(n_id, n_xid, sample_from=root_test_asset_subtree)
+        expected = set(a.external_id for a in assets)
         if pass_hierarchy:
             asset_hierarchy = AssetHierarchy(assets, ignore_orphans=True)
             with create_hierarchy_with_cleanup(cognite_client, asset_hierarchy) as created:
@@ -599,10 +586,7 @@ class TestAssetsAPICreateHierarchy:
         # We set only a subset of fields to ensure existing fields are left untouched.
         # Given metadata should extend existing. #TODO: Do the same for labels.
         patch_assets = [
-            DefaultResourceGenerator.asset(
-                name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id
-            )
-            for a in assets
+            AssetWrite(name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id) for a in assets
         ]
         # Advanced update: Move one asset to new parent:
         moved = patch_assets[-2]
@@ -651,8 +635,8 @@ class TestAssetsAPICreateHierarchy:
     def test_upsert_mode__only_first_batch_is_updated(self, cognite_client: CogniteClient) -> None:
         # SDK 6.24.0 and earlier versions had a bug when using upsert that could lead to only the first
         # _CREATE_LIMIT number of assets (updated) being returned.
-        assets = AssetList(create_asset_tower(10))
-        expected_xids = set(assets.as_external_ids())
+        assets = create_asset_tower(10)
+        expected_xids = set(a.external_id for a in assets)
         created = cognite_client.assets.create_hierarchy(assets, upsert=False)
         assert set(created.as_external_ids()) == expected_xids
 
@@ -671,10 +655,7 @@ class TestAssetsAPICreateHierarchy:
         # We set only a subset of fields to ensure existing fields are removed/nulled.
         # Given metadata should replace existing. #TODO: Do the same for labels.
         patch_assets = [
-            DefaultResourceGenerator.asset(
-                name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id
-            )
-            for a in assets
+            AssetWrite(name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id) for a in assets
         ]
         # Advanced update: Move one asset to new parent:
         moved = patch_assets[-2]
@@ -724,7 +705,7 @@ class TestAssetsAPICreateHierarchy:
             cognite_client, assets, upsert=True, upsert_mode=upsert_mode
         ) as patch_created:
             assert len(patch_created) == 4
-            assert set(AssetList(assets)._external_id_to_item) == set(patch_created._external_id_to_item)
+            assert set(a.external_id for a in assets) == set(patch_created._external_id_to_item)
             # 1+3 because 3 additional calls were made:
             # 1) Try create all (fail), 2) create non-duplicated (success), 3) update duplicated (success)
             assert 1 + 3 == cognite_client.assets._post.call_count  # type: ignore[attr-defined]
