@@ -80,5 +80,5 @@ def fix_single_file(path: Path) -> str | None:
         return "\n".join(was_fixed)
 
 
-def format_docstring_examples(files: list[Path]) -> str:
+def format_docstring_examples(files: tuple[Path, ...]) -> str:
     return "\n".join(filter(None, map(fix_single_file, files)))
