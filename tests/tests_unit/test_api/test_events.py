@@ -1,21 +1,23 @@
 import re
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
+from responses import RequestsMock
 
-from cognite.client._api.events import Event, EventList, EventUpdate
+from cognite.client.beta import CogniteClient
 from cognite.client.data_classes import (
     AggregateResult,
     EndTimeFilter,
-    EventFilter,
-    EventWrite,
     TimestampRange,
 )
+from cognite.client.data_classes.events import Event, EventFilter, EventList, EventUpdate, EventWrite
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def mock_events_response(rsps, cognite_client):
+def mock_events_response(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     response_body = {
         "items": [
             {
@@ -42,46 +44,46 @@ def mock_events_response(rsps, cognite_client):
 
 
 @pytest.fixture
-def mock_count_aggregate_response(rsps, cognite_client):
+def mock_count_aggregate_response(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     url_pattern = re.compile(re.escape(cognite_client.events._get_base_url_with_base_path()) + "/events/aggregate")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": [{"count": 10}]})
     yield rsps
 
 
 @pytest.fixture
-def mock_aggregate_unique_values_response(rsps, cognite_client):
+def mock_aggregate_unique_values_response(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     url_pattern = re.compile(re.escape(cognite_client.events._get_base_url_with_base_path()) + "/events/aggregate")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": [{"count": 5, "value": "WORKORDER"}]})
     yield rsps
 
 
 class TestEvents:
-    def test_retrieve_single(self, cognite_client, mock_events_response):
+    def test_retrieve_single(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.retrieve(id=1)
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple(self, cognite_client, mock_events_response):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.retrieve_multiple(ids=[1])
         assert isinstance(res, EventList)
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list(self, cognite_client, mock_events_response):
+    def test_list(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.list(source="bla")
         assert "bla" == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["source"]
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_partitions(self, cognite_client, mock_events_response):
-        cognite_client.events.list(partitions=10, limit=float("inf"))
+    def test_list_partitions(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
+        cognite_client.events.list(partitions=10, limit=float("inf"))  # type: ignore[arg-type]
         assert 10 == len(mock_events_response.calls)
 
-    def test_list_with_dataset_ids(self, cognite_client, mock_events_response):
+    def test_list_with_dataset_ids(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         cognite_client.events.list(source="bla", data_set_ids=[1], data_set_external_ids=["x"])
         assert [{"id": 1}, {"externalId": "x"}] == jsgz_load(mock_events_response.calls[0].request.body)["filter"][
             "dataSetIds"
         ]
 
-    def test_list_sorting(self, cognite_client, mock_events_response):
+    def test_list_sorting(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.list(sort=["startTime:desc"])
         modern_sort_expr = [
             {
@@ -93,26 +95,28 @@ class TestEvents:
         assert modern_sort_expr == jsgz_load(mock_events_response.calls[0].request.body)["sort"]
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_list_sorting_combined_with_partitions(self, cognite_client, mock_events_response):
+    def test_list_sorting_combined_with_partitions(
+        self, cognite_client: CogniteClient, mock_events_response: Any
+    ) -> None:
         with pytest.raises(ValueError):
             cognite_client.events.list(sort=["startTime:desc"], partitions=10)
 
-    def test_list_with_time_dict(self, cognite_client, mock_events_response):
+    def test_list_with_time_dict(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         cognite_client.events.list(start_time={"min": 20})
         assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
-    def test_list_with_timestamp_range(self, cognite_client, mock_events_response):
+    def test_list_with_timestamp_range(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         cognite_client.events.list(start_time=TimestampRange(min=20))
         assert 20 == jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]["min"]
         assert "max" not in jsgz_load(mock_events_response.calls[0].request.body)["filter"]["startTime"]
 
-    def test_count_aggregate(self, cognite_client, mock_count_aggregate_response):
+    def test_count_aggregate(self, cognite_client: CogniteClient, mock_count_aggregate_response: Any) -> None:
         res = cognite_client.events.aggregate(filter={"type": "WORKORDER"})
         assert isinstance(res[0], AggregateResult)
         assert res[0].count == 10
 
-    def test_call_root(self, cognite_client, mock_events_response):
+    def test_call_root(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
         calls = mock_events_response.calls
         assert 1 == len(calls)
@@ -122,7 +126,7 @@ class TestEvents:
             "filter": {"assetSubtreeIds": [{"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
-    def test_list_subtree(self, cognite_client, mock_events_response):
+    def test_list_subtree(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         cognite_client.events.list(limit=10, asset_subtree_external_ids=["a"], asset_subtree_ids=[1, 2])
         calls = mock_events_response.calls
         assert 1 == len(calls)
@@ -132,56 +136,56 @@ class TestEvents:
             "filter": {"assetSubtreeIds": [{"id": 1}, {"id": 2}, {"externalId": "a"}]},
         } == jsgz_load(calls[0].request.body)
 
-    def test_list_ongoing_wrong_signature(self, cognite_client):
+    def test_list_ongoing_wrong_signature(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError):
             EndTimeFilter(is_null=True, max=100)
 
-    def test_create_single(self, cognite_client, mock_events_response):
+    def test_create_single(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.create(EventWrite(external_id="1"))
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_events_response):
+    def test_create_multiple(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.create([EventWrite(external_id="1")])
         assert isinstance(res, EventList)
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_iter_single(self, cognite_client, mock_events_response):
+    def test_iter_single(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         for event in cognite_client.events:
             assert mock_events_response.calls[0].response.json()["items"][0] == event.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_events_response):
+    def test_iter_chunk(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         for events in cognite_client.events(chunk_size=1):
             assert mock_events_response.calls[0].response.json()["items"] == events.dump(camel_case=True)
 
-    def test_delete_single(self, cognite_client, mock_events_response):
+    def test_delete_single(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.delete(id=1)
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_events_response):
+    def test_delete_multiple(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.delete(id=[1], ignore_unknown_ids=True)
         assert {"ignoreUnknownIds": True, "items": [{"id": 1}]} == jsgz_load(mock_events_response.calls[0].request.body)
         assert res is None
 
-    def test_update_with_resource_class(self, cognite_client, mock_events_response):
+    def test_update_with_resource_class(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.update(DefaultResourceGenerator.event(id=1))
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_with_update_class(self, cognite_client, mock_events_response):
+    def test_update_with_update_class(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.update(EventUpdate(id=1).description.set("blabla"))
         assert isinstance(res, Event)
         assert mock_events_response.calls[0].response.json()["items"][0] == res.dump(camel_case=True)
 
-    def test_update_multiple(self, cognite_client, mock_events_response):
+    def test_update_multiple(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.update([EventUpdate(id=1).description.set("blabla")])
         assert isinstance(res, EventList)
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
-    def test_search(self, cognite_client, mock_events_response):
+    def test_search(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         res = cognite_client.events.search(filter=EventFilter(external_id_prefix="abc"))
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {"search": {"description": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
@@ -189,14 +193,16 @@ class TestEvents:
         )
 
     @pytest.mark.parametrize("filter_field", ["external_id_prefix", "externalIdPrefix"])
-    def test_search_dict_filter(self, cognite_client, mock_events_response, filter_field):
+    def test_search_dict_filter(
+        self, cognite_client: CogniteClient, mock_events_response: Any, filter_field: str
+    ) -> None:
         res = cognite_client.events.search(filter={filter_field: "bla"})
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
         assert {"search": {"description": None}, "filter": {"externalIdPrefix": "bla"}, "limit": 25} == jsgz_load(
             mock_events_response.calls[0].request.body
         )
 
-    def test_event_update_object(self):
+    def test_event_update_object(self) -> None:
         assert isinstance(
             EventUpdate(1)
             .asset_ids.add([])
@@ -217,7 +223,7 @@ class TestEvents:
 
 
 @pytest.fixture
-def mock_events_empty(rsps, cognite_client):
+def mock_events_empty(rsps: RequestsMock, cognite_client: CogniteClient) -> Iterator[RequestsMock]:
     url_pattern = re.compile(re.escape(cognite_client.events._get_base_url_with_base_path()) + "/.+")
     rsps.add(rsps.POST, url_pattern, status=200, json={"items": []})
     yield rsps
@@ -225,7 +231,7 @@ def mock_events_empty(rsps, cognite_client):
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_event_list_to_pandas(self, cognite_client, mock_events_response):
+    def test_event_list_to_pandas(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         import pandas as pd
 
         df = cognite_client.events.list().to_pandas()
@@ -233,17 +239,20 @@ class TestPandasIntegration:
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
-    def test_event_list_to_pandas_empty(self, cognite_client, mock_events_empty):
+    def test_event_list_to_pandas_empty(self, cognite_client: CogniteClient, mock_events_empty: Any) -> None:
         import pandas as pd
 
-        df = cognite_client.events.list().to_pandas()
+        events = cognite_client.events.list()
+        df = events.to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    def test_event_to_pandas(self, cognite_client, mock_events_response):
+    def test_event_to_pandas(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         import pandas as pd
 
-        df = cognite_client.events.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
+        event = cognite_client.events.retrieve(id=1)
+        assert event
+        df = event.to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]
