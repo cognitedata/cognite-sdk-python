@@ -101,7 +101,6 @@ class AgentUpsert(AgentCore):
             if isinstance(resource.get("tools"), Sequence)
             else None
         )
-
         instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -128,28 +127,23 @@ class Agent(AgentCore):
         model (str | None): Name of the language model to use. For example, "azure/gpt-4o", "gcp/gemini-2.0" or "aws/claude-3.5-sonnet". Always present in API responses.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (Sequence[AgentTool] | None): List of tools for the agent.
-        created_time (int | None): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
-        last_updated_time (int | None): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        created_time (int): The time the agent was created, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
+        last_updated_time (int): The time the agent was last updated, in milliseconds since Thursday, 1 January 1970 00:00:00 UTC, minus leap seconds.
         owner_id (str | None): The ID of the user who owns the agent.
     """
-
-    tools: Sequence[AgentTool] | None = None
-    created_time: int | None = None
-    last_updated_time: int | None = None
-    owner_id: str | None = None
 
     def __init__(
         self,
         external_id: str,
         name: str,
-        description: str | None = None,
-        instructions: str | None = None,
-        model: str | None = None,
-        labels: list[str] | None = None,
-        tools: Sequence[AgentTool] | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        owner_id: str | None = None,
+        description: str | None,
+        instructions: str | None,
+        model: str | None,
+        labels: list[str] | None,
+        tools: Sequence[AgentTool] | None,
+        created_time: int,
+        last_updated_time: int,
+        owner_id: str | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -195,12 +189,6 @@ class Agent(AgentCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Agent:
-        tools = (
-            [AgentTool._load(item) for item in resource.get("tools", [])]
-            if isinstance(resource.get("tools"), Sequence)
-            else None
-        )
-
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -208,9 +196,9 @@ class Agent(AgentCore):
             instructions=resource.get("instructions"),
             model=resource.get("model"),
             labels=resource.get("labels"),
-            tools=tools,
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            tools=(tools := resource.get("tools")) and [AgentTool._load(item) for item in tools],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource.get("ownerId"),
         )
         existing = set(instance.dump(camel_case=True).keys())
