@@ -1,5 +1,7 @@
 import math
+from collections.abc import Iterable, Sequence
 from itertools import zip_longest
+from typing import Any
 
 import pytest
 
@@ -11,6 +13,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     split_into_n_parts,
 )
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class TestSplitIntoChunks:
@@ -28,7 +31,7 @@ class TestSplitIntoChunks:
             ({}, 1, []),
         ],
     )
-    def test_split_into_chunks(self, input, chunk_size, expected_output):
+    def test_split_into_chunks(self, input: SequenceNotStr, chunk_size: int, expected_output: Sequence) -> None:
         actual_output = split_into_chunks(input, chunk_size)
         assert len(actual_output) == len(expected_output)
         for element in expected_output:
@@ -44,13 +47,13 @@ class TestRemoveDuplicatesKeepOrder:
             ("abccba", ["a", "b", "c"]),
         ),
     )
-    def test_no_duplicates(self, inp, expected):
+    def test_no_duplicates(self, inp: Iterable, expected: list) -> None:
         assert expected == remove_duplicates_keep_order(inp)
 
 
 class TestFindDuplicates:
     @pytest.mark.parametrize("inp", ("abc", (1, 2, 3), [1.0, 1.1, 2], range(3), {1: 2, 2: 3}, {1, 1, 1}))
-    def test_no_duplicates(self, inp):
+    def test_no_duplicates(self, inp: Iterable) -> None:
         assert set() == find_duplicates(inp)
 
     @pytest.mark.parametrize(
@@ -65,7 +68,7 @@ class TestFindDuplicates:
             ([frozenset((1,)), frozenset((1,)), frozenset((1, 3))], {frozenset((1,))}),
         ),
     )
-    def test_has_duplicates(self, inp, exp_duplicate):
+    def test_has_duplicates(self, inp: Iterable, exp_duplicate: set) -> None:
         assert exp_duplicate == find_duplicates(inp)
 
     @pytest.mark.parametrize(
@@ -76,7 +79,7 @@ class TestFindDuplicates:
             [{1: 2}, {1: 2}, {1: 2, 2: 3}],
         ),
     )
-    def test_raises_not_hashable(self, inp):
+    def test_raises_not_hashable(self, inp: Iterable) -> None:
         with pytest.raises(TypeError, match="unhashable type:"):
             find_duplicates(inp)
 
@@ -93,7 +96,7 @@ class TestSplitIntoNParts:
             (range(10), 3, (range(0, 10, 3), range(1, 10, 3), range(2, 10, 3))),
         ),
     )
-    def test_normal_split(self, inp, n, exp_out):
+    def test_normal_split(self, inp: Sequence, n: int, exp_out: Sequence) -> None:
         exp_type = type(inp)
         res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
@@ -109,7 +112,7 @@ class TestSplitIntoNParts:
             (range(1), 3, (range(0, 1, 3), range(1, 1, 3), range(2, 1, 3))),
         ),
     )
-    def test_split_into_too_many_pieces(self, inp, n, exp_out):
+    def test_split_into_too_many_pieces(self, inp: Sequence, n: int, exp_out: Sequence) -> None:
         exp_type = type(inp)
         res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
@@ -117,8 +120,8 @@ class TestSplitIntoNParts:
             assert r == res_exp
 
     @pytest.mark.parametrize("inp", (set(range(5)), None))
-    def test_raises_not_subscriptable(self, inp):
-        res = split_into_n_parts(inp, n=2)
+    def test_raises_not_subscriptable(self, inp: set[int]) -> None:
+        res = split_into_n_parts(inp, n=2)  # type: ignore[call-overload]
         with pytest.raises(TypeError, match="object is not subscriptable"):
             next(res)
 
@@ -137,7 +140,7 @@ class TestExactlyOneIsNotNone:
             ((None,), False),
         ),
     )
-    def test_exactly_one_is_not_none(self, inp, expected):
+    def test_exactly_one_is_not_none(self, inp: tuple, expected: bool) -> None:
         assert exactly_one_is_not_none(*inp) == expected
 
 
@@ -153,10 +156,10 @@ class TestLoadDictOrStr:
             ('{"foo": {"bar": "thing"}}', {"foo": {"bar": "thing"}}),
         ),
     )
-    def test_load_resource_to_dict(self, input, expected):
+    def test_load_resource_to_dict(self, input: str | dict, expected: dict) -> None:
         assert expected == load_resource_to_dict(input)
 
     @pytest.mark.parametrize("input", ("foo", 100))
-    def test_load_resource_to_dict_raises(self, input):
+    def test_load_resource_to_dict_raises(self, input: Any) -> None:
         with pytest.raises(TypeError, match="Resource must be json or yaml str, or dict, not"):
             load_resource_to_dict(input)

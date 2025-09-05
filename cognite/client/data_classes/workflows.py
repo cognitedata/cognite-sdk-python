@@ -899,11 +899,7 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
                             the description when updating it.
     """
 
-    def __init__(
-        self,
-        tasks: list[WorkflowTask],
-        description: str | None = None,
-    ) -> None:
+    def __init__(self, tasks: list[WorkflowTask], description: str | None) -> None:
         super().__init__(tasks, description)
 
     @classmethod
