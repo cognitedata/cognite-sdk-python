@@ -34,6 +34,7 @@ from cognite.client.utils._pandas_helpers import (
     convert_timestamp_columns_to_datetime,
     notebook_display_with_fallback,
 )
+from cognite.client.utils._runtime_type_checking import runtime_type_checked
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 
@@ -116,6 +117,10 @@ class CogniteObject(ABC):
 
     It is used both by the CogniteResources and the nested classes used by the CogniteResources.
     """
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        runtime_type_checked(cls)
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
