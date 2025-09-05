@@ -13,6 +13,7 @@ from cognite.client.data_classes import (
     Transformation,
     TransformationDestination,
     TransformationJobStatus,
+    TransformationWrite,
 )
 from cognite.client.utils._text import random_string
 
@@ -22,7 +23,7 @@ def new_transformation(cognite_client: CogniteClient) -> Iterator[Transformation
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
-    transform = Transformation(
+    transform = TransformationWrite(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),

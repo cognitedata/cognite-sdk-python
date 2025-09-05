@@ -120,12 +120,18 @@ class TransformationSchemaColumn(CogniteResource):
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
         resource_type = resource["type"]
-        type_classes: dict[str, type[TransformationSchemaType]] = {
-            "array": TransformationSchemaArrayType,
-            "map": TransformationSchemaMapType,
-            "struct": TransformationSchemaStructType,
-        }
-        type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType).load(resource_type)
+        match resource_type:
+            case dict():
+                type_classes: dict[str, type[TransformationSchemaType]] = {
+                    "array": TransformationSchemaArrayType,
+                    "map": TransformationSchemaMapType,
+                    "struct": TransformationSchemaStructType,
+                }
+                type_ = type_classes.get(resource_type["type"], TransformationSchemaUnknownType).load(resource_type)
+            case str():
+                type_ = TransformationSchemaType(type=resource_type)
+            case _:
+                raise ValueError(f"Unknown type for TransformationSchemaColumn: {resource_type}")
 
         return cls(
             name=resource["name"],

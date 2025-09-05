@@ -1,5 +1,6 @@
 import os
 import string
+from collections.abc import Iterator
 
 import pytest
 
@@ -11,16 +12,18 @@ from cognite.client.data_classes import (
     TransformationDestination,
     TransformationSchedule,
     TransformationScheduleUpdate,
+    TransformationScheduleWrite,
+    TransformationWrite,
 )
 from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_transformation(cognite_client: CogniteClient) -> Transformation:
+def new_transformation(cognite_client: CogniteClient) -> Iterator[Transformation]:
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
     assert isinstance(creds, OAuthClientCredentials)
-    transform = Transformation(
+    transform = TransformationWrite(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
@@ -53,8 +56,8 @@ other_transformation = new_transformation
 
 def schedule_from_transformation(
     cognite_client: CogniteClient, transformation: Transformation
-) -> TransformationSchedule:
-    schedule = TransformationSchedule(id=transformation.id, interval="0 * * * *")
+) -> Iterator[TransformationSchedule]:
+    schedule = TransformationScheduleWrite(id=transformation.id, interval="0 * * * *")
     tsc = cognite_client.transformations.schedules.create(schedule)
 
     yield tsc
@@ -65,12 +68,14 @@ def schedule_from_transformation(
 
 
 @pytest.fixture
-def new_schedule(cognite_client: CogniteClient, new_transformation: Transformation) -> TransformationSchedule:
+def new_schedule(cognite_client: CogniteClient, new_transformation: Transformation) -> Iterator[TransformationSchedule]:
     yield from schedule_from_transformation(cognite_client, new_transformation)
 
 
 @pytest.fixture
-def other_schedule(cognite_client: CogniteClient, other_transformation: Transformation) -> TransformationSchedule:
+def other_schedule(
+    cognite_client: CogniteClient, other_transformation: Transformation
+) -> Iterator[TransformationSchedule]:
     yield from schedule_from_transformation(cognite_client, other_transformation)
 
 
