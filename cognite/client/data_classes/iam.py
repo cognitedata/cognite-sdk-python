@@ -35,6 +35,10 @@ class GroupAttributesToken(CogniteObject):
 
     app_ids: list[str] = field(default_factory=list)
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(app_ids=resource.get("appIds", []))
+
 
 @dataclass
 class GroupAttributes(CogniteObject):
