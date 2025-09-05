@@ -800,7 +800,7 @@ class AssetHierarchy:
     def validate(
         self,
         verbose: bool = False,
-        output_file: Path | None = None,
+        output_file: Path | TextIO | None = None,
         on_error: Literal["ignore", "warn", "raise"] = "warn",
     ) -> AssetHierarchy:
         self._roots, self._orphans, self._invalid, self._unsure_parents, self._duplicates = self._inspect_attributes()
@@ -820,7 +820,7 @@ class AssetHierarchy:
         self.is_valid(on_error=on_error)
         return self
 
-    def validate_and_report(self, output_file: Path | None = None) -> AssetHierarchy:
+    def validate_and_report(self, output_file: Path | TextIO | None = None) -> AssetHierarchy:
         return self.validate(verbose=True, output_file=output_file, on_error="ignore")
 
     def groupby_parent_xid(self) -> dict[str | None, list[AssetWrite]]:
@@ -995,7 +995,7 @@ class AssetHierarchy:
             except Exception as e:
                 raise TypeError("Unable to write to `output_file`, a file-like object is required") from e
 
-    def _report_on_identifiers(self, output_file: Path | None) -> None:
+    def _report_on_identifiers(self, output_file: Path | TextIO | None) -> None:
         print_fn = functools.partial(self.print_to, output_file=output_file)
 
         def print_header(title: str, columns: list[str]) -> None:
@@ -1047,7 +1047,7 @@ class AssetHierarchy:
             for dupe_assets in self._duplicates.values():
                 print_table(dupe_assets, attrs_with_description)
 
-    def _report_on_cycles(self, output_file: Path | None, cycle_subtree_size: int) -> None:
+    def _report_on_cycles(self, output_file: Path | TextIO | None, cycle_subtree_size: int) -> None:
         if not (cycles := self._cycles):
             return
 
