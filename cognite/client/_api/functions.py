@@ -1377,6 +1377,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
+
         Args:
             id (int): Id of the schedule
 
