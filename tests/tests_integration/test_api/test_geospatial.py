@@ -10,7 +10,7 @@ import pytest
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential_jitter
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Asset
+from cognite.client.data_classes import AssetWrite
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     Feature,
@@ -265,7 +265,7 @@ def clean_old_custom_crs(cognite_client):
 
 @pytest.fixture(autouse=True, scope="session")
 def new_asset(cognite_client):
-    asset = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
+    asset = cognite_client.assets.create(AssetWrite(name="any", description="haha", metadata={"a": "b"}))
     yield asset
     cognite_client.assets.delete(id=asset.id)
 

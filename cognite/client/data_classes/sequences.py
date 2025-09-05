@@ -77,8 +77,8 @@ class SequenceColumn(SequenceColumnCore):
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        created_time (int): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
+        created_time (int | None): Time when this column was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int | None): The last time this column was updated in CDF, in milliseconds since Jan 1, 1970.
         name (str | None): Name of the column
         description (str | None): Description of the column
         value_type (ValueType): The type of the column. It can be String, Double or Long.
@@ -88,8 +88,8 @@ class SequenceColumn(SequenceColumnCore):
     def __init__(
         self,
         external_id: str,
-        created_time: int,
-        last_updated_time: int,
+        created_time: int | None,
+        last_updated_time: int | None,
         name: str | None,
         description: str | None,
         value_type: ValueType,
@@ -109,8 +109,8 @@ class SequenceColumn(SequenceColumnCore):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             external_id=resource["externalId"],
-            created_time=resource["createdTime"],
-            last_updated_time=resource["lastUpdatedTime"],
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
             name=resource.get("name"),
             description=resource.get("description"),
             value_type=cast(ValueType, resource["valueType"]),
