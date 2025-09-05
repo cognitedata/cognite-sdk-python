@@ -135,7 +135,7 @@ def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[A
 
 
 @contextmanager
-def rng_context(seed: int | str):
+def rng_context(seed: int | float | str):
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.
