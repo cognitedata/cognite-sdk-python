@@ -220,8 +220,9 @@ class DiagramsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> detect_job = client.diagrams.detect(
                 ...     entities=[
-                ...         {"userDefinedField": "21PT1017","ignoredField": "AA11"},
-                ...         {"userDefinedField": "21PT1018"}],
+                ...         {"userDefinedField": "21PT1017", "ignoredField": "AA11"},
+                ...         {"userDefinedField": "21PT1018"},
+                ...     ],
                 ...     search_field="userDefinedField",
                 ...     partial_match=True,
                 ...     min_tokens=2,
@@ -229,8 +230,9 @@ class DiagramsAPI(APIClient):
                 ...     file_external_ids=["Test1"],
                 ...     file_references=[
                 ...         FileReference(id=20, first_page=1, last_page=10),
-                ...         FileReference(external_id="ext_20", first_page=11, last_page=20)
-                ...     ])
+                ...         FileReference(external_id="ext_20", first_page=11, last_page=20),
+                ...     ],
+                ... )
                 >>> result = detect_job.result
                 >>> print(result)
                 <code>
@@ -266,13 +268,16 @@ class DiagramsAPI(APIClient):
 
             To use beta configuration options you can use a dictionary or `DiagramDetectConfig` object for convenience:
 
-                >>> from cognite.client.data_classes.contextualization import ConnectionFlags, DiagramDetectConfig
+                >>> from cognite.client.data_classes.contextualization import (
+                ...     ConnectionFlags,
+                ...     DiagramDetectConfig,
+                ... )
                 >>> config = DiagramDetectConfig(
                 ...     remove_leading_zeros=True,
                 ...     connection_flags=ConnectionFlags(
                 ...         no_text_inbetween=True,
                 ...         natural_reading_order=True,
-                ...     )
+                ...     ),
                 ... )
                 >>> job = client.diagrams.detect(entities=[{"name": "A1"}], file_id=123, config=config)
 

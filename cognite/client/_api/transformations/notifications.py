@@ -181,6 +181,6 @@ class TransformationNotificationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.transformations.notifications.delete(id=[1,2,3])
+                >>> client.transformations.notifications.delete(id=[1, 2, 3])
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

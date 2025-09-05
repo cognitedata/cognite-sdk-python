@@ -63,10 +63,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
                 ...     simulator_external_ids=["simulator_external_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="asc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="asc"),
                 ... )
 
         """
@@ -127,7 +124,7 @@ class SimulatorModelsAPI(APIClient):
                 >>> res = client.simulators.models.retrieve(external_ids="model_external_id")
 
             Get multiple simulator models by ids:
-                >>> res = client.simulators.models.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.retrieve(ids=[1, 2])
 
             Get multiple simulator models by external ids:
                 >>> res = client.simulators.models.retrieve(
@@ -222,13 +219,19 @@ class SimulatorModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> models = [
                 ...     SimulatorModelWrite(
-                ...         name="model1", simulator_external_id="sim1", type="SteadyState",
-                ...         data_set_id=1, external_id="model_external_id"
+                ...         name="model1",
+                ...         simulator_external_id="sim1",
+                ...         type="SteadyState",
+                ...         data_set_id=1,
+                ...         external_id="model_external_id",
                 ...     ),
                 ...     SimulatorModelWrite(
-                ...         name="model2", simulator_external_id="sim2", type="SteadyState",
-                ...         data_set_id=2, external_id="model_external_id2"
-                ...     )
+                ...         name="model2",
+                ...         simulator_external_id="sim2",
+                ...         type="SteadyState",
+                ...         data_set_id=2,
+                ...         external_id="model_external_id2",
+                ...     ),
                 ... ]
                 >>> res = client.simulators.models.create(models)
         """
@@ -257,7 +260,7 @@ class SimulatorModelsAPI(APIClient):
             Delete simulator models by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.models.delete(ids=[1,2,3], external_ids="model_external_id")
+                >>> client.simulators.models.delete(ids=[1, 2, 3], external_ids="model_external_id")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),

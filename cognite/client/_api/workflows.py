@@ -80,13 +80,18 @@ class WorkflowTriggerAPI(APIClient):
             Create or update a scheduled trigger for a workflow:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowTriggerUpsert,
+                ...     WorkflowScheduledTriggerRule,
+                ... )
                 >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(
+                ...             cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")
+                ...         ),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
@@ -96,8 +101,15 @@ class WorkflowTriggerAPI(APIClient):
 
             Create or update a data modeling trigger for a workflow:
 
-                >>> from cognite.client.data_classes.workflows import WorkflowDataModelingTriggerRule, WorkflowTriggerDataModelingQuery
-                >>> from cognite.client.data_classes.data_modeling.query import NodeResultSetExpression, Select, SourceSelector
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowDataModelingTriggerRule,
+                ...     WorkflowTriggerDataModelingQuery,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     NodeResultSetExpression,
+                ...     Select,
+                ...     SourceSelector,
+                ... )
                 >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> from cognite.client.data_classes.filters import Equals
                 >>> view_id = ViewId("my_space_id", "view_external_id", "v1")
@@ -106,7 +118,13 @@ class WorkflowTriggerAPI(APIClient):
                 ...         external_id="my_trigger",
                 ...         trigger_rule=WorkflowDataModelingTriggerRule(
                 ...             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                ...                 with_={"timeseries": NodeResultSetExpression(filter=Equals(view_id.as_property_ref("name"), value="my_name"))},
+                ...                 with_={
+                ...                     "timeseries": NodeResultSetExpression(
+                ...                         filter=Equals(
+                ...                             view_id.as_property_ref("name"), value="my_name"
+                ...                         )
+                ...                     )
+                ...                 },
                 ...                 select={"timeseries": Select([SourceSelector(view_id, ["name"])])},
                 ...             ),
                 ...             batch_size=500,
@@ -274,11 +292,15 @@ class WorkflowTaskAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "completed")
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", "completed"
+                ... )
 
             Update task with id '000560bc-9080-4286-b242-a27bb4819253' to status 'failed' with output '{"a": 1, "b": 2}':
 
-                >>> res = client.workflows.tasks.update("000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2})
+                >>> res = client.workflows.tasks.update(
+                ...     "000560bc-9080-4286-b242-a27bb4819253", "failed", output={"a": 1, "b": 2}
+                ... )
 
             Trigger workflow, retrieve detailed task execution and update status of the second task (assumed to be async) to 'completed':
 
@@ -312,7 +334,9 @@ class WorkflowExecutionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.executions.retrieve_detailed("000560bc-9080-4286-b242-a27bb4819253")
+                >>> res = client.workflows.executions.retrieve_detailed(
+                ...     "000560bc-9080-4286-b242-a27bb4819253"
+                ... )
 
             List workflow executions and retrieve detailed information for the first one:
 
@@ -376,7 +400,9 @@ class WorkflowExecutionAPI(APIClient):
                 ...     external_id="my_workflow-task1",
                 ...     parameters=FunctionTaskParameters(
                 ...         external_id="cdf_deployed_function:my_function",
-                ...         data={"workflow_data": "${workflow.input}"}))
+                ...         data={"workflow_data": "${workflow.input}"},
+                ...     ),
+                ... )
 
         Tip:
             You can create a session via the Sessions API, using the client.iam.session.create() method.
@@ -449,8 +475,7 @@ class WorkflowExecutionAPI(APIClient):
             Get all workflow executions from the last 24 hours:
 
                 >>> from cognite.client.utils import timestamp_to_ms
-                >>> res = client.workflows.executions.list(
-                ...     created_time_start=timestamp_to_ms("1d-ago"))
+                >>> res = client.workflows.executions.list(created_time_start=timestamp_to_ms("1d-ago"))
 
         """
         # Passing at least one filter criterion is required:
@@ -621,8 +646,10 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import (
-                ...     WorkflowVersionUpsert, WorkflowDefinitionUpsert,
-                ...     WorkflowTask, FunctionTaskParameters,
+                ...     WorkflowVersionUpsert,
+                ...     WorkflowDefinitionUpsert,
+                ...     WorkflowTask,
+                ...     FunctionTaskParameters,
                 ... )
                 >>> client = CogniteClient()
                 >>> function_task = WorkflowTask(
@@ -633,12 +660,12 @@ class WorkflowVersionAPI(APIClient):
                 ...     ),
                 ... )
                 >>> new_version = WorkflowVersionUpsert(
-                ...    workflow_external_id="my_workflow",
-                ...    version="1",
-                ...    workflow_definition=WorkflowDefinitionUpsert(
-                ...        tasks=[function_task],
-                ...        description="This workflow has one step",
-                ...    ),
+                ...     workflow_external_id="my_workflow",
+                ...     version="1",
+                ...     workflow_definition=WorkflowDefinitionUpsert(
+                ...         tasks=[function_task],
+                ...         description="This workflow has one step",
+                ...     ),
                 ... )
                 >>> res = client.workflows.versions.upsert(new_version)
         """
@@ -676,7 +703,9 @@ class WorkflowVersionAPI(APIClient):
             Delete workflow version "1" of workflow "my workflow" and workflow version "2" of workflow "my workflow 2" using the WorkflowVersionId class:
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
-                >>> client.workflows.versions.delete([WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")])
+                >>> client.workflows.versions.delete(
+                ...     [WorkflowVersionId("my workflow", "1"), WorkflowVersionId("my workflow 2", "2")]
+                ... )
 
         """
         identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
@@ -814,12 +843,12 @@ class WorkflowVersionAPI(APIClient):
 
                 >>> from cognite.client.data_classes import WorkflowVersionId
                 >>> res = client.workflows.versions.list(
-                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")])
+                ...     [WorkflowVersionId("my_workflow"), WorkflowVersionId("my_workflow_2")]
+                ... )
 
             Get all workflow versions for workflows 'my_workflow' version '1' and 'my_workflow_2' version '2' using tuples:
 
-                >>> res = client.workflows.versions.list(
-                ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
+                >>> res = client.workflows.versions.list([("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
         return self._list(

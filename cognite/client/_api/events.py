@@ -303,8 +303,12 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.utils import timestamp_to_ms
             >>> from datetime import datetime
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
+            >>> is_after_2020 = filters.Range(
+            ...     EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.events.aggregate_unique_values(
+            ...     EventProperty.type, advanced_filter=is_after_2020
+            ... )
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
@@ -314,8 +318,12 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes import aggregations
             >>> agg = aggregations
             >>> not_planned = agg.Not(agg.Prefix("planned"))
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> is_after_2020 = filters.Range(
+            ...     EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+            ... )
+            >>> result = client.events.aggregate_unique_values(
+            ...     EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned
+            ... )
             >>> print(result.unique)
 
         """
@@ -399,7 +407,9 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes import filters
             >>> from cognite.client.data_classes.events import EventProperty
             >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
-            >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
+            >>> plain_text_author_count = client.events.aggregate_cardinality_values(
+            ...     EventProperty.type, advanced_filter=is_asset
+            ... )
 
         """
         self._validate_filter(advanced_filter)
@@ -533,7 +543,7 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.events.delete(id=[1,2,3], external_id="3")
+                >>> client.events.delete(id=[1, 2, 3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -582,7 +592,11 @@ class EventsAPI(APIClient):
             Perform a partial update on a event, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import EventUpdate
-                >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     EventUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.events.update(my_update)
         """
         return self._update_multiple(
@@ -690,7 +704,8 @@ class EventsAPI(APIClient):
                 >>> is_workorder = filters.Prefix("external_id", "workorder")
                 >>> has_failure = filters.Search("description", "failure")
                 >>> res = client.events.filter(
-                ...     filter=filters.And(is_workorder, has_failure), sort=("start_time", "desc"))
+                ...     filter=filters.And(is_workorder, has_failure), sort=("start_time", "desc")
+                ... )
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -704,7 +719,8 @@ class EventsAPI(APIClient):
                 >>> has_failure = filters.Search(EventProperty.description, "failure")
                 >>> res = client.events.filter(
                 ...     filter=filters.And(is_workorder, has_failure),
-                ...     sort=(SortableEventProperty.start_time, "desc"))
+                ...     sort=(SortableEventProperty.start_time, "desc"),
+                ... )
         """
         warnings.warn(
             f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
@@ -792,12 +808,12 @@ class EventsAPI(APIClient):
             Iterate over events:
 
                 >>> for event in client.events:
-                ...     event # do something with the event
+                ...     event  # do something with the event
 
             Iterate over chunks of events to reduce memory load:
 
                 >>> for event_list in client.events(chunk_size=2500):
-                ...     event_list # do something with the events
+                ...     event_list  # do something with the events
 
             Using advanced filter, find all events that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
@@ -816,17 +832,19 @@ class EventsAPI(APIClient):
                 >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> in_timezone = filters.Prefix(EventProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.events.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableEventProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableEventProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.events.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.events.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
 
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)

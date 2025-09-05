@@ -220,7 +220,7 @@ class TransformationSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
+                >>> client.transformations.schedules.delete(id=[1, 2, 3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -272,7 +272,9 @@ class TransformationSchedulesAPI(APIClient):
             Perform a partial update on a transformation schedule, updating the interval and unpausing it:
 
                 >>> from cognite.client.data_classes import TransformationScheduleUpdate
-                >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                >>> my_update = (
+                ...     TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
+                ... )
                 >>> res = client.transformations.schedules.update(my_update)
         """
         return self._update_multiple(

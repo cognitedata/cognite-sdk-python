@@ -142,7 +142,7 @@ class SimulatorIntegrationsAPI(APIClient):
             Delete simulator integrations by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.integrations.delete(ids=[1, 2, 3], external_ids="foo")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),

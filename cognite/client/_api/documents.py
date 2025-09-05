@@ -52,7 +52,9 @@ class DocumentPreviewAPI(APIClient):
             Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
                 >>> from IPython.display import Image
-                >>> binary_png = client.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
+                >>> binary_png = client.documents.previews.download_page_as_png_bytes(
+                ...     id=123, page_number=5
+                ... )
                 >>> Image(binary_png)
         """
         res = self._do_request(
@@ -270,7 +272,7 @@ class DocumentsAPI(APIClient):
                 >>> client.documents.aggregate_count(
                 ...     filter=filters.InAssetSubtree(
                 ...         property=DocumentProperty.asset_external_ids,
-                ...         values=['Plant_1', 'Plant_2'],
+                ...         values=["Plant_1", "Plant_2"],
                 ...     )
                 ... )
         """
@@ -311,7 +313,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
+                >>> plain_text_author_count = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.author, filter=is_plain_text
+                ... )
 
             Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
@@ -319,7 +323,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
+                >>> type_count_excluded_text = client.documents.aggregate_cardinality_values(
+                ...     DocumentProperty.type, aggregate_filter=is_not_text
+                ... )
         """
         self._validate_filter(filter)
 
@@ -402,7 +408,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.language, filter=is_abc
+                ... )
                 >>> unique_languages = result.unique
 
             Get the unique mime types with count of documents, but exclude mime types that start with text:
@@ -411,7 +419,9 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes import aggregations
                 >>> agg = aggregations
                 >>> is_not_text = agg.Not(agg.Prefix("text"))
-                >>> result = client.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+                >>> result = client.documents.aggregate_unique_values(
+                ...     DocumentProperty.mime_type, aggregate_filter=is_not_text
+                ... )
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
@@ -591,11 +601,15 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-                >>> last_week = filters.Range(DocumentProperty.created_time,
-                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-                >>> documents = client.documents.search('"CPLEX Error 1217: No Solution exists."',
+                >>> last_week = filters.Range(
+                ...     DocumentProperty.created_time,
+                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)),
+                ... )
+                >>> documents = client.documents.search(
+                ...     '"CPLEX Error 1217: No Solution exists."',
                 ...     highlight=True,
-                ...     filter=filters.And(is_plain_text, last_week))
+                ...     filter=filters.And(is_plain_text, last_week),
+                ... )
         """
         self._validate_filter(filter)
         results = []
@@ -661,7 +675,7 @@ class DocumentsAPI(APIClient):
 
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> for document in client.documents:
-                ...    print(document.name)
+                ...     print(document.name)
 
             List all documents in your CDF project sorted by mime/type in descending order:
 

@@ -153,8 +153,8 @@ class TransformationJob(CogniteResource):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>>
-                >>> job1 = client.transformations.run(id = 1, wait = False)
-                >>> job2 = client.transformations.run(id = 2, wait = False)
+                >>> job1 = client.transformations.run(id=1, wait=False)
+                >>> job2 = client.transformations.run(id=2, wait=False)
                 >>> job1.wait()
                 >>> job2.wait()
                 >>> if TransformationJobStatus.FAILED not in [job1.status, job2.status]:
@@ -163,14 +163,14 @@ class TransformationJob(CogniteResource):
             wait transformation for 5 minutes and do something if still running:
 
                 >>>
-                >>> job = client.transformations.run(id = 1, wait = False)
-                >>> job.wait(timeout = 5.0*60)
+                >>> job = client.transformations.run(id=1, wait=False)
+                >>> job.wait(timeout=5.0 * 60)
                 >>> if job.status == TransformationJobStatus.FAILED:
-                >>>     # do something if job failed
+                >>> # do something if job failed
                 >>> elif job.status == TransformationJobStatus.COMPLETED:
-                >>>     # do something if job completed successfully
+                >>> # do something if job completed successfully
                 >>> else:
-                >>>     # do something if job is still running
+                >>> # do something if job is still running
         """
         self.update()
         if timeout is None:
@@ -223,11 +223,11 @@ class TransformationJob(CogniteResource):
                 >>>     job = client.transformations.run(id = 1, wait = False)
                 >>>     await job.wait_async(timeout = 5.0*60)
                 >>>     if job.status == TransformationJobStatus.FAILED:
-                >>>         # do something if job failed
+                >>> # do something if job failed
                 >>>     elif job.status == TransformationJobStatus.COMPLETED:
-                >>>         # do something if job completed successfully
+                >>> # do something if job completed successfully
                 >>>     else:
-                >>>         # do something if job is still running
+                >>> # do something if job is still running
                 >>>
                 >>> ensure_future(run_successive_transformations())
         """

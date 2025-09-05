@@ -157,12 +157,12 @@ class RawDatabasesAPI(APIClient):
             Iterate over databases:
 
                 >>> for db in client.raw.databases:
-                ...     db # do something with the db
+                ...     db  # do something with the db
 
             Iterate over chunks of databases to reduce memory load:
 
                 >>> for db_list in client.raw.databases(chunk_size=2500):
-                ...     db_list # do something with the dbs
+                ...     db_list  # do something with the dbs
         """
         return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
 
@@ -307,12 +307,12 @@ class RawTablesAPI(APIClient):
             Iterate over tables:
 
                 >>> for table in client.raw.tables(db_name="db1"):
-                ...     table # do something with the table
+                ...     table  # do something with the table
 
             Iterate over chunks of tables to reduce memory load:
 
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
-                ...     table_list # do something with the tables
+                ...     table_list  # do something with the tables
         """
         tb = self._list(
             list_cls=raw.TableList,
@@ -529,8 +529,10 @@ class RawRowsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import RowWrite
                 >>> client = CogniteClient()
-                >>> rows = [RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
-                ...         RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"})]
+                >>> rows = [
+                ...     RowWrite(key="r1", columns={"col1": "val1", "col2": "val1"}),
+                ...     RowWrite(key="r2", columns={"col1": "val2", "col2": "val2"}),
+                ... ]
                 >>> client.raw.rows.insert("db1", "table1", rows)
 
             You may also insert a dictionary directly:
@@ -582,10 +584,9 @@ class RawRowsAPI(APIClient):
                 >>>
                 >>> client = CogniteClient()
                 >>> df = pd.DataFrame(
-                ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]},
-                ...     index=["r1", "r2", "r3"])
-                >>> res = client.raw.rows.insert_dataframe(
-                ...     "db1", "table1", df, dropna=True)
+                ...     {"col-a": [1, 3, None], "col-b": [2, -1, 9]}, index=["r1", "r2", "r3"]
+                ... )
+                >>> res = client.raw.rows.insert_dataframe("db1", "table1", df, dropna=True)
         """
         if not dataframe.index.is_unique:
             raise ValueError("Dataframe index is not unique (used for the row keys)")
@@ -818,7 +819,7 @@ class RawRowsAPI(APIClient):
 
             Iterate through all rows one-by-one to reduce memory load (no concurrency used):
 
-                >>> for row in client.raw.rows("db1", "t1", columns=["col1","col2"]):
+                >>> for row in client.raw.rows("db1", "t1", columns=["col1", "col2"]):
                 ...     val1 = row["col1"]  # You may access the data directly
                 ...     val2 = row.get("col2")  # ...or use '.get' when keys can be missing
 

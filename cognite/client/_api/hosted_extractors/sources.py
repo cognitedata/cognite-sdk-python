@@ -102,11 +102,13 @@ class SourcesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.hosted_extractors.sources.retrieve('myMQTTSource')
+                >>> res = client.hosted_extractors.sources.retrieve("myMQTTSource")
 
             Get multiple sources by id:
 
-                >>> res = client.hosted_extractors.sources.retrieve(["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True)
+                >>> res = client.hosted_extractors.sources.retrieve(
+                ...     ["myMQTTSource", "MyEventHubSource"], ignore_unknown_ids=True
+                ... )
 
         """
         self._warning.warn()
@@ -171,7 +173,9 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceWrite
                 >>> client = CogniteClient()
-                >>> source = EventHubSourceWrite('my_event_hub', 'http://myeventhub.com', "My EventHub", 'my_key', 'my_value')
+                >>> source = EventHubSourceWrite(
+                ...     "my_event_hub", "http://myeventhub.com", "My EventHub", "my_key", "my_value"
+                ... )
                 >>> res = client.hosted_extractors.sources.create(source)
         """
         self._warning.warn()
@@ -218,7 +222,9 @@ class SourcesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.hosted_extractors import EventHubSourceUpdate
                 >>> client = CogniteClient()
-                >>> source = EventHubSourceUpdate('my_event_hub').event_hub_name.set("My Updated EventHub")
+                >>> source = EventHubSourceUpdate("my_event_hub").event_hub_name.set(
+                ...     "My Updated EventHub"
+                ... )
                 >>> res = client.hosted_extractors.sources.update(source)
         """
         self._warning.warn()
@@ -267,12 +273,12 @@ class SourcesAPI(APIClient):
             Iterate over sources:
 
                 >>> for source in client.hosted_extractors.sources:
-                ...     source # do something with the source
+                ...     source  # do something with the source
 
             Iterate over chunks of sources to reduce memory load:
 
                 >>> for source_list in client.hosted_extractors.sources(chunk_size=25):
-                ...     source_list # do something with the sources
+                ...     source_list  # do something with the sources
         """
         self._warning.warn()
         return self._list(
