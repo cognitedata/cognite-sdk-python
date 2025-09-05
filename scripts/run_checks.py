@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from cognite.client import global_config
 from scripts.custom_checks.docstr_examples import format_docstring_examples
 from scripts.custom_checks.docstrings import format_docstrings
 from scripts.custom_checks.version import (
@@ -12,8 +13,10 @@ from scripts.custom_checks.version import (
     version_number_and_date_is_increasing,
 )
 
+global_config.silence_feature_preview_warnings = True
 
-def run_checks(files: list[Path]) -> list[str | None]:
+
+def run_checks(files: tuple[Path, ...]) -> list[str | None]:
     return [
         pyproj_version_matches(),
         changelog_entry_version_matches(),

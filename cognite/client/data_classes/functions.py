@@ -686,7 +686,7 @@ class FunctionCall(CogniteResource):
         return call_id, function_id
 
     def wait(self) -> None:
-        backoff = Backoff(max_wait=5, base=1)
+        backoff = Backoff(max_wait=10, base=2, multiplier=0.3)
         while self.status == "Running":
             self.update()
             time.sleep(next(backoff))
