@@ -572,7 +572,7 @@ class AssetsAPI(APIClient):
 
     def create_hierarchy(
         self,
-        assets: Sequence[Asset | AssetWrite] | AssetHierarchy,
+        assets: Sequence[AssetWrite] | AssetHierarchy,
         *,
         upsert: bool = False,
         upsert_mode: Literal["patch", "replace"] = "patch",
@@ -585,7 +585,7 @@ class AssetsAPI(APIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            assets (Sequence[AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
             upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
@@ -599,7 +599,7 @@ class AssetsAPI(APIClient):
 
                 - Missing external ID.
                 - Missing a valid name.
-                - Has an ID set.
+                - Has an ID set (note: you may not pass Asset, use AssetWrite)
             2. Any asset duplicates exist (category: ``duplicates``)
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
@@ -627,12 +627,12 @@ class AssetsAPI(APIClient):
             Create an asset hierarchy:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
                 >>> assets = [
-                ...     Asset(external_id="root", name="root"),
-                ...     Asset(external_id="child1", parent_external_id="root", name="child1"),
-                ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
+                ...     AssetWrite(external_id="root", name="root"),
+                ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
+                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
