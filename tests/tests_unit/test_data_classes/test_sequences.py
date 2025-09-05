@@ -5,7 +5,7 @@ from cognite.client.data_classes import SequenceColumn, SequenceColumnList, Sequ
 
 class TestSequenceRowsList:
     @pytest.mark.dsl
-    def test_sequence_notebook_repr_html(self):
+    def test_sequence_notebook_repr_html(self) -> None:
         sequence_rows_list = SequenceRowsList(
             [
                 SequenceRows(
