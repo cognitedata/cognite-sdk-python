@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.data_sets import DataSet
+from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 
@@ -171,7 +171,7 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
     if data_set is None:
         data_set = cognite_client.data_sets.create(
-            DataSet(
+            DataSetWrite(
                 external_id="integration_tests_workflow",
                 name="Integration Tests Workflow",
                 description="Data set for integration tests of the workflow API",
