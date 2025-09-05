@@ -66,9 +66,9 @@ class Capability(ABC):
             raise ValueError(f"Could not instantiate {acl_name} due to: {err}. " + self.show_example_usage()) from err
 
     def _validate(self) -> None:
-        if (capability_cls := type(self)) is UnknownAcl:
+        if type(self) is UnknownAcl:
             raise ValueError(
-                f"{self.capability_name!r} is not a known ACL. If it should be, "  # type: ignore [attr-defined]
+                f"{self.capability_name!r} is not a known ACL. If it should be, "
                 "please create an issue on: https://github.com/cognitedata/cognite-sdk-python"
             )
         acl = (capability_cls := type(self)).__name__
@@ -435,7 +435,7 @@ class DataSetScope(Capability.Scope):
 @dataclass(frozen=True)
 class TableScope(Capability.Scope):
     _scope_name = "tableScope"
-    dbs_to_tables: dict[str, list[str]]
+    dbs_to_tables: dict[str, list[str] | dict[str, list[str]]]
 
     def __post_init__(self) -> None:
         if not self.dbs_to_tables:
