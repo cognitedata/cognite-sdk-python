@@ -161,13 +161,10 @@ class TableCore(WriteableCogniteResource["TableWrite"]):
     """A NoSQL database table to store customer data
 
     Args:
-        name (str | None): Unique name of the table
+        name (str): Unique name of the table
     """
 
-    def __init__(
-        self,
-        name: str | None = None,
-    ) -> None:
+    def __init__(self, name: str) -> None:
         self.name = name
 
 
