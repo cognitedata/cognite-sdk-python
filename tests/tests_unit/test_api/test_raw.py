@@ -1,17 +1,21 @@
 import math
 import re
+from collections.abc import Iterator
+from typing import Any
 
 import pytest
+from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client._api.raw import RawRowsAPI
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, RowWrite, RowWriteList, Table, TableList
+from cognite.client.data_classes.raw import RowCore, RowListCore
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import assert_all_value_types_equal, get_url, jsgz_load
 
 
 @pytest.fixture
-def mock_raw_db_response(httpx_mock, cognite_client):
+def mock_raw_db_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"name": "db1", "createdTime": 123}]}
     url_pattern = re.compile(re.escape(get_url(cognite_client.raw)) + r"/raw/dbs(?:/delete|$|\?.+)")
 
@@ -21,7 +25,7 @@ def mock_raw_db_response(httpx_mock, cognite_client):
 
 
 @pytest.fixture
-def mock_raw_table_response(httpx_mock, cognite_client):
+def mock_raw_table_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"name": "table1", "createdTime": 123}]}
     url_pattern = re.compile(re.escape(get_url(cognite_client.raw)) + r"/raw/dbs/db1/tables(?:/delete|$|\?.+)")
 
@@ -31,12 +35,19 @@ def mock_raw_table_response(httpx_mock, cognite_client):
 
 
 @pytest.fixture
-def example_raw_rows():
+def example_raw_rows_insert() -> list[dict[str, Any]]:
+    return [{"key": "row1", "columns": {"c1": 1, "c2": "2"}}]
+
+
+@pytest.fixture
+def example_raw_rows() -> list[dict[str, Any]]:
     return [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}]
 
 
 @pytest.fixture
-def mock_raw_row_response(httpx_mock, cognite_client, example_raw_rows):
+def mock_raw_row_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_raw_rows: list[dict[str, Any]]
+) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": example_raw_rows}
     raw_path_prefix = re.escape(get_url(cognite_client.raw)) + "/raw/dbs/db1/tables/table1"
     url_pattern = re.compile(raw_path_prefix + r"/rows(?:/delete|/row1|$|\?.+)")
@@ -51,7 +62,7 @@ def mock_raw_row_response(httpx_mock, cognite_client, example_raw_rows):
 
 
 @pytest.fixture
-def mock_retrieve_raw_row_response(httpx_mock, cognite_client):
+def mock_retrieve_raw_row_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[dict[str, Any]]:
     response_body = {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 123}
     httpx_mock.add_response(
         method="GET",
@@ -63,7 +74,9 @@ def mock_retrieve_raw_row_response(httpx_mock, cognite_client):
 
 
 @pytest.fixture
-def mock_retrieve_raw_rows_response_two_rows(httpx_mock, cognite_client):
+def mock_retrieve_raw_rows_response_two_rows(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     response_body = {
         "items": [
             {"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0},
@@ -93,7 +106,9 @@ def integer_rows_response() -> dict:
 
 
 @pytest.fixture
-def mock_retrieve_integer_rows(httpx_mock, integer_rows_response: dict, cognite_client: CogniteClient):
+def mock_retrieve_integer_rows(
+    httpx_mock: HTTPXMock, integer_rows_response: dict[str, Any], cognite_client: CogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     httpx_mock.add_response(
         method="GET",
         url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
@@ -104,7 +119,9 @@ def mock_retrieve_integer_rows(httpx_mock, integer_rows_response: dict, cognite_
 
 
 @pytest.fixture
-def mock_retrieve_raw_rows_response_one_row(httpx_mock, cognite_client):
+def mock_retrieve_raw_rows_response_one_row(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     response_body = {"items": [{"key": "row1", "columns": {"c1": 1, "c2": "2"}, "lastUpdatedTime": 0}]}
     for _ in range(2):
         httpx_mock.add_response(
@@ -117,7 +134,9 @@ def mock_retrieve_raw_rows_response_one_row(httpx_mock, cognite_client):
 
 
 @pytest.fixture
-def mock_retrieve_raw_rows_response_no_rows(httpx_mock, cognite_client):
+def mock_retrieve_raw_rows_response_no_rows(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+) -> Iterator[list[dict[str, Any]]]:
     for _ in range(2):
         httpx_mock.add_response(
             method="GET",
@@ -129,14 +148,18 @@ def mock_retrieve_raw_rows_response_no_rows(httpx_mock, cognite_client):
 
 
 class TestRawDatabases:
-    def test_create_single(self, cognite_client, mock_raw_db_response, httpx_mock):
+    def test_create_single(
+        self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.databases.create(name="db1")
         assert isinstance(res, Database)
         assert cognite_client == res._cognite_client
         assert mock_raw_db_response[0] == res.dump(camel_case=True)
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_create_multiple(self, cognite_client, mock_raw_db_response, httpx_mock):
+    def test_create_multiple(
+        self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_list = cognite_client.raw.databases.create(name=["db1"])
         assert isinstance(res_list, DatabaseList)
         for res in res_list:
@@ -145,29 +168,33 @@ class TestRawDatabases:
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
         assert mock_raw_db_response == res_list.dump(camel_case=True)
 
-    def test_list(self, cognite_client, mock_raw_db_response):
+    def test_list(self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]]) -> None:
         res_list = cognite_client.raw.databases.list()
         assert DatabaseList([Database("db1", created_time=123)]) == res_list
 
-    def test_iter_single(self, cognite_client, mock_raw_db_response):
+    def test_iter_single(self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]]) -> None:
         for db in cognite_client.raw.databases:
             assert mock_raw_db_response[0] == db.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_raw_db_response):
+    def test_iter_chunk(self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]]) -> None:
         for db in cognite_client.raw.databases(chunk_size=1):
             assert mock_raw_db_response == db.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_raw_db_response, httpx_mock):
+    def test_delete(
+        self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.databases.delete(name="db1")
         assert res is None
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_multiple(self, cognite_client, mock_raw_db_response, httpx_mock):
+    def test_delete_multiple(
+        self, cognite_client: CogniteClient, mock_raw_db_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.databases.delete(name=["db1"])
         assert res is None
         assert [{"name": "db1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client, httpx_mock):
+    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=get_url(cognite_client.raw) + "/raw/dbs/delete",
@@ -178,14 +205,21 @@ class TestRawDatabases:
             cognite_client.raw.databases.delete("db1")
         assert e.value.failed == ["db1"]
 
-    def test_get_tables_in_db(self, cognite_client, mock_raw_db_response, mock_raw_table_response):
+    def test_get_tables_in_db(
+        self,
+        cognite_client: CogniteClient,
+        mock_raw_db_response: list[dict[str, Any]],
+        mock_raw_table_response: list[dict[str, Any]],
+    ) -> None:
         db = cognite_client.raw.databases.list()[0]
         tables = db.tables()
         assert TableList([Table(name="table1", created_time=123)]) == tables
 
 
 class TestRawTables:
-    def test_create_single(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_create_single(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.tables.create("db1", name="table1")
         assert isinstance(res, Table)
         assert cognite_client == res._cognite_client
@@ -193,7 +227,9 @@ class TestRawTables:
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
         assert "db1" == res._db_name
 
-    def test_create_multiple(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_create_multiple(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_list = cognite_client.raw.tables.create("db1", name=["table1"])
         assert isinstance(res_list, TableList)
         for res in res_list:
@@ -203,35 +239,45 @@ class TestRawTables:
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
         assert mock_raw_table_response == res_list.dump(camel_case=True)
 
-    def test_list(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_list(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_list = cognite_client.raw.tables.list(db_name="db1")
         for res in res_list:
             assert "db1" == res._db_name
             assert cognite_client == res._cognite_client
         assert TableList([Table("table1", created_time=123)]) == res_list
 
-    def test_iter_single(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_iter_single(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         for table in cognite_client.raw.tables(db_name="db1"):
             assert mock_raw_table_response[0] == table.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_iter_chunk(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         for table_list in cognite_client.raw.tables("db1", chunk_size=1):
             for table in table_list:
                 assert "db1" == table._db_name
                 assert cognite_client == table._cognite_client
             assert mock_raw_table_response == table_list.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_delete(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.tables.delete("db1", name="table1")
         assert res is None
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_multiple(self, cognite_client, mock_raw_table_response, httpx_mock):
+    def test_delete_multiple(
+        self, cognite_client: CogniteClient, mock_raw_table_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.tables.delete(db_name="db1", name=["table1"])
         assert res is None
         assert [{"name": "table1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client, httpx_mock):
+    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/delete",
@@ -242,26 +288,47 @@ class TestRawTables:
             cognite_client.raw.tables.delete("db1", "table1")
         assert e.value.failed == ["table1"]
 
-    def test_get_rows_in_table(self, cognite_client, mock_raw_table_response, mock_raw_row_response, example_raw_rows):
+    def test_get_rows_in_table(
+        self,
+        cognite_client: CogniteClient,
+        mock_raw_table_response: list[dict[str, Any]],
+        mock_raw_row_response: HTTPXMock,
+        example_raw_rows: list[dict[str, Any]],
+    ) -> None:
         tables = cognite_client.raw.tables.list(db_name="db1")
         exp_rows = RowList.load(example_raw_rows)
         assert tables[0].rows() == exp_rows
 
 
 class TestRawRows:
-    def test_retrieve(self, cognite_client, mock_retrieve_raw_row_response, httpx_mock):
+    def test_retrieve(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_row_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.rows.retrieve(db_name="db1", table_name="table1", key="row1")
+        assert res
         assert mock_retrieve_raw_row_response == res.dump(camel_case=True)
         assert str(httpx_mock.get_requests()[0].url).endswith("/rows/row1")
 
-    def test_insert_w_rows_as_dict(self, cognite_client, mock_raw_row_response, example_raw_rows, httpx_mock):
+    def test_insert_w_rows_as_dict(
+        self,
+        cognite_client: CogniteClient,
+        mock_raw_row_response: list[dict[str, Any]],
+        example_raw_rows_insert: list[dict[str, Any]],
+        httpx_mock: HTTPXMock,
+    ) -> None:
         res = cognite_client.raw.rows.insert(
             db_name="db1", table_name="table1", row={"row1": {"c1": 1, "c2": "2"}}, ensure_parent=True
         )
         assert res is None
-        assert example_raw_rows == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
+        assert example_raw_rows_insert == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_insert_single_dto(self, cognite_client, example_raw_rows, mock_raw_row_response, httpx_mock):
+    def test_insert_single_dto(
+        self,
+        cognite_client: CogniteClient,
+        example_raw_rows_insert: list[dict[str, Any]],
+        mock_raw_row_response: list[dict[str, Any]],
+        httpx_mock: HTTPXMock,
+    ) -> None:
         res = cognite_client.raw.rows.insert(
             db_name="db1",
             table_name="table1",
@@ -269,14 +336,20 @@ class TestRawRows:
             ensure_parent=False,
         )
         assert res is None
-        assert example_raw_rows == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
+        assert example_raw_rows_insert == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_insert_multiple_dto(self, cognite_client, example_raw_rows, mock_raw_row_response, httpx_mock):
+    def test_insert_multiple_dto(
+        self,
+        cognite_client: CogniteClient,
+        example_raw_rows_insert: list[dict[str, Any]],
+        mock_raw_row_response: list[dict[str, Any]],
+        httpx_mock: HTTPXMock,
+    ) -> None:
         res = cognite_client.raw.rows.insert("db1", "table1", row=[RowWrite(key="row1", columns={"c1": 1, "c2": "2"})])
         assert res is None
-        assert example_raw_rows == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
+        assert example_raw_rows_insert == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_insert_fail(self, cognite_client, httpx_mock):
+    def test_insert_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows?ensureParent=false",
@@ -287,42 +360,58 @@ class TestRawRows:
             cognite_client.raw.rows.insert("db1", "table1", {"row1": {"c1": 1}})
         assert e.value.failed == ["row1"]
 
-    def test_list(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_list(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_list = cognite_client.raw.rows.list(db_name="db1", table_name="table1")
         assert RowList([Row(key="row1", columns={"c1": 1, "c2": "2"}, last_updated_time=123)]) == res_list
         assert b"columns=" not in httpx_mock.get_requests()[0].url.query
 
-    def test_list_cols(self, cognite_client, mock_raw_row_response, httpx_mock):
-        cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns=["a", 1])
+    def test_list_cols(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
+        cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns=["a", "1"])
         assert b"columns=a%2C1" in httpx_mock.get_requests()[0].url.query
 
-    def test_list_cols_empty(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_list_cols_empty(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns=[])
         assert b"columns=%2C&" in httpx_mock.get_requests()[0].url.query + b"&"
 
-    def test_list_cols_str_not_supported(self, cognite_client, mock_raw_row_response):
+    def test_list_cols_str_not_supported(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]]
+    ) -> None:
         with pytest.raises(TypeError):
-            cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns="a,b")
+            cognite_client.raw.rows.list(db_name="db1", table_name="table1", columns="a,b")  # type: ignore[arg-type]
 
-    def test_iter_single(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_iter_single(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         for db in cognite_client.raw.rows(db_name="db1", table_name="table1"):
             assert mock_raw_row_response[0] == db.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_iter_chunk(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         for db in cognite_client.raw.rows("db1", "table1", chunk_size=1):
             assert mock_raw_row_response == db.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_delete(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.rows.delete("db1", table_name="table1", key="row1")
         assert res is None
         assert [{"key": "row1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_multiple(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_delete_multiple(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.raw.rows.delete(db_name="db1", table_name="table1", key=["row1"])
         assert res is None
         assert [{"key": "row1"}] == jsgz_load(httpx_mock.get_requests()[0].content)["items"]
 
-    def test_delete_fail(self, cognite_client, httpx_mock):
+    def test_delete_fail(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
         httpx_mock.add_response(
             method="POST",
             url=get_url(cognite_client.raw) + "/raw/dbs/db1/tables/table1/rows/delete",
@@ -333,30 +422,40 @@ class TestRawRows:
             cognite_client.raw.rows.delete("db1", "table1", "key1")
         assert e.value.failed == ["key1"]
 
-    def test_iter(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_iter(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1")
         row = next(res_generator)
         assert Row(key="row1", columns={"c1": 1, "c2": "2"}, last_updated_time=123) == row
         assert b"columns=" not in httpx_mock.get_requests()[0].url.query
 
-    def test_iter_cols(self, cognite_client, mock_raw_row_response, httpx_mock):
-        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", columns=["a", 1])
+    def test_iter_cols(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
+        res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", columns=["a", "1"])
         next(res_generator)
         assert b"columns=a%2C1" in httpx_mock.get_requests()[0].url.query
 
-    def test_iter_cols_empty(self, cognite_client, mock_raw_row_response, httpx_mock):
+    def test_iter_cols_empty(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]], httpx_mock: HTTPXMock
+    ) -> None:
         res_generator = cognite_client.raw.rows(db_name="db1", table_name="table1", columns=[])
         next(res_generator)
         assert b"columns=%2C&" in httpx_mock.get_requests()[0].url.query + b"&"
 
-    def test_iter_cols_str_not_supported(self, cognite_client, mock_raw_row_response):
+    def test_iter_cols_str_not_supported(
+        self, cognite_client: CogniteClient, mock_raw_row_response: list[dict[str, Any]]
+    ) -> None:
         with pytest.raises(TypeError):
-            cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")
+            cognite_client.raw.rows(db_name="db1", table_name="table1", columns="a,b")  # type: ignore[call-overload]
 
 
 @pytest.mark.dsl
 class TestRawRowsDataframe:
-    def test_retrieve_dataframe_empty(self, cognite_client, mock_retrieve_raw_rows_response_no_rows):
+    def test_retrieve_dataframe_empty(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_no_rows: list[dict[str, Any]]
+    ) -> None:
         import pandas as pd
 
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
@@ -368,7 +467,9 @@ class TestRawRowsDataframe:
         assert res_df_last_updated_time_in_index.shape == (0, 0)
         assert res_df.equals(res_df_last_updated_time_in_index)
 
-    def test_retrieve_dataframe_one_row(self, cognite_client, mock_retrieve_raw_rows_response_one_row):
+    def test_retrieve_dataframe_one_row(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_one_row: list[dict[str, Any]]
+    ) -> None:
         import pandas as pd
 
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
@@ -380,7 +481,9 @@ class TestRawRowsDataframe:
         assert res_df_last_updated_time_in_index.shape == (1, 2)
         assert res_df.equals(res_df_last_updated_time_in_index.droplevel("last_updated_time"))
 
-    def test_retrieve_dataframe_two_rows(self, cognite_client, mock_retrieve_raw_rows_response_two_rows):
+    def test_retrieve_dataframe_two_rows(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_two_rows: list[dict[str, Any]]
+    ) -> None:
         import pandas as pd
 
         res_df = cognite_client.raw.rows.retrieve_dataframe(db_name="db1", table_name="table1")
@@ -401,6 +504,7 @@ class TestRawRowsDataframe:
     def test_retrieve_dataframe_integers(
         self,
         cognite_client: CogniteClient,
+        mock_retrieve_integer_rows: list[dict[str, Any]],
         integer_rows_response: dict,
     ) -> None:
         result = cognite_client.raw.rows.retrieve_dataframe(
@@ -413,11 +517,11 @@ class TestRawRowsDataframe:
 
 
 @pytest.mark.parametrize("raw_cls", (Row, RowWrite))
-def test_raw_row__direct_column_access(raw_cls):
+def test_raw_row__direct_column_access(raw_cls: type[RowCore]) -> None:
     # Verify additional methods: 'get', '__getitem__', '__setitem__', '__delitem__' and '__contains__'
     key = "itsamee"
     if raw_cls is Row:
-        row = Row(key="foo", columns={"bar": 42, key: "mario"}, last_updated_time=123)
+        row: RowCore = Row(key="foo", columns={"bar": 42, key: "mario"}, last_updated_time=123)
     else:
         row = RowWrite(key="foo", columns={"bar": 42, key: "mario"})
     assert row[key] == row.columns[key] == row.get(key) == "mario"
@@ -442,13 +546,13 @@ def test_raw_row__direct_column_access(raw_cls):
     with pytest.raises(KeyError, match="^'wrong-key'$"):
         del row["wrong-key"]
 
-    row.columns = None
+    row.columns = None  # type: ignore[assignment]
     with pytest.raises(RuntimeError, match="^columns not set on Row instance$"):
         del row["wrong-key"]
 
 
 @pytest.mark.dsl
-def test_insert_dataframe_raises_on_duplicated_cols(cognite_client):
+def test_insert_dataframe_raises_on_duplicated_cols(cognite_client: CogniteClient) -> None:
     import pandas as pd
 
     df = pd.DataFrame(
@@ -467,7 +571,7 @@ def test_insert_dataframe_raises_on_duplicated_cols(cognite_client):
 
 
 @pytest.mark.dsl
-def test_df_to_rows_skip_nans():
+def test_df_to_rows_skip_nans() -> None:
     import numpy as np
     import pandas as pd
 
@@ -493,7 +597,7 @@ def test_df_to_rows_skip_nans():
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_dbs_to_pandas(self):
+    def test_dbs_to_pandas(self) -> None:
         import pandas as pd
 
         db_list = DatabaseList(
@@ -507,7 +611,7 @@ class TestPandasIntegration:
             pd.DataFrame({"value": ["kar"]}, index=["name"]), db_list[0].to_pandas().drop("created_time")
         )
 
-    def test_tables_to_pandas(self):
+    def test_tables_to_pandas(self) -> None:
         import pandas as pd
 
         table_list = TableList(
@@ -521,7 +625,7 @@ class TestPandasIntegration:
             pd.DataFrame({"value": ["kar"]}, index=["name"]), table_list[0].to_pandas().drop("created_time")
         )
 
-    def test_rows_to_pandas(self):
+    def test_rows_to_pandas(self) -> None:
         import pandas as pd
 
         row_list = RowList(
@@ -536,7 +640,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
 
-    def test_rows_to_pandas_missing_cols(self):
+    def test_rows_to_pandas_missing_cols(self) -> None:
         import pandas as pd
 
         row_list = RowList(
@@ -551,7 +655,7 @@ class TestPandasIntegration:
         )
         pd.testing.assert_frame_equal(pd.DataFrame({"c1": ["v1"], "c2": ["v1"]}, index=["k1"]), row_list[0].to_pandas())
 
-    def test_rows_to_pandas__no_rows(self):
+    def test_rows_to_pandas__no_rows(self) -> None:
         import pandas as pd
 
         row_df = RowList([]).to_pandas()
@@ -560,14 +664,14 @@ class TestPandasIntegration:
 
     @pytest.mark.parametrize("lst_cls", (RowList, RowWriteList))
     @pytest.mark.parametrize("n_rows", (1, 5))
-    def test_rows_to_pandas__empty_or_sparse(self, lst_cls, n_rows):
+    def test_rows_to_pandas__empty_or_sparse(self, lst_cls: type[RowListCore], n_rows: int) -> None:
         # Before version 7.49.2, rows with no column data would be silently dropped when converting to a pandas dataframe,
         # which was most noticable as len(rows) != len(df).
         import pandas as pd
 
         keys = [f"row-{i}" for i in range(n_rows)]
         if lst_cls is RowList:
-            row_list = RowList([Row(k, {}, last_updated_time=123) for k in keys])
+            row_list: RowList | RowWriteList = RowList([Row(k, {}, last_updated_time=123) for k in keys])
         else:
             row_list = RowWriteList([RowWrite(k, {}) for k in keys])
         row_df = row_list.to_pandas()
