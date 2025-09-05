@@ -97,7 +97,7 @@ class TestAnnotationFilter:
 
 
 class TestAnnotationUpdate:
-    def test_set_chain(self):
+    def test_set_chain(self) -> None:
         update = {
             "data": {"assetRef": {"id": 1}, "textRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0}},
             "status": "rejected",

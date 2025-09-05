@@ -82,9 +82,11 @@ class TestAgentToolLoad:
                 assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
                 # Compare by serializing the structured object back to dict
                 assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
-            else:
+            elif isinstance(loaded_tool, UnknownAgentTool):
                 # For other tools (like UnknownAgentTool), configuration should be a dict
                 assert loaded_tool.configuration == tool_data["configuration"]
+            else:
+                raise TypeError(f"Unhandled tool type in test case: {type(loaded_tool)}")
 
     def test_unknown_agent_tool_preserves_custom_type(self) -> None:
         """Test that UnknownAgentTool preserves the original type string."""

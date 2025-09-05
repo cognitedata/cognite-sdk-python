@@ -1,4 +1,6 @@
 import re
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 
@@ -13,11 +15,11 @@ from cognite.client.utils._validation import (
 
 class TestAssertions:
     @pytest.mark.parametrize("var, var_name, types", [(1, "var1", [int]), ("1", "var2", [int, str])])
-    def test_assert_type_ok(self, var, var_name, types):
+    def test_assert_type_ok(self, var: int | str, var_name: str, types: list[type]) -> None:
         assert_type(var, var_name, types=types)
 
     @pytest.mark.parametrize("var, var_name, types", [("1", "var", [int, float]), ((1,), "var2", [dict, list])])
-    def test_assert_type_fail(self, var, var_name, types):
+    def test_assert_type_fail(self, var: Any, var_name: str, types: list[type]) -> None:
         with pytest.raises(TypeError, match=str(types)):
             assert_type(var, var_name, types)
 
@@ -31,7 +33,7 @@ class TestValidateUserInputDictWithIdentifier:
             ({"externalId": "foo"}, set(), Identifier("foo")),
         ),
     )
-    def test_validate_normal_input(self, dct, keys, expected):
+    def test_validate_normal_input(self, dct: dict, keys: set[str], expected: Identifier) -> None:
         assert expected == validate_user_input_dict_with_identifier(dct, required_keys=keys)
 
     @pytest.mark.parametrize(
@@ -57,7 +59,7 @@ class TestValidateUserInputDictWithIdentifier:
             ({"id": 123, "a": 0}, set(), ValueError, re.escape("Invalid key(s): ['a'], required key(s) missing: [].")),
         ),
     )
-    def test_validate_bad_input(self, dct, keys, err, err_msg):
+    def test_validate_bad_input(self, dct: dict, keys: set[str], err: type[Exception], err_msg: str) -> None:
         with pytest.raises(err, match=err_msg):
             validate_user_input_dict_with_identifier(dct, required_keys=keys)
 
@@ -68,7 +70,7 @@ process_fns_names = "data_set", "asset_subtree"
 
 class TestProcessIdentifiers:
     @pytest.mark.parametrize("fn, name", zip(process_fns, process_fns_names))
-    def test_all_process_fns_bad_input(self, fn, name):
+    def test_all_process_fns_bad_input(self, fn: Callable[..., Any], name: str) -> None:
         exp_match = rf"^{name}_ids must be of type int or Sequence\[int\]\. Found <class 'str'>$"
         with pytest.raises(TypeError, match=exp_match):
             fn("97", "a")
@@ -78,7 +80,7 @@ class TestProcessIdentifiers:
             fn(97, ord("a"))
 
     @pytest.mark.parametrize("fn", process_fns)
-    def test_all_process_fns_normal_input(self, fn):
+    def test_all_process_fns_normal_input(self, fn: Callable[..., Any]) -> None:
         assert fn(None, None) is None
         # As singletons:
         assert fn(1, None) == [{"id": 1}]
