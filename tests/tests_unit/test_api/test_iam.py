@@ -103,15 +103,20 @@ class TestGroups:
             name="My Group",
             capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())],
             attributes=attributes,
+            id=1,
+            source_id="sourceId",
+            is_deleted=False,
+            deleted_time=None,
         )
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
         assert {
             "items": [
                 {
-                    "name": "My Group",
-                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
                     "attributes": {"token": {"appIds": ["app1", "app2"]}, "unknownProperty": "unknownValue"},
+                    "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
+                    "name": "My Group",
+                    "sourceId": "sourceId",
                 }
             ]
         } == jsgz_load(mock_groups_with_attributes.calls[0].request.body)
