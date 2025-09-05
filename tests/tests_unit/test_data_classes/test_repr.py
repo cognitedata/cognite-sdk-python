@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from cognite.client.data_classes import (
@@ -42,9 +41,9 @@ class TestRepr:
         (
             Datapoint(timestamp=0, value=0),
             Datapoints(id=1),
-            DatapointsArray(id=1, timestamp=np.array([])),
+            DatapointsArray(id=1, timestamp=[]),  # type: ignore[arg-type]
             Datapoints(instance_id=NodeId("space", "xid")),
-            DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=np.array([])),
+            DatapointsArray(instance_id=NodeId("space", "xid"), timestamp=[]),  # type: ignore[arg-type]
         ),
     )
     def test_repr_html_dps_classes(self, inst: CogniteResource) -> None:
