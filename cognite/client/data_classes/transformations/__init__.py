@@ -466,7 +466,7 @@ class TransformationWrite(TransformationCore):
         self,
         external_id: str,
         name: str,
-        ignore_null_fields: bool,
+        ignore_null_fields: bool = False,
         query: str | None = None,
         destination: TransformationDestination | None = None,
         conflict_mode: Literal["abort", "delete", "update", "upsert"] | None = None,

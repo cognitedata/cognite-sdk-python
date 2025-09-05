@@ -10,6 +10,7 @@ from cognite.client.data_classes import (
     TransformationDestination,
     TransformationSchedule,
     TransformationUpdate,
+    TransformationWrite,
 )
 from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
@@ -90,18 +91,9 @@ other_transformation = new_transformation
 
 
 class TestTransformationsAPI:
-    def test_create_transformation_error(self, cognite_client):
-        xid = f"{random_string(6, string.ascii_letters)}-transformation"
-        transform_without_name = Transformation(external_id=xid, destination=TransformationDestination.assets())
-
-        with pytest.raises(
-            ValueError, match=r"^External ID, name and ignore null fields are required to create a transformation\."
-        ):
-            cognite_client.transformations.create(transform_without_name)
-
     def test_create_asset_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
         )
         ts = cognite_client.transformations.create(transform)
@@ -110,7 +102,7 @@ class TestTransformationsAPI:
     @pytest.mark.skip(reason="Awaiting access to more than one CDF project for our credentials")
     def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.assets(),
@@ -135,7 +127,7 @@ class TestTransformationsAPI:
 
     def test_create_raw_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.raw("myDatabase", "myTable"),
@@ -146,7 +138,7 @@ class TestTransformationsAPI:
 
     def test_create_asset_hierarchy_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.asset_hierarchy()
         )
         ts = cognite_client.transformations.create(transform)
@@ -154,7 +146,7 @@ class TestTransformationsAPI:
 
     def test_create_string_datapoints_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.string_datapoints(),
@@ -164,7 +156,7 @@ class TestTransformationsAPI:
 
     def test_create_transformation_with_tags(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.string_datapoints(),
@@ -182,7 +174,7 @@ class TestTransformationsAPI:
             ),
             instance_space="test-space",
         )
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=nodes,
@@ -212,7 +204,7 @@ class TestTransformationsAPI:
             edge_type=None,
         )
 
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=edges,
@@ -242,7 +234,7 @@ class TestTransformationsAPI:
             ),
         )
 
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=edges,
@@ -272,7 +264,7 @@ class TestTransformationsAPI:
             ),
             instance_space="test-instanceSpace",
         )
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             query="SELECT * FROM my_source_table",
@@ -303,7 +295,7 @@ class TestTransformationsAPI:
             ),
             instance_space="test-instanceSpace",
         )
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             query="SELECT * FROM my_source_table",
@@ -325,7 +317,7 @@ class TestTransformationsAPI:
 
     def test_create_sequence_rows_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
+        transform = TransformationWrite(
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.sequence_rows(external_id="testSequenceRows"),
