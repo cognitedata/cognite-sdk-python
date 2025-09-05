@@ -22,6 +22,7 @@ from cognite.client.data_classes import (
     TimeSeries,
 )
 from cognite.client.data_classes import Sequence as CogniteSequence
+from cognite.client.data_classes.agents import Agent, AgentTool
 from cognite.client.data_classes.data_modeling import NodeId
 
 # Files to exclude test directories or modules
@@ -295,4 +296,28 @@ class DefaultResourceGenerator:
             created_time=created_time,
             metadata=metadata,
             cognite_client=cognite_client,
+        )
+
+    @staticmethod
+    def agent(
+        external_id: str = "test_agent",
+        name: str = "Test Agent",
+        description: str | None = None,
+        instructions: str | None = None,
+        model: str | None = None,
+        tools: Sequence[AgentTool] | None = None,
+        created_time: int = 123,
+        last_updated_time: int = 123,
+        owner_id: str | None = None,
+    ) -> Agent:
+        return Agent(
+            external_id=external_id,
+            name=name,
+            description=description,
+            instructions=instructions,
+            model=model,
+            tools=tools,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            owner_id=owner_id,
         )

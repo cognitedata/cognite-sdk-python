@@ -8,17 +8,17 @@ from cognite.client.utils._importing import local_import
 
 
 class TestJsonDumpDefault:
-    def test_json_serializable_Decimal(self):
+    def test_json_serializable_Decimal(self) -> None:
         assert _json.dumps(Decimal(1))
 
-    def test_json_not_serializable_sets(self):
+    def test_json_not_serializable_sets(self) -> None:
         with pytest.raises(TypeError):
             _json.dumps({1, 2})
         with pytest.raises(TypeError):
             _json.dumps({1, 2})
 
     @pytest.mark.dsl
-    def test_json_serializable_numpy(self):
+    def test_json_serializable_numpy(self) -> None:
         np = local_import("numpy")
         arr = np.array([1.2, 3.4], dtype=np.float32)
         with pytest.raises(TypeError):
@@ -28,7 +28,7 @@ class TestJsonDumpDefault:
         assert _json.dumps(arr[0])
 
     @pytest.mark.dsl
-    def test_json_serialiable_numpy_integer(self):
+    def test_json_serialiable_numpy_integer(self) -> None:
         import numpy as np
 
         inputs = [np.int32(1), np.int64(1)]
@@ -36,7 +36,7 @@ class TestJsonDumpDefault:
             assert _json.dumps(input)
 
     @pytest.mark.dsl
-    def test_json_dump_cognite_object(self):
+    def test_json_dump_cognite_object(self) -> None:
         class Obj(CogniteObject):
             def __init__(self, foo: int) -> None:
                 self.foo = foo

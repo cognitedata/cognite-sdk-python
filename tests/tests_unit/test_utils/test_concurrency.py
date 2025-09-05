@@ -13,7 +13,7 @@ from cognite.client.utils._concurrency import (
 )
 
 
-def i_dont_like_5(i):
+def i_dont_like_5(i: int) -> int:
     if i == 5:
         raise CogniteAPIError("no", 5, cluster="testcluster", project="testproject")
     else:
@@ -39,7 +39,7 @@ class TestExecutor:
         "executor",
         (ConcurrencySettings.get_mainthread_executor(), ConcurrencySettings.get_thread_pool_executor()),
     )
-    def test_executors__results_ordering_match_tasks(self, executor) -> None:
+    def test_executors__results_ordering_match_tasks(self, executor: ThreadPoolExecutor) -> None:
         assert ConcurrencySettings.executor_type == "threadpool"
 
         # We use a task that yields thread control and use N tasks >> max_workers to really test ordering:
@@ -75,7 +75,7 @@ class TestExecutor:
             task_summary.raise_compound_exception_if_failed_tasks()
 
     @pytest.mark.parametrize("fail_fast", (False, True))
-    def test_fail_fast__execute_tasks_serially(self, fail_fast):
+    def test_fail_fast__execute_tasks_serially(self, fail_fast: bool) -> None:
         tasks = list(zip(range(10)))
         task_summary = execute_tasks_serially(i_dont_like_5, tasks, fail_fast=fail_fast)
         with pytest.raises(CogniteAPIError) as err:
@@ -90,7 +90,7 @@ class TestExecutor:
             assert err.value.skipped == []
 
     @pytest.mark.parametrize("fail_fast", (False, True))
-    def test_fail_fast__execute_tasks_with_threads(self, fail_fast):
+    def test_fail_fast__execute_tasks_with_threads(self, fail_fast: bool) -> None:
         assert ConcurrencySettings.executor_type == "threadpool"
         task_summary = execute_tasks(
             i_dont_like_5,

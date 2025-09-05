@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator
 from datetime import timedelta, timezone
 
 import pytest
+from _pytest.mark import ParameterSet
 
 from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.utils._time import ZoneInfo
 
 
 class TestDatapoint:
-    def test_display_str_no_timezone(self):
+    def test_display_str_no_timezone(self) -> None:
         dp = Datapoint(timestamp=1716589737000, value="foo", average=123)
         assert "timezone" not in str(dp)
         assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
@@ -20,7 +23,7 @@ class TestDatapoint:
         assert "timezone" not in str(dp)
         assert '"timestamp": "2024-05-24 22:28:57.000+00:00"' in str(dp)
 
-    def test_display_str_with_builtin_timezone(self):
+    def test_display_str_with_builtin_timezone(self) -> None:
         epoch_ms = 1716589737000
         dp = Datapoint(timestamp=epoch_ms, value="foo", average=123)
         dp.timezone = timezone(timedelta(hours=2))
@@ -40,7 +43,9 @@ class TestDatapoint:
             (1616589737000, 1, "Europe/Oslo", "2021-03-24 13:42:17.000+01:00"),
         ),
     )
-    def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(self, epoch_ms, offset_hours, zone, expected):
+    def test_display_str_and_to_pandas_with_timezone_and_zoneinfo(
+        self, epoch_ms: int, offset_hours: int, zone: str, expected: str
+    ) -> None:
         import pandas as pd
 
         dp1 = Datapoint(timestamp=epoch_ms, value="foo", average=123)
@@ -58,12 +63,13 @@ class TestDatapoint:
         assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
-def factory_method_from_array_data():
+def factory_method_from_array_data() -> Iterator[ParameterSet]:
     try:
         import numpy as np
         import pandas as pd
     except ImportError:
-        return []
+        yield from []
+        return
 
     index = pd.date_range("2023-01-01", periods=4, freq="1h", tz="UTC").values
     arr1 = DatapointsArray(id=123, average=np.array([1.0, 2.0], dtype=np.float64), timestamp=index[:2])
@@ -76,19 +82,22 @@ def factory_method_from_array_data():
 class TestDatapointsArray:
     @staticmethod
     @pytest.mark.parametrize("arrays, expected_array", list(factory_method_from_array_data()))
-    def test_factory_method_from_array(arrays: list[DatapointsArray], expected_array: DatapointsArray):
+    def test_factory_method_from_array(arrays: list[DatapointsArray], expected_array: DatapointsArray) -> None:
         import numpy as np
 
         actual_array = DatapointsArray.create_from_arrays(*arrays)
 
+        assert actual_array.average is not None and expected_array.average is not None
         np.testing.assert_allclose(actual_array.average, expected_array.average)
+
+        assert actual_array.timestamp is not None and expected_array.timestamp is not None
         np.testing.assert_equal(actual_array.timestamp, expected_array.timestamp)
 
-    def test_dump_converts_missing_values_to_none(self):
+    def test_dump_converts_missing_values_to_none(self) -> None:
         # Easy to forget that we can have bad data (missing) without any status codes on the object
         import numpy as np
 
-        params = dict(
+        params: dict = dict(
             id=123,
             timestamp=np.array([1, 2, 3], dtype=np.int64),
             value=np.array([-1, None, 2.5], dtype=np.float64),
@@ -103,7 +112,7 @@ class TestDatapointsArray:
 @pytest.mark.dsl
 class TestToPandas:
     @pytest.mark.parametrize("dps_lst_cls", [DatapointsList, DatapointsArrayList])
-    def test_identifier_priority(self, dps_lst_cls):
+    def test_identifier_priority(self, dps_lst_cls: type[CogniteResourceList]) -> None:
         import numpy as np
         import pandas as pd
 
