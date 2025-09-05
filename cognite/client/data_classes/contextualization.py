@@ -30,7 +30,7 @@ from cognite.client.data_classes.annotations import AnnotationList, AnnotationTy
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, load_resource
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -143,12 +143,12 @@ class ContextualizationJob(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
+    def wait_for_completion(self, timeout: float | None = None, interval: float = 1) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout (int | None): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
+            timeout (float | None): Time out after this many seconds. (None means wait indefinitely)
+            interval (float): Poll status every this many seconds.
 
         Raises:
             ModelFailedException: The model fit failed.
@@ -739,19 +739,6 @@ class VisionExtractPredictions(VisionResource):
         )
 
 
-VISION_FEATURE_MAP: dict[str, Any] = {
-    "text_predictions": TextRegion,
-    "asset_tag_predictions": AssetLink,
-    "industrial_object_predictions": ObjectDetection,
-    "people_predictions": ObjectDetection,
-    "personal_protective_equipment_predictions": ObjectDetection,
-    "digital_gauge_predictions": ObjectDetection,
-    "dial_gauge_predictions": KeypointCollectionWithObjectDetection,
-    "level_gauge_predictions": KeypointCollectionWithObjectDetection,
-    "valve_predictions": KeypointCollectionWithObjectDetection,
-}
-
-
 VISION_ANNOTATION_TYPE_MAP: dict[str, str | dict[str, str]] = {
     "text_predictions": "images.TextRegion",
     "asset_tag_predictions": "images.AssetLink",
@@ -1023,7 +1010,7 @@ class VisionExtractItem(CogniteResource):
     def __init__(
         self,
         file_id: int,
-        predictions: dict[str, Any],
+        predictions: VisionExtractPredictions,
         file_external_id: str | None,
         error_message: str | None,
         cognite_client: CogniteClient | None = None,
@@ -1031,7 +1018,7 @@ class VisionExtractItem(CogniteResource):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.error_message = error_message
-        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, dict) else predictions
+        self.predictions = predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -1040,7 +1027,7 @@ class VisionExtractItem(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
         return cls(
             file_id=resource["fileId"],
-            predictions=resource["predictions"],
+            predictions=VisionExtractPredictions._load(resource["predictions"]),
             file_external_id=resource.get("fileExternalId"),
             error_message=resource.get("errorMessage"),
             cognite_client=cognite_client,
@@ -1048,33 +1035,8 @@ class VisionExtractItem(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
-        # Replace the loaded VisionExtractPredictions with its corresponding dict representation
-        if "predictions" in item_dump and isinstance(self._predictions_dict, dict):
-            item_dump["predictions"] = (
-                self._predictions_dict if camel_case else self._resource_to_snake_case(self._predictions_dict)
-            )
+        item_dump["predictions"] = self.predictions.dump(camel_case=camel_case)
         return item_dump
-
-    @classmethod
-    def _process_predictions_dict(cls, predictions_dict: dict[str, Any]) -> VisionExtractPredictions:
-        """Converts a (validated) predictions dict to a corresponding VisionExtractPredictions"""
-        prediction_object = VisionExtractPredictions()
-        snake_case_predictions_dict = cls._resource_to_snake_case(predictions_dict)
-        for key, value in snake_case_predictions_dict.items():
-            if hasattr(prediction_object, key):
-                feature_class = VISION_FEATURE_MAP[key]
-                setattr(prediction_object, key, [feature_class(**v) for v in value])
-        return prediction_object
-
-    @classmethod
-    def _resource_to_snake_case(cls, resource: Any) -> Any:
-        if isinstance(resource, list):
-            return [cls._resource_to_snake_case(element) for element in resource]
-        elif isinstance(resource, dict):
-            return {to_snake_case(k): cls._resource_to_snake_case(v) for k, v in resource.items() if v is not None}
-        elif hasattr(resource, "__dict__"):
-            return cls._resource_to_snake_case(resource.__dict__)
-        return resource
 
 
 P = ParamSpec("P")
@@ -1392,9 +1354,7 @@ class DiagramDetectConfig(CogniteObject):
         self._extra_params = {}
         for param_name, value in params.items():
             if known := _known_params.get(to_camel_case(param_name)):
-                raise ValueError(
-                    f"Provided parameter name `{param_name}` collides with a known parameter `{known}`. Please use it insead."
-                )
+                raise ValueError(f"Provided parameter name `{param_name}` collides with a known parameter `{known}`.")
             self._extra_params[param_name] = value
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
