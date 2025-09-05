@@ -135,7 +135,7 @@ class SimulatorRoutinesAPI(APIClient):
                 ...         external_id="routine_ext_id_2",
                 ...         simulator_integration_external_id="integration_ext_id_2",
                 ...         model_external_id="model_ext_id_2",
-                ...     )
+                ...     ),
                 ... ]
                 >>> res = client.simulators.routines.create(routines)
         """
@@ -165,7 +165,7 @@ class SimulatorRoutinesAPI(APIClient):
             Delete simulator routines by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.routines.delete(ids=[1,2,3], external_ids="foo")
+                >>> client.simulators.routines.delete(ids=[1, 2, 3], external_ids="foo")
         """
         self._warning.warn()
         self._delete_multiple(
@@ -203,10 +203,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.routines.list(
                 ...     simulator_integration_external_ids=["integration_ext_id"],
-                ...     sort=PropertySort(
-                ...         property="createdTime",
-                ...         order="desc"
-                ...     )
+                ...     sort=PropertySort(property="createdTime", order="desc"),
                 ... )
 
         """
@@ -257,8 +254,7 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> run = client.simulators.routines.run(
-                ...     routine_external_id="routine1",
-                ...     log_severity="Debug"
+                ...     routine_external_id="routine1", log_severity="Debug"
                 ... )
         """
         self._warning.warn()

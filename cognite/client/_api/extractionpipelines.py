@@ -130,7 +130,9 @@ class ExtractionPipelinesAPI(APIClient):
 
             Get assets by external id:
 
-                >>> res = client.extraction_pipelines.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
+                >>> res = client.extraction_pipelines.retrieve_multiple(
+                ...     external_ids=["abc", "def"], ignore_unknown_ids=True
+                ... )
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
@@ -219,7 +221,7 @@ class ExtractionPipelinesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.extraction_pipelines.delete(id=[1,2,3], external_id="3")
+                >>> client.extraction_pipelines.delete(id=[1, 2, 3], external_id="3")
         """
         self._delete_multiple(identifiers=IdentifierSequence.load(id, external_id), wrap_ids=True, extra_body_fields={})
 
@@ -309,12 +311,16 @@ class ExtractionPipelineRunsAPI(APIClient):
 
             Filter extraction pipeline runs on a given status:
 
-                >>> runs_list = client.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], limit=5)
+                >>> runs_list = client.extraction_pipelines.runs.list(
+                ...     external_id="test ext id", statuses=["seen"], limit=5
+                ... )
 
             Get all failed pipeline runs in the last 24 hours for pipeline 'extId':
 
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
-                >>> res = client.extraction_pipelines.runs.list(external_id="extId", statuses="failure", created_time="24h-ago")
+                >>> res = client.extraction_pipelines.runs.list(
+                ...     external_id="extId", statuses="failure", created_time="24h-ago"
+                ... )
         """
         if isinstance(created_time, str):
             created_time = TimestampRange(min=timestamp_to_ms(created_time))
@@ -375,7 +381,8 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client.data_classes import ExtractionPipelineRunWrite
                 >>> client = CogniteClient()
                 >>> res = client.extraction_pipelines.runs.create(
-                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId"))
+                ...     ExtractionPipelineRunWrite(status="success", extpipe_external_id="extId")
+                ... )
         """
         assert_type(run, "run", [ExtractionPipelineRunCore, Sequence])
         return self._create_multiple(
@@ -454,7 +461,9 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineConfigWrite
                 >>> client = CogniteClient()
-                >>> res = client.extraction_pipelines.config.create(ExtractionPipelineConfigWrite(external_id="extId", config="my config contents"))
+                >>> res = client.extraction_pipelines.config.create(
+                ...     ExtractionPipelineConfigWrite(external_id="extId", config="my config contents")
+                ... )
         """
         if isinstance(config, ExtractionPipelineConfig):
             config = config.as_write()

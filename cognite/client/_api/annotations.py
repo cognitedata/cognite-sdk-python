@@ -233,7 +233,9 @@ class AnnotationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
-                >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
+                >>> flt = AnnotationFilter(
+                ...     annotated_resource_type="file", annotated_resource_ids=[{"id": 123}]
+                ... )
                 >>> res = client.annotations.list(flt, limit=None)
         """
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)

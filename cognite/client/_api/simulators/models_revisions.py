@@ -70,7 +70,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...     created_time=TimestampRange(min=0, max=1000000),
                 ...     last_updated_time=TimestampRange(min=0, max=1000000),
                 ...     sort=PropertySort(order="asc", property="createdTime"),
-                ...     limit=10
+                ...     limit=10,
                 ... )
         """
         model_revisions_filter = SimulatorModelRevisionsFilter(
@@ -137,7 +137,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ... )
 
             Get multiple simulator model revisions by ids:
-                >>> res = client.simulators.models.revisions.retrieve(ids=[1,2])
+                >>> res = client.simulators.models.revisions.retrieve(ids=[1, 2])
 
             Get multiple simulator model revisions by external ids:
                 >>> res = client.simulators.models.revisions.retrieve(
@@ -247,7 +247,11 @@ class SimulatorModelRevisionsAPI(APIClient):
         Examples:
             Create new simulator model revisions:
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.simulators import SimulatorModelRevisionWrite, SimulatorModelDependencyFileId, SimulatorModelRevisionDependency
+                >>> from cognite.client.data_classes.simulators import (
+                ...     SimulatorModelRevisionWrite,
+                ...     SimulatorModelDependencyFileId,
+                ...     SimulatorModelRevisionDependency,
+                ... )
                 >>> client = CogniteClient()
                 >>> revisions = [
                 ...     SimulatorModelRevisionWrite(
@@ -259,7 +263,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...         external_id="revision2",
                 ...         file_id=2,
                 ...         model_external_id="a_2",
-                ...         external_dependencies = [
+                ...         external_dependencies=[
                 ...             SimulatorModelRevisionDependency(
                 ...                 file=SimulatorModelDependencyFileId(id=123),
                 ...                 arguments={
@@ -267,7 +271,7 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...                     "fieldB": "value2",
                 ...                 },
                 ...             )
-                ...         ]
+                ...         ],
                 ...     ),
                 ... ]
                 >>> res = client.simulators.models.revisions.create(revisions)

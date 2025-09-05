@@ -365,7 +365,8 @@ class TimeSeriesAPI(APIClient):
             >>> timezone_count = client.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
             ...     advanced_filter=is_critical,
-            ...     aggregate_filter=not_america)
+            ...     aggregate_filter=not_america,
+            ... )
 
         """
         self._validate_filter(advanced_filter)
@@ -401,7 +402,9 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
-                >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
+                >>> key_count = client.time_series.aggregate_cardinality_properties(
+                ...     TimeSeriesProperty.metadata
+                ... )
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -437,7 +440,9 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> client = CogniteClient()
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.metadata_key("timezone")
+                ... )
                 >>> print(result.unique)
 
             Get the different units with count used for time series created after 2020-01-01 in your CDF project:
@@ -446,8 +451,12 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.utils import timestamp_to_ms
                 >>> from datetime import datetime
-                >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
+                >>> created_after_2020 = filters.Range(
+                ...     TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.unit, advanced_filter=created_after_2020
+                ... )
                 >>> print(result.unique)
 
             Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
@@ -456,8 +465,14 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
                 >>> from cognite.client.data_classes import aggregations as aggs, filters
                 >>> not_test = aggs.Not(aggs.Prefix("test"))
-                >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-                >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> created_after_2020 = filters.Range(
+                ...     TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1))
+                ... )
+                >>> result = client.time_series.aggregate_unique_values(
+                ...     TimeSeriesProperty.unit,
+                ...     advanced_filter=created_after_2020,
+                ...     aggregate_filter=not_test,
+                ... )
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
@@ -529,7 +544,9 @@ class TimeSeriesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeriesWrite
                 >>> client = CogniteClient()
-                >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
+                >>> ts = client.time_series.create(
+                ...     TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo")
+                ... )
         """
         return self._create_multiple(
             list_cls=TimeSeriesList,
@@ -557,7 +574,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.time_series.delete(id=[1,2,3], external_id="3")
+                >>> client.time_series.delete(id=[1, 2, 3], external_id="3")
         """
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
@@ -609,7 +626,11 @@ class TimeSeriesAPI(APIClient):
             Perform a partial update on a time series, updating the description and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import TimeSeriesUpdate
-                >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     TimeSeriesUpdate(id=1)
+                ...     .description.set("New description")
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.time_series.update(my_update)
 
             Perform a partial update on a time series by instance id:
@@ -667,8 +688,12 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> existing_time_series = client.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
-                >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
-                >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
+                >>> new_time_series = TimeSeries(
+                ...     external_id="new_timeSeries", description="New timeSeries"
+                ... )
+                >>> res = client.time_series.upsert(
+                ...     [existing_time_series, new_time_series], mode="replace"
+                ... )
         """
 
         return self._upsert_multiple(
@@ -711,7 +736,7 @@ class TimeSeriesAPI(APIClient):
 
             Search for all time series connected to asset with id 123:
 
-                >>> res = client.time_series.search(filter={"asset_ids":[123]})
+                >>> res = client.time_series.search(filter={"asset_ids": [123]})
         """
 
         return self._search(
@@ -758,9 +783,14 @@ class TimeSeriesAPI(APIClient):
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
 
                 >>> from cognite.client.data_classes.filters import Equals
-                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> from cognite.client.data_classes.time_series import (
+                ...     TimeSeriesProperty,
+                ...     SortableTimeSeriesProperty,
+                ... )
                 >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
-                >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
+                >>> res = client.time_series.filter(
+                ...     filter=is_numeric, sort=SortableTimeSeriesProperty.external_id
+                ... )
         """
         warnings.warn(
             f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
@@ -847,19 +877,21 @@ class TimeSeriesAPI(APIClient):
             Iterate over time series:
 
                 >>> for ts in client.time_series:
-                ...     ts # do something with the time series
+                ...     ts  # do something with the time series
 
             Iterate over chunks of time series to reduce memory load:
 
                 >>> for ts_list in client.time_series(chunk_size=2500):
-                ...     ts_list # do something with the time series
+                ...     ts_list  # do something with the time series
 
             Using advanced filter, find all time series that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
 
                 >>> from cognite.client.data_classes import filters
                 >>> in_timezone = filters.Prefix(["metadata", "timezone"], "Europe")
-                >>> res = client.time_series.list(advanced_filter=in_timezone, sort=("external_id", "asc"))
+                >>> res = client.time_series.list(
+                ...     advanced_filter=in_timezone, sort=("external_id", "asc")
+                ... )
 
             Note that you can check the API documentation above to see which properties you can filter on
             with which filters.
@@ -868,20 +900,25 @@ class TimeSeriesAPI(APIClient):
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` Enums.
 
                 >>> from cognite.client.data_classes import filters
-                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> from cognite.client.data_classes.time_series import (
+                ...     TimeSeriesProperty,
+                ...     SortableTimeSeriesProperty,
+                ... )
                 >>> in_timezone = filters.Prefix(TimeSeriesProperty.metadata_key("timezone"), "Europe")
                 >>> res = client.time_series.list(
-                ...     advanced_filter=in_timezone,
-                ...     sort=(SortableTimeSeriesProperty.external_id, "asc"))
+                ...     advanced_filter=in_timezone, sort=(SortableTimeSeriesProperty.external_id, "asc")
+                ... )
 
             Combine filter and advanced filter:
 
                 >>> from cognite.client.data_classes import filters
                 >>> not_instrument_lvl5 = filters.And(
-                ...    filters.ContainsAny("labels", ["Level5"]),
-                ...    filters.Not(filters.ContainsAny("labels", ["Instrument"]))
+                ...     filters.ContainsAny("labels", ["Level5"]),
+                ...     filters.Not(filters.ContainsAny("labels", ["Instrument"])),
                 ... )
-                >>> res = client.time_series.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
+                >>> res = client.time_series.list(
+                ...     asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5
+                ... )
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

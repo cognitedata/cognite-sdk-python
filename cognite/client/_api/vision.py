@@ -82,7 +82,9 @@ class VisionAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.contextualization import VisionFeature
                 >>> client = CogniteClient()
-                >>> extract_job = client.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
+                >>> extract_job = client.vision.extract(
+                ...     features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1]
+                ... )
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions
