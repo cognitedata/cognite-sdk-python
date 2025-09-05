@@ -258,22 +258,40 @@ class Feature(FeatureCore):
 
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        created_time (int | None): No description.
+        last_updated_time (int | None): No description.
+        data_set_id (int | None): No description.
         cognite_client (CogniteClient | None): The client to associate with this object.
         **properties (Any): The properties of the feature.
     """
 
     def __init__(
-        self, external_id: str | None = None, cognite_client: CogniteClient | None = None, **properties: Any
+        self,
+        external_id: str | None,
+        created_time: int | None,
+        last_updated_time: int | None,
+        data_set_id: int | None,
+        cognite_client: CogniteClient | None = None,
+        **properties: Any,
     ) -> None:
         super().__init__(external_id=external_id, **properties)
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Feature:
+        _non_feature_keys = {"externalId", "createdTime", "lastUpdatedTime", "dataSetId"}
         return cls(
             external_id=resource.get("externalId"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+            data_set_id=resource.get("dataSetId"),
             cognite_client=cognite_client,
-            **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
+            **{
+                _to_feature_property_name(key): value for key, value in resource.items() if key not in _non_feature_keys
+            },
         )
 
     def as_write(self) -> FeatureWrite:
@@ -426,7 +444,12 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
         if property_column_mapping is None:
             property_column_mapping = {prop_name: prop_name for (prop_name, _) in feature_type.properties.items()}
         for _, row in geodataframe.iterrows():
-            feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
+            feature = Feature(
+                external_id=row[external_id_column],
+                data_set_id=row.get(data_set_id_column, None),
+                created_time=row.get("createdTime", None),
+                last_updated_time=row.get("lastUpdatedTime", None),
+            )
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
                 # skip generated columns and externalId, dataSetId columns
