@@ -1,4 +1,6 @@
-from cognite.client._cognite_client import CogniteClient, Response
+from requests import Response
+
+from cognite.client._cognite_client import CogniteClient
 
 
 def update_logs(cognite_client: CogniteClient, log_id: int, payload: list[dict]) -> Response:

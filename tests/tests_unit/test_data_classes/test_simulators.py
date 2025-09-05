@@ -44,7 +44,10 @@ class TestSimulatorModelRevisionDependency:
             )
         ],
     )
-    def test_load_list(self, input_data):
+    def test_load_list(
+        self,
+        input_data: list[dict[str, dict]],
+    ) -> None:
         result = SimulatorModelRevisionDependency._load_list(input_data)
         assert isinstance(result, list)
         assert all(isinstance(item, SimulatorModelRevisionDependency) for item in result)
@@ -52,7 +55,7 @@ class TestSimulatorModelRevisionDependency:
         assert isinstance(result[0].file, SimulatorModelDependencyFileId)
         assert result[0].file.id == 1111
         assert result[0].arguments == {"fieldA": "valueA"}
-        assert isinstance(result[0].file, SimulatorModelDependencyFileId)
+        assert isinstance(result[1].file, SimulatorModelDependencyFileId)
         assert result[1].file.id == 2222
 
 
@@ -366,7 +369,7 @@ class TestSimulationRunData:
 
 class TestSimulator:
     @pytest.fixture
-    def simulator_with_quantities(self):
+    def simulator_with_quantities(self) -> Simulator:
         """Create a simulator with unit quantities for testing."""
         unit_m = SimulatorUnitEntry(label="Meters", name="m")
         unit_ft = SimulatorUnitEntry(label="Feet", name="ft")
@@ -388,7 +391,7 @@ class TestSimulator:
         )
 
     @pytest.fixture
-    def simulator_without_quantities(self):
+    def simulator_without_quantities(self) -> Simulator:
         """Create a simulator without unit quantities for testing."""
         return Simulator(
             external_id="empty-simulator",
@@ -398,20 +401,20 @@ class TestSimulator:
             unit_quantities=None,
         )
 
-    def test_get_quantities_with_data(self, simulator_with_quantities):
+    def test_get_quantities_with_data(self, simulator_with_quantities: Simulator) -> None:
         """Test get_quantities returns correct list when quantities exist."""
         quantities = simulator_with_quantities.get_quantities()
         assert quantities == ["length", "mass", "temperature"]
         assert len(quantities) == 3
         assert all(isinstance(q, str) for q in quantities)
 
-    def test_get_quantities_empty(self, simulator_without_quantities):
+    def test_get_quantities_empty(self, simulator_without_quantities: Simulator) -> None:
         """Test get_quantities returns empty list when no quantities exist."""
         quantities = simulator_without_quantities.get_quantities()
         assert quantities == []
         assert len(quantities) == 0
 
-    def test_get_units_valid_quantity(self, simulator_with_quantities):
+    def test_get_units_valid_quantity(self, simulator_with_quantities: Simulator) -> None:
         """Test get_units returns correct units for valid quantities."""
         # Test length units
         length_units = simulator_with_quantities.get_units("length")
@@ -428,7 +431,7 @@ class TestSimulator:
         assert temp_units == ["C", "F"]
         assert len(temp_units) == 2
 
-    def test_get_units_invalid_quantity(self, simulator_with_quantities):
+    def test_get_units_invalid_quantity(self, simulator_with_quantities: Simulator) -> None:
         """Test get_units raises ValueError for non-existent quantity."""
         with pytest.raises(ValueError) as exc_info:
             simulator_with_quantities.get_units("pressure")
@@ -437,7 +440,7 @@ class TestSimulator:
         assert "Quantity 'pressure' not found" in error_msg
         assert "Available quantities: length, mass, temperature" in error_msg
 
-    def test_get_units_no_quantities(self, simulator_without_quantities):
+    def test_get_units_no_quantities(self, simulator_without_quantities: Simulator) -> None:
         """Test get_units raises ValueError when simulator has no quantities."""
         with pytest.raises(ValueError) as exc_info:
             simulator_without_quantities.get_units("any_quantity")
@@ -446,7 +449,7 @@ class TestSimulator:
         assert "Quantity 'any_quantity' not found" in error_msg
         assert "This simulator has no unit quantities defined" in error_msg
 
-    def test_get_units_empty_units_list(self):
+    def test_get_units_empty_units_list(self) -> None:
         """Test get_units with quantity that has empty units list."""
         empty_quantity = SimulatorQuantity(name="empty", label="Empty Quantity", units=[])
 

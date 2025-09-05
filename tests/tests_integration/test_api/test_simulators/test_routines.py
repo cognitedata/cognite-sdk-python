@@ -2,7 +2,7 @@ import pytest
 
 from cognite.client._cognite_client import CogniteClient
 from cognite.client.data_classes.simulators.filters import PropertySort
-from cognite.client.data_classes.simulators.routines import SimulatorRoutineWrite
+from cognite.client.data_classes.simulators.routines import SimulatorRoutine, SimulatorRoutineWrite
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.data import ResourceNames
 
@@ -37,7 +37,10 @@ class TestSimulatorRoutines:
             cognite_client.simulators.routines.delete(external_ids=[routine_to_create.external_id])
 
     def test_sort(
-        self, cognite_client: CogniteClient, seed_resource_names: ResourceNames, seed_simulator_routines
+        self,
+        cognite_client: CogniteClient,
+        seed_resource_names: ResourceNames,
+        seed_simulator_routines: list[SimulatorRoutine],
     ) -> None:
         simulator_integration_unique_external_id = seed_resource_names.simulator_integration_external_id
 
