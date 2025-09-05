@@ -32,7 +32,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling, simulators and datapoints
+      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling tests.
         entry: |
           poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
           tests/tests_unit/test_data_classes/test_data_models
@@ -40,6 +40,9 @@ repos:
           tests/tests_integration/test_api/test_datapoints.py
           tests/tests_unit/test_api/test_assets.py
           tests/tests_integration/test_api/test_assets.py
+          tests/tests_unit/test_api/test_events.py
+          tests/tests_unit/test_data_classes/test_events.py
+          tests/tests_integration/test_api/test_events.py
           tests/tests_integration/test_api/test_simulators
           tests/tests_integration/test_api/test_principals.py
           tests/tests_unit/test_api/test_simulators

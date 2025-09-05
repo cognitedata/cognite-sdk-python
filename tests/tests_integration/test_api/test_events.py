@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime
 from unittest import mock
 
@@ -15,7 +16,7 @@ from tests.utils import set_request_limit
 
 
 @pytest.fixture
-def new_event(cognite_client):
+def new_event(cognite_client: CogniteClient) -> Iterator[Event]:
     event = cognite_client.events.create(EventWrite(type="test__py__sdk"))
     yield event
     cognite_client.events.delete(id=event.id)
@@ -54,16 +55,9 @@ def event_list(cognite_client: CogniteClient) -> EventList:
 
 
 @pytest.fixture
-def post_spy(cognite_client):
+def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
     with mock.patch.object(cognite_client.events, "_post", wraps=cognite_client.events._post) as _:
         yield
-
-
-@pytest.fixture
-def root_test_asset(cognite_client):
-    for asset in cognite_client.assets(root=True):
-        if asset.name.startswith("test__"):
-            return asset
 
 
 @pytest.fixture(scope="session")
@@ -81,7 +75,7 @@ def twenty_events(cognite_client: CogniteClient) -> EventList:
 
 
 class TestEventsAPI:
-    def test_retrieve(self, cognite_client):
+    def test_retrieve(self, cognite_client: CogniteClient) -> None:
         random_external_id = random_string(10)
         try:
             cognite_client.events.create(EventWrite(external_id=random_external_id))
@@ -89,13 +83,13 @@ class TestEventsAPI:
         finally:
             cognite_client.events.delete(external_id=random_external_id, ignore_unknown_ids=True)
 
-    def test_retrieve_multiple(self, cognite_client, root_test_asset):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient) -> None:
         res_listed_ids = [e.id for e in cognite_client.events.list(limit=2, type="test-data-populator")]
         res_lookup_ids = [e.id for e in cognite_client.events.retrieve_multiple(res_listed_ids)]
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids
 
-    def test_retrieve_unknown(self, cognite_client):
+    def test_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
         external_id = "retrieve_unknown" + random_string(10)
         created_event = cognite_client.events.create(EventWrite(external_id=external_id))
         try:
@@ -109,57 +103,57 @@ class TestEventsAPI:
             cognite_client.events.delete(id=created_event.id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("twenty_events")
-    def test_list(self, cognite_client, post_spy):
+    def test_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
         with set_request_limit(cognite_client.events, 10):
             res = cognite_client.events.list(limit=20)
 
         assert 20 == len(res)
-        assert 2 == cognite_client.events._post.call_count
+        assert 2 == cognite_client.events._post.call_count  # type: ignore[attr-defined]
 
-    def test_list_ongoing(self, cognite_client):
+    def test_list_ongoing(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.events.list(end_time=EndTimeFilter(is_null=True), limit=10)
         assert len(res) > 0
 
-    def test_aggregation(self, cognite_client, new_event, twenty_events: EventList):
+    def test_aggregation(self, cognite_client: CogniteClient, new_event: Event, twenty_events: EventList) -> None:
         res_aggregate = cognite_client.events.aggregate(filter=EventFilter(type=twenty_events[0].type))
         assert res_aggregate[0].count > 0
 
-    def test_partitioned_list(self, cognite_client, post_spy, twenty_events: EventList):
+    def test_partitioned_list(self, cognite_client: CogniteClient, post_spy: None, twenty_events: EventList) -> None:
         # stop race conditions by cutting off max created time
         type = twenty_events[0].type
-        maxtime = twenty_events[0].start_time + 1
+        maxtime = (twenty_events[0].start_time or 0) + 1
         res_flat = cognite_client.events.list(limit=None, type=type, start_time={"max": maxtime})
         res_part = cognite_client.events.list(partitions=8, type=type, start_time={"max": maxtime}, limit=None)
         assert len(res_flat) > 0
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
-    def test_compare_partitioned_gen_and_list(self, cognite_client, post_spy):
+    def test_compare_partitioned_gen_and_list(self, cognite_client: CogniteClient, post_spy: None) -> None:
         # stop race conditions by cutting off max created time
         maxtime = utils.timestamp_to_ms(datetime(2019, 5, 25, 17, 30))
         res_generator = cognite_client.events(partitions=8, limit=None, created_time={"max": maxtime})
         res_list = cognite_client.events.list(partitions=8, limit=None, created_time={"max": maxtime})
         assert {a.id for a in res_generator} == {a.id for a in res_list}
 
-    def test_assetid_list(self, cognite_client):
+    def test_assetid_list(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.events.list(
             limit=None, type="test-data-populator", asset_external_ids=["a", "b"], asset_ids=[0, 1]
         )
         assert 0 == len(res)
 
-    def test_search(self, cognite_client):
+    def test_search(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.events.search(filter=EventFilter(start_time={"min": 1691574120000}))
         assert len(res) > 0
 
-    def test_update(self, cognite_client, new_event):
+    def test_update(self, cognite_client: CogniteClient, new_event: Event) -> None:
         update_event = EventUpdate(new_event.id).metadata.set({"bla": "bla"})
         res = cognite_client.events.update(update_event)
         assert {"bla": "bla"} == res.metadata
-        update_event2 = EventUpdate(new_event.id).metadata.set(None)
+        update_event2 = EventUpdate(new_event.id).metadata.set({})
         res2 = cognite_client.events.update(update_event2)
         assert res2.metadata == {}
 
-    def test_delete_with_nonexisting(self, cognite_client):
+    def test_delete_with_nonexisting(self, cognite_client: CogniteClient) -> None:
         a = cognite_client.events.create(EventWrite())
         cognite_client.events.delete(id=a.id, external_id="this event does not exist", ignore_unknown_ids=True)
         assert cognite_client.events.retrieve(id=a.id) is None
@@ -261,7 +255,7 @@ class TestEventsAPI:
         count = cognite_client.events.aggregate_cardinality_properties(
             EventProperty.metadata, advanced_filter=is_integration_test
         )
-        assert count >= len({k for e in event_list for k in e.metadata})
+        assert count >= len({k for e in event_list for k in e.metadata or {}})
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         f = filters
