@@ -166,7 +166,8 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     Args:
         data_models (Sequence[DataModelInfo] | None): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
-        version (Literal["v1", "v2"]): The version of the QKG tool to use. Defaults to "v2".
+        version (Literal["v1", "v2"]): The version of the QKG tool to use.
+            Defaults to "v2".
     """
 
     data_models: Sequence[DataModelInfo] | None = None
