@@ -7,10 +7,14 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
+    Action,
+    ActionMessage,
     AgentChatResponse,
     AgentDataItem,
     AgentMessage,
     AgentReasoningItem,
+    ClientTool,
+    ClientToolAction,
     TextContent,
 )
 

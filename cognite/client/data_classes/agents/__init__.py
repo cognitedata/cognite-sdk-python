@@ -21,11 +21,15 @@ from cognite.client.data_classes.agents.agent_tools import (
 )
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
 from cognite.client.data_classes.agents.chat import (
+    Action,
+    ActionMessage,
     AgentChatResponse,
     AgentDataItem,
     AgentMessage,
     AgentMessageList,
     AgentReasoningItem,
+    ClientTool,
+    ClientToolAction,
     Message,
     MessageContent,
     MessageList,
@@ -34,6 +38,8 @@ from cognite.client.data_classes.agents.chat import (
 )
 
 __all__ = [
+    "Action",
+    "ActionMessage",
     "Agent",
     "AgentChatResponse",
     "AgentDataItem",
@@ -49,6 +55,8 @@ __all__ = [
     "AgentUpsertList",
     "AskDocumentAgentTool",
     "AskDocumentAgentToolUpsert",
+    "ClientTool",
+    "ClientToolAction",
     "DataModelInfo",
     "InstanceSpaces",
     "Message",
