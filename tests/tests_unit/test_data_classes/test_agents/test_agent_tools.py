@@ -21,7 +21,6 @@ qkg_example = {
             {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
         ],
         "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
-        "version": "v2",
     },
 }
 
@@ -51,6 +50,19 @@ unknown_example = {
 }
 
 # Test QKG examples with different versions
+qkg_example_with_v2 = {
+    "name": "qkgExampleWithV2",
+    "type": "queryKnowledgeGraph",
+    "description": "Query the knowledge graph with v2",
+    "configuration": {
+        "dataModels": [
+            {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
+        ],
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+        "version": "v2",
+    },
+}
+
 qkg_example_v1 = {
     "name": "qkgExampleV1",
     "type": "queryKnowledgeGraph",
@@ -108,7 +120,11 @@ class TestAgentToolLoad:
                 # For QueryKnowledgeGraph, we expect a structured configuration object
                 assert isinstance(loaded_tool.configuration, QueryKnowledgeGraphAgentToolConfiguration)
                 # Compare by serializing the structured object back to dict
-                assert loaded_tool.configuration.dump(camel_case=True) == tool_data["configuration"]
+                # Version field is added automatically if not present, so we need to account for it
+                expected_config = tool_data["configuration"].copy()
+                if "version" not in expected_config:
+                    expected_config["version"] = "v2"  # Default version
+                assert loaded_tool.configuration.dump(camel_case=True) == expected_config
             else:
                 # For other tools (like UnknownAgentTool), configuration should be a dict
                 assert loaded_tool.configuration == tool_data["configuration"]
@@ -156,7 +172,7 @@ class TestAgentToolDump:
         assert dumped_tool["description"] == unknown_example["description"]
         assert dumped_tool["configuration"] == unknown_example["configuration"]
 
-    def test_agent_tool_dump_returns_correct_type_for_query_knowledge_graph_tool(self) -> None:
+    def test_agent_tool_dump_returns_correct_type_for_qkg_tool(self) -> None:
         """Test that AgentTool.dump() returns the correct type for query knowledge graph tools."""
         loaded_tool = AgentTool._load(qkg_example)
         dumped_tool = loaded_tool.dump(camel_case=True)
@@ -164,7 +180,11 @@ class TestAgentToolDump:
         assert dumped_tool["type"] == "queryKnowledgeGraph"
         assert dumped_tool["name"] == qkg_example["name"]
         assert dumped_tool["description"] == qkg_example["description"]
-        assert dumped_tool["configuration"] == qkg_example["configuration"]
+        
+        # Check configuration components individually since version is now added automatically
+        expected_config = qkg_example["configuration"].copy()
+        expected_config["version"] = "v2"  # Default version is added during load/dump
+        assert dumped_tool["configuration"] == expected_config
 
 
 class TestAgentToolUpsert:
@@ -197,7 +217,7 @@ class TestQueryKnowledgeGraphAgentToolVersions:
 
     def test_qkg_tool_with_explicit_v2_version(self) -> None:
         """Test QKG tool with explicit v2 version."""
-        loaded_tool = AgentTool._load(qkg_example)
+        loaded_tool = AgentTool._load(qkg_example_with_v2)
 
         assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
         assert loaded_tool.configuration is not None
