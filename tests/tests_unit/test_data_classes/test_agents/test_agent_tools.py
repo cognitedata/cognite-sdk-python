@@ -21,6 +21,7 @@ qkg_example = {
             {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
         ],
         "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+        "version": "v2",
     },
 }
 
@@ -47,6 +48,32 @@ unknown_example = {
     "type": "yolo",  # This is not a known tool type
     "description": "An unknown tool",
     "configuration": {"key": "value"},
+}
+
+# Test QKG examples with different versions
+qkg_example_v1 = {
+    "name": "qkgExampleV1",
+    "type": "queryKnowledgeGraph",
+    "description": "Query the knowledge graph with v1",
+    "configuration": {
+        "dataModels": [
+            {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
+        ],
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+        "version": "v1",
+    },
+}
+
+qkg_example_no_version = {
+    "name": "qkgExampleNoVersion",
+    "type": "queryKnowledgeGraph",
+    "description": "Query the knowledge graph without version specified",
+    "configuration": {
+        "dataModels": [
+            {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
+        ],
+        "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
+    },
 }
 
 
@@ -163,3 +190,55 @@ class TestAgentToolUpsert:
 
         assert dumped_tool["name"] == tool_data["name"]
         assert dumped_tool["description"] == tool_data["description"]
+
+
+class TestQueryKnowledgeGraphAgentToolVersions:
+    """Test QKG tool version functionality."""
+
+    def test_qkg_tool_with_explicit_v2_version(self) -> None:
+        """Test QKG tool with explicit v2 version."""
+        loaded_tool = AgentTool._load(qkg_example)
+        
+        assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
+        assert loaded_tool.configuration is not None
+        assert loaded_tool.configuration.version == "v2"
+        
+        # Test that it dumps correctly
+        dumped_tool = loaded_tool.dump(camel_case=True)
+        assert dumped_tool["configuration"]["version"] == "v2"
+
+    def test_qkg_tool_with_explicit_v1_version(self) -> None:
+        """Test QKG tool with explicit v1 version."""
+        loaded_tool = AgentTool._load(qkg_example_v1)
+        
+        assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
+        assert loaded_tool.configuration is not None
+        assert loaded_tool.configuration.version == "v1"
+        
+        # Test that it dumps correctly
+        dumped_tool = loaded_tool.dump(camel_case=True)
+        assert dumped_tool["configuration"]["version"] == "v1"
+
+    def test_qkg_tool_defaults_to_v2_when_no_version_specified(self) -> None:
+        """Test QKG tool defaults to v2 when no version is specified."""
+        loaded_tool = AgentTool._load(qkg_example_no_version)
+        
+        assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
+        assert loaded_tool.configuration is not None
+        assert loaded_tool.configuration.version == "v2"
+        
+        # Test that it dumps correctly with default version
+        dumped_tool = loaded_tool.dump(camel_case=True)
+        assert dumped_tool["configuration"]["version"] == "v2"
+
+    def test_qkg_tool_upsert_preserves_version(self) -> None:
+        """Test that QKG tool upsert preserves version information."""
+        loaded_tool = AgentTool._load(qkg_example_v1)
+        upsert_tool = loaded_tool.as_write()
+        
+        assert upsert_tool.configuration is not None
+        assert upsert_tool.configuration.version == "v1"
+        
+        # Test that upsert dumps correctly
+        dumped_tool = upsert_tool.dump(camel_case=True)
+        assert dumped_tool["configuration"]["version"] == "v1"
