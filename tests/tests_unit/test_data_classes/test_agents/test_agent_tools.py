@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client.data_classes.agents.agent_tools import (
+    DEFAULT_QKG_VERSION,
     AgentTool,
     AskDocumentAgentTool,
     QueryKnowledgeGraphAgentTool,
@@ -59,7 +60,7 @@ qkg_example_with_v2 = {
             {"space": "cdf_cdm", "externalId": "CogniteCore", "version": "v1", "viewExternalIds": ["CogniteAsset"]}
         ],
         "instanceSpaces": {"type": "manual", "spaces": ["my_space"]},
-        "version": "v2",
+        "version": DEFAULT_QKG_VERSION,
     },
 }
 
@@ -123,7 +124,7 @@ class TestAgentToolLoad:
                 # Version field is added automatically if not present, so we need to account for it
                 expected_config = tool_data["configuration"].copy()
                 if "version" not in expected_config:
-                    expected_config["version"] = "v2"  # Default version
+                    expected_config["version"] = DEFAULT_QKG_VERSION  # Default version
                 assert loaded_tool.configuration.dump(camel_case=True) == expected_config
             else:
                 # For other tools (like UnknownAgentTool), configuration should be a dict
@@ -183,7 +184,7 @@ class TestAgentToolDump:
         
         # Check configuration components individually since version is now added automatically
         expected_config = qkg_example["configuration"].copy()
-        expected_config["version"] = "v2"  # Default version is added during load/dump
+        expected_config["version"] = DEFAULT_QKG_VERSION  # Default version is added during load/dump
         assert dumped_tool["configuration"] == expected_config
 
 
@@ -221,11 +222,11 @@ class TestQueryKnowledgeGraphAgentToolVersions:
 
         assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
         assert loaded_tool.configuration is not None
-        assert loaded_tool.configuration.version == "v2"
+        assert loaded_tool.configuration.version == DEFAULT_QKG_VERSION
 
         # Test that it dumps correctly
         dumped_tool = loaded_tool.dump(camel_case=True)
-        assert dumped_tool["configuration"]["version"] == "v2"
+        assert dumped_tool["configuration"]["version"] == DEFAULT_QKG_VERSION
 
     def test_qkg_tool_with_explicit_v1_version(self) -> None:
         """Test QKG tool with explicit v1 version."""
@@ -245,11 +246,11 @@ class TestQueryKnowledgeGraphAgentToolVersions:
 
         assert isinstance(loaded_tool, QueryKnowledgeGraphAgentTool)
         assert loaded_tool.configuration is not None
-        assert loaded_tool.configuration.version == "v2"
+        assert loaded_tool.configuration.version == DEFAULT_QKG_VERSION
 
         # Test that it dumps correctly with default version
         dumped_tool = loaded_tool.dump(camel_case=True)
-        assert dumped_tool["configuration"]["version"] == "v2"
+        assert dumped_tool["configuration"]["version"] == DEFAULT_QKG_VERSION
 
     def test_qkg_tool_upsert_preserves_version(self) -> None:
         """Test that QKG tool upsert preserves version information."""
