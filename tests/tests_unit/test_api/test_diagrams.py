@@ -34,8 +34,6 @@ class TestPNIDParsingUnit:
             start_time=1,
             status_time=1,
             error_message=None,
-            status_path=None,
-            job_token=None,
             cognite_client=None,
         ),
     )
