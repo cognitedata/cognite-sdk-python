@@ -92,10 +92,9 @@ def test_all_base_api_paths_have_retry_or_specifically_no_set(
     "lst_cls",
     [
         list_cls
-        for list_cls in all_concrete_subclasses(CogniteResourceList)
         # Principal list .as_ids() returns a list of strings and not integers,
         # so we skip the check for it.
-        if list_cls not in {PrincipalList}
+        for list_cls in all_concrete_subclasses(CogniteResourceList, exclude={PrincipalList})
     ],
 )
 def test_ensure_identifier_mixins(lst_cls):

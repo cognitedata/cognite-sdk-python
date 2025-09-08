@@ -59,7 +59,7 @@ class UserPrincipal(Principal):
         id (str): The ID of an organization user
         name (str): Human-readable name of the principal
         picture_url (str): URL to a picture of the principal
-        email (str | None): Do not use this to uniquely identify a user, as it can be changed
+        email (str | None): User email. Do not use this to uniquely identify a user, as it can be changed
             and is not guaranteed to be unique. Use the id field instead.
         given_name (str | None): The given name of the user
         middle_name (str | None): The middle name of the user
@@ -125,8 +125,10 @@ class ServicePrincipal(Principal):
         id (str): Unique identifier of a service account
         name (str): Human-readable name of the service account
         created_by (ServiceAccountCreator): The creator of the service account
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): When the principal was created. It is given as the number of milliseconds
+            since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): When the principal was last updated.  It is given as the number of milliseconds
+            since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         picture_url (str): URL to a picture of the principal.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         description (str | None): A description of the service account.
@@ -183,7 +185,7 @@ class UnknownPrincipal(Principal):
     Arguments:
         id (str): Unique identifier of the principal.
         type (str): The type of the principal, which is not recognized by the SDK.
-        data (dict[str, Any]): Additional data associated with the principal, excluding the 'id' field.
+        data (dict[str, Any]): Additional data associated with the principal, excluding the 'id' and 'type' fields.
 
     """
 
@@ -203,12 +205,7 @@ class UnknownPrincipal(Principal):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output = {
-            "id": self.id,
-            "type": self.type,
-        }
-        output.update(self.__data)
-        return output
+        return {"id": self.id, "type": self.type, **self.__data}
 
 
 class PrincipalList(CogniteResourceList[Principal]):

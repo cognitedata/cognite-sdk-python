@@ -97,10 +97,10 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     )
 
 
-def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     return [
         sub
-        for sub in all_subclasses(base)
+        for sub in all_subclasses(base, exclude=exclude)
         if all(base is not abc.ABC for base in sub.__bases__)
         and not inspect.isabstract(sub)
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
