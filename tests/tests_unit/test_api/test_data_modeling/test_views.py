@@ -15,17 +15,17 @@ class TestViewsRetrieveLatest:
             make_test_view("myOtherSpace", "myView", "v2", created_time=2),
         ]
 
-    def test_different_versions(self, cognite_client, views):
+    def test_different_versions(self, cognite_client, views) -> None:
         views = (views[0], views[1])
         result = cognite_client.data_modeling.views._get_latest_views(views)
         assert result == [views[1]]
 
-    def test_different_external_ids(self, cognite_client, views):
+    def test_different_external_ids(self, cognite_client, views) -> None:
         views = [views[0], views[1], views[2], views[3]]
 
         result = cognite_client.data_modeling.views._get_latest_views(views)
         assert result == [views[1], views[3]]
 
-    def test_different_spaces(self, cognite_client, views):
+    def test_different_spaces(self, cognite_client, views) -> None:
         result = cognite_client.data_modeling.views._get_latest_views(views)
         assert result == [views[1], views[3], views[5]]

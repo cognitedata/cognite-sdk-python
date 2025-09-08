@@ -17,7 +17,7 @@ from cognite.client.utils._url import NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
 from tests.utils import all_concrete_subclasses, all_subclasses
 
 
-def test_assert_no_root_init_file():
+def test_assert_no_root_init_file() -> None:
     # We have an implicit namespace package under the namespace package directory: 'cognite'.
 
     # From: https://packaging.python.org/en/latest/guides/packaging-namespace-packages/#native-namespace-packages
@@ -28,7 +28,7 @@ def test_assert_no_root_init_file():
 
 
 @pytest.mark.parametrize("cls", [CogniteResource, CogniteResourceList])
-def test_ensure_all_to_pandas_methods_use_snake_case(cls):
+def test_ensure_all_to_pandas_methods_use_snake_case(cls) -> None:
     err_msg = "Class: '{}' for method to_pandas does not default camel_case parameter to False."
     for sub_cls in all_subclasses(cls):
         if not (cls_method := getattr(sub_cls, "to_pandas", False)):
@@ -46,7 +46,7 @@ def test_ensure_all_to_pandas_methods_use_snake_case(cls):
         for list_cls in all_concrete_subclasses(CogniteResourceList, exclude={PrincipalList})
     ],
 )
-def test_ensure_identifier_mixins(lst_cls):
+def test_ensure_identifier_mixins(lst_cls: type[CogniteResourceList]) -> None:
     # TODO: Data Modeling uses "as_ids()" even though existing classes use the same for "integer internal ids"
     if "data_modeling" in str(lst_cls):
         return

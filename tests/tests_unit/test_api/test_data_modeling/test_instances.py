@@ -38,7 +38,7 @@ class TestSourceDef:
             ),
         ),
     )
-    def test_instances_api_dump_instance_source(self, sources, expected):
+    def test_instances_api_dump_instance_source(self, sources, expected) -> None:
         # We need to support:
         # ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
         # ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]

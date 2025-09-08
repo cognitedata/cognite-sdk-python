@@ -67,7 +67,7 @@ class TestListAndIterSignatures:
             (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
         ],
     )
-    def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
+    def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore) -> None:
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
         list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
         filter_parameters = {p.name for p in inspect.signature(filter.__init__).parameters.values()}
@@ -96,7 +96,7 @@ class TestListAndIterSignatures:
             data_sets.DataSetsAPI,
         ],
     )
-    def test_list_and_iter_signatures_are_same(self, api):
+    def test_list_and_iter_signatures_are_same(self, api) -> None:
         ignore_params = {"chunk_size"}
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
         list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
@@ -115,7 +115,7 @@ def signature_error_msg(expected, actual, ignore=None):
 
 
 class TestFileMetadataUploadSignatures:
-    def test_upload_signatures_same_as_file_metadata_signature(self):
+    def test_upload_signatures_same_as_file_metadata_signature(self) -> None:
         upload_parameters = dict(inspect.signature(files.FilesAPI.upload).parameters)
         del upload_parameters["path"]
         del upload_parameters["recursive"]
