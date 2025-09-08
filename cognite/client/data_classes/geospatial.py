@@ -37,10 +37,10 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
 
     def __init__(
         self,
-        external_id: str | None = None,
-        data_set_id: int | None = None,
-        properties: dict[str, Any] | None = None,
-        search_spec: dict[str, Any] | None = None,
+        external_id: str | None,
+        data_set_id: int | None,
+        properties: dict[str, Any] | None,
+        search_spec: dict[str, Any] | None,
     ) -> None:
         self.external_id = external_id
         self.data_set_id = data_set_id

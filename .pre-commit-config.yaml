@@ -42,16 +42,25 @@ repos:
           tests/tests_unit/test_base.py
           tests/tests_unit/test_cognite_client.py
           tests/tests_unit/test_config.py
+          tests/tests_unit/test_credential_providers.py
+          
+          tests/tests_unit/test_api/test_assets.py
+          tests/tests_unit/test_api/test_events.py
+          tests/tests_unit/test_api/test_datapoints.py
+          tests/tests_unit/test_api/test_data_sets.py
+          tests/tests_unit/test_api/test_geospatial.py
+          tests/tests_unit/test_api/test_raw.py
+          tests/tests_unit/test_api/test_time_series.py
+          tests/tests_unit/test_api/test_3d.py
+          tests/tests_unit/test_api/test_vision_extract.py
+          tests/tests_unit/test_api/test_transformations.py
           
           tests/tests_integration/test_api/test_data_modeling
           tests/tests_integration/test_api/test_datapoints.py
-          tests/tests_unit/test_api/test_assets.py
           tests/tests_integration/test_api/test_assets.py
-          tests/tests_unit/test_api/test_events.py
           tests/tests_integration/test_api/test_events.py
-          tests/tests_unit/test_api/test_raw.py
           tests/tests_integration/test_api/test_raw.py
-
+          
           tests/tests_integration/test_api/test_simulators
           tests/tests_integration/test_api/test_principals.py
           tests/tests_unit/test_api/test_simulators
