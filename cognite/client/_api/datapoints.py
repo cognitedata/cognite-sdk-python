@@ -1133,7 +1133,7 @@ class DatapointsAPI(APIClient):
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names (Literal['id', 'external_id', 'instance_id']): Use either instance IDs, external IDs or IDs as column names. Time series missing instance ID will use external ID if it exists then ID as backup. Default: "instance_id"
-            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used. If none of the time series have units, the columns will not have a second level.
+            include_unit (bool): Include units as a second level in the columns. If availible unit external IDs will be used, if not the basic unit property of the time series will be used.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
