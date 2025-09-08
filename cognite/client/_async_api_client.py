@@ -21,7 +21,6 @@ from typing import (
 from urllib.parse import urljoin
 
 import httpx
-from requests.structures import CaseInsensitiveDict
 
 from cognite.client._async_http_client import AsyncHTTPClient, HTTPClientConfig, get_global_async_client
 from cognite.client.config import global_config

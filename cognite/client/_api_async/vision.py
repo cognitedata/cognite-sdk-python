@@ -1,43 +1,42 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 
 
 class AsyncVisionAPI(AsyncAPIClient):
-    _RESOURCE_PATH = "/vision"
+    _RESOURCE_PATH = "/context/vision"
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ, **kwargs) -> dict:
-        """`List vision <placeholder-api-docs>`_"""
-        # Placeholder implementation - would need specific filters and data classes
-        # return await self._list(
-        #     list_cls=placeholder_list_cls,
-        #     resource_cls=placeholder_resource_cls,
-        #     method="POST",
-        #     limit=limit,
-        #     filter=kwargs,
-        # )
-        pass
+    async def extract(
+        self,
+        features: list[str],
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Extract features from images."""
+        body = {
+            "items": [{
+                "fileId": file_id,
+                "fileExternalId": file_external_id,
+            }],
+            "features": features,
+        }
+        body = {k: v for k, v in body.items() if v is not None}
+        
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/extract", json=body)
+        return res.json()
 
-    async def retrieve(self, id: int | None = None, external_id: str | None = None):
-        """`Retrieve a single vision by id.`_"""
-        # Placeholder implementation
-        pass
-
-    async def create(self, item):
-        """`Create one or more vision.`_"""
-        # Placeholder implementation  
-        pass
-
-    async def delete(self, id: int | Sequence[int] | None = None, external_id: str | None = None):
-        """`Delete one or more vision`_"""
-        # Placeholder implementation
-        pass
-
-    async def update(self, item):
-        """`Update one or more vision`_"""
-        # Placeholder implementation
-        pass
+    async def extract_text(
+        self,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Extract text from images."""
+        return await self.extract(
+            features=["TextDetection"],
+            file_id=file_id,
+            file_external_id=file_external_id,
+        )

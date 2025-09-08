@@ -1,43 +1,44 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 
 
 class AsyncDiagramsAPI(AsyncAPIClient):
-    _RESOURCE_PATH = "/diagrams"
+    _RESOURCE_PATH = "/context/diagram"
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ, **kwargs) -> dict:
-        """`List diagrams <placeholder-api-docs>`_"""
-        # Placeholder implementation - would need specific filters and data classes
-        # return await self._list(
-        #     list_cls=placeholder_list_cls,
-        #     resource_cls=placeholder_resource_cls,
-        #     method="POST",
-        #     limit=limit,
-        #     filter=kwargs,
-        # )
-        pass
+    async def detect(
+        self,
+        entities: list[dict[str, Any]],
+        search_field: str = "name",
+        partial_match: bool = False,
+        min_tokens: int = 2,
+    ) -> dict[str, Any]:
+        """Detect entities in diagrams."""
+        body = {
+            "entities": entities,
+            "searchField": search_field,
+            "partialMatch": partial_match,
+            "minTokens": min_tokens,
+        }
+        
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/detect", json=body)
+        return res.json()
 
-    async def retrieve(self, id: int | None = None, external_id: str | None = None):
-        """`Retrieve a single diagrams by id.`_"""
-        # Placeholder implementation
-        pass
-
-    async def create(self, item):
-        """`Create one or more diagrams.`_"""
-        # Placeholder implementation  
-        pass
-
-    async def delete(self, id: int | Sequence[int] | None = None, external_id: str | None = None):
-        """`Delete one or more diagrams`_"""
-        # Placeholder implementation
-        pass
-
-    async def update(self, item):
-        """`Update one or more diagrams`_"""
-        # Placeholder implementation
-        pass
+    async def convert(
+        self,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Convert diagram to interactive format."""
+        body = {"items": [{}]}
+        if file_id is not None:
+            body["items"][0]["fileId"] = file_id
+        if file_external_id is not None:
+            body["items"][0]["fileExternalId"] = file_external_id
+        
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/convert", json=body)
+        return res.json()

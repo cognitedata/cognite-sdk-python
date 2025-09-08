@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -49,12 +49,22 @@ class AsyncDataSetsAPI(AsyncAPIClient):
 
     def __call__(self, chunk_size: int | None = None, **kwargs) -> AsyncIterator[DataSet] | AsyncIterator[DataSetList]:
         """Async iterator over data sets."""
+        filter = DataSetFilter(
+            name=kwargs.get('name'),
+            external_id_prefix=kwargs.get('external_id_prefix'),
+            write_protected=kwargs.get('write_protected'),
+            metadata=kwargs.get('metadata'),
+            created_time=kwargs.get('created_time'),
+            last_updated_time=kwargs.get('last_updated_time'),
+        ).dump(camel_case=True)
+
         return self._list_generator(
             list_cls=DataSetList,
             resource_cls=DataSet,
             method="POST",
             chunk_size=chunk_size,
-            **kwargs
+            filter=filter,
+            limit=kwargs.get('limit'),
         )
 
     def __aiter__(self) -> AsyncIterator[DataSet]:
@@ -161,4 +171,24 @@ class AsyncDataSetsAPI(AsyncAPIClient):
             cls=CountAggregate,
             resource_path=self._RESOURCE_PATH,
             filter=filter,
+        )
+
+    @overload
+    async def upsert(self, item: Sequence[DataSet | DataSetWrite], mode: Literal["patch", "replace"] = "patch") -> DataSetList: ...
+
+    @overload 
+    async def upsert(self, item: DataSet | DataSetWrite, mode: Literal["patch", "replace"] = "patch") -> DataSet: ...
+
+    async def upsert(
+        self,
+        item: DataSet | DataSetWrite | Sequence[DataSet | DataSetWrite],
+        mode: Literal["patch", "replace"] = "patch",
+    ) -> DataSet | DataSetList:
+        """`Upsert data sets <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_"""
+        return await self._upsert_multiple(
+            items=item,
+            list_cls=DataSetList,
+            resource_cls=DataSet,
+            update_cls=DataSetUpdate,
+            mode=mode,
         )

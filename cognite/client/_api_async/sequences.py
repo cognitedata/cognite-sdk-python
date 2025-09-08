@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -15,6 +15,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -153,16 +154,17 @@ class AsyncSequencesAPI(AsyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`List sequences <https://developer.cognite.com/api#tag/Sequences/operation/listSequences>`_"""
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
         filter = SequenceFilter(
             name=name,
             external_id_prefix=external_id_prefix,
             metadata=metadata,
             asset_ids=asset_ids,
             asset_external_ids=asset_external_ids,
-            asset_subtree_ids=asset_subtree_ids,
-            asset_subtree_external_ids=asset_subtree_external_ids,
-            data_set_ids=data_set_ids,
-            data_set_external_ids=data_set_external_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            data_set_ids=data_set_ids_processed,
             created_time=created_time,
             last_updated_time=last_updated_time,
         ).dump(camel_case=True)

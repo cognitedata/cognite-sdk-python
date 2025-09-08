@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -10,34 +10,25 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 class AsyncUnitsAPI(AsyncAPIClient):
     _RESOURCE_PATH = "/units"
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ, **kwargs) -> dict:
-        """`List units <placeholder-api-docs>`_"""
-        # Placeholder implementation - would need specific filters and data classes
-        # return await self._list(
-        #     list_cls=placeholder_list_cls,
-        #     resource_cls=placeholder_resource_cls,
-        #     method="POST",
-        #     limit=limit,
-        #     filter=kwargs,
-        # )
-        pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.systems = AsyncUnitSystemAPI(self._config, self._api_version, self._cognite_client)
 
-    async def retrieve(self, id: int | None = None, external_id: str | None = None):
-        """`Retrieve a single units by id.`_"""
-        # Placeholder implementation
-        pass
+    async def list(self, name: str | None = None, symbol: str | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> dict:
+        """List units."""
+        filter = {}
+        if name:
+            filter["name"] = name
+        if symbol:
+            filter["symbol"] = symbol
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
+        return res.json()
 
-    async def create(self, item):
-        """`Create one or more units.`_"""
-        # Placeholder implementation  
-        pass
 
-    async def delete(self, id: int | Sequence[int] | None = None, external_id: str | None = None):
-        """`Delete one or more units`_"""
-        # Placeholder implementation
-        pass
+class AsyncUnitSystemAPI(AsyncAPIClient):
+    _RESOURCE_PATH = "/units/systems"
 
-    async def update(self, item):
-        """`Update one or more units`_"""
-        # Placeholder implementation
-        pass
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> dict:
+        """List unit systems."""
+        res = await self._get(url_path=self._RESOURCE_PATH)
+        return res.json()

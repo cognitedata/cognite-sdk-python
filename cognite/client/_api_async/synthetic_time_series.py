@@ -1,43 +1,38 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes import (
+    Datapoints,
+    DatapointsList,
+)
 
 
 class AsyncSyntheticTimeSeriesAPI(AsyncAPIClient):
-    _RESOURCE_PATH = "/synthetic_time_series"
+    _RESOURCE_PATH = "/timeseries/synthetic"
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ, **kwargs) -> dict:
-        """`List synthetic time series <placeholder-api-docs>`_"""
-        # Placeholder implementation - would need specific filters and data classes
-        # return await self._list(
-        #     list_cls=placeholder_list_cls,
-        #     resource_cls=placeholder_resource_cls,
-        #     method="POST",
-        #     limit=limit,
-        #     filter=kwargs,
-        # )
-        pass
-
-    async def retrieve(self, id: int | None = None, external_id: str | None = None):
-        """`Retrieve a single synthetic time series by id.`_"""
-        # Placeholder implementation
-        pass
-
-    async def create(self, item):
-        """`Create one or more synthetic time series.`_"""
-        # Placeholder implementation  
-        pass
-
-    async def delete(self, id: int | Sequence[int] | None = None, external_id: str | None = None):
-        """`Delete one or more synthetic time series`_"""
-        # Placeholder implementation
-        pass
-
-    async def update(self, item):
-        """`Update one or more synthetic time series`_"""
-        # Placeholder implementation
-        pass
+    async def query(
+        self,
+        expressions: list[dict[str, Any]],
+        start: int | str,
+        end: int | str,
+        limit: int | None = None,
+        aggregates: list[str] | None = None,
+        granularity: str | None = None,
+    ) -> DatapointsList:
+        """Query synthetic time series."""
+        body = {
+            "items": expressions,
+            "start": start,
+            "end": end,
+            "limit": limit,
+            "aggregates": aggregates,
+            "granularity": granularity,
+        }
+        body = {k: v for k, v in body.items() if v is not None}
+        
+        res = await self._post(url_path=f"{self._RESOURCE_PATH}/query", json=body)
+        return DatapointsList._load(res.json()["items"], cognite_client=self._cognite_client)

@@ -11,7 +11,8 @@ from cognite.client.data_classes import (
     GroupWrite,
     SecurityCategory,
     SecurityCategoryList,
-    UserIdentifier,
+    Session,
+    SessionList,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -109,9 +110,9 @@ class AsyncSecurityCategoriesAPI(AsyncAPIClient):
 class AsyncSessionsAPI(AsyncAPIClient):
     _RESOURCE_PATH = "/sessions"
 
-    async def create(self, user_identifier: UserIdentifier, session_type: str | None = None) -> dict[str, Any]:
+    async def create(self, session_type: str | None = None) -> dict[str, Any]:
         """`Create session <https://developer.cognite.com/api#tag/IAM/operation/createSessions>`_"""
-        body = {"userIdentifier": user_identifier.dump()}
+        body = {}
         if session_type:
             body["sessionType"] = session_type
         

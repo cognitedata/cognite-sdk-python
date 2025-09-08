@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -98,4 +98,39 @@ class AsyncFunctionsAPI(AsyncAPIClient):
             identifiers=IdentifierSequence.load(id, external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
+
+    @overload
+    async def update(self, item: Sequence[Function | FunctionUpdate]) -> FunctionList: ...
+
+    @overload
+    async def update(self, item: Function | FunctionUpdate) -> Function: ...
+
+    async def update(self, item: Function | FunctionUpdate | Sequence[Function | FunctionUpdate]) -> Function | FunctionList:
+        """`Update one or more functions <https://developer.cognite.com/api#tag/Functions/operation/updateFunctions>`_"""
+        return await self._update_multiple(
+            list_cls=FunctionList,
+            resource_cls=Function,
+            update_cls=FunctionUpdate,
+            items=item,
+        )
+
+    @overload
+    async def upsert(self, item: Sequence[Function | FunctionWrite], mode: Literal["patch", "replace"] = "patch") -> FunctionList: ...
+
+    @overload 
+    async def upsert(self, item: Function | FunctionWrite, mode: Literal["patch", "replace"] = "patch") -> Function: ...
+
+    async def upsert(
+        self,
+        item: Function | FunctionWrite | Sequence[Function | FunctionWrite],
+        mode: Literal["patch", "replace"] = "patch",
+    ) -> Function | FunctionList:
+        """`Upsert functions <https://developer.cognite.com/api#tag/Functions/operation/createFunctions>`_"""
+        return await self._upsert_multiple(
+            items=item,
+            list_cls=FunctionList,
+            resource_cls=Function,
+            update_cls=FunctionUpdate,
+            mode=mode,
         )

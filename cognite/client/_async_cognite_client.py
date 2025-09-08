@@ -32,7 +32,7 @@ from cognite.client._api_async.time_series import AsyncTimeSeriesAPI
 from cognite.client._api_async.units import AsyncUnitsAPI
 from cognite.client._api_async.user_profiles import AsyncUserProfilesAPI
 from cognite.client._api_async.vision import AsyncVisionAPI
-from cognite.client._api_async.workflows import AsyncWorkflowsAPI
+from cognite.client._api_async.workflows import AsyncWorkflowAPI
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
@@ -86,7 +86,7 @@ class AsyncCogniteClient:
         self.units = AsyncUnitsAPI(self._config, self._API_VERSION, self)
         self.user_profiles = AsyncUserProfilesAPI(self._config, self._API_VERSION, self)
         self.vision = AsyncVisionAPI(self._config, self._API_VERSION, self)
-        self.workflows = AsyncWorkflowsAPI(self._config, self._API_VERSION, self)
+        self.workflows = AsyncWorkflowAPI(self._config, self._API_VERSION, self)
         
         # Base API client for generic operations  
         self._api_client = AsyncAPIClient(self._config, api_version=None, cognite_client=self)
