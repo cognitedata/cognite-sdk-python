@@ -38,7 +38,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
     Args:
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The instance ID for the file. (Only applicable for files created in DMS)
-        name (str | None): Name of the file.
+        name (str): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -54,20 +54,20 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
 
     def __init__(
         self,
-        external_id: str | None = None,
-        instance_id: NodeId | None = None,
-        name: str | None = None,
-        source: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        directory: str | None = None,
-        asset_ids: Sequence[int] | None = None,
-        data_set_id: int | None = None,
-        labels: Sequence[Label] | None = None,
-        geo_location: GeoLocation | None = None,
-        source_created_time: int | None = None,
-        source_modified_time: int | None = None,
-        security_categories: Sequence[int] | None = None,
+        external_id: str | None,
+        instance_id: NodeId | None,
+        name: str,
+        source: str | None,
+        mime_type: str | None,
+        metadata: dict[str, str] | None,
+        directory: str | None,
+        asset_ids: Sequence[int] | None,
+        data_set_id: int | None,
+        labels: Sequence[Label] | None,
+        geo_location: GeoLocation | None,
+        source_created_time: int | None,
+        source_modified_time: int | None,
+        security_categories: Sequence[int] | None,
     ) -> None:
         if geo_location is not None:
             if isinstance(geo_location, dict):
@@ -88,16 +88,6 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         self.source_created_time = source_created_time
         self.source_modified_time = source_modified_time
         self.security_categories = security_categories
-
-    @classmethod
-    def _load(cls: type[T_FileMetadata], resource: dict, cognite_client: CogniteClient | None = None) -> T_FileMetadata:
-        instance = super()._load(resource, cognite_client)
-        instance.labels = Label._load_list(instance.labels)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
-        if isinstance(instance.instance_id, dict):
-            instance.instance_id = NodeId.load(instance.instance_id)
-        return instance
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -127,7 +117,7 @@ class FileMetadata(FileMetadataCore):
         uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The Instance ID for the file. (Only applicable for files created in DMS)
-        name (str | None): Name of the file.
+        name (str): Name of the file.
         source (str | None): The source of the file.
         mime_type (str | None): File type. E.g., text/plain, application/pdf, ...
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -151,7 +141,7 @@ class FileMetadata(FileMetadataCore):
         uploaded_time: int | None,
         external_id: str | None,
         instance_id: NodeId | None,
-        name: str | None,
+        name: str,
         source: str | None,
         mime_type: str | None,
         metadata: dict[str, str] | None,
@@ -198,7 +188,7 @@ class FileMetadata(FileMetadataCore):
             uploaded_time=resource.get("uploadedTime"),
             external_id=resource.get("externalId"),
             instance_id=(instance_id := resource.get("instanceId")) and NodeId.load(instance_id),
-            name=resource.get("name"),
+            name=resource["name"],
             directory=resource.get("directory"),
             source=resource.get("source"),
             mime_type=resource.get("mimeType"),
