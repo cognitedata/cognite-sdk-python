@@ -150,13 +150,15 @@ class WorkflowVersionAPI(APIClient):
 
     def delete(
         self,
-        workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
+        workflow_version_id: WorkflowVersionIdentifier
+        | MutableSequence[WorkflowVersionId]
+        | MutableSequence[tuple[str, str]],
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete a workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/DeleteSpecificVersionsOfWorkflow>`_
 
         Args:
-            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier]): Workflow version id or list of workflow version ids to delete.
+            workflow_version_id (WorkflowVersionIdentifier | MutableSequence[WorkflowVersionId] | MutableSequence[tuple[str, str]]): Workflow version id or list of workflow version ids to delete.
             ignore_unknown_ids (bool): Ignore external ids that are not found rather than throw an exception.
 
         Examples:
