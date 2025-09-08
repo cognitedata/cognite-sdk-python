@@ -724,7 +724,7 @@ class TimeSeriesAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortSpec | list[SortSpec] | None = None,
+        sort: TimeSeriesProperty | SortSpec | list[SortSpec] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
@@ -735,7 +735,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             filter (Filter | dict): Filter to apply.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            sort (TimeSeriesProperty | SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -801,7 +801,7 @@ class TimeSeriesAPI(APIClient):
         partitions: int | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         advanced_filter: Filter | dict[str, Any] | None = None,
-        sort: SortSpec | list[SortSpec] | None = None,
+        sort: SortSpec | list[SortSpec] | TimeSeriesProperty | None = None,
     ) -> TimeSeriesList:
         """`List time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -825,7 +825,7 @@ class TimeSeriesAPI(APIClient):
             partitions (int | None): Retrieve resources in parallel using this number of workers (values up to 10 allowed), limit must be set to `None` (or `-1`).
             limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not. See examples below for usage.
-            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
+            sort (SortSpec | list[SortSpec] | TimeSeriesProperty | None): The criteria to sort by. Defaults to desc for `_score_` and asc for all other properties. Sort is not allowed if `partitions` is used.
 
         Returns:
             TimeSeriesList: The requested time series.
