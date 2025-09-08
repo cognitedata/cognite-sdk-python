@@ -713,9 +713,7 @@ class GeospatialComputedResponse(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> GeospatialComputedResponse:
-        item_list = GeospatialComputedItemList._load(
-            cast(list[Any], resource.get("items")), cognite_client=cognite_client
-        )
+        item_list = GeospatialComputedItemList._load(resource.get("items", []), cognite_client=cognite_client)
         return cls(item_list, cognite_client=cognite_client)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
