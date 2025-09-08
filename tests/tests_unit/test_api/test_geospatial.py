@@ -24,6 +24,9 @@ def test_feature_type() -> FeatureType:
             "assetIds": {"type": "LONGARRAY", "optional": "true"},
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
+        data_set_id=None,
+        created_time=123,
+        last_updated_time=123,
     )
 
 
