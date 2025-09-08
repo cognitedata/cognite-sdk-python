@@ -46,12 +46,12 @@ def test_tss(cognite_client) -> TimeSeriesList:
 
 
 @pytest.fixture
-def test_ts_numeric(test_tss):
+def test_ts_numeric(test_tss) -> None:
     return test_tss[0]
 
 
 @pytest.fixture
-def test_ts_string(test_tss):
+def test_ts_string(test_tss) -> None:
     return test_tss[1]
 
 
@@ -78,20 +78,20 @@ def time_series_list(cognite_client: CogniteClient) -> TimeSeriesList:
 
 
 class TestTimeSeriesAPI:
-    def test_retrieve(self, cognite_client):
+    def test_retrieve(self, cognite_client) -> None:
         listed_asset = cognite_client.time_series.list(limit=1)[0]
         retrieved_asset = cognite_client.time_series.retrieve(listed_asset.id)
         retrieved_asset.external_id = listed_asset.external_id
         assert retrieved_asset == listed_asset
 
-    def test_retrieve_multiple(self, cognite_client):
+    def test_retrieve_multiple(self, cognite_client) -> None:
         res = cognite_client.time_series.list(limit=2)
         retrieved_assets = cognite_client.time_series.retrieve_multiple([t.id for t in res])
         for listed_asset, retrieved_asset in zip(res, retrieved_assets):
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_retrieve_multiple_ignore_unknown(self, cognite_client):
+    def test_retrieve_multiple_ignore_unknown(self, cognite_client) -> None:
         res = cognite_client.time_series.list(limit=2)
         retrieved_assets = cognite_client.time_series.retrieve_multiple(
             [t.id for t in res] + [1, 2, 3], ignore_unknown_ids=True
@@ -100,14 +100,14 @@ class TestTimeSeriesAPI:
             retrieved_asset.external_id = listed_asset.external_id
         assert res == retrieved_assets
 
-    def test_list(self, cognite_client, post_spy):
+    def test_list(self, cognite_client, post_spy) -> None:
         with set_request_limit(cognite_client.time_series, 10):
             res = cognite_client.time_series.list(limit=20)
 
         assert 20 == len(res)
         assert 2 == cognite_client.time_series._post.call_count
 
-    def test_list_with_filters(self, cognite_client, post_spy):
+    def test_list_with_filters(self, cognite_client, post_spy) -> None:
         res = cognite_client.time_series.list(
             is_step=True,
             is_string=False,
@@ -150,17 +150,17 @@ class TestTimeSeriesAPI:
         assert len(res_flat) == len(res_part)
         assert {a.id for a in res_flat} == {a.id for a in res_part}
 
-    def test_aggregate(self, cognite_client, new_ts):
+    def test_aggregate(self, cognite_client, new_ts) -> None:
         res = cognite_client.time_series.aggregate(filter=TimeSeriesFilter(name="any"))
         assert res[0].count > 0
 
-    def test_search(self, cognite_client):
+    def test_search(self, cognite_client) -> None:
         res = cognite_client.time_series.search(
             name="test__timestamp_multiplied", filter=TimeSeriesFilter(created_time={"min": 0})
         )
         assert len(res) > 0
 
-    def test_update(self, cognite_client, new_ts):
+    def test_update(self, cognite_client, new_ts) -> None:
         assert new_ts.metadata == {"a": "b"}
         update_ts = TimeSeriesUpdate(new_ts.id).name.set("newname").metadata.set({})
         res = cognite_client.time_series.update(update_ts)
@@ -175,7 +175,7 @@ class TestTimeSeriesAPI:
         assert "temperature:deg_c" == res.unit_external_id
         assert "temperature:deg_c" == retrieved.unit_external_id
 
-    def test_delete_with_nonexisting(self, cognite_client):
+    def test_delete_with_nonexisting(self, cognite_client) -> None:
         a = cognite_client.time_series.create(TimeSeriesWrite(name="any"))
         cognite_client.assets.delete(id=a.id, external_id="this ts does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
@@ -329,17 +329,17 @@ class TestTimeSeriesHelperMethods:
         "ts_idx, exp_count",
         [(0, 2609), (2, 1), (3, 1)],
     )
-    def test_get_count__numeric(self, test_tss, ts_idx, exp_count):
+    def test_get_count__numeric(self, test_tss, ts_idx, exp_count) -> None:
         assert test_tss[ts_idx].is_string is False
         count = test_tss[ts_idx].count()
         assert count == exp_count
 
-    def test_get_count__string_fails(self, test_ts_string):
+    def test_get_count__string_fails(self, test_ts_string) -> None:
         assert test_ts_string.is_string is True
         with pytest.raises(RuntimeError, match="String time series does not support count aggregate."):
             test_ts_string.count()
 
-    def test_get_latest(self, test_ts_numeric, test_ts_string):
+    def test_get_latest(self, test_ts_numeric, test_ts_string) -> None:
         res1 = test_ts_numeric.latest()
         res2 = test_ts_string.latest()
         assert res1.timestamp == 946166400000
@@ -347,7 +347,7 @@ class TestTimeSeriesHelperMethods:
         assert res2.timestamp == 946166400000
         assert res2.value == "946166400073"  # this value should probably be more string-like ;P
 
-    def test_get_latest_before(self, test_ts_numeric, test_ts_string):
+    def test_get_latest_before(self, test_ts_numeric, test_ts_string) -> None:
         res1 = test_ts_numeric.latest(before=0)
         res2 = test_ts_string.latest(before=0)
         assert res1.timestamp == -345600000
@@ -364,7 +364,7 @@ class TestTimeSeriesHelperMethods:
             (3, MAX_TIMESTAMP_MS, MAX_TIMESTAMP_MS),
         ],
     )
-    def test_get_first_datapoint(self, test_tss, ts_idx, exp_ts, exp_val):
+    def test_get_first_datapoint(self, test_tss, ts_idx, exp_ts, exp_val) -> None:
         res = test_tss[ts_idx].first()
         assert res.timestamp == exp_ts
         assert res.value == exp_val

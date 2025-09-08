@@ -113,7 +113,7 @@ def diagram_node(cognite_client: CogniteClient, mypnid: FileMetadata, diagram_sp
 
 class TestPNIDParsingIntegration:
     @pytest.mark.skip
-    def test_run_diagram_detect(self, cognite_client: CogniteClient, mypnid: FileMetadata):
+    def test_run_diagram_detect(self, cognite_client: CogniteClient, mypnid: FileMetadata) -> None:
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
         detect_job = cognite_client.diagrams.detect(file_ids=[mypnid.id], entities=entities)
@@ -203,7 +203,7 @@ class TestPNIDParsingIntegration:
         assert len(detected_by_resource_type["file_reference"]) >= 10  # 14 seen when making the test
         assert len(detected_by_resource_type["instrument"]) >= 60  # 72 seen when making the test
 
-    def test_run_diagram_detect_with_file_instance_id(self, cognite_client, diagram_node: NodeId):
+    def test_run_diagram_detect_with_file_instance_id(self, cognite_client, diagram_node: NodeId) -> None:
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
         detect_job = cognite_client.diagrams.detect(file_instance_ids=[diagram_node], entities=entities)
