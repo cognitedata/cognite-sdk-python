@@ -61,6 +61,7 @@ repos:
           tests/tests_integration/test_api/test_datapoints.py
           tests/tests_integration/test_api/test_assets.py
           tests/tests_integration/test_api/test_events.py
+          tests/tests_integration/test_api/test_workflows.py
           tests/tests_integration/test_api/test_raw.py
           
           tests/tests_integration/test_api/test_simulators
