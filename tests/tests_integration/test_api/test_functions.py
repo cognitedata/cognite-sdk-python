@@ -219,7 +219,6 @@ class TestFunctionSchedulesAPI:
             data={"key": "value"},
             nonce=session.nonce,
         )
-        created: FunctionSchedule | None = None
         try:
             created = cognite_client.functions.schedules.create(schedule)
 
@@ -229,7 +228,4 @@ class TestFunctionSchedulesAPI:
             assert created.as_write().dump() == expected
             assert created.session_id == session.id
         finally:
-            if created:
-                cognite_client.functions.schedules.delete(created.id)
-            if created_fn:
-                cognite_client.functions.delete(id=created_fn.id)
+            cognite_client.functions.delete(id=created_fn.id)
