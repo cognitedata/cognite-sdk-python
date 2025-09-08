@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, BinaryIO, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, BinaryIO, Literal, overload
 
 from cognite.client._api.document_preview import DocumentPreviewAPI
 from cognite.client._api_client import APIClient
@@ -52,7 +52,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> Iterator[Document]: ...
 
     def __call__(
         self,
@@ -96,7 +96,7 @@ class DocumentsAPI(APIClient):
         Returns:
             Iterator[Document]: yields documents one by one.
         """
-        return cast(Iterator[Document], self())
+        return self()
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -392,7 +392,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[False] = False,
         filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList: ...
 
@@ -402,7 +402,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[True],
         filter: Filter | dict[str, Any] | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
 
