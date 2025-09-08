@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -31,11 +32,14 @@ def mypnid(cognite_client: CogniteClient) -> FileMetadata:
     file = cognite_client.files.retrieve(external_id=PNID_FILE_EXTERNAL_ID.name)
 
     if file is None:
-        file = cognite_client.files.upload(
-            path=PNID_FILE_EXTERNAL_ID,
-            external_id=PNID_FILE_EXTERNAL_ID.name,
-            name="mypnid.pdf",
-            mime_type="application/pdf",
+        return cast(
+            FileMetadata,
+            cognite_client.files.upload(
+                path=PNID_FILE_EXTERNAL_ID,
+                external_id=PNID_FILE_EXTERNAL_ID.name,
+                name="mypnid.pdf",
+                mime_type="application/pdf",
+            ),
         )
     return file
 
@@ -45,12 +49,15 @@ def eleven_page_pnid(cognite_client: CogniteClient) -> FileMetadata:
     file = cognite_client.files.retrieve(external_id=ELEVEN_PAGE_PNID.name)
 
     if file is None:
-        file = cognite_client.files.upload(
-            path=ELEVEN_PAGE_PNID,
-            external_id=ELEVEN_PAGE_PNID.name,
-            name="functional_tests.pdf",
-            mime_type="application/pdf",
-            metadata={"purpose": "test diagram detect with page ranges"},
+        return cast(
+            FileMetadata,
+            cognite_client.files.upload(
+                path=ELEVEN_PAGE_PNID,
+                external_id=ELEVEN_PAGE_PNID.name,
+                name="functional_tests.pdf",
+                mime_type="application/pdf",
+                metadata={"purpose": "test diagram detect with page ranges"},
+            ),
         )
     return file
 
@@ -114,7 +121,7 @@ def diagram_node(cognite_client: CogniteClient, mypnid: FileMetadata, diagram_sp
 class TestPNIDParsingIntegration:
     @pytest.mark.skip
     def test_run_diagram_detect(self, cognite_client: CogniteClient, mypnid: FileMetadata) -> None:
-        entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
+        entities: list[dict] = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
         detect_job = cognite_client.diagrams.detect(file_ids=[mypnid.id], entities=entities)
         assert isinstance(detect_job, DiagramDetectResults)
@@ -157,7 +164,7 @@ class TestPNIDParsingIntegration:
     @pytest.mark.skip
     def test_run_diagram_detect_with_page_range(
         self, cognite_client: CogniteClient, eleven_page_pnid: FileMetadata, fifty_five_page_pnid: FileMetadata
-    ):
+    ) -> None:
         entities = [{"name": "PH-ME-P-0156-001", "id": 1}, {"name": "PH-ME-P-0156-002", "id": 2}]
         # References to the above are expected on page 6 and page 11, and repeating every 11 pages.
 
@@ -203,8 +210,10 @@ class TestPNIDParsingIntegration:
         assert len(detected_by_resource_type["file_reference"]) >= 10  # 14 seen when making the test
         assert len(detected_by_resource_type["instrument"]) >= 60  # 72 seen when making the test
 
-    def test_run_diagram_detect_with_file_instance_id(self, cognite_client, diagram_node: NodeId) -> None:
-        entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
+    def test_run_diagram_detect_with_file_instance_id(
+        self, cognite_client: CogniteClient, diagram_node: NodeId
+    ) -> None:
+        entities: list[dict] = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
         detect_job = cognite_client.diagrams.detect(file_instance_ids=[diagram_node], entities=entities)
         assert isinstance(detect_job, DiagramDetectResults)
