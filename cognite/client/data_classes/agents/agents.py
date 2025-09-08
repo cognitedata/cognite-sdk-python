@@ -153,13 +153,7 @@ class Agent(AgentCore):
             model=model,
             labels=labels,
         )
-        # These fields are always present in API responses, but optional when creating.
-        # Force the type to be non-optional for read instances.
-        self.description: str = description  # type: ignore[assignment]
-        self.instructions: str = instructions  # type: ignore[assignment]
-        self.model: str = model  # type: ignore[assignment]
-        self.labels: list[str] = labels  # type: ignore[assignment]
-        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.tools: AgentToolList = AgentToolList(tools if tools is not None else [])
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
