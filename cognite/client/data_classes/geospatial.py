@@ -29,7 +29,7 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
     """A representation of a feature type in the geospatial API.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         data_set_id (int | None): The ID of the dataset this feature type belongs to.
         properties (dict[str, Any] | None): The properties of the feature type.
         search_spec (dict[str, Any] | None): The search spec of the feature type.
@@ -37,7 +37,7 @@ class FeatureTypeCore(WriteableCogniteResource["FeatureTypeWrite"], ABC):
 
     def __init__(
         self,
-        external_id: str | None,
+        external_id: str,
         data_set_id: int | None,
         properties: dict[str, Any] | None,
         search_spec: dict[str, Any] | None,
@@ -53,10 +53,10 @@ class FeatureType(FeatureTypeCore):
     This is the reading version of the FeatureType class, it is used when retrieving feature types from the api.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         data_set_id (int | None): The ID of the dataset this feature type belongs to.
-        created_time (int | None): The created time of the feature type.
-        last_updated_time (int | None): The last updated time of the feature type.
+        created_time (int): The created time of the feature type.
+        last_updated_time (int): The last updated time of the feature type.
         properties (dict[str, Any] | None): The properties of the feature type.
         search_spec (dict[str, Any] | None): The search spec of the feature type.
         cognite_client (CogniteClient | None): The client to associate with this object.
@@ -64,12 +64,12 @@ class FeatureType(FeatureTypeCore):
 
     def __init__(
         self,
-        external_id: str | None = None,
-        data_set_id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        properties: dict[str, Any] | None = None,
-        search_spec: dict[str, Any] | None = None,
+        external_id: str,
+        data_set_id: int | None,
+        created_time: int,
+        last_updated_time: int,
+        properties: dict[str, Any] | None,
+        search_spec: dict[str, Any] | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -85,10 +85,10 @@ class FeatureType(FeatureTypeCore):
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> FeatureType:
         return cls(
-            external_id=resource.get("externalId"),
+            external_id=resource["externalId"],
             data_set_id=resource.get("dataSetId"),
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             properties=resource.get("properties"),
             search_spec=resource.get("searchSpec"),
             cognite_client=cognite_client,
@@ -230,7 +230,7 @@ class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
 
     PRE_DEFINED_SNAKE_CASE_NAMES = frozenset({to_snake_case(key) for key in RESERVED_PROPERTIES})
 
-    def __init__(self, external_id: str | None = None, **properties: Any) -> None:
+    def __init__(self, external_id: str | None, **properties: Any) -> None:
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
@@ -525,17 +525,12 @@ class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenc
     """A representation of a feature in the geospatial API.
 
     Args:
-        srid (int | None): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str | None): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
-        proj_string (str | None): The projection specification string as described in https://proj.org/usage/quickstart.html
+        srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
+        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
-    def __init__(
-        self,
-        srid: int | None = None,
-        wkt: str | None = None,
-        proj_string: str | None = None,
-    ) -> None:
+    def __init__(self, srid: int, wkt: str, proj_string: str) -> None:
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
@@ -546,32 +541,28 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
     This is the reading version of the CoordinateReferenceSystem class, it is used when retrieving from the CDF.
 
     Args:
-        srid (int | None): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str | None): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
-        proj_string (str | None): The projection specification string as described in https://proj.org/usage/quickstart.html
+        srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
+        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        srid: int | None = None,
-        wkt: str | None = None,
-        proj_string: str | None = None,
+        srid: int,
+        wkt: str,
+        proj_string: str,
         cognite_client: CogniteClient | None = None,
     ) -> None:
-        super().__init__(
-            srid=srid,
-            wkt=wkt,
-            proj_string=proj_string,
-        )
+        super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> CoordinateReferenceSystem:
         return cls(
-            srid=resource.get("srid"),
-            wkt=resource.get("wkt"),
-            proj_string=resource.get("projString"),
+            srid=resource["srid"],
+            wkt=resource["wkt"],
+            proj_string=resource["projString"],
             cognite_client=cognite_client,
         )
 
@@ -580,11 +571,7 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
         if self.srid is None or self.wkt is None or self.proj_string is None:
             raise ValueError("SRID, WKT, and projString must be set to create a coordinate reference system")
 
-        return CoordinateReferenceSystemWrite(
-            srid=self.srid,
-            wkt=self.wkt,
-            proj_string=self.proj_string,
-        )
+        return CoordinateReferenceSystemWrite(srid=self.srid, wkt=self.wkt, proj_string=self.proj_string)
 
 
 class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
@@ -596,27 +583,14 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
-    def __init__(
-        self,
-        srid: int,
-        wkt: str,
-        proj_string: str,
-    ) -> None:
-        super().__init__(
-            srid=srid,
-            wkt=wkt,
-            proj_string=proj_string,
-        )
+    def __init__(self, srid: int, wkt: str, proj_string: str) -> None:
+        super().__init__(srid=srid, wkt=wkt, proj_string=proj_string)
 
     @classmethod
     def _load(
         cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None
     ) -> CoordinateReferenceSystemWrite:
-        return cls(
-            srid=resource["srid"],
-            wkt=resource["wkt"],
-            proj_string=resource["projString"],
-        )
+        return cls(srid=resource["srid"], wkt=resource["wkt"], proj_string=resource["projString"])
 
     def as_write(self) -> CoordinateReferenceSystemWrite:
         """Returns this CoordinateReferenceSystemWrite instance."""
