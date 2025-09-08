@@ -70,6 +70,7 @@ repos:
           tests/tests_integration/test_api/test_functions.py
           tests/tests_integration/test_api/test_geospatial.py
           tests/tests_integration/test_api/test_iam.py
+          tests/tests_integration/test_api/test_labels.py
           tests/tests_integration/test_api/test_workflows.py
           tests/tests_integration/test_api/test_raw.py
           tests/tests_integration/test_api/test_transformations
