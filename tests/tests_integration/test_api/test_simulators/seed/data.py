@@ -503,8 +503,8 @@ SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET = [
                 "graphicalObject": {
                     "height": 50,
                     "width": 100,
-                    "scaleX": True,
-                    "scaleY": True,
+                    "scaleX": 10,
+                    "scaleY": 8.73,
                     "active": True,
                     "angle": 90,
                     "position": {"x": 100, "y": 100},

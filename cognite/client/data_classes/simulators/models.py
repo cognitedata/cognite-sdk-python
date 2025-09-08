@@ -506,8 +506,8 @@ class SimulatorFlowsheetGraphicalObject(CogniteObject):
     position: SimulatorFlowsheetPosition | None
     height: float | None
     width: float | None
-    scale_x: bool | None
-    scale_y: bool | None
+    scale_x: float | int | None
+    scale_y: float | int | None
     angle: float | None
     active: bool | None
 
