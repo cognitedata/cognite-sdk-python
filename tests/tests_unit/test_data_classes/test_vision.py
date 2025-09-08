@@ -363,7 +363,7 @@ class TestVisionExtractJob:
     @pytest.mark.parametrize(
         "status, result, expected_items",
         [
-            (JobStatus.QUEUED, None, None),
+            (JobStatus.QUEUED, None, []),
             (
                 JobStatus.COMPLETED,
                 {"items": [{"fileId": 1, "predictions": mock_vision_predictions_dict}]},
@@ -380,30 +380,37 @@ class TestVisionExtractJob:
         ids=["non_completed_job", "completed_job"],
     )
     def test_items_property(
-        self, mock_result: MagicMock, status: JobStatus, result: dict | None, expected_items: list | None
+        self, mock_result: MagicMock, status: JobStatus, result: dict | None, expected_items: list[VisionExtractItem]
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         mock_result.return_value = result
         job: VisionExtractJob = VisionExtractJob(
-            job_id=1, status=status.value, status_time=123, created_time=123, cognite_client=cognite_client
+            job_id=1,
+            status=status.value,
+            status_time=123,
+            created_time=123,
+            items=expected_items,
+            cognite_client=cognite_client,
         )
         assert job.items == expected_items
 
     @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
-        "file_id, expected_item, error_message",
+        "file_id, expected_items, error_message",
         [
             (
                 1,
-                VisionExtractItem(
-                    file_id=1,
-                    file_external_id="foo",
-                    predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
-                    error_message=None,
-                ),
+                [
+                    VisionExtractItem(
+                        file_id=1,
+                        file_external_id="foo",
+                        predictions=VisionExtractPredictions.load(mock_vision_predictions_dict),
+                        error_message=None,
+                    )
+                ],
                 None,
             ),
-            (1337, None, "File with id 1337 not found in results"),
+            (1337, [], "File with id 1337 not found in results"),
         ],
         ids=["valid_unique_id", "non_existing_id"],
     )
@@ -411,7 +418,7 @@ class TestVisionExtractJob:
         self,
         mock_result: MagicMock,
         file_id: int,
-        expected_item: VisionExtractItem | None,
+        expected_items: list[VisionExtractItem],
         error_message: str | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
@@ -426,13 +433,18 @@ class TestVisionExtractJob:
             ]
         }
         job: VisionExtractJob = VisionExtractJob(
-            job_id=1, status="bla", status_time=123, created_time=123, cognite_client=cognite_client
+            job_id=1,
+            status="bla",
+            status_time=123,
+            created_time=123,
+            items=expected_items,
+            cognite_client=cognite_client,
         )
         if error_message is not None:
             with pytest.raises(IndexError, match=error_message):
                 job[file_id]
         else:
-            assert job[file_id] == expected_item
+            assert job[file_id] == expected_items[0]
 
     @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
@@ -440,17 +452,17 @@ class TestVisionExtractJob:
         [
             (
                 {"items": []},
-                None,
+                {"creating_user": "sdk-tests"},
                 [],
             ),
             (
                 {"items": [{"fileId": 1, "predictions": {}}]},
-                None,
+                {"creating_user": "sdk-tests"},
                 [],
             ),
             (
                 {"items": [{"fileId": 1, "predictions": {"text_predictions": []}}]},
-                None,
+                {"creating_user": "sdk-tests"},
                 [],
             ),
             (
@@ -472,7 +484,7 @@ class TestVisionExtractJob:
                         }
                     ]
                 },
-                {"creating_user": None, "creating_app": None, "creating_app_version": None},
+                {"creating_user": "sdk-tests", "creating_app": None, "creating_app_version": None},
                 [
                     AnnotationWrite(
                         annotated_resource_id=1,
@@ -486,7 +498,7 @@ class TestVisionExtractJob:
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version="1",
-                        creating_user=None,
+                        creating_user="sdk-tests",
                     ),
                     AnnotationWrite(
                         annotated_resource_id=1,
@@ -499,7 +511,7 @@ class TestVisionExtractJob:
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version="1",
-                        creating_user=None,
+                        creating_user="sdk-tests",
                     ),
                     AnnotationWrite(
                         annotated_resource_id=1,
@@ -512,7 +524,7 @@ class TestVisionExtractJob:
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version="1",
-                        creating_user=None,
+                        creating_user="sdk-tests",
                     ),
                     AnnotationWrite(
                         annotated_resource_id=1,
@@ -527,7 +539,7 @@ class TestVisionExtractJob:
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version="1",
-                        creating_user=None,
+                        creating_user="sdk-tests",
                     ),
                     AnnotationWrite(
                         annotated_resource_id=1,
@@ -540,7 +552,7 @@ class TestVisionExtractJob:
                         status="suggested",
                         creating_app="cognite-sdk-python",
                         creating_app_version="1",
-                        creating_user=None,
+                        creating_user="sdk-tests",
                     ),
                 ],
             ),
@@ -584,8 +596,8 @@ class TestVisionExtractJob:
     def test_predictions_to_annotations(
         self,
         mock_result: MagicMock,
-        result: dict | None,
-        params: dict | None,
+        result: dict,
+        params: dict,
         expected_items: list | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
@@ -593,9 +605,14 @@ class TestVisionExtractJob:
         mock_result.return_value = result
 
         job: VisionExtractJob = VisionExtractJob(
-            job_id=1, status=JobStatus.COMPLETED.value, status_time=123, created_time=123, cognite_client=cognite_client
+            job_id=1,
+            status=JobStatus.COMPLETED.value,
+            status_time=123,
+            created_time=123,
+            cognite_client=cognite_client,
+            items=[VisionExtractItem.load(item) for item in result.get("items", [])],
         )
-        assert job._predictions_to_annotations(**(params or {})) == expected_items
+        assert job._predictions_to_annotations(**params) == expected_items
 
 
 class TestFeatureParameters:

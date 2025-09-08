@@ -145,6 +145,22 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
+    @overload
+    def create(
+        self,
+        name: str | ThreeDModelWrite,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModel: ...
+
+    @overload
+    def create(
+        self,
+        name: SequenceNotStr[str | ThreeDModelWrite],
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModelList: ...
+
     def create(
         self,
         name: str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite],

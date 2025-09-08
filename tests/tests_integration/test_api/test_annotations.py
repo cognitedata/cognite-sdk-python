@@ -202,7 +202,7 @@ class TestAnnotationsIntegration:
         created_annotation = cognite_client.annotations.create(base_annotation)
         assert isinstance(created_annotation, Annotation)
         check_created_vs_base(base_annotation, created_annotation)
-        assert created_annotation.creating_user is None
+        assert created_annotation.creating_user == "sdk-tests"
 
     def test_create_single_annotation2(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         base_annotation.status = "rejected"
@@ -224,7 +224,7 @@ class TestAnnotationsIntegration:
         suggested_annotation = cognite_client.annotations.suggest(base_suggest_annotation)
         assert isinstance(suggested_annotation, Annotation)
         check_created_vs_base(base_suggest_annotation, suggested_annotation)
-        assert suggested_annotation.creating_user is None
+        assert suggested_annotation.creating_user == "sdk-tests"
 
     def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: AnnotationWrite) -> None:
         suggested_annotations = cognite_client.annotations.suggest([base_suggest_annotation] * 30)
@@ -343,7 +343,7 @@ class TestAnnotationsIntegration:
             filter=AnnotationReverseLookupFilter(
                 data={"assetRef": {"id": asset_link_annotation.data["assetRef"]["id"]}},
                 annotated_resource_type="file",
-                creating_user=None,
+                creating_user="sdk-tests",
                 annotation_type="diagrams.AssetLink",
                 status="approved",
             )
