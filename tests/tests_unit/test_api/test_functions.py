@@ -400,7 +400,7 @@ class TestFunctionsAPI:
             ("bad_function_code2", "handler.py", TypeError),
         ],
     )
-    def test_validate_folder(self, function_folder, function_path, exception):
+    def test_validate_folder(self, function_folder, function_path, exception) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path, skip_folder_validation=True)
@@ -417,7 +417,7 @@ class TestFunctionsAPI:
             ("relative_imports", "bad_relative_import.py", ImportError),
         ],
     )
-    def test_imports_in_validate_folder(self, function_folder, function_path, exception):
+    def test_imports_in_validate_folder(self, function_folder, function_path, exception) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path, skip_folder_validation=False)
@@ -433,35 +433,37 @@ class TestFunctionsAPI:
         ],
     )
     @pytest.mark.usefixtures("mock_file_create_response")
-    def test_zip_and_upload_folder(self, function_folder, function_name, cognite_client):
+    def test_zip_and_upload_folder(self, function_folder, function_name, cognite_client) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         cognite_client.functions._zip_and_upload_folder(folder, function_name)
 
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
-    def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client):
+    def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client) -> None:
         with pytest.raises(RuntimeError):
             cognite_client.functions.create(name="myfunction", file_id=123)
 
-    def test_create_with_path(self, mock_functions_create_response, cognite_client):
+    def test_create_with_path(self, mock_functions_create_response, cognite_client) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_file_id(self, mock_functions_create_response, cognite_client):
+    def test_create_with_file_id(self, mock_functions_create_response, cognite_client) -> None:
         res = cognite_client.functions.create(name="myfunction", file_id=1234)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_function_handle(self, mock_functions_create_response, function_handle, cognite_client):
+    def test_create_with_function_handle(self, mock_functions_create_response, function_handle, cognite_client) -> None:
         res = cognite_client.functions.create(name="myfunction", function_handle=function_handle)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_function_handle_with_illegal_name_raises(self, function_handle_illegal_name, cognite_client):
+    def test_create_with_function_handle_with_illegal_name_raises(
+        self, function_handle_illegal_name, cognite_client
+    ) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", function_handle=function_handle_illegal_name)
 
@@ -536,27 +538,29 @@ class TestFunctionsAPI:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", function_handle=function_handle, file_id=1234)
 
-    def test_create_with_path_and_file_id_raises(self, mock_functions_create_response, cognite_client):
+    def test_create_with_path_and_file_id_raises(self, mock_functions_create_response, cognite_client) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(
                 name="myfunction", folder="some/folder", file_id=1234, function_path="handler.py"
             )
 
-    def test_create_with_cpu_and_memory(self, mock_functions_create_response, cognite_client):
+    def test_create_with_cpu_and_memory(self, mock_functions_create_response, cognite_client) -> None:
         res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1.0)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_cpu_not_float_raises(self, mock_functions_create_response, cognite_client):
+    def test_create_with_cpu_not_float_raises(self, mock_functions_create_response, cognite_client) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", file_id=1234, cpu="0.2")
 
-    def test_create_with_memory_not_float_raises(self, mock_functions_create_response, cognite_client):
+    def test_create_with_memory_not_float_raises(self, mock_functions_create_response, cognite_client) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", file_id=1234, memory="0.5")
 
-    def test_create_upload_with_data_set_id(self, mock_functions_create_response, cognite_client, function_handle):
+    def test_create_upload_with_data_set_id(
+        self, mock_functions_create_response, cognite_client, function_handle
+    ) -> None:
         cognite_client.files = MagicMock(spec=cognite_client.files)
 
         def mock_upload_bytes(*args, **kwargs):
@@ -588,70 +592,72 @@ class TestFunctionsAPI:
 
         cognite_client.functions.create(name="myfunction", function_handle=function_handle, data_set_id=999)
 
-    def test_delete_single_id(self, mock_functions_delete_response, cognite_client):
+    def test_delete_single_id(self, mock_functions_delete_response, cognite_client) -> None:
         _ = cognite_client.functions.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_functions_delete_response.get_requests()[0].content)
 
-    def test_delete_single_external_id(self, mock_functions_delete_response, cognite_client):
+    def test_delete_single_external_id(self, mock_functions_delete_response, cognite_client) -> None:
         _ = cognite_client.functions.delete(external_id="func1")
         assert {"items": [{"externalId": "func1"}]} == jsgz_load(
             mock_functions_delete_response.get_requests()[0].content
         )
 
-    def test_delete_multiple_id_and_multiple_external_id(self, mock_functions_delete_response, cognite_client):
+    def test_delete_multiple_id_and_multiple_external_id(self, mock_functions_delete_response, cognite_client) -> None:
         _ = cognite_client.functions.delete(id=[1, 2, 3], external_id=["func1", "func2"])
         assert {
             "items": [{"id": 1}, {"id": 2}, {"id": 3}, {"externalId": "func1"}, {"externalId": "func2"}]
         } == jsgz_load(mock_functions_delete_response.get_requests()[0].content)
 
-    def test_list(self, mock_functions_filter_response, cognite_client):
+    def test_list(self, mock_functions_filter_response, cognite_client) -> None:
         res = cognite_client.functions.list()
 
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_list_with_limits(self, mock_functions_filter_response, cognite_client):
+    def test_list_with_limits(self, mock_functions_filter_response, cognite_client) -> None:
         res = cognite_client.functions.list(limit=1)
         assert isinstance(res, FunctionList)
         assert len(res) == 1
 
-    def test_retrieve_by_id(self, mock_functions_retrieve_response, cognite_client):
+    def test_retrieve_by_id(self, mock_functions_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.retrieve(id=1)
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_retrieve_by_external_id(self, mock_functions_retrieve_response, cognite_client):
+    def test_retrieve_by_external_id(self, mock_functions_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.retrieve(external_id="func1")
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_retrieve_by_id_and_external_id_raises(self, cognite_client):
+    def test_retrieve_by_id_and_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError):
             cognite_client.functions.retrieve(id=1, external_id="func1")
 
-    def test_retrieve_multiple_by_ids(self, mock_functions_retrieve_response, cognite_client):
+    def test_retrieve_multiple_by_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.retrieve_multiple(ids=[1])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple_by_external_ids(self, mock_functions_retrieve_response, cognite_client):
+    def test_retrieve_multiple_by_external_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.retrieve_multiple(external_ids=["func1"])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple_by_ids_and_external_ids(self, mock_functions_retrieve_response, cognite_client):
+    def test_retrieve_multiple_by_ids_and_external_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.retrieve_multiple(ids=[1], external_ids=["func1"])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
-    def test_function_call_with_failing_client_credentials_flow(self, cognite_client_with_client_credentials_flow):
+    def test_function_call_with_failing_client_credentials_flow(
+        self, cognite_client_with_client_credentials_flow
+    ) -> None:
         with pytest.raises(CogniteAPIError) as excinfo:
             cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert excinfo.value.code == 403
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
-    def test_function_call_with_failing_token_exchange_flow(self, cognite_client_with_token):
+    def test_function_call_with_failing_token_exchange_flow(self, cognite_client_with_token) -> None:
         with pytest.raises(CogniteAPIError) as excinfo:
             cognite_client_with_token.functions.call(id=FUNCTION_ID)
         assert excinfo.value.code == 403
@@ -661,7 +667,7 @@ class TestFunctionsAPI:
         assert isinstance(res, FunctionsLimits)
         assert mock_functions_limit_response == res.dump(camel_case=True)
 
-    def test_functions_status_endpoint(self, mock_functions_status_response, cognite_client):
+    def test_functions_status_endpoint(self, mock_functions_status_response, cognite_client) -> None:
         res = cognite_client.functions.activate()
         assert isinstance(res, FunctionsStatus)
         assert mock_functions_status_response == res.dump(camel_case=True)
@@ -674,17 +680,17 @@ class TestFunctionsAPI:
 class TestRequirementsParser:
     """Test extraction of requirements.txt from docstring in handle-function"""
 
-    def test_validate_requirements(self):
+    def test_validate_requirements(self) -> None:
         parsed = _validate_and_parse_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
         assert parsed == ["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"]
 
-    def test_validate_requirements_error(self):
+    def test_validate_requirements_error(self) -> None:
         reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]
         for req in reqs:
             with pytest.raises(Exception):
                 _validate_and_parse_requirements(req)
 
-    def test_get_requirements_handle(self):
+    def test_get_requirements_handle(self) -> None:
         def fn():
             """
             [requirements]
@@ -695,13 +701,13 @@ class TestRequirementsParser:
 
         assert _get_fn_docstring_requirements(fn) == ["asyncio"]
 
-    def test_get_requirements_handle_error(self):
+    def test_get_requirements_handle_error(self) -> None:
         def fn():
             return None
 
         assert _get_fn_docstring_requirements(fn) == []
 
-    def test_get_requirements_handle_no_docstr(self):
+    def test_get_requirements_handle_no_docstr(self) -> None:
         def fn():
             """
             [requirements]
@@ -713,7 +719,7 @@ class TestRequirementsParser:
         with pytest.raises(Exception):
             _get_fn_docstring_requirements(fn)
 
-    def test_get_requirements_handle_no_reqs(self):
+    def test_get_requirements_handle_no_reqs(self) -> None:
         def fn():
             """
             [requirements]
@@ -723,7 +729,7 @@ class TestRequirementsParser:
 
         assert _get_fn_docstring_requirements(fn) == []
 
-    def test_extract_requirements_from_file(self, tmpdir):
+    def test_extract_requirements_from_file(self, tmpdir) -> None:
         req = "somepackage == 3.8.1"
         file = os.path.join(tmpdir, "requirements.txt")
         with open(file, "w+") as f:
@@ -733,17 +739,17 @@ class TestRequirementsParser:
         assert len(reqs) == 1
         assert req in reqs
 
-    def test_extract_requirements_from_doc_string(self):
+    def test_extract_requirements_from_doc_string(self) -> None:
         req_mock = '[requirements]\nSomePackage==3.4.3, >3.4.1; python_version=="3.7"\nSomePackage==21.4.0; python_version=="3.7" and python_full_version<"3.0.0" or python_full_version>="3.5.0" and python_version>="3.7"\nSomePackage==2022.6.15; python_version>="3.8" and python_version<"4"\ncSomePackage==1.15.0; python_version>="3.6"\n[/requirements]\n'
         doc_string_mock = "this should not be included\n" + req_mock + "neither should this\n"
         expected = req_mock.splitlines()[1:-1]
         assert _extract_requirements_from_doc_string(doc_string_mock) == expected
 
-    def test_extract_requirements_from_doc_string_empty(self):
+    def test_extract_requirements_from_doc_string_empty(self) -> None:
         doc_string = "[requirements]\n[/requirements]\n"
         assert _extract_requirements_from_doc_string(doc_string) == []
 
-    def test_extract_requirements_from_doc_string_no_defined(self):
+    def test_extract_requirements_from_doc_string_no_defined(self) -> None:
         doc_string = "no requirements here"
         assert _extract_requirements_from_doc_string(doc_string) is None
 
@@ -879,23 +885,23 @@ def mock_schedule_no_data_response(httpx_mock, cognite_client):
 
 
 class TestFunctionSchedulesAPI:
-    def test_retrieve_schedules(self, mock_function_schedules_retrieve_response, cognite_client):
+    def test_retrieve_schedules(self, mock_function_schedules_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.schedules.retrieve(id=SCHEDULE_WITH_FUNCTION_EXTERNAL_ID["id"])
         assert isinstance(res, FunctionSchedule)
         assert SCHEDULE_WITH_FUNCTION_EXTERNAL_ID == res.dump(camel_case=True)
 
-    def test_list_schedules(self, mock_filter_function_schedules_response, cognite_client):
+    def test_list_schedules(self, mock_filter_function_schedules_response, cognite_client) -> None:
         res = cognite_client.functions.schedules.list()
         assert isinstance(res, FunctionSchedulesList)
         assert [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID] == res.dump(camel_case=True)
 
-    def test_list_schedules_with_limit(self, mock_filter_function_schedules_response, cognite_client):
+    def test_list_schedules_with_limit(self, mock_filter_function_schedules_response, cognite_client) -> None:
         res = cognite_client.functions.schedules.list(limit=1)
 
         assert isinstance(res, FunctionSchedulesList)
         assert len(res) == 1
 
-    def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
+    def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
         assert (
@@ -903,7 +909,7 @@ class TestFunctionSchedulesAPI:
             == excinfo.value.args[0]
         )
 
-    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client):
+    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.create(
                 function_id=123,
@@ -914,7 +920,7 @@ class TestFunctionSchedulesAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
-    def test_create_schedules_with_function_external_id(self, cognite_client):
+    def test_create_schedules_with_function_external_id(self, cognite_client) -> None:
         with patch.object(
             cognite_client.functions.schedules, "_post", wraps=cognite_client.functions.schedules._post
         ) as post_mock:
@@ -1034,13 +1040,13 @@ class TestFunctionSchedulesAPI:
         res = cognite_client.functions.schedules.delete(id=8012683333564363)
         assert res is None
 
-    def test_schedule_get_data__function_has_data(self, mock_schedule_get_data_response, cognite_client):
+    def test_schedule_get_data__function_has_data(self, mock_schedule_get_data_response, cognite_client) -> None:
         res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
 
         assert isinstance(res, dict)
         assert {"value": 2} == res
 
-    def test_schedule_get_data__function_is_missing_data(self, mock_schedule_no_data_response, cognite_client):
+    def test_schedule_get_data__function_is_missing_data(self, mock_schedule_no_data_response, cognite_client) -> None:
         res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
         assert res is None
 
@@ -1060,7 +1066,7 @@ class TestFunctionCallsAPI:
         assert isinstance(res, FunctionCallList)
         assert [CALL_COMPLETED, CALL_SCHEDULED] == res.dump(camel_case=True)
 
-    def test_list_calls_by_function_id(self, mock_function_calls_filter_response, cognite_client):
+    def test_list_calls_by_function_id(self, mock_function_calls_filter_response, cognite_client) -> None:
         filter_kwargs = {
             "status": "Completed",
             "schedule_id": 123,
@@ -1079,41 +1085,41 @@ class TestFunctionCallsAPI:
         assert len(res) == 2
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_list_calls_by_function_external_id(self, mock_function_calls_filter_response, cognite_client):
+    def test_list_calls_by_function_external_id(self, mock_function_calls_filter_response, cognite_client) -> None:
         res = cognite_client.functions.calls.list(function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCallList)
         assert [CALL_COMPLETED, CALL_SCHEDULED] == res.dump(camel_case=True)
 
-    def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client):
+    def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.list(function_id=123, function_external_id="my-function")
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
-    def test_retrieve_call_by_function_id(self, mock_function_calls_retrieve_response, cognite_client):
+    def test_retrieve_call_by_function_id(self, mock_function_calls_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
         assert CALL_COMPLETED == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_retrieve_call_by_function_external_id(self, mock_function_calls_retrieve_response, cognite_client):
+    def test_retrieve_call_by_function_external_id(self, mock_function_calls_retrieve_response, cognite_client) -> None:
         res = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCall)
         assert CALL_COMPLETED == res.dump(camel_case=True)
 
-    def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client):
+    def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.retrieve(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
-    def test_function_call_logs_by_function_id(self, mock_function_call_logs_response, cognite_client):
+    def test_function_call_logs_by_function_id(self, mock_function_call_logs_response, cognite_client) -> None:
         res = cognite_client.functions.calls.get_logs(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_function_call_logs_by_function_external_id(self, mock_function_call_logs_response, cognite_client):
+    def test_function_call_logs_by_function_external_id(self, mock_function_call_logs_response, cognite_client) -> None:
         res = cognite_client.functions.calls.get_logs(call_id=CALL_ID, function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == res.dump(camel_case=True)
@@ -1128,14 +1134,14 @@ class TestFunctionCallsAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_calls_retrieve_response")
-    def test_get_logs_on_retrieved_call_object(self, mock_function_call_logs_response, cognite_client):
+    def test_get_logs_on_retrieved_call_object(self, mock_function_call_logs_response, cognite_client) -> None:
         call = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
         logs = call.get_logs()
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == logs.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_function_calls_filter_response")
-    def test_get_logs_on_listed_call_object(self, mock_function_call_logs_response, cognite_client):
+    def test_get_logs_on_listed_call_object(self, mock_function_call_logs_response, cognite_client) -> None:
         calls = cognite_client.functions.calls.list(function_id=FUNCTION_ID)
         logs = calls[0].get_logs()
         assert isinstance(logs, FunctionCallLog)
@@ -1148,17 +1154,19 @@ class TestFunctionCallsAPI:
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == logs.dump(camel_case=True)
 
-    def test_function_call_response_by_function_id(self, mock_function_call_response_response, cognite_client):
+    def test_function_call_response_by_function_id(self, mock_function_call_response_response, cognite_client) -> None:
         res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, dict)
         assert mock_function_call_response_response["response"] == res
 
-    def test_function_call_response_by_function_external_id(self, mock_function_call_response_response, cognite_client):
+    def test_function_call_response_by_function_external_id(
+        self, mock_function_call_response_response, cognite_client
+    ) -> None:
         res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, dict)
         assert mock_function_call_response_response["response"] == res
 
-    def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client):
+    def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_response(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
@@ -1166,7 +1174,7 @@ class TestFunctionCallsAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_calls_retrieve_response")
-    def test_get_response_on_retrieved_call_object(self, mock_function_call_response_response, cognite_client):
+    def test_get_response_on_retrieved_call_object(self, mock_function_call_response_response, cognite_client) -> None:
         call = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
         response = call.get_response()
         assert isinstance(response, dict)
@@ -1187,7 +1195,7 @@ def fns_api_with_mock_client(cognite_client):
         ("xid", True),
     ),
 )
-def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
+def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle) -> None:
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
     file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle, name="name", external_id=xid)
@@ -1207,7 +1215,9 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
         ("xid", True),
     ),
 )
-def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
+def test__zip_and_upload_handle__zip_file_content(
+    fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs
+) -> None:
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
@@ -1243,7 +1253,7 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
         ("xid", True),
     ),
 )
-def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
+def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite) -> None:
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
 
@@ -1265,7 +1275,7 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
         ("xid", True),
     ),
 )
-def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
+def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite) -> None:
     def validate_file_upload_call(*args, **kwargs):
         assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
