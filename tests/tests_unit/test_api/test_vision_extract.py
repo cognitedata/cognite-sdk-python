@@ -193,7 +193,7 @@ class TestVisionExtract:
                 CogniteException,
                 match="Extract job is not completed. If the job is queued or running, wait for completion and try again",
             ):
-                job.save_predictions()
+                job.save_predictions(creating_user="sdk-tests")
 
             # Wait for job to complete and check its content
             expected_job_id = 1
@@ -268,4 +268,4 @@ class TestVisionExtract:
         assert isinstance(retrieved_job, VisionExtractJob)
         assert retrieved_job.job_id == job.job_id
 
-        assert retrieved_job.save_predictions() == []
+        assert retrieved_job.save_predictions(creating_user="sdk-tests") == []
