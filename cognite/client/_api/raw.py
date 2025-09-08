@@ -5,7 +5,7 @@ import random
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -47,10 +47,10 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Database]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
+    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatabaseList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -70,7 +70,7 @@ class RawDatabasesAPI(APIClient):
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
-    def __iter__(self) -> Iterator[Database]:
+    def __iter__(self) -> AsyncIterator[Database]:
         """Iterate over databases
 
         Returns:
@@ -84,7 +84,7 @@ class RawDatabasesAPI(APIClient):
     @overload
     def create(self, name: list[str]) -> DatabaseList: ...
 
-    def create(self, name: str | list[str]) -> Database | DatabaseList:
+    async def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
@@ -106,9 +106,9 @@ class RawDatabasesAPI(APIClient):
             items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
+        return await self._acreate_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
+    async def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
@@ -137,7 +137,7 @@ class RawDatabasesAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
@@ -164,7 +164,7 @@ class RawDatabasesAPI(APIClient):
                 >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
-        return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
+        return await self._alist(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
 
 
 class RawTablesAPI(APIClient):
@@ -207,7 +207,7 @@ class RawTablesAPI(APIClient):
     @overload
     def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
 
-    def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
+    async def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
@@ -238,7 +238,7 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
@@ -286,7 +286,7 @@ class RawTablesAPI(APIClient):
         for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
+    async def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
@@ -343,7 +343,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Row]: ...
+    ) -> AsyncIterator[Row]: ...
 
     @overload
     def __call__(
@@ -356,7 +356,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[RowList]: ...
+    ) -> AsyncIterator[RowList]: ...
 
     def __call__(
         self,
@@ -428,7 +428,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None,
         columns: list[str] | None,
         partitions: int,
-    ) -> Iterator[RowList]:
+    ) -> AsyncIterator[RowList]:
         # We are a bit restrictive on partitioning - especially for "small" limits:
         partitions = min(partitions, self._config.max_workers)
         if finite_limit := is_finite(limit):
@@ -455,7 +455,7 @@ class RawRowsAPI(APIClient):
             for initial in cursors
         ]
 
-        def exhaust(iterator: Iterator) -> None:
+        async def exhaust(iterator: Iterator) -> None:
             for res in iterator:
                 results.append(res)
                 if quit_early.is_set():
@@ -482,7 +482,7 @@ class RawRowsAPI(APIClient):
         for f in futures:
             f.cancelled() or f.result()  # Visibility in case anything failed
 
-    def _read_rows_unlimited(self, futures: list[Future], results: deque[RowList]) -> Iterator[RowList]:
+    def _read_rows_unlimited(self, futures: list[Future], results: deque[RowList]) -> AsyncIterator[RowList]:
         while not all(f.done() for f in futures):
             while results:
                 yield results.popleft()
@@ -490,7 +490,7 @@ class RawRowsAPI(APIClient):
 
     def _read_rows_limited(
         self, futures: list[Future], results: deque[RowList], limit: int, quit_early: threading.Event
-    ) -> Iterator[RowList]:
+    ) -> AsyncIterator[RowList]:
         n_total = 0
         while True:
             while results:
@@ -507,7 +507,7 @@ class RawRowsAPI(APIClient):
             if all(f.done() for f in futures) and not results:
                 return
 
-    def insert(
+    async def insert(
         self,
         db_name: str,
         table_name: str,
@@ -554,7 +554,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(
+    async def insert_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -633,7 +633,7 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
@@ -666,7 +666,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
+    async def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
 
         Args:
@@ -691,7 +691,7 @@ class RawRowsAPI(APIClient):
                 >>> val2 = row.get("col2")
 
         """
-        return self._retrieve(
+        return await self._aretrieve(
             cls=Row,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             identifier=Identifier(key),
@@ -707,7 +707,7 @@ class RawRowsAPI(APIClient):
         else:
             return ",".join(str(x) for x in columns)
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -749,7 +749,7 @@ class RawRowsAPI(APIClient):
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
+        rows = await self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
         if last_updated_time_in_index:
             idx = pd.MultiIndex.from_tuples(
                 [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
@@ -777,7 +777,7 @@ class RawRowsAPI(APIClient):
             },
         ).json()["items"]
 
-    def list(
+    async def list(
         self,
         db_name: str,
         table_name: str,

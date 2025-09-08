@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import warnings
 from collections import UserList
@@ -367,3 +368,104 @@ def classify_error(err: Exception) -> Literal["failed", "unknown"]:
     if isinstance(err, CogniteAPIError) and err.code and err.code >= 500:
         return "unknown"
     return "failed"
+
+
+async def execute_tasks_async(
+    func: Callable[..., T_Result],
+    tasks: Sequence[tuple | dict],
+    max_workers: int,
+    fail_fast: bool = False,
+    executor: TaskExecutor | None = None,
+) -> TasksSummary:
+    """
+    Async version of execute_tasks that runs async functions concurrently.
+    
+    Args:
+        func: Async function to execute for each task
+        tasks: List of task arguments (tuples or dicts)
+        max_workers: Maximum concurrent tasks (used as semaphore limit)
+        fail_fast: Whether to stop on first error
+        executor: Ignored for async tasks
+    
+    Returns:
+        TasksSummary with results in the same order as tasks
+    """
+    if not tasks:
+        return TasksSummary([], [], [], [], [], [])
+    
+    semaphore = asyncio.Semaphore(max_workers)
+    task_order = [id(task) for task in tasks]
+    
+    async def run_task(task: tuple | dict):
+        async with semaphore:
+            if isinstance(task, dict):
+                return await func(**task)
+            elif isinstance(task, tuple):
+                return await func(*task)
+            else:
+                raise TypeError(f"invalid task type: {type(task)}")
+    
+    # Create all async tasks
+    async_tasks = []
+    for task in tasks:
+        async_task = asyncio.create_task(run_task(task))
+        async_tasks.append((async_task, task))
+    
+    results: dict[int, tuple | dict] = {}
+    successful_results: dict[int, Any] = {}
+    failed_tasks, unknown_result_tasks, skipped_tasks, exceptions = [], [], [], []
+    
+    # Wait for all tasks to complete or fail
+    pending = {async_task for async_task, _ in async_tasks}
+    
+    while pending:
+        done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+        
+        for completed_task in done:
+            # Find the original task associated with this async task
+            original_task = None
+            for async_task, task in async_tasks:
+                if async_task == completed_task:
+                    original_task = task
+                    break
+            
+            if original_task is None:
+                continue
+            
+            try:
+                result = await completed_task
+                results[id(original_task)] = original_task
+                successful_results[id(original_task)] = result
+                
+            except Exception as err:
+                exceptions.append(err)
+                if classify_error(err) == "failed":
+                    failed_tasks.append(original_task)
+                else:
+                    unknown_result_tasks.append(original_task)
+                
+                if fail_fast:
+                    # Cancel remaining tasks
+                    for async_task, task in async_tasks:
+                        if async_task in pending:
+                            async_task.cancel()
+                            skipped_tasks.append(task)
+                    pending.clear()
+                    break
+    
+    # Wait for any remaining cancelled tasks to complete
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+    
+    # Order results according to original task order
+    ordered_successful_tasks = [results[task_id] for task_id in task_order if task_id in results]
+    ordered_results = [successful_results[task_id] for task_id in task_order if task_id in successful_results]
+    
+    return TasksSummary(
+        ordered_successful_tasks,
+        unknown_result_tasks,
+        failed_tasks,
+        skipped_tasks,
+        ordered_results,
+        exceptions,
+    )

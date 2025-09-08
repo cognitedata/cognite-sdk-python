@@ -175,7 +175,7 @@ class DiagramsAPI(APIClient):
         configuration: DiagramDetectConfig | dict[str, Any] | None = None,
     ) -> DiagramDetectResults: ...
 
-    def detect(
+    async def detect(
         self,
         entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
@@ -341,7 +341,7 @@ class DiagramsAPI(APIClient):
             **beta_parameters,  # type: ignore[arg-type]
         )
 
-    def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
+    async def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         if self._cognite_client is None:
             raise CogniteMissingClientError(self)
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
@@ -373,7 +373,7 @@ class DiagramsAPI(APIClient):
         ]  # diagram detect always return file id.
         return items
 
-    def convert(self, detect_job: DiagramDetectResults) -> DiagramConvertResults:
+    async def convert(self, detect_job: DiagramDetectResults) -> DiagramConvertResults:
         """Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
 
         Args:

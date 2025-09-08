@@ -36,7 +36,7 @@ class AnnotationsAPI(APIClient):
     @overload
     def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList: ...
 
-    def create(
+    async def create(
         self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
     ) -> Annotation | AnnotationList:
         """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
@@ -49,7 +49,7 @@ class AnnotationsAPI(APIClient):
         """
         assert_type(annotations, "annotations", [AnnotationCore, Sequence])
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=AnnotationList,
             resource_cls=Annotation,
             resource_path=self._RESOURCE_PATH + "/",
@@ -63,7 +63,7 @@ class AnnotationsAPI(APIClient):
     @overload
     def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList: ...
 
-    def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
+    async def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
         """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
 
         Args:
@@ -79,7 +79,7 @@ class AnnotationsAPI(APIClient):
             if isinstance(annotations, Sequence)
             else self._sanitize_suggest_item(annotations)
         )
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=AnnotationList,
             resource_cls=Annotation,
             resource_path=self._RESOURCE_PATH + "/suggest",
@@ -128,7 +128,7 @@ class AnnotationsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> AnnotationList: ...
 
-    def update(
+    async def update(
         self,
         item: Annotation
         | AnnotationWrite
@@ -144,19 +144,19 @@ class AnnotationsAPI(APIClient):
 
         Returns:
             Annotation | AnnotationList: No description."""
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item, mode=mode
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_
 
         Args:
             id (int | Sequence[int]): ID or list of IDs to be deleted
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
-    def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
+    async def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
 
         Args:
@@ -166,9 +166,9 @@ class AnnotationsAPI(APIClient):
             AnnotationList: list of annotations
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
-        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
+        return await self._aretrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
-    def retrieve(self, id: int) -> Annotation | None:
+    async def retrieve(self, id: int) -> Annotation | None:
         """`Retrieve an annotation by id <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_
 
         Args:
@@ -178,9 +178,9 @@ class AnnotationsAPI(APIClient):
             Annotation | None: annotation requested
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
-        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
+        return await self._aretrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
-    def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
+    async def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
         """Reverse lookup annotated resources based on having annotations matching the filter.
 
         Args:
@@ -203,7 +203,7 @@ class AnnotationsAPI(APIClient):
         self._reverse_lookup_warning.warn()
         assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
 
-        return self._list(
+        return await self._alist(
             list_cls=ResourceReferenceList,
             resource_cls=ResourceReference,
             method="POST",
@@ -213,7 +213,7 @@ class AnnotationsAPI(APIClient):
             api_subversion="beta",
         )
 
-    def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
+    async def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Note:
@@ -234,7 +234,7 @@ class AnnotationsAPI(APIClient):
                 >>> from cognite.client.data_classes import AnnotationFilter
                 >>> client = CogniteClient()
                 >>> flt = AnnotationFilter(annotated_resource_type="file", annotated_resource_ids=[{"id": 123}])
-                >>> res = client.annotations.list(flt, limit=None)
+                >>> res = await client.annotations.list(flt, limit=None)
         """
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 

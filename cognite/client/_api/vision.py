@@ -59,7 +59,7 @@ class VisionAPI(APIClient):
             cognite_client=self._cognite_client,
         )
 
-    def extract(
+    async def extract(
         self,
         features: VisionFeature | list[VisionFeature],
         file_ids: list[int] | None = None,
@@ -116,7 +116,7 @@ class VisionAPI(APIClient):
             headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
         )
 
-    def get_extract_job(self, job_id: int) -> VisionExtractJob:
+    async def get_extract_job(self, job_id: int) -> VisionExtractJob:
         """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
 
         Args:

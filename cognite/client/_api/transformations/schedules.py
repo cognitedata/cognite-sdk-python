@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -34,12 +34,12 @@ class TransformationSchedulesAPI(APIClient):
     @overload
     def __call__(
         self, chunk_size: None = None, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationSchedule]: ...
+    ) -> AsyncIterator[TransformationSchedule]: ...
 
     @overload
     def __call__(
         self, chunk_size: int, include_public: bool = True, limit: int | None = None
-    ) -> Iterator[TransformationScheduleList]: ...
+    ) -> AsyncIterator[TransformationScheduleList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, include_public: bool = True, limit: int | None = None
@@ -64,7 +64,7 @@ class TransformationSchedulesAPI(APIClient):
             filter=TransformationFilter(include_public=include_public).dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[TransformationSchedule]:
+    def __iter__(self) -> AsyncIterator[TransformationSchedule]:
         """Iterate over all transformation schedules"""
         return self()
 
@@ -76,7 +76,7 @@ class TransformationSchedulesAPI(APIClient):
         self, schedule: Sequence[TransformationSchedule] | Sequence[TransformationScheduleWrite]
     ) -> TransformationScheduleList: ...
 
-    def create(
+    async def create(
         self,
         schedule: TransformationSchedule
         | TransformationScheduleWrite
@@ -103,14 +103,14 @@ class TransformationSchedulesAPI(APIClient):
         """
         assert_type(schedule, "schedule", [TransformationScheduleCore, Sequence])
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=TransformationScheduleList,
             resource_cls=TransformationSchedule,
             items=schedule,
             input_resource_cls=TransformationScheduleWrite,
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> TransformationSchedule | None:
         """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
@@ -133,11 +133,11 @@ class TransformationSchedulesAPI(APIClient):
                 >>> res = client.transformations.schedules.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=TransformationScheduleList, resource_cls=TransformationSchedule, identifiers=identifiers
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -166,14 +166,14 @@ class TransformationSchedulesAPI(APIClient):
                 >>> res = client.transformations.schedules.retrieve_multiple(external_ids=["t1", "t2"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=TransformationScheduleList,
             resource_cls=TransformationSchedule,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ) -> TransformationScheduleList:
+    async def list(self, include_public: bool = True, limit: int | None = DEFAULT_LIMIT_READ) -> TransformationScheduleList:
         """`List all transformation schedules. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedules>`_
 
         Args:
@@ -193,7 +193,7 @@ class TransformationSchedulesAPI(APIClient):
         """
         filter = TransformationFilter(include_public=include_public).dump(camel_case=True)
 
-        return self._list(
+        return await self._alist(
             list_cls=TransformationScheduleList,
             resource_cls=TransformationSchedule,
             method="GET",
@@ -201,7 +201,7 @@ class TransformationSchedulesAPI(APIClient):
             filter=filter,
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -222,7 +222,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.transformations.schedules.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
@@ -242,7 +242,7 @@ class TransformationSchedulesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TransformationScheduleList: ...
 
-    def update(
+    async def update(
         self,
         item: TransformationSchedule
         | TransformationScheduleWrite
@@ -275,7 +275,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> my_update = TransformationScheduleUpdate(id=1).interval.set("0 * * * *").is_paused.set(False)
                 >>> res = client.transformations.schedules.update(my_update)
         """
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=TransformationScheduleList,
             resource_cls=TransformationSchedule,
             update_cls=TransformationScheduleUpdate,

@@ -29,7 +29,7 @@ class SpaceStatisticsAPI(APIClient):
     @overload
     def retrieve(self, space: SequenceNotStr[str]) -> SpaceStatisticsList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         space: str | SequenceNotStr[str],
     ) -> SpaceStatistics | SpaceStatisticsList | None:
@@ -55,14 +55,14 @@ class SpaceStatisticsAPI(APIClient):
                 ... )
 
         """
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             SpaceStatisticsList,
             SpaceStatistics,
             identifiers=_load_space_identifier(space),
             resource_path=self._RESOURCE_PATH,
         )
 
-    def list(self) -> SpaceStatisticsList:
+    async def list(self) -> SpaceStatisticsList:
         """`Retrieve usage for all spaces <https://developer.cognite.com/api#tag/Statistics/operation/getSpaceStatistics>`_
 
         Returns statistics for data modeling resources grouped by each space in the project.
@@ -93,7 +93,7 @@ class StatisticsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpaceStatisticsAPI(config, api_version, cognite_client)
 
-    def project(self) -> ProjectStatistics:
+    async def project(self) -> ProjectStatistics:
         """`Retrieve project-wide usage data and limits <https://developer.cognite.com/api#tag/Statistics/operation/getStatistics>`_
 
         Returns the usage data and limits for a project's data modelling usage, including data model schemas and graph instances

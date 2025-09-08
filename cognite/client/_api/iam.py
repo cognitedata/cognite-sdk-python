@@ -220,7 +220,7 @@ class IAMAPI(APIClient):
 
         return [Capability.from_tuple(tpl) for tpl in sorted(missing)]
 
-    def verify_capabilities(
+    async def verify_capabilities(
         self,
         desired_capabilities: ComparableCapability,
         ignore_allscope_meaning: bool = False,
@@ -311,7 +311,7 @@ class _GroupWriteAdapter(GroupWrite):
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
-    def list(self, all: bool = False) -> GroupList:
+    async def list(self, all: bool = False) -> GroupList:
         """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
 
         Args:
@@ -343,7 +343,7 @@ class GroupsAPI(APIClient):
     @overload
     def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
-    def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
+    async def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
@@ -405,11 +405,11 @@ class GroupsAPI(APIClient):
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=_GroupListAdapter, resource_cls=_GroupAdapter, items=group, input_resource_cls=_GroupWriteAdapter
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
 
         Args:
@@ -423,13 +423,13 @@ class GroupsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.iam.groups.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
@@ -446,7 +446,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.iam.security_categories.list()
         """
-        return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
+        return await self._alist(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     @overload
     def create(self, security_category: SecurityCategory | SecurityCategoryWrite) -> SecurityCategory: ...
@@ -456,7 +456,7 @@ class SecurityCategoriesAPI(APIClient):
         self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
     ) -> SecurityCategoryList: ...
 
-    def create(
+    async def create(
         self,
         security_category: SecurityCategory
         | SecurityCategoryWrite
@@ -481,14 +481,14 @@ class SecurityCategoriesAPI(APIClient):
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = client.iam.security_categories.create(my_category)
         """
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,
             items=security_category,
             input_resource_cls=SecurityCategoryWrite,
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
@@ -502,11 +502,11 @@ class SecurityCategoriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.iam.security_categories.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
 
 
 class TokenAPI(APIClient):
-    def inspect(self) -> TokenInspection:
+    async def inspect(self) -> TokenInspection:
         """Inspect a token.
 
         Get details about which projects it belongs to and which capabilities are granted to it.
@@ -536,7 +536,7 @@ class SessionsAPI(APIClient):
             100  # There isn't an API limit so this is a self-inflicted limit due to no support for large payloads
         )
 
-    def create(
+    async def create(
         self,
         client_credentials: ClientCredentials | None = None,
         session_type: SessionType | Literal["DEFAULT"] = "DEFAULT",
@@ -591,7 +591,7 @@ class SessionsAPI(APIClient):
     @overload
     def revoke(self, id: Sequence[int]) -> SessionList: ...
 
-    def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
+    async def revoke(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
@@ -605,7 +605,7 @@ class SessionsAPI(APIClient):
 
         revoked_sessions_res = cast(
             list,
-            self._delete_multiple(
+            await self._adelete_multiple(
                 identifiers=ident_sequence,
                 wrap_ids=True,
                 returns_items=True,
@@ -622,7 +622,7 @@ class SessionsAPI(APIClient):
     @overload
     def retrieve(self, id: Sequence[int]) -> SessionList: ...
 
-    def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
+    async def retrieve(self, id: int | Sequence[int]) -> Session | SessionList:
         """`Retrieves sessions with given IDs. <https://developer.cognite.com/api#tag/Sessions/operation/getSessionsByIds>`_
 
         The request will fail if any of the IDs does not belong to an existing session.
@@ -635,13 +635,13 @@ class SessionsAPI(APIClient):
         """
 
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=SessionList,
             resource_cls=Session,
             identifiers=identifiers,
         )
 
-    def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
+    async def list(self, status: SessionStatus | None = None, limit: int = DEFAULT_LIMIT_READ) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_
 
         Args:
@@ -652,4 +652,4 @@ class SessionsAPI(APIClient):
             SessionList: a list of sessions in the current project.
         """
         filter = {"status": status.upper()} if status is not None else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)
+        return await self._alist(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter, limit=limit)

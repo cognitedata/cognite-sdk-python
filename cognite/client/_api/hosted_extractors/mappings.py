@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -38,14 +38,14 @@ class MappingsAPI(APIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    ) -> AsyncIterator[Mapping]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
-    ) -> Iterator[Mapping]: ...
+    ) -> AsyncIterator[Mapping]: ...
 
     def __call__(
         self,
@@ -74,7 +74,7 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def __iter__(self) -> Iterator[Mapping]:
+    def __iter__(self) -> AsyncIterator[Mapping]:
         """Iterate over mappings
 
         Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
@@ -90,7 +90,7 @@ class MappingsAPI(APIClient):
     @overload
     def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> MappingList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
         """`Retrieve one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_
@@ -115,7 +115,7 @@ class MappingsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -123,7 +123,7 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(
+    async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """`Delete one or more mappings  <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_
@@ -147,7 +147,7 @@ class MappingsAPI(APIClient):
             "force": force,
         }
 
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
@@ -161,7 +161,7 @@ class MappingsAPI(APIClient):
     @overload
     def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
 
-    def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
+    async def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
         """`Create one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_
 
         Args:
@@ -181,7 +181,7 @@ class MappingsAPI(APIClient):
                 >>> res = client.hosted_extractors.mappings.create(mapping)
         """
         self._warning.warn()
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
             items=items,
@@ -195,7 +195,7 @@ class MappingsAPI(APIClient):
     @overload
     def update(self, items: Sequence[MappingWrite | MappingUpdate]) -> MappingList: ...
 
-    def update(
+    async def update(
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
         """`Update one or more mappings. <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_
@@ -217,7 +217,7 @@ class MappingsAPI(APIClient):
                 >>> res = client.hosted_extractors.mappings.update(mapping)
         """
         self._warning.warn()
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             items=items,
             list_cls=MappingList,
             resource_cls=Mapping,
@@ -225,7 +225,7 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> MappingList:
@@ -256,7 +256,7 @@ class MappingsAPI(APIClient):
                 ...     mapping_list # do something with the mappings
         """
         self._warning.warn()
-        return self._list(
+        return await self._alist(
             list_cls=MappingList,
             resource_cls=Mapping,
             method="GET",

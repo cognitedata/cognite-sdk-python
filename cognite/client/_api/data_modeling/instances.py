@@ -5,7 +5,7 @@ import itertools
 import logging
 import random
 import time
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, AsyncIterator, Sequence
 from datetime import datetime, timezone
 from threading import Thread
 from typing import (
@@ -141,7 +141,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
         ]
         return cls(resources, None)
 
-    def as_ids(self) -> list[NodeId | EdgeId]:
+    async def as_ids(self) -> list[NodeId | EdgeId]:
         return [result.as_id() for result in self]
 
 
@@ -181,7 +181,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[Node]: ...
+    ) -> AsyncIterator[Node]: ...
 
     @overload
     def __call__(
@@ -194,7 +194,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[Edge]: ...
+    ) -> AsyncIterator[Edge]: ...
 
     @overload
     def __call__(
@@ -207,7 +207,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[NodeList]: ...
+    ) -> AsyncIterator[NodeList]: ...
 
     @overload
     def __call__(
@@ -220,7 +220,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[EdgeList]: ...
+    ) -> AsyncIterator[EdgeList]: ...
 
     def __call__(
         self,
@@ -287,7 +287,7 @@ class InstancesAPI(APIClient):
             )
         )
 
-    def __iter__(self) -> Iterator[Node]:
+    def __iter__(self) -> AsyncIterator[Node]:
         """Iterate over instances (nodes only)
         Fetches nodes as they are iterated over, so you keep a limited number of nodes in memory.
 
@@ -330,7 +330,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
     ) -> EdgeList[Edge]: ...
 
-    def retrieve_edges(
+    async def retrieve_edges(
         self,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]],
         edge_cls: type[T_Edge] = Edge,  # type: ignore
@@ -432,7 +432,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
     ) -> NodeList[Node]: ...
 
-    def retrieve_nodes(
+    async def retrieve_nodes(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]],
         node_cls: type[T_Node] = Node,  # type: ignore
@@ -506,7 +506,7 @@ class InstancesAPI(APIClient):
             return res.nodes[0] if res.nodes else None
         return res.nodes
 
-    def retrieve(
+    async def retrieve(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -661,7 +661,7 @@ class InstancesAPI(APIClient):
 
         return DataModelingIdentifierSequence(identifiers, is_singleton=False)
 
-    def delete(
+    async def delete(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -698,7 +698,7 @@ class InstancesAPI(APIClient):
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
             list,
-            self._delete_multiple(
+            await self._adelete_multiple(
                 identifiers,
                 wrap_ids=True,
                 returns_items=True,
@@ -709,7 +709,7 @@ class InstancesAPI(APIClient):
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
 
-    def inspect(
+    async def inspect(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -776,7 +776,7 @@ class InstancesAPI(APIClient):
             edges=InstanceInspectResultList._load([edge for edge in items if edge["instanceType"] == "edge"]),
         )
 
-    def subscribe(
+    async def subscribe(
         self,
         query: Query,
         callback: Callable[[QueryResult], None],
@@ -902,7 +902,7 @@ class InstancesAPI(APIClient):
     def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
-    def apply(
+    async def apply(
         self,
         nodes: NodeApply | Sequence[NodeApply] | None = None,
         edges: EdgeApply | Sequence[EdgeApply] | None = None,
@@ -1101,7 +1101,7 @@ class InstancesAPI(APIClient):
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
     ) -> EdgeList[T_Edge]: ...
 
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1247,7 +1247,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList: ...
 
-    def aggregate(
+    async def aggregate(
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
@@ -1356,7 +1356,7 @@ class InstancesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]: ...
 
-    def histogram(
+    async def histogram(
         self,
         view: ViewId,
         histograms: Histogram | Sequence[Histogram],
@@ -1431,7 +1431,7 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query, include_typing: bool = False) -> QueryResult:
+    async def query(self, query: Query, include_typing: bool = False) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -1491,7 +1491,7 @@ class InstancesAPI(APIClient):
         query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing)
 
-    def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
+    async def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
@@ -1597,7 +1597,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
     ) -> EdgeList[T_Edge]: ...
 
-    def list(
+    async def list(
         self,
         instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
         include_typing: bool = False,

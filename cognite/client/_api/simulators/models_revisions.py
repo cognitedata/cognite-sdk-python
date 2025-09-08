@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, NoReturn, overload
 
 from cognite.client._api_client import APIClient
@@ -32,7 +32,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 100
 
-    def list(
+    async def list(
         self,
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
@@ -80,7 +80,7 @@ class SimulatorModelRevisionsAPI(APIClient):
             last_updated_time=last_updated_time,
         )
         self._warning.warn()
-        return self._list(
+        return await self._alist(
             method="POST",
             limit=limit,
             resource_cls=SimulatorModelRevision,
@@ -109,7 +109,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
@@ -146,13 +146,13 @@ class SimulatorModelRevisionsAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
 
-    def __iter__(self) -> Iterator[SimulatorModelRevision]:
+    def __iter__(self) -> AsyncIterator[SimulatorModelRevision]:
         """Iterate over simulator model revisions
 
         Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
@@ -172,7 +172,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelRevisionList]: ...
+    ) -> AsyncIterator[SimulatorModelRevisionList]: ...
 
     @overload
     def __call__(
@@ -184,7 +184,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorModelRevision]: ...
+    ) -> AsyncIterator[SimulatorModelRevision]: ...
 
     def __call__(
         self,
@@ -233,7 +233,7 @@ class SimulatorModelRevisionsAPI(APIClient):
     @overload
     def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
 
-    def create(
+    async def create(
         self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
@@ -274,7 +274,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         """
         assert_type(items, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=SimulatorModelRevisionList,
             resource_cls=SimulatorModelRevision,
             items=items,

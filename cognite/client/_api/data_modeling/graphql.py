@@ -55,7 +55,7 @@ class DataModelingGraphQLAPI(APIClient):
         res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
         return res[query_name]["items"][0]["graphQlDml"]
 
-    def apply_dml(
+    async def apply_dml(
         self,
         id: DataModelIdentifier,
         dml: str,
@@ -135,7 +135,7 @@ class DataModelingGraphQLAPI(APIClient):
         res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
         return DMLApplyResult.load(res[query_name]["result"])
 
-    def query(self, id: DataModelIdentifier, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def query(self, id: DataModelIdentifier, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
         """Execute a GraphQl query against a given data model.
 
         Args:

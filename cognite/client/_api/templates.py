@@ -48,7 +48,7 @@ class TemplatesAPI(APIClient):
             UserWarning,
         )
 
-    def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
+    async def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
         """
         `Run a GraphQL Query.`
         To learn more, see https://graphql.org/learn/
@@ -95,7 +95,7 @@ class TemplatesAPI(APIClient):
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
 
-    def create(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
+    async def create(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Create one or more template groups.`
 
         Args:
@@ -115,14 +115,14 @@ class TemplateGroupsAPI(APIClient):
                 >>> client.templates.groups.create([template_group_1, template_group_2])
         """
         TemplatesAPI._deprecation_warning()
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=TemplateGroupList,
             resource_cls=TemplateGroup,
             items=template_groups,
             input_resource_cls=TemplateGroupWrite,
         )
 
-    def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
+    async def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Upsert one or more template groups.`
         Will overwrite existing template group(s) with the same external id(s).
 
@@ -157,7 +157,7 @@ class TemplateGroupsAPI(APIClient):
             return res[0]
         return res
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> TemplateGroupList:
         """`Retrieve multiple template groups by external id.`
@@ -178,14 +178,14 @@ class TemplateGroupsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=TemplateGroupList,
             resource_cls=TemplateGroup,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
+    async def list(
         self, limit: int | None = DEFAULT_LIMIT_READ, owners: SequenceNotStr[str] | None = None
     ) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
@@ -209,7 +209,7 @@ class TemplateGroupsAPI(APIClient):
         filter = {}
         if owners is not None:
             filter["owners"] = owners
-        return self._list(
+        return await self._alist(
             list_cls=TemplateGroupList,
             resource_cls=TemplateGroup,
             method="POST",
@@ -219,7 +219,7 @@ class TemplateGroupsAPI(APIClient):
             sort=None,
         )
 
-    def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
@@ -234,7 +234,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> client.templates.groups.delete(external_ids=["a", "b"])
         """
         TemplatesAPI._deprecation_warning()
-        self._delete_multiple(
+        await self._adelete_multiple(
             wrap_ids=True,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
@@ -244,7 +244,7 @@ class TemplateGroupsAPI(APIClient):
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
 
-    def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
+    async def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`
         A Template Group update supports specifying different conflict modes, which is used when an existing schema already exists.
 
@@ -289,7 +289,7 @@ class TemplateGroupVersionsAPI(APIClient):
         version_res = self._post(resource_path, version.dump(camel_case=True)).json()
         return TemplateGroupVersion._load(version_res)
 
-    def list(
+    async def list(
         self,
         external_id: str,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -322,7 +322,7 @@ class TemplateGroupVersionsAPI(APIClient):
             filter["minVersion"] = min_version
         if max_version is not None:
             filter["maxVersion"] = max_version
-        return self._list(
+        return await self._alist(
             list_cls=TemplateGroupVersionList,
             resource_cls=TemplateGroupVersion,
             resource_path=resource_path,
@@ -331,7 +331,7 @@ class TemplateGroupVersionsAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, external_id: str, version: int) -> None:
+    async def delete(self, external_id: str, version: int) -> None:
         """`Delete a template group version.`
 
         Args:
@@ -353,7 +353,7 @@ class TemplateGroupVersionsAPI(APIClient):
 class TemplateInstancesAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/instances"
 
-    def create(
+    async def create(
         self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Create one or more template instances.`
@@ -392,7 +392,7 @@ class TemplateInstancesAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=TemplateInstanceList,
             resource_cls=TemplateInstance,
             resource_path=resource_path,
@@ -400,7 +400,7 @@ class TemplateInstancesAPI(APIClient):
             input_resource_cls=TemplateInstanceWrite,
         )
 
-    def upsert(
+    async def upsert(
         self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Upsert one or more template instances.`
@@ -450,7 +450,7 @@ class TemplateInstancesAPI(APIClient):
             return res[0]
         return res
 
-    def update(
+    async def update(
         self, external_id: str, version: int, item: TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]
     ) -> TemplateInstance | TemplateInstanceList:
         """`Update one or more template instances`
@@ -474,7 +474,7 @@ class TemplateInstancesAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=TemplateInstanceList,
             resource_cls=TemplateInstance,
             update_cls=TemplateInstanceUpdate,
@@ -482,7 +482,7 @@ class TemplateInstancesAPI(APIClient):
             resource_path=resource_path,
         )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self, external_id: str, version: int, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
         """`Retrieve multiple template instances by external id.`
@@ -506,7 +506,7 @@ class TemplateInstancesAPI(APIClient):
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=TemplateInstanceList,
             resource_cls=TemplateInstance,
             resource_path=resource_path,
@@ -514,7 +514,7 @@ class TemplateInstancesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
+    async def list(
         self,
         external_id: str,
         version: int,
@@ -549,7 +549,7 @@ class TemplateInstancesAPI(APIClient):
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
             filter["templateNames"] = template_names
-        return self._list(
+        return await self._alist(
             list_cls=TemplateInstanceList,
             resource_cls=TemplateInstance,
             resource_path=resource_path,
@@ -558,7 +558,7 @@ class TemplateInstancesAPI(APIClient):
             filter=filter,
         )
 
-    def delete(
+    async def delete(
         self, external_id: str, version: int, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> None:
         """`Delete one or more template instances.`
@@ -578,7 +578,7 @@ class TemplateInstancesAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        self._delete_multiple(
+        await self._adelete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
@@ -589,7 +589,7 @@ class TemplateInstancesAPI(APIClient):
 class TemplateViewsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
 
-    def create(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
+    async def create(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Create one or more template views.`
 
         Args:
@@ -624,11 +624,11 @@ class TemplateViewsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views, input_resource_cls=ViewWrite
         )
 
-    def upsert(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
+    async def upsert(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Upsert one or more template views.`
 
         Args:
@@ -671,7 +671,7 @@ class TemplateViewsAPI(APIClient):
             return res[0]
         return res
 
-    def resolve(
+    async def resolve(
         self,
         external_id: str,
         version: int,
@@ -701,7 +701,7 @@ class TemplateViewsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         url_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version) + "/resolve"
-        return self._list(
+        return await self._alist(
             list_cls=ViewResolveList,
             resource_cls=ViewResolveItem,
             url_path=url_path,
@@ -710,7 +710,7 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
+    async def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 
@@ -731,9 +731,9 @@ class TemplateViewsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._list(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
+        return await self._alist(list_cls=ViewList, resource_cls=View, resource_path=resource_path, method="POST", limit=limit)
 
-    def delete(
+    async def delete(
         self,
         external_id: str,
         version: int,
@@ -757,7 +757,7 @@ class TemplateViewsAPI(APIClient):
         """
         TemplatesAPI._deprecation_warning()
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        self._delete_multiple(
+        await self._adelete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=view_external_id),
             wrap_ids=True,

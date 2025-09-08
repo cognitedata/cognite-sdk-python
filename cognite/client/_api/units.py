@@ -57,7 +57,7 @@ class UnitAPI(APIClient):
     @overload
     def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
@@ -75,15 +75,15 @@ class UnitAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.units.retrieve('temperature:deg_c')
+                >>> res = await client.units.retrieve('temperature:deg_c')
 
             Retrive units 'temperature:deg_c' and 'pressure:bar':
 
-                >>> res = client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
+                >>> res = await client.units.retrieve(['temperature:deg_c', 'pressure:bar'])
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             identifiers=identifier,
             list_cls=UnitList,
             resource_cls=Unit,
@@ -108,7 +108,7 @@ class UnitAPI(APIClient):
         return_closest_matches: bool,
     ) -> Unit | UnitList: ...
 
-    def from_alias(
+    async def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
@@ -205,7 +205,7 @@ class UnitAPI(APIClient):
                 err_msg += f" Did you mean one of: {close_matches}?"
             raise ValueError(err_msg) from None
 
-    def list(self) -> UnitList:
+    async def list(self) -> UnitList:
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
@@ -217,15 +217,15 @@ class UnitAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.units.list()
+                >>> res = await client.units.list()
         """
-        return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
+        return await self._alist(method="GET", list_cls=UnitList, resource_cls=Unit)
 
 
 class UnitSystemAPI(APIClient):
     _RESOURCE_PATH = "/units/systems"
 
-    def list(self) -> UnitSystemList:
+    async def list(self) -> UnitSystemList:
         """`List all supported unit systems <https://developer.cognite.com/api#tag/Unit-Systems/operation/listUnitSystems>`_
 
         Returns:
@@ -240,4 +240,4 @@ class UnitSystemAPI(APIClient):
                 >>> res = client.units.systems.list()
 
         """
-        return self._list(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)
+        return await self._alist(method="GET", list_cls=UnitSystemList, resource_cls=UnitSystem)

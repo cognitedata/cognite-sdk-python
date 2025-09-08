@@ -8,7 +8,7 @@ import sys
 import textwrap
 import time
 import warnings
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, AsyncIterator, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -72,7 +72,7 @@ def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identif
         return primitive
 
     if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
+        function = cognite_await client.functions.retrieve(external_id=primitive)
         if function:
             return function.id
 
@@ -128,7 +128,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Function]: ...
+    ) -> AsyncIterator[Function]: ...
 
     @overload
     def __call__(
@@ -142,7 +142,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionList]: ...
+    ) -> AsyncIterator[FunctionList]: ...
 
     def __call__(
         self,
@@ -174,7 +174,7 @@ class FunctionsAPI(APIClient):
         """
         # The _list_generator method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
-        functions = self.list(
+        functions = await self.list(
             name=name,
             owner=owner,
             file_id=file_id,
@@ -191,11 +191,11 @@ class FunctionsAPI(APIClient):
             for chunk in split_into_chunks(functions.data, chunk_size)
         )
 
-    def __iter__(self) -> Iterator[Function]:
+    def __iter__(self) -> AsyncIterator[Function]:
         """Iterate over all functions."""
         return self()
 
-    def create(
+    async def create(
         self,
         name: str | FunctionWrite,
         folder: str | None = None,
@@ -262,19 +262,19 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> function = client.functions.create(
+                >>> function = await client.functions.create(
                 ...     name="myfunction",
                 ...     folder="path/to/code",
                 ...     function_path="path/to/function.py")
 
             Create function with file_id from already uploaded source code:
 
-                >>> function = client.functions.create(
+                >>> function = await client.functions.create(
                 ...     name="myfunction", file_id=123, function_path="path/to/function.py")
 
             Create function with predefined function object named `handle`:
 
-                >>> function = client.functions.create(name="myfunction", function_handle=handle)
+                >>> function = await client.functions.create(name="myfunction", function_handle=handle)
 
             Create function with predefined function object named `handle` with dependencies:
 
@@ -286,7 +286,7 @@ class FunctionsAPI(APIClient):
                 >>>     """
                 >>>     pass
                 >>>
-                >>> function = client.functions.create(name="myfunction", function_handle=handle)
+                >>> function = await client.functions.create(name="myfunction", function_handle=handle)
 
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
@@ -354,7 +354,7 @@ class FunctionsAPI(APIClient):
         assert_type(memory, "memory", [float], allow_none=True)
         sleep_time = 1.0  # seconds
         for i in range(MAX_RETRIES):
-            file = self._cognite_client.files.retrieve(id=file_id)
+            file = self._cognite_await client.files.retrieve(id=file_id)
             if file and file.uploaded:
                 break
             time.sleep(sleep_time)
@@ -380,7 +380,7 @@ class FunctionsAPI(APIClient):
         )
         return function
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -397,14 +397,14 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.functions.delete(id=[1,2,3], external_id="function3")
+                >>> await client.functions.delete(id=[1,2,3], external_id="function3")
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
         )
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         owner: str | None = None,
@@ -436,7 +436,7 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> functions_list = client.functions.list()
+                >>> functions_list = await client.functions.list()
         """
         if is_unlimited(limit):
             # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
@@ -461,7 +461,7 @@ class FunctionsAPI(APIClient):
 
         return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
@@ -477,16 +477,16 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.functions.retrieve(id=1)
+                >>> res = await client.functions.retrieve(id=1)
 
             Get function by external id:
 
-                >>> res = client.functions.retrieve(external_id="abc")
+                >>> res = await client.functions.retrieve(external_id="abc")
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
+        return await self._aretrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -516,14 +516,14 @@ class FunctionsAPI(APIClient):
         """
         assert_type(ids, "id", [Sequence], allow_none=True)
         assert_type(external_ids, "external_id", [Sequence], allow_none=True)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
             list_cls=FunctionList,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def call(
+    async def call(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -556,7 +556,7 @@ class FunctionsAPI(APIClient):
 
             Call a function directly on the `Function` object:
 
-                >>> func = client.functions.retrieve(id=1)
+                >>> func = await client.functions.retrieve(id=1)
                 >>> call = func.call()
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
@@ -573,7 +573,7 @@ class FunctionsAPI(APIClient):
             function_call.wait()
         return function_call
 
-    def limits(self) -> FunctionsLimits:
+    async def limits(self) -> FunctionsLimits:
         """`Get service limits. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
 
         Returns:
@@ -681,7 +681,7 @@ class FunctionsAPI(APIClient):
                 + " were given."
             )
 
-    def activate(self) -> FunctionsStatus:
+    async def activate(self) -> FunctionsStatus:
         """`Activate functions for the Project. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsStatus>`_.
 
         Returns:
@@ -698,7 +698,7 @@ class FunctionsAPI(APIClient):
         res = self._post(self._RESOURCE_PATH + "/status")
         return FunctionsStatus.load(res.json())
 
-    def status(self) -> FunctionsStatus:
+    async def status(self) -> FunctionsStatus:
         """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
@@ -716,7 +716,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus.load(res.json())
 
 
-def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
+async def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
     return next(
         (
             item
@@ -768,7 +768,7 @@ def _check_imports(root_path: str, module_path: str) -> None:
         raise error
 
 
-def validate_function_folder(root_path: str, function_path: str, skip_folder_validation: bool) -> None:
+async def validate_function_folder(root_path: str, function_path: str, skip_folder_validation: bool) -> None:
     if not function_path.endswith(".py"):
         raise TypeError(f"{function_path} must be a Python file.")
 
@@ -899,7 +899,7 @@ class FunctionCallsAPI(APIClient):
     _RESOURCE_PATH_RESPONSE = "/functions/{}/calls/{}/response"
     _RESOURCE_PATH_LOGS = "/functions/{}/calls/{}/logs"
 
-    def list(
+    async def list(
         self,
         function_id: int | None = None,
         function_external_id: str | None = None,
@@ -933,7 +933,7 @@ class FunctionCallsAPI(APIClient):
 
             List function calls directly on a function object:
 
-                >>> func = client.functions.retrieve(id=1)
+                >>> func = await client.functions.retrieve(id=1)
                 >>> calls = func.list_calls()
 
         """
@@ -946,7 +946,7 @@ class FunctionCallsAPI(APIClient):
             end_time=end_time,
         ).dump(camel_case=True)
         resource_path = self._RESOURCE_PATH.format(function_id)
-        return self._list(
+        return await self._alist(
             method="POST",
             resource_path=resource_path,
             filter=filter,
@@ -955,7 +955,7 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def retrieve(
+    async def retrieve(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -981,7 +981,7 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call directly on a function object:
 
-                >>> func = client.functions.retrieve(id=1)
+                >>> func = await client.functions.retrieve(id=1)
                 >>> call = func.retrieve_call(id=2)
         """
         identifier = _get_function_identifier(function_id, function_external_id)
@@ -989,14 +989,14 @@ class FunctionCallsAPI(APIClient):
 
         resource_path = self._RESOURCE_PATH.format(function_id)
 
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(ids=call_id).as_singleton(),
             resource_cls=FunctionCall,
             list_cls=FunctionCallList,
         )
 
-    def get_response(
+    async def get_response(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -1032,7 +1032,7 @@ class FunctionCallsAPI(APIClient):
         resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
         return self._get(resource_path).json().get("response")
 
-    def get_logs(
+    async def get_logs(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -1082,7 +1082,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedule]: ...
+    ) -> AsyncIterator[FunctionSchedule]: ...
 
     @overload
     def __call__(
@@ -1094,7 +1094,7 @@ class FunctionSchedulesAPI(APIClient):
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionSchedulesList]: ...
+    ) -> AsyncIterator[FunctionSchedulesList]: ...
 
     def __call__(
         self,
@@ -1123,7 +1123,7 @@ class FunctionSchedulesAPI(APIClient):
         """
         _ensure_at_most_one_id_given(function_id, function_external_id)
 
-        schedules = self.list(
+        schedules = await self.list(
             name=name,
             function_id=function_id,
             function_external_id=function_external_id,
@@ -1139,7 +1139,7 @@ class FunctionSchedulesAPI(APIClient):
             for chunk in split_into_chunks(schedules.data, chunk_size)
         )
 
-    def __iter__(self) -> Iterator[FunctionSchedule]:
+    def __iter__(self) -> AsyncIterator[FunctionSchedule]:
         """Iterate over all function schedules"""
         return self()
 
@@ -1149,7 +1149,7 @@ class FunctionSchedulesAPI(APIClient):
     @overload
     def retrieve(self, id: Sequence[int], ignore_unknown_ids: bool = False) -> FunctionSchedulesList: ...
 
-    def retrieve(
+    async def retrieve(
         self, id: int | Sequence[int], ignore_unknown_ids: bool = False
     ) -> FunctionSchedule | None | FunctionSchedulesList:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
@@ -1171,14 +1171,14 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         identifiers = IdentifierSequence.load(ids=id)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             identifiers=identifiers,
             resource_cls=FunctionSchedule,
             list_cls=FunctionSchedulesList,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         function_id: int | None = None,
@@ -1210,7 +1210,7 @@ class FunctionSchedulesAPI(APIClient):
 
             List schedules directly on a function object to get only schedules associated with this particular function:
 
-                >>> func = client.functions.retrieve(id=1)
+                >>> func = await client.functions.retrieve(id=1)
                 >>> schedules = func.list_schedules(limit=None)
 
         """
@@ -1233,7 +1233,7 @@ class FunctionSchedulesAPI(APIClient):
 
         return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def create(
+    async def create(
         self,
         name: str | FunctionScheduleWrite,
         cron_expression: str | None = None,
@@ -1350,14 +1350,14 @@ class FunctionSchedulesAPI(APIClient):
                 api_name="Functions API",
                 client_credentials=client_credentials,
             )
-        return self._create_multiple(
+        return await self._acreate_multiple(
             items=dumped,
             resource_cls=FunctionSchedule,
             input_resource_cls=FunctionScheduleWrite,
             list_cls=FunctionSchedulesList,
         )
 
-    def delete(self, id: int) -> None:
+    async def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_
 
         Args:
@@ -1375,7 +1375,7 @@ class FunctionSchedulesAPI(APIClient):
         url = f"{self._RESOURCE_PATH}/delete"
         self._post(url, json={"items": [{"id": id}]})
 
-    def get_input_data(self, id: int) -> dict[str, object] | None:
+    async def get_input_data(self, id: int) -> dict[str, object] | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
 
         Args:

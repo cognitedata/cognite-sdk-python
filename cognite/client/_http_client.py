@@ -8,6 +8,8 @@ from collections.abc import Callable, Iterable, MutableMapping
 from http import cookiejar
 from typing import Any, Literal
 
+import asyncio
+import httpx
 import requests
 import requests.adapters
 import urllib3
@@ -41,6 +43,23 @@ def get_global_requests_session() -> requests.Session:
     if global_config.proxies is not None:
         session.proxies.update(global_config.proxies)
     return session
+
+
+@functools.lru_cache(1)
+def get_global_async_client() -> httpx.AsyncClient:
+    limits = httpx.Limits(
+        max_keepalive_connections=global_config.max_connection_pool_size,
+        max_connections=global_config.max_connection_pool_size * 2,
+    )
+    
+    client = httpx.AsyncClient(
+        limits=limits,
+        verify=not global_config.disable_ssl,
+        proxies=global_config.proxies,
+        follow_redirects=False,
+    )
+    
+    return client
 
 
 class HTTPClientConfig:
@@ -100,11 +119,13 @@ class HTTPClient:
     def __init__(
         self,
         config: HTTPClientConfig,
-        session: requests.Session,
-        refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
+        session: requests.Session | None = None,
+        async_client: httpx.AsyncClient | None = None,
+        refresh_auth_header: Callable[[MutableMapping[str, Any]], None] | None = None,
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
     ) -> None:
         self.session = session
+        self.async_client = async_client
         self.config = config
         self.refresh_auth_header = refresh_auth_header
         self.retry_tracker_factory = retry_tracker_factory  # needed for tests
@@ -160,7 +181,7 @@ class HTTPClient:
 
             # During a backoff loop, our credentials might expire, so we check and maybe refresh:
             time.sleep(retry_tracker.get_backoff_time())
-            if headers is not None:
+            if headers is not None and self.refresh_auth_header is not None:
                 # TODO: Refactoring needed to make this "prettier"
                 self.refresh_auth_header(headers)
 
@@ -224,3 +245,100 @@ class HTTPClient:
         if exc.__context__ is None:
             return False
         return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)
+
+    async def arequest(
+        self,
+        method: str,
+        url: str,
+        data: str | bytes | Iterable[bytes] | SupportsRead | None = None,
+        headers: MutableMapping[str, Any] | None = None,
+        timeout: float | None = None,
+        params: dict[str, Any] | str | bytes | None = None,
+        stream: bool | None = None,
+        allow_redirects: bool = False,
+    ) -> httpx.Response:
+        """Async version of request method."""
+        if self.async_client is None:
+            raise RuntimeError("HTTPClient was not initialized with async_client for async operations")
+            
+        retry_tracker = self.retry_tracker_factory(self.config)
+        accepts_json = (headers or {}).get("accept") == "application/json"
+        is_auto_retryable = False
+        
+        while True:
+            try:
+                res = await self._ado_request(
+                    method=method,
+                    url=url,
+                    content=data,
+                    headers=headers,
+                    timeout=timeout,
+                    params=params,
+                    stream=stream,
+                    follow_redirects=allow_redirects,
+                )
+                if accepts_json:
+                    try:
+                        json_data = res.json()
+                        is_auto_retryable = json_data.get("error", {}).get("isAutoRetryable", False)
+                    except Exception:
+                        pass
+
+                retry_tracker.status += 1
+                if not retry_tracker.should_retry(status_code=res.status_code, is_auto_retryable=is_auto_retryable):
+                    return res
+
+            except CogniteReadTimeout as e:
+                retry_tracker.read += 1
+                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
+                    raise e
+            except CogniteConnectionError as e:
+                retry_tracker.connect += 1
+                if not retry_tracker.should_retry(status_code=None, is_auto_retryable=True):
+                    raise e
+
+            # During a backoff loop, our credentials might expire, so we check and maybe refresh:
+            await asyncio.sleep(retry_tracker.get_backoff_time())
+            if headers is not None and self.refresh_auth_header is not None:
+                self.refresh_auth_header(headers)
+
+    async def _ado_request(
+        self,
+        method: str,
+        url: str,
+        content: str | bytes | Iterable[bytes] | SupportsRead | None = None,
+        headers: MutableMapping[str, Any] | None = None,
+        timeout: float | None = None,
+        params: dict[str, Any] | str | bytes | None = None,
+        stream: bool | None = None,
+        follow_redirects: bool = False,
+    ) -> httpx.Response:
+        """Async version of _do_request using httpx."""
+        try:
+            res = await self.async_client.request(
+                method=method,
+                url=url,
+                content=content,
+                headers=headers,
+                timeout=timeout,
+                params=params,
+                follow_redirects=follow_redirects,
+            )
+            return res
+        except Exception as e:
+            if self._any_exception_in_context_isinstance(
+                e, (asyncio.TimeoutError, httpx.ReadTimeout, httpx.TimeoutException)
+            ):
+                raise CogniteReadTimeout from e
+            if self._any_exception_in_context_isinstance(
+                e,
+                (
+                    ConnectionError,
+                    httpx.ConnectError,
+                    httpx.ConnectTimeout,
+                ),
+            ):
+                if self._any_exception_in_context_isinstance(e, ConnectionRefusedError):
+                    raise CogniteConnectionRefused from e
+                raise CogniteConnectionError from e
+            raise e
