@@ -23,10 +23,12 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowDataModelingTriggerRule,
     WorkflowDefinitionUpsert,
+    WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowScheduledTriggerRule,
     WorkflowTask,
+    WorkflowTaskExecution,
     WorkflowTrigger,
     WorkflowTriggerDataModelingQuery,
     WorkflowTriggerUpsert,
@@ -38,11 +40,13 @@ from cognite.client.data_classes.workflows import (
 )
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils import timestamp_to_ms
+from cognite.client.utils._retry import Backoff
 from cognite.client.utils._text import random_string
 from tests.tests_integration.test_api.test_simulators.seed.resources import (
     ensure_workflow_simint_routine,
     finish_simulation_runs,
 )
+from tests.utils import get_or_raise
 
 
 @pytest.fixture
@@ -88,12 +92,12 @@ def _new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[
 
 
 @pytest.fixture(scope="session")
-def new_workflow(cognite_client: CogniteClient, data_set: DataSet):
+def new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[Workflow]:
     yield from _new_workflow(cognite_client, data_set)
 
 
 @pytest.fixture
-def new_workflow_test_scoped(cognite_client: CogniteClient, data_set: DataSet):
+def new_workflow_test_scoped(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[Workflow]:
     yield from _new_workflow(cognite_client, data_set)
 
 
@@ -139,12 +143,14 @@ def _new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow)
 
 
 @pytest.fixture(scope="session")
-def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+def new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
     yield from _new_workflow_version(cognite_client, new_workflow)
 
 
 @pytest.fixture
-def new_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow_test_scoped: Workflow):
+def new_workflow_version_test_scoped(
+    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+) -> Iterator[WorkflowVersion]:
     yield from _new_workflow_version(cognite_client, new_workflow_test_scoped)
 
 
@@ -172,12 +178,14 @@ def _new_async_workflow_version(cognite_client: CogniteClient, new_workflow: Wor
 
 
 @pytest.fixture(scope="session")
-def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow):
+def async_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersion]:
     yield from _new_async_workflow_version(cognite_client, new_workflow)
 
 
 @pytest.fixture
-def async_workflow_version_test_scoped(cognite_client: CogniteClient, new_workflow_test_scoped: Workflow):
+def async_workflow_version_test_scoped(
+    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+) -> Iterator[WorkflowVersion]:
     yield from _new_async_workflow_version(cognite_client, new_workflow_test_scoped)
 
 
@@ -257,7 +265,9 @@ def workflow_version_list_test_scoped(
     yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped)
 
 
-def _new_workflow_execution_list(cognite_client: CogniteClient, new_workflow_version: WorkflowVersion):
+def _new_workflow_execution_list(
+    cognite_client: CogniteClient, new_workflow_version: WorkflowVersion
+) -> WorkflowExecutionList:
     run_1 = cognite_client.workflows.executions.run(
         new_workflow_version.workflow_external_id,
         new_workflow_version.version,
@@ -268,7 +278,9 @@ def _new_workflow_execution_list(cognite_client: CogniteClient, new_workflow_ver
     while run_1.status == "running" and total_sleep < 30:
         time.sleep(0.5)
         total_sleep += 0.5
-        run_1 = cognite_client.workflows.executions.retrieve_detailed(run_1.id).as_execution()
+        detailed = cognite_client.workflows.executions.retrieve_detailed(run_1.id)
+        assert detailed
+        run_1 = detailed.as_execution()
 
     run_2 = cognite_client.workflows.executions.run(
         new_workflow_version.workflow_external_id,
@@ -281,13 +293,15 @@ def _new_workflow_execution_list(cognite_client: CogniteClient, new_workflow_ver
 
 
 @pytest.fixture(scope="session")
-def workflow_execution_list(cognite_client: CogniteClient, new_workflow_version: WorkflowVersion):
+def workflow_execution_list(
+    cognite_client: CogniteClient, new_workflow_version: WorkflowVersion
+) -> WorkflowExecutionList:
     return _new_workflow_execution_list(cognite_client, new_workflow_version)
 
 
 def workflow_execution_list_test_scoped(
     cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
-):
+) -> WorkflowExecutionList:
     return _new_workflow_execution_list(cognite_client, new_workflow_version_test_scoped)
 
 
@@ -297,7 +311,7 @@ ALMOST_NEVER_TRIGGER_CRON_EXPRESSION = "0 0 29 2 *"
 
 
 @pytest.fixture(scope="session")
-def permanent_workflow_for_triggers(cognite_client: CogniteClient):
+def permanent_workflow_for_triggers(cognite_client: CogniteClient) -> WorkflowVersion:
     workflow = WorkflowUpsert(
         external_id="integration_test-workflow_for_triggers",
     )
@@ -317,8 +331,8 @@ def permanent_workflow_for_triggers(cognite_client: CogniteClient):
             ],
         ),
     )
-    cognite_client.workflows.versions.upsert(version)
-    return version
+    upserted = cognite_client.workflows.versions.upsert(version)
+    return upserted
 
 
 def _create_scheduled_trigger(version: WorkflowVersion, cron_expression: str) -> WorkflowTriggerUpsert:
@@ -351,7 +365,9 @@ def permanent_scheduled_trigger(
 
 
 @pytest.fixture(scope="class")
-def permanent_data_modeling_trigger(cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion):
+def permanent_data_modeling_trigger(
+    cognite_client: CogniteClient, permanent_workflow_for_triggers: WorkflowVersion
+) -> WorkflowTrigger:
     version = permanent_workflow_for_triggers
 
     trigger = WorkflowTriggerUpsert(
@@ -378,7 +394,7 @@ def permanent_data_modeling_trigger(cognite_client: CogniteClient, permanent_wor
     else:
         retrieved = existing_triggers[trigger.external_id]
 
-    yield retrieved
+    return retrieved
 
 
 class TestWorkflows:
@@ -405,6 +421,7 @@ class TestWorkflows:
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         retrieved = cognite_client.workflows.retrieve(persisted_workflow_list[0].external_id)
+        assert retrieved
         assert retrieved.dump() == persisted_workflow_list[0].dump()
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
@@ -423,7 +440,7 @@ class TestWorkflowVersions:
         self,
         cognite_client: CogniteClient,
         workflow_simint_routine: str,
-    ):
+    ) -> None:
         workflow_id = "integration_test-workflow_for_simulator_integration" + random_string(5)
 
         version = WorkflowVersionUpsert(
@@ -459,11 +476,13 @@ class TestWorkflowVersions:
             assert len(created_version.workflow_definition.tasks) > 0
 
             execution = cognite_client.workflows.executions.run(workflow_id, version.version)
-            execution_detailed = None
-            simulation_task = None
+            execution_detailed: WorkflowExecutionDetailed | None
+            simulation_task: WorkflowTaskExecution | None
 
+            backoff = Backoff()
             for _ in range(20):
                 execution_detailed = cognite_client.workflows.executions.retrieve_detailed(execution.id)
+                assert execution_detailed
                 simulation_task = execution_detailed.executed_tasks[0]
 
                 if simulation_task.status == "in_progress":
@@ -472,12 +491,14 @@ class TestWorkflowVersions:
                 if execution_detailed.status == "completed" or execution_detailed.status == "failed":
                     break
 
-                time.sleep(1.5)
+                time.sleep(next(backoff))
 
-            assert isinstance(simulation_task.output, SimulationTaskOutput)
+            assert simulation_task is not None
             assert simulation_task.status == "completed"
-            assert simulation_task.output.run_id is not None
-            assert simulation_task.output.log_id is not None
+            output = simulation_task.output
+            assert isinstance(output, SimulationTaskOutput)
+            assert output.run_id is not None
+            assert output.log_id is not None
 
         finally:
             if created_version is not None:
@@ -543,10 +564,10 @@ class TestWorkflowVersions:
             ],
             ignore_unknown_ids=True,
         )
-        assert cognite_client.workflows.versions.retrieve(new_workflow_version_test_scoped.as_id().as_tuple()) is None
+        assert cognite_client.workflows.versions.retrieve(new_workflow_version_test_scoped.as_id()) is None
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion) -> None:
-        retrieved = cognite_client.workflows.versions.retrieve(new_workflow_version.as_id().as_tuple())
+        retrieved = cognite_client.workflows.versions.retrieve(new_workflow_version.as_id())
         assert retrieved == new_workflow_version
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
@@ -581,6 +602,7 @@ class TestWorkflowExecutions:
         workflow_execution_list: WorkflowExecutionList,
     ) -> None:
         retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
+        assert retrieved
         assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
         assert retrieved.executed_tasks
         assert retrieved.metadata == {"test": "integration_completed"}
@@ -607,12 +629,15 @@ class TestWorkflowExecutions:
         assert async_task.parameters.is_async_complete
 
         workflow_execution_detailed = cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id)
-        async_task = workflow_execution_detailed.executed_tasks[0]
+        assert workflow_execution_detailed
+        async_task_execution = workflow_execution_detailed.executed_tasks[0]
 
-        async_task = cognite_client.workflows.tasks.update(async_task.id, "completed")
-        assert async_task.status == "completed"
+        async_task_execution = cognite_client.workflows.tasks.update(async_task_execution.id, "completed")
+        assert async_task_execution.status == "completed"
         time.sleep(5)
-        assert cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id).status == "completed"
+        execution = cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id)
+        assert execution
+        assert execution.status == "completed"
 
     def test_trigger_cancel_retry_workflow(
         self, cognite_client: CogniteClient, new_workflow_version: WorkflowVersion
@@ -749,7 +774,8 @@ class TestWorkflowTriggers:
         assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
         assert history[0].workflow_version == permanent_scheduled_trigger.workflow_version
 
-        detailed = cognite_client.workflows.executions.retrieve_detailed(history[0].workflow_execution_id)
+        execution_id = get_or_raise(history[0].workflow_execution_id)
+        detailed = cognite_client.workflows.executions.retrieve_detailed(execution_id)
         assert detailed is not None
         assert detailed.metadata == permanent_scheduled_trigger.metadata
         # version gets appended to input when executed by a trigger

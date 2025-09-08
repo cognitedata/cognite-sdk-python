@@ -1497,25 +1497,15 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
         trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
-        input (dict | None): The input data of the workflow version trigger. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
     def __init__(
-        self,
-        external_id: str,
-        trigger_rule: WorkflowTriggerRule,
-        workflow_external_id: str,
-        workflow_version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
+        self, external_id: str, trigger_rule: WorkflowTriggerRule, workflow_external_id: str, workflow_version: str
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
-        self.input = input
-        self.metadata = metadata
 
 
 class WorkflowTriggerUpsert(WorkflowTriggerCore):
@@ -1530,6 +1520,24 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         input (dict | None): The input data of the workflow version trigger. Defaults to None.
         metadata (dict | None): Application specific metadata. Defaults to None.
     """
+
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            trigger_rule=trigger_rule,
+            workflow_external_id=workflow_external_id,
+            workflow_version=workflow_version,
+        )
+        self.input = input
+        self.metadata = metadata
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -1577,8 +1585,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_version (str): The version of the workflow.
         input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
         metadata (dict | None): Application specific metadata. Defaults to None.
-        created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
-        last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
+        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
     """
 
     def __init__(
@@ -1587,19 +1595,19 @@ class WorkflowTrigger(WorkflowTriggerCore):
         trigger_rule: WorkflowTriggerRule,
         workflow_external_id: str,
         workflow_version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
+        input: dict | None,
+        metadata: dict | None,
+        created_time: int,
+        last_updated_time: int,
     ) -> None:
         super().__init__(
             external_id=external_id,
             trigger_rule=trigger_rule,
             workflow_external_id=workflow_external_id,
             workflow_version=workflow_version,
-            input=input,
-            metadata=metadata,
         )
+        self.input = input or {}
+        self.metadata = metadata or {}
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
@@ -1631,8 +1639,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
             trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
             metadata=resource.get("metadata"),
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
         )
 
     def as_write(self) -> WorkflowTriggerUpsert:
@@ -1677,8 +1685,8 @@ class WorkflowTriggerRun(CogniteResource):
         workflow_external_id: str,
         workflow_version: str,
         status: Literal["success", "failed"],
-        workflow_execution_id: str | None = None,
-        reason_for_failure: str | None = None,
+        workflow_execution_id: str | None,
+        reason_for_failure: str | None,
     ) -> None:
         self.external_id = external_id
         self.fire_time = fire_time
