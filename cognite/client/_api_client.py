@@ -25,7 +25,7 @@ from requests import Response
 from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 from requests.structures import CaseInsensitiveDict
 
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session, get_global_async_client
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -129,6 +129,7 @@ class APIClient:
 
     def _init_http_clients(self) -> None:
         session = get_global_requests_session()
+        async_client = get_global_async_client()
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
@@ -140,6 +141,7 @@ class APIClient:
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
+            async_client=async_client,
             refresh_auth_header=self._refresh_auth_header,
         )
         self._http_client_with_retry = HTTPClient(
@@ -153,6 +155,7 @@ class APIClient:
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
+            async_client=async_client,
             refresh_auth_header=self._refresh_auth_header,
         )
 
@@ -246,6 +249,92 @@ class APIClient:
 
         stream = kwargs.get("stream")
         self._log_request(res, payload=json_payload, stream=stream)
+        return res
+
+    # ASYNC VERSIONS OF HTTP METHODS
+    async def _adelete(
+        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> httpx.Response:
+        return await self._ado_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
+
+    async def _aget(
+        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> httpx.Response:
+        return await self._ado_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
+
+    async def _apost(
+        self,
+        url_path: str,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
+    ) -> httpx.Response:
+        return await self._ado_request(
+            "POST",
+            url_path,
+            json=json,
+            headers=headers,
+            params=params,
+            timeout=self._config.timeout,
+            api_subversion=api_subversion,
+        )
+
+    async def _aput(
+        self, url_path: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> httpx.Response:
+        return await self._ado_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
+
+    async def _ado_request(
+        self,
+        method: str,
+        url_path: str,
+        accept: str = "application/json",
+        api_subversion: str | None = None,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        is_retryable, full_url = self._resolve_url(method, url_path)
+        json_payload = kwargs.pop("json", None)
+        headers = self._configure_headers(
+            accept,
+            additional_headers=self._config.headers.copy(),
+            api_subversion=api_subversion,
+        )
+        headers.update(kwargs.get("headers") or {})
+
+        if json_payload is not None:
+            try:
+                data = _json.dumps(json_payload, allow_nan=False)
+            except ValueError as e:
+                msg = "Out of range float values are not JSON compliant"
+                if msg in str(e):
+                    raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
+                        e.__traceback__
+                    ) from None
+                raise
+            kwargs["content"] = data
+            if method in ["PUT", "POST"] and not global_config.disable_gzip:
+                kwargs["content"] = gzip.compress(data.encode())
+                headers["Content-Encoding"] = "gzip"
+
+        kwargs["headers"] = headers
+        kwargs.setdefault("allow_redirects", False)
+
+        if is_retryable:
+            res = await self._http_client_with_retry.arequest(method=method, url=full_url, **kwargs)
+        else:
+            res = await self._http_client.arequest(method=method, url=full_url, **kwargs)
+
+        match res.status_code:
+            case 200 | 201 | 202 | 204:
+                pass
+            case 401:
+                self._raise_no_project_access_error(res)
+            case _:
+                self._raise_api_error(res, payload=json_payload)
+
+        stream = kwargs.get("stream")
+        self._log_async_request(res, payload=json_payload, stream=stream)
         return res
 
     def _configure_headers(
@@ -654,6 +743,168 @@ class APIClient:
             list(itertools.chain.from_iterable(resource_fetcher)),
             cognite_client=self._cognite_client,
         )
+
+    async def _alist(
+        self,
+        method: Literal["POST", "GET"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
+        partitions: int | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+        settings_forcing_raw_response_loading: list[str] | None = None,
+    ) -> T_CogniteResourceList:
+        """Async version of _list method."""
+        verify_limit(limit)
+        if partitions:
+            if not is_unlimited(limit):
+                raise ValueError(
+                    "When using partitions, a finite limit can not be used. Pass one of `None`, `-1` or `inf`."
+                )
+            if sort is not None:
+                raise ValueError("When using sort, partitions is not supported.")
+            if settings_forcing_raw_response_loading:
+                raise ValueError(
+                    "When using partitions, the following settings are not "
+                    f"supported (yet): {settings_forcing_raw_response_loading}"
+                )
+            assert initial_cursor is api_subversion is None
+            return await self._alist_partitioned(
+                partitions=partitions,
+                method=method,
+                list_cls=list_cls,
+                resource_path=resource_path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                other_params=other_params,
+                headers=headers,
+            )
+        
+        fetch_kwargs = dict(
+            resource_path=resource_path or self._RESOURCE_PATH,
+            url_path=url_path,
+            limit=limit,
+            chunk_size=self._LIST_LIMIT,
+            filter=filter,
+            sort=sort,
+            other_params=other_params,
+            headers=headers,
+            initial_cursor=initial_cursor,
+            advanced_filter=advanced_filter,
+            api_subversion=api_subversion,
+        )
+        
+        # Collect all items from async generator
+        items = []
+        async for chunk in self._alist_generator(method, list_cls, resource_cls, **fetch_kwargs):
+            if isinstance(chunk, list_cls):
+                items.extend(chunk)
+            else:
+                items.append(chunk)
+        
+        return list_cls(items, cognite_client=self._cognite_client)
+
+    async def _alist_generator(
+        self,
+        method: Literal["GET", "POST"],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        url_path: str | None = None,
+        limit: int | None = None,
+        chunk_size: int | None = None,
+        filter: dict[str, Any] | None = None,
+        sort: SequenceNotStr[str | dict[str, Any]] | None = None,
+        other_params: dict[str, Any] | None = None,
+        partitions: int | None = None,
+        headers: dict[str, Any] | None = None,
+        initial_cursor: str | None = None,
+        advanced_filter: dict | Filter | None = None,
+        api_subversion: str | None = None,
+    ):
+        """Async version of _list_generator."""
+        if partitions:
+            warnings.warn("passing `partitions` to a generator method is not supported, so it's being ignored")
+            chunk_size = None
+        
+        limit, url_path, params = self._prepare_params_for_list_generator(
+            limit, method, filter, url_path, resource_path, sort, other_params, advanced_filter
+        )
+        unprocessed_items: list[dict[str, Any]] = []
+        total_retrieved, current_limit, next_cursor = 0, self._LIST_LIMIT, initial_cursor
+        
+        while True:
+            if limit and (n_remaining := limit - total_retrieved) < current_limit:
+                current_limit = n_remaining
+
+            params.update(limit=current_limit, cursor=next_cursor)
+            if method == "GET":
+                res = await self._aget(url_path=url_path, params=params, headers=headers)
+            else:
+                res = await self._apost(url_path=url_path, json=params, headers=headers, api_subversion=api_subversion)
+
+            response = res.json()
+            async for item in self._aprocess_into_chunks(response, chunk_size, resource_cls, list_cls, unprocessed_items):
+                yield item
+
+            next_cursor = response.get("nextCursor")
+            total_retrieved += len(response["items"])
+            if total_retrieved == limit or next_cursor is None:
+                if unprocessed_items:
+                    yield list_cls._load(unprocessed_items, cognite_client=self._cognite_client)
+                break
+
+    async def _aprocess_into_chunks(
+        self,
+        response: dict[str, Any],
+        chunk_size: int | None,
+        resource_cls: type[T_CogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        unprocessed_items: list[dict[str, Any]],
+    ):
+        """Async version of _process_into_chunks."""
+        if not chunk_size:
+            for item in response["items"]:
+                yield resource_cls._load(item, cognite_client=self._cognite_client)
+        else:
+            unprocessed_items.extend(response["items"])
+            if len(unprocessed_items) >= chunk_size:
+                chunks = split_into_chunks(unprocessed_items, chunk_size)
+                unprocessed_items.clear()
+                if chunks and len(chunks[-1]) < chunk_size:
+                    unprocessed_items.extend(chunks.pop(-1))
+                for chunk in chunks:
+                    yield list_cls._load(chunk, cognite_client=self._cognite_client)
+
+    async def _aretrieve(
+        self,
+        identifier: IdentifierCore,
+        cls: type[T_CogniteResource],
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> T_CogniteResource | None:
+        """Async version of _retrieve."""
+        resource_path = resource_path or self._RESOURCE_PATH
+        try:
+            res = await self._aget(
+                url_path=interpolate_and_url_encode(resource_path + "/{}", str(identifier.as_primitive())),
+                params=params,
+                headers=headers,
+            )
+            return cls._load(res.json(), cognite_client=self._cognite_client)
+        except CogniteAPIError as e:
+            if e.code != 404:
+                raise
+        return None
 
     def _list_partitioned(
         self,
@@ -1360,6 +1611,24 @@ class APIClient:
 
         logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
+    def _log_async_request(self, res: httpx.Response, **kwargs: Any) -> None:
+        method = res.request.method
+        url = res.request.url
+        status_code = res.status_code
+
+        extra = kwargs.copy()
+        extra["headers"] = dict(res.request.headers)
+        self._sanitize_headers(extra["headers"])
+        if extra.get("payload") is None:
+            extra.pop("payload", None)
+
+        stream = kwargs.get("stream")
+        if not stream and self._config.debug is True:
+            extra["response_payload"] = shorten(self._get_async_response_content_safe(res), 500)
+        extra["response_headers"] = dict(res.headers)
+
+        logger.debug(f"HTTP/1.1 {method} {url} {status_code}", extra=extra)
+
     @staticmethod
     def _get_response_content_safe(res: Response) -> str:
         try:
@@ -1375,6 +1644,535 @@ class APIClient:
         return "<binary>"
 
     @staticmethod
+    def _get_async_response_content_safe(res: httpx.Response) -> str:
+        try:
+            return _json.dumps(res.json())
+        except Exception:
+            pass
+
+        try:
+            return res.content.decode()
+        except UnicodeDecodeError:
+            pass
+
+        return "<binary>"
+
+
+    async def _aretrieve_multiple(
+        self,
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        identifiers: SingletonIdentifierSequence | IdentifierSequenceCore,
+        resource_path: str | None = None,
+        ignore_unknown_ids: bool | None = None,
+        headers: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
+        settings_forcing_raw_response_loading: list[str] | None = None,
+    ) -> T_CogniteResourceList | T_CogniteResource | None:
+        """Async version of _retrieve_multiple."""
+        resource_path = resource_path or self._RESOURCE_PATH
+
+        ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
+        tasks: list[dict[str, str | dict[str, Any] | None]] = [
+            {
+                "url_path": resource_path + "/byids",
+                "json": {
+                    "items": id_chunk.as_dicts(),
+                    **ignore_unknown_obj,
+                    **(other_params or {}),
+                },
+                "headers": headers,
+                "params": params,
+            }
+            for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
+        ]
+        tasks_summary = await execute_tasks_async(
+            functools.partial(self._apost, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            fail_fast=True,
+            executor=executor,
+        )
+        try:
+            tasks_summary.raise_compound_exception_if_failed_tasks(
+                task_unwrap_fn=unpack_items_in_payload,
+                task_list_element_unwrap_fn=identifiers.extract_identifiers,
+            )
+        except CogniteNotFoundError:
+            if identifiers.is_singleton():
+                return None
+            raise
+
+        if settings_forcing_raw_response_loading:
+            loaded = list_cls._load_raw_api_response(
+                tasks_summary.raw_api_responses, cognite_client=self._cognite_client
+            )
+            return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
+
+        retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+
+        if identifiers.is_singleton():
+            if retrieved_items:
+                return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+            else:
+                return None
+        return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
+
+    async def _acreate_multiple(
+        self,
+        items: Sequence[WriteableCogniteResource] | Sequence[dict[str, Any]] | WriteableCogniteResource | dict[str, Any],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_WritableCogniteResource],
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
+        limit: int | None = None,
+        input_resource_cls: type[CogniteResource] | None = None,
+        executor: TaskExecutor | None = None,
+        api_subversion: str | None = None,
+    ) -> T_CogniteResourceList | T_WritableCogniteResource:
+        """Async version of _create_multiple."""
+        resource_path = resource_path or self._RESOURCE_PATH
+        input_resource_cls = input_resource_cls or resource_cls
+        limit = limit or self._CREATE_LIMIT
+        single_item = not isinstance(items, Sequence)
+        if single_item:
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], [items])
+        else:
+            items = cast(Sequence[T_WritableCogniteResource] | Sequence[dict[str, Any]], items)
+
+        items = [item.as_write() if isinstance(item, WriteableCogniteResource) else item for item in items]
+
+        tasks = [
+            (resource_path, task_items, params, headers)
+            for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
+        ]
+        summary = await execute_tasks_async(
+            functools.partial(self._apost, api_subversion=api_subversion),
+            tasks,
+            max_workers=self._config.max_workers,
+            executor=executor,
+        )
+
+        def unwrap_element(el: T) -> CogniteResource | T:
+            if isinstance(el, dict):
+                return input_resource_cls._load(el, cognite_client=self._cognite_client)
+            else:
+                return el
+
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
+        )
+        created_resources = summary.joined_results(lambda res: res.json()["items"])
+
+        if single_item:
+            return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
+        return list_cls._load(created_resources, cognite_client=self._cognite_client)
+
+    async def _aupdate_multiple(
+        self,
+        items: Sequence[CogniteResource | CogniteUpdate | WriteableCogniteResource] | CogniteResource | CogniteUpdate | WriteableCogniteResource,
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_CogniteResource],
+        update_cls: type[CogniteUpdate],
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
+        api_subversion: str | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
+    ) -> T_CogniteResourceList | T_CogniteResource:
+        """Async version of _update_multiple."""
+        resource_path = resource_path or self._RESOURCE_PATH
+        patch_objects = []
+        single_item = not isinstance(items, (Sequence, UserList))
+        if single_item:
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], [items])
+        else:
+            item_list = cast(Sequence[CogniteResource] | Sequence[CogniteUpdate], items)
+
+        for index, item in enumerate(item_list):
+            if isinstance(item, CogniteResource):
+                patch_objects.append(
+                    self._convert_resource_to_patch_object(
+                        item, update_cls._get_update_properties(item), mode, cdf_item_by_id
+                    )
+                )
+            elif isinstance(item, CogniteUpdate):
+                patch_objects.append(item.dump(camel_case=True))
+                patch_object_update = patch_objects[index]["update"]
+                if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
+                    patch_object_update["metadata"] = {"set": {}}
+            else:
+                raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
+        patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+
+        tasks = [
+            {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
+            for chunk in patch_object_chunks
+        ]
+
+        tasks_summary = await execute_tasks_async(
+            functools.partial(self._apost, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
+        )
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
+        )
+        updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+
+        if single_item:
+            return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
+        return list_cls._load(updated_items, cognite_client=self._cognite_client)
+
+    async def _adelete_multiple(
+        self,
+        identifiers: IdentifierSequenceCore,
+        wrap_ids: bool,
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        extra_body_fields: dict[str, Any] | None = None,
+        returns_items: bool = False,
+        executor: TaskExecutor | None = None,
+        delete_endpoint: str = "/delete",
+    ) -> list | None:
+        """Async version of _delete_multiple."""
+        resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
+        tasks = [
+            {
+                "url_path": resource_path,
+                "json": {
+                    "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
+                    **(extra_body_fields or {}),
+                },
+                "params": params,
+                "headers": headers,
+            }
+            for chunk in identifiers.chunked(self._DELETE_LIMIT)
+        ]
+        summary = await execute_tasks_async(self._apost, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=unpack_items_in_payload,
+            task_list_element_unwrap_fn=identifiers.unwrap_identifier,
+        )
+        if returns_items:
+            return summary.joined_results(lambda res: res.json()["items"])
+        else:
+            return None
+
+    async def _asearch(
+        self,
+        list_cls: type[T_CogniteResourceList],
+        search: dict,
+        filter: dict | CogniteFilter,
+        limit: int,
+        resource_path: str | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        api_subversion: str | None = None,
+    ) -> T_CogniteResourceList:
+        """Async version of _search."""
+        verify_limit(limit)
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        if isinstance(filter, CogniteFilter):
+            filter = filter.dump(camel_case=True)
+        elif isinstance(filter, dict):
+            filter = convert_all_keys_to_camel_case(filter)
+        resource_path = resource_path or self._RESOURCE_PATH
+        res = await self._apost(
+            url_path=resource_path + "/search",
+            json={"search": search, "filter": filter, "limit": limit},
+            params=params,
+            headers=headers,
+            api_subversion=api_subversion,
+        )
+        return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    async def _aaggregate(
+        self,
+        cls: type[T],
+        resource_path: str | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        aggregate: str | None = None,
+        fields: SequenceNotStr[str] | None = None,
+        keys: SequenceNotStr[str] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> list[T]:
+        """Async version of _aggregate."""
+        assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
+        assert_type(fields, "fields", [list], allow_none=True)
+        if isinstance(filter, CogniteFilter):
+            dumped_filter = filter.dump(camel_case=True)
+        elif isinstance(filter, dict):
+            dumped_filter = convert_all_keys_to_camel_case(filter)
+        else:
+            dumped_filter = {}
+        resource_path = resource_path or self._RESOURCE_PATH
+        body: dict[str, Any] = {"filter": dumped_filter}
+        if aggregate is not None:
+            body["aggregate"] = aggregate
+        if fields is not None:
+            body["fields"] = fields
+        if keys is not None:
+            body["keys"] = keys
+        res = await self._apost(url_path=resource_path + "/aggregate", json=body, headers=headers)
+        return [cls._load(agg) for agg in res.json()["items"]]
+
+    async def _aadvanced_aggregate(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
+        properties: EnumProperty | str | list[str] | tuple[EnumProperty | str | list[str], AggregationFilter] | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict[str, Any] | None = None,
+        advanced_filter: Filter | dict[str, Any] | None = None,
+        aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
+        limit: int | None = None,
+        api_subversion: str | None = None,
+    ) -> int | UniqueResultList:
+        """Async version of _advanced_aggregate."""
+        verify_limit(limit)
+        if aggregate not in VALID_AGGREGATIONS:
+            raise ValueError(f"Invalid aggregate {aggregate!r}. Valid aggregates are {sorted(VALID_AGGREGATIONS)}.")
+
+        body: dict[str, Any] = {"aggregate": aggregate}
+        if properties is not None:
+            if isinstance(properties, tuple):
+                properties, property_aggregation_filter = properties
+            else:
+                property_aggregation_filter = None
+
+            if isinstance(properties, EnumProperty):
+                dumped_properties = properties.as_reference()
+            elif isinstance(properties, str):
+                dumped_properties = [to_camel_case(properties)]
+            elif isinstance(properties, list):
+                dumped_properties = [to_camel_case(properties[0])] if len(properties) == 1 else properties
+            else:
+                raise ValueError(f"Unknown property format: {properties}")
+
+            body["properties"] = [{"property": dumped_properties}]
+            if property_aggregation_filter is not None:
+                body["properties"][0]["filter"] = property_aggregation_filter.dump()
+
+        if path is not None:
+            if isinstance(path, EnumProperty):
+                dumped_path = path.as_reference()
+            elif isinstance(path, str):
+                dumped_path = [path]
+            elif isinstance(path, list):
+                dumped_path = path
+            else:
+                raise ValueError(f"Unknown path format: {path}")
+            body["path"] = dumped_path
+
+        if query is not None:
+            body["search"] = {"query": query}
+
+        if filter is not None:
+            assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
+            if isinstance(filter, CogniteFilter):
+                dumped_filter = filter.dump(camel_case=True)
+            elif isinstance(filter, dict):
+                dumped_filter = convert_all_keys_to_camel_case(filter)
+            body["filter"] = dumped_filter
+
+        if advanced_filter is not None:
+            body["advancedFilter"] = advanced_filter.dump() if isinstance(advanced_filter, Filter) else advanced_filter
+
+        if aggregate_filter is not None:
+            body["aggregateFilter"] = (
+                aggregate_filter.dump() if isinstance(aggregate_filter, AggregationFilter) else aggregate_filter
+            )
+        if limit is not None:
+            body["limit"] = limit
+
+        res = await self._apost(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body, api_subversion=api_subversion)
+        json_items = res.json()["items"]
+        if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
+            return json_items[0]["count"]
+        elif aggregate in {"uniqueValues", "uniqueProperties"}:
+            return UniqueResultList._load(json_items, cognite_client=self._cognite_client)
+        else:
+            raise ValueError(f"Unknown aggregate: {aggregate}")
+
+    async def _aupsert_multiple(
+        self,
+        items: WriteableCogniteResource | Sequence[WriteableCogniteResource],
+        list_cls: type[T_CogniteResourceList],
+        resource_cls: type[T_WritableCogniteResource],
+        update_cls: type[CogniteUpdate],
+        mode: Literal["patch", "replace"],
+        input_resource_cls: type[CogniteResource] | None = None,
+        api_subversion: str | None = None,
+        cdf_item_by_id: Mapping[Any, T_CogniteResource] | None = None,
+    ) -> T_WritableCogniteResource | T_CogniteResourceList:
+        """Async version of _upsert_multiple."""
+        if mode not in ["patch", "replace"]:
+            raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
+        is_single = isinstance(items, WriteableCogniteResource)
+        items = cast(Sequence[T_WritableCogniteResource], [items] if is_single else items)
+        try:
+            result = await self._aupdate_multiple(
+                items,
+                list_cls,
+                resource_cls,
+                update_cls,
+                mode=mode,
+                api_subversion=api_subversion,
+                cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
+            )
+        except CogniteNotFoundError as not_found_error:
+            items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
+            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
+            
+            try:
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+            except KeyError:
+                raise not_found_error
+            to_create = [
+                items_by_external_id[external_id]
+                for external_id in not_found_error.failed
+                if external_id in missing_external_ids
+            ]
+
+            to_update = [
+                items_by_external_id[identifier] if isinstance(identifier, str) else items_by_id[identifier]
+                for identifier in not_found_error.failed
+                if identifier not in missing_external_ids or isinstance(identifier, int)
+            ]
+
+            created: T_CogniteResourceList | None = None
+            updated: T_CogniteResourceList | None = None
+            try:
+                if to_create:
+                    created = await self._acreate_multiple(
+                        to_create,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        input_resource_cls=input_resource_cls,
+                        api_subversion=api_subversion,
+                    )
+                if to_update:
+                    updated = await self._aupdate_multiple(
+                        to_update,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        update_cls=update_cls,
+                        mode=mode,
+                        api_subversion=api_subversion,
+                        cdf_item_by_id=cast(Mapping | None, cdf_item_by_id),
+                    )
+            except CogniteAPIError as api_error:
+                successful = list(api_error.successful)
+                unknown = list(api_error.unknown)
+                failed = list(api_error.failed)
+
+                successful.extend(not_found_error.successful)
+                unknown.extend(not_found_error.unknown)
+                if created is not None:
+                    successful.extend(item.external_id for item in created)
+                if updated is None and created is not None:
+                    failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)  # type: ignore [attr-defined]
+                raise CogniteAPIError(
+                    api_error.message,
+                    code=api_error.code,
+                    successful=successful,
+                    failed=failed,
+                    unknown=unknown,
+                    cluster=self._config.cdf_cluster,
+                    project=self._config.project,
+                )
+                
+            successful_resources: T_CogniteResourceList | None = None
+            if not_found_error.successful:
+                identifiers = IdentifierSequence.of(*not_found_error.successful)
+                successful_resources = await self._aretrieve_multiple(
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers, api_subversion=api_subversion
+                )
+                if isinstance(successful_resources, resource_cls):
+                    successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
+
+            result = list_cls(
+                (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
+            )
+            # Reorder to match the order of the input items
+            result.data = [
+                result.get(
+                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                        camel_case=False
+                    )
+                )
+                for item in items
+            ]
+
+        if is_single:
+            return result[0]
+        return result
+
+    async def _alist_partitioned(
+        self,
+        partitions: int,
+        method: Literal["POST", "GET"],
+        list_cls: type[T_CogniteResourceList],
+        resource_path: str | None = None,
+        filter: dict[str, Any] | None = None,
+        other_params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        advanced_filter: dict | Filter | None = None,
+    ) -> T_CogniteResourceList:
+        """Async version of _list_partitioned."""
+        async def get_partition(partition: int) -> list[dict[str, Any]]:
+            next_cursor = None
+            retrieved_items = []
+            while True:
+                if method == "POST":
+                    body = {
+                        "filter": filter or {},
+                        "limit": self._LIST_LIMIT,
+                        "cursor": next_cursor,
+                        "partition": partition,
+                        **(other_params or {}),
+                    }
+                    if advanced_filter:
+                        body["advancedFilter"] = (
+                            advanced_filter.dump(camel_case_property=True)
+                            if isinstance(advanced_filter, Filter)
+                            else advanced_filter
+                        )
+                    res = await self._apost(
+                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
+                    )
+                elif method == "GET":
+                    params = {
+                        **(filter or {}),
+                        "limit": self._LIST_LIMIT,
+                        "cursor": next_cursor,
+                        "partition": partition,
+                        **(other_params or {}),
+                    }
+                    res = await self._aget(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
+                else:
+                    raise ValueError(f"Unsupported method: {method}")
+                retrieved_items.extend(res.json()["items"])
+                next_cursor = res.json().get("nextCursor")
+                if next_cursor is None:
+                    break
+            return retrieved_items
+
+        tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
+        tasks_summary = await execute_tasks_async(get_partition, tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary.raise_compound_exception_if_failed_tasks()
+
+        return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
+
+
+        @staticmethod
     def _sanitize_headers(headers: dict[str, Any] | None) -> None:
         if headers is None:
             return None

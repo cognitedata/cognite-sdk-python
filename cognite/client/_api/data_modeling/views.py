@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -37,7 +37,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[View]: ...
+    ) -> AsyncIterator[View]: ...
 
     @overload
     def __call__(
@@ -48,7 +48,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> Iterator[ViewList]: ...
+    ) -> AsyncIterator[ViewList]: ...
 
     def __call__(
         self,
@@ -84,7 +84,7 @@ class ViewsAPI(APIClient):
             filter=filter_.dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[View]:
+    def __iter__(self) -> AsyncIterator[View]:
         """Iterate over views
 
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
@@ -100,7 +100,7 @@ class ViewsAPI(APIClient):
             views_by_space_and_xid[(view.space, view.external_id)].append(view)
         return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
-    def retrieve(
+    async def retrieve(
         self,
         ids: ViewIdentifier | Sequence[ViewIdentifier],
         include_inherited_properties: bool = True,
@@ -139,7 +139,7 @@ class ViewsAPI(APIClient):
         else:
             return self._get_latest_views(views)
 
-    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
+    async def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
 
         Args:
@@ -156,7 +156,7 @@ class ViewsAPI(APIClient):
         """
         deleted_views = cast(
             list,
-            self._delete_multiple(
+            await self._adelete_multiple(
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
@@ -165,7 +165,7 @@ class ViewsAPI(APIClient):
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
-    def list(
+    async def list(
         self,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
@@ -205,7 +205,7 @@ class ViewsAPI(APIClient):
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
 
-        return self._list(
+        return await self._alist(
             list_cls=ViewList, resource_cls=View, method="GET", limit=limit, filter=filter_.dump(camel_case=True)
         )
 
@@ -215,7 +215,7 @@ class ViewsAPI(APIClient):
     @overload
     def apply(self, view: ViewApply) -> View: ...
 
-    def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
+    async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
 
         Args:
@@ -297,7 +297,7 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,

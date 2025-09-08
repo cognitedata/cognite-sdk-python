@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -20,7 +20,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
 
-    def __iter__(self) -> Iterator[LabelDefinition]:
+    def __iter__(self) -> AsyncIterator[LabelDefinition]:
         """Iterate over Labels
 
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
@@ -39,7 +39,7 @@ class LabelsAPI(APIClient):
         limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinition]: ...
+    ) -> AsyncIterator[LabelDefinition]: ...
 
     @overload
     def __call__(
@@ -50,7 +50,7 @@ class LabelsAPI(APIClient):
         limit: int | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> Iterator[LabelDefinitionList]: ...
+    ) -> AsyncIterator[LabelDefinitionList]: ...
 
     def __call__(
         self,
@@ -97,7 +97,7 @@ class LabelsAPI(APIClient):
     @overload
     def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
         """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
@@ -115,7 +115,7 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
+                >>> res = await client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
 
         """
         is_single = isinstance(external_id, str)
@@ -131,7 +131,7 @@ class LabelsAPI(APIClient):
             return result[0] if result else None
         return result
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         external_id_prefix: str | None = None,
@@ -157,7 +157,7 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> label_list = client.labels.list(limit=5, name="Pump")
+                >>> label_list = await client.labels.list(limit=5, name="Pump")
 
             Iterate over label definitions:
 
@@ -174,7 +174,7 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
-        return self._list(
+        return await self._alist(
             list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter
         )
 
@@ -184,7 +184,7 @@ class LabelsAPI(APIClient):
     @overload
     def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList: ...
 
-    def create(
+    async def create(
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
@@ -206,7 +206,7 @@ class LabelsAPI(APIClient):
                 >>> from cognite.client.data_classes import LabelDefinitionWrite
                 >>> client = CogniteClient()
                 >>> labels = [LabelDefinitionWrite(external_id="ROTATING_EQUIPMENT", name="Rotating equipment"), LabelDefinitionWrite(external_id="PUMP", name="pump")]
-                >>> res = client.labels.create(labels)
+                >>> res = await client.labels.create(labels)
         """
         if isinstance(label, Sequence):
             if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
@@ -214,9 +214,9 @@ class LabelsAPI(APIClient):
         elif not isinstance(label, LabelDefinitionCore):
             raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
 
-        return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
+        return await self._acreate_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
-    def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
@@ -228,6 +228,6 @@ class LabelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.labels.delete(external_id=["big_pump", "small_pump"])
+                >>> await client.labels.delete(external_id=["big_pump", "small_pump"])
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

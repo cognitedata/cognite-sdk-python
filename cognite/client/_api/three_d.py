@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -48,12 +48,12 @@ class ThreeDModelsAPI(APIClient):
     @overload
     def __call__(
         self, chunk_size: None = None, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModel]: ...
+    ) -> AsyncIterator[ThreeDModel]: ...
 
     @overload
     def __call__(
         self, chunk_size: int, published: bool | None = None, limit: int | None = None
-    ) -> Iterator[ThreeDModelList]: ...
+    ) -> AsyncIterator[ThreeDModelList]: ...
 
     def __call__(
         self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
@@ -79,7 +79,7 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def __iter__(self) -> Iterator[ThreeDModel]:
+    def __iter__(self) -> AsyncIterator[ThreeDModel]:
         """Iterate over 3d models
 
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
@@ -89,7 +89,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self()
 
-    def retrieve(self, id: int) -> ThreeDModel | None:
+    async def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
         Args:
@@ -106,9 +106,9 @@ class ThreeDModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.models.retrieve(id=1)
         """
-        return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
+        return await self._aretrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
+    async def list(self, published: bool | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> ThreeDModelList:
         """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
 
         Args:
@@ -136,7 +136,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> for three_d_model in client.three_d.models(chunk_size=50):
                 ...     three_d_model # do something with the 3d model
         """
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
@@ -144,7 +144,7 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(
+    async def create(
         self,
         name: str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite],
         data_set_id: int | None = None,
@@ -187,7 +187,7 @@ class ThreeDModelsAPI(APIClient):
             items = name
         else:
             items = [ThreeDModelWrite(n, data_set_id, metadata) if isinstance(n, str) else n for n in name]
-        return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
+        return await self._acreate_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=items)
 
     @overload
     def update(
@@ -203,7 +203,7 @@ class ThreeDModelsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> ThreeDModelList: ...
 
-    def update(
+    async def update(
         self,
         item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -236,7 +236,7 @@ class ThreeDModelsAPI(APIClient):
         """
         # Note that we cannot use the ThreeDModelWrite to update as the write format of a 3D model
         # does not have ID or External ID, thus no identifier to know which model to update.
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             update_cls=ThreeDModelUpdate,
@@ -244,7 +244,7 @@ class ThreeDModelsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
 
         Args:
@@ -258,7 +258,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.models.delete(id=1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
@@ -267,11 +267,11 @@ class ThreeDRevisionsAPI(APIClient):
     @overload
     def __call__(
         self, model_id: int, chunk_size: None = None, published: bool = False, limit: int | None = None
-    ) -> Iterator[ThreeDModelRevision]: ...
+    ) -> AsyncIterator[ThreeDModelRevision]: ...
     @overload
     def __call__(
         self, model_id: int, chunk_size: int, published: bool = False, limit: int | None = None
-    ) -> Iterator[ThreeDModelRevisionList]: ...
+    ) -> AsyncIterator[ThreeDModelRevisionList]: ...
 
     def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
@@ -299,7 +299,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
+    async def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
         """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
 
         Args:
@@ -317,7 +317,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.retrieve(model_id=1, id=1)
         """
-        return self._retrieve(
+        return await self._aretrieve(
             cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifier=InternalId(id),
@@ -333,7 +333,7 @@ class ThreeDRevisionsAPI(APIClient):
         self, model_id: int, revision: Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]
     ) -> ThreeDModelRevisionList: ...
 
-    def create(
+    async def create(
         self,
         model_id: int,
         revision: ThreeDModelRevision
@@ -360,7 +360,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = client.three_d.revisions.create(model_id=1, revision=my_revision)
         """
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
@@ -368,7 +368,7 @@ class ThreeDRevisionsAPI(APIClient):
             input_resource_cls=ThreeDModelRevisionWrite,
         )
 
-    def list(
+    async def list(
         self, model_id: int, published: bool = False, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDModelRevisionList:
         """`List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
@@ -389,7 +389,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
@@ -398,7 +398,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def update(
+    async def update(
         self,
         model_id: int,
         item: ThreeDModelRevision
@@ -432,7 +432,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
                 >>> res = client.three_d.revisions.update(model_id=1, item=my_update)
         """
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             update_cls=ThreeDModelRevisionUpdate,
@@ -441,7 +441,7 @@ class ThreeDRevisionsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, model_id: int, id: int | Sequence[int]) -> None:
+    async def delete(self, model_id: int, id: int | Sequence[int]) -> None:
         """`Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
 
         Args:
@@ -456,13 +456,13 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.delete(model_id=1, id=1)
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 
-    def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
+    async def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
         """`Update a revision thumbnail. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_
 
         Args:
@@ -482,7 +482,7 @@ class ThreeDRevisionsAPI(APIClient):
         body = {"fileId": file_id}
         self._post(resource_path, json=body)
 
-    def list_nodes(
+    async def list_nodes(
         self,
         model_id: int,
         revision_id: int,
@@ -518,7 +518,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,
@@ -529,7 +529,7 @@ class ThreeDRevisionsAPI(APIClient):
             other_params={"sortByNodeId": sort_by_node_id},
         )
 
-    def filter_nodes(
+    async def filter_nodes(
         self,
         model_id: int,
         revision_id: int,
@@ -558,7 +558,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,
@@ -568,7 +568,7 @@ class ThreeDRevisionsAPI(APIClient):
             partitions=partitions,
         )
 
-    def list_ancestor_nodes(
+    async def list_ancestor_nodes(
         self, model_id: int, revision_id: int, node_id: int | None = None, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
@@ -591,7 +591,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,
@@ -604,7 +604,7 @@ class ThreeDRevisionsAPI(APIClient):
 class ThreeDFilesAPI(APIClient):
     _RESOURCE_PATH = "/3d/files"
 
-    def retrieve(self, id: int) -> bytes:
+    async def retrieve(self, id: int) -> bytes:
         """`Retrieve the contents of a 3d file by id. <https://developer.cognite.com/api#tag/3D-Files/operation/get3DFile>`_
 
         Args:
@@ -628,7 +628,7 @@ class ThreeDFilesAPI(APIClient):
 class ThreeDAssetMappingAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
 
-    def list(
+    async def list(
         self,
         model_id: int,
         revision_id: int,
@@ -669,7 +669,7 @@ class ThreeDAssetMappingAPI(APIClient):
         flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
         if intersects_bounding_box:
             flt["intersectsBoundingBox"] = _json.dumps(intersects_bounding_box)
-        return self._list(
+        return await self._alist(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,
             resource_path=path,
@@ -691,7 +691,7 @@ class ThreeDAssetMappingAPI(APIClient):
         asset_mapping: Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMappingList: ...
 
-    def create(
+    async def create(
         self,
         model_id: int,
         revision_id: int,
@@ -721,7 +721,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> res = client.three_d.asset_mappings.create(model_id=1, revision_id=1, asset_mapping=my_mapping)
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=ThreeDAssetMappingList,
             resource_cls=ThreeDAssetMapping,
             resource_path=path,
@@ -729,7 +729,7 @@ class ThreeDAssetMappingAPI(APIClient):
             input_resource_cls=ThreeDAssetMappingWrite,
         )
 
-    def delete(
+    async def delete(
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
         """`Delete 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_

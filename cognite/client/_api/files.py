@@ -4,7 +4,7 @@ import copy
 import os
 import warnings
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from io import BufferedReader
 from pathlib import Path
 from typing import Any, BinaryIO, Literal, TextIO, cast, overload
@@ -64,7 +64,7 @@ class FilesAPI(APIClient):
         uploaded: bool | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[FileMetadata]: ...
+    ) -> AsyncIterator[FileMetadata]: ...
     @overload
     def __call__(
         self,
@@ -91,7 +91,7 @@ class FilesAPI(APIClient):
         uploaded: bool | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[FileMetadataList]: ...
+    ) -> AsyncIterator[FileMetadataList]: ...
 
     def __call__(
         self,
@@ -184,7 +184,7 @@ class FilesAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[FileMetadata]:
+    def __iter__(self) -> AsyncIterator[FileMetadata]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -194,7 +194,7 @@ class FilesAPI(APIClient):
         """
         return self()
 
-    def create(
+    async def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
     ) -> tuple[FileMetadata, str]:
         """Create file without uploading content.
@@ -214,7 +214,7 @@ class FilesAPI(APIClient):
                 >>> from cognite.client.data_classes import FileMetadataWrite
                 >>> client = CogniteClient()
                 >>> file_metadata = FileMetadataWrite(name="MyFile")
-                >>> res = client.files.create(file_metadata)
+                >>> res = await client.files.create(file_metadata)
 
         """
         if isinstance(file_metadata, FileMetadata):
@@ -227,7 +227,7 @@ class FilesAPI(APIClient):
         file_metadata = FileMetadata._load(returned_file_metadata)
         return file_metadata, upload_url
 
-    def retrieve(
+    async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
@@ -246,16 +246,16 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.files.retrieve(id=1)
+                >>> res = await client.files.retrieve(id=1)
 
             Get file metadata by external id:
 
-                >>> res = client.files.retrieve(external_id="1")
+                >>> res = await client.files.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
-        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
+        return await self._aretrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -286,14 +286,14 @@ class FilesAPI(APIClient):
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
@@ -311,9 +311,9 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aaggregate(filter=filter, cls=CountAggregate)
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -332,9 +332,9 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.files.delete(id=[1,2,3], external_id="3")
+                >>> await client.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
@@ -354,7 +354,7 @@ class FilesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadataList: ...
 
-    def update(
+    async def update(
         self,
         item: FileMetadata
         | FileMetadataWrite
@@ -378,29 +378,29 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> file_metadata = client.files.retrieve(id=1)
+                >>> file_metadata = await client.files.retrieve(id=1)
                 >>> file_metadata.description = "New description"
-                >>> res = client.files.update(file_metadata)
+                >>> res = await client.files.update(file_metadata)
 
             Perform a partial update on file metadata, updating the source and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> my_update = FileMetadataUpdate(id=1).source.set("new source").metadata.add({"key": "value"})
-                >>> res = client.files.update(my_update)
+                >>> res = await client.files.update(my_update)
 
             Attach labels to a files:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> my_update = FileMetadataUpdate(id=1).labels.add(["PUMP", "VERIFIED"])
-                >>> res = client.files.update(my_update)
+                >>> res = await client.files.update(my_update)
 
             Detach a single label from a file:
 
                 >>> from cognite.client.data_classes import FileMetadataUpdate
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
-                >>> res = client.files.update(my_update)
+                >>> res = await client.files.update(my_update)
         """
-        return self._update_multiple(
+        return await self._aupdate_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             update_cls=FileMetadataUpdate,
@@ -409,7 +409,7 @@ class FilesAPI(APIClient):
             mode=mode,
         )
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         filter: FileMetadataFilter | dict[str, Any] | None = None,
@@ -432,16 +432,16 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.files.search(name="some name")
+                >>> res = await client.files.search(name="some name")
 
             Search for an asset with an attached label:
 
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
-                >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
+                >>> res = await client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
-        return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
+        return await self._asearch(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
-    def upload_content(
+    async def upload_content(
         self,
         path: str,
         external_id: str | None = None,
@@ -468,7 +468,7 @@ class FilesAPI(APIClient):
             raise IsADirectoryError(path)
         raise FileNotFoundError(path)
 
-    def upload(
+    async def upload(
         self,
         path: str,
         external_id: str | None = None,
@@ -588,7 +588,7 @@ class FilesAPI(APIClient):
             file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
-    def upload_content_bytes(
+    async def upload_content_bytes(
         self,
         content: str | bytes | BinaryIO,
         external_id: str | None = None,
@@ -659,7 +659,7 @@ class FilesAPI(APIClient):
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
         return file_metadata
 
-    def upload_bytes(
+    async def upload_bytes(
         self,
         content: str | bytes | BinaryIO,
         name: str,
@@ -748,7 +748,7 @@ class FilesAPI(APIClient):
 
         return self._upload_bytes(content, res.json())
 
-    def multipart_upload_session(
+    async def multipart_upload_session(
         self,
         name: str,
         parts: int,
@@ -849,7 +849,7 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def multipart_upload_content_session(
+    async def multipart_upload_content_session(
         self,
         parts: int,
         external_id: str | None = None,
@@ -943,7 +943,7 @@ class FilesAPI(APIClient):
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
         )
 
-    def retrieve_download_urls(
+    async def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -1008,7 +1008,7 @@ class FilesAPI(APIClient):
 
         return unique_created
 
-    def download(
+    async def download(
         self,
         directory: str | Path,
         id: int | Sequence[int] | None = None,
@@ -1157,7 +1157,7 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(
+    async def download_to_path(
         self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> None:
         """Download a file to a specific target.
@@ -1183,7 +1183,7 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
-    def download_bytes(
+    async def download_bytes(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> bytes:
         """Download a file as bytes.
@@ -1214,7 +1214,7 @@ class FilesAPI(APIClient):
         )
         return res.content
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         mime_type: str | None = None,
@@ -1274,7 +1274,7 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
+                >>> file_list = await client.files.list(limit=5, external_id_prefix="prefix")
 
             Iterate over files metadata:
 
@@ -1290,13 +1290,13 @@ class FilesAPI(APIClient):
 
                 >>> from cognite.client.data_classes import LabelFilter
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
-                >>> file_list = client.files.list(labels=my_label_filter)
+                >>> file_list = await client.files.list(labels=my_label_filter)
 
             Filter files based on geoLocation:
 
                 >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
-                >>> file_list = client.files.list(geo_location=my_geo_location_filter)
+                >>> file_list = await client.files.list(geo_location=my_geo_location_filter)
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -1322,7 +1322,7 @@ class FilesAPI(APIClient):
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
 
-        return self._list(
+        return await self._alist(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             method="POST",

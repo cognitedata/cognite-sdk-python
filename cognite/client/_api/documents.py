@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, AsyncIterator
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, BinaryIO, Literal, cast, overload
 
@@ -31,7 +31,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
 class DocumentPreviewAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
+    async def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
@@ -60,7 +60,7 @@ class DocumentPreviewAPI(APIClient):
         )
         return res.content
 
-    def download_page_as_png(
+    async def download_page_as_png(
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
     ) -> None:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
@@ -93,7 +93,7 @@ class DocumentPreviewAPI(APIClient):
         content = self.download_page_as_png_bytes(id, page_number)
         path.write_bytes(content)
 
-    def download_document_as_pdf_bytes(self, id: int) -> bytes:
+    async def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
@@ -115,7 +115,7 @@ class DocumentPreviewAPI(APIClient):
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
 
-    def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
+    async def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
@@ -147,7 +147,7 @@ class DocumentPreviewAPI(APIClient):
         content = self.download_document_as_pdf_bytes(id)
         path.write_bytes(content)
 
-    def retrieve_pdf_link(self, id: int) -> TemporaryLink:
+    async def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
 
         Args:
@@ -183,7 +183,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> AsyncIterator[DocumentList]: ...
 
     @overload
     def __call__(
@@ -193,7 +193,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int | None = None,
         partitions: int | None = None,
-    ) -> Iterator[DocumentList]: ...
+    ) -> AsyncIterator[DocumentList]: ...
 
     def __call__(
         self,
@@ -229,7 +229,7 @@ class DocumentsAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[Document]:
+    def __iter__(self) -> AsyncIterator[Document]:
         """Iterate over documents
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
@@ -239,7 +239,7 @@ class DocumentsAPI(APIClient):
         """
         return cast(Iterator[Document], self())
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
+    async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -275,11 +275,11 @@ class DocumentsAPI(APIClient):
                 ... )
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._aadvanced_aggregate(
             "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -323,7 +323,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._aadvanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
@@ -331,7 +331,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SourceFileProperty | list[str] = SourceFileProperty.metadata,
         query: str | None = None,
@@ -359,7 +359,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._aadvanced_aggregate(
             "cardinalityProperties",
             path=path,
             query=query,
@@ -367,7 +367,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -415,7 +415,7 @@ class DocumentsAPI(APIClient):
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._aadvanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             query=query,
@@ -424,7 +424,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -455,7 +455,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._aadvanced_aggregate(
             aggregate="uniqueProperties",
             # There is a bug/inconsistency in the API where the path parameter is called properties for documents.
             # This has been reported to the API team, and will be fixed in the future.
@@ -466,7 +466,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> bytes:
+    async def retrieve_content(self, id: int) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -496,7 +496,7 @@ class DocumentsAPI(APIClient):
         response = self._do_request("POST", f"{self._RESOURCE_PATH}/content", accept="text/plain", json=body)
         return response.content
 
-    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+    async def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
         """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -548,7 +548,7 @@ class DocumentsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
 
-    def search(
+    async def search(
         self,
         query: str,
         highlight: bool = False,
@@ -581,7 +581,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-                >>> documents = client.documents.search("pump 123", filter=is_pdf)
+                >>> documents = await client.documents.search("pump 123", filter=is_pdf)
 
             Find all documents with exact text 'CPLEX Error 1217: No Solution exists.'
             in plain text files created the last week in your CDF project and highlight the matches:
@@ -593,7 +593,7 @@ class DocumentsAPI(APIClient):
                 >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
                 >>> last_week = filters.Range(DocumentProperty.created_time,
                 ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-                >>> documents = client.documents.search('"CPLEX Error 1217: No Solution exists."',
+                >>> documents = await client.documents.search('"CPLEX Error 1217: No Solution exists."',
                 ...     highlight=True,
                 ...     filter=filters.And(is_plain_text, last_week))
         """
@@ -626,7 +626,7 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
@@ -655,7 +655,7 @@ class DocumentsAPI(APIClient):
                 >>> from cognite.client.data_classes.documents import DocumentProperty
                 >>> client = CogniteClient()
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-                >>> pdf_documents = client.documents.list(filter=is_pdf)
+                >>> pdf_documents = await client.documents.list(filter=is_pdf)
 
             Iterate over all documents in your CDF project:
 
@@ -666,11 +666,11 @@ class DocumentsAPI(APIClient):
             List all documents in your CDF project sorted by mime/type in descending order:
 
                 >>> from cognite.client.data_classes.documents import SortableDocumentProperty
-                >>> documents = client.documents.list(sort=(SortableDocumentProperty.mime_type, "desc"))
+                >>> documents = await client.documents.list(sort=(SortableDocumentProperty.mime_type, "desc"))
 
         """
         self._validate_filter(filter)
-        return self._list(
+        return await self._alist(
             list_cls=DocumentList,
             resource_cls=Document,
             method="POST",

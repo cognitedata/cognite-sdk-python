@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numbers
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import Any, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
@@ -59,7 +59,7 @@ class GeospatialAPI(APIClient):
         self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureTypeList: ...
 
-    def create_feature_types(
+    async def create_feature_types(
         self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureType | FeatureTypeList:
         """`Creates feature types`
@@ -88,7 +88,7 @@ class GeospatialAPI(APIClient):
                 ... ]
                 >>> res = client.geospatial.create_feature_types(feature_types)
         """
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
             items=feature_type,
@@ -96,7 +96,7 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureTypeWrite,
         )
 
-    def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
+    async def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more feature type`
         <https://developer.cognite.com/api#tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
 
@@ -113,14 +113,14 @@ class GeospatialAPI(APIClient):
                 >>> client.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
         extra_body_fields = {"recursive": True} if recursive else {}
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
             extra_body_fields=extra_body_fields,
         )
 
-    def list_feature_types(self) -> FeatureTypeList:
+    async def list_feature_types(self) -> FeatureTypeList:
         """`List feature types`
         <https://developer.cognite.com/api#tag/Geospatial/operation/listFeatureTypes>
 
@@ -136,7 +136,7 @@ class GeospatialAPI(APIClient):
                 >>> for feature_type in client.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
         """
-        return self._list(
+        return await self._alist(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
             method="POST",
@@ -149,7 +149,7 @@ class GeospatialAPI(APIClient):
     @overload
     def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
 
-    def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
+    async def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types`
         <https://developer.cognite.com/api#tag/Geospatial/operation/getFeatureTypesByIds>
 
@@ -168,14 +168,14 @@ class GeospatialAPI(APIClient):
                 >>> res = client.geospatial.retrieve_feature_types(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
             identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
+    async def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types`
         <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatureTypes>
 
@@ -247,7 +247,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList: ...
 
-    def create_features(
+    async def create_features(
         self,
         feature_type_external_id: str,
         feature: Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList,
@@ -299,7 +299,7 @@ class GeospatialAPI(APIClient):
 
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=FeatureList,
             resource_cls=Feature,
             items=feature,
@@ -309,7 +309,7 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureWrite,
         )
 
-    def delete_features(
+    async def delete_features(
         self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """`Delete one or more feature`
@@ -331,7 +331,7 @@ class GeospatialAPI(APIClient):
                 ... )
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id), resource_path=resource_path, wrap_ids=True
         )
 
@@ -351,7 +351,7 @@ class GeospatialAPI(APIClient):
         properties: dict[str, Any] | None = None,
     ) -> FeatureList: ...
 
-    def retrieve_features(
+    async def retrieve_features(
         self,
         feature_type_external_id: str,
         external_id: str | list[str],
@@ -381,7 +381,7 @@ class GeospatialAPI(APIClient):
         """
         resource_path = self._feature_resource_path(feature_type_external_id)
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=FeatureList,
             resource_cls=Feature,
             identifiers=identifiers.as_singleton() if identifiers.is_singleton() else identifiers,
@@ -389,7 +389,7 @@ class GeospatialAPI(APIClient):
             other_params={"output": {"properties": properties}},
         )
 
-    def update_features(
+    async def update_features(
         self,
         feature_type_external_id: str,
         feature: Feature | Sequence[Feature],
@@ -443,7 +443,7 @@ class GeospatialAPI(APIClient):
             ),
         )
 
-    def list_features(
+    async def list_features(
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
@@ -508,7 +508,7 @@ class GeospatialAPI(APIClient):
                 ...     }}
                 ... )
         """
-        return self._list(
+        return await self._alist(
             list_cls=FeatureList,
             resource_cls=Feature,
             resource_path=self._feature_resource_path(feature_type_external_id),
@@ -521,7 +521,7 @@ class GeospatialAPI(APIClient):
             },
         )
 
-    def search_features(
+    async def search_features(
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
@@ -649,14 +649,14 @@ class GeospatialAPI(APIClient):
         )
         return FeatureList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def stream_features(
+    async def stream_features(
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
         allow_crs_transformation: bool = False,
         allow_dimensionality_mismatch: bool = False,
-    ) -> Iterator[Feature]:
+    ) -> AsyncIterator[Feature]:
         """`Stream features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
 
@@ -716,7 +716,7 @@ class GeospatialAPI(APIClient):
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
-    def aggregate_features(
+    async def aggregate_features(
         self,
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
@@ -772,7 +772,7 @@ class GeospatialAPI(APIClient):
         )
         return FeatureAggregateList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
+    async def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
         <https://developer.cognite.com/api#tag/Geospatial/operation/getCoordinateReferenceSystem>
 
@@ -800,7 +800,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
+    async def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
         <https://developer.cognite.com/api#tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
 
@@ -821,7 +821,7 @@ class GeospatialAPI(APIClient):
         res = self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def create_coordinate_reference_systems(
+    async def create_coordinate_reference_systems(
         self,
         crs: CoordinateReferenceSystem
         | CoordinateReferenceSystemWrite
@@ -891,7 +891,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
+    async def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System`
         <https://developer.cognite.com/api#tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
 
@@ -915,7 +915,7 @@ class GeospatialAPI(APIClient):
             url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids_processed]}
         )
 
-    def put_raster(
+    async def put_raster(
         self,
         feature_type_external_id: str,
         feature_external_id: str,
@@ -977,7 +977,7 @@ class GeospatialAPI(APIClient):
         )
         return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
-    def delete_raster(
+    async def delete_raster(
         self,
         feature_type_external_id: str,
         feature_external_id: str,
@@ -1010,7 +1010,7 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
         )
 
-    def get_raster(
+    async def get_raster(
         self,
         feature_type_external_id: str,
         feature_external_id: str,
@@ -1066,7 +1066,7 @@ class GeospatialAPI(APIClient):
         )
         return res.content
 
-    def compute(
+    async def compute(
         self,
         output: dict[str, GeospatialComputeFunction],
     ) -> GeospatialComputedResponse:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, MutableSequence, Sequence
+from collections.abc import Iterator, AsyncIterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
@@ -46,7 +46,7 @@ WorkflowIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str] | str
 WorkflowVersionIdentifier: TypeAlias = WorkflowVersionId | tuple[str, str]
 
 
-def wrap_workflow_ids(
+async def wrap_workflow_ids(
     workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None,
 ) -> list[dict[str, Any]]:
     if workflow_version_ids is None:
@@ -61,7 +61,7 @@ class WorkflowTriggerAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
 
-    def upsert(
+    async def upsert(
         self,
         workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
@@ -130,7 +130,7 @@ class WorkflowTriggerAPI(APIClient):
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     # TODO: remove method and associated data classes in next major release
-    def create(
+    async def create(
         self,
         workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | dict | None = None,
@@ -147,7 +147,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.upsert(workflow_trigger, client_credentials)
 
-    def delete(self, external_id: str | SequenceNotStr[str]) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """`Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
         Args:
@@ -165,12 +165,12 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> client.workflows.triggers.delete(["my_trigger", "another_trigger"])
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
 
-    def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
+    async def get_triggers(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """List the workflow triggers.
 
         .. admonition:: Deprecation Warning
@@ -181,9 +181,9 @@ class WorkflowTriggerAPI(APIClient):
             "The 'get_triggers' method is deprecated, use 'list' instead. It will be removed in the next major release.",
             UserWarning,
         )
-        return self.list(limit)
+        return await self.list(limit)
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
@@ -200,7 +200,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.list(limit=None)
         """
-        return self._list(
+        return await self._alist(
             method="GET",
             url_path=self._RESOURCE_PATH,
             resource_cls=WorkflowTrigger,
@@ -208,7 +208,7 @@ class WorkflowTriggerAPI(APIClient):
             limit=limit,
         )
 
-    def get_trigger_run_history(
+    async def get_trigger_run_history(
         self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
     ) -> WorkflowTriggerRunList:
         """List the history of runs for a trigger.
@@ -223,7 +223,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.list_runs(external_id, limit)
 
-    def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
+    async def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
         """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
@@ -241,7 +241,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
-        return self._list(
+        return await self._alist(
             method="GET",
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/history", external_id),
             resource_cls=WorkflowTriggerRun,
@@ -253,7 +253,7 @@ class WorkflowTriggerAPI(APIClient):
 class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
-    def update(
+    async def update(
         self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None
     ) -> WorkflowTaskExecution:
         """`Update status of async task. <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_
@@ -297,7 +297,7 @@ class WorkflowTaskAPI(APIClient):
 class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
-    def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
+    async def retrieve_detailed(self, id: str) -> WorkflowExecutionDetailed | None:
         """`Retrieve a workflow execution with detailed information. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/ExecutionOfSpecificRunOfWorkflow>`_
 
         Args:
@@ -328,7 +328,7 @@ class WorkflowExecutionAPI(APIClient):
             raise
         return WorkflowExecutionDetailed._load(response.json())
 
-    def trigger(
+    async def trigger(
         self,
         workflow_external_id: str,
         version: str,
@@ -348,7 +348,7 @@ class WorkflowExecutionAPI(APIClient):
         )
         return self.run(workflow_external_id, version, input, metadata, client_credentials)
 
-    def run(
+    async def run(
         self,
         workflow_external_id: str,
         version: str,
@@ -418,7 +418,7 @@ class WorkflowExecutionAPI(APIClient):
         )
         return WorkflowExecution._load(response.json())
 
-    def list(
+    async def list(
         self,
         workflow_version_ids: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier] | None = None,
         created_time_start: int | None = None,
@@ -474,7 +474,7 @@ class WorkflowExecutionAPI(APIClient):
             else:  # Assume it is a stringy type
                 filter_["status"] = [statuses.upper()]
 
-        return self._list(
+        return await self._alist(
             method="POST",
             resource_cls=WorkflowExecution,
             list_cls=WorkflowExecutionList,
@@ -482,7 +482,7 @@ class WorkflowExecutionAPI(APIClient):
             limit=limit,
         )
 
-    def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
+    async def cancel(self, id: str, reason: str | None) -> WorkflowExecution:
         """`Cancel a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionCancellation>`_
 
         Note:
@@ -512,7 +512,7 @@ class WorkflowExecutionAPI(APIClient):
         )
         return WorkflowExecution._load(response.json())
 
-    def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
+    async def retry(self, id: str, client_credentials: ClientCredentials | None = None) -> WorkflowExecution:
         """`Retry a workflow execution. <https://api-docs.cognite.com/20230101/tag/Workflow-executions/operation/WorkflowExecutionRetryn>`_
 
         Args:
@@ -556,7 +556,7 @@ class WorkflowVersionAPI(APIClient):
         chunk_size: None = None,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersion]: ...
+    ) -> AsyncIterator[WorkflowVersion]: ...
 
     @overload
     def __call__(
@@ -564,7 +564,7 @@ class WorkflowVersionAPI(APIClient):
         chunk_size: int,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = None,
-    ) -> Iterator[WorkflowVersionList]: ...
+    ) -> AsyncIterator[WorkflowVersionList]: ...
 
     def __call__(
         self,
@@ -591,7 +591,7 @@ class WorkflowVersionAPI(APIClient):
             chunk_size=chunk_size,
         )
 
-    def __iter__(self) -> Iterator[WorkflowVersion]:
+    def __iter__(self) -> AsyncIterator[WorkflowVersion]:
         """Iterate all over workflow versions"""
         return self()
 
@@ -601,7 +601,7 @@ class WorkflowVersionAPI(APIClient):
     @overload
     def upsert(self, version: Sequence[WorkflowVersionUpsert]) -> WorkflowVersionList: ...
 
-    def upsert(
+    async def upsert(
         self, version: WorkflowVersionUpsert | Sequence[WorkflowVersionUpsert], mode: Literal["replace"] = "replace"
     ) -> WorkflowVersion | WorkflowVersionList:
         """`Create one or more workflow version(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflowVersion>`_
@@ -647,14 +647,14 @@ class WorkflowVersionAPI(APIClient):
 
         assert_type(version, "workflow version", [WorkflowVersionUpsert, Sequence])
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=WorkflowVersionList,
             resource_cls=WorkflowVersion,
             items=version,
             input_resource_cls=WorkflowVersionUpsert,
         )
 
-    def delete(
+    async def delete(
         self,
         workflow_version_id: WorkflowVersionIdentifier | MutableSequence[WorkflowVersionIdentifier],
         ignore_unknown_ids: bool = False,
@@ -680,7 +680,7 @@ class WorkflowVersionAPI(APIClient):
 
         """
         identifiers = WorkflowIds.load(workflow_version_id).dump(camel_case=True)
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=WorkflowVersionIdentifierSequence.load(identifiers),
             params={"ignoreUnknownIds": ignore_unknown_ids},
             wrap_ids=True,
@@ -704,7 +704,7 @@ class WorkflowVersionAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> WorkflowVersionList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         workflow_external_id: WorkflowVersionIdentifier | Sequence[WorkflowVersionIdentifier] | WorkflowIds | str,
         version: str | None = None,
@@ -760,7 +760,7 @@ class WorkflowVersionAPI(APIClient):
                 warnings.warn("Argument 'version' is ignored when passing one or more 'WorkflowVersionId'", UserWarning)
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
-        def get_single(wf_xid: WorkflowVersionId, ignore_missing: bool = ignore_unknown_ids) -> WorkflowVersion | None:
+        async def get_single(wf_xid: WorkflowVersionId, ignore_missing: bool = ignore_unknown_ids) -> WorkflowVersion | None:
             try:
                 response = self._get(
                     url_path=interpolate_and_url_encode("/workflows/{}/versions/{}", *wf_xid.as_tuple())
@@ -788,7 +788,7 @@ class WorkflowVersionAPI(APIClient):
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowVersionList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         workflow_version_ids: WorkflowIdentifier | MutableSequence[WorkflowIdentifier] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
@@ -822,7 +822,7 @@ class WorkflowVersionAPI(APIClient):
                 ...     [("my_workflow", "1"), ("my_workflow_2", "2")])
 
         """
-        return self._list(
+        return await self._alist(
             method="POST",
             resource_cls=WorkflowVersion,
             list_cls=WorkflowVersionList,
@@ -850,10 +850,10 @@ class WorkflowAPI(APIClient):
         self._DELETE_LIMIT = 100
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: None = None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: None = None, limit: None = None) -> AsyncIterator[Workflow]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: None) -> Iterator[Workflow]: ...
+    def __call__(self, chunk_size: int, limit: None) -> AsyncIterator[Workflow]: ...
 
     def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
@@ -872,7 +872,7 @@ class WorkflowAPI(APIClient):
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
         )
 
-    def __iter__(self) -> Iterator[Workflow]:
+    def __iter__(self) -> AsyncIterator[Workflow]:
         """Iterate all over workflows"""
         return self()
 
@@ -882,7 +882,7 @@ class WorkflowAPI(APIClient):
     @overload
     def upsert(self, workflow: Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace") -> WorkflowList: ...
 
-    def upsert(
+    async def upsert(
         self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
     ) -> Workflow | WorkflowList:
         """`Create one or more workflow(s). <https://api-docs.cognite.com/20230101/tag/Workflow-versions/operation/CreateOrUpdateWorkflow>`_
@@ -916,7 +916,7 @@ class WorkflowAPI(APIClient):
 
         assert_type(workflow, "workflow", [WorkflowUpsert, Sequence])
 
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=WorkflowList,
             resource_cls=Workflow,
             items=workflow,
@@ -929,7 +929,7 @@ class WorkflowAPI(APIClient):
     @overload
     def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> WorkflowList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Workflow | WorkflowList | None:
         """`Retrieve one or more workflows. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/fetchWorkflowDetails>`_
@@ -947,15 +947,15 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> workflow = client.workflows.retrieve("my_workflow")
+                >>> workflow = await client.workflows.retrieve("my_workflow")
 
             Retrieve multiple workflows:
 
-                >>> workflow_list = client.workflows.retrieve(["foo", "bar"])
+                >>> workflow_list = await client.workflows.retrieve(["foo", "bar"])
         """
 
         # We can not use _retrieve_multiple as the backend doesn't support 'ignore_unknown_ids':
-        def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
+        async def get_single(xid: str, ignore_missing: bool = ignore_unknown_ids) -> Workflow | None:
             try:
                 response = self._get(url_path=interpolate_and_url_encode("/workflows/{}", xid))
                 return Workflow._load(response.json())
@@ -973,7 +973,7 @@ class WorkflowAPI(APIClient):
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return WorkflowList(list(filter(None, tasks_summary.results)), cognite_client=self._cognite_client)
 
-    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more workflows with versions. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_
 
         Args:
@@ -986,15 +986,15 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.workflows.delete("my_workflow")
+                >>> await client.workflows.delete("my_workflow")
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
             wrap_ids=True,
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
         """`List workflows in the project. <https://api-docs.cognite.com/20230101/tag/Workflows/operation/FetchAllWorkflows>`_
 
         Args:
@@ -1009,9 +1009,9 @@ class WorkflowAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.workflows.list(limit=None)
+                >>> res = await client.workflows.list(limit=None)
         """
-        return self._list(
+        return await self._alist(
             method="GET",
             resource_cls=Workflow,
             list_cls=WorkflowList,

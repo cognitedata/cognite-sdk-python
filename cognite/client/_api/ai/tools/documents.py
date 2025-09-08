@@ -12,7 +12,7 @@ from cognite.client.utils._identifier import IdentifierSequenceWithInstanceId
 class AIDocumentsAPI(APIClient):
     _RESOURCE_PATH = "/ai/tools/documents"
 
-    def summarize(
+    async def summarize(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -51,7 +51,7 @@ class AIDocumentsAPI(APIClient):
         res = self._post(self._RESOURCE_PATH + "/summarize", json={"items": ident.as_dicts()})
         return Summary._load(res.json()["items"][0])
 
-    def ask_question(
+    async def ask_question(
         self,
         question: str,
         *,

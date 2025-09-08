@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -41,7 +41,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> Iterator[Container]: ...
+    ) -> AsyncIterator[Container]: ...
 
     @overload
     def __call__(
@@ -50,7 +50,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         include_global: bool = False,
         limit: int | None = None,
-    ) -> Iterator[ContainerList]: ...
+    ) -> AsyncIterator[ContainerList]: ...
 
     def __call__(
         self,
@@ -82,7 +82,7 @@ class ContainersAPI(APIClient):
             filter=flt.dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[Container]:
+    def __iter__(self) -> AsyncIterator[Container]:
         """Iterate over containers
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
@@ -98,7 +98,7 @@ class ContainersAPI(APIClient):
     @overload
     def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList: ...
 
-    def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
+    async def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
         """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
@@ -120,14 +120,14 @@ class ContainersAPI(APIClient):
                 ...     ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
-        return self._retrieve_multiple(
+        return await self._aretrieve_multiple(
             list_cls=ContainerList,
             resource_cls=Container,
             identifiers=identifier,
             executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
+    async def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
 
         Args:
@@ -144,7 +144,7 @@ class ContainersAPI(APIClient):
         """
         deleted_containers = cast(
             list,
-            self._delete_multiple(
+            await self._adelete_multiple(
                 identifiers=_load_identifier(ids, "container"),
                 wrap_ids=True,
                 returns_items=True,
@@ -153,7 +153,7 @@ class ContainersAPI(APIClient):
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
-    def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
+    async def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
         """`Delete one or more constraints <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerConstraints>`_
 
         Args:
@@ -172,7 +172,7 @@ class ContainersAPI(APIClient):
         """
         return self._delete_constraints_or_indexes(ids, "constraints")
 
-    def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
+    async def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
         """`Delete one or more indexes <https://developer.cognite.com/api#tag/Containers/operation/deleteContainerIndexes>`_
 
         Args:
@@ -217,7 +217,7 @@ class ContainersAPI(APIClient):
             for item in res.json()["items"]
         ]
 
-    def list(
+    async def list(
         self,
         space: str | None = None,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
@@ -252,7 +252,7 @@ class ContainersAPI(APIClient):
                 ...     container_list # do something with the containers
         """
         flt = _ContainerFilter(space, include_global)
-        return self._list(
+        return await self._alist(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
@@ -266,7 +266,7 @@ class ContainersAPI(APIClient):
     @overload
     def apply(self, container: ContainerApply) -> Container: ...
 
-    def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
+    async def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
@@ -384,7 +384,7 @@ class ContainersAPI(APIClient):
                 ... )
 
         """
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=ContainerList,
             resource_cls=Container,
             items=container,

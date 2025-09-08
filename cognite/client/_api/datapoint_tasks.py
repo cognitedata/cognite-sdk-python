@@ -6,7 +6,7 @@ import operator as op
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, AsyncIterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import chain, pairwise
@@ -142,7 +142,7 @@ class _FullDatapointsQuery:
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
         )
 
-    def parse_into_queries(self) -> list[DatapointsQuery]:
+    async def parse_into_queries(self) -> list[DatapointsQuery]:
         queries = []
         if (id_ := self.id) is not None:
             queries.extend(self._parse(id_, arg_name="id", exp_type=int))
@@ -500,27 +500,27 @@ class DpsUnpackFns:
                 raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
 
 
-def ensure_int(val: float, change_nan_to: int = 0) -> int:
+async def ensure_int(val: float, change_nan_to: int = 0) -> int:
     if math.isnan(val):
         return change_nan_to
     return int(val)
 
 
-def ensure_int_numpy(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.int64]:
+async def ensure_int_numpy(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.int64]:
     return np.nan_to_num(arr, copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(np.int64)
 
 
-def decide_numpy_dtype_from_is_string(is_string: bool) -> type:
+async def decide_numpy_dtype_from_is_string(is_string: bool) -> type:
     return np.object_ if is_string else np.float64
 
 
-def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
+async def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     if (dp_type := res.WhichOneof("datapointType")) is not None:
         return getattr(res, dp_type).datapoints
     return cast(DatapointsAny, [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
+async def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
     # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
     if res.instanceId and res.instanceId.space:  # res.instanceId evaluates to True even when empty :eyes:
         instance_id = NodeId(res.instanceId.space, res.instanceId.externalId)
@@ -540,28 +540,28 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
 _DataContainer: TypeAlias = defaultdict[tuple[float, ...], list]
 
 
-def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
+async def datapoints_in_order(container: _DataContainer) -> AsyncIterator[list]:
     return chain.from_iterable(container[k] for k in sorted(container))
 
 
-def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
+async def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
     return np.hstack(list(datapoints_in_order(container)))
 
 
-def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
+async def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
     return np.array(create_list_from_dps_container(container), dtype=np.object_)
 
 
-def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
+async def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
     all_aggs_arr = np.vstack(list(datapoints_in_order(container)))
     return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
 
 
-def create_list_from_dps_container(container: _DataContainer) -> list:
+async def create_list_from_dps_container(container: _DataContainer) -> list:
     return list(chain.from_iterable(datapoints_in_order(container)))
 
 
-def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
+async def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
     concatenated = chain.from_iterable(datapoints_in_order(container))
     return map(list, zip(*concatenated))  # rows to columns
 
@@ -605,7 +605,7 @@ class BaseDpsFetchSubtask:
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
+    async def get_next_payload_item(self) -> _DatapointsPayloadItem:
         return _DatapointsPayloadItem(
             start=self.start,
             end=self.end,
@@ -614,7 +614,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
             **self.static_kwargs,  # type: ignore [typeddict-item]
         )
 
-    def store_partial_result(self, res: DataPointListItem) -> None:
+    async def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
         # (or `aggregateDatapoints`, but not here of course):
         if dps := get_datapoints_from_proto(res):
@@ -633,7 +633,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.next_cursor = first_cursor
         self.uses_cursor = self.parent.query.use_cursors
 
-    def get_next_payload_item(self) -> _DatapointsPayloadItem:
+    async def get_next_payload_item(self) -> _DatapointsPayloadItem:
         remaining = self.parent.get_remaining_limit()
         return _DatapointsPayloadItem(
             start=self.next_start,
@@ -643,7 +643,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
             **self.static_kwargs,  # type: ignore [typeddict-item]
         )
 
-    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
+    async def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if not self.parent.ts_info:
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
@@ -683,7 +683,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0  # Actual value doesn't matter (any int will do)
 
-    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
+    async def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
         super().store_partial_result(res)
         if not self.is_done:
@@ -721,7 +721,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         return new_subtasks
 
 
-def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
+async def get_task_orchestrator(query: DatapointsQuery) -> type[BaseTaskOrchestrator]:
     if query.is_raw_query:
         if query.limit is None:
             return ConcurrentUnlimitedRawTaskOrchestrator
@@ -845,12 +845,12 @@ class BaseTaskOrchestrator(ABC):
             except AttributeError:
                 pass
 
-    def finalize_datapoints(self) -> None:
+    async def finalize_datapoints(self) -> None:
         if self._final_result is None:
             self._final_result = self.get_result()
             self._clear_data_containers()
 
-    def get_result(self) -> Datapoints | DatapointsArray:
+    async def get_result(self) -> Datapoints | DatapointsArray:
         if self._final_result is not None:
             return self._final_result
         return self._get_result()
@@ -885,13 +885,13 @@ class BaseTaskOrchestrator(ABC):
 
 
 class SerialTaskOrchestratorMixin(BaseTaskOrchestrator):
-    def get_remaining_limit(self) -> float:
+    async def get_remaining_limit(self) -> float:
         assert len(self.subtasks) == 1
         if self.query.limit is None:
             return math.inf
         return self.query.limit - self.n_dps_first_batch - self.subtasks[0].n_dps_fetched
 
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
+    async def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # For serial fetching, a single task suffice
         start = self.query.start if self.eager_mode else self.first_start
         subtasks: list[BaseDpsFetchSubtask] = [
@@ -1072,10 +1072,10 @@ class ConcurrentTaskOrchestratorMixin(BaseTaskOrchestrator):
     @abstractmethod
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int: ...
 
-    def get_remaining_limit(self) -> float:
+    async def get_remaining_limit(self) -> float:
         return math.inf
 
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
+    async def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # Given e.g. a single time series, we want to put all our workers to work by splitting into lots of pieces!
         # As the number grows - or we start combining multiple into the same query - we want to split less:
         # we hold back to not create too many subtasks:

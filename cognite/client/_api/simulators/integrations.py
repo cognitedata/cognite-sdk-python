@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -29,7 +29,7 @@ class SimulatorIntegrationsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
 
-    def __iter__(self) -> Iterator[SimulatorIntegration]:
+    def __iter__(self) -> AsyncIterator[SimulatorIntegration]:
         """Iterate over simulator integrations
 
         Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
@@ -46,7 +46,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorIntegrationList]: ...
+    ) -> AsyncIterator[SimulatorIntegrationList]: ...
 
     @overload
     def __call__(
@@ -55,7 +55,7 @@ class SimulatorIntegrationsAPI(APIClient):
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
         limit: int | None = None,
-    ) -> Iterator[SimulatorIntegration]: ...
+    ) -> AsyncIterator[SimulatorIntegration]: ...
 
     def __call__(
         self,
@@ -87,7 +87,7 @@ class SimulatorIntegrationsAPI(APIClient):
             limit=limit,
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -119,7 +119,7 @@ class SimulatorIntegrationsAPI(APIClient):
         """
         integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         self._warning.warn()
-        return self._list(
+        return await self._alist(
             method="POST",
             limit=limit,
             resource_cls=SimulatorIntegration,
@@ -127,7 +127,7 @@ class SimulatorIntegrationsAPI(APIClient):
             filter=integrations_filter.dump(),
         )
 
-    def delete(
+    async def delete(
         self,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
@@ -144,7 +144,7 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
         """
-        self._delete_multiple(
+        await self._adelete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )

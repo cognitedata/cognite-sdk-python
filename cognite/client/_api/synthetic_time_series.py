@@ -47,7 +47,7 @@ class SyntheticDatapointsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
 
-    def query(
+    async def query(
         self,
         expressions: str | sympy.Basic | Sequence[str | sympy.Basic],
         start: int | str | datetime,
@@ -96,7 +96,7 @@ class SyntheticDatapointsAPI(APIClient):
             You can also specify variables for an easier query syntax:
 
                 >>> from cognite.client.data_classes.data_modeling.ids import NodeId
-                >>> ts = client.time_series.retrieve(id=123)
+                >>> ts = await client.time_series.retrieve(id=123)
                 >>> variables = {
                 ...     "A": ts,
                 ...     "B": "my_ts_external_id",

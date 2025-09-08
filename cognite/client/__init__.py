@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from cognite.client._async_cognite_client import AsyncCogniteClient
-from cognite.client._cognite_client import CogniteClient
+from cognite.client._cognite_client import AsyncCogniteClient, CogniteClient
 from cognite.client._constants import _RUNNING_IN_BROWSER
 from cognite.client._version import __version__
 from cognite.client.config import ClientConfig, global_config

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, AsyncIterator, Sequence
 from typing import overload
 
 from cognite.client._api_client import APIClient
@@ -29,7 +29,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_external_id: str | None = None,
         destination: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[TransformationNotification]: ...
+    ) -> AsyncIterator[TransformationNotification]: ...
 
     @overload
     def __call__(
@@ -39,7 +39,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_external_id: str | None = None,
         destination: str | None = None,
         limit: int | None = None,
-    ) -> Iterator[TransformationNotificationList]: ...
+    ) -> AsyncIterator[TransformationNotificationList]: ...
 
     def __call__(
         self,
@@ -76,7 +76,7 @@ class TransformationNotificationsAPI(APIClient):
             chunk_size=chunk_size,
         )
 
-    def __iter__(self) -> Iterator[TransformationNotification]:
+    def __iter__(self) -> AsyncIterator[TransformationNotification]:
         """Iterate over all transformation notifications"""
         return self()
 
@@ -90,7 +90,7 @@ class TransformationNotificationsAPI(APIClient):
         self, notification: Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]
     ) -> TransformationNotificationList: ...
 
-    def create(
+    async def create(
         self,
         notification: TransformationNotification
         | TransformationNotificationWrite
@@ -116,14 +116,14 @@ class TransformationNotificationsAPI(APIClient):
                 >>> res = client.transformations.notifications.create(notifications)
         """
         assert_type(notification, "notification", [TransformationNotificationCore, Sequence])
-        return self._create_multiple(
+        return await self._acreate_multiple(
             list_cls=TransformationNotificationList,
             resource_cls=TransformationNotification,
             items=notification,
             input_resource_cls=TransformationNotificationWrite,
         )
 
-    def list(
+    async def list(
         self,
         transformation_id: int | None = None,
         transformation_external_id: str | None = None,
@@ -161,7 +161,7 @@ class TransformationNotificationsAPI(APIClient):
             destination=destination,
         ).dump(camel_case=True)
 
-        return self._list(
+        return await self._alist(
             list_cls=TransformationNotificationList,
             resource_cls=TransformationNotification,
             method="GET",
@@ -169,7 +169,7 @@ class TransformationNotificationsAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, id: int | Sequence[int] | None = None) -> None:
+    async def delete(self, id: int | Sequence[int] | None = None) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:
@@ -183,4 +183,4 @@ class TransformationNotificationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.transformations.notifications.delete(id=[1,2,3])
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
+        await self._adelete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

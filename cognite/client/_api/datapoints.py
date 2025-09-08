@@ -9,7 +9,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
-from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from collections.abc import Callable, Iterable, Iterator, AsyncIterator, MutableSequence, Sequence
 from itertools import chain
 from operator import itemgetter
 from typing import (
@@ -103,14 +103,14 @@ class DpsFetchStrategy(ABC):
             split_qs[query.is_raw_query].append(query)
         return split_qs
 
-    def fetch_all_datapoints(self) -> DatapointsList:
+    async def fetch_all_datapoints(self) -> DatapointsList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=False)],  # type: ignore [arg-type]
             cognite_client=self.dps_client._cognite_client,
         )
 
-    def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
+    async def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
         pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
         return DatapointsArrayList(
             [ts_task.get_result() for ts_task in self._fetch_all(pool, use_numpy=True)],  # type: ignore [arg-type]
@@ -135,7 +135,7 @@ class DpsFetchStrategy(ABC):
             raise CogniteNotFoundError(not_found=[q.identifier.as_dict(camel_case=False) for q in to_raise])
 
     @abstractmethod
-    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> Iterator[BaseTaskOrchestrator]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         raise NotImplementedError
 
 
@@ -150,7 +150,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
     most 168 datapoints exist per week).
     """
 
-    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> Iterator[BaseTaskOrchestrator]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         missing_to_raise: set[DatapointsQuery] = set()
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
@@ -253,7 +253,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.agg_subtask_pool: list[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
 
-    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> Iterator[BaseTaskOrchestrator]:
+    def _fetch_all(self, pool: ThreadPoolExecutor, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
@@ -509,7 +509,7 @@ class DatapointsAPI(APIClient):
         return_arrays: Literal[True] = True,
         chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
-    ) -> Iterator[DatapointsArray]: ...
+    ) -> AsyncIterator[DatapointsArray]: ...
 
     @overload
     def __call__(
@@ -519,7 +519,7 @@ class DatapointsAPI(APIClient):
         return_arrays: Literal[True] = True,
         chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
-    ) -> Iterator[DatapointsArrayList]: ...
+    ) -> AsyncIterator[DatapointsArrayList]: ...
 
     @overload
     def __call__(
@@ -529,7 +529,7 @@ class DatapointsAPI(APIClient):
         return_arrays: Literal[False],
         chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
-    ) -> Iterator[Datapoints]: ...
+    ) -> AsyncIterator[Datapoints]: ...
 
     @overload
     def __call__(
@@ -539,7 +539,7 @@ class DatapointsAPI(APIClient):
         return_arrays: Literal[False],
         chunk_size_datapoints: int = DEFAULT_DATAPOINTS_CHUNK_SIZE,
         chunk_size_time_series: int | None = None,
-    ) -> Iterator[DatapointsList]: ...
+    ) -> AsyncIterator[DatapointsList]: ...
 
     def __call__(
         self,
@@ -607,7 +607,7 @@ class DatapointsAPI(APIClient):
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
                 >>> target_client = CogniteClient()
-                >>> ts_to_copy = client.time_series.list(data_set_external_ids="my-use-case")
+                >>> ts_to_copy = await client.time_series.list(data_set_external_ids="my-use-case")
                 >>> queries = [
                 ...     DatapointsQuery(
                 ...         external_id=ts.external_id,
@@ -920,7 +920,7 @@ class DatapointsAPI(APIClient):
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
@@ -1073,7 +1073,7 @@ class DatapointsAPI(APIClient):
             After fetching, the `.get` method will return a list of ``Datapoints`` instead, (assuming we have more than one event) in the
             same order, similar to how slicing works with non-unique indices on Pandas DataFrames:
 
-                >>> periods = client.events.list(type="alarm", subtype="pressure")
+                >>> periods = await client.events.list(type="alarm", subtype="pressure")
                 >>> sensor_xid = "foo-pressure-bar"
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[42, 43, 44],
@@ -1283,7 +1283,7 @@ class DatapointsAPI(APIClient):
         treat_uncertain_as_bad: bool = True,
     ) -> DatapointsArrayList: ...
 
-    def retrieve_arrays(
+    async def retrieve_arrays(
         self,
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
@@ -1413,7 +1413,7 @@ class DatapointsAPI(APIClient):
             return None
         return dps_lst[0]
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         *,
         id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
@@ -1568,7 +1568,7 @@ class DatapointsAPI(APIClient):
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     # TODO: Deprecated, don't add support for new features like instance_id
-    def retrieve_dataframe_in_tz(
+    async def retrieve_dataframe_in_tz(
         self,
         *,
         id: int | Sequence[int] | None = None,
@@ -1880,7 +1880,7 @@ class DatapointsAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> DatapointsList: ...
 
-    def retrieve_latest(
+    async def retrieve_latest(
         self,
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None = None,
@@ -1994,7 +1994,7 @@ class DatapointsAPI(APIClient):
             return None
         return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
-    def insert(
+    async def insert(
         self,
         datapoints: Datapoints
         | DatapointsArray
@@ -2090,7 +2090,7 @@ class DatapointsAPI(APIClient):
         post_dps_object["datapoints"] = datapoints
         DatapointsPoster(self).insert([post_dps_object])
 
-    def insert_multiple(
+    async def insert_multiple(
         self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray | NodeId]]
     ) -> None:
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
@@ -2163,7 +2163,7 @@ class DatapointsAPI(APIClient):
             raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
         DatapointsPoster(self).insert(datapoints)
 
-    def delete_range(
+    async def delete_range(
         self,
         start: int | str | datetime.datetime,
         end: int | str | datetime.datetime,
@@ -2201,7 +2201,7 @@ class DatapointsAPI(APIClient):
         delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
         self._delete_datapoints_ranges([delete_dps_object])
 
-    def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
+    async def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
 
         Args:
@@ -2231,7 +2231,7 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def insert_dataframe(
+    async def insert_dataframe(
         self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True, instance_id_headers: bool = False
     ) -> None:
         """Insert a dataframe (columns must be unique).
@@ -2318,7 +2318,7 @@ class _InsertDatapoint(NamedTuple):
             return cls(dct["timestamp"], dct["value"], status.get("code"), status.get("symbol"))
         return cls(dct["timestamp"], dct["value"])
 
-    def dump(self) -> dict[str, Any]:
+    async def dump(self) -> dict[str, Any]:
         dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
         if self.status_code:  # also skip if 0
             dumped["status"] = {"code": self.status_code}
@@ -2336,7 +2336,7 @@ class DatapointsPoster:
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
         self.max_workers = self.dps_client._config.max_workers
 
-    def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+    async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
         # To ensure we stay below the max limit on objects per request, we first chunk based on it:
         # (with 10k limit this is almost always just one chunk)
@@ -2659,7 +2659,7 @@ class RetrieveLatestDpsFetcher:
                     dp["value"] = _json.convert_to_float(dp["value"])
         return result
 
-    def fetch_datapoints(self) -> list[dict[str, Any]]:
+    async def fetch_datapoints(self) -> list[dict[str, Any]]:
         tasks = [
             {
                 "url_path": self.dps_client._RESOURCE_PATH + "/latest",
