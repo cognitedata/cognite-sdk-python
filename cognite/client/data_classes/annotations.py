@@ -50,9 +50,9 @@ class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int | None): The internal ID of the annotated resource.
+        annotated_resource_id (int): The internal ID of the annotated resource.
     """
 
     def __init__(
@@ -62,9 +62,9 @@ class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
         status: str,
         creating_app: str,
         creating_app_version: str,
-        creating_user: str | None,
+        creating_user: str,
         annotated_resource_type: str,
-        annotated_resource_id: int | None = None,
+        annotated_resource_id: int,
     ) -> None:
         self.annotation_type = annotation_type
         self.data = data
@@ -96,9 +96,9 @@ class Annotation(AnnotationCore):
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        creating_user (str): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int | None): The internal ID of the annotated resource.
+        annotated_resource_id (int): The internal ID of the annotated resource.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
@@ -112,20 +112,20 @@ class Annotation(AnnotationCore):
         status: str,
         creating_app: str,
         creating_app_version: str,
-        creating_user: str | None,
+        creating_user: str,
         annotated_resource_type: str,
-        annotated_resource_id: int | None,
+        annotated_resource_id: int,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
-            annotation_type,
-            data,
-            status,
-            creating_app,
-            creating_app_version,
-            creating_user,
-            annotated_resource_type,
-            annotated_resource_id,
+            annotation_type=annotation_type,
+            data=data,
+            status=status,
+            creating_app=creating_app,
+            creating_app_version=creating_app_version,
+            creating_user=creating_user,
+            annotated_resource_type=annotated_resource_type,
+            annotated_resource_id=annotated_resource_id,
         )
         self.id: int = id
         self.created_time: int = created_time
@@ -146,9 +146,9 @@ class Annotation(AnnotationCore):
             status=data.get("status", "suggested"),
             creating_app=data["creating_app"],
             creating_app_version=data["creating_app_version"],
-            creating_user=data.get("creating_user"),
+            creating_user=data["creating_user"],
             annotated_resource_type=data["annotated_resource_type"],
-            annotated_resource_id=data.get("annotated_resource_id"),
+            annotated_resource_id=data["annotated_resource_id"],
             id=data["id"],
             created_time=data["created_time"],
             last_updated_time=data["last_updated_time"],
@@ -181,7 +181,7 @@ class AnnotationWrite(AnnotationCore):
         status (Literal['suggested', 'approved', 'rejected']): The status of the annotation, e.g. "suggested", "approved", "rejected".
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (str | None): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        creating_user (str): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (Literal['file', 'threedmodel']): Type name of the CDF resource that is annotated, e.g. "file".
         annotated_resource_id (int): The internal ID of the annotated resource.
     """
@@ -193,7 +193,7 @@ class AnnotationWrite(AnnotationCore):
         status: Literal["suggested", "approved", "rejected"],
         creating_app: str,
         creating_app_version: str,
-        creating_user: str | None,
+        creating_user: str,
         annotated_resource_type: Literal["file", "threedmodel"],
         annotated_resource_id: int,
     ) -> None:
