@@ -1080,13 +1080,13 @@ class VisionExtractJob(VisionJob, Generic[P]):
         return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
 
     @property
-    def items(self) -> list[VisionExtractItem] | None:
+    def items(self) -> list[VisionExtractItem]:
         """Returns a list of all predictions by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
-        return self._items
+        return self._items or []
 
     @items.setter
     def items(self, items: list[VisionExtractItem]) -> None:
@@ -1105,7 +1105,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
     ) -> list[AnnotationWrite]:
         annotations = []
 
-        for item in self.items or []:
+        for item in self.items:
             if item.predictions is not None:
                 for prediction_type, prediction_data_list in item.predictions.dump(camel_case=False).items():
                     for data in prediction_data_list:
