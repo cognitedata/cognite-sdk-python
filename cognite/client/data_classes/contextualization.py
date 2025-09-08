@@ -632,13 +632,13 @@ class DiagramDetectResults(ContextualizationJob):
         return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
 
     @property
-    def items(self) -> list[DiagramDetectItem] | None:
+    def items(self) -> list[DiagramDetectItem]:
         """Returns a list of all results by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
-        return self._items
+        return self._items or []
 
     @items.setter
     def items(self, items: list[DiagramDetectItem]) -> None:
