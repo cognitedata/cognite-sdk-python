@@ -6,14 +6,14 @@ from cognite.client.data_classes.transformations.common import OidcCredentials
 
 
 @pytest.fixture
-def oidc_credentials():
+def oidc_credentials() -> OidcCredentials:
     return OidcCredentials(
         client_id="id", client_secret="secret", scopes=["impersonation"], token_uri="url", cdf_project_name="xyz"
     )
 
 
 @pytest.mark.parametrize("scopes", ("comma,separated,scopes", ["comma", "separated", "scopes"]))
-def test_oidc_credentials(scopes):
+def test_oidc_credentials(scopes: list[str] | str) -> None:
     oidc_credentials = OidcCredentials(
         client_id="id", client_secret="secret", scopes=scopes, token_uri="url", cdf_project_name="zyx"
     )
@@ -33,7 +33,7 @@ def test_oidc_credentials_no_scope() -> None:
     assert str(e.value) == "Scopes must be provided to create OAuthClientCredentials"
 
 
-def test_oidc_credentials_as_credential_provider(oidc_credentials):
+def test_oidc_credentials_as_credential_provider(oidc_credentials: OidcCredentials) -> None:
     client_creds = oidc_credentials.as_credential_provider()
 
     assert isinstance(client_creds, OAuthClientCredentials)
@@ -42,7 +42,7 @@ def test_oidc_credentials_as_credential_provider(oidc_credentials):
     assert client_creds.token_custom_args["audience"] is oidc_credentials.audience is None
 
 
-def test_oidc_credentials_as_client_credentials(oidc_credentials):
+def test_oidc_credentials_as_client_credentials(oidc_credentials: OidcCredentials) -> None:
     client_creds = oidc_credentials.as_client_credentials()
 
     assert isinstance(client_creds, ClientCredentials)
