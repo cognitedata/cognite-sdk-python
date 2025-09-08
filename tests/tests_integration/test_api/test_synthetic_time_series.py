@@ -60,7 +60,7 @@ def post_spy(cognite_client):
 
 
 class TestSyntheticDatapointsAPI:
-    def test_query(self, cognite_client, test_time_series, post_spy):
+    def test_query(self, cognite_client, test_time_series, post_spy) -> None:
         query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(2017, 1, 1), end="now", limit=23456
@@ -68,7 +68,7 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps)
         assert 3 == cognite_client.time_series.data.synthetic._post.call_count
 
-    def test_query_with_start_before_epoch(self, cognite_client, test_time_series, post_spy):
+    def test_query_with_start_before_epoch(self, cognite_client, test_time_series, post_spy) -> None:
         query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(1920, 1, 1, tzinfo=timezone.utc), end="now", limit=23456
@@ -76,7 +76,7 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps)
         assert 3 == cognite_client.time_series.data.synthetic._post.call_count
 
-    def test_query_with_multiple_expressions(self, cognite_client, test_time_series, post_spy):
+    def test_query_with_multiple_expressions(self, cognite_client, test_time_series, post_spy) -> None:
         expressions = [f"ts{{id:{test_time_series[0].id}}}", f"ts{{id:{test_time_series[1].id}}}"]
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=expressions, start=datetime(2017, 1, 1), end="now", limit=23456
@@ -85,7 +85,7 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps[1])
         assert 6 == cognite_client.time_series.data.synthetic._post.call_count
 
-    def test_query_using_time_series_objs__with_errors(self, cognite_client, test_time_series, post_spy):
+    def test_query_using_time_series_objs__with_errors(self, cognite_client, test_time_series, post_spy) -> None:
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=["A / (B - B)"],
             start=datetime(2017, 1, 1),
@@ -101,7 +101,7 @@ class TestSyntheticDatapointsAPI:
         assert (100, 1) == dps.to_pandas().shape
         assert (100, 2) == dps.to_pandas(include_errors=True).shape
 
-    def test_query_using_time_series_objs__missing_external_id(self, cognite_client, test_time_series):
+    def test_query_using_time_series_objs__missing_external_id(self, cognite_client, test_time_series) -> None:
         (whoopsie_ts := test_time_series[1].as_write()).external_id = None
         # Before SDK version 7.32.8, when a passed TimeSeries missing external_id was passed, None
         # was just cast to string and passed to the API, most likely leading to a "not found" error
@@ -116,7 +116,7 @@ class TestSyntheticDatapointsAPI:
                 variables={"A": test_time_series[0], "B": whoopsie_ts},
             )
 
-    def test_query_using_instance_ids(self, cognite_client):
+    def test_query_using_instance_ids(self, cognite_client) -> None:
         node_id = NodeId("PySDK-DMS-time-series-integration-test", "PYSDK integration test 126: clone of 114")
         ext_id = "PYSDK integration test 114: 1mill dps, random distribution, 1950-2020, numeric"
         ts_with_ext_id, ts_with_instance_id = cognite_client.time_series.retrieve_multiple(
@@ -140,7 +140,7 @@ class TestSyntheticDatapointsAPI:
         assert all(x == 0.0 for x in res.value)  # float, plz
 
     @pytest.mark.dsl
-    def test_expression_builder_time_series_vs_string(self, cognite_client, test_time_series):
+    def test_expression_builder_time_series_vs_string(self, cognite_client, test_time_series) -> None:
         from sympy import symbols
 
         dps1 = cognite_client.time_series.data.synthetic.query(
@@ -164,7 +164,7 @@ class TestSyntheticDatapointsAPI:
         assert isinstance(dps2, DatapointsList)
 
     @pytest.mark.dsl
-    def test_expression_builder_complex(self, cognite_client, test_time_series):
+    def test_expression_builder_complex(self, cognite_client, test_time_series) -> None:
         from sympy import Abs, cos, log, pi, sin, sqrt, symbols
 
         string_symbols = list("abcdefghij")
