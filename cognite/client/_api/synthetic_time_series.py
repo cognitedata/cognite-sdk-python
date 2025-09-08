@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Union, cast, overload
 
@@ -50,38 +50,38 @@ class SyntheticDatapointsAPI(APIClient):
     @overload
     def query(
         self,
-        expressions: str | sympy.Basic,
+        expressions: SequenceNotStr[str] | SequenceNotStr[sympy.Basic],
         start: int | str | datetime,
         end: int | str | datetime,
         limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
-        aggregate: str | None = None,
-        granularity: str | None = None,
-        target_unit: str | None = None,
-        target_unit_system: str | None = None,
-    ) -> Datapoints: ...
-
-    @overload
-    def query(
-        self,
-        expressions: Sequence[str | sympy.Basic],
-        start: int | str | datetime,
-        end: int | str | datetime,
-        limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
     ) -> DatapointsList: ...
 
+    @overload
     def query(
         self,
-        expressions: str | sympy.Basic | Sequence[str | sympy.Basic],
+        expressions: str | sympy.Basic,
         start: int | str | datetime,
         end: int | str | datetime,
         limit: int | None = None,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+    ) -> Datapoints: ...
+
+    def query(
+        self,
+        expressions: str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic],
+        start: int | str | datetime,
+        end: int | str | datetime,
+        limit: int | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
@@ -90,11 +90,11 @@ class SyntheticDatapointsAPI(APIClient):
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Args:
-            expressions (str | sympy.Basic | Sequence[str | sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            expressions (str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (int | str | datetime): Inclusive start.
             end (int | str | datetime): Exclusive end.
             limit (int | None): Number of datapoints per expression to retrieve.
-            variables (dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
+            variables (Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None): An optional map of symbol replacements.
             aggregate (str | None): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
             granularity (str | None): use this granularity with the aggregate.
             target_unit (str | None): use this target_unit when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
@@ -185,7 +185,7 @@ class SyntheticDatapointsAPI(APIClient):
     def _build_expression(
         self,
         expression: str | sympy.Basic,
-        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        variables: Mapping[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
         aggregate: str | None = None,
         granularity: str | None = None,
         target_unit: str | None = None,
