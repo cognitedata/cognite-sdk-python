@@ -60,11 +60,11 @@ repos:
           tests/tests_integration/test_api/test_agents.py
           tests/tests_integration/test_api/test_annotations.py
           tests/tests_integration/test_api/test_assets.py
+          tests/tests_integration/test_api/test_data_modeling
           tests/tests_integration/test_api/test_data_sets.py
           tests/tests_integration/test_api/test_datapoint_subscriptions.py
           tests/tests_integration/test_api/test_datapoints.py
-          tests/tests_integration/test_api/test_data_modeling
-          tests/tests_integration/test_api/test_datapoints.py
+          tests/tests_integration/test_api/test_diagrams.py
           tests/tests_integration/test_api/test_events.py
           tests/tests_integration/test_api/test_workflows.py
           tests/tests_integration/test_api/test_raw.py
