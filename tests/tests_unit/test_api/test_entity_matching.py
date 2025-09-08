@@ -79,7 +79,7 @@ def mock_status_rules_ok(httpx_mock, cognite_client):
 
 
 class TestEntityMatching:
-    def test_fit(self, cognite_client, mock_fit, mock_status_ok):
+    def test_fit(self, cognite_client, mock_fit, mock_status_ok) -> None:
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
         model = cognite_client.entity_matching.fit(
@@ -118,7 +118,7 @@ class TestEntityMatching:
         assert 1 == n_fit_calls
         assert 1 == n_status_calls
 
-    def test_ml_fit(self, cognite_client, mock_fit, mock_status_ok):
+    def test_ml_fit(self, cognite_client, mock_fit, mock_status_ok) -> None:
         # fit_ml should produce the same output as fit. Will eventually be removed
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
@@ -132,7 +132,7 @@ class TestEntityMatching:
         assert "Completed" == model.status
         assert 123 == model.id
 
-    def test_fit_cognite_resource(self, cognite_client, mock_fit):
+    def test_fit_cognite_resource(self, cognite_client, mock_fit) -> None:
         entities_from = [
             DefaultResourceGenerator.time_series(
                 id=1,
@@ -163,7 +163,7 @@ class TestEntityMatching:
             "classifier": None,
         } == jsgz_load(mock_fit.get_requests()[0].content)
 
-    def test_fit_fails(self, cognite_client, mock_fit, mock_status_failed):
+    def test_fit_fails(self, cognite_client, mock_fit, mock_status_failed) -> None:
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
         model = cognite_client.entity_matching.fit(sources=entities_from, targets=entities_to)
@@ -174,7 +174,7 @@ class TestEntityMatching:
         assert "error message" == exc_info.value.error_message
         assert "EntityMatchingModel 123 failed with error 'error message'" == str(exc_info.value)
 
-    def test_retrieve(self, cognite_client, mock_retrieve):
+    def test_retrieve(self, cognite_client, mock_retrieve) -> None:
         model = cognite_client.entity_matching.retrieve(id=123)
         assert isinstance(model, EntityMatchingModel)
         assert "Completed" == model.status

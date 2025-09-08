@@ -120,13 +120,13 @@ class TestDocumentsAPI:
             pdf_file.dump(camel_case=False), exclude
         )
 
-    def test_retrieve_content(self, cognite_client: CogniteClient, text_file: FileMetadata):
+    def test_retrieve_content(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         res = cognite_client.documents.retrieve_content(id=text_file.id)
         assert isinstance(res, bytes)
         res = res.decode("utf-8")[:-1]  # remove additional newline added by Files API
         assert res == PLAIN_TEXT_CONTENT
 
-    def test_retrieve_content_into_buffer(self, cognite_client: CogniteClient, text_file: FileMetadata):
+    def test_retrieve_content_into_buffer(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         buffer = BytesIO()
         res = cognite_client.documents.retrieve_content_buffer(id=text_file.id, buffer=buffer)
         assert res is None
@@ -134,7 +134,7 @@ class TestDocumentsAPI:
         result = result[:-1]  # remove additional newline added by Files API
         assert result == PLAIN_TEXT_CONTENT
 
-    def test_search_no_filters_no_highlight(self, cognite_client: CogniteClient, text_file: FileMetadata):
+    def test_search_no_filters_no_highlight(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         query = '"pro at pericula ullamcorper"'
         result = cognite_client.documents.search(query=query, limit=5, sort=SortableDocumentProperty.title)
         assert len(result) == 1, "Expected to retrieve exactly one document."
@@ -143,7 +143,7 @@ class TestDocumentsAPI:
         assert actual.id == text_file.id
         assert actual.source_file.name == text_file.name
 
-    def test_search_no_filter_with_highlight(self, cognite_client: CogniteClient, text_file):
+    def test_search_no_filter_with_highlight(self, cognite_client: CogniteClient, text_file) -> None:
         query = '"pro at pericula ullamcorper"'
 
         result = cognite_client.documents.search(query=query, highlight=True, limit=5)
@@ -155,13 +155,13 @@ class TestDocumentsAPI:
         assert not actual.highlight.name
         assert query[1:-1] in actual.highlight.content[0]
 
-    def test_aggregate_count(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_aggregate_count(self, cognite_client: CogniteClient, document_list: FileMetadataList) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         count = cognite_client.documents.aggregate_count(filter=is_integration_test)
         assert count >= len(document_list)
 
-    def test_aggregate_cardinality(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_aggregate_cardinality(self, cognite_client: CogniteClient, document_list: FileMetadataList) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         count = cognite_client.documents.aggregate_cardinality_values(
@@ -169,7 +169,9 @@ class TestDocumentsAPI:
         )
         assert count >= len({doc.mime_type for doc in document_list if doc.mime_type is not None})
 
-    def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_aggregate_cardinality_metadata(
+        self, cognite_client: CogniteClient, document_list: FileMetadataList
+    ) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         count = cognite_client.documents.aggregate_cardinality_properties(
@@ -178,7 +180,7 @@ class TestDocumentsAPI:
         assert count >= len({k for doc in document_list for k in doc.metadata or []})
 
     @pytest.mark.usefixtures("document_list")
-    def test_aggregate_unique_types(self, cognite_client: CogniteClient):
+    def test_aggregate_unique_types(self, cognite_client: CogniteClient) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         is_not_text = agg.Not(agg.Prefix("text"))
@@ -195,7 +197,7 @@ class TestDocumentsAPI:
         assert len(all_buckets) > len(not_text_buckets)
 
     @pytest.mark.usefixtures("document_list")
-    def test_aggregate_unique_types__property_is_custom(self, cognite_client: CogniteClient):
+    def test_aggregate_unique_types__property_is_custom(self, cognite_client: CogniteClient) -> None:
         # Bug prior to 7.70.3 would convert user given property (list) to camelCase, which would then silently fail
         # and not return any results from the aggregation request.
         key_count = cognite_client.documents.aggregate_unique_values(
@@ -213,7 +215,7 @@ class TestDocumentsAPI:
             cognite_client.documents.aggregate_unique_values(property=["source_file", "mime_type"])
         assert err.value.code == 400
 
-    def test_aggregate_unique_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_aggregate_unique_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         result = cognite_client.documents.aggregate_unique_properties(
@@ -222,23 +224,23 @@ class TestDocumentsAPI:
         assert result
         assert set(result.unique) >= {key.casefold() for a in document_list for key in a.metadata or []}
 
-    def test_iterate_over_text_documents(self, cognite_client: CogniteClient):
+    def test_iterate_over_text_documents(self, cognite_client: CogniteClient) -> None:
         is_text_doc = flt.Equals(DocumentProperty.mime_type, "text/plain")
 
         for text_doc in cognite_client.documents(filter=is_text_doc):
             assert text_doc.mime_type == "text/plain"
             break
 
-    def test_retrieve_pdf_link(self, cognite_client: CogniteClient, pdf_file: FileMetadata):
+    def test_retrieve_pdf_link(self, cognite_client: CogniteClient, pdf_file: FileMetadata) -> None:
         link = cognite_client.documents.previews.retrieve_pdf_link(id=pdf_file.id)
         life = link.expires_at - int(time.time() * 1000)
         assert life > 0
         assert link.url.startswith("http")
 
-    def test_download_image_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata):
+    def test_download_image_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         content = cognite_client.documents.previews.download_page_as_png_bytes(id=text_file.id)
         assert content.startswith(b"\x89PNG\r\n\x1a\n")
 
-    def test_download_pdf_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata):
+    def test_download_pdf_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         content = cognite_client.documents.previews.download_document_as_pdf_bytes(id=text_file.id)
         assert content.startswith(b"%PDF")

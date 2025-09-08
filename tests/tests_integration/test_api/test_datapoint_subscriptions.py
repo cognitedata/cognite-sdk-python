@@ -170,7 +170,7 @@ class TestDatapointSubscriptions:
             retrieved_deleted = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
             assert retrieved_deleted is None
 
-    def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+    def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
@@ -194,7 +194,9 @@ class TestDatapointSubscriptions:
             assert updated.data_set_id == data_set.id
             assert updated.description == "Updated description"
 
-    def test_update_subscription_write_object(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+    def test_update_subscription_write_object(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ) -> None:
         new_subscription = DataPointSubscriptionWrite(
             external_id=f"PYSDKDataPointSubscriptionUpdateTest-{random_string(10)}",
             name="PYSDKDataPointSubscriptionUpdateTest",
@@ -212,7 +214,7 @@ class TestDatapointSubscriptions:
             assert updated.time_series_count == len(time_series_external_ids)
             assert updated.data_set_id == data_set.id
 
-    def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
+    def test_update_filter_defined_subscription(self, cognite_client: CogniteClient) -> None:
         f = filters
         p = DatapointSubscriptionProperty
         numerical_timeseries = f.And(f.Equals(p.is_string, False))
