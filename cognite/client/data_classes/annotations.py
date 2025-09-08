@@ -15,7 +15,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -134,24 +133,18 @@ class Annotation(AnnotationCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
-        return cls.from_dict(resource, cognite_client=cognite_client)
-
-    @classmethod
-    def from_dict(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
-        # Create base annotation
-        data = {to_snake_case(key): val for key, val in resource.items()}
-        return Annotation(
-            annotation_type=data["annotation_type"],
-            data=data["data"],
-            status=data.get("status", "suggested"),
-            creating_app=data["creating_app"],
-            creating_app_version=data["creating_app_version"],
-            creating_user=data["creating_user"],
-            annotated_resource_type=data["annotated_resource_type"],
-            annotated_resource_id=data["annotated_resource_id"],
-            id=data["id"],
-            created_time=data["created_time"],
-            last_updated_time=data["last_updated_time"],
+        return cls(
+            annotation_type=resource["annotationType"],
+            data=resource["data"],
+            status=resource["status"],
+            creating_app=resource["creatingApp"],
+            creating_app_version=resource["creatingAppVersion"],
+            creating_user=resource["creatingUser"],
+            annotated_resource_type=resource["annotatedResourceType"],
+            annotated_resource_id=resource["annotatedResourceId"],
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             cognite_client=cognite_client,
         )
 

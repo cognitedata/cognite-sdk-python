@@ -74,9 +74,15 @@ repos:
           tests/tests_integration/test_api/test_geospatial.py
           tests/tests_integration/test_api/test_iam.py
           tests/tests_integration/test_api/test_labels.py
-          tests/tests_integration/test_api/test_workflows.py
           tests/tests_integration/test_api/test_raw.py
+          tests/tests_integration/test_api/test_synthetic_time_series.py
+          tests/tests_integration/test_api/test_three_d.py
+          tests/tests_integration/test_api/test_time_series.py
+          tests/tests_integration/test_api/test_unit.py
+          tests/tests_integration/test_api/test_user_profiles.py
+          tests/tests_integration/test_api/test_vision_extract.py
           tests/tests_integration/test_api/test_transformations
+          tests/tests_integration/test_api/test_workflows.py
 
           tests/tests_integration/test_api/test_simulators
           tests/tests_integration/test_api/test_principals.py
