@@ -166,7 +166,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     Args:
         data_models (Sequence[DataModelInfo] | None): The data models and views to query.
         instance_spaces (InstanceSpaces | None): The instance spaces to query.
-        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query.
+        version (str | None): The version of the query generation strategy to use. A higher number does not necessarily mean a better query. Supported values are "v1" and "v2".
     """
 
     data_models: Sequence[DataModelInfo] | None = None
@@ -188,7 +188,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         return cls(
             data_models=data_models,
             instance_spaces=instance_spaces,
-            version=resource.get("version"),
+            version=resource.get("version", "v2"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
