@@ -83,7 +83,7 @@ def other_schedule(
     os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
 class TestTransformationSchedulesAPI:
-    def test_create(self, new_schedule: TransformationSchedule):
+    def test_create(self, new_schedule: TransformationSchedule) -> None:
         assert (
             new_schedule.interval == "0 * * * *"
             and new_schedule.is_paused is False
@@ -91,24 +91,30 @@ class TestTransformationSchedulesAPI:
             and new_schedule.last_updated_time is not None
         )
 
-    def test_schedule_member(self, cognite_client, new_schedule: TransformationSchedule):
+    def test_schedule_member(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_schedule.id)
         assert (
-            retrieved_transformation.schedule.interval == "0 * * * *"
+            retrieved_transformation
+            and retrieved_transformation.schedule
+            and retrieved_transformation.schedule.interval == "0 * * * *"
             and retrieved_transformation.schedule.is_paused is False
         )
 
-    def test_retrieve(self, cognite_client, new_schedule: TransformationSchedule):
+    def test_retrieve(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
         assert (
-            new_schedule.id == retrieved_schedule.id
+            retrieved_schedule
+            and new_schedule.id == retrieved_schedule.id
             and new_schedule.interval == retrieved_schedule.interval
             and new_schedule.is_paused == retrieved_schedule.is_paused
         )
 
     def test_retrieve_multiple(
-        self, cognite_client, new_schedule: TransformationSchedule, other_schedule: TransformationSchedule
-    ):
+        self,
+        cognite_client: CogniteClient,
+        new_schedule: TransformationSchedule,
+        other_schedule: TransformationSchedule,
+    ) -> None:
         assert new_schedule.id != other_schedule.id
         ids = [new_schedule.id, other_schedule.id]
         retrieved_schedules = cognite_client.transformations.schedules.retrieve_multiple(ids=ids)
@@ -124,23 +130,25 @@ class TestTransformationSchedulesAPI:
                 and other_schedule.is_paused == retrieved_schedule.is_paused
             )
 
-    def test_update_full(self, cognite_client, new_schedule):
+    def test_update_full(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         new_schedule.interval = "5 * * * *"
         new_schedule.is_paused = True
         updated_schedule = cognite_client.transformations.schedules.update(new_schedule)
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
+        assert retrieved_schedule
         assert updated_schedule.interval == retrieved_schedule.interval == "5 * * * *"
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
-    def test_update_partial(self, cognite_client, new_schedule):
+    def test_update_partial(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         update_schedule = TransformationScheduleUpdate(id=new_schedule.id).interval.set("5 * * * *").is_paused.set(True)
         updated_schedule = cognite_client.transformations.schedules.update(update_schedule)
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
+        assert retrieved_schedule
         assert updated_schedule.interval == retrieved_schedule.interval == "5 * * * *"
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
-    def test_list(self, cognite_client, new_schedule):
+    def test_list(self, cognite_client: CogniteClient, new_schedule: TransformationSchedule) -> None:
         retrieved_schedules = cognite_client.transformations.schedules.list()
         assert new_schedule.id in [schedule.id for schedule in retrieved_schedules]
