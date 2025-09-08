@@ -470,7 +470,7 @@ class FilesAPI(APIClient):
 
     def upload(
         self,
-        path: str,
+        path: str | Path,
         external_id: str | None = None,
         name: str | None = None,
         source: str | None = None,
@@ -490,7 +490,7 @@ class FilesAPI(APIClient):
         """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
 
         Args:
-            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            path (str | Path): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             name (str | None): Name of the file.
             source (str | None): The source of the file.
@@ -580,7 +580,7 @@ class FilesAPI(APIClient):
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
 
-    def _upload_file_from_path(self, file: FileMetadataWrite, file_path: str, overwrite: bool) -> FileMetadata:
+    def _upload_file_from_path(self, file: FileMetadataWrite, file_path: str | Path, overwrite: bool) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
