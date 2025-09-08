@@ -24,7 +24,7 @@ class TestSingleTSQueryValidator:
     @pytest.mark.parametrize("ids", (None, []))
     @pytest.mark.parametrize("xids", (None, []))
     @pytest.mark.parametrize("inst_id", (None, []))
-    def test_no_identifiers_raises(self, ids, xids, inst_id):
+    def test_no_identifiers_raises(self, ids, xids, inst_id) -> None:
         with pytest.raises(
             ValueError, match=re.escape("Pass at least one time series `id`, `external_id` or `instance_id`!")
         ):
@@ -38,7 +38,7 @@ class TestSingleTSQueryValidator:
             ({123}, {"foo"}, "id"),
         ),
     )
-    def test_wrong_identifier_type_raises(self, ids, xids, exp_attr_to_fail):
+    def test_wrong_identifier_type_raises(self, ids, xids, exp_attr_to_fail) -> None:
         err_msg = f"Got unsupported type {type(ids or xids)}, as, or part of argument `{exp_attr_to_fail}`."
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
@@ -54,7 +54,7 @@ class TestSingleTSQueryValidator:
             ({"iid": 123}, {"extern-id": "foo"}, "id"),
         ),
     )
-    def test_missing_identifier_in_dict_raises(self, ids, xids, exp_attr_to_fail):
+    def test_missing_identifier_in_dict_raises(self, ids, xids, exp_attr_to_fail) -> None:
         err_msg = f"Missing required key `{exp_attr_to_fail}` in dict:"
 
         with pytest.raises(KeyError, match=re.escape(err_msg)):
@@ -73,7 +73,7 @@ class TestSingleTSQueryValidator:
             (None, [{"externalId": b"foo"}], bytes, "external_id"),
         ),
     )
-    def test_identifier_in_dict_has_wrong_type(self, ids, xids, exp_wrong_type, exp_attr_to_fail):
+    def test_identifier_in_dict_has_wrong_type(self, ids, xids, exp_wrong_type, exp_attr_to_fail) -> None:
         exp_type = "int" if exp_attr_to_fail == "id" else "str"
         err_msg = f"Invalid {exp_attr_to_fail}, expected {exp_type}, got {exp_wrong_type}"
 
@@ -81,7 +81,7 @@ class TestSingleTSQueryValidator:
             _FullDatapointsQuery(id=ids, external_id=xids).parse_into_queries()
 
     @pytest.mark.parametrize("identifier_dct", ({"id": 123}, {"external_id": "foo"}, {"externalId": "bar"}))
-    def test_identifier_dicts_has_wrong_keys(self, identifier_dct):
+    def test_identifier_dicts_has_wrong_keys(self, identifier_dct) -> None:
         good_keys = random.choices(
             ["start", "end", "aggregates", "granularity", "include_outside_points", "limit"],
             k=random.randint(0, 6),
@@ -100,7 +100,7 @@ class TestSingleTSQueryValidator:
             query.parse_into_queries()
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
-    def test_valid_limits(self, limit, exp_limit, query_validator):
+    def test_valid_limits(self, limit, exp_limit, query_validator) -> None:
         query = _FullDatapointsQuery(id=1, limit=limit)
         ts_queries = query.parse_into_queries()
         query_validator(ts_queries)
@@ -108,7 +108,7 @@ class TestSingleTSQueryValidator:
         assert ts_queries[0].limit == exp_limit
 
     @pytest.mark.parametrize("limit", (-2, -math.inf, math.nan, ..., "5000"))
-    def test_limits_not_allowed_values(self, limit, query_validator):
+    def test_limits_not_allowed_values(self, limit, query_validator) -> None:
         with pytest.raises(TypeError, match=re.escape("Parameter `limit` must be a non-negative integer -OR-")):
             query = _FullDatapointsQuery(id=1, limit=limit)
             query_validator(query.parse_into_queries())
@@ -153,7 +153,7 @@ class TestSingleTSQueryValidator:
             (1, datetime.now(timezone.utc)),
         ),
     )
-    def test_function__verify_time_range__valid_inputs(self, start, end, query_validator):
+    def test_function__verify_time_range__valid_inputs(self, start, end, query_validator) -> None:
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
             ts_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs).parse_into_queries()
@@ -174,7 +174,7 @@ class TestSingleTSQueryValidator:
             (datetime.now(timezone.utc), 123),
         ),
     )
-    def test_function__verify_time_range__raises(self, start, end, query_validator):
+    def test_function__verify_time_range__raises(self, start, end, query_validator) -> None:
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
             full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
@@ -182,7 +182,7 @@ class TestSingleTSQueryValidator:
             with pytest.raises(ValueError, match="Invalid time range"):
                 query_validator(all_queries)
 
-    def test_retrieve_aggregates__include_outside_points_raises(self, query_validator):
+    def test_retrieve_aggregates__include_outside_points_raises(self, query_validator) -> None:
         id_dct_lst = [
             {"id": ts_id, "granularity": random_granularity(), "aggregates": random_aggregates()}
             for ts_id in random_cognite_ids(10)

@@ -204,7 +204,7 @@ class TestAPIClientUpsert:
         finally:
             cognite_client.events.delete(external_id=[preexisting.external_id])
 
-    def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient):
+    def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient) -> None:
         new_event = EventWrite(
             external_id="test_upsert_with_invalid_mode:new",
             type="test__py__sdk",
@@ -220,7 +220,7 @@ class TestAPIClientUpsert:
         finally:  # Just in case the event gets created
             cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
 
-    def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient):
+    def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient) -> None:
         new_event = DefaultResourceGenerator.event(
             id=666,
             type="test__py__sdk",
@@ -236,7 +236,7 @@ class TestAPIClientUpsert:
         finally:  # Just in case the event gets created
             cognite_client.events.delete(id=new_event.id, ignore_unknown_ids=True)
 
-    def test_upsert_with_patch_option(self, cognite_client: CogniteClient):
+    def test_upsert_with_patch_option(self, cognite_client: CogniteClient) -> None:
         existing_event = EventWrite(
             external_id="test_upsert_with_patch_option:existing" + random_string(5),
             type="mypType1",
@@ -320,7 +320,7 @@ def event_list(cognite_client: CogniteClient) -> EventList:
 
 
 class TestAPIClientAdvancedAggregate:
-    def test_aggregate_property_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+    def test_aggregate_property_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
         advanced_filter = filters.Not(filters.Equals(EventProperty.source, "source2"))
         agg_filter = aggregations.Prefix("subtype1")
@@ -336,7 +336,7 @@ class TestAPIClientAdvancedAggregate:
             and event.source != "source2"
         )
 
-    def test_aggregate_path_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList):
+    def test_aggregate_path_with_all_filters(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         filter_ = EventFilter(external_id_prefix="_advanced_aggregate:")
         advanced_filter = filters.Not(filters.Equals(EventProperty.type, "type1"))
         agg_filter = aggregations.Prefix("shop")
