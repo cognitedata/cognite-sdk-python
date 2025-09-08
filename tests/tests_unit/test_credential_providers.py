@@ -38,25 +38,25 @@ class TestCredentialProvider:
             ),
         ],
     )
-    def test_invalid_not_dict(self, config, error_type, error_message):
+    def test_invalid_not_dict(self, config: dict, error_type: type[Exception], error_message: str) -> None:
         with pytest.raises(error_type, match=error_message):
             CredentialProvider.load(config)
 
 
 class TestToken:
-    def test_token_auth_header(self):
+    def test_token_auth_header(self) -> None:
         creds = Token("abc")
         assert "Authorization", "Bearer abc" == creds.authorization_header()
 
-    def test_token_factory_auth_header(self):
+    def test_token_factory_auth_header(self) -> None:
         creds = Token(lambda: "abc")
         assert "Authorization", "Bearer abc" == creds.authorization_header()
 
-    def test_token_non_string(self):
+    def test_token_non_string(self) -> None:
         with pytest.raises(
             TypeError, match=r"'token' must be a string or a no-argument-callable returning a string, not"
         ):
-            Token({"foo": "bar"})
+            Token({"foo": "bar"})  # type: ignore[arg-type]
 
     @pytest.mark.parametrize(
         "config",
@@ -66,7 +66,7 @@ class TestToken:
             {"token": (lambda: "abc")},
         ],
     )
-    def test_load(self, config):
+    def test_load(self, config: dict) -> None:
         creds = Token.load(config)
         assert isinstance(creds, Token)
         assert "Authorization", "Bearer abc" == creds.authorization_header()
@@ -82,7 +82,7 @@ class TestToken:
             {"token": {"token": (lambda: "abc")}},
         ],
     )
-    def test_create_from_credential_provider(self, config):
+    def test_create_from_credential_provider(self, config: dict) -> None:
         creds = CredentialProvider.load(config)
         assert isinstance(creds, Token)
         assert "Authorization", "Bearer abc" == creds.authorization_header()
@@ -99,7 +99,7 @@ class TestOAuthDeviceCode:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
-    def test_access_token_generated(self, mock_public_client, expires_in):
+    def test_access_token_generated(self, mock_public_client: MagicMock, expires_in: int | str) -> None:
         mock_response = Mock()
         mock_response.json.return_value = {
             "user_code": "ABCDEF",
@@ -115,7 +115,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_entra_id_uses_authority_endpoint(self, mock_public_client):
+    def test_entra_id_uses_authority_endpoint(self, mock_public_client: MagicMock) -> None:
         mock_device_response = Mock()
         mock_device_response.json.return_value = {
             "user_code": "ABCD-EFGH",
@@ -152,7 +152,7 @@ class TestOAuthDeviceCode:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_create_from_credential_provider(self, mock_public_client):
+    def test_create_from_credential_provider(self, mock_public_client: MagicMock) -> None:
         config = {"device_code": dict(self.DEFAULT_PROVIDER_ARGS)}
         creds = CredentialProvider.load(config)
         assert isinstance(creds, OAuthDeviceCode)
@@ -387,7 +387,7 @@ class TestOAuthInteractive:
 
     @patch("cognite.client.credentials.PublicClientApplication")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
-    def test_access_token_generated(self, mock_public_client, expires_in):
+    def test_access_token_generated(self, mock_public_client: MagicMock, expires_in: int | str) -> None:
         mock_public_client().acquire_token_silent.return_value = {
             "access_token": "azure_token",
             "expires_in": expires_in,
@@ -397,13 +397,13 @@ class TestOAuthInteractive:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_load(self, mock_public_client):
+    def test_load(self, mock_public_client: MagicMock) -> None:
         creds = OAuthInteractive.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthInteractive)
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.PublicClientApplication")
-    def test_create_from_credential_provider(self, mock_public_client):
+    def test_create_from_credential_provider(self, mock_public_client: MagicMock) -> None:
         config = {"interactive": dict(self.DEFAULT_PROVIDER_ARGS)}
         creds = CredentialProvider.load(config)
         assert isinstance(creds, OAuthInteractive)
@@ -423,14 +423,14 @@ class TestOauthClientCredentials:
 
     @patch("cognite.client.credentials.OAuth2Client")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
-    def test_access_token_generated(self, mock_oauth_client, expires_in):
+    def test_access_token_generated(self, mock_oauth_client: MagicMock, expires_in: int | str) -> None:
         mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.OAuth2Client")
-    def test_access_token_not_generated_due_to_error(self, mock_oauth_client):
+    def test_access_token_not_generated_due_to_error(self, mock_oauth_client: MagicMock) -> None:
         mock_oauth_client().fetch_token.side_effect = OAuthError("very_invalid", "Invalid client_id parameter value.")
         with pytest.raises(
             CogniteAuthError,
@@ -440,7 +440,7 @@ class TestOauthClientCredentials:
             creds._refresh_access_token()
 
     @patch("cognite.client.credentials.OAuth2Client")
-    def test_access_token_expired(self, mock_oauth_client):
+    def test_access_token_expired(self, mock_oauth_client: MagicMock) -> None:
         mock_oauth_client().fetch_token.side_effect = [
             {"access_token": "azure_token_expired", "expires_in": -1000},
             {"access_token": "azure_token_refreshed", "expires_in": 1000},
@@ -449,11 +449,11 @@ class TestOauthClientCredentials:
         assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
 
-    def test_load(self):
+    def test_load(self) -> None:
         creds = OAuthClientCredentials.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthClientCredentials)
 
-    def test_create_from_credential_provider(self):
+    def test_create_from_credential_provider(self) -> None:
         creds = CredentialProvider.load({"client_credentials": dict(self.DEFAULT_PROVIDER_ARGS)})
         assert isinstance(creds, OAuthClientCredentials)
         assert creds.client_id == "azure-client-id"
@@ -475,7 +475,7 @@ class TestOAuthClientCertificate:
     )
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
-    def test_access_token_generated(self, mock_msal_app):
+    def test_access_token_generated(self, mock_msal_app: MagicMock) -> None:
         mock_msal_app().acquire_token_for_client.return_value = {
             "access_token": "azure_token",
             "expires_in": 1000,
@@ -484,7 +484,7 @@ class TestOAuthClientCertificate:
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
-    def test_load(self, mock_msal_app):
+    def test_load(self, mock_msal_app: MagicMock) -> None:
         mock_msal_app().acquire_token_for_client.return_value = {
             "access_token": "azure_token",
             "expires_in": 1000,
@@ -498,7 +498,7 @@ class TestOAuthClientCertificate:
         assert creds.scopes == ["https://greenfield.cognitedata.com/.default"]
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
-    def test_create_from_credential_provider(self, mock_msal_app):
+    def test_create_from_credential_provider(self, mock_msal_app: MagicMock) -> None:
         mock_msal_app().acquire_token_for_client.return_value = {
             "access_token": "azure_token",
             "expires_in": 1000,
