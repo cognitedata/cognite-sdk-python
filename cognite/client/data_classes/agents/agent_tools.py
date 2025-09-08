@@ -171,7 +171,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
 
     data_models: Sequence[DataModelInfo] | None = None
     instance_spaces: InstanceSpaces | None = None
-    version: str | None = None
+    version: Literal["v1", "v2"] | str | None = None
 
     @classmethod
     def _load(
