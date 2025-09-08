@@ -1,92 +1,17 @@
 from __future__ import annotations
 
-import asyncio
-import functools
 from typing import Any
 
-from requests import Response
+import httpx
 
-from cognite.client._async_cognite_client import AsyncCogniteClient
+from cognite.client._async_api_client import AsyncAPIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
 
 
-def _sync_wrapper(async_method):
-    """Decorator to convert async methods to sync by running them in asyncio.run."""
-    @functools.wraps(async_method)
-    def wrapper(self, *args, **kwargs):
-        # Check if we're already in an async context
-        try:
-            loop = asyncio.get_running_loop()
-            # We're in an async context, which means we can't use asyncio.run
-            # This shouldn't happen in normal usage, but just in case
-            raise RuntimeError(
-                "Cannot call sync methods from within an async context. "
-                "Use the AsyncCogniteClient directly instead."
-            )
-        except RuntimeError:
-            # No running loop, we can use asyncio.run
-            pass
-        
-        return asyncio.run(async_method(self, *args, **kwargs))
-    return wrapper
-
-
-class _ResponseAdapter:
-    """Adapter to convert httpx.Response to requests.Response interface."""
-    
-    def __init__(self, httpx_response):
-        self._httpx_response = httpx_response
-        self._json_cache = None
-    
-    @property
-    def status_code(self):
-        return self._httpx_response.status_code
-    
-    @property
-    def headers(self):
-        return dict(self._httpx_response.headers)
-    
-    @property
-    def content(self):
-        return self._httpx_response.content
-    
-    @property
-    def text(self):
-        return self._httpx_response.text
-    
-    def json(self, **kwargs):
-        if self._json_cache is None:
-            self._json_cache = self._httpx_response.json(**kwargs)
-        return self._json_cache
-    
-    @property
-    def request(self):
-        # Create a minimal request object for compatibility
-        class RequestAdapter:
-            def __init__(self, httpx_request):
-                self.method = httpx_request.method
-                self.url = str(httpx_request.url)
-                self.headers = dict(httpx_request.headers)
-        
-        return RequestAdapter(self._httpx_response.request)
-    
-    @property
-    def history(self):
-        # httpx doesn't have the same history concept as requests
-        return []
-    
-    def __getattr__(self, name):
-        # Fallback to httpx response for any other attributes
-        return getattr(self._httpx_response, name)
-
-
-class CogniteClient:
-    """Main entrypoint into Cognite Python SDK.
-
-    This is a sync wrapper around AsyncCogniteClient that maintains compatibility
-    with the original synchronous interface.
+class AsyncCogniteClient:
+    """Async entrypoint into Cognite Python SDK.
 
     All services are made available through this object. See examples below.
 
@@ -97,37 +22,39 @@ class CogniteClient:
     _API_VERSION = "v1"
 
     def __init__(self, config: ClientConfig | None = None) -> None:
-        self._async_client = AsyncCogniteClient(config)
+        if (client_config := config or global_config.default_client_config) is None:
+            raise ValueError(
+                "No ClientConfig has been provided, either pass it directly to AsyncCogniteClient "
+                "or set global_config.default_client_config."
+            )
+        else:
+            self._config = client_config
 
-    @_sync_wrapper
-    async def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+        # For now, we'll use a placeholder for the API endpoints
+        # These will be replaced with async versions once we convert the individual API classes
+        self._api_client = AsyncAPIClient(self._config, api_version=None, cognite_client=self)
+
+    async def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> httpx.Response:
         """Perform a GET request to an arbitrary path in the API."""
-        httpx_response = await self._async_client.get(url, params=params, headers=headers)
-        return _ResponseAdapter(httpx_response)
+        return await self._api_client._get(url, params=params, headers=headers)
 
-    @_sync_wrapper
     async def post(
         self,
         url: str,
         json: dict[str, Any],
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> Response:
+    ) -> httpx.Response:
         """Perform a POST request to an arbitrary path in the API."""
-        httpx_response = await self._async_client.post(url, json=json, params=params, headers=headers)
-        return _ResponseAdapter(httpx_response)
+        return await self._api_client._post(url, json=json, params=params, headers=headers)
 
-    @_sync_wrapper
-    async def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+    async def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> httpx.Response:
         """Perform a PUT request to an arbitrary path in the API."""
-        httpx_response = await self._async_client.put(url, json=json, headers=headers)
-        return _ResponseAdapter(httpx_response)
+        return await self._api_client._put(url, json=json, headers=headers)
 
-    @_sync_wrapper
-    async def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+    async def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> httpx.Response:
         """Perform a DELETE request to an arbitrary path in the API."""
-        httpx_response = await self._async_client.delete(url, params=params, headers=headers)
-        return _ResponseAdapter(httpx_response)
+        return await self._api_client._delete(url, params=params, headers=headers)
 
     @property
     def version(self) -> str:
@@ -145,7 +72,7 @@ class CogniteClient:
         Returns:
             ClientConfig: The configuration object.
         """
-        return self._async_client._config
+        return self._config
 
     @classmethod
     def default(
@@ -154,9 +81,9 @@ class CogniteClient:
         cdf_cluster: str,
         credentials: CredentialProvider,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration.
+        Create an AsyncCogniteClient with default configuration.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -169,7 +96,7 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -182,9 +109,9 @@ class CogniteClient:
         client_id: str,
         client_secret: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using a client credentials flow.
+        Create an AsyncCogniteClient with default configuration using a client credentials flow.
 
         The default configuration creates the URLs based on the project and cluster:
 
@@ -201,7 +128,7 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
 
         credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
@@ -216,9 +143,9 @@ class CogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
-    ) -> CogniteClient:
+    ) -> AsyncCogniteClient:
         """
-        Create a CogniteClient with default configuration using the interactive flow.
+        Create an AsyncCogniteClient with default configuration using the interactive flow.
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
@@ -234,26 +161,26 @@ class CogniteClient:
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            CogniteClient: A CogniteClient instance with default configurations.
+            AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
-    def load(cls, config: dict[str, Any] | str) -> CogniteClient:
-        """Load a cognite client object from a YAML/JSON string or dict.
+    def load(cls, config: dict[str, Any] | str) -> AsyncCogniteClient:
+        """Load an async cognite client object from a YAML/JSON string or dict.
 
         Args:
-            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the CogniteClient class.
+            config (dict[str, Any] | str): A dictionary or YAML/JSON string containing configuration values defined in the AsyncCogniteClient class.
 
         Returns:
-            CogniteClient: A cognite client object.
+            AsyncCogniteClient: An async cognite client object.
 
         Examples:
 
-            Create a cognite client object from a dictionary input:
+            Create an async cognite client object from a dictionary input:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import AsyncCogniteClient
                 >>> import os
                 >>> config = {
                 ...     "client_name": "abcd",
@@ -268,24 +195,18 @@ class CogniteClient:
                 ...         },
                 ...     },
                 ... }
-                >>> client = CogniteClient.load(config)
+                >>> client = AsyncCogniteClient.load(config)
         """
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))
 
-    def __enter__(self):
-        """Context manager entry."""
+    async def __aenter__(self) -> AsyncCogniteClient:
+        """Async context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit - cleanup resources."""
-        # Create and run cleanup coroutine
-        async def cleanup():
-            await self._async_client.__aexit__(exc_type, exc_val, exc_tb)
-        
-        try:
-            asyncio.run(cleanup())
-        except RuntimeError:
-            # If we're already in an event loop, we can't run cleanup
-            # This is a limitation but shouldn't happen in normal usage
-            pass
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Async context manager exit - cleanup resources."""
+        if hasattr(self._api_client, '_http_client'):
+            await self._api_client._http_client.aclose()
+        if hasattr(self._api_client, '_http_client_with_retry'):
+            await self._api_client._http_client_with_retry.aclose()
