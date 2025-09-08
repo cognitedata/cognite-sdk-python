@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -56,14 +57,14 @@ def annotation() -> AnnotationWrite:
         status="approved",
         creating_app="UnitTest",
         creating_app_version="0.0.1",
-        creating_user=None,
+        creating_user="sdk-tests",
         annotated_resource_type="file",
         annotated_resource_id=1,
     )
 
 
 @pytest.fixture
-def file_id(cognite_client: CogniteClient) -> int:
+def file_id(cognite_client: CogniteClient) -> Iterator[int]:
     # Create a test file
     random_id = uuid.uuid4()
     name = f"annotation_unit_test_file_{random_id}"
@@ -136,7 +137,7 @@ def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient)
         creating_app_version="0.2.3",
         annotated_resource_id=permanent_file_id,
         annotated_resource_type="file",
-        creating_user=None,
+        creating_user="sdk-tests",
     )
     return cognite_client.annotations.create(annotation)
 
@@ -155,7 +156,7 @@ def assert_payload_dict(local: dict[str, Any], remote: dict[str, Any]) -> None:
             assert local_v == remote_v
 
 
-def check_created_vs_base(base_annotation: AnnotationWrite, created_annotation: Annotation) -> None:
+def check_created_vs_base(base_annotation: AnnotationWrite | Annotation, created_annotation: Annotation) -> None:
     base_dump = base_annotation.dump(camel_case=False)
     created_dump = created_annotation.dump(camel_case=False)
     special_keys = ["id", "created_time", "last_updated_time", "data"]
@@ -174,8 +175,8 @@ def check_created_vs_base(base_annotation: AnnotationWrite, created_annotation: 
 
 
 def _test_list_on_created_annotations(
-    cognite_client: CogniteClient, annotations: AnnotationList, limit: int = DEFAULT_LIMIT_READ
-):
+    cognite_client: CogniteClient, annotations: AnnotationList, limit: int | None = DEFAULT_LIMIT_READ
+) -> None:
     annotation = annotations[0]
     filter = AnnotationFilter(
         annotated_resource_type=annotation.annotated_resource_type,
@@ -187,7 +188,7 @@ def _test_list_on_created_annotations(
     )
     annotations_list = cognite_client.annotations.list(filter=filter, limit=limit)
     assert isinstance(annotations_list, AnnotationList)
-    if is_unlimited(limit) or limit > len(annotations):
+    if is_unlimited(limit) or (limit is not None and limit > len(annotations)):
         assert len(annotations_list) == len(annotations)
     else:
         assert len(annotations_list) == limit
@@ -218,14 +219,14 @@ class TestAnnotationsIntegration:
             check_created_vs_base(base_annotation, a)
 
     def test_suggest_single_annotation(
-        self, cognite_client: CogniteClient, base_suggest_annotation: Annotation
+        self, cognite_client: CogniteClient, base_suggest_annotation: AnnotationWrite
     ) -> None:
         suggested_annotation = cognite_client.annotations.suggest(base_suggest_annotation)
         assert isinstance(suggested_annotation, Annotation)
         check_created_vs_base(base_suggest_annotation, suggested_annotation)
         assert suggested_annotation.creating_user is None
 
-    def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: Annotation) -> None:
+    def test_suggest_annotations(self, cognite_client: CogniteClient, base_suggest_annotation: AnnotationWrite) -> None:
         suggested_annotations = cognite_client.annotations.suggest([base_suggest_annotation] * 30)
         assert isinstance(suggested_annotations, AnnotationList)
         for a in suggested_annotations:
@@ -279,12 +280,12 @@ class TestAnnotationsIntegration:
         for k, v in update.items():
             getattr(annotation_update, k).set(v)
 
-        updated = cognite_client.annotations.update([annotation_update])
-        assert isinstance(updated, AnnotationList)
-        updated = updated[0]
+        updated_list = cognite_client.annotations.update([annotation_update])
+        assert isinstance(updated_list, AnnotationList)
+        updated = updated_list[0]
         for k, v in update.items():
             if k == "data":
-                assert_payload_dict(update["data"], updated.data)
+                assert_payload_dict(cast(dict, update["data"]), updated.data)
             else:
                 assert getattr(updated, k) == v
 
@@ -320,7 +321,7 @@ class TestAnnotationsIntegration:
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=30)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=-1)
         _test_list_on_created_annotations(cognite_client, created_annotations, limit=None)
-        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))
+        _test_list_on_created_annotations(cognite_client, created_annotations, limit=float("inf"))  # type: ignore[arg-type]
 
     def test_retrieve(self, cognite_client: CogniteClient, base_annotation: AnnotationWrite) -> None:
         created_annotation = cognite_client.annotations.create(base_annotation)
