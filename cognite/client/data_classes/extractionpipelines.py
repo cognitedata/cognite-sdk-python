@@ -82,7 +82,7 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
     Args:
-        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): The name of the extraction pipeline.
         description (str | None): The description of the extraction pipeline.
         data_set_id (int | None): The id of the dataset this extraction pipeline related with.
@@ -99,18 +99,18 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
-        raw_tables: list[dict[str, str]] | None = None,
-        schedule: str | None = None,
-        contacts: list[ExtractionPipelineContact] | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        documentation: str | None = None,
-        notification_config: ExtractionPipelineNotificationConfiguration | None = None,
-        created_by: str | None = None,
+        external_id: str,
+        name: str | None,
+        description: str | None,
+        data_set_id: int | None,
+        raw_tables: list[dict[str, str]] | None,
+        schedule: str | None,
+        contacts: list[ExtractionPipelineContact] | None,
+        metadata: dict[str, str] | None,
+        source: str | None,
+        documentation: str | None,
+        notification_config: ExtractionPipelineNotificationConfiguration | None,
+        created_by: str | None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -443,16 +443,16 @@ class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunW
     """A representation of an extraction pipeline run.
 
     Args:
-        status (str | None): success/failure/seen.
+        status (str): success/failure/seen.
         message (str | None): Optional status message.
         created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
         self,
-        status: str | None = None,
-        message: str | None = None,
-        created_time: int | None = None,
+        status: str,
+        message: str | None,
+        created_time: int | None,
     ) -> None:
         self.status = status
         self.message = message
