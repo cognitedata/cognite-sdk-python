@@ -92,11 +92,9 @@ class ContextualizationJob(CogniteResource):
         status: str,
         status_time: int,
         created_time: int,
-        start_time: int | None = None,
+        start_time: int | None,
         model_id: int | None = None,
         error_message: str | None = None,
-        status_path: str | None = None,
-        job_token: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
@@ -106,10 +104,10 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
-        self.job_token = job_token
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: dict[str, Any] | None = None
-        self._status_path = status_path
+        self.job_token: str | None = None
+        self._status_path: str | None = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -121,26 +119,32 @@ class ContextualizationJob(CogniteResource):
             start_time=resource.get("startTime"),
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
-            job_token=resource.get("jobToken"),
-            status_path=None,
             cognite_client=cognite_client,
         )
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
-        data = (
+        job_token = self.job_token
+        status_path = self._status_path
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = (
             getattr(self._cognite_client, self._JOB_TYPE.value)
-            ._get(f"{self._status_path}{self.job_id}", headers=headers)
+            ._get(f"{status_path}{self.job_id}", headers=headers)
             .json()
         )
-        self.status = data["status"]
-        self.status_time = data.get("statusTime")
-        self.start_time = data.get("startTime")
-        self.created_time = self.created_time or data.get("createdTime")
-        self.error_message = data.get("errorMessage")
-        self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
-        assert self.status is not None
+        self.__init__(  # type: ignore[misc]
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._status_path = status_path
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
     def wait_for_completion(self, timeout: float | None = None, interval: float = 1) -> None:
@@ -182,11 +186,9 @@ class ContextualizationJob(CogniteResource):
         status_path: str,
         cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
+        obj = cls._load(data, cognite_client=cognite_client)
         obj._status_path = status_path
-        # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
-        if "items" in data and hasattr(obj, "items"):
-            obj.items = data["items"]
+        obj.job_token = headers.get("X-Job-Token")
         return obj
 
 
@@ -495,11 +497,10 @@ class DiagramConvertResults(ContextualizationJob):
         status: str,
         status_time: int,
         created_time: int,
+        items: list[DiagramConvertItem],
         start_time: int | None = None,
         model_id: int | None = None,
         error_message: str | None = None,
-        status_path: str | None = None,
-        job_token: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -510,37 +511,63 @@ class DiagramConvertResults(ContextualizationJob):
             start_time=start_time,
             model_id=model_id,
             error_message=error_message,
-            status_path=status_path,
-            job_token=job_token,
             cognite_client=cognite_client,
         )
-        self._items: list | None = None
+        self.items = items
 
-    def __getitem__(self, find_id: Any) -> DiagramConvertItem:
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramConvertItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def update_status(self) -> str:
+        """Updates the model status and returns it"""
+        job_token = self.job_token
+        status_path = self._status_path
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = (
+            getattr(self._cognite_client, self._JOB_TYPE.value)
+            ._get(f"{status_path}{self.job_id}", headers=headers)
+            .json()
+        )
+        self.__init__(  # type: ignore[misc]
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in resource["items"]],
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._status_path = status_path
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case=camel_case)
+        data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return data
+
+    def __getitem__(self, find_id: int | str) -> DiagramConvertItem:
         """Retrieves the results for the file with (external) id"""
-        found = [
-            item
-            for item in self.result["items"]
-            if item.get("fileId") == find_id or item.get("fileExternalId") == find_id
-        ]
+        found = [item for item in self.items if item.file_id == find_id or item.file_external_id == find_id]
         if not found:
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramConvertItem._load(found[0], cognite_client=self._cognite_client)
-
-    @property
-    def items(self) -> list[DiagramConvertItem] | None:
-        """returns a list of all results by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items
-
-    @items.setter
-    def items(self, items: list) -> None:
-        self._items = items
+        return found[0]
 
 
 class DiagramDetectItem(CogniteResource):
@@ -549,7 +576,7 @@ class DiagramDetectItem(CogniteResource):
         file_id: int,
         file_external_id: str | None,
         file_instance_id: dict[str, str] | None,
-        annotations: list[dict[str, Any]],
+        annotations: list[dict[str, Any]] | None,
         page_range: dict[str, int] | None,
         page_count: int | None,
         cognite_client: CogniteClient | None = None,
@@ -557,7 +584,7 @@ class DiagramDetectItem(CogniteResource):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.file_instance_id = file_instance_id
-        self.annotations = annotations
+        self.annotations = annotations or []
         self.page_range = page_range
         self.page_count = page_count
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -568,7 +595,7 @@ class DiagramDetectItem(CogniteResource):
             file_id=resource["fileId"],
             file_external_id=resource.get("fileExternalId"),
             file_instance_id=resource.get("fileInstanceId"),
-            annotations=resource["annotations"],
+            annotations=resource.get("annotations"),
             cognite_client=cognite_client,
             page_range=resource.get("pageRange"),
             page_count=resource.get("pageCount"),
@@ -597,11 +624,10 @@ class DiagramDetectResults(ContextualizationJob):
         status: str,
         status_time: int,
         created_time: int,
+        items: list[DiagramDetectItem],
         start_time: int | None = None,
         model_id: int | None = None,
         error_message: str | None = None,
-        status_path: str | None = None,
-        job_token: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -612,37 +638,62 @@ class DiagramDetectResults(ContextualizationJob):
             start_time=start_time,
             model_id=model_id,
             error_message=error_message,
-            status_path=status_path,
-            job_token=job_token,
             cognite_client=cognite_client,
         )
-        self._items: list[DiagramDetectItem] | None = None
+        self.items: list[DiagramDetectItem] = items
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[DiagramDetectItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def update_status(self) -> str:
+        status_path = self._status_path
+        job_token = self.job_token
+        headers = {"X-Job-Token": job_token} if job_token else {}
+
+        url = f"{status_path}{self.job_id}"
+        resource = self._cognite_client.diagrams._get(url, headers=headers).json()
+        self.__init__(  # type: ignore[misc]
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[
+                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
+            ],
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._status_path = status_path
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        data = super().dump(camel_case=camel_case)
+        data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return data
 
     def __getitem__(self, find_id: Any) -> DiagramDetectItem:
         """retrieves the results for the file with (external) id"""
-        found = [
-            item
-            for item in self.result["items"]
-            if item.get("fileId") == find_id or item.get("fileExternalId") == find_id
-        ]
+        found = [item for item in self.items if item.file_id == find_id or item.file_external_id == find_id]
         if not found:
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
-
-    @property
-    def items(self) -> list[DiagramDetectItem]:
-        """Returns a list of all results by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items or []
-
-    @items.setter
-    def items(self, items: list[DiagramDetectItem]) -> None:
-        self._items = items
+        return found[0]
 
     @property
     def errors(self) -> list[str]:
@@ -989,21 +1040,6 @@ class FeatureParameters(VisionResource):
         )
 
 
-class VisionJob(ContextualizationJob):
-    def update_status(self) -> str:
-        # Override update_status since we need to handle the vision-specific
-        # edge case where we also record failed items per batch
-        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        self.status = data["status"]
-        self.status_time = data.get("statusTime")
-        self.start_time = data.get("startTime")
-        self.created_time = self.created_time or data.get("createdTime")
-        self.error_message = data.get("errorMessage") or data.get("failedItems")
-        self._result = {k: v for k, v in data.items() if k not in self._COMMON_FIELDS}
-        assert self.status is not None
-        return self.status
-
-
 class VisionExtractItem(CogniteResource):
     """Data class for storing predictions for a single image file"""
 
@@ -1027,7 +1063,9 @@ class VisionExtractItem(CogniteResource):
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> VisionExtractItem:
         return cls(
             file_id=resource["fileId"],
-            predictions=VisionExtractPredictions._load(resource["predictions"]),
+            predictions=VisionExtractPredictions._load(resource["predictions"], cognite_client=cognite_client)
+            if "predictions" in resource
+            else VisionExtractPredictions(),
             file_external_id=resource.get("fileExternalId"),
             error_message=resource.get("errorMessage"),
             cognite_client=cognite_client,
@@ -1042,7 +1080,7 @@ class VisionExtractItem(CogniteResource):
 P = ParamSpec("P")
 
 
-class VisionExtractJob(VisionJob, Generic[P]):
+class VisionExtractJob(ContextualizationJob, Generic[P]):
     _JOB_TYPE = ContextualizationJobType.VISION
 
     def __init__(
@@ -1051,11 +1089,10 @@ class VisionExtractJob(VisionJob, Generic[P]):
         status: str,
         status_time: int,
         created_time: int,
+        items: list[VisionExtractItem],
         start_time: int | None = None,
         model_id: int | None = None,
         error_message: str | None = None,
-        status_path: str | None = None,
-        job_token: str | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -1066,31 +1103,55 @@ class VisionExtractJob(VisionJob, Generic[P]):
             start_time=start_time,
             model_id=model_id,
             error_message=error_message,
-            status_path=status_path,
-            job_token=job_token,
             cognite_client=cognite_client,
         )
-        self._items: list[VisionExtractItem] | None = None
+        self.items = items
+
+    def update_status(self) -> str:
+        status_path = self._status_path
+        resource = self._cognite_client.vision._get(f"{status_path}{self.job_id}").json()
+        self.__init__(  # type: ignore[misc]
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[
+                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in resource.get("items", [])
+            ],
+            cognite_client=self._cognite_client,
+        )
+        self._status_path = status_path
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            model_id=resource.get("modelId"),
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource.get("startTime"),
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        job_dump = super().dump(camel_case=camel_case)
+        job_dump["items"] = [item.dump(camel_case=camel_case) for item in self.items]
+        return job_dump
 
     def __getitem__(self, file_id: int) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
-        found = [item for item in self.result["items"] if item.get("fileId") == file_id]
+        found = [item for item in self.items if item.file_id == file_id]
         if not found:
             raise IndexError(f"File with id {file_id} not found in results")
-        return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
-
-    @property
-    def items(self) -> list[VisionExtractItem]:
-        """Returns a list of all predictions by file"""
-        if JobStatus(self.status) is JobStatus.COMPLETED:
-            self._items = [
-                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
-            ]
-        return self._items or []
-
-    @items.setter
-    def items(self, items: list[VisionExtractItem]) -> None:
-        self._items = items
+        return found[0]
 
     @property
     def errors(self) -> list[str]:

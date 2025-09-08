@@ -24,17 +24,11 @@ class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
 
     def _run_job(
-        self,
-        job_path: str,
-        job_cls: type[T_ContextualizationJob],
-        json: dict[str, Any],
-        status_path: str | None = None,
-        headers: dict | None = None,
+        self, job_path: str, job_cls: type[T_ContextualizationJob], json: dict[str, Any], status_path: str | None = None
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
-        response = self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers)
-
+        response = self._post(self._RESOURCE_PATH + job_path, json=json)
         return job_cls._load_with_status(
             data=response.json(),
             headers=response.headers,

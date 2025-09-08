@@ -2,19 +2,20 @@ import os
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import UserProfile, UserProfileList
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="module")
-def profiles(cognite_client):
+def profiles(cognite_client: CogniteClient) -> UserProfileList:
     if profiles := cognite_client.iam.user_profiles.list(limit=5):
         return profiles
     pytest.skip("Can't test user profiles without any user profiles available", allow_module_level=True)
 
 
-def test_user_profiles_api__list(cognite_client, profiles) -> None:
+def test_user_profiles_api__list(cognite_client: CogniteClient, profiles: UserProfileList) -> None:
     assert 1 <= len(profiles) <= 5
     assert isinstance(profiles, UserProfileList)
     assert isinstance(profiles[0], UserProfile)
@@ -22,7 +23,7 @@ def test_user_profiles_api__list(cognite_client, profiles) -> None:
 
 
 @pytest.mark.skipif(os.getenv("LOGIN_FLOW") != "interactive", reason="This test requires interactive auth")
-def test_user_profiles_api__get_my_own_profile(cognite_client) -> None:
+def test_user_profiles_api__get_my_own_profile(cognite_client: CogniteClient) -> None:
     profile = cognite_client.iam.user_profiles.me()
     assert isinstance(profile, UserProfile)
     # Only two required fields returned:
@@ -30,7 +31,7 @@ def test_user_profiles_api__get_my_own_profile(cognite_client) -> None:
     assert isinstance(profile.last_updated_time, int)
 
 
-def test_user_profiles_api__retrieve_single(cognite_client, profiles) -> None:
+def test_user_profiles_api__retrieve_single(cognite_client: CogniteClient, profiles: UserProfileList) -> None:
     profile = profiles[0]
     profile_retrieve = cognite_client.iam.user_profiles.retrieve(profile.user_identifier)
     assert profile_retrieve is not None
@@ -38,11 +39,11 @@ def test_user_profiles_api__retrieve_single(cognite_client, profiles) -> None:
     assert profile == profile_retrieve
 
 
-def test_user_profiles_api__retrieve_not_exist(cognite_client) -> None:
+def test_user_profiles_api__retrieve_not_exist(cognite_client: CogniteClient) -> None:
     assert cognite_client.iam.user_profiles.retrieve(random_string(10)) is None
 
 
-def test_user_profiles_api__retrieve_many(cognite_client, profiles) -> None:
+def test_user_profiles_api__retrieve_many(cognite_client: CogniteClient, profiles: UserProfileList) -> None:
     profiles_retrieve = cognite_client.iam.user_profiles.retrieve([p.user_identifier for p in profiles])
 
     assert isinstance(profiles, UserProfileList)
@@ -50,7 +51,7 @@ def test_user_profiles_api__retrieve_many(cognite_client, profiles) -> None:
     assert profiles == profiles_retrieve
 
 
-def test_user_profiles_api__retrieve_many_not_exist(cognite_client, profiles) -> None:
+def test_user_profiles_api__retrieve_many_not_exist(cognite_client: CogniteClient, profiles: UserProfileList) -> None:
     user_idents = [profiles[0].user_identifier, user_id := random_string(10)]
 
     # Endpoint does not support 'ignore unknown ids'

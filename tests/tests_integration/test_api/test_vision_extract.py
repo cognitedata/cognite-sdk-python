@@ -36,6 +36,6 @@ class TestVisionExtractAPI:
         assert job.job_id > 0
         assert JobStatus(job.status) == JobStatus.QUEUED
         assert len(job.items) == 1
-        assert job.items[0]["fileId"] == file_id
+        assert job.items[0].file_id == file_id
         assert job.status_time > 0
         assert job.created_time > 0
