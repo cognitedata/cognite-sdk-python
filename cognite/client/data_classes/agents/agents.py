@@ -137,7 +137,7 @@ class Agent(AgentCore):
         super().__init__(
             external_id=external_id, name=name, description=description, instructions=instructions, model=model
         )
-        self.tools: AgentToolList | None = AgentToolList(tools) if tools is not None else None
+        self.tools: AgentToolList = AgentToolList(tools if tools is not None else [])
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.owner_id = owner_id
