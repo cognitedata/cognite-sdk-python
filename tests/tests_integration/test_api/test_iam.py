@@ -27,7 +27,7 @@ class TestGroupsAPI:
         reason="CogniteAPIError: There can only be 1500 undeleted or deleted groups per project | code: 400"
     )
     @pytest.mark.parametrize("source_id, members", (("abc-123", None), (None, ["user1", "user2"])))
-    def test_create(self, cognite_client, source_id, members):
+    def test_create(self, cognite_client, source_id, members) -> None:
         metadata = {"haha": "blabla"}
         group: Group | None = None
         try:
@@ -67,11 +67,11 @@ def security_category(cognite_client: CogniteClient) -> SecurityCategory:
 
 
 class TestSecurityCategoriesAPI:
-    def test_list(self, cognite_client: CogniteClient, security_category: SecurityCategory):
+    def test_list(self, cognite_client: CogniteClient, security_category: SecurityCategory) -> None:
         res = cognite_client.iam.security_categories.list()
         assert len(res) > 0
 
-    def test_create_and_delete(self, cognite_client):
+    def test_create_and_delete(self, cognite_client) -> None:
         random_name = "test_" + random_string(10)
         res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name=random_name))
         assert res.id in {s.id for s in cognite_client.iam.security_categories.list()}

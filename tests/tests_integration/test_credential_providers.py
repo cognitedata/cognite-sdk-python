@@ -23,7 +23,7 @@ class TestCredentialProvidersArePicklable:
             (OAuthInteractive, [AUTHORITY_URL, "client_id2", "scopes"]),
         ),
     )
-    def test_serialize_and_deserialize(self, auth_cls, args, cognite_client):
+    def test_serialize_and_deserialize(self, auth_cls, args, cognite_client) -> None:
         cred_prov = auth_cls(*args)
         roundtrip_cred_prov = pickle.loads(pickle.dumps(cred_prov))
         assert type(roundtrip_cred_prov) is auth_cls

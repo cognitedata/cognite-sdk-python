@@ -91,14 +91,14 @@ def mock_ask_response(httpx_mock, cognite_client):
 
 class TestAIAPI:
     @pytest.mark.usefixtures("mock_summarize_response")
-    def test_summarize(self, cognite_client):
+    def test_summarize(self, cognite_client) -> None:
         summary = cognite_client.ai.tools.documents.summarize(id=1234)
         assert isinstance(summary, Summary)
         assert summary.id == 1234
         assert summary.summary == "Summary"
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_ask_question(self, cognite_client):
+    def test_ask_question(self, cognite_client) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert len(answer.content) == 2
         content = answer.content[0]
@@ -118,7 +118,7 @@ class TestAIAPI:
         assert location.bottom == 1.0
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_answer_methods(self, cognite_client):
+    def test_answer_methods(self, cognite_client) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert answer.full_answer == "This is the answer."
         all_refs = answer.all_references

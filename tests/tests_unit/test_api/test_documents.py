@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 import re
+from typing import Any
 
 import pytest
+from pytest_httpx import HTTPXMock
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Document
 from tests.utils import get_url
 
 
 @pytest.fixture
-def example_documents():
+def example_documents() -> list[dict[str, Any]]:
     return [
         {
             "id": 952558513813,
@@ -97,18 +101,20 @@ def example_documents():
 
 
 @pytest.fixture
-def mock_documents_list_response(httpx_mock, cognite_client, example_documents):
+def mock_documents_list_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_documents: list[dict[str, Any]]
+) -> HTTPXMock:
     response_body = {"items": example_documents}
     url_pattern = re.compile(re.escape(get_url(cognite_client.documents)) + "/.+")
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_documents_search_response(httpx_mock, cognite_client):
+def mock_documents_search_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
             {
@@ -127,7 +133,7 @@ def mock_documents_search_response(httpx_mock, cognite_client):
     }
     response_body_with_cursor = response_body | {"nextCursor": "foo"}
 
-    url_pattern = re.compile(re.escape(cognite_client.documents._get_base_url_with_base_path()) + "/.+")
+    url_pattern = re.compile(re.escape(get_url(cognite_client.documents)) + "/.+")
 
     # Add responses for the search endpoint
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True)
@@ -139,7 +145,9 @@ def mock_documents_search_response(httpx_mock, cognite_client):
 
 class TestDocumentsAPI:
     @pytest.mark.usefixtures("mock_documents_list_response")
-    def test_list(self, cognite_client, example_documents):
+    def test_list(
+        self, cognite_client: CogniteClient, example_documents: list[dict[str, Any]]
+    ) -> None:
         documents = cognite_client.documents.list()
         assert len(documents) == 2
         file_with_instance_id, file_wo_instance_id = documents
@@ -155,6 +163,6 @@ class TestDocumentsAPI:
         assert doc2 == file_wo_instance_id.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_documents_search_response")
-    def test_search_limit(self, cognite_client):
+    def test_search_limit(self, cognite_client: CogniteClient) -> None:
         documents = cognite_client.documents.search(query="a", limit=1)
         assert len(documents) == 1
