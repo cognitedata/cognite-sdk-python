@@ -91,7 +91,6 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
         destination_nonce (NonceCredentials | None): No description.
         destination_oidc_credentials (OidcCredentials | None): No description.
         data_set_id (int | None): No description.
-        tags (list[str] | None): No description.
     """
 
     def __init__(
@@ -104,7 +103,6 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
         destination_nonce: NonceCredentials | None,
         destination_oidc_credentials: OidcCredentials | None,
         data_set_id: int | None = None,
-        tags: list[str] | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -114,7 +112,6 @@ class TransformationCore(WriteableCogniteResource["TransformationWrite"], ABC):
         self.destination_nonce = destination_nonce
         self.destination_oidc_credentials = destination_oidc_credentials
         self.data_set_id = data_set_id
-        self.tags = tags
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -284,7 +281,6 @@ class Transformation(TransformationCore):
             source_nonce=source_nonce,
             destination_nonce=destination_nonce,
             data_set_id=data_set_id,
-            tags=tags,
         )
         self.id = id
         self.query = query
@@ -301,6 +297,7 @@ class Transformation(TransformationCore):
         self.schedule = schedule
         self.source_session = source_session
         self.destination_session = destination_session
+        self.tags = tags or []
         self._cognite_client = cast("CogniteClient", cognite_client)
 
         if self.has_source_oidc_credentials or self.has_destination_oidc_credentials:
@@ -487,12 +484,12 @@ class TransformationWrite(TransformationCore):
             source_nonce=source_nonce,
             destination_nonce=destination_nonce,
             data_set_id=data_set_id,
-            tags=tags,
         )
         self.query = query
         self.destination = destination
         self.conflict_mode = conflict_mode
         self.is_public = is_public
+        self.tags = tags
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationWrite:
