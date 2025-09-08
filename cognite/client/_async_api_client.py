@@ -241,7 +241,7 @@ class AsyncAPIClient:
     def _configure_headers(
         self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
     ) -> MutableMapping[str, Any]:
-        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
+        headers: MutableMapping[str, Any] = {}
         headers.update({
             'User-Agent': f'python-httpx/{httpx.__version__}',
             'Accept': accept,

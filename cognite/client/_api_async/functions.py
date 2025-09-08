@@ -8,8 +8,8 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
     FunctionList,
-    FunctionWrite,
     FunctionUpdate,
+    FunctionWrite,
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
