@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes._base import CogniteFilter
 from cognite.client.data_classes.simulators.filters import SimulatorIntegrationFilter
 from cognite.client.data_classes.simulators.simulators import (
     SimulatorIntegration,
@@ -42,16 +41,28 @@ class SimulatorIntegrationsAPI(APIClient):
 
     @overload
     def __call__(
-        self, chunk_size: int, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
-    ) -> Iterator[SimulatorIntegration]: ...
+        self,
+        chunk_size: int,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[SimulatorIntegrationList]: ...
 
     @overload
     def __call__(
-        self, chunk_size: None = None, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorIntegration]: ...
 
     def __call__(
-        self, chunk_size: int | None = None, filter: SimulatorIntegrationFilter | None = None, limit: int | None = None
+        self,
+        chunk_size: int | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
+        limit: int | None = None,
     ) -> Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]:
         """Iterate over simulator integrations
 
@@ -59,17 +70,19 @@ class SimulatorIntegrationsAPI(APIClient):
 
         Args:
             chunk_size (int | None): Number of simulator integrations to return in each chunk. Defaults to yielding one simulator integration a time.
-            filter (SimulatorIntegrationFilter | None): Filter to apply on the integrations list.
-            limit (int | None): Maximum number of simulator integrations to return. Defaults to return all items.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
+            active (bool | None): Filter on active status of the simulator integration.
+            limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
 
         Returns:
-            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
+            Iterator[SimulatorIntegration] | Iterator[SimulatorIntegrationList]: yields SimulatorIntegration one by one if chunk_size is not specified, else SimulatorIntegrationList objects.
         """
+        integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         return self._list_generator(
             list_cls=SimulatorIntegrationList,
             resource_cls=SimulatorIntegration,
             method="POST",
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=integrations_filter.dump(),
             chunk_size=chunk_size,
             limit=limit,
         )
@@ -77,59 +90,61 @@ class SimulatorIntegrationsAPI(APIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        filter: SimulatorIntegrationFilter | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
+        active: bool | None = None,
     ) -> SimulatorIntegrationList:
         """`Filter simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/filter_simulator_integrations_simulators_integrations_list_post>`_
-        Retrieves a list of simulator integrations that match the given criteria
+
+        Retrieves a list of simulator integrations that match the given criteria.
 
         Args:
             limit (int | None): The maximum number of simulator integrations to return, pass None to return all.
-            filter (SimulatorIntegrationFilter | None): Filter to apply.
+            simulator_external_ids (str | SequenceNotStr[str] | None): Filter on simulator external ids.
+            active (bool | None): Filter on active status of the simulator integration.
 
         Returns:
             SimulatorIntegrationList: List of simulator integrations
 
         Examples:
-
             List a few simulator integrations:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.simulators.integrations.list()
+                >>> res = client.simulators.integrations.list(limit=10)
 
-            Filter integrations by active status:
-                >>> from cognite.client.data_classes.simulators import SimulatorIntegrationFilter
+            Filter simulator integrations by simulator external ids and active status:
                 >>> res = client.simulators.integrations.list(
-                ...     filter=SimulatorIntegrationFilter(active=True))
+                ...     simulator_external_ids=["sim1", "sim2"],
+                ...     active=True,
+                ... )
         """
+        integrations_filter = SimulatorIntegrationFilter(simulator_external_ids=simulator_external_ids, active=active)
         self._warning.warn()
         return self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulatorIntegration,
             list_cls=SimulatorIntegrationList,
-            filter=filter.dump() if isinstance(filter, CogniteFilter) else filter,
+            filter=integrations_filter.dump(),
         )
 
     def delete(
         self,
-        id: int | Sequence[int] | None = None,
-        external_id: str | SequenceNotStr[str] | None = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
+        """`Delete simulator integrations <https://developer.cognite.com/api#tag/Simulator-Integrations/operation/delete_simulator_integrations_simulators_integrations_delete_post>`_
 
         Args:
-            id (int | Sequence[int] | None): Id or list of ids
-            external_id (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
+            ids (int | Sequence[int] | None): Id(s) of simulator integrations to delete
+            external_ids (str | SequenceNotStr[str] | None): External_id(s) of simulator integrations to delete
 
         Examples:
-
-            Delete integrations by id or external id:
-
+            Delete simulator integrations by id or external id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> client.simulators.integrations.delete(id=[1,2,3], external_id="foo")
+                >>> client.simulators.integrations.delete(ids=[1,2,3], external_ids="foo")
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
         )

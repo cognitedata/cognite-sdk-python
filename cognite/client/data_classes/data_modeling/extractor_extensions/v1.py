@@ -23,7 +23,7 @@ class _CogniteExtractorDataProperties:
 class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply):
     """This represents the writing format of Cognite extractor datum.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -49,7 +49,7 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
 class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
     """This represents the reading format of Cognite extractor datum.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -107,7 +107,7 @@ class _CogniteExtractorFileProperties:
 class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply):
     """This represents the writing format of Cognite extractor file.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -184,7 +184,7 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
 class CogniteExtractorFile(_CogniteExtractorFileProperties, TypedNode):
     """This represents the reading format of Cognite extractor file.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -310,7 +310,7 @@ class _CogniteExtractorTimeSeriesProperties:
 class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, TypedNodeApply):
     """This represents the writing format of Cognite extractor time series.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -387,7 +387,7 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
 class CogniteExtractorTimeSeries(_CogniteExtractorTimeSeriesProperties, TypedNode):
     """This represents the reading format of Cognite extractor time series.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.

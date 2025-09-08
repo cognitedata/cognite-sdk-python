@@ -23,17 +23,16 @@ class SimulatorLogsAPI(APIClient):
         self._RETRIEVE_LIMIT = 1
 
     @overload
-    def retrieve(self, id: int) -> SimulatorLog | None: ...
+    def retrieve(self, ids: int) -> SimulatorLog | None: ...
 
     @overload
     def retrieve(
         self,
-        id: Sequence[int],
+        ids: Sequence[int],
     ) -> SimulatorLogList | None: ...
 
-    def retrieve(self, id: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
-        """`Retrieve simulator log(s) <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
-        Retrieve one simulator log by ID(s)
+    def retrieve(self, ids: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
+        """`Retrieve simulator logs <https://developer.cognite.com/api#tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
         They provide valuable information for monitoring, debugging, and auditing.
@@ -42,20 +41,34 @@ class SimulatorLogsAPI(APIClient):
         They help users identify issues, diagnose problems, and gain insights into the behavior of the simulator integrations.
 
         Args:
-            id (int | Sequence[int]): The ids of the simulator log.
+            ids (int | Sequence[int]): The ids of the simulator log.
+
         Returns:
             SimulatorLogList | SimulatorLog | None: Requested simulator log(s)
+
         Examples:
-            Get simulator model logs:
+            Get simulator logs by simulator model id:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> model = client.simulators.models.retrieve(id=1)
-                >>> logs = client.simulators.logs.retrieve(id=model.log_id)
+                >>> model = client.simulators.models.retrieve(ids=1)
+                >>> logs = client.simulators.logs.retrieve(ids=model.log_id)
+
+            Get simulator logs by simulator integration id:
+                >>> integrations = client.simulators.integrations.list()
+                >>> logs = client.simulators.logs.retrieve(ids=integrations[0].log_id)
+
+            Get simulator logs by simulation run id:
+                >>> run = client.simulators.runs.retrieve(ids=1)
+                >>> logs = client.simulators.logs.retrieve(ids=run.log_id)
+
+            Get simulator logs directly on a simulation run object:
+                >>> run = client.simulators.runs.retrieve(ids=2)
+                >>> res = run.get_logs()
         """
         self._warning.warn()
 
         return self._retrieve_multiple(
             list_cls=SimulatorLogList,
             resource_cls=SimulatorLog,
-            identifiers=IdentifierSequence.load(ids=id),
+            identifiers=IdentifierSequence.load(ids=ids),
         )

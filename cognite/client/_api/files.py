@@ -450,7 +450,7 @@ class FilesAPI(APIClient):
         """`Upload a file content <https://developer.cognite.com/api#tag/Files/operation/getUploadLink>`_
 
         Args:
-            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            path (str): Path to the file you wish to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | None): Instance ID of the file.
         Returns:
@@ -464,8 +464,9 @@ class FilesAPI(APIClient):
                     fh = fh.read()
                 file_metadata = self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
             return file_metadata
-
-        raise ValueError(f"The path '{path}' must exist and be a file")
+        if os.path.isdir(path):
+            raise IsADirectoryError(path)
+        raise FileNotFoundError(path)
 
     def upload(
         self,
@@ -629,7 +630,13 @@ class FilesAPI(APIClient):
             res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
         except CogniteAPIError as e:
             if e.code == 403:
-                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
+                raise CogniteAuthorizationError(
+                    message=e.message,
+                    code=e.code,
+                    x_request_id=e.x_request_id,
+                    cluster=self._config.cdf_cluster,
+                    project=self._config.project,
+                ) from e
             raise
 
         return self._upload_bytes(content, res.json()["items"][0])
@@ -730,7 +737,13 @@ class FilesAPI(APIClient):
             if e.code == 403 and "insufficient access rights" in e.message:
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
-                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+                raise CogniteAuthorizationError(
+                    message=msg,
+                    code=e.code,
+                    x_request_id=e.x_request_id,
+                    cluster=self._config.cdf_cluster,
+                    project=self._config.project,
+                ) from e
             raise
 
         return self._upload_bytes(content, res.json())
@@ -819,7 +832,13 @@ class FilesAPI(APIClient):
             if e.code == 403 and "insufficient access rights" in e.message:
                 dsid_notice = " Try to provide a data_set_id." if data_set_id is None else ""
                 msg = f"Could not create a file due to insufficient access rights.{dsid_notice}"
-                raise CogniteAuthorizationError(message=msg, code=e.code, x_request_id=e.x_request_id) from e
+                raise CogniteAuthorizationError(
+                    message=msg,
+                    code=e.code,
+                    x_request_id=e.x_request_id,
+                    cluster=self._config.cdf_cluster,
+                    project=self._config.project,
+                ) from e
             raise
 
         returned_file_metadata = res.json()
@@ -874,7 +893,13 @@ class FilesAPI(APIClient):
             )
         except CogniteAPIError as e:
             if e.code == 403:
-                raise CogniteAuthorizationError(message=e.message, code=e.code, x_request_id=e.x_request_id) from e
+                raise CogniteAuthorizationError(
+                    message=e.message,
+                    code=e.code,
+                    x_request_id=e.x_request_id,
+                    cluster=self._config.cdf_cluster,
+                    project=self._config.project,
+                ) from e
             raise
 
         returned_file_metadata = res.json()["items"][0]
@@ -1102,8 +1127,7 @@ class FilesAPI(APIClient):
         tasks = [(directory, {"id": id}, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
         tasks_summary = execute_tasks(self._process_file_download, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]],
-            str_format_element_fn=lambda metadata: metadata.id,
+            task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]]
         )
 
     def _get_download_link(self, identifier: dict[str, int | str]) -> str:

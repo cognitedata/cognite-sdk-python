@@ -40,6 +40,7 @@ Contents
    extensions_and_optional_dependencies
    identity_and_access_management
    data_modeling
+   agents
    ai
    assets
    events
@@ -56,6 +57,7 @@ Contents
    data_organization
    transformations
    functions
+   simulators
    data_workflows
    unit_catalog
    filters

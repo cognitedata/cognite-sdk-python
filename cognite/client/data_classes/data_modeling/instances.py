@@ -147,6 +147,7 @@ class NodeOrEdgeData(CogniteObject):
 
 class InstanceCore(DataModelingResource, ABC):
     """A node or edge
+
     Args:
         space (str): The workspace for the instance, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
@@ -1177,7 +1178,7 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]
@@ -1273,7 +1274,7 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
     def _load_raw_api_response(cls, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> Self:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [
-            cls._RESOURCE._load(item, cognite_client=cognite_client)  # type: ignore[has-type]
+            cls._RESOURCE._load(item, cognite_client=cognite_client)
             for response in responses
             for item in response.get("items", [])
         ]
@@ -1316,6 +1317,7 @@ class EdgeListWithCursor(EdgeList):
 class InstancesApply:
     """
     This represents the write request of an instance query
+
     Args:
         nodes (NodeApplyList): A list of nodes.
         edges (EdgeApplyList): A list of edges.

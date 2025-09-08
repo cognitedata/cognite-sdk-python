@@ -36,7 +36,7 @@ class _Cognite360ImageProperties:
 class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
     """This represents the writing format of Cognite 360 image.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -113,7 +113,7 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
 class Cognite360Image(_Cognite360ImageProperties, TypedNode):
     """This represents the reading format of Cognite 360 image.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -231,9 +231,10 @@ class _Cognite360ImageCollectionProperties:
 class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, TypedNodeApply):
     """This represents the writing format of Cognite 360 image collection.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents a logical collection of Cognite360Image instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image collection.
@@ -279,9 +280,10 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
 class Cognite360ImageCollection(_Cognite360ImageCollectionProperties, TypedNode):
     """This represents the reading format of Cognite 360 image collection.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents a logical collection of Cognite360Image instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image collection.
@@ -357,9 +359,10 @@ class _Cognite360ImageModelProperties:
 class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply):
     """This represents the writing format of Cognite 360 image model.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Navigational aid for traversing Cognite360ImageModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image model.
@@ -399,9 +402,10 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
 class Cognite360ImageModel(_Cognite360ImageModelProperties, TypedNode):
     """This represents the reading format of Cognite 360 image model.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Navigational aid for traversing Cognite360ImageModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image model.
@@ -469,9 +473,10 @@ class _Cognite360ImageStationProperties:
 class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeApply):
     """This represents the writing format of Cognite 360 image station.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     A way to group images across collections. Used for creating visual scan history
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image station.
@@ -508,9 +513,10 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
 class Cognite360ImageStation(_Cognite360ImageStationProperties, TypedNode):
     """This represents the reading format of Cognite 360 image station.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     A way to group images across collections. Used for creating visual scan history
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image station.
@@ -574,9 +580,10 @@ class _Cognite3DModelProperties:
 class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D model.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -616,9 +623,10 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
 class Cognite3DModel(_Cognite3DModelProperties, TypedNode):
     """This represents the reading format of Cognite 3D model.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Groups revisions of 3D data of various kinds together (CAD, PointCloud, Image360)
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
@@ -691,9 +699,10 @@ class _Cognite3DObjectProperties:
 class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D object.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D object.
@@ -745,9 +754,10 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
 class Cognite3DObject(_Cognite3DObjectProperties, TypedNode):
     """This represents the reading format of Cognite 3D object.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     This is the virtual position representation of an object in the physical world, connecting an asset to one or more 3D resources
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D object.
@@ -832,7 +842,7 @@ class _Cognite3DRevisionProperties:
 class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D revision.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
 
@@ -869,7 +879,7 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
 class Cognite3DRevision(_Cognite3DRevisionProperties, TypedNode):
     """This represents the reading format of Cognite 3D revision.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Shared revision information for various 3D data types. Normally not used directly, but through CognitePointCloudRevision, Image360Collection or CogniteCADRevision
 
@@ -940,7 +950,7 @@ class _Cognite3DTransformationProperties:
 class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, TypedNodeApply):
     """This represents the writing format of Cognite 3D transformation node.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
@@ -992,7 +1002,7 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
 class Cognite3DTransformationNode(_Cognite3DTransformationProperties, TypedNode):
     """This represents the reading format of Cognite 3D transformation node.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
@@ -1085,9 +1095,10 @@ class _CogniteActivityProperties:
 class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
     """This represents the writing format of Cognite activity.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents activities. Activities typically happen over a period and have a start and end time.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1165,9 +1176,10 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
 class CogniteActivity(_CogniteActivityProperties, TypedNode):
     """This represents the reading format of Cognite activity.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents activities. Activities typically happen over a period and have a start and end time.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
@@ -1294,9 +1306,10 @@ class _CogniteAssetProperties:
 class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
     """This represents the writing format of Cognite asset.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1363,9 +1376,10 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
 class CogniteAsset(_CogniteAssetProperties, TypedNode):
     """This represents the reading format of Cognite asset.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Assets represent systems that support industrial functions or processes. Assets are often called 'functional location'.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
@@ -1476,9 +1490,10 @@ class _CogniteAssetClassProperties:
 class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
     """This represents the writing format of Cognite asset clas.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents the class of an asset.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1518,9 +1533,10 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
 class CogniteAssetClass(_CogniteAssetClassProperties, TypedNode):
     """This represents the reading format of Cognite asset clas.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents the class of an asset.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
@@ -1588,9 +1604,10 @@ class _CogniteAssetTypeProperties:
 class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
     """This represents the writing format of Cognite asset type.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents the type of an asset.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1633,9 +1650,10 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
 class CogniteAssetType(_CogniteAssetTypeProperties, TypedNode):
     """This represents the reading format of Cognite asset type.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents the type of an asset.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
@@ -1707,9 +1725,10 @@ class _CogniteCADModelProperties:
 class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
     """This represents the writing format of Cognite cad model.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Navigational aid for traversing CogniteCADModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -1749,9 +1768,10 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
 class CogniteCADModel(_CogniteCADModelProperties, TypedNode):
     """This represents the reading format of Cognite cad model.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Navigational aid for traversing CogniteCADModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
@@ -1823,9 +1843,10 @@ class _CogniteCADNodeProperties:
 class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
     """This represents the writing format of Cognite cad node.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents nodes from the 3D model that have been contextualized
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1877,9 +1898,10 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
 class CogniteCADNode(_CogniteCADNodeProperties, TypedNode):
     """This represents the reading format of Cognite cad node.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents nodes from the 3D model that have been contextualized
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
@@ -1965,7 +1987,7 @@ class _CogniteCADRevisionProperties:
 class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
     """This represents the writing format of Cognite cad revision.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -2003,7 +2025,7 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
 class CogniteCADRevision(_CogniteCADRevisionProperties, TypedNode):
     """This represents the reading format of Cognite cad revision.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -2066,7 +2088,7 @@ class _CogniteCubeMapProperties:
 class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
     """This represents the writing format of Cognite cube map.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The cube map holds references to 6 images in used to visually represent the surrounding environment
 
@@ -2109,7 +2131,7 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
 class CogniteCubeMap(_CogniteCubeMapProperties, TypedNode):
     """This represents the reading format of Cognite cube map.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The cube map holds references to 6 images in used to visually represent the surrounding environment
 
@@ -2178,7 +2200,7 @@ class _CogniteDescribableProperties:
 class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply):
     """This represents the writing format of Cognite describable node.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
@@ -2215,7 +2237,7 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
 class CogniteDescribableNode(_CogniteDescribableProperties, TypedNode):
     """This represents the reading format of Cognite describable node.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
@@ -2285,9 +2307,10 @@ class _CogniteEquipmentProperties:
 class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
     """This represents the writing format of Cognite equipment.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Equipment represents physical supplies or devices.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2357,9 +2380,10 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
 class CogniteEquipment(_CogniteEquipmentProperties, TypedNode):
     """This represents the reading format of Cognite equipment.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Equipment represents physical supplies or devices.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
@@ -2468,9 +2492,10 @@ class _CogniteEquipmentTypeProperties:
 class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply):
     """This represents the writing format of Cognite equipment type.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents the type of equipment.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2516,9 +2541,10 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
 class CogniteEquipmentType(_CogniteEquipmentTypeProperties, TypedNode):
     """This represents the reading format of Cognite equipment type.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents the type of equipment.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
@@ -2602,9 +2628,10 @@ class _CogniteFileProperties:
 class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
     """This represents the writing format of Cognite file.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents files.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2671,9 +2698,10 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
 class CogniteFile(_CogniteFileProperties, TypedNode):
     """This represents the reading format of Cognite file.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents files.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
@@ -2783,9 +2811,10 @@ class _CogniteFileCategoryProperties:
 class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
     """This represents the writing format of Cognite file category.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents the categories of files as determined by contextualization or categorization.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -2828,9 +2857,10 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
 class CogniteFileCategory(_CogniteFileCategoryProperties, TypedNode):
     """This represents the reading format of Cognite file category.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents the categories of files as determined by contextualization or categorization.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
@@ -2902,9 +2932,10 @@ class _CognitePointCloudModelProperties:
 class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeApply):
     """This represents the writing format of Cognite point cloud model.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -2944,9 +2975,10 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
 class CognitePointCloudModel(_CognitePointCloudModelProperties, TypedNode):
     """This represents the reading format of Cognite point cloud model.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Navigational aid for traversing CognitePointCloudModel instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
@@ -3016,9 +3048,10 @@ class _CognitePointCloudRevisionProperties:
 class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, TypedNodeApply):
     """This represents the writing format of Cognite point cloud revision.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Navigational aid for traversing CognitePointCloudRevision instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
@@ -3055,9 +3088,10 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
 class CognitePointCloudRevision(_CognitePointCloudRevisionProperties, TypedNode):
     """This represents the reading format of Cognite point cloud revision.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Navigational aid for traversing CognitePointCloudRevision instances
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
@@ -3125,9 +3159,10 @@ class _CognitePointCloudVolumeProperties:
 class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNodeApply):
     """This represents the writing format of Cognite point cloud volume.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     PointCloud volume definition
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -3182,9 +3217,10 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
 class CognitePointCloudVolume(_CognitePointCloudVolumeProperties, TypedNode):
     """This represents the reading format of Cognite point cloud volume.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     PointCloud volume definition
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
@@ -3275,9 +3311,10 @@ class _CogniteSchedulableProperties:
 class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
     """This represents the writing format of Cognite schedulable.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -3311,9 +3348,10 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
 class CogniteSchedulable(_CogniteSchedulableProperties, TypedNode):
     """This represents the reading format of Cognite schedulable.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     CogniteSchedulable represents the metadata about when an activity (or similar) starts and ends.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
@@ -3373,9 +3411,10 @@ class _CogniteSourceSystemProperties:
 class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
     """This represents the writing format of Cognite source system.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -3415,9 +3454,10 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
 class CogniteSourceSystem(_CogniteSourceSystemProperties, TypedNode):
     """This represents the reading format of Cognite source system.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The CogniteSourceSystem core concept is used to standardize the way source system is stored.
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
@@ -3490,7 +3530,7 @@ class _CogniteSourceableProperties:
 class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
     """This represents the writing format of Cognite sourceable node.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -3534,7 +3574,7 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
 class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
     """This represents the reading format of Cognite sourceable node.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -3615,9 +3655,10 @@ class _CogniteTimeSeriesProperties:
 class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
     """This represents the writing format of Cognite time series.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents a series of data points in time order."
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
@@ -3690,9 +3731,10 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
 class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
     """This represents the reading format of Cognite time series.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents a series of data points in time order."
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
@@ -3804,9 +3846,10 @@ class _CogniteUnitProperties:
 class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
     """This represents the writing format of Cognite unit.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Represents a single unit of measurement
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite unit.
@@ -3852,9 +3895,10 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
 class CogniteUnit(_CogniteUnitProperties, TypedNode):
     """This represents the reading format of Cognite unit.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Represents a single unit of measurement
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite unit.
@@ -3930,9 +3974,10 @@ class _CogniteVisualizableProperties:
 class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
     """This represents the writing format of Cognite visualizable.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -3957,9 +4002,10 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
 class CogniteVisualizable(_CogniteVisualizableProperties, TypedNode):
     """This represents the reading format of Cognite visualizable.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     CogniteVisualizable defines the standard way to reference a related 3D resource
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
@@ -4013,7 +4059,7 @@ class _Cognite360ImageAnnotationProperties:
 class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, TypedEdgeApply):
     """This represents the writing format of Cognite 360 image annotation.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -4085,7 +4131,7 @@ class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, Typed
 class Cognite360ImageAnnotation(_Cognite360ImageAnnotationProperties, TypedEdge):
     """This represents the reading format of Cognite 360 image annotation.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -4190,7 +4236,7 @@ class Cognite360ImageAnnotation(_Cognite360ImageAnnotationProperties, TypedEdge)
 class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, TypedEdgeApply):
     """This represents the writing format of Cognite 3D transformation edge.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
@@ -4246,7 +4292,7 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
 class Cognite3DTransformationEdge(_Cognite3DTransformationProperties, TypedEdge):
     """This represents the reading format of Cognite 3D transformation edge.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The Cognite3DTransformation object defines a comprehensive 3D transformation, enabling precise adjustments to an object's position, orientation, and size in the 3D coordinate system. It allows for the translation of objects along the three spatial axes, rotation around these axes using Euler angles, and scaling along each axis to modify the object's dimensions. The object's transformation is defined in "CDF space", a coordinate system where the positive Z axis is the up direction
 
@@ -4342,9 +4388,10 @@ class _CogniteAnnotationProperties:
 class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
     """This represents the writing format of Cognite annotation.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Annotation represents contextualization results or links
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4409,9 +4456,10 @@ class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
 class CogniteAnnotation(_CogniteAnnotationProperties, TypedEdge):
     """This represents the reading format of Cognite annotation.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Annotation represents contextualization results or links
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite annotation.
@@ -4507,7 +4555,7 @@ class CogniteAnnotation(_CogniteAnnotationProperties, TypedEdge):
 class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply):
     """This represents the writing format of Cognite describable edge.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
@@ -4548,7 +4596,7 @@ class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply)
 class CogniteDescribableEdge(_CogniteDescribableProperties, TypedEdge):
     """This represents the reading format of Cognite describable edge.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     The describable core concept is used as a standard way of holding the bare minimum of information about the instance
 
@@ -4636,9 +4684,10 @@ class _CogniteDiagramAnnotationProperties:
 class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEdgeApply):
     """This represents the writing format of Cognite diagram annotation.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Annotation for diagrams
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -4739,9 +4788,10 @@ class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEd
 class CogniteDiagramAnnotation(_CogniteDiagramAnnotationProperties, TypedEdge):
     """This represents the reading format of Cognite diagram annotation.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Annotation for diagrams
+
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite diagram annotation.
@@ -4885,7 +4935,7 @@ class CogniteDiagramAnnotation(_CogniteDiagramAnnotationProperties, TypedEdge):
 class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
     """This represents the writing format of Cognite sourceable edge.
 
-    It is used to when data is written to CDF.
+    It is used when data is written to CDF.
 
     Args:
         space (str): The space where the node is located.
@@ -4933,7 +4983,7 @@ class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
 class CogniteSourceableEdge(_CogniteSourceableProperties, TypedEdge):
     """This represents the reading format of Cognite sourceable edge.
 
-    It is used to when data is read from CDF.
+    It is used when data is read from CDF.
 
     Args:
         space (str): The space where the node is located.

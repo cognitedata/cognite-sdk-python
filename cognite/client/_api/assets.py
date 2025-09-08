@@ -4,7 +4,6 @@ import functools
 import heapq
 import itertools
 import math
-import operator as op
 import threading
 import warnings
 from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -44,7 +43,7 @@ from cognite.client.data_classes.assets import (
     SortableAssetProperty,
 )
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteMultiException
 from cognite.client.utils._auxiliary import split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import ConcurrencySettings, classify_error, execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence
@@ -1421,27 +1420,24 @@ class _AssetHierarchyCreator:
 
     def _raise_latest_exception(self, exceptions: list[Exception], successful: list[Asset]) -> NoReturn:
         *_, latest_exception = exceptions
-        common = dict(
-            successful=AssetList(successful),
-            unknown=AssetList(self.unknown),
-            failed=AssetList(self.failed),
-            unwrap_fn=op.attrgetter("external_id"),
-            cluster=self.assets_api._config.cdf_cluster,
-        )
         err_message = "One or more errors happened during asset creation. Latest error:"
         if isinstance(latest_exception, CogniteAPIError):
             raise CogniteAPIError(
                 message=f"{err_message} {latest_exception.message}",
                 x_request_id=latest_exception.x_request_id,
                 code=latest_exception.code,
+                cluster=self.assets_api._config.cdf_cluster,
+                project=self.assets_api._config.project,
                 extra=latest_exception.extra,
-                **common,  # type: ignore [arg-type]
+                successful=AssetList(successful),
+                unknown=AssetList(self.unknown),
+                failed=AssetList(self.failed),
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
-        # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
+        # the underlying reason from the user. We do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
-        raise CogniteAPIError(
-            message=f"{err_message} {type(latest_exception).__name__}('{latest_exception}')",
-            code=None,  # type: ignore [arg-type]
-            **common,  # type: ignore [arg-type]
+        raise CogniteMultiException(
+            successful=AssetList(successful),
+            unknown=AssetList(self.unknown),
+            failed=AssetList(self.failed),
         ) from latest_exception

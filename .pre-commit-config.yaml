@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.0
+    rev: v0.12.11
     hooks:
       - id: ruff
         args:
@@ -20,7 +20,7 @@ repos:
           - --exclude=cognite/client/_proto*
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: debug-statements
       - id: check-docstring-first
@@ -33,6 +33,8 @@ repos:
         entry: |
           poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
           tests/tests_unit/test_data_classes/test_data_models
+          tests/tests_unit/test_utils/test_time.py
+          tests/tests_integration/test_api/test_datapoints.py
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
@@ -48,7 +50,7 @@ repos:
         require_serial: true  # avoid possible race conditions
 
   - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
-    rev: 0.6.0
+    rev: 0.7.3
     hooks:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)

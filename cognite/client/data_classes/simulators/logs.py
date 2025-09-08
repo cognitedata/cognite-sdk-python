@@ -23,6 +23,7 @@ Severity = Literal["Debug", "Information", "Warning", "Error"]
 class SimulatorLogData(CogniteObject):
     """
     Simulator log data represents a single log entry in a simulator log.
+
     Args:
         timestamp (int): Timestamp of the log message.
         message (str): Log message.

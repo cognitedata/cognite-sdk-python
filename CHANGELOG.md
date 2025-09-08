@@ -8,14 +8,121 @@ The changelog for SDK version 0.x.x can be found [here](https://github.com/cogni
 
 For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
 
-Changes are grouped as follows
-- `Added` for new features.
-- `Changed` for changes in existing functionality.
-- `Deprecated` for soon-to-be removed features.
-- `Improved` for transparent changes, e.g. better performance.
-- `Removed` for now removed features.
-- `Fixed` for any bug fixes.
-- `Security` in case of vulnerabilities.
+As of 2025-08-29, changes are grouped as follows
+- ✨ Features: New features or additions to existing features.
+- 🐛 Bug Fixes: Bug fixes.
+- ⚡ Improvements: Transparent changes, e.g. better performance.
+
+## [7.83.1] - 2025-08-30
+### Changed
+- [beta] Agents API updated to beta maturity (SDK implementation remains alpha).
+
+## [7.83.0] - 2025-08-28
+### Added
+- Add `timezone` as an optional param to the WorkflowScheduledTriggerRule.
+
+## [Unreleased]
+### Added
+- [alpha] Support for `created_time` and `simulation_time` filters in `client.simulators.runs.list()` to filter simulation runs by timestamp ranges.
+- Added `get_quantities()` and `get_units()` methods to the `Simulator` class for easier access to simulator unit quantities and their units.
+
+## [7.82.1] - 2025-08-28
+### Fixed
+- Fix documentation of files.upload_content. It does not support directories. Use more meaningful errors when the path is not a file. 
+
+## [7.82.0] - 2025-08-26
+### Added
+- Added support for specifying `max_text_size` in DMS text properties.
+
+## [7.81.3] - 2025-08-26
+### Added
+- Added missing parameter `nonce` to the `FunctionScheduleWrite` method to allow passing 
+  a custom nonce.
+
+## [7.81.2] - 2025-08-21
+### Changed
+- Attributes `run_time` and `simulation_time` are now automatically converted to timestamp format (when calling `to_pandas(...)`)
+
+## [7.81.1] - 2025-08-20
+### Fixed
+- [alpha] Breaking change: fixed naming inconsistencies in simulators module. Renamed `SimulatorRunList` to `SimulationRunList` and `SimulatorRunDataList` to `SimulationRunDataList`
+
+## [7.81.0] - 2025-08-19
+### Added
+- Support for external dependencies in simulator and simulator model revisions resources.
+
+## [7.80.3] - 2025-08-17
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for chat.
+
+## [7.80.2] - 2025-08-16
+### Fixed
+- Added missing parameter `description` to `DatapointSubscriptionUpdate` object such that it can be updated
+  in the `client.time_series.subscriptions.update(...)` method.
+
+## [7.80.1] - 2025-08-14
+### Fixed
+- Make CogniteAPIError.response_code non-nullable again, addressing a regression introduced in the previous version.
+
+## [7.80.0] - 2025-08-11
+### Added
+- Emit project name in exceptions to make it easier to gather relevant context.
+
+## [7.79.0] - 2025-08-01
+### Changed
+- [alpha] Breaking change: Filtering consistency in __call__ methods for simulator integrations, model and model revisions.
+
+## [7.78.1] - 2025-08-01
+### Changed
+- Only emit counts for each status (successful, failed, unknown, skipped) in exception __str__ reprs. The actual 
+  underlying objects are still available through the `succesful`, `unknown`, `failed`, and `skipped` attributes.
+### Fixed
+- Fixes type annotations for Functions API. Adds new `FunctionHandle` type for annotating function handles.
+
+## [7.78.0] - 2025-07-29
+### Added
+- Support for two-phase syncing of instances. See `sync_mode` and `backfill_sort` on the `NodeResultSet` class.
+### Changed
+- Improved error messages when using query-specific fields in sync, and vice versa.
+
+## [7.77.3] - 2025-07-28
+### Added
+- Comprehensive documentation for the simulators API endpoints
+
+### Changed
+- Consistency improvements across the simulators API namespace
+
+## [7.77.2] - 2025-07-25
+### Added
+- Agents now maintains all properties returned from the API when using the `.load(...)` and `.dump(...)` methods. 
+  Similarly, you can load an `AgentUpsert` from a `dict`/`YAML`/`JSON` object using the `AgentUpsert.load(...)` method
+  and all properties will be sent to the API.
+
+## [7.77.1] - 2025-07-23
+### Added
+- Added new `agentsAcl` capability.
+
+## [7.77.0] - 2025-07-17
+### Added
+- Support for the `/models/statistics` API endpoints with methods `client.data_modeling.statistics.project()`,
+  `client.data_modeling.statistics.spaces.list()`, and `client.data_modeling.statistics.spaces.retrieve(...)`.
+
+## [7.76.1] - 2025-07-12
+### Added
+- [alpha] Support for the `/ai/agents` API endpoint for upsert, retrieve, list and delete.
+
+## [7.76.0] - 2025-06-25
+### Added
+- When ingesting datapoints, `insert_dataframe` now accepts instance IDs as column names when `instance_id_headers` is `True`. Note, in th next major release of the SDK, the behaviour of the column names will change and the ID type of the column will be determined based on the type of the column name. E.g. if the column name is of type `NodeId` it will automatically be interpreted as instance ID.
+
+## [7.75.3] - 2025-06-25
+### Added
+- Added new `appConfigAcl` capability.
+
+## [7.75.2] - 2025-06-05
+### Fixed
+- The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
+  you to not infer the data types of column types in the returning dataframe.
 
 ## [7.76.0] - 2025-05-19
 ### Added

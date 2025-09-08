@@ -81,11 +81,12 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.workflows import WorkflowTriggerUpsert, WorkflowScheduledTriggerRule
+                >>> from zoneinfo import ZoneInfo
                 >>> client = CogniteClient()
                 >>> client.workflows.triggers.upsert(
                 ...     WorkflowTriggerUpsert(
                 ...         external_id="my_trigger",
-                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *"),
+                ...         trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 0 * * *", timezone=ZoneInfo("UTC")),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",
                 ...         input={"a": 1, "b": 2},
@@ -876,10 +877,10 @@ class WorkflowAPI(APIClient):
         return self()
 
     @overload
-    def upsert(self, workflow: WorkflowUpsert) -> Workflow: ...
+    def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...
 
     @overload
-    def upsert(self, workflow: Sequence[WorkflowUpsert]) -> WorkflowList: ...
+    def upsert(self, workflow: Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace") -> WorkflowList: ...
 
     def upsert(
         self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
@@ -923,10 +924,10 @@ class WorkflowAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_id: str) -> Workflow | None: ...
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Workflow | None: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str]) -> WorkflowList: ...
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> WorkflowList: ...
 
     def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False

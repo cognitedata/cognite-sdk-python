@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
+    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -28,11 +30,13 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
         model_external_id: str,
         file_id: int,
         description: str | None = None,
+        external_dependencies: list[SimulatorModelRevisionDependency] | None = None,
     ) -> None:
         self.external_id = external_id
         self.model_external_id = model_external_id
         self.file_id = file_id
         self.description = description
+        self.external_dependencies = external_dependencies
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -41,7 +45,19 @@ class SimulatorModelRevisionCore(WriteableCogniteResource["SimulatorModelRevisio
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        if self.external_dependencies is not None:
+            output["externalDependencies"] = [item.dump(camel_case=camel_case) for item in self.external_dependencies]
+
+        return output
 
 
 class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
@@ -58,13 +74,20 @@ class SimulatorModelRevisionWrite(SimulatorModelRevisionCore):
             model_external_id=resource["modelExternalId"],
             file_id=resource["fileId"],
             description=resource.get("description"),
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
 
 
 class SimulatorModelRevision(SimulatorModelRevisionCore):
     """
     Simulator model revisions track changes and updates to a simulator model over time.
+
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     Args:
         id (int): Internal id of the simulator model revision
         external_id (str): External id of the simulator model revision
@@ -80,6 +103,7 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id (int): The id of the log associated with the simulator model revision
         description (str | None): The description of the simulator model revision
         status_message (str | None): The current status message of the simulator model revision
+        external_dependencies (list[SimulatorModelRevisionDependency] | None): A list of external dependencies for the simulator model revision
     """
 
     def __init__(
@@ -98,12 +122,14 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
         log_id: int,
         description: str | None = None,
         status_message: str | None = None,
+        external_dependencies: list[SimulatorModelRevisionDependency] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
             model_external_id=model_external_id,
             file_id=file_id,
             description=description,
+            external_dependencies=external_dependencies,
         )
         self.id = id
         self.created_time = created_time
@@ -133,6 +159,11 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
             log_id=resource["logId"],
             description=resource.get("description"),
             status_message=resource.get("statusMessage"),
+            external_dependencies=SimulatorModelRevisionDependency._load_list(
+                resource["externalDependencies"], cognite_client
+            )
+            if "externalDependencies" in resource
+            else None,
         )
 
     def as_write(self) -> SimulatorModelRevisionWrite:
@@ -148,13 +179,16 @@ class SimulatorModelRevision(SimulatorModelRevisionCore):
 class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
     """
     The simulator model resource represents an asset modeled in a simulator.
+
     This asset could range from a pump or well to a complete processing facility or refinery.
     The simulator model is the root of its associated revisions, routines, runs, and results.
     The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
     maintaining the integrity and hierarchy of the simulation data.
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     This is the read/response format of a simulator model.
+
     Args:
         external_id (str): External id of the simulator model
         simulator_external_id (str): External id of the associated simulator
@@ -200,13 +234,16 @@ class SimulatorModelWrite(SimulatorModelCore):
 class SimulatorModel(SimulatorModelCore):
     """
     The simulator model resource represents an asset modeled in a simulator.
+
     This asset could range from a pump or well to a complete processing facility or refinery.
     The simulator model is the root of its associated revisions, routines, runs, and results.
     The dataset assigned to a model is inherited by its children. Deleting a model also deletes all its children, thereby
     maintaining the integrity and hierarchy of the simulation data.
     Simulator model revisions track changes and updates to a simulator model over time.
     Each revision ensures that modifications to models are traceable and allows users to understand the evolution of a given model.
+
     This is the read/response format of a simulator model.
+
     Args:
         id (int): A unique id of a simulator model
         external_id (str): External id of the simulator model
@@ -315,3 +352,55 @@ class SimulatorModelUpdate(CogniteUpdate):
             PropertySpec("name"),
             PropertySpec("description"),
         ]
+
+
+@dataclass
+class SimulatorModelDependencyFileReference(CogniteObject): ...
+
+
+@dataclass
+class SimulatorModelDependencyFileId(SimulatorModelDependencyFileReference):
+    id: int
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+        )
+
+
+@dataclass
+class SimulatorModelRevisionDependency(CogniteObject):
+    """
+    Represents an external dependency for a simulator model revision.
+    Args:
+        file (int): The file ID associated with the external dependency.
+        arguments (dict[str, str]): A dictionary that contains the key-value pairs (fields) for the external dependency.
+    """
+
+    file: SimulatorModelDependencyFileReference
+    arguments: dict[str, str]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            file=SimulatorModelDependencyFileId.load(resource["file"])
+            if "id" in resource["file"]
+            else resource["file"],
+            arguments=resource["arguments"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["file"] = (
+            self.file.dump(camel_case=camel_case)
+            if isinstance(self.file, SimulatorModelDependencyFileReference)
+            else self.file
+        )
+        return output
+
+    @classmethod
+    def _load_list(
+        cls, resource: list[dict[str, Any]], cognite_client: CogniteClient | None = None
+    ) -> list[SimulatorModelRevisionDependency]:
+        return [cls._load(item, cognite_client) for item in resource]

@@ -205,7 +205,8 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
 
 
 class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_View]]):
-    _RESOURCE = DataModel
+    # This should be DataModel[T_View], but generic causes issues with MyPy.
+    _RESOURCE = DataModel  # type: ignore[assignment]
 
     def as_apply(self) -> DataModelApplyList:
         """

@@ -810,10 +810,10 @@ class InstancesAPI(APIClient):
                 ...     print(result)
                 ...
                 >>> view_id = ViewId("someSpace", "someView", "v1")
-                >>> filter = Range(view_id.as_property_ref("releaseYear"), lt=2000)
+                >>> filter = Range(view_id.as_property_ref("createdYear"), lt=2023)
                 >>> query = Query(
-                ...     with_={"movies": NodeResultSetExpression(filter=filter)},
-                ...     select={"movies": Select([SourceSelector(view_id, ["releaseYear"])])}
+                ...     with_={"work_orders": NodeResultSetExpression(filter=filter)},
+                ...     select={"work_orders": Select([SourceSelector(view_id, ["createdYear"])])}
                 ... )
                 >>> subscription_context = client.data_modeling.instances.subscribe(query, just_print_the_result)
                 >>> subscription_context.cancel()
@@ -937,53 +937,51 @@ class InstancesAPI(APIClient):
 
             Create two nodes with data with a one-to-many edge
 
-                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
-                >>> actor = NodeApply(
-                ...     space="actors",
-                ...     external_id="arnold_schwarzenegger",
+                >>> from cognite.client.data_classes.data_modeling import ContainerId, EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> work_order = NodeApply(
+                ...     space="industrial",
+                ...     external_id="work_order:123",
                 ...     sources=[
+                ...         # Insert data through a view
                 ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "PersonView", "v1"),
-                ...             {"name": "Arnold Schwarzenegger", "birthYear": 1947}
-                ...         ),
-                ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "ActorView", "v1"),
-                ...             {"wonOscar": False}
+                ...             ViewId("mySpace", "WorkOrderView", "v1"),
+                ...             {"title": "Repair pump", "createdYear": 2023}
                 ...         )
                 ...     ]
                 ... )
-                >>> movie = NodeApply(
-                ...     space="movies",
-                ...     external_id="Terminator",
+                >>> pump = NodeApply(
+                ...     space="industrial",
+                ...     external_id="pump:456",
                 ...     sources=[
+                ...         # Insert data directly to the container
                 ...         NodeOrEdgeData(
-                ...             ViewId("mySpace", "MovieView", "v1"),
-                ...             {"title": "Terminator", "releaseYear": 1984}
+                ...             ContainerId("mySpace", "PumpContainer"),
+                ...             {"name": "Pump 456", "location": "Subsea"}
                 ...         )
                 ...     ]
                 ... )
-                ... # This is one-to-many edge, in this case from a person to a movie
-                >>> actor_to_movie = EdgeApply(
-                ...     space="actors",
-                ...     external_id="relation:arnold_schwarzenegger:terminator",
-                ...     type=("types", "acts-in"),
-                ...     start_node=("actors", "arnold_schwarzenegger"),
-                ...     end_node=("movies", "Terminator"),
+                ... # This is one-to-many edge, in this case from a work order to a pump
+                >>> work_order_to_pump = EdgeApply(
+                ...     space="industrial",
+                ...     external_id="relation:work_order:123:pump:456",
+                ...     type=("industrial", "relates-to"),
+                ...     start_node=("industrial", "work_order:123"),
+                ...     end_node=("industrial", "pump:456"),
                 ... )
-                >>> res = client.data_modeling.instances.apply([actor, movie], [actor_to_movie])
+                >>> res = client.data_modeling.instances.apply([work_order, pump], [work_order_to_pump])
 
             Create new edge and automatically create end nodes.
 
                 >>> from cognite.client.data_classes.data_modeling import EdgeApply
-                >>> actor_to_movie = EdgeApply(
-                ...     space="actors",
-                ...     external_id="relation:arnold_schwarzenegger:terminator",
-                ...     type=("types", "acts-in"),
-                ...     start_node=("actors", "arnold_schwarzenegger"),
-                ...     end_node=("movies", "Terminator"),
+                >>> work_order_to_pump = EdgeApply(
+                ...     space="industrial",
+                ...     external_id="relation:work_order:123:pump:456",
+                ...     type=("industrial", "relates-to"),
+                ...     start_node=("industrial", "work_order:123"),
+                ...     end_node=("industrial", "pump:456"),
                 ... )
                 >>> res = client.data_modeling.instances.apply(
-                ...     edges=actor_to_movie,
+                ...     edges=work_order_to_pump,
                 ...     auto_create_start_nodes=True,
                 ...     auto_create_end_nodes=True
                 ... )
@@ -1282,13 +1280,13 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Get the average run time in minutes for movies grouped by release year:
+            Get the average run time in minutes for pumps grouped by release year:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
                 >>> client = CogniteClient()
                 >>> avg_run_time = aggs.Avg("runTimeMinutes")
-                >>> view_id = ViewId("mySpace", "PersonView", "v1")
+                >>> view_id = ViewId("mySpace", "PumpView", "v1")
                 >>> res = client.data_modeling.instances.aggregate(view_id, avg_run_time, group_by="releaseYear")
 
         """
@@ -1448,24 +1446,24 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Find actors in movies released before 2000 sorted by actor name:
+            Find work orders created before 2023 sorted by title:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
-                >>> movie_id = ViewId("mySpace", "MovieView", "v1")
-                >>> actor_id = ViewId("mySpace", "ActorView", "v1")
+                >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
+                >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(
                 ...     with_ = {
-                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...         "work_orders": NodeResultSetExpression(filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)),
+                ...         "work_orders_to_pumps": EdgeResultSetExpression(from_="work_orders", filter=Equals(["edge", "type"], {"space": work_order_id.space, "externalId": "WorkOrder.asset"})),
+                ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
                 ...     },
                 ...     select = {
-                ...         "actors": Select(
-                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
+                ...         "pumps": Select(
+                ...             [SourceSelector(pump_id, ["name"])], sort=[InstanceSort(pump_id.as_property_ref("name"))]),
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.query(query)
@@ -1490,6 +1488,7 @@ class InstancesAPI(APIClient):
 
                 >>> SourceSelector(source=ViewId("my-space", "my-xid", "v1"), properties=["*"])
         """
+        query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing)
 
     def sync(self, query: Query, include_typing: bool = False) -> QueryResult:
@@ -1506,7 +1505,7 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Find actors in movies released before 2000 sorted by actor name:
+            Find work orders created before 2023 sorted by title:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.instances import InstanceSort
@@ -1514,26 +1513,27 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> client = CogniteClient()
-                >>> movie_id = ViewId("mySpace", "MovieView", "v1")
-                >>> actor_id = ViewId("mySpace", "ActorView", "v1")
+                >>> work_order_id = ViewId("mySpace", "WorkOrderView", "v1")
+                >>> pump_id = ViewId("mySpace", "PumpView", "v1")
                 >>> query = Query(
                 ...     with_ = {
-                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...         "work_orders": NodeResultSetExpression(filter=Range(work_order_id.as_property_ref("createdYear"), lt=2023)),
+                ...         "work_orders_to_pumps": EdgeResultSetExpression(from_="work_orders", filter=Equals(["edge", "type"], {"space": work_order_id.space, "externalId": "WorkOrder.asset"})),
+                ...         "pumps": NodeResultSetExpression(from_="work_orders_to_pumps"),
                 ...     },
                 ...     select = {
-                ...         "actors": Select(
-                ...             [SourceSelector(actor_id, ["name"])], sort=[InstanceSort(actor_id.as_property_ref("name"))]),
+                ...         "pumps": Select(
+                ...             [SourceSelector(pump_id, ["name"])], sort=[InstanceSort(pump_id.as_property_ref("name"))]),
                 ...     },
                 ... )
                 >>> res = client.data_modeling.instances.sync(query)
-                >>> # Added a new movie with actors released before 2000
+                >>> # Added a new work order with pumps created before 2023
                 >>> query.cursors = res.cursors
                 >>> res_new = client.data_modeling.instances.sync(query)
 
-            In the last example, the res_new will only contain the actors that have been added with the new movie.
+            In the last example, the res_new will only contain the pumps that have been added with the new work order.
         """
+        query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing)
 
     def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool) -> QueryResult:
@@ -1651,6 +1651,17 @@ class InstancesAPI(APIClient):
 
                 >>> for instance_list in client.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
+
+            List instances with a view as source:
+
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> instance_list = client.data_modeling.instances.list(sources=ViewId("mySpace", "myView", "v1"))
+
+            Convert instances to pandas DataFrame with expanded properties:
+
+                >>> df = instance_list.to_pandas(expand_properties=True, camel_case=True)
+                >>> # expand_properties=True will add the properties directly as dataframe columns
+                >>> # camel_case=True will convert the DataFrame column names to camel case (e.g. externalId)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)

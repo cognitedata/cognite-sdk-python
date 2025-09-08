@@ -22,11 +22,13 @@ from pathlib import Path
 import numpy as np
 
 from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.data_classes.functions import FunctionHandle
 from cognite.client.utils._text import shorten
 
 FUNC_EXCEPTIONS = {}
 CLS_METHOD_EXCEPTIONS = {
     (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
+    (FunctionHandle, "__init__"),  # Reason: Protocol class doesn't have __init__ with return type
 }
 
 # Helper for testing specific class + method/property:
@@ -423,7 +425,7 @@ def format_docstring_function(fn) -> list[str]:
     return []
 
 
-def find_all_classes_and_funcs(files: list[Path]):
+def find_all_classes_and_funcs(files: tuple[Path, ...]):
     def predicate(obj):
         return inspect.isclass(obj) or inspect.isfunction(obj)
 
@@ -436,5 +438,5 @@ def find_all_classes_and_funcs(files: list[Path]):
     }
 
 
-def format_docstrings(files: list[Path]) -> str:
+def format_docstrings(files: tuple[Path, ...]) -> str:
     return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs(files))))

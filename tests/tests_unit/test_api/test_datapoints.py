@@ -13,6 +13,7 @@ import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json
 from cognite.client.utils._time import ZoneInfo, granularity_to_ms
@@ -642,6 +643,63 @@ class TestPandasIntegration:
                 },
             ]
         } == request_body
+
+    @pytest.mark.parametrize(
+        "instance_ids", [(NodeId("space", "123"), NodeId("space", "456")), (("space", "123"), ("space", "456"))]
+    )
+    def test_insert_dataframe_instance_ids(
+        self, cognite_client: CogniteClient, mock_post_datapoints, instance_ids: tuple
+    ):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        df = pd.DataFrame(
+            {instance_ids[0]: [1, 2, 3, 4], instance_ids[1]: [5.0, 6.0, 7.0, 8.0]},
+            index=pd.to_datetime(timestamps, unit="ms"),
+        )
+        res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+        assert res is None
+        request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
+        assert {
+            "items": [
+                {
+                    "instanceId": {"externalId": "123", "space": "space"},
+                    "datapoints": [{"timestamp": ts, "value": val} for ts, val in zip(timestamps, range(1, 5))],
+                },
+                {
+                    "instanceId": {"externalId": "456", "space": "space"},
+                    "datapoints": [{"timestamp": ts, "value": float(val)} for ts, val in zip(timestamps, range(5, 9))],
+                },
+            ]
+        } == request_body
+
+    def test_insert_dataframe_external_ids_and_instance_ids(self, cognite_client: CogniteClient):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        index = pd.to_datetime(timestamps, unit="ms")
+        df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
+        with pytest.raises(
+            ValueError, match="`instance_id_headers` and `external_id_headers` cannot be used at the same time."
+        ):
+            cognite_client.time_series.data.insert_dataframe(df, instance_id_headers=True)
+
+    def test_insert_dataframe_malformed_instance_ids(self, cognite_client: CogniteClient):
+        import pandas as pd
+
+        timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
+        index = pd.to_datetime(timestamps, unit="ms")
+        df = pd.DataFrame({"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]}, index=index)
+        with pytest.raises(
+            ValueError,
+            match="Could not find instance IDs in the column header. InstanceId are given as NodeId or tuple. Got <class 'str'>",
+        ):
+            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
+
+        df = pd.DataFrame({(123,): [1, 2, 3, 4], (456,): [5.0, 6.0, 7.0, 8.0]}, index=index)
+        # TODO: NodeId does not give a correct error message when tuples have the wrong number of elements. This should be fixed in the NodeId class.
+        with pytest.raises(KeyError):
+            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False, instance_id_headers=True)
 
     def test_insert_dataframe_with_nans(self, cognite_client):
         import pandas as pd

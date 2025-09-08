@@ -257,45 +257,45 @@ class ViewsAPI(APIClient):
                 ...     ViewApply,
                 ...     ViewId
                 ... )
-                >>> acts_in_edge_type = DirectRelationReference(space="imdb", external_id="acts-in")
-                >>> movie_view = ViewApply(
-                ...     space="imdb",
-                ...     external_id="Movie",
-                ...     version="1",
-                ...     name="Movie",
+                >>> work_order_for_asset = DirectRelationReference(space="mySpace", external_id="work_order_for_asset")
+                >>> work_order_view = ViewApply(
+                ...     space="mySpace",
+                ...     external_id="WorkOrder",
+                ...     version="v1",
+                ...     name="WorkOrder",
                 ...     properties={
                 ...         "title": MappedPropertyApply(
-                ...             container=ContainerId(space="imdb", external_id="Movie"),
+                ...             container=ContainerId(space="mySpace", external_id="WorkOrder"),
                 ...             container_property_identifier="title",
                 ...         ),
-                ...         "actors": MultiEdgeConnectionApply(
-                ...             type=acts_in_edge_type,
-                ...             direction="inwards",
-                ...             source=ViewId("imdb", "Actor", "1"),
-                ...             name="actors",
+                ...         "asset": MultiEdgeConnectionApply(
+                ...             type=work_order_for_asset,
+                ...             direction="outwards",
+                ...             source=ViewId("mySpace", "Asset", "v1"),
+                ...             name="asset",
                 ...         ),
                 ...     }
                 ... )
-                >>> actor_view = ViewApply(
-                ...     space="imdb",
-                ...     external_id="Actor",
-                ...     version="1",
-                ...     name="Actor",
+                >>> asset_view = ViewApply(
+                ...     space="mySpace",
+                ...     external_id="Asset",
+                ...     version="v1",
+                ...     name="Asset",
                 ...     properties={
                 ...         "name": MappedPropertyApply(
-                ...             container=ContainerId("imdb", "Actor"),
+                ...             container=ContainerId("mySpace", "Asset"),
                 ...             name="name",
                 ...             container_property_identifier="name",
                 ...         ),
-                ...         "movies": MultiEdgeConnectionApply(
-                ...             type=acts_in_edge_type,
-                ...             direction="outwards",
-                ...             source=ViewId("imdb", "Movie", "1"),
-                ...             name="movies",
+                ...         "work_orders": MultiEdgeConnectionApply(
+                ...             type=work_order_for_asset,
+                ...             direction="inwards",
+                ...             source=ViewId("mySpace", "WorkOrder", "v1"),
+                ...             name="work_orders",
                 ...         ),
                 ...     }
                 ... )
-                >>> res = client.data_modeling.views.apply([movie_view, actor_view])
+                >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """
         return self._create_multiple(
             list_cls=ViewList,

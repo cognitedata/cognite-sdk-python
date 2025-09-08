@@ -25,6 +25,12 @@ capabilities:
       - SUGGEST
       scope:
         all: {}
+  - appConfigAcl:
+      actions:
+        - READ
+        - WRITE
+      scope:
+        all: {}
   - assetsAcl:
       actions:
       - WRITE

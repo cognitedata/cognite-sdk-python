@@ -74,6 +74,7 @@ def http_client__init__(
 class EnvVarToken(CredentialProvider):
     """Credential provider that always reads token from an environment variable just-in-time,
     allowing refreshing the value by another entity.
+
     Args:
         key (str): The name of the env.var. to read from. Default: 'COGNITE_TOKEN'
     Raises:

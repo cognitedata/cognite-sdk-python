@@ -18,9 +18,9 @@ def a_function(cognite_client: CogniteClient) -> Function:
     name = "python-sdk-test-function"
     external_id = "python-sdk-test-function"
     description = "test function"
-    retrieved = cognite_client.functions.retrieve_multiple(external_ids=[external_id], ignore_unknown_ids=True)
+    retrieved = cognite_client.functions.retrieve(external_id=external_id)
     if retrieved:
-        return retrieved[0]
+        return retrieved
 
     function = cognite_client.functions.create(
         name=name,
@@ -197,3 +197,26 @@ class TestFunctionSchedulesAPI:
     def test_raise_retrieve_unknown(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteNotFoundError):
             cognite_client.functions.schedules.retrieve(id=[123])
+        assert cognite_client.functions.schedules.retrieve(id=123) is None
+
+    def test_create_with_nonce(self, cognite_client: CogniteClient, dummy_function: Function) -> None:
+        session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
+        schedule = FunctionScheduleWrite(
+            name="test_create_with_nonce",
+            cron_expression="0 0 * * *",
+            function_id=dummy_function.id,
+            data={"key": "value"},
+            nonce=session.nonce,
+        )
+        created: FunctionSchedule | None = None
+        try:
+            created = cognite_client.functions.schedules.create(schedule)
+
+            expected = schedule.dump()
+            # Nonce is not returned
+            expected.pop("nonce", None)
+            assert created.as_write().dump() == expected
+            assert created.session_id == session.id
+        finally:
+            if created:
+                cognite_client.functions.schedules.delete(created.id)

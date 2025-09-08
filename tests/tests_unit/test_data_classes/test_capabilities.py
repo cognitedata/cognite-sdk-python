@@ -31,9 +31,12 @@ from cognite.client.data_classes.capabilities import (
 
 def all_acls():
     yield from [
+        {"agentsAcl": {"actions": ["READ", "WRITE", "RUN"], "scope": {"all": {}}}},
         {"annotationsAcl": {"actions": ["WRITE", "READ", "SUGGEST", "REVIEW"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
+        {"appConfigAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"appConfigAcl": {"actions": ["READ", "WRITE"], "scope": {"appScope": {"apps": ["SEARCH"]}}}},
         {"auditlogAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"dataModelInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"dataModelInstancesAcl": {"actions": ["READ"], "scope": {"spaceScope": {"externalIds": ["maintain"]}}}},

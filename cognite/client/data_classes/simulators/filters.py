@@ -19,7 +19,7 @@ def _parse_str_or_sequence(value: str | SequenceNotStr[str] | None) -> list[str]
 class SimulatorIntegrationFilter(CogniteFilter):
     def __init__(
         self,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
         active: bool | None = None,
     ) -> None:
         self.simulator_external_ids = (
@@ -31,7 +31,7 @@ class SimulatorIntegrationFilter(CogniteFilter):
 class SimulatorModelsFilter(CogniteFilter):
     def __init__(
         self,
-        simulator_external_ids: str | Sequence[str] | None = None,
+        simulator_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> None:
         self.simulator_external_ids = (
             [simulator_external_ids] if isinstance(simulator_external_ids, str) else simulator_external_ids
@@ -41,10 +41,15 @@ class SimulatorModelsFilter(CogniteFilter):
 class SimulatorModelRevisionsFilter(CogniteFilter):
     def __init__(
         self,
-        model_external_ids: str | Sequence[str] | None = None,
+        model_external_ids: str | SequenceNotStr[str] | None = None,
         all_versions: bool | None = None,
+        created_time: TimestampRange | None = None,
+        last_updated_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = [model_external_ids] if isinstance(model_external_ids, str) else model_external_ids
+        self.all_versions = all_versions
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
 
 
 class SimulatorRunsFilter(CogniteFilter):
@@ -58,6 +63,8 @@ class SimulatorRunsFilter(CogniteFilter):
         routine_external_ids: str | SequenceNotStr[str] | None = None,
         routine_revision_external_ids: str | SequenceNotStr[str] | None = None,
         model_revision_external_ids: str | SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> None:
         self.model_external_ids = _parse_str_or_sequence(model_external_ids)
         self.simulator_integration_external_ids = _parse_str_or_sequence(simulator_integration_external_ids)
@@ -67,6 +74,8 @@ class SimulatorRunsFilter(CogniteFilter):
         self.model_revision_external_ids = _parse_str_or_sequence(model_revision_external_ids)
         self.status = status
         self.run_type = run_type
+        self.created_time = created_time
+        self.simulation_time = simulation_time
 
 
 class SimulatorRoutinesFilter(CogniteFilter):

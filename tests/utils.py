@@ -18,6 +18,7 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from zoneinfo import ZoneInfo
 
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
@@ -74,23 +75,32 @@ T_Type = TypeVar("T_Type", bound=type)
 UNION_TYPES = {typing.Union, UnionType}
 
 
-def all_subclasses(base: T_Type) -> list[T_Type]:
+def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
     Ignores classes not part of the main library, e.g. subclasses part of tests.
+
+    Args:
+        base: The base class to find subclasses of.
+        exclude: A set of classes to exclude from the results.
+
+    Returns:
+        A list of subclasses.
+
     """
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c))
+            - (exclude or set()),
         ),
         key=str,
     )
 
 
-def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     return [
         sub
-        for sub in all_subclasses(base)
+        for sub in all_subclasses(base, exclude=exclude)
         if all(base is not abc.ABC for base in sub.__bases__)
         and not inspect.isabstract(sub)
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
@@ -148,12 +158,12 @@ def rng_context(seed: int | str):
                 pass
 
 
-def random_cognite_ids(n):
+def random_cognite_ids(n: int) -> list[int]:
     # Returns list of random, valid Cognite internal IDs:
     return random.choices(range(1, MAX_VALID_INTERNAL_ID + 1), k=n)
 
 
-def random_cognite_external_ids(n, str_len=50):
+def random_cognite_external_ids(n: int, str_len: int = 50) -> list[str]:
     # Returns list of random, valid Cognite external IDs:
     return [random_string(str_len) for _ in range(n)]
 
@@ -241,7 +251,7 @@ def cdf_aggregate(
     raw_df: pandas.DataFrame,
     aggregate: Literal["average", "sum", "count"],
     granularity: str,
-    is_step: bool = False,
+    is_step: bool | None = False,
     raw_freq: str | None = None,
 ) -> pandas.DataFrame:
     """Aggregates the dataframe as CDF is doing it on the database layer.
@@ -337,6 +347,12 @@ class FakeCogniteResourceGenerator:
         self._cognite_client = cognite_client or CogniteClientMock()
 
     def create_instance(self, resource_cls: type[T_Object], skip_defaulted_args: bool = False) -> T_Object:
+        if abc.ABC in resource_cls.__bases__:
+            subclasses = all_concrete_subclasses(resource_cls)
+            if len(subclasses) == 0:
+                raise TypeError(f"Cannot create instance of abstract class {resource_cls.__name__}")
+            resource_cls = self._random.choice(subclasses) if subclasses else resource_cls
+
         signature = inspect.signature(resource_cls.__init__)
         try:
             type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
@@ -532,6 +548,9 @@ class FakeCogniteResourceGenerator:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
         elif type_ is CogniteClient:
             return self._cognite_client
+        elif type_ is ZoneInfo:
+            # Special case for ZoneInfo - provide a default timezone
+            return ZoneInfo("UTC")
         elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
             implementations = all_concrete_subclasses(type_)
             if type_ is Filter:
@@ -623,3 +642,19 @@ class FakeCogniteResourceGenerator:
             # Python 3.10 Type Hint
             if annotation.startswith("Sequence[") and annotation.endswith("]"):
                 return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+
+
+def get_or_raise(obj: T | None) -> T:
+    """Get the object or raise an exception if it is None."""
+    if obj is None:
+        raise ValueError("Object is None")
+    return obj
+
+
+def assert_all_value_types_equal(d1: dict, d2: dict) -> None:
+    assert d1.keys() == d2.keys()
+    for k in d1.keys():
+        v1, v2 = d1[k], d2[k]
+        assert type(v1) is type(v2), f"Type mismatch for key '{k}': {type(v1)} != {type(v2)}"
+        if isinstance(v1, dict) and isinstance(v2, dict):
+            assert_all_value_types_equal(v1, v2)

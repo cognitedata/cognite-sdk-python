@@ -489,6 +489,15 @@ class SpaceIDScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class AppConfigScope(Capability.Scope):
+    _scope_name = "appScope"
+    apps: list[Literal["SEARCH"]]
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, i) for i in self.apps}
+
+
+@dataclass(frozen=True)
 class PartitionScope(Capability.Scope):
     _scope_name = "partition"
     partition_ids: list[int]
@@ -556,6 +565,21 @@ class UnknownAcl(Capability):
 
 
 @dataclass
+class AgentsAcl(Capability):
+    _capability_name = "agentsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        READ = "READ"
+        WRITE = "WRITE"
+        RUN = "RUN"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class AnalyticsAcl(Capability):
     _capability_name = "analyticsAcl"
     actions: Sequence[Action]
@@ -584,6 +608,21 @@ class AnnotationsAcl(Capability):
 
     class Scope:
         All = AllScope
+
+
+@dataclass
+class AppConfigAcl(Capability):
+    _capability_name = "appConfigAcl"
+    actions: Sequence[Action]
+    scope: AllScope | AppConfigScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        AppConfig = AppConfigScope
 
 
 @dataclass
