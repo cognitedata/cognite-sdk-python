@@ -9,7 +9,13 @@ from cognite.client.data_classes import Function, FunctionList, FunctionSchedule
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 
-def handle(client, data) -> str:
+def handle(
+    *,
+    client: CogniteClient | None = None,
+    data: dict[str, object] | None = None,
+    secrets: dict[str, str] | None = None,
+    function_call_info: dict[str, object] | None = None,
+) -> object:
     return "Hello, world!"
 
 
@@ -38,7 +44,13 @@ def dummy_function(cognite_client: CogniteClient) -> Function:
     if retrieved:
         return retrieved[0]
 
-    def handle(client, data, secrets, function_call_info):
+    def handle(
+        *,
+        client: CogniteClient | None = None,
+        data: dict[str, object] | None = None,
+        secrets: dict[str, str] | None = None,
+        function_call_info: dict[str, object] | None = None,
+    ) -> object:
         print(f"Inputs: {data!r}")  # noqa
         print(f"Call info: {function_call_info!r}")  # noqa
         return data
@@ -98,6 +110,7 @@ class TestFunctionsAPI:
         expected_unique_schedules = 5
         # This is an integration test dummy function that purposefully doesn't have an external id.
         fn = cognite_client.functions.retrieve(id=dummy_function.id)
+        assert fn
         schedules = fn.list_schedules(limit=-1)
 
         assert len(schedules) == expected_unique_schedules
@@ -202,7 +215,13 @@ class TestFunctionSchedulesAPI:
     def test_create_with_nonce(self, cognite_client: CogniteClient) -> None:
         session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
 
-        def handle(client, data, secrets, function_call_info):
+        def handle(
+            *,
+            client: CogniteClient | None = None,
+            data: dict[str, object] | None = None,
+            secrets: dict[str, str] | None = None,
+            function_call_info: dict[str, object] | None = None,
+        ) -> object:
             print(f"Inputs: {data!r}")  # noqa
             print(f"Call info: {function_call_info!r}")  # noqa
             return data
