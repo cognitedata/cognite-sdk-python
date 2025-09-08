@@ -85,14 +85,14 @@ class TestDocumentsAPI:
         cognite_client: CogniteClient,
         document_list: FileMetadataList,
         text_file: FileMetadata,
-    ):
+    ) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
 
         documents = cognite_client.documents.list(
             limit=5, filter=is_integration_test, sort=SortableDocumentProperty.mime_type
         )
         assert len(documents) >= len(document_list)
-        assert [doc.mime_type for doc in documents] == sorted(doc.mime_type for doc in document_list)
+        assert [doc.mime_type for doc in documents] == sorted((doc.mime_type or "") for doc in document_list)
         exclude = _SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE
         retrieved_text = documents.get(id=text_file.id)
         assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
@@ -105,7 +105,7 @@ class TestDocumentsAPI:
         cognite_client: CogniteClient,
         document_list: FileMetadataList,
         pdf_file: FileMetadata,
-    ):
+    ) -> None:
         is_integration_test = flt.Prefix("externalId", _FILE_PREFIX)
         is_lorem = flt.Search(DocumentProperty.content, "lorem ipsum")
 
@@ -123,8 +123,8 @@ class TestDocumentsAPI:
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         res = cognite_client.documents.retrieve_content(id=text_file.id)
         assert isinstance(res, bytes)
-        res = res.decode("utf-8")[:-1]  # remove additional newline added by Files API
-        assert res == PLAIN_TEXT_CONTENT
+        res_str = res.decode("utf-8")[:-1]  # remove additional newline added by Files API
+        assert res_str == PLAIN_TEXT_CONTENT
 
     def test_retrieve_content_into_buffer(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         buffer = BytesIO()
@@ -143,7 +143,7 @@ class TestDocumentsAPI:
         assert actual.id == text_file.id
         assert actual.source_file.name == text_file.name
 
-    def test_search_no_filter_with_highlight(self, cognite_client: CogniteClient, text_file) -> None:
+    def test_search_no_filter_with_highlight(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         query = '"pro at pericula ullamcorper"'
 
         result = cognite_client.documents.search(query=query, highlight=True, limit=5)
@@ -228,6 +228,7 @@ class TestDocumentsAPI:
         is_text_doc = flt.Equals(DocumentProperty.mime_type, "text/plain")
 
         for text_doc in cognite_client.documents(filter=is_text_doc):
+            assert text_doc
             assert text_doc.mime_type == "text/plain"
             break
 
