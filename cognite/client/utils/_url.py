@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING, Any
-from urllib.parse import quote, urljoin
+from urllib.parse import quote
 
 if TYPE_CHECKING:
-    from cognite.client.config import ClientConfig
+    from cognite.client._basic_api_client import BasicAsyncAPIClient
 
 
 NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: tuple[str, ...] = (
@@ -65,11 +65,11 @@ VALID_URL_PATTERN = re.compile(r"^https?://[a-z\d.:\-]+(?:/api/v1/projects/[^/]+
 VALID_METHODS = {"GET", "POST", "PUT", "DELETE", "PATCH"}
 
 
-def resolve_url(method: str, url_path: str, api_version: str | None, config: ClientConfig) -> tuple[bool, str]:
+def resolve_url(api_client: BasicAsyncAPIClient, method: str, url_path: str) -> tuple[bool, str]:
     if not url_path.startswith("/"):
         raise ValueError("URL path must start with '/'")
 
-    full_url = get_base_url_with_base_path(api_version, config) + url_path
+    full_url = api_client._base_url_with_base_path + url_path
     is_retryable = validate_url_and_return_retryability(method, full_url)
     return is_retryable, full_url
 
@@ -83,12 +83,6 @@ def validate_url_and_return_retryability(method: str, full_url: str) -> bool:
         return is_retryable
 
     raise ValueError(f"URL {full_url} is not valid. Cannot resolve whether or not it is retryable")
-
-
-def get_base_url_with_base_path(api_version: str | None, config: ClientConfig) -> str:
-    if api_version:
-        return urljoin(config.base_url, f"/api/{api_version}/projects/{config.project}")
-    return config.base_url
 
 
 def can_be_retried(method: str, path: str) -> bool:
