@@ -3,7 +3,8 @@ from __future__ import annotations
 import numbers
 import urllib.parse
 from collections.abc import Iterator, Sequence
-from typing import Any, cast, overload
+from pathlib import Path
+from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -386,24 +387,42 @@ class GeospatialAPI(APIClient):
             other_params={"output": {"properties": properties}},
         )
 
+    @overload
     def update_features(
         self,
         feature_type_external_id: str,
-        feature: Feature | Sequence[Feature],
+        feature: Feature | FeatureWrite,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
-    ) -> FeatureList:
+    ) -> Feature: ...
+
+    @overload
+    def update_features(
+        self,
+        feature_type_external_id: str,
+        feature: Sequence[Feature] | Sequence[FeatureWrite],
+        allow_crs_transformation: bool = False,
+        chunk_size: int | None = None,
+    ) -> FeatureList: ...
+
+    def update_features(
+        self,
+        feature_type_external_id: str,
+        feature: Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite],
+        allow_crs_transformation: bool = False,
+        chunk_size: int | None = None,
+    ) -> Feature | FeatureList:
         """`Update features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
 
         Args:
             feature_type_external_id (str): No description.
-            feature (Feature | Sequence[Feature]): feature or list of features.
+            feature (Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite]): feature or list of features.
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
             chunk_size (int | None): maximum number of items in a single request to the api
 
         Returns:
-            FeatureList: Updated features
+            Feature | FeatureList: Updated features
 
         Examples:
 
@@ -428,16 +447,13 @@ class GeospatialAPI(APIClient):
         # they are more like a replace so an update looks like a feature creation
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
-        return cast(
-            FeatureList,
-            self._create_multiple(
-                list_cls=FeatureList,
-                resource_cls=Feature,
-                items=feature,
-                resource_path=resource_path,
-                extra_body_fields=extra_body_fields,
-                limit=chunk_size,
-            ),
+        return self._create_multiple(
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            items=feature,
+            resource_path=resource_path,
+            extra_body_fields=extra_body_fields,
+            limit=chunk_size,
         )
 
     def list_features(
@@ -914,7 +930,7 @@ class GeospatialAPI(APIClient):
         raster_property_name: str,
         raster_format: str,
         raster_srid: int,
-        file: str,
+        file: str | Path,
         allow_crs_transformation: bool = False,
         raster_scale_x: float | None = None,
         raster_scale_y: float | None = None,
@@ -927,7 +943,7 @@ class GeospatialAPI(APIClient):
             raster_property_name (str): the raster property name
             raster_format (str): the raster input format
             raster_srid (int): the associated SRID for the raster
-            file (str): the path to the file of the raster
+            file (str | Path): the path to the file of the raster
             allow_crs_transformation (bool): When the parameter is false, requests with rasters in Coordinate Reference System different from the one defined in the feature type will result in bad request response code.
             raster_scale_x (float | None): the X component of the pixel width in units of coordinate reference system
             raster_scale_y (float | None): the Y component of the pixel height in units of coordinate reference system
