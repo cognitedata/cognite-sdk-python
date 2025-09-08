@@ -188,7 +188,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
         return cls(
             data_models=data_models,
             instance_spaces=instance_spaces,
-            version=resource.get("version", "v2"),
+            version=resource.get("version"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
