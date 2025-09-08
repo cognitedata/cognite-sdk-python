@@ -5,14 +5,15 @@ import os
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import CreatedSession, Group, GroupList, SecurityCategory
+from cognite.client.data_classes import CreatedSession, Group, GroupList, GroupWrite, SecurityCategory
 from cognite.client.data_classes.capabilities import EventsAcl, ProjectCapabilityList
 from cognite.client.data_classes.iam import SecurityCategoryWrite
 from cognite.client.utils._text import random_string
+from tests.utils import get_or_raise
 
 
 @pytest.fixture(scope="session")
-def group_list(cognite_client) -> GroupList:
+def group_list(cognite_client: CogniteClient) -> GroupList:
     groups = cognite_client.iam.groups.list(all=True)
     assert len(groups) > 0
     return groups
@@ -27,12 +28,12 @@ class TestGroupsAPI:
         reason="CogniteAPIError: There can only be 1500 undeleted or deleted groups per project | code: 400"
     )
     @pytest.mark.parametrize("source_id, members", (("abc-123", None), (None, ["user1", "user2"])))
-    def test_create(self, cognite_client, source_id, members) -> None:
+    def test_create(self, cognite_client: CogniteClient, source_id: str | None, members: list[str] | None) -> None:
         metadata = {"haha": "blabla"}
         group: Group | None = None
         try:
             group = cognite_client.iam.groups.create(
-                Group(
+                GroupWrite(
                     name="bla",
                     capabilities=[EventsAcl([EventsAcl.Action.Read], EventsAcl.Scope.All())],
                     metadata=metadata,
@@ -46,7 +47,7 @@ class TestGroupsAPI:
             if members is None:
                 assert group.members is None
             else:
-                assert sorted(group.members) == members
+                assert sorted(get_or_raise(group.members)) == members
         finally:
             if group:
                 cognite_client.iam.groups.delete(group.id)
@@ -71,7 +72,7 @@ class TestSecurityCategoriesAPI:
         res = cognite_client.iam.security_categories.list()
         assert len(res) > 0
 
-    def test_create_and_delete(self, cognite_client) -> None:
+    def test_create_and_delete(self, cognite_client: CogniteClient) -> None:
         random_name = "test_" + random_string(10)
         res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name=random_name))
         assert res.id in {s.id for s in cognite_client.iam.security_categories.list()}
