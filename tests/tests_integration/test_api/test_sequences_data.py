@@ -179,11 +179,11 @@ class TestSequencesDataAPI:
         assert isinstance(dps, SequenceRows)
         assert len(dps) > 0
 
-    def test_retrieve_latest(self, cognite_client, small_sequence):
+    def test_retrieve_latest(self, cognite_client, small_sequence) -> None:
         dps = cognite_client.sequences.data.retrieve_last_row(id=small_sequence.id)
         assert len(dps) == 1
 
-    def test_retrieve_multi(self, cognite_client, small_sequence, pretend_timeseries):
+    def test_retrieve_multi(self, cognite_client, small_sequence, pretend_timeseries) -> None:
         dps = cognite_client.sequences.rows.retrieve(
             external_id=pretend_timeseries.external_id, id=small_sequence.id, start=0, end=None
         )
@@ -205,56 +205,56 @@ class TestSequencesDataAPI:
             df.columns
         )
 
-    def test_retrieve_dataframe(self, cognite_client, small_sequence):
+    def test_retrieve_dataframe(self, cognite_client, small_sequence) -> None:
         df = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5).to_pandas()
         assert df.shape[0] == 4
         assert df.shape[1] == 2
         assert np.diff(df.index).all()
 
-    def test_insert_dataframe(self, cognite_client, small_sequence, new_small_seq):
+    def test_insert_dataframe(self, cognite_client, small_sequence, new_small_seq) -> None:
         df = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5).to_pandas()
         cognite_client.sequences.data.insert_dataframe(df, id=new_small_seq.id)
 
-    def test_insert(self, cognite_client, new_seq):
+    def test_insert(self, cognite_client, new_seq) -> None:
         data = {i: ["str"] for i in range(1, 61)}
         cognite_client.sequences.data.insert(rows=data, column_external_ids=new_seq.column_external_ids, id=new_seq.id)
 
-    def test_insert_raw(self, cognite_client, new_seq_long):
+    def test_insert_raw(self, cognite_client, new_seq_long) -> None:
         data = [{"rowNumber": i, "values": [2 * i]} for i in range(1, 61)]
         cognite_client.sequences.data.insert(
             rows=data, column_external_ids=new_seq_long.column_external_ids, id=new_seq_long.id
         )
 
-    def test_insert_implicit_rows(self, cognite_client, new_seq_mixed):
+    def test_insert_implicit_rows(self, cognite_client, new_seq_mixed) -> None:
         data = {i: [i, "str"] for i in range(1, 10)}
         cognite_client.sequences.data.insert(data, id=new_seq_mixed.id, column_external_ids=["column0", "column1"])
 
-    def test_insert_copy(self, cognite_client, small_sequence, new_small_seq):
+    def test_insert_copy(self, cognite_client, small_sequence, new_small_seq) -> None:
         data = cognite_client.sequences.data.retrieve(id=small_sequence.id, start=0, end=5)
         cognite_client.sequences.data.insert(rows=data, id=new_small_seq.id, column_external_ids=None)
 
-    def test_delete_multiple(self, cognite_client, new_seq):
+    def test_delete_multiple(self, cognite_client, new_seq) -> None:
         cognite_client.sequences.data.delete(rows=[1, 2, 42, 3524], id=new_seq.id)
 
-    def test_retrieve_paginate(self, cognite_client: CogniteClient, string200: Sequence, post_spy):
+    def test_retrieve_paginate(self, cognite_client: CogniteClient, string200: Sequence, post_spy) -> None:
         data = cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=996)
         assert 200 == len(data.values[0])
         assert 995 == len(data)
         assert 4 == cognite_client.sequences.data._post.call_count  # around 300 rows per request for this case
 
-    def test_retrieve_paginate_max(self, cognite_client, pretend_timeseries, post_spy):
+    def test_retrieve_paginate_max(self, cognite_client, pretend_timeseries, post_spy) -> None:
         data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None)
         assert 1 == len(data.values[0])
         assert 54321 == len(data)
         assert 6 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
-    def test_retrieve_paginate_limit_small(self, cognite_client, pretend_timeseries, post_spy):
+    def test_retrieve_paginate_limit_small(self, cognite_client, pretend_timeseries, post_spy) -> None:
         data = cognite_client.sequences.data.retrieve(id=pretend_timeseries.id, start=0, end=None, limit=23)
         assert 1 == len(data.values[0])
         assert 23 == len(data)
         assert 1 == cognite_client.sequences.data._post.call_count  # 10k rows each of 54321 rows
 
-    def test_retrieve_paginate_limit_paged(self, cognite_client, pretend_timeseries, post_spy):
+    def test_retrieve_paginate_limit_paged(self, cognite_client, pretend_timeseries, post_spy) -> None:
         data = cognite_client.sequences.data.retrieve(
             id=pretend_timeseries.id, start=0, end=None, limit=40023
         ).to_pandas()
@@ -268,7 +268,7 @@ class TestSequencesDataAPI:
         assert 1 == len(dps.column_external_ids)
         assert isinstance(dps.values[0][0], str)
 
-    def test_retrieve_mixed(self, cognite_client, named_long_str):
+    def test_retrieve_mixed(self, cognite_client, named_long_str) -> None:
         dps = cognite_client.sequences.data.retrieve(id=named_long_str.id, start=42, end=43)
         assert 1 == len(dps)
         assert isinstance(dps.values[0][0], int)
@@ -279,11 +279,11 @@ class TestSequencesDataAPI:
         with pytest.raises(ValueError):
             dps.get_column("missingcol")
 
-    def test_retrieve_paginate_end_coinciding_with_page(self, cognite_client, string200, post_spy):
+    def test_retrieve_paginate_end_coinciding_with_page(self, cognite_client, string200, post_spy) -> None:
         cognite_client.sequences.data.retrieve(id=string200.id, start=1, end=118)
         assert 1 == cognite_client.sequences.data._post.call_count
 
-    def test_delete_range(self, cognite_client, new_seq_long):
+    def test_delete_range(self, cognite_client, new_seq_long) -> None:
         data = [(i, [10 * i]) for i in [1, 2, 3, 5, 8, 13, 21, 34]]
         cognite_client.sequences.data.insert(
             column_external_ids=new_seq_long.column_external_ids, rows=data, id=new_seq_long.id
