@@ -94,18 +94,18 @@ def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipelin
 
 class TestExtractionPipelinesAPI:
     @pytest.mark.usefixtures("an_extractor_pipeline")
-    def test_retrieve(self, cognite_client):
+    def test_retrieve(self, cognite_client) -> None:
         res = cognite_client.extraction_pipelines.list(limit=1)
         assert res[0] == cognite_client.extraction_pipelines.retrieve(id=res[0].id)
 
-    def test_retrieve_multiple(self, cognite_client):
+    def test_retrieve_multiple(self, cognite_client) -> None:
         res_listed_ids = [e.id for e in cognite_client.extraction_pipelines.list(limit=2)]
         res_lookup_ids = [e.id for e in cognite_client.extraction_pipelines.retrieve_multiple(res_listed_ids)]
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids
 
     @pytest.mark.usefixtures("an_extractor_pipeline")
-    def test_retrieve_unknown(self, cognite_client):
+    def test_retrieve_unknown(self, cognite_client) -> None:
         res = cognite_client.extraction_pipelines.list(limit=1)
         with pytest.raises(CogniteNotFoundError):
             cognite_client.extraction_pipelines.retrieve_multiple(ids=[res[0].id], external_ids=["this does not exist"])
@@ -114,7 +114,7 @@ class TestExtractionPipelinesAPI:
         )
         assert 1 == len(retr)
 
-    def test_update(self, cognite_client, new_extpipe: ExtractionPipeline):
+    def test_update(self, cognite_client, new_extpipe: ExtractionPipeline) -> None:
         update_extraction_pipeline = ExtractionPipelineUpdate(id=new_extpipe.id).metadata.set({"hey": "now"})
         res = cognite_client.extraction_pipelines.update(update_extraction_pipeline)
         assert {"hey": "now"} == res.metadata
@@ -122,11 +122,11 @@ class TestExtractionPipelinesAPI:
         res2 = cognite_client.extraction_pipelines.update(update_extraction_pipeline2)
         assert res2.metadata is None
 
-    def test_delete(self, cognite_client, new_extpipe: ExtractionPipeline):
+    def test_delete(self, cognite_client, new_extpipe: ExtractionPipeline) -> None:
         cognite_client.extraction_pipelines.delete(id=new_extpipe.id)
         assert cognite_client.extraction_pipelines.retrieve(id=new_extpipe.id) is None
 
-    def test_last_status_message(self, cognite_client, new_extpipe: ExtractionPipeline):
+    def test_last_status_message(self, cognite_client, new_extpipe: ExtractionPipeline) -> None:
         initial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert initial_message is None
 
@@ -136,7 +136,7 @@ class TestExtractionPipelinesAPI:
         new_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert new_message == "Oh no!"
 
-    def test_last_run_times(self, cognite_client, new_extpipe: ExtractionPipeline):
+    def test_last_run_times(self, cognite_client, new_extpipe: ExtractionPipeline) -> None:
         retrieve = cognite_client.extraction_pipelines.retrieve
         extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure == 0

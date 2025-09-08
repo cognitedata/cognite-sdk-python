@@ -23,7 +23,7 @@ def example_error():
 
 
 class TestRetryTracker:
-    def test_total_retries_exceeded(self, default_config):
+    def test_total_retries_exceeded(self, default_config) -> None:
         default_config._max_retries_total = 10
         rt = RetryTracker(default_config)
         rt.status = 4
@@ -34,7 +34,7 @@ class TestRetryTracker:
         assert rt.should_retry_total is False
         assert rt.should_retry_status_code(429) is False
 
-    def test_status_retries_exceeded(self, default_config):
+    def test_status_retries_exceeded(self, default_config) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(default_config)
         assert rt.should_retry_total is True
@@ -42,32 +42,32 @@ class TestRetryTracker:
         assert rt.should_retry_status_code(429) is False
         assert rt.last_failed_reason == "status_code=429"
 
-    def test_read_retries_exceeded(self, default_config, example_error):
+    def test_read_retries_exceeded(self, default_config, example_error) -> None:
         default_config._max_retries_read = 1
         rt = RetryTracker(default_config)
         assert rt.should_retry_timeout(example_error) is True
         assert rt.should_retry_timeout(example_error) is False
         assert rt.last_failed_reason == "RequestError"
 
-    def test_connect_retries_exceeded(self, default_config, example_error):
+    def test_connect_retries_exceeded(self, default_config, example_error) -> None:
         default_config._max_retries_connect = 1
         rt = RetryTracker(default_config)
         assert rt.should_retry_connect_error(example_error) is True
         assert rt.should_retry_connect_error(example_error) is False
 
-    def test_correct_retry_of_status(self, default_config):
+    def test_correct_retry_of_status(self, default_config) -> None:
         rt = RetryTracker(default_config)
         assert rt.should_retry_status_code(500) is False
         rt.config.status_codes_to_retry.add(500)
         assert rt.should_retry_status_code(500) is True
 
-    def test_get_backoff_time(self, default_config):
+    def test_get_backoff_time(self, default_config) -> None:
         rt = RetryTracker(default_config)
         for i in range(10):
             rt.read += 1
             assert 0 <= rt.get_backoff_time() <= default_config.max_backoff_seconds
 
-    def test_is_auto_retryable(self, default_config):
+    def test_is_auto_retryable(self, default_config) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(default_config)
 
