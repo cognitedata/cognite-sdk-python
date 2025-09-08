@@ -64,7 +64,6 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._text import random_string, to_snake_case
-from cognite.client.utils._url import get_base_url_with_base_path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -74,8 +73,8 @@ UNION_TYPES = {typing.Union, UnionType}  # TODO: Can we remove UnionType now tha
 
 
 def get_url(api: APIClient, path: str = "") -> str:
-    """Test helper to get the full URL for a given API + path"""
-    return get_base_url_with_base_path(api._api_version, api._config) + path
+    """Test helper to get the full URL for a given API + path (mostly to improve readability)"""
+    return api._base_url_with_base_path + path
 
 
 def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
