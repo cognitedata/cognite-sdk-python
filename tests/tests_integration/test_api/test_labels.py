@@ -30,7 +30,7 @@ def post_spy(cognite_client):
 
 
 class TestLabelsAPI:
-    def test_list(self, cognite_client, new_label, post_spy):
+    def test_list(self, cognite_client, new_label, post_spy) -> None:
         res = cognite_client.labels.list(limit=100)
         assert 0 < len(res) <= 100
         assert 1 == cognite_client.labels._post.call_count
@@ -61,13 +61,13 @@ class TestLabelsAPI:
         res = cognite_client.labels.retrieve(external_id="this does not exist", ignore_unknown_ids=True)
         assert res is None
 
-    def test_create_asset_with_label(self, cognite_client, new_label):
+    def test_create_asset_with_label(self, cognite_client, new_label) -> None:
         ac = cognite_client.assets.create(AssetWrite(name="any", labels=[Label(external_id=new_label.external_id)]))
         assert isinstance(ac, Asset)
         assert len(ac.labels) == 1
         cognite_client.assets.delete(id=ac.id)
 
-    def test_update_asset_with_label(self, cognite_client, new_label):
+    def test_update_asset_with_label(self, cognite_client, new_label) -> None:
         ac = cognite_client.assets.create(AssetWrite(name="any", description="delete me"))
         assert not ac.labels
         update = AssetUpdate(id=ac.id).labels.add([new_label.external_id])

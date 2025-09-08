@@ -23,33 +23,33 @@ def post_spy(cognite_client):
 
 
 class TestDataSetsAPI:
-    def test_retrieve(self, cognite_client, new_dataset):
+    def test_retrieve(self, cognite_client, new_dataset) -> None:
         assert new_dataset.id == cognite_client.data_sets.retrieve(new_dataset.id).id
 
-    def test_retrieve_multiple(self, cognite_client):
+    def test_retrieve_multiple(self, cognite_client) -> None:
         res_listed_ids = [e.id for e in cognite_client.data_sets.list(limit=2)]
         res_lookup_ids = [e.id for e in cognite_client.data_sets.retrieve_multiple(res_listed_ids)]
         for listed_id in res_listed_ids:
             assert listed_id in res_lookup_ids
 
-    def test_retrieve_unknown(self, cognite_client, new_dataset):
+    def test_retrieve_unknown(self, cognite_client, new_dataset) -> None:
         invalid_external_id = "this does not exist"
         with pytest.raises(CogniteNotFoundError) as error:
             cognite_client.data_sets.retrieve_multiple(ids=[new_dataset.id], external_ids=[invalid_external_id])
         assert error.value.not_found[0]["externalId"] == invalid_external_id
 
-    def test_list(self, cognite_client, post_spy):
+    def test_list(self, cognite_client, post_spy) -> None:
         with set_request_limit(cognite_client.data_sets, 1):
             res = cognite_client.data_sets.list(limit=2)
 
         assert 2 == len(res)
         assert 2 == cognite_client.data_sets._post.call_count
 
-    def test_aggregate(self, cognite_client):
+    def test_aggregate(self, cognite_client) -> None:
         res = cognite_client.data_sets.aggregate(filter=DataSetFilter(metadata={"1": "1"}))
         assert res[0].count > 0
 
-    def test_update(self, cognite_client, new_dataset):
+    def test_update(self, cognite_client, new_dataset) -> None:
         update_asset = DataSetUpdate(new_dataset.id).metadata.set({"1": "1"}).name.set("newname")
         res = cognite_client.data_sets.update(update_asset)
         assert {"1": "1"} == res.metadata
