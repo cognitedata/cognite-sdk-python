@@ -82,6 +82,65 @@ class _ResponseAdapter:
         return getattr(self._httpx_response, name)
 
 
+class _SyncAPIWrapper:
+    """Generic sync wrapper for async APIs."""
+    
+    def __init__(self, async_api):
+        self._async_api = async_api
+    
+    def __call__(self, **kwargs):
+        """Sync wrapper for async __call__ method."""
+        return _sync_wrapper(self._async_api.__call__)(self, **kwargs)
+    
+    def __iter__(self):
+        """Sync wrapper for async iterator."""
+        async_iter = self._async_api.__aiter__()
+        
+        # Convert async iterator to sync iterator
+        def sync_iter():
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                while True:
+                    try:
+                        item = loop.run_until_complete(async_iter.__anext__())
+                        yield item
+                    except StopAsyncIteration:
+                        break
+            finally:
+                loop.close()
+        
+        return sync_iter()
+    
+    def __getattr__(self, name):
+        """Dynamically wrap any async method from the underlying API."""
+        attr = getattr(self._async_api, name)
+        if callable(attr) and hasattr(attr, '__call__'):
+            # Check if it's an async method by looking for coroutine function
+            import inspect
+            if inspect.iscoroutinefunction(attr):
+                return _sync_wrapper(attr)(self)
+            else:
+                # If it's not async, just return it as-is
+                return attr
+        else:
+            # If it's not callable, return the attribute directly
+            return attr
+
+
+class _SyncAssetAPIWrapper(_SyncAPIWrapper):
+    """Sync wrapper for AsyncAssetsAPI with asset-specific methods."""
+    
+    @_sync_wrapper
+    async def retrieve_subtree(self, **kwargs):
+        return await self._async_api.retrieve_subtree(**kwargs)
+    
+    @_sync_wrapper
+    async def create_hierarchy(self, **kwargs):
+        return await self._async_api.create_hierarchy(**kwargs)
+
+
 class CogniteClient:
     """Main entrypoint into Cognite Python SDK.
 
@@ -98,6 +157,36 @@ class CogniteClient:
 
     def __init__(self, config: ClientConfig | None = None) -> None:
         self._async_client = AsyncCogniteClient(config)
+        
+        # Sync API endpoints (wrap async versions) - ALL APIs
+        self.annotations = _SyncAPIWrapper(self._async_client.annotations)
+        self.assets = _SyncAssetAPIWrapper(self._async_client.assets)
+        self.data_modeling = _SyncAPIWrapper(self._async_client.data_modeling)
+        self.data_sets = _SyncAPIWrapper(self._async_client.data_sets)
+        self.datapoints = _SyncAPIWrapper(self._async_client.datapoints)
+        self.datapoints_subscriptions = _SyncAPIWrapper(self._async_client.datapoints_subscriptions)
+        self.diagrams = _SyncAPIWrapper(self._async_client.diagrams)
+        self.documents = _SyncAPIWrapper(self._async_client.documents)
+        self.entity_matching = _SyncAPIWrapper(self._async_client.entity_matching)
+        self.events = _SyncAPIWrapper(self._async_client.events)
+        self.extraction_pipelines = _SyncAPIWrapper(self._async_client.extraction_pipelines)
+        self.files = _SyncAPIWrapper(self._async_client.files)
+        self.functions = _SyncAPIWrapper(self._async_client.functions)
+        self.geospatial = _SyncAPIWrapper(self._async_client.geospatial)
+        self.iam = _SyncAPIWrapper(self._async_client.iam)
+        self.labels = _SyncAPIWrapper(self._async_client.labels)
+        self.organization = _SyncAPIWrapper(self._async_client.organization)
+        self.raw = _SyncAPIWrapper(self._async_client.raw)
+        self.relationships = _SyncAPIWrapper(self._async_client.relationships)
+        self.sequences = _SyncAPIWrapper(self._async_client.sequences)
+        self.synthetic_time_series = _SyncAPIWrapper(self._async_client.synthetic_time_series)
+        self.templates = _SyncAPIWrapper(self._async_client.templates)
+        self.three_d = _SyncAPIWrapper(self._async_client.three_d)
+        self.time_series = _SyncAPIWrapper(self._async_client.time_series)
+        self.units = _SyncAPIWrapper(self._async_client.units)
+        self.user_profiles = _SyncAPIWrapper(self._async_client.user_profiles)
+        self.vision = _SyncAPIWrapper(self._async_client.vision)
+        self.workflows = _SyncAPIWrapper(self._async_client.workflows)
 
     @_sync_wrapper
     async def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:

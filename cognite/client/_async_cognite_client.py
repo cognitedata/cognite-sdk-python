@@ -5,6 +5,34 @@ from typing import Any
 import httpx
 
 from cognite.client._async_api_client import AsyncAPIClient
+from cognite.client._api_async.annotations import AsyncAnnotationsAPI
+from cognite.client._api_async.assets import AsyncAssetsAPI
+from cognite.client._api_async.data_modeling import AsyncDataModelingAPI
+from cognite.client._api_async.data_sets import AsyncDataSetsAPI
+from cognite.client._api_async.datapoints import AsyncDatapointsAPI
+from cognite.client._api_async.datapoints_subscriptions import AsyncDatapointsSubscriptionAPI
+from cognite.client._api_async.diagrams import AsyncDiagramsAPI
+from cognite.client._api_async.documents import AsyncDocumentsAPI
+from cognite.client._api_async.entity_matching import AsyncEntityMatchingAPI
+from cognite.client._api_async.events import AsyncEventsAPI
+from cognite.client._api_async.extractionpipelines import AsyncExtractionPipelinesAPI
+from cognite.client._api_async.files import AsyncFilesAPI
+from cognite.client._api_async.functions import AsyncFunctionsAPI
+from cognite.client._api_async.geospatial import AsyncGeospatialAPI
+from cognite.client._api_async.iam import AsyncIAMAPI
+from cognite.client._api_async.labels import AsyncLabelsAPI
+from cognite.client._api_async.organization import AsyncOrganizationAPI
+from cognite.client._api_async.raw import AsyncRawAPI
+from cognite.client._api_async.relationships import AsyncRelationshipsAPI
+from cognite.client._api_async.sequences import AsyncSequencesAPI
+from cognite.client._api_async.synthetic_time_series import AsyncSyntheticTimeSeriesAPI
+from cognite.client._api_async.templates import AsyncTemplatesAPI
+from cognite.client._api_async.three_d import AsyncThreeDAPI
+from cognite.client._api_async.time_series import AsyncTimeSeriesAPI
+from cognite.client._api_async.units import AsyncUnitsAPI
+from cognite.client._api_async.user_profiles import AsyncUserProfilesAPI
+from cognite.client._api_async.vision import AsyncVisionAPI
+from cognite.client._api_async.workflows import AsyncWorkflowsAPI
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
@@ -30,8 +58,37 @@ class AsyncCogniteClient:
         else:
             self._config = client_config
 
-        # For now, we'll use a placeholder for the API endpoints
-        # These will be replaced with async versions once we convert the individual API classes
+        # Async API endpoints - ALL APIs from original CogniteClient
+        self.annotations = AsyncAnnotationsAPI(self._config, self._API_VERSION, self)
+        self.assets = AsyncAssetsAPI(self._config, self._API_VERSION, self)
+        self.data_modeling = AsyncDataModelingAPI(self._config, self._API_VERSION, self)
+        self.data_sets = AsyncDataSetsAPI(self._config, self._API_VERSION, self)
+        self.datapoints = AsyncDatapointsAPI(self._config, self._API_VERSION, self)
+        self.datapoints_subscriptions = AsyncDatapointsSubscriptionAPI(self._config, self._API_VERSION, self)
+        self.diagrams = AsyncDiagramsAPI(self._config, self._API_VERSION, self)
+        self.documents = AsyncDocumentsAPI(self._config, self._API_VERSION, self)
+        self.entity_matching = AsyncEntityMatchingAPI(self._config, self._API_VERSION, self)
+        self.events = AsyncEventsAPI(self._config, self._API_VERSION, self)
+        self.extraction_pipelines = AsyncExtractionPipelinesAPI(self._config, self._API_VERSION, self)
+        self.files = AsyncFilesAPI(self._config, self._API_VERSION, self)
+        self.functions = AsyncFunctionsAPI(self._config, self._API_VERSION, self)
+        self.geospatial = AsyncGeospatialAPI(self._config, self._API_VERSION, self)
+        self.iam = AsyncIAMAPI(self._config, self._API_VERSION, self)
+        self.labels = AsyncLabelsAPI(self._config, self._API_VERSION, self)
+        self.organization = AsyncOrganizationAPI(self._config, self._API_VERSION, self)
+        self.raw = AsyncRawAPI(self._config, self._API_VERSION, self)
+        self.relationships = AsyncRelationshipsAPI(self._config, self._API_VERSION, self)
+        self.sequences = AsyncSequencesAPI(self._config, self._API_VERSION, self)
+        self.synthetic_time_series = AsyncSyntheticTimeSeriesAPI(self._config, self._API_VERSION, self)
+        self.templates = AsyncTemplatesAPI(self._config, self._API_VERSION, self)
+        self.three_d = AsyncThreeDAPI(self._config, self._API_VERSION, self)
+        self.time_series = AsyncTimeSeriesAPI(self._config, self._API_VERSION, self)
+        self.units = AsyncUnitsAPI(self._config, self._API_VERSION, self)
+        self.user_profiles = AsyncUserProfilesAPI(self._config, self._API_VERSION, self)
+        self.vision = AsyncVisionAPI(self._config, self._API_VERSION, self)
+        self.workflows = AsyncWorkflowsAPI(self._config, self._API_VERSION, self)
+        
+        # Base API client for generic operations  
         self._api_client = AsyncAPIClient(self._config, api_version=None, cognite_client=self)
 
     async def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> httpx.Response:
