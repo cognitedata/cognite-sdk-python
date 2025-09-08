@@ -55,7 +55,13 @@ def agent_dump(agent_upsert_dump: dict[str, Any]) -> dict[str, Any]:
 
 @pytest.fixture
 def agent_minimal_dump() -> dict[str, Any]:
-    return {"externalId": "test_agent", "name": "Test Agent", "createdTime": 123, "lastUpdatedTime": 123}
+    return {
+        "externalId": "test_agent",
+        "name": "Test Agent",
+        "createdTime": 667008000000,
+        "lastUpdatedTime": 667008000001,
+        "tools": [],
+    }
 
 
 class TestAgentUpsert:
@@ -120,7 +126,7 @@ class TestAgent:
         assert agent.description is None
         assert agent.instructions is None
         assert agent.model is None
-        assert agent.tools is None
+        assert agent.tools == []
 
         dumped = agent.dump(camel_case=True)
         assert agent_minimal_dump == dumped
@@ -133,6 +139,7 @@ class TestAgent:
             "unknownProperty": "unknown_value",
             "createdTime": 123,
             "lastUpdatedTime": 123,
+            "tools": [],
         }
         dumped = Agent._load(agent_data).dump(camel_case=True)
 
@@ -141,7 +148,7 @@ class TestAgent:
     def test_tools_handling(self) -> None:
         # Test with no tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent")
-        assert agent.tools is None
+        assert agent.tools == []
 
         # Test with an empty list of tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
@@ -172,7 +179,7 @@ class TestAgent:
     def test_agent_with_none_tools(self) -> None:
         """Test agent creation with None tools."""
         agent = DefaultResourceGenerator.agent(external_id="test", name="test", tools=None)
-        assert agent.tools is None
+        assert agent.tools == []
 
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type

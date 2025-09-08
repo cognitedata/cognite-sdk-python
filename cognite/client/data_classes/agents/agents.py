@@ -147,7 +147,7 @@ class Agent(AgentCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
-        if self.tools:
+        if self.tools is not None:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
         if self._unknown_properties:
             result.update(self._unknown_properties)
