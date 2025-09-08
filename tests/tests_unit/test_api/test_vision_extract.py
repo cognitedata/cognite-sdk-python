@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
 from contextlib import nullcontext as does_not_raise
 from copy import deepcopy
 from typing import Any
@@ -73,7 +72,7 @@ def mock_get_response_body_ok() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, Any]) -> Iterator[HTTPXMock]:
+def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, Any]) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
         url=re.compile(".*?/context/vision/extract"),
@@ -81,11 +80,11 @@ def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, 
         json=mock_post_response_body,
         is_optional=True,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_get_extract(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> Iterator[HTTPXMock]:
+def mock_get_extract(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
     httpx_mock.add_response(
         method="GET",
         url=re.compile(".*?/context/vision/extract/\\d+"),
@@ -93,13 +92,11 @@ def mock_get_extract(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str,
         json=mock_get_response_body_ok,
         is_optional=True,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_get_extract_empty_predictions(
-    httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]
-) -> Iterator[HTTPXMock]:
+def mock_get_extract_empty_predictions(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
     response_copy = deepcopy(mock_get_response_body_ok)
     response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
     httpx_mock.add_response(
@@ -107,13 +104,14 @@ def mock_get_extract_empty_predictions(
         url=re.compile(".*?/context/vision/extract/\\d+"),
         status_code=200,
         json=response_copy,
+        is_reusable=True,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestJobStatusEnum:
     @pytest.mark.parametrize("job_status", list(JobStatus))
-    def test_job_status_methods(self, job_status):
+    def test_job_status_methods(self, job_status: JobStatus) -> None:
         v1 = job_status.is_finished()
         v2 = job_status.is_not_finished()
         assert sorted([v1, v2]) == [False, True]
@@ -173,7 +171,7 @@ class TestVisionExtract:
     ) -> None:
         vapi = cognite_client.vision
         file_ids = [1, 2, 3]
-        file_external_ids = []
+        file_external_ids: list[str] = []
         if error_message is not None:
             with pytest.raises(TypeError, match=error_message):
                 # GET request will not be executed due to invalid parameters in POST
@@ -183,7 +181,7 @@ class TestVisionExtract:
             is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
             error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
-            with error_handling:
+            with error_handling:  # type: ignore[union-attr]
                 job = vapi.extract(
                     features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
                 )
@@ -232,7 +230,7 @@ class TestVisionExtract:
     ) -> None:
         vapi = cognite_client.vision
         file_ids = [1, 2, 3]
-        file_external_ids = []
+        file_external_ids: list[str] = []
 
         job = vapi.extract(
             features=VisionFeature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
@@ -259,7 +257,7 @@ class TestVisionExtract:
     ) -> None:
         vapi = cognite_client.vision
         file_ids = [1]
-        file_external_ids = []
+        file_external_ids: list[str] = []
 
         job = vapi.extract(
             features=VisionFeature.ASSET_TAG_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
