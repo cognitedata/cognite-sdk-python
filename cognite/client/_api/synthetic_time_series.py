@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries, TimeSeriesWrite
@@ -46,6 +46,34 @@ class SyntheticDatapointsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
+
+    @overload
+    def query(
+        self,
+        expressions: str | sympy.Basic,
+        start: int | str | datetime,
+        end: int | str | datetime,
+        limit: int | None = None,
+        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+    ) -> Datapoints: ...
+
+    @overload
+    def query(
+        self,
+        expressions: Sequence[str | sympy.Basic],
+        start: int | str | datetime,
+        end: int | str | datetime,
+        limit: int | None = None,
+        variables: dict[str | sympy.Symbol, str | NodeId | TimeSeries | TimeSeriesWrite] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+        target_unit: str | None = None,
+        target_unit_system: str | None = None,
+    ) -> DatapointsList: ...
 
     def query(
         self,
