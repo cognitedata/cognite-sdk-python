@@ -1099,7 +1099,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
 
     def _predictions_to_annotations(
         self,
-        creating_user: str | None = None,
+        creating_user: str,
         creating_app: str | None = None,
         creating_app_version: str | None = None,
     ) -> list[AnnotationWrite]:
@@ -1121,7 +1121,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
                                     status="suggested",
                                     creating_app=creating_app or "cognite-sdk-python",
                                     creating_app_version=creating_app_version or self._cognite_client.version,
-                                    creating_user=creating_user or None,
+                                    creating_user=creating_user,
                                 )
                                 annotations.append(annotation)
                         elif isinstance(annotation_type, str):
@@ -1133,7 +1133,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
                                 status="suggested",
                                 creating_app=creating_app or "cognite-sdk-python",
                                 creating_app_version=creating_app_version or self._cognite_client.version,
-                                creating_user=creating_user or None,
+                                creating_user=creating_user,
                             )
 
                             annotations.append(annotation)
@@ -1144,7 +1144,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
 
     def save_predictions(
         self,
-        creating_user: str | None = None,
+        creating_user: str,
         creating_app: str | None = None,
         creating_app_version: str | None = None,
     ) -> Annotation | AnnotationList:
@@ -1153,7 +1153,7 @@ class VisionExtractJob(VisionJob, Generic[P]):
         See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+            creating_user (str): (str, optional): A username, or email, or name.
             creating_app (str | None): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
             creating_app_version (str | None): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:
