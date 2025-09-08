@@ -63,7 +63,7 @@ def cognite_mock_client_placeholder() -> CogniteClient:
     """
     # We allow the mock to pass isinstance checks
     client = MagicMock()
-    client.__class__ = CogniteClient
+    client.__class__ = CogniteClient  # type: ignore[assignment]
     return client
 
 
@@ -163,7 +163,7 @@ class DefaultResourceGenerator:
         data_set_id: int | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
-        labels: Sequence[Label] | None = None,
+        labels: list[Label] | None = None,
         aggregates: AggregateResultItem | None = None,
         cognite_client: CogniteClient | None = None,
     ) -> Asset:
@@ -179,7 +179,7 @@ class DefaultResourceGenerator:
             data_set_id=data_set_id,
             created_time=created_time,
             last_updated_time=last_updated_time,
-            labels=labels,
+            labels=labels or [],
             parent_external_id=parent_external_id,
             geo_location=geo_location,
             aggregates=aggregates,
@@ -251,7 +251,7 @@ class DefaultResourceGenerator:
             cognite_client=cognite_client,
             asset_id=asset_id,
             metadata=metadata,
-            columns=columns,
+            columns=columns or [],
         )
 
     @staticmethod
@@ -263,7 +263,7 @@ class DefaultResourceGenerator:
     ) -> Row:
         return Row(
             key=key,
-            columns=columns,
+            columns=columns or {},
             last_updated_time=last_updated_time,
             cognite_client=cognite_client,
         )
@@ -283,7 +283,7 @@ class DefaultResourceGenerator:
     @staticmethod
     def threed_model(
         id: int = 1,
-        name: str | None = "default_3dmodel",
+        name: str = "default_3dmodel",
         data_set_id: int | None = None,
         created_time: int = 123,
         metadata: dict[str, str] | None = None,
