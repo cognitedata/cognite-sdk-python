@@ -64,18 +64,18 @@ def mock_groups_with_attributes(group_with_attributes, httpx_mock, cognite_clien
 
 
 class TestGroups:
-    def test_list(self, cognite_client, mock_groups_response):
+    def test_list(self, cognite_client, mock_groups_response) -> None:
         res = cognite_client.iam.groups.list()
         assert isinstance(res, GroupList)
         assert mock_groups_response["items"] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_groups_with_attributes")
-    def test_list_groups_with_attributes(self, cognite_client, group_with_attributes):
+    def test_list_groups_with_attributes(self, cognite_client, group_with_attributes) -> None:
         res = cognite_client.iam.groups.list()
         assert isinstance(res, GroupList)
         assert res.dump(camel_case=True) == [group_with_attributes]
 
-    def test_create(self, cognite_client, mock_groups_response, httpx_mock):
+    def test_create(self, cognite_client, mock_groups_response, httpx_mock) -> None:
         my_group = GroupWrite(name="My Group", capabilities=[GroupsAcl([GroupsAcl.Action.List], AllScope())])
         res = cognite_client.iam.groups.create(my_group)
         assert isinstance(res, Group)
@@ -86,7 +86,7 @@ class TestGroups:
         } == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_groups_response["items"][0] == res.dump(camel_case=True)
 
-    def test_create_with_attributes(self, cognite_client, mock_groups_with_attributes):
+    def test_create_with_attributes(self, cognite_client, mock_groups_with_attributes) -> None:
         # Construct attributes via loader to include unknown properties for pass-through
         attributes = GroupAttributes.load(
             {
@@ -112,20 +112,20 @@ class TestGroups:
         ]
         assert expected == jsgz_load(mock_groups_with_attributes.get_requests()[0].content)["items"]
 
-    def test_create_multiple(self, cognite_client, mock_groups_response, httpx_mock):
+    def test_create_multiple(self, cognite_client, mock_groups_response, httpx_mock) -> None:
         res = cognite_client.iam.groups.create([1])
         assert isinstance(res, GroupList)
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_groups_response["items"] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_groups_response")
-    def test_delete(self, cognite_client, httpx_mock):
+    def test_delete(self, cognite_client, httpx_mock) -> None:
         res = cognite_client.iam.groups.delete(1)
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
     @pytest.mark.usefixtures("mock_groups_response")
-    def test_delete_multiple(self, cognite_client, httpx_mock):
+    def test_delete_multiple(self, cognite_client, httpx_mock) -> None:
         res = cognite_client.iam.groups.delete([1])
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
@@ -141,29 +141,29 @@ def mock_security_cats_response(httpx_mock, cognite_client):
 
 
 class TestSecurityCategories:
-    def test_list(self, cognite_client, mock_security_cats_response):
+    def test_list(self, cognite_client, mock_security_cats_response) -> None:
         res = cognite_client.iam.security_categories.list()
         assert isinstance(res, SecurityCategoryList)
         assert mock_security_cats_response["items"] == res.dump(camel_case=True)
 
-    def test_create(self, cognite_client, mock_security_cats_response, httpx_mock):
+    def test_create(self, cognite_client, mock_security_cats_response, httpx_mock) -> None:
         res = cognite_client.iam.security_categories.create(SecurityCategoryWrite(name="My Category"))
         assert isinstance(res, SecurityCategory)
         assert {"items": [{"name": "My Category"}]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_security_cats_response["items"][0] == res.dump(camel_case=True)
 
-    def test_create_multiple(self, cognite_client, mock_security_cats_response, httpx_mock):
+    def test_create_multiple(self, cognite_client, mock_security_cats_response, httpx_mock) -> None:
         res = cognite_client.iam.security_categories.create([1])
         assert isinstance(res, SecurityCategoryList)
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_security_cats_response["items"] == res.dump(camel_case=True)
 
-    def test_delete(self, cognite_client, mock_security_cats_response, httpx_mock):
+    def test_delete(self, cognite_client, mock_security_cats_response, httpx_mock) -> None:
         res = cognite_client.iam.security_categories.delete(1)
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_security_cats_response, httpx_mock):
+    def test_delete_multiple(self, cognite_client, mock_security_cats_response, httpx_mock) -> None:
         res = cognite_client.iam.security_categories.delete([1])
         assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
@@ -184,7 +184,7 @@ def mock_token_inspect(httpx_mock, cognite_client):
 
 
 class TestTokenAPI:
-    def test_token_inspect(self, cognite_client, mock_token_inspect):
+    def test_token_inspect(self, cognite_client, mock_token_inspect) -> None:
         res = cognite_client.iam.token.inspect()
         assert isinstance(res, TokenInspection)
         assert res.subject == "someSubject"
@@ -200,7 +200,7 @@ class TestTokenAPI:
             )
         )
 
-    def test_token_inspection_dump(self):
+    def test_token_inspection_dump(self) -> None:
         capabilities = ProjectCapabilityList(
             [
                 ProjectCapability(

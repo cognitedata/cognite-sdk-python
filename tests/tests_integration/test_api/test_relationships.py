@@ -154,19 +154,19 @@ def relationship_with_resources(new_asset, new_time_series, cognite_client):
 
 
 class TestRelationshipscognite_client:
-    def test_get_single(self, cognite_client, new_relationship):
+    def test_get_single(self, cognite_client, new_relationship) -> None:
         new_rel, ext_id = new_relationship
         res = cognite_client.relationships.retrieve(external_id=new_rel.external_id)
         assert isinstance(res, Relationship)
         assert new_rel.external_id == ext_id
         assert res.confidence == 1
 
-    def test_retrieve_unknown(self, cognite_client, new_relationship):
+    def test_retrieve_unknown(self, cognite_client, new_relationship) -> None:
         with pytest.raises(CogniteNotFoundError):
             cognite_client.relationships.retrieve_multiple(external_ids=["this does not exist"])
         assert cognite_client.relationships.retrieve(external_id="this does not exist") is None
 
-    def test_update_single(self, cognite_client, new_relationship):
+    def test_update_single(self, cognite_client, new_relationship) -> None:
         new_rel, ext_id = new_relationship
         updated_rel = cognite_client.relationships.update(
             RelationshipUpdate(ext_id).target_type.set("timeseries").confidence.set(None)
@@ -175,13 +175,13 @@ class TestRelationshipscognite_client:
         assert updated_rel.target_type == "timeSeries"
         assert updated_rel.confidence is None
 
-    def test_list_filter(self, cognite_client, create_multiple_relationships):
+    def test_list_filter(self, cognite_client, create_multiple_relationships) -> None:
         relationships_ext_ids, ext_id, source_ext_id = create_multiple_relationships
         res = cognite_client.relationships.list(source_external_ids=[source_ext_id[3]])
         assert len(res) == 2
         assert isinstance(res, RelationshipList)
 
-    def test_list_data_set(self, cognite_client, new_relationship):
+    def test_list_data_set(self, cognite_client, new_relationship) -> None:
         new_rel, ext_id = new_relationship
         pre_existing_data_set = cognite_client.data_sets.retrieve(external_id="pre_existing_data_set")
         res = cognite_client.relationships.list(
@@ -191,13 +191,13 @@ class TestRelationshipscognite_client:
         assert res == res2
         assert isinstance(res, RelationshipList)
 
-    def test_list_label_filter(self, cognite_client, create_multiple_relationships):
+    def test_list_label_filter(self, cognite_client, create_multiple_relationships) -> None:
         relationships, ext_id, source_ext_id = create_multiple_relationships
         res = cognite_client.relationships.list(labels=LabelFilter(contains_all=[ext_id]))
         assert len(res) == 3
         assert isinstance(res, RelationshipList)
 
-    def test_fetch_resources_list(self, cognite_client, relationship_with_resources):
+    def test_fetch_resources_list(self, cognite_client, relationship_with_resources) -> None:
         relationship, ext_id, asset, time_series = relationship_with_resources
         res = cognite_client.relationships.list(
             source_external_ids=[relationship.source_external_id], fetch_resources=True
@@ -205,7 +205,7 @@ class TestRelationshipscognite_client:
         assert res[0].source == asset
         assert res[0].target == time_series
 
-    def test_fetch_resources_retrieve(self, cognite_client, relationship_with_resources):
+    def test_fetch_resources_retrieve(self, cognite_client, relationship_with_resources) -> None:
         relationship, ext_id, asset, time_series = relationship_with_resources
         res = cognite_client.relationships.retrieve_multiple(external_ids=[ext_id], fetch_resources=True)
         assert res[0].source == asset
@@ -221,22 +221,22 @@ class TestRelationshipscognite_client:
         assert res.source._get_cognite_client() is not None
         assert res.target._get_cognite_client() is not None
 
-    def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient):
+    def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteNotFoundError) as e:
             cognite_client.relationships.retrieve_multiple(external_ids=["this does not exist"])
 
         assert e.value.not_found[0]["externalId"] == "this does not exist"
 
-    def test_retrieve_unknown_ignore_unknowns(self, cognite_client: CogniteClient):
+    def test_retrieve_unknown_ignore_unknowns(self, cognite_client: CogniteClient) -> None:
         res = cognite_client.relationships.retrieve_multiple(
             external_ids=["this does not exist"], ignore_unknown_ids=True
         )
         assert len(res) == 0
 
-    def test_deletes_ignore_unknown_ids(self, cognite_client):
+    def test_deletes_ignore_unknown_ids(self, cognite_client) -> None:
         cognite_client.relationships.delete(external_id=["non_existing_rel"], ignore_unknown_ids=True)
 
-    def test_partitioned_list(self, cognite_client, create_multiple_relationships):
+    def test_partitioned_list(self, cognite_client, create_multiple_relationships) -> None:
         _, _, ext_ids = create_multiple_relationships
         res_flat = cognite_client.relationships.list(limit=None, source_external_ids=ext_ids)
         res_part = cognite_client.relationships.list(partitions=8, limit=None, source_external_ids=ext_ids)
@@ -244,7 +244,7 @@ class TestRelationshipscognite_client:
         assert len(res_flat) == len(res_part)
         assert {a.external_id for a in res_flat} == {a.external_id for a in res_part}
 
-    def test_compare_partitioned_gen_and_list(self, cognite_client, create_multiple_relationships):
+    def test_compare_partitioned_gen_and_list(self, cognite_client, create_multiple_relationships) -> None:
         _, _, ext_ids = create_multiple_relationships
         res_generator = cognite_client.relationships(partitions=8, limit=None, source_external_ids=ext_ids)
         res_list = cognite_client.relationships.list(partitions=8, limit=None, source_external_ids=ext_ids)

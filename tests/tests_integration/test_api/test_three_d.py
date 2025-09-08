@@ -11,12 +11,12 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="class")
-def test_model_name():
+def test_model_name() -> None:
     return f"NewTestModel-{random_string(6)}"
 
 
 @pytest.fixture(scope="class")
-def test_revision(cognite_client):
+def test_revision(cognite_client) -> None:
     model_id = cognite_client.three_d.models.list(published=True, limit=1)[0].id
     revision = cognite_client.three_d.revisions.list(model_id=model_id, limit=1)[0]
     return revision, model_id
@@ -31,14 +31,14 @@ def new_model(cognite_client: CogniteClient, test_model_name: str) -> ThreeDMode
 
 
 @pytest.fixture(scope="class")
-def test_nodes_tree_index_order(cognite_client):
+def test_nodes_tree_index_order(cognite_client) -> None:
     revision, model_id = test_revision
     return cognite_client.three_d.list_nodes(model_id=model_id, revision_id=revision.id)
 
 
 @pytest.mark.usefixtures("new_model")
 class TestThreeDModelsAPI:
-    def test_list_and_retrieve(self, cognite_client, test_model_name):
+    def test_list_and_retrieve(self, cognite_client, test_model_name) -> None:
         res = cognite_client.three_d.models.list(limit=1)
         assert 1 == len(res)
         res = next(r for r in cognite_client.three_d.models(limit=None) if r.name == test_model_name)
@@ -64,13 +64,13 @@ class TestThreeDModelsAPI:
                 with suppress(CogniteAPIError):
                     cognite_client.three_d.models.delete(id=created.id)
 
-    def test_update_with_resource(self, new_model, cognite_client):
+    def test_update_with_resource(self, new_model, cognite_client) -> None:
         model = new_model
         model.name = "NewTestModelVer2"
         res = cognite_client.three_d.models.update(model)
         assert model.name == res.name
 
-    def test_partial_update(self, new_model, cognite_client):
+    def test_partial_update(self, new_model, cognite_client) -> None:
         added_metadata = {"key": "value"}
         update = ThreeDModelUpdate(id=new_model.id).metadata.add(added_metadata)
         res = cognite_client.three_d.models.update(update)
@@ -79,7 +79,7 @@ class TestThreeDModelsAPI:
 
 class TestThreeDRevisionsAPI:
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_list_and_retrieve(self, test_revision, cognite_client):
+    def test_list_and_retrieve(self, test_revision, cognite_client) -> None:
         revision, model_id = test_revision
         assert revision == cognite_client.three_d.revisions.retrieve(model_id=model_id, id=revision.id)
         res = cognite_client.three_d.revisions.list(model_id=model_id)
@@ -88,7 +88,7 @@ class TestThreeDRevisionsAPI:
         assert len(res) > 0
 
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_list_ancestor_nodes(self, test_revision, cognite_client):
+    def test_list_ancestor_nodes(self, test_revision, cognite_client) -> None:
         revision, model_id = test_revision
         node_id = test_nodes_tree_index_order[0].id
         res = cognite_client.three_d.revisions.list_ancestor_nodes(
@@ -97,7 +97,7 @@ class TestThreeDRevisionsAPI:
         assert len(res) > 0
 
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_list_nodes_partitions(self, test_revision, cognite_client):
+    def test_list_nodes_partitions(self, test_revision, cognite_client) -> None:
         revision, model_id = test_revision
         nodes = cognite_client.three_d.revisions.list_nodes(
             model_id=model_id, revision_id=revision.id, partitions=4, sort_by_node_id=True
@@ -106,13 +106,13 @@ class TestThreeDRevisionsAPI:
         # assert test_node_tree_index_order[nodes[0].tree_index].id == nodes[0].id
 
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_update_with_resource(self, cognite_client, test_revision):
+    def test_update_with_resource(self, cognite_client, test_revision) -> None:
         revision, model_id = test_revision
         revision.metadata = {"key": "value"}
         cognite_client.three_d.revisions.update(model_id, revision)
 
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_partial_update(self, cognite_client, test_revision):
+    def test_partial_update(self, cognite_client, test_revision) -> None:
         revision, model_id = test_revision
         added_metadata = {"key": "value"}
         revision_update = ThreeDModelRevisionUpdate(id=revision.id).metadata.add(added_metadata)
@@ -121,7 +121,7 @@ class TestThreeDRevisionsAPI:
 
 class TestThreeDFilesAPI:
     @pytest.mark.skip(reason="missing a 3d model to test revision against")
-    def test_retrieve(self, cognite_client, test_revision):
+    def test_retrieve(self, cognite_client, test_revision) -> None:
         revision, model_id = test_revision
         project = cognite_client._config.project
         url = f"/api/v1/projects/{project}/3d/reveal/models/{model_id}/revisions/{revision.id}"

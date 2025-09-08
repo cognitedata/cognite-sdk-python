@@ -73,29 +73,29 @@ def mock_revert_config_response(httpx_mock, cognite_client):
 
 
 class TestExtractionPipelines:
-    def test_retrieve_config(self, cognite_client, mock_config_response):
+    def test_retrieve_config(self, cognite_client, mock_config_response) -> None:
         res = cognite_client.extraction_pipelines.config.retrieve(external_id="int-123")
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response == res.dump(camel_case=True)
 
-    def test_retrieve_config_revision(self, cognite_client, mock_config_response_with_revision):
+    def test_retrieve_config_revision(self, cognite_client, mock_config_response_with_revision) -> None:
         res = cognite_client.extraction_pipelines.config.retrieve(external_id="int-123", revision=4)
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response_with_revision == res.dump(camel_case=True)
 
-    def test_new_config(self, cognite_client, mock_config_response):
+    def test_new_config(self, cognite_client, mock_config_response) -> None:
         res = cognite_client.extraction_pipelines.config.create(
             ExtractionPipelineConfigWrite(external_id="int-123", config="config abc 123", description="description")
         )
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response == res.dump(camel_case=True)
 
-    def test_revert_config(self, cognite_client, mock_revert_config_response):
+    def test_revert_config(self, cognite_client, mock_revert_config_response) -> None:
         res = cognite_client.extraction_pipelines.config.revert(external_id="int-123", revision=3)
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_revert_config_response == res.dump(camel_case=True)
 
-    def test_list_revisions(self, cognite_client, mock_config_list_response):
+    def test_list_revisions(self, cognite_client, mock_config_list_response) -> None:
         res = cognite_client.extraction_pipelines.config.list(external_id="int-123")
         assert isinstance(res, ExtractionPipelineConfigRevisionList)
         assert mock_config_list_response == {"items": res.dump(camel_case=True)}

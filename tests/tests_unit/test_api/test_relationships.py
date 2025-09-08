@@ -59,7 +59,7 @@ def mock_rel_empty(httpx_mock, cognite_client):
 
 
 class TestRelationships:
-    def test_retrieve_single(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_retrieve_single(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.retrieve(external_id="a")
         assert isinstance(res, Relationship)
         assert mock_rel_response["items"][0] == res.dump(camel_case=True)
@@ -67,7 +67,7 @@ class TestRelationships:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_retrieve_multiple(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_retrieve_multiple(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.retrieve_multiple(external_ids=["a"])
         assert isinstance(res, RelationshipList)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
@@ -75,11 +75,11 @@ class TestRelationships:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_list(self, cognite_client, mock_rel_response):
+    def test_list(self, cognite_client, mock_rel_response) -> None:
         res = cognite_client.relationships.list()
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_create_single(self, cognite_client, mock_rel_response):
+    def test_create_single(self, cognite_client, mock_rel_response) -> None:
         res = cognite_client.relationships.create(
             RelationshipWrite(
                 external_id="1",
@@ -95,7 +95,7 @@ class TestRelationships:
         assert isinstance(res, Relationship)
         assert mock_rel_response["items"][0] == res.dump(camel_case=True)
 
-    def test_create_single_types(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_create_single_types(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         types = ["asset", "timeSeries", "file", "event", "sequence"]
         for cls_string in types:
             res = cognite_client.relationships.create(
@@ -141,7 +141,7 @@ class TestRelationships:
             assert isinstance(it["sourceType"], str)
             assert isinstance(it["targetType"], str)
 
-    def test_create_wrong_type(self, cognite_client, mock_rel_response):
+    def test_create_wrong_type(self, cognite_client, mock_rel_response) -> None:
         with pytest.raises(TypeError):
             cognite_client.relationships.create(
                 Relationship(
@@ -155,7 +155,7 @@ class TestRelationships:
                 )
             )
 
-    def test_create_multiple(self, cognite_client, mock_rel_response):
+    def test_create_multiple(self, cognite_client, mock_rel_response) -> None:
         rel1 = RelationshipWrite(
             external_id="new1",
             confidence=0.5,
@@ -178,7 +178,7 @@ class TestRelationships:
         assert isinstance(res, RelationshipList)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_update_with_resource_class(self, cognite_client, mock_rel_response):
+    def test_update_with_resource_class(self, cognite_client, mock_rel_response) -> None:
         res = cognite_client.relationships.update(
             Relationship(
                 external_id="test1",
@@ -201,12 +201,12 @@ class TestRelationships:
         assert isinstance(res, Relationship)
         assert mock_rel_response["items"][0] == res.dump(camel_case=True)
 
-    def test_update_with_update_class(self, cognite_client, mock_rel_response):
+    def test_update_with_update_class(self, cognite_client, mock_rel_response) -> None:
         res = cognite_client.relationships.update(RelationshipUpdate(external_id="test_1").confidence.set(None))
         assert isinstance(res, Relationship)
         assert mock_rel_response["items"][0] == res.dump(camel_case=True)
 
-    def test_update_multiple(self, cognite_client, mock_rel_response):
+    def test_update_multiple(self, cognite_client, mock_rel_response) -> None:
         res = cognite_client.relationships.update(
             [
                 RelationshipUpdate(external_id="test1").source_external_id.set("blabla"),
@@ -216,14 +216,14 @@ class TestRelationships:
         assert isinstance(res, RelationshipList)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_update_labels_single(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_update_labels_single(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         cognite_client.relationships.update(
             [RelationshipUpdate(external_id="test1").labels.add("PUMP").labels.remove("VALVE")]
         )
         expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "VALVE"}]}}
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
-    def test_update_labels_multiple(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_update_labels_multiple(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         cognite_client.relationships.update(
             [
                 RelationshipUpdate(external_id="test1")
@@ -239,7 +239,7 @@ class TestRelationships:
         }
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
-    def test_update_labels_resource_class(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_update_labels_resource_class(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         cognite_client.relationships.update(
             Relationship(
                 external_id="test1",
@@ -268,32 +268,32 @@ class TestRelationships:
         }
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
-    def test_iter_single(self, cognite_client, mock_rel_response):
+    def test_iter_single(self, cognite_client, mock_rel_response) -> None:
         for rel in cognite_client.relationships:
             assert mock_rel_response["items"][0] == rel.dump(camel_case=True)
 
-    def test_delete_single(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_delete_single(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.delete(external_id="a")
         assert {"items": [{"externalId": "a"}], "ignoreUnknownIds": False} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_delete_multiple(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.delete(external_id=["a"])
         assert {"items": [{"externalId": "a"}], "ignoreUnknownIds": False} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
         assert res is None
 
-    def test_delete_multiple_ignore_unknown_ids(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_delete_multiple_ignore_unknown_ids(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.delete(external_id=[1], ignore_unknown_ids=True)
         assert {"items": [{"externalId": "1"}], "ignoreUnknownIds": True} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
         assert res is None
 
-    def test_advanced_list(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_advanced_list(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.list(
             source_types=["asset"], labels=LabelFilter(contains_any=["label_ext_id"])
         )
@@ -304,7 +304,7 @@ class TestRelationships:
         } == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_source_target_packing(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_source_target_packing(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         res = cognite_client.relationships.list(
             source_types=["asset"],
             source_external_ids=["bla"],
@@ -325,7 +325,7 @@ class TestRelationships:
         } == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_multi_source_target_list(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_multi_source_target_list(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         source_external_ids = ["source1", "source2"]
         source_types = ["asset", "asset"]
         target_external_ids = ["target1", "target2"]
@@ -360,7 +360,7 @@ class TestRelationships:
         } == jsgz_load(httpx_mock.get_requests()[0].content)
         assert mock_rel_response["items"] == res.dump(camel_case=True)
 
-    def test_many_source_targets(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_many_source_targets(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         source_external_ids = [str(i) for i in range(2500)]
         target_external_ids = [str(i) for i in range(3500)]
         with pytest.raises(ValueError):
@@ -378,7 +378,7 @@ class TestRelationships:
         assert isinstance(res, RelationshipList)
         assert 12 == len(res)
 
-    def test_many_sources_only(self, cognite_client, mock_rel_response, httpx_mock):
+    def test_many_sources_only(self, cognite_client, mock_rel_response, httpx_mock) -> None:
         source_external_ids = [str(i) for i in range(2500)]
         with pytest.raises(ValueError):
             cognite_client.relationships(source_external_ids=source_external_ids)
