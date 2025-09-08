@@ -63,6 +63,7 @@ repos:
           tests/tests_integration/test_api/test_datapoints.py
           tests/tests_integration/test_api/test_diagrams.py
           tests/tests_integration/test_api/test_documents.py
+          tests/tests_integration/test_api/test_entity_matching.py
           tests/tests_integration/test_api/test_events.py
           tests/tests_integration/test_api/test_workflows.py
           tests/tests_integration/test_api/test_raw.py
