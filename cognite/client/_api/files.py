@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, cast, overload
+from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -1095,7 +1095,7 @@ class FilesAPI(APIClient):
 
             ids.append(identifier)
             file_directories.append(file_directory)
-            filepaths.append(file_directory / cast(str, metadata.name))
+            filepaths.append(file_directory / metadata.name)
 
         return ids, filepaths, file_directories
 
