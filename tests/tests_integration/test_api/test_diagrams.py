@@ -216,6 +216,7 @@ class TestPNIDParsingIntegration:
         entities: list[dict] = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
 
         detect_job = cognite_client.diagrams.detect(file_instance_ids=[diagram_node], entities=entities)
+        detect_job.wait_for_completion()
         assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
             detect_job.result
