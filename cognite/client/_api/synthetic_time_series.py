@@ -134,7 +134,7 @@ class SyntheticDatapointsAPI(APIClient):
             query_datapoints = Datapoints(external_id=short_expression, value=[], error=[])
             tasks.append((query, query_datapoints, limit))
 
-        datapoints_summary = execute_tasks(self._fetch_datapoints, tasks, max_workers=self._config.max_workers)
+        datapoints_summary = await execute_tasks_async(self._fetch_datapoints, tasks, max_workers=self._config.max_workers)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
