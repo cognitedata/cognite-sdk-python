@@ -172,16 +172,6 @@ class SequencesAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[Sequence]:
-        """Iterate over sequences
-
-        Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[Sequence]: yields Sequence one by one.
-        """
-        return self()
-
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
@@ -956,10 +946,10 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.sequences.list(limit=5)
 
-            Iterate over sequences:
+            Iterate over sequences, one-by-one:
 
-                >>> for seq in client.sequences:
-                ...     seq # do something with the sequence
+                >>> for seq in client.sequences():
+                ...     seq  # do something with the sequence
 
             Iterate over chunks of sequences to reduce memory load:
 

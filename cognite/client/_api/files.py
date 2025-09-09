@@ -184,16 +184,6 @@ class FilesAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[FileMetadata]:
-        """Iterate over files
-
-        Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[FileMetadata]: yields Files one by one.
-        """
-        return self()
-
     def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
     ) -> tuple[FileMetadata, str]:
@@ -1280,10 +1270,10 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> file_list = client.files.list(limit=5, external_id_prefix="prefix")
 
-            Iterate over files metadata:
+            Iterate over files metadata, one-by-one:
 
-                >>> for file_metadata in client.files:
-                ...     file_metadata # do something with the file metadata
+                >>> for file_metadata in client.files():
+                ...     file_metadata  # do something with the file metadata
 
             Iterate over chunks of files metadata to reduce memory load:
 

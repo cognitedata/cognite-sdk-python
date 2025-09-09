@@ -149,16 +149,6 @@ class SimulatorModelRevisionsAPI(APIClient):
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
 
-    def __iter__(self) -> Iterator[SimulatorModelRevision]:
-        """Iterate over simulator model revisions
-
-        Fetches simulator model revisions as they are iterated over, so you keep a limited number of simulator model revisions in memory.
-
-        Returns:
-            Iterator[SimulatorModelRevision]: yields Simulator model revisions one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
