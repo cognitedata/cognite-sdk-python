@@ -61,8 +61,8 @@ class SequencesDataAPI(APIClient):
                 >>> seq = client.sequences.create(
                 ...     SequenceWrite(
                 ...         columns=[
-                ...             SequenceColumnWrite(value_type="String", external_id="col_a"),
-                ...             SequenceColumnWrite(value_type="Double", external_id="col_b")
+                ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id="col_b")
                 ...         ],
                 ...     )
                 ... )
@@ -228,6 +228,18 @@ class SequencesDataAPI(APIClient):
         self,
         *,
         id: typing.Sequence[int],
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: typing.Sequence[int] | int,
+        external_id: SequenceNotStr[str] | str,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
