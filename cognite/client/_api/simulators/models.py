@@ -59,6 +59,10 @@ class SimulatorModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.simulators.models.list(limit=10)
 
+            Iterate over simulator models, one-by-one:
+                >>> for model in client.simulators.models():
+                ...     model  # do something with the simulator model
+
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
                 >>> res = client.simulators.models.list(
@@ -134,16 +138,6 @@ class SimulatorModelsAPI(APIClient):
             resource_cls=SimulatorModel,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
-
-    def __iter__(self) -> Iterator[SimulatorModel]:
-        """Iterate over simulator models
-
-        Fetches simulator models as they are iterated over, so you keep a limited number of simulator models in memory.
-
-        Returns:
-            Iterator[SimulatorModel]: yields Simulator model one by one.
-        """
-        return self()
 
     @overload
     def __call__(

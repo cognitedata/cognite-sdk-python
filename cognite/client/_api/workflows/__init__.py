@@ -67,10 +67,6 @@ class WorkflowAPI(APIClient):
             method="GET", resource_cls=Workflow, list_cls=WorkflowList, limit=limit, chunk_size=chunk_size
         )
 
-    def __iter__(self) -> Iterator[Workflow]:
-        """Iterate all over workflows"""
-        return self()
-
     @overload
     def upsert(self, workflow: WorkflowUpsert, mode: Literal["replace"] = "replace") -> Workflow: ...
 

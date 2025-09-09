@@ -82,16 +82,6 @@ class ContainersAPI(APIClient):
             filter=flt.dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[Container]:
-        """Iterate over containers
-
-        Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
-
-        Returns:
-            Iterator[Container]: yields Containers one by one.
-        """
-        return self()
-
     @overload
     def retrieve(self, ids: ContainerIdentifier) -> Container | None: ...
 
@@ -241,10 +231,10 @@ class ContainersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
-            Iterate over containers:
+            Iterate over containers, one-by-one:
 
-                >>> for container in client.data_modeling.containers:
-                ...     container # do something with the container
+                >>> for container in client.data_modeling.containers():
+                ...     container  # do something with the container
 
             Iterate over chunks of containers to reduce memory load:
 

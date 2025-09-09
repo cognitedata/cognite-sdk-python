@@ -62,16 +62,6 @@ class SpacesAPI(APIClient):
             limit=limit,
         )
 
-    def __iter__(self) -> Iterator[Space]:
-        """Iterate over spaces
-
-        Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
-
-        Returns:
-            Iterator[Space]: yields Spaces one by one.
-        """
-        return self()
-
     @overload
     def retrieve(self, spaces: str) -> Space | None: ...
 
@@ -154,10 +144,10 @@ class SpacesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> space_list = client.data_modeling.spaces.list(limit=5)
 
-            Iterate over spaces:
+            Iterate over spaces, one-by-one:
 
-                >>> for space in client.data_modeling.spaces:
-                ...     space # do something with the space
+                >>> for space in client.data_modeling.spaces():
+                ...     space  # do something with the space
 
             Iterate over chunks of spaces to reduce memory load:
 
