@@ -84,16 +84,6 @@ class ViewsAPI(APIClient):
             filter=filter_.dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[View]:
-        """Iterate over views
-
-        Fetches views as they are iterated over, so you keep a limited number of views in memory.
-
-        Returns:
-            Iterator[View]: yields Views one by one.
-        """
-        return self()
-
     def _get_latest_views(self, views: ViewList) -> ViewList:
         views_by_space_and_xid = defaultdict(list)
         for view in views:
@@ -193,10 +183,10 @@ class ViewsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> view_list = client.data_modeling.views.list(limit=5)
 
-            Iterate over views:
+            Iterate over views, one-by-one:
 
-                >>> for view in client.data_modeling.views:
-                ...     view # do something with the view
+                >>> for view in client.data_modeling.views():
+                ...     view  # do something with the view
 
             Iterate over chunks of views to reduce memory load:
 

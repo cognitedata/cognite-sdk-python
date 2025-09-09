@@ -52,16 +52,6 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def __iter__(self) -> Iterator[ThreeDModel]:
-        """Iterate over 3d models
-
-        Fetches models as they are iterated over, so you keep a limited number of models in memory.
-
-        Returns:
-            Iterator[ThreeDModel]: yields models one by one.
-        """
-        return self()
-
     def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
@@ -97,17 +87,17 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> three_d_model_list = client.three_d.models.list()
+                >>> model_list = client.three_d.models.list()
 
-            Iterate over 3d models:
+            Iterate over 3d models, one-by-one:
 
-                >>> for three_d_model in client.three_d.models:
-                ...     three_d_model # do something with the 3d model
+                >>> for model in client.three_d.models():
+                ...     model  # do something with the 3d model
 
             Iterate over chunks of 3d models to reduce memory load:
 
-                >>> for three_d_model in client.three_d.models(chunk_size=50):
-                ...     three_d_model # do something with the 3d model
+                >>> for model in client.three_d.models(chunk_size=50):
+                ...     model # do something with the 3d model
         """
         return self._list(
             list_cls=ThreeDModelList,
@@ -212,9 +202,9 @@ class ThreeDModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> three_d_model = client.three_d.models.retrieve(id=1)
-                >>> three_d_model.name = "New Name"
-                >>> res = client.three_d.models.update(three_d_model)
+                >>> model = client.three_d.models.retrieve(id=1)
+                >>> model.name = "New Name"
+                >>> res = client.three_d.models.update(model)
 
             Perform a partial update on a 3d model:
 
@@ -241,7 +231,7 @@ class ThreeDModelsAPI(APIClient):
 
         Example:
 
-            Delete 3d model by id::
+            Delete 3d model by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
