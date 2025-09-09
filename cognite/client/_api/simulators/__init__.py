@@ -32,16 +32,6 @@ class SimulatorsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
 
-    def __iter__(self) -> Iterator[Simulator]:
-        """Iterate over simulators
-
-        Fetches simulators as they are iterated over, so you keep a limited number of simulators in memory.
-
-        Returns:
-            Iterator[Simulator]: yields Simulators one by one.
-        """
-        return self()
-
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
 
@@ -84,6 +74,10 @@ class SimulatorsAPI(APIClient):
                     >>> from cognite.client import CogniteClient
                     >>> client = CogniteClient()
                     >>> res = client.simulators.list(limit=10)
+
+            Iterate over simulators, one-by-one:
+                    >>> for simulator in client.simulators():
+                    ...     simulator  # do something with the simulator
 
         """
         self._warning.warn()

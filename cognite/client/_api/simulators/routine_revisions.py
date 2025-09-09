@@ -33,16 +33,6 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._RETRIEVE_LIMIT = 20
 
-    def __iter__(self) -> Iterator[SimulatorRoutineRevision]:
-        """Iterate over simulator routine revisions
-
-        Fetches simulator routine revisions as they are iterated over, so you keep a limited number of simulator routine revisions in memory.
-
-        Returns:
-            Iterator[SimulatorRoutineRevision]: yields Simulator routine revisions one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,

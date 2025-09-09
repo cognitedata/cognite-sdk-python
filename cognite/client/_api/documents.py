@@ -88,16 +88,6 @@ class DocumentsAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[Document]:
-        """Iterate over documents
-
-        Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
-
-        Returns:
-            Iterator[Document]: yields documents one by one.
-        """
-        return self()
-
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -509,11 +499,19 @@ class DocumentsAPI(APIClient):
                 >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
                 >>> pdf_documents = client.documents.list(filter=is_pdf)
 
-            Iterate over all documents in your CDF project:
+            List documents in your CDF project:
 
-                >>> from cognite.client.data_classes.documents import DocumentProperty
-                >>> for document in client.documents:
-                ...    print(document.name)
+                >>> documents = client.documents.list(limit=100)
+
+            Iterate over documents, one-by-one:
+
+                >>> for document in client.documents():
+                ...     document  # do something with the document
+
+            Iterate over chunks of documents to reduce memory load:
+
+                >>> for document_list in client.documents(chunk_size=250):
+                ...     document_list  # do something with the document
 
             List all documents in your CDF project sorted by mime/type in descending order:
 

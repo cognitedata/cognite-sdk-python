@@ -42,16 +42,6 @@ class SimulatorRunsAPI(APIClient):
             feature_name="Simulators",
         )
 
-    def __iter__(self) -> Iterator[SimulationRun]:
-        """Iterate over simulation runs
-
-        Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
-
-        Returns:
-            Iterator[SimulationRun]: yields simulation runs one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
@@ -191,6 +181,10 @@ class SimulatorRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.runs.list()
+
+            Iterate over simulation runs, one-by-one:
+                >>> for run in client.simulators.runs():
+                ...     run  # do something with the simulation run
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(

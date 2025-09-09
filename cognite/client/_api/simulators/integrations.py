@@ -29,16 +29,6 @@ class SimulatorIntegrationsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
         )
 
-    def __iter__(self) -> Iterator[SimulatorIntegration]:
-        """Iterate over simulator integrations
-
-        Fetches simulator integrations as they are iterated over, so you keep a limited number of simulator integrations in memory.
-
-        Returns:
-            Iterator[SimulatorIntegration]: yields Simulator integrations one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
@@ -110,6 +100,10 @@ class SimulatorIntegrationsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.integrations.list(limit=10)
+
+            Iterate over simulator integrations, one-by-one:
+                >>> for integration in client.simulators.integrations():
+                ...     integration  # do something with the simulator integration
 
             Filter simulator integrations by simulator external ids and active status:
                 >>> res = client.simulators.integrations.list(

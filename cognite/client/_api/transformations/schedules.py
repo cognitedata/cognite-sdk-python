@@ -64,10 +64,6 @@ class TransformationSchedulesAPI(APIClient):
             filter=TransformationFilter(include_public=include_public).dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[TransformationSchedule]:
-        """Iterate over all transformation schedules"""
-        return self()
-
     @overload
     def create(self, schedule: TransformationSchedule | TransformationScheduleWrite) -> TransformationSchedule: ...
 

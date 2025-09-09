@@ -38,16 +38,6 @@ class SimulatorRoutinesAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
 
-    def __iter__(self) -> Iterator[SimulatorRoutine]:
-        """Iterate over simulator routines
-
-        Fetches simulator routines as they are iterated over, so you keep a limited number of simulator routines in memory.
-
-        Returns:
-            Iterator[SimulatorRoutine]: yields Simulator routines one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
@@ -206,6 +196,10 @@ class SimulatorRoutinesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.simulators.routines.list(limit=10)
+
+            Iterate over simulator routines, one-by-one:
+                >>> for routine in client.simulators.routines():
+                ...     routine  # do something with the simulator routine
 
             Specify filter and sort order:
                 >>> from cognite.client.data_classes.simulators.filters import PropertySort
