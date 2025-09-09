@@ -1246,7 +1246,7 @@ class Datapoints(CogniteResource):
         # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
         field_names, data_lists = [], []
         data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
-        units = []
+        units: list[str | None] = []
         if not include_errors:  # We do not touch column ordering for synthetic datapoints
             data_fields = sorted(data_fields)
         for attr, data in data_fields:
