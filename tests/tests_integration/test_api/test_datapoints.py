@@ -2999,6 +2999,7 @@ class TestRetrieveDataFrameAPI:
             granularity="1d",
             target_unit="temperature:deg_c",
         )
+        assert isinstance(res, DatapointsList)
         res = res[0].to_pandas(include_errors=True, include_unit=True)
         assert type(res.columns) is pd.core.indexes.base.Index
 

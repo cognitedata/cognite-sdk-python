@@ -993,7 +993,7 @@ class DatapointsArray(CogniteResource):
 
         identifier = resolve_ts_identifier_as_df_column_name(self, column_names)
         data: list[np.typing.NDArray] = [np.array([]) if self.value is None else self.value]
-        units = [self.unit_external_id if self.unit_external_id is not None else self.unit]
+        units: list[str | None] = [self.unit_external_id if self.unit_external_id is not None else self.unit]
         if self.value is not None:
             columns = [identifier]
             if include_status:
