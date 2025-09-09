@@ -10,7 +10,7 @@ from cognite.client.data_classes.simulators.runs import (
 
 @pytest.mark.dsl
 class TestSimulationRunDataItemPandasIntegration:
-    def test_to_pandas(self):
+    def test_to_pandas(self) -> None:
         import pandas as pd
 
         # Create sample data

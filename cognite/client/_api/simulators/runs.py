@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.filters import SimulatorRunsFilter
 from cognite.client.data_classes.simulators.runs import (
     SimulationRun,
@@ -64,6 +65,8 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> Iterator[SimulationRunList]: ...
 
     @overload
@@ -79,6 +82,8 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> Iterator[SimulationRun]: ...
 
     def __call__(
@@ -93,6 +98,8 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> Iterator[SimulationRun] | Iterator[SimulationRunList]:
         """Iterate over simulation runs
 
@@ -109,6 +116,8 @@ class SimulatorRunsAPI(APIClient):
             routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
             routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
+            created_time (TimestampRange | None): Filter by created time
+            simulation_time (TimestampRange | None): Filter by simulation time
 
         Returns:
             Iterator[SimulationRun] | Iterator[SimulationRunList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
@@ -123,6 +132,8 @@ class SimulatorRunsAPI(APIClient):
             routine_external_ids=routine_external_ids,
             routine_revision_external_ids=routine_revision_external_ids,
             model_revision_external_ids=model_revision_external_ids,
+            created_time=created_time,
+            simulation_time=simulation_time,
         )
 
         return self._list_generator(
@@ -145,6 +156,8 @@ class SimulatorRunsAPI(APIClient):
         routine_external_ids: SequenceNotStr[str] | None = None,
         routine_revision_external_ids: SequenceNotStr[str] | None = None,
         model_revision_external_ids: SequenceNotStr[str] | None = None,
+        created_time: TimestampRange | None = None,
+        simulation_time: TimestampRange | None = None,
     ) -> SimulationRunList:
         """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
@@ -160,6 +173,8 @@ class SimulatorRunsAPI(APIClient):
             routine_external_ids (SequenceNotStr[str] | None): Filter by routine external ids
             routine_revision_external_ids (SequenceNotStr[str] | None): Filter by routine revision external ids
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
+            created_time (TimestampRange | None): Filter by created time
+            simulation_time (TimestampRange | None): Filter by simulation time
 
         Returns:
             SimulationRunList: List of simulation runs
@@ -175,6 +190,13 @@ class SimulatorRunsAPI(APIClient):
                 ...     simulator_external_ids=["PROSPER", "DWSIM"],
                 ...     status="success"
                 ... )
+
+            Filter runs by time ranges:
+                >>> from cognite.client.data_classes.shared import TimestampRange
+                >>> res = client.simulators.runs.list(
+                ...     created_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ...     simulation_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ... )
         """
 
         filter_runs = SimulatorRunsFilter(
@@ -186,6 +208,8 @@ class SimulatorRunsAPI(APIClient):
             routine_external_ids=routine_external_ids,
             routine_revision_external_ids=routine_revision_external_ids,
             model_revision_external_ids=model_revision_external_ids,
+            created_time=created_time,
+            simulation_time=simulation_time,
         )
         self._warning.warn()
         return self._list(

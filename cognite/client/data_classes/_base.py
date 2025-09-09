@@ -526,6 +526,7 @@ class CogniteUpdate:
 
         Args:
             camel_case (Literal[True]): No description.
+
         Returns:
             dict[str, Any]: A dictionary representation of the instance.
         """

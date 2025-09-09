@@ -1,24 +1,12 @@
 {
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "extra-files": [
+    "cognite/client/_version.py"
+  ],
   "packages": {
     ".": {
-      "package-name": "cognite-sdk",
-      "bump-files": [
-        "pyproject.toml",
-        {
-          "filename": "cognite/client/_version.py",
-          "search-regex": "__version__ = \"(.*)\""
-        }
-      ]
+      "package-name": "cognite/client"
     }
-  },
-  "changelog-types": [
-    { "type": "feat", "section": "✨ Features", "hidden": false },
-    { "type": "fix", "section": "🐛 Bug Fixes", "hidden": false },
-    { "type": "perf", "section": "⚡ Improvements", "hidden": false },
-    { "type": "docs", "section": "📚 Documentation", "hidden": true },
-    { "type": "style", "section": "🎨 Styles", "hidden": true },
-    { "type": "refactor", "section": "🛠 Refactoring", "hidden": true },
-    { "type": "test", "section": "✅ Tests", "hidden": true },
-    { "type": "chore", "section": "🔧 Chores", "hidden": true }
-  ]
+  }
 }

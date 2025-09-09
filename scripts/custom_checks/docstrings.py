@@ -425,7 +425,7 @@ def format_docstring_function(fn) -> list[str]:
     return []
 
 
-def find_all_classes_and_funcs(files: list[Path]):
+def find_all_classes_and_funcs(files: tuple[Path, ...]):
     def predicate(obj):
         return inspect.isclass(obj) or inspect.isfunction(obj)
 
@@ -438,5 +438,5 @@ def find_all_classes_and_funcs(files: list[Path]):
     }
 
 
-def format_docstrings(files: list[Path]) -> str:
+def format_docstrings(files: tuple[Path, ...]) -> str:
     return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs(files))))

@@ -199,16 +199,26 @@ class TestFunctionSchedulesAPI:
             cognite_client.functions.schedules.retrieve(id=[123])
         assert cognite_client.functions.schedules.retrieve(id=123) is None
 
-    def test_create_with_nonce(self, cognite_client: CogniteClient, dummy_function: Function) -> None:
+    def test_create_with_nonce(self, cognite_client: CogniteClient) -> None:
         session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
+
+        def handle(client, data, secrets, function_call_info):
+            print(f"Inputs: {data!r}")  # noqa
+            print(f"Call info: {function_call_info!r}")  # noqa
+            return data
+
+        created_fn = cognite_client.functions.create(
+            name="test_function_for_schedule_with_nonce",
+            function_handle=handle,
+            description="print inputs & call info, return inputs",
+        )
         schedule = FunctionScheduleWrite(
             name="test_create_with_nonce",
             cron_expression="0 0 * * *",
-            function_id=dummy_function.id,
+            function_id=created_fn.id,
             data={"key": "value"},
             nonce=session.nonce,
         )
-        created: FunctionSchedule | None = None
         try:
             created = cognite_client.functions.schedules.create(schedule)
 
@@ -218,5 +228,4 @@ class TestFunctionSchedulesAPI:
             assert created.as_write().dump() == expected
             assert created.session_id == session.id
         finally:
-            if created:
-                cognite_client.functions.schedules.delete(created.id)
+            cognite_client.functions.delete(id=created_fn.id)

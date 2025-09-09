@@ -75,23 +75,32 @@ T_Type = TypeVar("T_Type", bound=type)
 UNION_TYPES = {typing.Union, UnionType}
 
 
-def all_subclasses(base: T_Type) -> list[T_Type]:
+def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
     Ignores classes not part of the main library, e.g. subclasses part of tests.
+
+    Args:
+        base: The base class to find subclasses of.
+        exclude: A set of classes to exclude from the results.
+
+    Returns:
+        A list of subclasses.
+
     """
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c))
+            - (exclude or set()),
         ),
         key=str,
     )
 
 
-def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Type]:
     return [
         sub
-        for sub in all_subclasses(base)
+        for sub in all_subclasses(base, exclude=exclude)
         if all(base is not abc.ABC for base in sub.__bases__)
         and not inspect.isabstract(sub)
         # The FakeCogniteResourceGenerator does not support descriptors, so we exclude the Typed classes
