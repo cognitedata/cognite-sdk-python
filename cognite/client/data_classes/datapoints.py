@@ -1252,7 +1252,10 @@ class Datapoints(CogniteResource):
         for attr, data in data_fields:
             if attr == "timestamp":
                 continue
-            units.append(self.unit_external_id if self.unit_external_id is not None else self.unit)
+            if attr == "error":
+                units.append(None)
+            else:
+                units.append(self.unit_external_id if self.unit_external_id is not None else self.unit)
             id_col_name = identifier
             if attr == "value":
                 field_names.append(id_col_name)

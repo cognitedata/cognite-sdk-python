@@ -2989,6 +2989,19 @@ class TestRetrieveDataFrameAPI:
         )
         assert type(res.columns) is pd.core.indexes.base.Index
 
+        res = cognite_client.time_series.data.synthetic.query(
+            expressions=["A / (A  - A)"],
+            start=pd.Timestamp("1970-01-01"),
+            end=pd.Timestamp("2025-02-01"),
+            limit=1,
+            variables={"A": ex_ids[0]},
+            aggregate="average",
+            granularity="1d",
+            target_unit="temperature:deg_c",
+        )
+        res = res[0].to_pandas(include_errors=True, include_unit=True)
+        assert type(res.columns) is pd.core.indexes.base.Index
+
 
 @pytest.fixture
 def post_spy(cognite_client: CogniteClient) -> Iterator[None]:
