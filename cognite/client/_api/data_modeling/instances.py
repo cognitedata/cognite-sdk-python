@@ -117,7 +117,6 @@ class _TypedNodeOrEdgeListAdapter:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
-    @classmethod
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug_notices = next((DebugNoticeList._load(r["debug"]["notices"]) for r in responses if "debug" in r), None)
