@@ -2,7 +2,9 @@ import pickle
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.credentials import (
+    CredentialProvider,
     OAuthClientCredentials,
     OAuthDeviceCode,
     OAuthInteractive,
@@ -23,7 +25,9 @@ class TestCredentialProvidersArePicklable:
             (OAuthInteractive, [AUTHORITY_URL, "client_id2", "scopes"]),
         ),
     )
-    def test_serialize_and_deserialize(self, auth_cls, args, cognite_client) -> None:
+    def test_serialize_and_deserialize(
+        self, auth_cls: type[CredentialProvider], args: list[str], cognite_client: CogniteClient
+    ) -> None:
         cred_prov = auth_cls(*args)
         roundtrip_cred_prov = pickle.loads(pickle.dumps(cred_prov))
         assert type(roundtrip_cred_prov) is auth_cls

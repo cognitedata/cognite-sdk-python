@@ -521,8 +521,8 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type="String", external_id="user", description="some description"),
-                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
                 ... ]
                 >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
@@ -617,7 +617,7 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> my_update = SequenceUpdate(id=1).columns.add(
-                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description")
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description")
                 ... )
                 >>> res = client.sequences.update(my_update)
 
@@ -626,8 +626,8 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type ="String",external_id="user", description ="some description"),
-                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
                 ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
@@ -705,7 +705,7 @@ class SequencesAPI(APIClient):
                 >>> new_sequence = SequenceWrite(
                 ...     external_id="new_sequence",
                 ...     description="New sequence",
-                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="String")]
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="STRING")]
                 ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
@@ -1069,8 +1069,8 @@ class SequencesDataAPI(APIClient):
                 >>> seq = client.sequences.create(
                 ...     SequenceWrite(
                 ...         columns=[
-                ...             SequenceColumnWrite(value_type="String", external_id="col_a"),
-                ...             SequenceColumnWrite(value_type="Double", external_id ="col_b")
+                ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id ="col_b")
                 ...         ],
                 ...     )
                 ... )
@@ -1236,6 +1236,18 @@ class SequencesDataAPI(APIClient):
         self,
         *,
         id: typing.Sequence[int],
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList: ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: typing.Sequence[int] | int,
+        external_id: SequenceNotStr[str] | str,
         start: int = 0,
         end: int | None = None,
         columns: SequenceNotStr[str] | None = None,
