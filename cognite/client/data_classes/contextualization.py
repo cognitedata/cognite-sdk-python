@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import time
 import warnings
+from abc import ABC, abstractmethod
 from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast, final
 
 from typing_extensions import Self
 
@@ -68,7 +69,7 @@ class ContextualizationJobType(Enum):
     VISION = "vision"
 
 
-class ContextualizationJob(CogniteResource):
+class ContextualizationJob(CogniteResource, ABC):
     """Data class for the result of a contextualization job."""
 
     _COMMON_FIELDS = frozenset(
@@ -84,7 +85,6 @@ class ContextualizationJob(CogniteResource):
             "jobToken",
         }
     )
-    _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
 
     def __init__(
         self,
@@ -92,13 +92,11 @@ class ContextualizationJob(CogniteResource):
         status: str,
         status_time: int,
         created_time: int,
-        start_time: int | None,
-        model_id: int | None = None,
-        error_message: str | None = None,
+        start_time: int,
+        error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
-        self.model_id = model_id
         self.status = status
         self.created_time = created_time
         self.start_time = start_time
@@ -107,45 +105,14 @@ class ContextualizationJob(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: dict[str, Any] | None = None
         self.job_token: str | None = None
-        self._status_path: str | None = None
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
-            status=resource["status"],
-            created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
-            status_time=resource["statusTime"],
-            error_message=resource.get("errorMessage"),
-            cognite_client=cognite_client,
-        )
-
+    @abstractmethod
     def update_status(self) -> str:
-        """Updates the model status and returns it"""
-        job_token = self.job_token
-        status_path = self._status_path
-        headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = (
-            getattr(self._cognite_client, self._JOB_TYPE.value)
-            ._get(f"{status_path}{self.job_id}", headers=headers)
-            .json()
-        )
-        self.__init__(  # type: ignore[misc]
-            job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
-            status=resource["status"],
-            created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
-            status_time=resource["statusTime"],
-            error_message=resource.get("errorMessage"),
-            cognite_client=self._cognite_client,
-        )
-        self.job_token = job_token
-        self._status_path = status_path
-        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
-        return self.status
+        raise NotImplementedError
+
+    @abstractmethod
+    def _status_path(self) -> str:
+        raise NotImplementedError
 
     def wait_for_completion(self, timeout: float | None = None, interval: float = 1) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
@@ -178,16 +145,14 @@ class ContextualizationJob(CogniteResource):
         return f"{self.__class__.__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
 
     @classmethod
-    def _load_with_status(
+    def _load_with_job_token(
         cls: type[T_ContextualizationJob],
-        *,
         data: dict[str, Any],
+        *,
         headers: MutableMapping[str, str],
-        status_path: str,
         cognite_client: Any,
     ) -> T_ContextualizationJob:
         obj = cls._load(data, cognite_client=cognite_client)
-        obj._status_path = status_path
         obj.job_token = headers.get("X-Job-Token")
         return obj
 
@@ -297,7 +262,7 @@ class EntityMatchingModel(CogniteResource):
         targets: list[dict] | None = None,
         num_matches: int = 1,
         score_threshold: float | None = None,
-    ) -> ContextualizationJob:
+    ) -> EntityMatchingPredictionResult:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
 
         Args:
@@ -307,19 +272,20 @@ class EntityMatchingModel(CogniteResource):
             score_threshold (float | None): only return matches with a score above this threshold
 
         Returns:
-            ContextualizationJob: object which can be used to wait for and retrieve results."""
+            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results."""
         self.wait_for_completion()
-        return self._cognite_client.entity_matching._run_job(
-            job_path="/predict",
-            job_cls=ContextualizationJob,
-            status_path="/jobs/",
-            json={
-                "id": self.id,
-                "sources": self._dump_entities(sources),
-                "targets": self._dump_entities(targets),
-                "numMatches": num_matches,
-                "scoreThreshold": score_threshold,
-            },
+        json = {
+            "id": self.id,
+            "sources": self._dump_entities(sources),
+            "targets": self._dump_entities(targets),
+            "numMatches": num_matches,
+            "scoreThreshold": score_threshold,
+        }
+        response = self._cognite_client.entity_matching._post(f"{self._RESOURCE_PATH}/predict", json=json)
+        return EntityMatchingPredictionResult._load_with_job_token(
+            data=response.json(),
+            headers=response.headers,
+            cognite_client=self._cognite_client,
         )
 
     def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
@@ -488,9 +454,8 @@ class DiagramConvertItem(CogniteResource):
         return df
 
 
+@final
 class DiagramConvertResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.DIAGRAMS
-
     def __init__(
         self,
         job_id: int,
@@ -498,9 +463,8 @@ class DiagramConvertResults(ContextualizationJob):
         status_time: int,
         created_time: int,
         items: list[DiagramConvertItem],
-        start_time: int | None = None,
-        model_id: int | None = None,
-        error_message: str | None = None,
+        start_time: int,
+        error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -509,7 +473,6 @@ class DiagramConvertResults(ContextualizationJob):
             status_time=status_time,
             created_time=created_time,
             start_time=start_time,
-            model_id=model_id,
             error_message=error_message,
             cognite_client=cognite_client,
         )
@@ -519,39 +482,34 @@ class DiagramConvertResults(ContextualizationJob):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
+            start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[DiagramConvertItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
             cognite_client=cognite_client,
         )
 
+    def _status_path(self) -> str:
+        return f"/context/diagram/convert/{self.job_id}"
+
     def update_status(self) -> str:
         """Updates the model status and returns it"""
         job_token = self.job_token
-        status_path = self._status_path
         headers = {"X-Job-Token": job_token} if job_token else {}
-        resource = (
-            getattr(self._cognite_client, self._JOB_TYPE.value)
-            ._get(f"{status_path}{self.job_id}", headers=headers)
-            .json()
-        )
-        self.__init__(  # type: ignore[misc]
+        resource = self._cognite_client.diagrams._get(self._status_path(), headers=headers).json()
+        self.__init__(
             job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
+            start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in resource["items"]],
             cognite_client=self._cognite_client,
         )
         self.job_token = job_token
-        self._status_path = status_path
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
@@ -615,9 +573,8 @@ class DiagramDetectItem(CogniteResource):
         return df
 
 
+@final
 class DiagramDetectResults(ContextualizationJob):
-    _JOB_TYPE = ContextualizationJobType.DIAGRAMS
-
     def __init__(
         self,
         job_id: int,
@@ -625,9 +582,8 @@ class DiagramDetectResults(ContextualizationJob):
         status_time: int,
         created_time: int,
         items: list[DiagramDetectItem],
-        start_time: int | None = None,
-        model_id: int | None = None,
-        error_message: str | None = None,
+        start_time: int,
+        error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -636,7 +592,6 @@ class DiagramDetectResults(ContextualizationJob):
             status_time=status_time,
             created_time=created_time,
             start_time=start_time,
-            model_id=model_id,
             error_message=error_message,
             cognite_client=cognite_client,
         )
@@ -646,29 +601,27 @@ class DiagramDetectResults(ContextualizationJob):
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
+            start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[DiagramDetectItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
             cognite_client=cognite_client,
         )
 
+    def _status_path(self) -> str:
+        return f"/context/diagram/detect/{self.job_id}"
+
     def update_status(self) -> str:
-        status_path = self._status_path
         job_token = self.job_token
         headers = {"X-Job-Token": job_token} if job_token else {}
-
-        url = f"{status_path}{self.job_id}"
-        resource = self._cognite_client.diagrams._get(url, headers=headers).json()
-        self.__init__(  # type: ignore[misc]
+        resource = self._cognite_client.diagrams._get(self._status_path(), headers=headers).json()
+        self.__init__(
             job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
+            start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[
@@ -677,7 +630,6 @@ class DiagramDetectResults(ContextualizationJob):
             cognite_client=self._cognite_client,
         )
         self.job_token = job_token
-        self._status_path = status_path
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
 
@@ -1080,9 +1032,8 @@ class VisionExtractItem(CogniteResource):
 P = ParamSpec("P")
 
 
+@final
 class VisionExtractJob(ContextualizationJob, Generic[P]):
-    _JOB_TYPE = ContextualizationJobType.VISION
-
     def __init__(
         self,
         job_id: int,
@@ -1090,9 +1041,8 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         status_time: int,
         created_time: int,
         items: list[VisionExtractItem],
-        start_time: int | None = None,
-        model_id: int | None = None,
-        error_message: str | None = None,
+        start_time: int,
+        error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(
@@ -1101,21 +1051,34 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             status_time=status_time,
             created_time=created_time,
             start_time=start_time,
-            model_id=model_id,
             error_message=error_message,
             cognite_client=cognite_client,
         )
         self.items = items
 
-    def update_status(self) -> str:
-        status_path = self._status_path
-        resource = self._cognite_client.vision._get(f"{status_path}{self.job_id}").json()
-        self.__init__(  # type: ignore[misc]
+    def _status_path(self) -> str:
+        return f"/context/vision/extract/{self.job_id}"
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> VisionExtractJob:
+        return cls(
             job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
+            cognite_client=cognite_client,
+        )
+
+    def update_status(self) -> str:
+        resource = self._cognite_client.vision._get(self._status_path()).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[
@@ -1123,23 +1086,8 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             ],
             cognite_client=self._cognite_client,
         )
-        self._status_path = status_path
         self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
         return self.status
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            job_id=resource["jobId"],
-            model_id=resource.get("modelId"),
-            status=resource["status"],
-            created_time=resource["createdTime"],
-            start_time=resource.get("startTime"),
-            status_time=resource["statusTime"],
-            error_message=resource.get("errorMessage"),
-            items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
-            cognite_client=cognite_client,
-        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         job_dump = super().dump(camel_case=camel_case)
@@ -1231,6 +1179,62 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
+
+
+@final
+class EntityMatchingPredictionResult(ContextualizationJob):
+    def __init__(
+        self,
+        job_id: int,
+        status: str,
+        status_time: int,
+        created_time: int,
+        start_time: int,
+        error_message: str | None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        super().__init__(
+            job_id=job_id,
+            status=status,
+            status_time=status_time,
+            created_time=created_time,
+            start_time=start_time,
+            error_message=error_message,
+            cognite_client=cognite_client,
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            cognite_client=cognite_client,
+        )
+
+    def _status_path(self) -> str:
+        return f"/context/entitymatching/jobs/{self.job_id}"
+
+    def update_status(self) -> str:
+        """Updates the model status and returns it"""
+        job_token = self.job_token
+        headers = {"X-Job-Token": job_token} if job_token else {}
+        resource = self._cognite_client.entity_matching._get(self._status_path(), headers=headers).json()
+        self.__init__(
+            job_id=resource["jobId"],
+            status=resource["status"],
+            created_time=resource["createdTime"],
+            start_time=resource["startTime"],
+            status_time=resource["statusTime"],
+            error_message=resource.get("errorMessage"),
+            cognite_client=self._cognite_client,
+        )
+        self.job_token = job_token
+        self._result = {k: v for k, v in resource.items() if k not in self._COMMON_FIELDS}
+        return self.status
 
 
 class ResourceReference(CogniteResource):
