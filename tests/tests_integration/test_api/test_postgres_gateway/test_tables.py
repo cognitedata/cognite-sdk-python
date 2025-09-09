@@ -30,7 +30,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def one_space(cognite_client: CogniteClient) -> Space:
+def one_space(cognite_client: CogniteClient) -> Iterator[Space]:
     my_space = SpaceApply(
         space=f"my_space-{random_string(10)}",
     )
@@ -40,7 +40,7 @@ def one_space(cognite_client: CogniteClient) -> Space:
 
 
 @pytest.fixture
-def one_container(cognite_client: CogniteClient, one_space: Space) -> Container:
+def one_container(cognite_client: CogniteClient, one_space: Space) -> Iterator[Container]:
     my_container = ContainerApply(
         space=one_space.space, external_id="my_container", properties={"name": ContainerProperty(type=Text())}
     )
@@ -50,7 +50,7 @@ def one_container(cognite_client: CogniteClient, one_space: Space) -> Container:
 
 
 @pytest.fixture
-def one_view(cognite_client: CogniteClient, one_space: Space, one_container: Container) -> View:
+def one_view(cognite_client: CogniteClient, one_space: Space, one_container: Container) -> Iterator[View]:
     my_view = ViewApply(
         space=one_space.space,
         external_id="my_view",
@@ -63,7 +63,7 @@ def one_view(cognite_client: CogniteClient, one_space: Space, one_container: Con
 
 
 @pytest.fixture
-def one_raw_table(cognite_client: CogniteClient) -> tuple[str, str]:
+def one_raw_table(cognite_client: CogniteClient) -> Iterator[tuple[str, str]]:
     db_table_pair = f"my_database-{random_string(10)}", "my_table_postgres_gateway"
 
     cognite_client.raw.databases.create(db_table_pair[0])
