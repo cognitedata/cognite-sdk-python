@@ -102,10 +102,10 @@ class Relationship(RelationshipCore):
         last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
         source_external_id (str): External id of the CDF resource that constitutes the relationship source.
         source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the source_external_id and source_type fields.
+        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the source_external_id and source_type fields.
         target_external_id (str): External id of the CDF resource that constitutes the relationship target.
         target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the target_external_id and target_type fields.
+        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None): The full resource referenced by the target_external_id and target_type fields.
         start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
         end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
         confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
@@ -121,10 +121,10 @@ class Relationship(RelationshipCore):
         last_updated_time: int,
         source_external_id: str,
         source_type: str,
-        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None,
+        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None,
         target_external_id: str,
         target_type: str,
-        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None,
+        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict[str, Any] | None,
         start_time: int | None,
         end_time: int | None,
         confidence: float | None,
