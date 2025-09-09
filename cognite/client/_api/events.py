@@ -178,16 +178,6 @@ class EventsAPI(APIClient):
             partitions=partitions,
         )
 
-    def __iter__(self) -> Iterator[Event]:
-        """Iterate over events
-
-        Fetches events as they are iterated over, so you keep a limited number of events in memory.
-
-        Returns:
-            Iterator[Event]: yields Events one by one.
-        """
-        return self()
-
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
 
@@ -789,10 +779,10 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> event_list = client.events.list(limit=5, start_time={"max": 1500000000})
 
-            Iterate over events:
+            Iterate over events, one-by-one:
 
-                >>> for event in client.events:
-                ...     event # do something with the event
+                >>> for event in client.events():
+                ...     event  # do something with the event
 
             Iterate over chunks of events to reduce memory load:
 
