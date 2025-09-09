@@ -151,14 +151,14 @@ class RawTablesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
-            Iterate over tables:
+            Iterate over tables, one-by-one:
 
                 >>> for table in client.raw.tables(db_name="db1"):
-                ...     table # do something with the table
+                ...     table  # do something with the table
 
             Iterate over chunks of tables to reduce memory load:
 
-                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
+                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
