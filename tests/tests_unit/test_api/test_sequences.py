@@ -87,7 +87,7 @@ def mock_get_sequence_data(httpx_mock, cognite_client):
     payload = {
         "id": 0,
         "externalId": "eid",
-        "columns": [{"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Double"}],
+        "columns": [{"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "DOUBLE"}],
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
     httpx_mock.add_response(
@@ -105,8 +105,8 @@ def mock_get_sequence_empty_data(httpx_mock, cognite_client):
         "id": 0,
         "externalId": "eid",
         "columns": [
-            {"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
-            {"externalId": "ceid2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
+            {"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "STRING"},
+            {"externalId": "ceid2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "STRING"},
         ],
         "rows": [],
     }
@@ -125,7 +125,7 @@ def mock_get_sequence_data_many_columns(httpx_mock, cognite_client):
         "id": 0,
         "externalId": "eid",
         "columns": [
-            {"externalId": f"ceid{i}", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"}
+            {"externalId": f"ceid{i}", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "STRING"}
             for i in range(200)
         ],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
@@ -145,8 +145,8 @@ def mock_get_sequence_data_two_col(httpx_mock, cognite_client):
         "id": 0,
         "externalId": "eid",
         "columns": [
-            {"externalId": "col1", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
-            {"externalId": "col2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+            {"externalId": "col1", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "LONG"},
+            {"externalId": "col2", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "LONG"},
         ],
         "rows": [{"rowNumber": 0, "values": [1, 2]}],
     }
@@ -166,8 +166,8 @@ def mock_get_sequence_data_two_col_with_zero(httpx_mock, cognite_client):
         "id": 0,
         "externalId": "eid",
         "columns": [
-            {"externalId": "str", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "String"},
-            {"externalId": "lon", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+            {"externalId": "str", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "STRING"},
+            {"externalId": "lon", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "LONG"},
         ],
         "rows": [{"rowNumber": 12, "values": ["string-12", 0]}],
     }
@@ -187,8 +187,8 @@ def mock_get_sequence_data_with_null(httpx_mock, cognite_client):
         "id": 0,
         "externalId": "eid",
         "columns": [
-            {"id": 0, "externalId": "intcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
-            {"id": 1, "externalId": "strcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "Long"},
+            {"id": 0, "externalId": "intcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "LONG"},
+            {"id": 1, "externalId": "strcol", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "LONG"},
         ],
         "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 1, "values": [None, "blah"]}],
     }
@@ -262,7 +262,7 @@ class TestSequences:
         assert mock_seq_response["items"][0] == res.dump(camel_case=True)
         assert {
             "items": [
-                {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "Double"}]}
+                {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "DOUBLE"}]}
             ]
         } == jsgz_load(httpx_mock.get_requests()[0].content)
 
@@ -272,7 +272,7 @@ class TestSequences:
                 external_id="1",
                 name="blabla",
                 columns=[
-                    SequenceColumnWrite(value_type="String", external_id="column0"),
+                    SequenceColumnWrite(value_type="STRING", external_id="column0"),
                     SequenceColumnWrite(external_id="c2"),
                 ],
             )
@@ -285,8 +285,8 @@ class TestSequences:
                     "name": "blabla",
                     "externalId": "1",
                     "columns": [
-                        {"externalId": "column0", "valueType": "String"},
-                        {"externalId": "c2", "valueType": "Double"},
+                        {"externalId": "column0", "valueType": "STRING"},
+                        {"externalId": "c2", "valueType": "DOUBLE"},
                     ],
                 }
             ]
@@ -295,13 +295,13 @@ class TestSequences:
     def test_create_columnid_passed(self, cognite_client, mock_seq_response, httpx_mock) -> None:
         res = cognite_client.sequences.create(
             SequenceWrite(
-                external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="a", value_type="String")]
+                external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="a", value_type="STRING")]
             )
         )
         assert isinstance(res, Sequence)
         assert {
-            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "String", "externalId": "a"}]}]
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+            "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
+        } == jsgz_load(mock_seq_response.calls[0].request.body)
 
     def test_create_multiple(self, cognite_client, mock_seq_response) -> None:
         res = cognite_client.sequences.create(
