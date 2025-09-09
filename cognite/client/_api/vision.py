@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import (
     FeatureParameters,
-    T_ContextualizationJob,
     VisionExtractJob,
     VisionFeature,
 )
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import assert_type
 
 
@@ -36,28 +33,6 @@ class VisionAPI(APIClient):
             {"fileExternalId": external_id} for external_id in identifier_sequence if isinstance(external_id, str)
         ]
         return [*id_objs, *external_id_objs]
-
-    def _run_job(
-        self,
-        job_path: str,
-        job_cls: type[T_ContextualizationJob],
-        status_path: str | None = None,
-        headers: dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> T_ContextualizationJob:
-        if status_path is None:
-            status_path = job_path + "/"
-        res = self._post(
-            self._RESOURCE_PATH + job_path,
-            json={to_camel_case(k): v for k, v in (kwargs or {}).items() if v is not None},
-            headers=headers,
-        )
-        return job_cls._load_with_status(
-            data=res.json(),
-            headers=res.headers,
-            status_path=self._RESOURCE_PATH + status_path,
-            cognite_client=self._cognite_client,
-        )
 
     def extract(
         self,
@@ -99,22 +74,18 @@ class VisionAPI(APIClient):
             features = [features]
 
         beta_features = [f for f in features if f in VisionFeature.beta_features()]
+        headers = {}
         if len(beta_features) > 0:
             warnings.warn(f"Features {beta_features} are in beta and are still in development")
+            headers = {"cdf-version": "beta"}
 
-        return self._run_job(
-            job_path="/extract",
-            status_path="/extract/",
-            items=self._process_file_ids(file_ids, file_external_ids),
-            features=features,
-            parameters=parameters
-            if isinstance(parameters, dict)
-            else parameters.dump(camel_case=True)
-            if parameters is not None
-            else None,
-            job_cls=VisionExtractJob,
-            headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
-        )
+        body = {
+            "items": self._process_file_ids(file_ids, file_external_ids),
+            "features": features,
+            **({"parameters": parameters.dump(camel_case=True)} if parameters is not None else {}),
+        }
+        response = self._post(f"{self._RESOURCE_PATH}/extract", json=body, headers=headers)
+        return VisionExtractJob._load(response.json(), cognite_client=self._cognite_client)
 
     def get_extract_job(self, job_id: int) -> VisionExtractJob:
         """`Retrieve an existing extract job by ID. <https://developer.cognite.com/api#tag/Vision/operation/getVisionExtract>`_
@@ -137,6 +108,4 @@ class VisionAPI(APIClient):
                 ...     # do something with the predictions
         """
         result = self._get(f"{self._RESOURCE_PATH}/extract/{job_id}")
-        job: VisionExtractJob = VisionExtractJob.load(result.json(), cognite_client=self._cognite_client)
-        job._status_path = f"{self._RESOURCE_PATH}/extract/{job_id}"
-        return job
+        return VisionExtractJob._load(result.json(), cognite_client=self._cognite_client)
