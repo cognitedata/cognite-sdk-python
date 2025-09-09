@@ -28,6 +28,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
+    EntityMatchingPredictionResult,
     JobStatus,
 )
 from cognite.client.data_classes.data_sets import (
@@ -371,6 +372,7 @@ __all__ = [
     "EntityMatchingModel",
     "EntityMatchingModelList",
     "EntityMatchingModelUpdate",
+    "EntityMatchingPredictionResult",
     "Event",
     "EventFilter",
     "EventList",
