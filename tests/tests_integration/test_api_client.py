@@ -4,6 +4,7 @@ generic resource, an arbitrary resource is used instead to test the endpoint.
 """
 
 import random
+from collections.abc import Iterator
 from unittest.mock import patch
 
 import pytest
@@ -15,10 +16,11 @@ from cognite.client.data_classes.events import EventProperty, EventWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from tests.tests_unit.conftest import DefaultResourceGenerator
+from tests.utils import get_or_raise
 
 
 @pytest.fixture
-def post_spy_event(cognite_client):
+def post_spy_event(cognite_client: CogniteClient) -> Iterator[None]:
     dps_api = cognite_client.events
     with patch.object(dps_api, "_post", wraps=dps_api._post):
         yield
@@ -106,7 +108,7 @@ class TestAPIClientUpsert:
             cognite_client.events.delete(external_id=[new_event.external_id, existing.external_id])
 
     def test_upsert_split_into_multiple_tasks(
-        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event
+        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event: None
     ) -> None:
         new_event = EventWrite(
             external_id="test_upsert_split_into_multiple_tasks:new" + random_string(5),
@@ -131,7 +133,7 @@ class TestAPIClientUpsert:
             monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
 
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
-            assert cognite_client.events._post.call_count >= 2
+            assert cognite_client.events._post.call_count >= 2  # type: ignore[attr-defined]
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
@@ -214,7 +216,7 @@ class TestAPIClientUpsert:
         )
         try:
             with pytest.raises(ValueError) as e:
-                cognite_client.events.upsert(new_event, mode="invalid_mode")
+                cognite_client.events.upsert(new_event, mode="invalid_mode")  # type: ignore[call-overload]
 
             assert "invalid_mode" in e.value.args[0]
         finally:  # Just in case the event gets created
@@ -331,8 +333,8 @@ class TestAPIClientAdvancedAggregate:
         assert count == sum(
             1
             for event in event_list
-            if event.subtype.startswith("type1")
-            and event.external_id.startswith("_advanced_aggregate:") == "subtype1"
+            if get_or_raise(event.subtype).startswith("type1")
+            and get_or_raise(event.external_id).startswith("_advanced_aggregate:") == "subtype1"
             and event.source != "source2"
         )
 
@@ -347,8 +349,9 @@ class TestAPIClientAdvancedAggregate:
         assert count == sum(
             1
             for event in event_list
-            if event.external_id.startswith("_advanced_aggregate:") == "subtype1" and event.type != "type1"
-            for key in event.metadata
+            if get_or_raise(event.external_id).startswith("_advanced_aggregate:") == "subtype1"
+            and event.type != "type1"
+            for key in get_or_raise(event.metadata)
             if key.startswith("shop")
         )
 
@@ -387,7 +390,7 @@ class TestAPIClientDelete:
 
 
 @pytest.fixture()
-def new_asset(cognite_client: CogniteClient) -> Asset:
+def new_asset(cognite_client: CogniteClient) -> Iterator[Asset]:
     new_asset = AssetWrite(
         external_id=f"test_api_client:new_asset:fixture_{random_string(5)}",
         name="test_asset",
