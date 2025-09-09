@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.shared import TimestampRange
@@ -127,27 +127,20 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
+    def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...
 
     @overload
-    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorRoutineRevision | None: ...
+    def retrieve(self, *, external_ids: str) -> SimulatorRoutineRevision | None: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: None = None,
-        external_ids: str = ...,
-    ) -> SimulatorRoutineRevision | None: ...
+    def retrieve(self, *, ids: Sequence[int]) -> SimulatorRoutineRevisionList: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: Sequence[int] | None = None,
-        external_ids: SequenceNotStr[str] | None = None,
-    ) -> SimulatorRoutineRevisionList | None: ...
+    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorRoutineRevisionList: ...
 
     def retrieve(
         self,
+        *,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
