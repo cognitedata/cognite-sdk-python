@@ -6,7 +6,12 @@ import pytest
 from dotenv import load_dotenv
 
 from cognite.client import ClientConfig, CogniteClient
-from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import (
+    CredentialProvider,
+    OAuthClientCertificate,
+    OAuthClientCredentials,
+    OAuthInteractive,
+)
 from cognite.client.data_classes import DataSet, DataSetWrite
 from cognite.client.data_classes.data_modeling import SpaceApply
 from cognite.client.utils import timestamp_to_ms
@@ -19,7 +24,7 @@ def cognite_client() -> CogniteClient:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def session_cleanup(cognite_client: CogniteClient):
+def session_cleanup(cognite_client: CogniteClient) -> None:
     resource_age = timestamp_to_ms("30m-ago")
 
     active_sessions = cognite_client.iam.sessions.list(status="ACTIVE", limit=-1)
@@ -66,7 +71,7 @@ def cognite_client_beta() -> CogniteClient:
 def make_cognite_client(beta: bool = False) -> CogniteClient:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
-        credentials = OAuthClientCredentials(
+        credentials: CredentialProvider = OAuthClientCredentials(
             token_url=os.environ["COGNITE_TOKEN_URL"],
             client_id=os.environ["COGNITE_CLIENT_ID"],
             client_secret=os.environ["COGNITE_CLIENT_SECRET"],
@@ -92,7 +97,7 @@ def make_cognite_client(beta: bool = False) -> CogniteClient:
             "Environment variable LOGIN_FLOW must be set to 'client_credentials', 'client_certificate' or 'interactive'"
         )
 
-    beta_configuration = dict(api_subversion="beta") if beta else dict()
+    beta_configuration: dict = dict(api_subversion="beta") if beta else dict()
 
     return CogniteClient(
         ClientConfig(
