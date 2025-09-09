@@ -86,16 +86,6 @@ class DataModelsAPI(APIClient):
             filter=filter.dump(camel_case=True),
         )
 
-    def __iter__(self) -> Iterator[DataModel]:
-        """Iterate over data model
-
-        Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
-
-        Returns:
-            Iterator[DataModel]: yields DataModels one by one.
-        """
-        return self()
-
     @overload
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
@@ -207,10 +197,10 @@ class DataModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> data_model_list = client.data_modeling.data_models.list(limit=5)
 
-            Iterate over data model:
+            Iterate over data model, one-by-one:
 
-                >>> for data_model in client.data_modeling.data_models:
-                ...     data_model # do something with the data_model
+                >>> for data_model in client.data_modeling.data_models():
+                ...     data_model  # do something with the data model
 
             Iterate over chunks of data model to reduce memory load:
 

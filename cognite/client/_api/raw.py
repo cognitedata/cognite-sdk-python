@@ -71,14 +71,6 @@ class RawDatabasesAPI(APIClient):
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
-    def __iter__(self) -> Iterator[Database]:
-        """Iterate over databases
-
-        Returns:
-            Iterator[Database]: yields Database one by one.
-        """
-        return self()
-
     @overload
     def create(self, name: str) -> Database: ...
 
@@ -155,10 +147,10 @@ class RawDatabasesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> db_list = client.raw.databases.list(limit=5)
 
-            Iterate over databases:
+            Iterate over databases, one-by-one:
 
-                >>> for db in client.raw.databases:
-                ...     db # do something with the db
+                >>> for db in client.raw.databases():
+                ...     db  # do something with the db
 
             Iterate over chunks of databases to reduce memory load:
 
@@ -306,14 +298,14 @@ class RawTablesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> table_list = client.raw.tables.list("db1", limit=5)
 
-            Iterate over tables:
+            Iterate over tables, one-by-one:
 
                 >>> for table in client.raw.tables(db_name="db1"):
-                ...     table # do something with the table
+                ...     table  # do something with the table
 
             Iterate over chunks of tables to reduce memory load:
 
-                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=2500):
+                >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
                 ...     table_list # do something with the tables
         """
         tb = self._list(
