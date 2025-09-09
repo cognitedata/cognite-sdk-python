@@ -87,20 +87,33 @@ class SimulationRunCore(WriteableCogniteResource["SimulationRunWrite"]):
     def __init__(
         self,
         run_type: str | None,
-        routine_external_id: str,
+        routine_external_id: str | None,
         run_time: int | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
     ) -> None:
         self.run_type = run_type
         self.run_time = run_time
         self.routine_external_id = routine_external_id
+        self.routine_revision_external_id = routine_revision_external_id
+        self.model_revision_external_id = model_revision_external_id
 
 
 class SimulationRunWrite(SimulationRunCore):
     """
     Request to run a simulator routine asynchronously.
 
+    This class supports two modes of running simulations:
+    1. By routine external ID only
+    2. By routine revision external ID + model revision external ID
+
     Args:
-        routine_external_id (str): External id of the associated simulator routine
+        routine_external_id (str | None): External id of the associated simulator routine.
+            Cannot be specified together with routine_revision_external_id and model_revision_external_id.
+        routine_revision_external_id (str | None): External id of the associated simulator routine revision.
+            Must be specified together with model_revision_external_id.
+        model_revision_external_id (str | None): External id of the associated simulator model revision.
+            Must be specified together with routine_revision_external_id.
         run_type (str | None): The type of the simulation run
         run_time (int | None): Run time in milliseconds. Reference timestamp used for data pre-processing and data sampling.
         queue (bool | None): Queue the simulation run when connector is down.
@@ -110,15 +123,34 @@ class SimulationRunWrite(SimulationRunCore):
 
     def __init__(
         self,
-        routine_external_id: str,
+        routine_external_id: str | None = None,
+        routine_revision_external_id: str | None = None,
+        model_revision_external_id: str | None = None,
         run_type: str | None = None,
         run_time: int | None = None,
         queue: bool | None = None,
         log_severity: str | None = None,
         inputs: list[SimulationInputOverride] | None = None,
     ) -> None:
+        # Validate that either routine_external_id OR (routine_revision_external_id + model_revision_external_id) is provided
+        if routine_external_id is not None:
+            if routine_revision_external_id is not None or model_revision_external_id is not None:
+                raise ValueError(
+                    "Cannot specify both 'routine_external_id' and revision-based parameters "
+                    "('routine_revision_external_id', 'model_revision_external_id'). "
+                    "Use either routine_external_id alone, or both routine_revision_external_id and model_revision_external_id."
+                )
+        else:
+            if not (routine_revision_external_id is not None and model_revision_external_id is not None):
+                raise ValueError(
+                    "Must specify either 'routine_external_id' alone, or both "
+                    "'routine_revision_external_id' and 'model_revision_external_id' together."
+                )
+
         super().__init__(
             routine_external_id=routine_external_id,
+            routine_revision_external_id=routine_revision_external_id,
+            model_revision_external_id=model_revision_external_id,
             run_type=run_type,
             run_time=run_time,
         )
@@ -131,7 +163,9 @@ class SimulationRunWrite(SimulationRunCore):
         inputs = resource.get("inputs", None)
         return cls(
             run_type=resource.get("runType"),
-            routine_external_id=resource["routineExternalId"],
+            routine_external_id=resource.get("routineExternalId"),
+            routine_revision_external_id=resource.get("routineRevisionExternalId"),
+            model_revision_external_id=resource.get("modelRevisionExternalId"),
             run_time=resource.get("runTime"),
             queue=resource.get("queue"),
             log_severity=resource.get("logSeverity"),
@@ -142,6 +176,16 @@ class SimulationRunWrite(SimulationRunCore):
         output = super().dump(camel_case=camel_case)
         if self.inputs is not None:
             output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
+
+        # Remove fields based on the mode we're in
+        if self.routine_external_id is not None:
+            # Routine-only mode: remove revision fields that might be None
+            output.pop("routineRevisionExternalId", None)
+            output.pop("modelRevisionExternalId", None)
+        else:
+            # Revision mode: remove routine_external_id
+            output.pop("routineExternalId", None)
+
         return output
 
     def as_write(self) -> SimulationRunWrite:
@@ -227,6 +271,17 @@ class SimulationRun(SimulationRunCore):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def as_write(self) -> SimulationRunWrite:
+        # Check if we have revision-based fields in the run
+        if hasattr(self, "routine_revision_external_id") and hasattr(self, "model_revision_external_id"):
+            if self.routine_revision_external_id and self.model_revision_external_id:
+                return SimulationRunWrite(
+                    routine_revision_external_id=self.routine_revision_external_id,
+                    model_revision_external_id=self.model_revision_external_id,
+                    run_type=self.run_type,
+                    run_time=self.run_time,
+                )
+
+        # Default to routine-based
         return SimulationRunWrite(
             routine_external_id=self.routine_external_id,
             run_type=self.run_type,
