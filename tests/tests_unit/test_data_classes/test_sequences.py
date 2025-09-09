@@ -18,7 +18,7 @@ class TestSequenceRowsList:
                                 last_updated_time=123,
                                 name=None,
                                 description=None,
-                                value_type="String",
+                                value_type="STRING",
                                 metadata=None,
                             )
                             for col in ["co1", "col2", "col3"]
