@@ -70,17 +70,6 @@ class UsersAPI(APIClient):
             limit=limit,
         )
 
-    def __iter__(self) -> Iterator[User]:
-        """Iterate over users
-
-        Fetches users as they are iterated over, so you keep a
-        limited number of users in memory.
-
-        Returns:
-            Iterator[User]: yields user one by one.
-        """
-        return self()
-
     @overload
     def create(self, user: UserWrite) -> UserCreated: ...
 
@@ -245,10 +234,10 @@ class UsersAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> user_list = client.postgres_gateway.users.list(limit=5)
 
-            Iterate over users:
+            Iterate over users, one-by-one:
 
-                >>> for user in client.postgres_gateway.users:
-                ...     user # do something with the user
+                >>> for user in client.postgres_gateway.users():
+                ...     user  # do something with the user
 
             Iterate over chunks of users to reduce memory load:
 

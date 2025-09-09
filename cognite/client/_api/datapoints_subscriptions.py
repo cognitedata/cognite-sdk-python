@@ -56,10 +56,6 @@ class DatapointsSubscriptionAPI(APIClient):
             resource_cls=DatapointSubscription,
         )
 
-    def __iter__(self) -> Iterator[DatapointSubscription]:
-        """Iterate over all datapoint subscriptions."""
-        return self()
-
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
