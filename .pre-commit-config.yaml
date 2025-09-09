@@ -33,6 +33,8 @@ repos:
         entry: |
           poetry run dmypy run -- cognite 
           
+          tests/tests_integration
+          
           tests/tests_unit/test_data_classes
           tests/tests_unit/test_utils
           tests/tests_unit/test_api_client.py
@@ -52,39 +54,8 @@ repos:
           tests/tests_unit/test_api/test_time_series.py
           tests/tests_unit/test_api/test_3d.py
           tests/tests_unit/test_api/test_vision_extract.py
-          tests/tests_unit/test_api/test_transformations.py
-          
-          tests/tests_integration/test_api/test_agents.py
-          tests/tests_integration/test_api/test_annotations.py
-          tests/tests_integration/test_api/test_assets.py
-          tests/tests_integration/test_api/test_data_modeling
-          tests/tests_integration/test_api/test_data_sets.py
-          tests/tests_integration/test_api/test_datapoint_subscriptions.py
-          tests/tests_integration/test_api/test_datapoints.py
-          tests/tests_integration/test_api/test_diagrams.py
-          tests/tests_integration/test_api/test_documents.py
-          tests/tests_integration/test_api/test_entity_matching.py
-          tests/tests_integration/test_api/test_events.py
-          tests/tests_integration/test_api/test_extraction_pipelines.py
-          tests/tests_integration/test_api/test_files.py
-          tests/tests_integration/test_api/test_functions.py
-          tests/tests_integration/test_api/test_geospatial.py
-          tests/tests_integration/test_api/test_iam.py
-          tests/tests_integration/test_api/test_labels.py
-          tests/tests_integration/test_api/test_organization.py
-          tests/tests_integration/test_api/test_raw.py
-          tests/tests_integration/test_api/test_relationships.py
-          tests/tests_integration/test_api/test_synthetic_time_series.py
-          tests/tests_integration/test_api/test_three_d.py
-          tests/tests_integration/test_api/test_time_series.py
-          tests/tests_integration/test_api/test_unit.py
-          tests/tests_integration/test_api/test_user_profiles.py
-          tests/tests_integration/test_api/test_vision_extract.py
-          tests/tests_integration/test_api/test_transformations
-          tests/tests_integration/test_api/test_workflows.py
-
-          tests/tests_integration/test_api/test_simulators
           tests/tests_unit/test_api/test_simulators
+          tests/tests_unit/test_api/test_transformations.py
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
