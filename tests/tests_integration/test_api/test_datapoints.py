@@ -2951,33 +2951,39 @@ class TestRetrieveDataFrameAPI:
         expected_unit_columns: pd.Index,
         ts_status_codes: TimeSeriesList,
     ) -> None:
+        aggregates = ["average", "min"]
         assert timeseries_degree_c_minus40_0_100.external_id is not None
         assert ts_status_codes[0].external_id is not None
         ex_ids = [timeseries_degree_c_minus40_0_100.external_id, ts_status_codes[0].external_id]
         res = cognite_client.time_series.data.retrieve_dataframe(
             external_id=ex_ids,
             include_unit=True,
-            aggregates="average",
+            aggregates=aggregates,
             granularity="1d",
             include_status=include_status,
         )
-        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        expected_res = pd.Index(["temperature:deg_c"] * 2 + [np.nan] * 2, dtype="object", name="Units")
+        pd.testing.assert_index_equal(expected_res, res.columns.get_level_values(1))
+
         res = cognite_client.time_series.data.retrieve(
-            external_id=ex_ids, aggregates="average", granularity="1d", include_status=include_status
+            external_id=ex_ids, aggregates=aggregates, granularity="1d", include_status=include_status
         )
         res = res.to_pandas(include_unit=True)
-        assert res.columns.get_level_values(1)[0] == "temperature:deg_c"
+        pd.testing.assert_index_equal(expected_res, res.columns.get_level_values(1))
+
         res = cognite_client.time_series.data.retrieve_dataframe(
             external_id=ex_ids, include_unit=True, include_status=include_status
         )
         pd.testing.assert_index_equal(expected_unit_columns, res.columns.get_level_values(1))
+
         res = cognite_client.time_series.data.retrieve(external_id=ex_ids, include_status=include_status)
         res = res.to_pandas(include_unit=True)
         pd.testing.assert_index_equal(expected_unit_columns, res.columns.get_level_values(1))
+
         res = cognite_client.time_series.data.retrieve_dataframe(
             external_id=one_mill_dps_ts[0].external_id,
             include_unit=True,
-            aggregates="average",
+            aggregates=aggregates,
             granularity="100d",
             include_status=include_status,
         )

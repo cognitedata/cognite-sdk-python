@@ -1015,7 +1015,10 @@ class DatapointsArray(CogniteResource):
             for agg in agg_names
         ]
         if include_unit and any(bool(u and not u.isspace()) for u in units):
-            aggregate_columns = pd.MultiIndex.from_tuples(list(zip(aggregate_columns, units)), names=[None, "Units"])
+            units_for_aggs = units * len(agg_names)
+            aggregate_columns = pd.MultiIndex.from_tuples(
+                list(zip(aggregate_columns, units_for_aggs, strict=True)), names=[None, "Units"]
+            )
         # We need special handling for object aggregates:
         for i, agg in enumerate(agg_names):
             if agg in ("min_datapoint", "max_datapoint"):
@@ -1243,12 +1246,13 @@ class Datapoints(CogniteResource):
         # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
         field_names, data_lists = [], []
         data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
-        units = [self.unit_external_id if self.unit_external_id is not None else self.unit]
+        units = []
         if not include_errors:  # We do not touch column ordering for synthetic datapoints
             data_fields = sorted(data_fields)
         for attr, data in data_fields:
             if attr == "timestamp":
                 continue
+            units.append(self.unit_external_id if self.unit_external_id is not None else self.unit)
             id_col_name = identifier
             if attr == "value":
                 field_names.append(id_col_name)
@@ -1286,7 +1290,7 @@ class Datapoints(CogniteResource):
         else:
             idx = pd.to_datetime(self.timestamp, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(tz))
         if include_unit and any(bool(u and not u.isspace()) for u in units):
-            field_names = pd.MultiIndex.from_tuples(list(zip(field_names, units)), names=[None, "Units"])
+            field_names = pd.MultiIndex.from_tuples(list(zip(field_names, units, strict=True)), names=[None, "Units"])
         (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
         return df
 
