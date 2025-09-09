@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -90,27 +90,20 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
+    def retrieve(self, *, ids: int) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorModelRevision | None: ...
+    def retrieve(self, *, external_ids: str) -> SimulatorModelRevision | None: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: None,
-        external_ids: str,
-    ) -> SimulatorModelRevision | None: ...
+    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelRevisionList: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: int | Sequence[int] | None = None,
-        external_ids: str | SequenceNotStr[str] | None = None,
-    ) -> SimulatorModelRevision | SimulatorModelRevisionList | None: ...
+    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelRevisionList: ...
 
     def retrieve(
         self,
+        *,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None:

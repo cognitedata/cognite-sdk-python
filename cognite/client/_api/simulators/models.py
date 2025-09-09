@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, NoReturn, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.simulators.models_revisions import SimulatorModelRevisionsAPI
 from cognite.client._api_client import APIClient
@@ -37,7 +37,7 @@ class SimulatorModelsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DEFAULT_LIMIT_READ,
+        limit: int | None = DEFAULT_LIMIT_READ,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
@@ -46,7 +46,7 @@ class SimulatorModelsAPI(APIClient):
         Retrieves a list of simulator models that match the given criteria.
 
         Args:
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             simulator_external_ids (str | SequenceNotStr[str] | None): Filter by simulator external id(s).
             sort (PropertySort | None): The criteria to sort by.
 
@@ -82,27 +82,20 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: None = None, external_ids: None = None) -> NoReturn: ...
+    def retrieve(self, *, ids: int) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(self, ids: int, external_ids: None = None) -> SimulatorModel | None: ...
+    def retrieve(self, *, external_ids: str) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: None,
-        external_ids: str,
-    ) -> SimulatorModel | None: ...
+    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelList: ...
 
     @overload
-    def retrieve(
-        self,
-        ids: Sequence[int] | None = None,
-        external_ids: SequenceNotStr[str] | None = None,
-    ) -> SimulatorModelList | None: ...
+    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelList: ...
 
     def retrieve(
         self,
+        *,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
     ) -> SimulatorModel | SimulatorModelList | None:
