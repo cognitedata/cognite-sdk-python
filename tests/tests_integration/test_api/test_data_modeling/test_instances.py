@@ -45,7 +45,13 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteAsset, CogniteAssetApply
 from cognite.client.data_classes.data_modeling.data_types import DirectRelation, Int64, UnitReference
+from cognite.client.data_classes.data_modeling.debug import (
+    DebugNoticeList,
+    DebugParameters,
+    NoTimeoutWithoutResultsNotice,
+)
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
     InstanceInspectResults,
@@ -430,6 +436,48 @@ def view_with_all_the_types(
         },
     )
     return cognite_client.data_modeling.views.apply(view)
+
+
+@pytest.fixture(scope="session")
+def cognite_asset_nodes(cognite_client: CogniteClient, integration_test_space: Space) -> NodeList:
+    space = integration_test_space.space
+    asset_ids = [
+        (space, "asset:root"),
+        (space, "asset:child_1"),
+        (space, "asset:child_1_1"),
+        (space, "asset:child_1_1_1"),
+        (space, "asset:child_2"),
+    ]
+    asset_nodes = cognite_client.data_modeling.instances.retrieve(
+        nodes=asset_ids,
+        sources=CogniteAsset.get_source(),
+    ).nodes
+    if len(asset_nodes) == 5:
+        return asset_nodes
+
+    to_apply = [
+        CogniteAssetApply(space, "asset:root", name="Root Asset", parent=None),
+        CogniteAssetApply(space, "asset:child_1", name="Child Asset 1", parent=(space, "asset:root")),
+        CogniteAssetApply(
+            space,
+            "asset:child_1_1",
+            name="Child Asset 1.1",
+            parent=(space, "asset:child_1"),
+        ),
+        CogniteAssetApply(
+            space,
+            "asset:child_1_1_1",
+            name="Child Asset 1.1.1",
+            parent=(space, "asset:child_1_1"),
+        ),
+        CogniteAssetApply(space, "asset:child_2", name="Child Asset 2", parent=(space, "asset:root")),
+    ]
+    cognite_client.data_modeling.instances.apply(to_apply).nodes
+    time.sleep(10)  # if we are lucky, path.mat will run, if not, tests will probably fail this cycle
+    return cognite_client.data_modeling.instances.retrieve(
+        nodes=asset_ids,
+        sources=CogniteAsset.get_source(),
+    ).nodes
 
 
 class TestInstancesAPI:
@@ -1321,6 +1369,67 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.query(
                 Query(with_={"result": NodeResultSetExpression(**sync_fields)}, select={"result": Select()}),
             )
+
+    @pytest.mark.parametrize("include_typing", [True, False])
+    @pytest.mark.usefixtures("cognite_asset_nodes")
+    def test_instance_list_debug_notices(self, cognite_client: CogniteClient, include_typing: bool) -> None:
+        # Test that debug notices, which are returned at the root level of the response, are properly handled.
+        # We also test with and without 'include_typing' which is returned the same way.
+        debug_params = DebugParameters(emit_results=True, timeout=20 * 1000, profile=True)
+
+        # Test using a typed node:
+        res1 = cognite_client.data_modeling.instances.list(
+            # TODO: type[T_Node] does not accept CogniteAsset, but it should:
+            instance_type=CogniteAsset,  # type: ignore [call-overload]
+            sources=None,
+            include_typing=include_typing,
+            debug=debug_params,
+        )
+        # Test by specifying a view:
+        res2 = cognite_client.data_modeling.instances.list(
+            instance_type="node",
+            sources=CogniteAsset.get_source(),
+            include_typing=include_typing,
+            debug=debug_params,
+        )
+        for res in res1, res2:
+            assert isinstance(res, NodeList)
+            assert isinstance(res.debug_notices, DebugNoticeList)
+            assert len(res.debug_notices) == 1
+            # Since we specify both emit_results and timeout, we should get...:
+            assert isinstance(res.debug_notices[0], NoTimeoutWithoutResultsNotice)
+
+            if include_typing:
+                assert res.typing is not None
+
+    @pytest.mark.usefixtures("cognite_asset_nodes")
+    def test_instance_query_and_sync_debug_notices(self, cognite_client: CogniteClient) -> None:
+        debug_params = DebugParameters(emit_results=True, timeout=20 * 1000, profile=True)
+        query = Query(
+            with_={
+                "result": NodeResultSetExpression(
+                    filter=filters.Prefix(["node", "externalId"], "asset:"),
+                )
+            },
+            select={
+                "result": Select([SourceSelector(source=CogniteAsset.get_source(), properties=["name", "parent"])])
+            },
+        )
+
+        res1 = cognite_client.data_modeling.instances.query(query, debug=debug_params)
+        res2 = cognite_client.data_modeling.instances.sync(query, debug=debug_params)
+
+        for res in res1, res2:
+            assert isinstance(res, QueryResult)
+            assert isinstance(res.debug_notices, DebugNoticeList)
+            assert len(res.debug_notices) == 1
+            # Since we specify both emit_results and timeout, we should get...:
+            assert isinstance(res.debug_notices[0], NoTimeoutWithoutResultsNotice)
+
+            for node_lst in res.values():
+                assert isinstance(node_lst, NodeList)
+                assert isinstance(node_lst.debug_notices, DebugNoticeList)
+                assert res.debug_notices is node_lst.debug_notices
 
 
 class TestInstancesSync:
