@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-ValueType: TypeAlias = Literal["String", "Double", "Long"]
+ValueType: TypeAlias = Literal["STRING", "DOUBLE", "LONG"]
 
 
 class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
@@ -56,7 +56,7 @@ class SequenceColumnCore(WriteableCogniteResource["SequenceColumnWrite"], ABC):
         external_id: str | None = None,
         name: str | None = None,
         description: str | None = None,
-        value_type: ValueType = "Double",
+        value_type: ValueType = "DOUBLE",
         metadata: dict[str, Any] | None = None,
     ) -> None:
         self.external_id = external_id
@@ -147,7 +147,7 @@ class SequenceColumnWrite(SequenceColumnCore):
         external_id: str,
         name: str | None = None,
         description: str | None = None,
-        value_type: ValueType = "Double",
+        value_type: ValueType = "DOUBLE",
         metadata: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
@@ -164,7 +164,7 @@ class SequenceColumnWrite(SequenceColumnCore):
             external_id=resource["externalId"],
             name=resource.get("name"),
             description=resource.get("description"),
-            value_type=resource.get("valueType", "Double"),
+            value_type=resource.get("valueType", "DOUBLE"),
             metadata=resource.get("metadata"),
         )
 
@@ -276,8 +276,10 @@ class Sequence(SequenceCore):
         self.created_time: int = created_time
         self.last_updated_time: int = last_updated_time
 
-        self.columns: SequenceColumnList | None
-        if columns is None or isinstance(columns, SequenceColumnList):
+        self.columns: SequenceColumnList
+        if columns is None:
+            self.columns = SequenceColumnList([])
+        elif isinstance(columns, SequenceColumnList):
             self.columns = columns
         elif isinstance(columns, typing.Sequence) and all(isinstance(col, SequenceColumn) for col in columns):
             self.columns = SequenceColumnList(columns)
