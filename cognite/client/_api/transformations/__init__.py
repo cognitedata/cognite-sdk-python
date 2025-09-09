@@ -147,10 +147,6 @@ class TransformationsAPI(APIClient):
             list_cls=TransformationList,
         )
 
-    def __iter__(self) -> Iterator[Transformation]:
-        """Iterate over all transformations"""
-        return self()
-
     @overload
     def create(self, transformation: Transformation | TransformationWrite) -> Transformation: ...
 

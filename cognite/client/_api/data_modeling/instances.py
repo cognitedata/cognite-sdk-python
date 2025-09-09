@@ -317,15 +317,6 @@ class InstancesAPI(APIClient):
             )
         )
 
-    def __iter__(self) -> Iterator[Node]:
-        """Iterate over instances (nodes only)
-        Fetches nodes as they are iterated over, so you keep a limited number of nodes in memory.
-
-        Returns:
-            Iterator[Node]: yields nodes one by one.
-        """
-        return self(None, "node")
-
     @overload
     def retrieve_edges(
         self,
@@ -1729,10 +1720,12 @@ class InstancesAPI(APIClient):
                 ...     nulls_first=True)
                 >>> instance_list = client.data_modeling.instances.list(sort=property_sort)
 
-            Iterate over instances (note: returns nodes):
+            Iterate over instances (nodes by default), one-by-one:
 
-                >>> for instance in client.data_modeling.instances:
-                ...     instance # do something with the instance
+                >>> for node in client.data_modeling.instances():
+                ...     node
+                >>> for edge in client.data_modeling.instances(instance_type="edge"):
+                ...     edge
 
             Iterate over chunks of instances to reduce memory load:
 

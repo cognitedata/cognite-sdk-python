@@ -118,10 +118,6 @@ class FunctionSchedulesAPI(APIClient):
             for chunk in split_into_chunks(schedules.data, chunk_size)
         )
 
-    def __iter__(self) -> Iterator[FunctionSchedule]:
-        """Iterate over all function schedules"""
-        return self()
-
     @overload
     def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...
 

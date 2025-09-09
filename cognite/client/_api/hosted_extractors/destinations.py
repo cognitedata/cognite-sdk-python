@@ -74,16 +74,6 @@ class DestinationsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def __iter__(self) -> Iterator[Destination]:
-        """Iterate over destinations
-
-        Fetches destinations as they are iterated over, so you keep a limited number of destinations in memory.
-
-        Returns:
-            Iterator[Destination]: yields Destination one by one.
-        """
-        return self()
-
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
 
@@ -258,10 +248,10 @@ class DestinationsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> destination_list = client.hosted_extractors.destinations.list(limit=5)
 
-            Iterate over destinations:
+            Iterate over destinations, one-by-one:
 
-                >>> for destination in client.hosted_extractors.destinations:
-                ...     destination # do something with the destination
+                >>> for destination in client.hosted_extractors.destinations():
+                ...     destination  # do something with the destination
 
             Iterate over chunks of destinations to reduce memory load:
 

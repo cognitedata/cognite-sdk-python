@@ -85,10 +85,6 @@ class WorkflowVersionAPI(APIClient):
             chunk_size=chunk_size,
         )
 
-    def __iter__(self) -> Iterator[WorkflowVersion]:
-        """Iterate all over workflow versions"""
-        return self()
-
     @overload
     def upsert(self, version: WorkflowVersionUpsert) -> WorkflowVersion: ...
 
