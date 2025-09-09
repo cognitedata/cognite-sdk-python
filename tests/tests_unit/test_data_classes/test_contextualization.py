@@ -6,11 +6,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import ContextualizationJob
 from cognite.client.data_classes.contextualization import (
     ConnectionFlags,
     DetectJobBundle,
     DiagramDetectConfig,
+    EntityMatchingPredictionResult,
 )
 from cognite.client.testing import monkeypatch_cognite_client
 
@@ -27,31 +27,37 @@ def mock_base_job_response() -> dict[str, Any]:
 
 
 @pytest.fixture()
-def job(cognite_client: CogniteClient) -> ContextualizationJob:
-    return ContextualizationJob(
-        job_id=123, status="Queued", cognite_client=cognite_client, status_time=1, created_time=1, start_time=None
+def job(cognite_client: CogniteClient) -> EntityMatchingPredictionResult:
+    return EntityMatchingPredictionResult(
+        job_id=123,
+        status="Queued",
+        cognite_client=cognite_client,
+        status_time=1,
+        created_time=1,
+        start_time=123,
+        error_message=None,
     )
 
 
-def mock_update_status_running(self: ContextualizationJob) -> str:
+def mock_update_status_running(self: EntityMatchingPredictionResult) -> str:
     self.status = "Running"
     return self.status
 
 
-def mock_update_status_completed(self: ContextualizationJob) -> str:
+def mock_update_status_completed(self: EntityMatchingPredictionResult) -> str:
     self.status = "Completed"
     return self.status
 
 
-class TestContextualizationJob:
-    @patch("cognite.client.data_classes.ContextualizationJob.update_status", new=mock_update_status_running)
-    def test_wait_for_completion_running(self, job: ContextualizationJob) -> None:
+class TestEntityMatchingPredictionResult:
+    @patch("cognite.client.data_classes.EntityMatchingPredictionResult.update_status", new=mock_update_status_running)
+    def test_wait_for_completion_running(self, job: EntityMatchingPredictionResult) -> None:
         assert job.status == "Queued"
         job.wait_for_completion(timeout=0.01, interval=0.01)
         assert job.status == "Running"
 
-    @patch("cognite.client.data_classes.ContextualizationJob.update_status", new=mock_update_status_completed)
-    def test_wait_for_completion_completed(self, job: ContextualizationJob) -> None:
+    @patch("cognite.client.data_classes.EntityMatchingPredictionResult.update_status", new=mock_update_status_completed)
+    def test_wait_for_completion_completed(self, job: EntityMatchingPredictionResult) -> None:
         assert job.status == "Queued"
         job.wait_for_completion()
         assert job.status == "Completed"
