@@ -74,7 +74,9 @@ repos:
           tests/tests_integration/test_api/test_geospatial.py
           tests/tests_integration/test_api/test_iam.py
           tests/tests_integration/test_api/test_labels.py
+          tests/tests_integration/test_api/test_organization.py
           tests/tests_integration/test_api/test_raw.py
+          tests/tests_integration/test_api/test_relationships.py
           tests/tests_integration/test_api/test_synthetic_time_series.py
           tests/tests_integration/test_api/test_three_d.py
           tests/tests_integration/test_api/test_time_series.py
