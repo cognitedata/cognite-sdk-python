@@ -220,16 +220,6 @@ class AssetsAPI(APIClient):
             other_params=agg_props,
         )
 
-    def __iter__(self) -> Iterator[Asset]:
-        """Iterate over assets
-
-        Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
-
-        Returns:
-            Iterator[Asset]: yields Assets one by one.
-        """
-        return self()
-
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
 
@@ -1072,10 +1062,10 @@ class AssetsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> asset_list = client.assets.list(limit=5)
 
-            Iterate over assets:
+            Iterate over assets, one-by-one:
 
-                >>> for asset in client.assets:
-                ...     asset # do something with the asset
+                >>> for asset in client.assets():
+                ...     asset  # do something with the asset
 
             Iterate over chunks of assets to reduce memory load:
 

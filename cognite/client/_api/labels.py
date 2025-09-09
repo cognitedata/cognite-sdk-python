@@ -20,16 +20,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
 
-    def __iter__(self) -> Iterator[LabelDefinition]:
-        """Iterate over Labels
-
-        Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
-
-        Returns:
-            Iterator[LabelDefinition]: yields Labels one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
@@ -159,10 +149,10 @@ class LabelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> label_list = client.labels.list(limit=5, name="Pump")
 
-            Iterate over label definitions:
+            Iterate over label definitions, one-by-one:
 
-                >>> for label in client.labels:
-                ...     label # do something with the label definition
+                >>> for label in client.labels():
+                ...     label  # do something with the label definition
 
             Iterate over chunks of label definitions to reduce memory load:
 

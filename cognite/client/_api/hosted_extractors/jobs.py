@@ -77,16 +77,6 @@ class JobsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def __iter__(self) -> Iterator[Job]:
-        """Iterate over jobs
-
-        Fetches jobs as they are iterated over, so you keep a limited number of jobs in memory.
-
-        Returns:
-            Iterator[Job]: yields Job one by one.
-        """
-        return self()
-
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
 
@@ -258,10 +248,10 @@ class JobsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> job_list = client.hosted_extractors.jobs.list(limit=5)
 
-            Iterate over jobs:
+            Iterate over jobs, one-by-one:
 
-                >>> for job in client.hosted_extractors.jobs:
-                ...     job # do something with the job
+                >>> for job in client.hosted_extractors.jobs():
+                ...     job  # do something with the job
 
             Iterate over chunks of jobs to reduce memory load:
 

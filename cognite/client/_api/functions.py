@@ -191,10 +191,6 @@ class FunctionsAPI(APIClient):
             for chunk in split_into_chunks(functions.data, chunk_size)
         )
 
-    def __iter__(self) -> Iterator[Function]:
-        """Iterate over all functions."""
-        return self()
-
     def create(
         self,
         name: str | FunctionWrite,
@@ -1138,10 +1134,6 @@ class FunctionSchedulesAPI(APIClient):
             FunctionSchedulesList(chunk, cognite_client=self._cognite_client)
             for chunk in split_into_chunks(schedules.data, chunk_size)
         )
-
-    def __iter__(self) -> Iterator[FunctionSchedule]:
-        """Iterate over all function schedules"""
-        return self()
 
     @overload
     def retrieve(self, id: int, ignore_unknown_ids: bool = False) -> FunctionSchedule | None: ...

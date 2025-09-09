@@ -76,10 +76,6 @@ class TransformationNotificationsAPI(APIClient):
             chunk_size=chunk_size,
         )
 
-    def __iter__(self) -> Iterator[TransformationNotification]:
-        """Iterate over all transformation notifications"""
-        return self()
-
     @overload
     def create(
         self, notification: TransformationNotification | TransformationNotificationWrite
