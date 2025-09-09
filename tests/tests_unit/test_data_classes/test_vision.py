@@ -391,6 +391,8 @@ class TestVisionExtractJob:
             created_time=123,
             items=expected_items,
             cognite_client=cognite_client,
+            start_time=123,
+            error_message=None,
         )
         assert job.items == expected_items
 
@@ -439,6 +441,8 @@ class TestVisionExtractJob:
             created_time=123,
             items=expected_items,
             cognite_client=cognite_client,
+            start_time=123,
+            error_message=None,
         )
         if error_message is not None:
             with pytest.raises(IndexError, match=error_message):
@@ -611,6 +615,8 @@ class TestVisionExtractJob:
             created_time=123,
             cognite_client=cognite_client,
             items=[VisionExtractItem.load(item) for item in result.get("items", [])],
+            start_time=123,
+            error_message=None,
         )
         assert job._predictions_to_annotations(**params) == expected_items
 

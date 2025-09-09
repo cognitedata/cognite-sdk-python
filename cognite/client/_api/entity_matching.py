@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -12,6 +12,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModel,
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
+    EntityMatchingPredictionResult,
 )
 from cognite.client.utils._auxiliary import convert_true_match, is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
@@ -22,19 +23,6 @@ T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=Contextualizati
 
 class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
-
-    def _run_job(
-        self, job_path: str, job_cls: type[T_ContextualizationJob], json: dict[str, Any], status_path: str | None = None
-    ) -> T_ContextualizationJob:
-        if status_path is None:
-            status_path = job_path + "/"
-        response = self._post(self._RESOURCE_PATH + job_path, json=json)
-        return job_cls._load_with_status(
-            data=response.json(),
-            headers=response.headers,
-            status_path=self._RESOURCE_PATH + status_path,
-            cognite_client=self._cognite_client,
-        )
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """`Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
@@ -261,7 +249,7 @@ class EntityMatchingAPI(APIClient):
         score_threshold: float | None = None,
         id: int | None = None,
         external_id: str | None = None,
-    ) -> ContextualizationJob:
+    ) -> EntityMatchingPredictionResult:
         """`Predict entity matching.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingPredict>`_
 
         Warning:
@@ -280,7 +268,7 @@ class EntityMatchingAPI(APIClient):
             external_id (str | None): external ids of the model to use.
 
         Returns:
-            ContextualizationJob: object which can be used to wait for and retrieve results.
+            EntityMatchingPredictionResult: object which can be used to wait for and retrieve results.
 
         Examples:
             >>> from cognite.client import CogniteClient
