@@ -74,16 +74,6 @@ class MappingsAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def __iter__(self) -> Iterator[Mapping]:
-        """Iterate over mappings
-
-        Fetches mappings as they are iterated over, so you keep a limited number of mappings in memory.
-
-        Returns:
-            Iterator[Mapping]: yields Mapping one by one.
-        """
-        return self()
-
     @overload
     def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
 
@@ -245,10 +235,10 @@ class MappingsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> mapping_list = client.hosted_extractors.mappings.list(limit=5)
 
-            Iterate over mappings:
+            Iterate over mappings, one-by-one:
 
-                >>> for mapping in client.hosted_extractors.mappings:
-                ...     mapping # do something with the mapping
+                >>> for mapping in client.hosted_extractors.mappings():
+                ...     mapping  # do something with the mapping
 
             Iterate over chunks of mappings to reduce memory load:
 

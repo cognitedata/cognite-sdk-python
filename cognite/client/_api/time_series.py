@@ -190,16 +190,6 @@ class TimeSeriesAPI(APIClient):
             sort=prep_sort,
         )
 
-    def __iter__(self) -> Iterator[TimeSeries]:
-        """Iterate over time series
-
-        Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
-
-        Returns:
-            Iterator[TimeSeries]: yields TimeSeries one by one.
-        """
-        return self()
-
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> TimeSeries | None:
@@ -844,10 +834,10 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.list(limit=5)
 
-            Iterate over time series:
+            Iterate over time series, one-by-one:
 
-                >>> for ts in client.time_series:
-                ...     ts # do something with the time series
+                >>> for ts in client.time_series():
+                ...     ts  # do something with the time series
 
             Iterate over chunks of time series to reduce memory load:
 

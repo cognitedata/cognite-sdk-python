@@ -162,10 +162,6 @@ class FunctionsAPI(APIClient):
             for chunk in split_into_chunks(functions.data, chunk_size)
         )
 
-    def __iter__(self) -> Iterator[Function]:
-        """Iterate over all functions."""
-        return self()
-
     def create(
         self,
         name: str | FunctionWrite,
