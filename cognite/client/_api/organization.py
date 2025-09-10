@@ -56,18 +56,31 @@ class PrincipalsAPI(OrgAPI):
                 >>> client = CogniteClient()
                 >>> res = client.iam.principals.me()
         """
-        res = self._get("https://auth.cognite.com/api/v1/principals/me")
-        return Principal._load(res.json())
+        # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
+        base_path = ""
+        if self._api_version:
+            base_path = f"/api/{self._api_version}"
+        full_url = urljoin(self._auth_url, base_path) + "/principals/me"
+        headers = self._configure_headers(
+            "application/json",
+            additional_headers=self._config.headers.copy(),
+            api_subversion=self._api_subversion,
+        )
+        response = self._http_client_with_retry.request(method="GET", url=full_url, headers=headers)
+        response.raise_for_status()
+        return Principal._load(response.json())
 
     def retrieve(
         self,
         id: str | SequenceNotStr[str] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
         """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
         Args:
             id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
             external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
+            ignore_unknown_ids (bool): If True, unknown IDs will be ignored and not raise an error. Defaults to False
         Returns:
             Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
         Examples:
@@ -78,12 +91,12 @@ class PrincipalsAPI(OrgAPI):
             Retrieve a principal by external ID:
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
         """
-        identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id)
         return self._retrieve_multiple(
             list_cls=PrincipalList,
             resource_cls=Principal,  # type: ignore[type-abstract]
             identifiers=identifier,
-            other_params={"ignoreUnknownIds": True},
+            other_params={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
