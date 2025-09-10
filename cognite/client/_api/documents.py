@@ -616,6 +616,10 @@ class DocumentsAPI(APIClient):
             response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
             json_content = response.json()
             results.extend(json_content["items"])
+
+            if len(results) >= limit:
+                break
+
             if not (next_cursor := json_content.get("nextCursor")):
                 break
 
