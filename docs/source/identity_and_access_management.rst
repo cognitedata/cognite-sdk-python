@@ -17,14 +17,13 @@ Get the current caller's principal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.organization.PrincipalsAPI.me
 
-List principals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.organization.PrincipalsAPI.list
-
 Retrieve a principal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.organization.PrincipalsAPI.retrieve
 
+List principals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.list
 
 Tokens
 ^^^^^^

@@ -47,6 +47,7 @@ class PrincipalsAPI(OrgAPI):
 
     def me(self) -> Principal:
         """`Get the current caller's information. <https://developer.cognite.com/api#tag/Principals/operation/getMe>`_
+
         Returns:
             Principal: The principal of the user running the code, i.e. the
                 principal *this* CogniteClient was instantiated with.
