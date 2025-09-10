@@ -129,12 +129,12 @@ class ThreeDModelsAPI(APIClient):
             Iterate over 3d models:
 
                 >>> for three_d_model in client.three_d.models:
-                ...     three_d_model # do something with the 3d model
+                ...     three_d_model  # do something with the 3d model
 
             Iterate over chunks of 3d models to reduce memory load:
 
                 >>> for three_d_model in client.three_d.models(chunk_size=50):
-                ...     three_d_model # do something with the 3d model
+                ...     three_d_model  # do something with the 3d model
         """
         return self._list(
             list_cls=ThreeDModelList,
@@ -429,7 +429,11 @@ class ThreeDRevisionsAPI(APIClient):
             Perform a partial update on a revision, updating the published property and adding a new field to metadata:
 
                 >>> from cognite.client.data_classes import ThreeDModelRevisionUpdate
-                >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
+                >>> my_update = (
+                ...     ThreeDModelRevisionUpdate(id=1)
+                ...     .published.set(False)
+                ...     .metadata.add({"key": "value"})
+                ... )
                 >>> res = client.three_d.revisions.update(model_id=1, item=my_update)
         """
         return self._update_multiple(
@@ -555,7 +559,17 @@ class ThreeDRevisionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
-                >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
+                >>> res = client.three_d.revisions.filter_nodes(
+                ...     model_id=1,
+                ...     revision_id=1,
+                ...     properties={
+                ...         "PDMS": {
+                ...             "Area": ["AB76", "AB77", "AB78"],
+                ...             "Type": ["PIPE", "BEND", "PIPESUP"],
+                ...         }
+                ...     },
+                ...     limit=10,
+                ... )
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
         return self._list(
@@ -663,7 +677,8 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> from cognite.client.data_classes import BoundingBox3D
                 >>> bbox = BoundingBox3D(min=[0.0, 0.0, 0.0], max=[1.0, 1.0, 1.0])
                 >>> res = client.three_d.asset_mappings.list(
-                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox)
+                ...     model_id=1, revision_id=1, intersects_bounding_box=bbox
+                ... )
         """
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}

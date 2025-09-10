@@ -50,9 +50,7 @@ class SpaceStatisticsAPI(APIClient):
                 >>> result = client.data_modeling.statistics.spaces.retrieve("my-space")
 
             Fetch statistics for multiple spaces:
-                >>> res = client.data_modeling.statistics.spaces.retrieve(
-                ...     ["my-space1", "my-space2"]
-                ... )
+                >>> res = client.data_modeling.statistics.spaces.retrieve(["my-space1", "my-space2"])
 
         """
         return self._retrieve_multiple(
