@@ -124,6 +124,10 @@ As of 2025-08-29, changes are grouped as follows
 - The `client.raw.rows.retrieve_dataframe` method now has a new parameter `infer_dtypes` that allows
   you to not infer the data types of column types in the returning dataframe.
 
+## [7.76.0] - 2025-05-19
+### Added
+- When using `retrieve_dataframe` or `to_pandas` with datapoints, an `include_unit` argument has been added that will include the units as a second level to the columns.
+
 ## [7.75.1] - 2025-05-15
 ### Fixed
 - Fixes missing `instance_id` field in `Document` class returned from `client.documents.list()` and `client.documents.search()`.
