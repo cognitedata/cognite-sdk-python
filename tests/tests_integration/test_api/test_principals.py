@@ -41,6 +41,13 @@ class TestPrincipalsAPI:
         assert len(principals) > 0
         assert any(p.id == me.id for p in principals), "The principal should be included in the list of principals."
 
+    def test_list_multiple_type(self, cognite_client_cog_idp: CogniteClient, me: Principal) -> None:
+        client = cognite_client_cog_idp
+        types = ["USER", "SERVICE_ACCOUNT"]
+        principals = client.iam.principals.list(types=types, limit=-1)
+        assert len(principals) > 0
+        assert any(p.id == me.id for p in principals), "The principal should be included in the list of principals."
+
     def test_retrieve_principal(self, cognite_client_cog_idp: CogniteClient, three_principals: PrincipalList) -> None:
         client = cognite_client_cog_idp
         retrieved = client.iam.principals.retrieve(id=three_principals[0].id)
