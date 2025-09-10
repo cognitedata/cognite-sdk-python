@@ -82,6 +82,12 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 class Filter(ABC):
     _filter_name: str
 
+    def __bool__(self) -> NoReturn:
+        raise RuntimeError(
+            "You can not combine filters using 'and' or 'or', you must use the And filter (&), or the Or filter (|) "
+            "from 'cognite.client.data_classes.filters'. You can also use 'flt1 & flt2', or 'flt1 | flt2'."
+        )
+
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
         Dump the filter to a dictionary.
