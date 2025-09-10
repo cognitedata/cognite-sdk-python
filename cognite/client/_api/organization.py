@@ -58,10 +58,10 @@ class PrincipalsAPI(OrgAPI):
                 >>> res = client.iam.principals.me()
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
-        base_path = ""
+        path = "/principals/me"
         if self._api_version:
-            base_path = f"/api/{self._api_version}"
-        full_url = urljoin(self._auth_url, base_path) + "/principals/me"
+            path = f"/api/{self._api_version}{path}"
+        full_url = urljoin(self._auth_url, path)
         headers = self._configure_headers(
             "application/json",
             additional_headers=self._config.headers.copy(),
