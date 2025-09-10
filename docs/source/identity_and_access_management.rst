@@ -15,20 +15,15 @@ Principals
 
 Get the current caller's principal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.PrincipalsAPI.me
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.me
 
 List principals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.PrincipalsAPI.list
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.list
 
 Retrieve a principal
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.PrincipalsAPI.retrieve
-
-Retrieve multiple principals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.PrincipalsAPI.retrieve_multiple
-
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.retrieve
 
 
 Tokens
