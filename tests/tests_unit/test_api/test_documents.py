@@ -124,7 +124,7 @@ def mock_documents_search_response(rsps, cognite_client):
             },
         ]
     }
-    response_body_with_cursor = response_body | { "nextCursor": "foo" }
+    response_body_with_cursor = response_body | {"nextCursor": "foo"}
 
     url_pattern = re.compile(re.escape(cognite_client.documents._get_base_url_with_base_path()) + "/.+")
     rsps.assert_all_requests_are_fired = False
