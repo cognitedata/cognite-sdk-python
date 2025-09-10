@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC
 from collections.abc import Sequence
 from functools import cached_property
@@ -112,7 +113,7 @@ class PrincipalsAPI(OrgAPI):
         id: None = None,
         external_id: None = None,
         ignore_unknown_ids: bool = False,
-    ) -> None: ...
+    ) -> PrincipalList: ...
 
     def retrieve(
         self,
@@ -140,6 +141,8 @@ class PrincipalsAPI(OrgAPI):
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
         """
         identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id)
+        if identifier.is_singleton() and ignore_unknown_ids:
+            warnings.warn(UserWarning("ignore_unknown_ids=True has no effect when retrieving a single principal."))
 
         return self._retrieve_multiple(
             list_cls=PrincipalList,

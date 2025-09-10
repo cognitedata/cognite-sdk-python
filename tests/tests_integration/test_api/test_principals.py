@@ -53,6 +53,10 @@ class TestPrincipalsAPI:
         client = cognite_client_cog_idp
         assert client.iam.principals.retrieve(external_id="non-existing-principal-id") is None
 
+    def test_retrieve_nothing(self, cognite_client_cog_idp: CogniteClient) -> None:
+        client = cognite_client_cog_idp
+        assert client.iam.principals.retrieve() == PrincipalList([])
+
     def test_retrieve_multiple_principals(
         self, cognite_client_cog_idp: CogniteClient, three_principals: PrincipalList
     ) -> None:
