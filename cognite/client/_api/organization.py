@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from functools import cached_property
+from typing import overload
 from urllib.parse import urljoin
 
 from cognite.client._api_client import APIClient
@@ -71,6 +72,48 @@ class PrincipalsAPI(OrgAPI):
         response.raise_for_status()
         return Principal._load(response.json())
 
+    @overload
+    def retrieve(
+        self,
+        id: str,
+        external_id: None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> Principal | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        id: None = None,
+        *,
+        external_id: str,
+        ignore_unknown_ids: bool = False,
+    ) -> Principal | None: ...
+
+    @overload
+    def retrieve(
+        self,
+        id: SequenceNotStr[str],
+        external_id: None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> PrincipalList: ...
+
+    @overload
+    def retrieve(
+        self,
+        id: None = None,
+        *,
+        external_id: SequenceNotStr[str],
+        ignore_unknown_ids: bool = False,
+    ) -> PrincipalList: ...
+
+    @overload
+    def retrieve(
+        self,
+        id: None = None,
+        external_id: None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> None: ...
+
     def retrieve(
         self,
         id: str | SequenceNotStr[str] | None = None,
@@ -81,7 +124,11 @@ class PrincipalsAPI(OrgAPI):
         Args:
             id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
             external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
-            ignore_unknown_ids (bool): If True, unknown IDs will be ignored and not raise an error. Defaults to False
+            ignore_unknown_ids (bool): This is only relevant when retrieving multiple principals. If set to True,
+                the method will return the principals that were found and ignore the ones that were not found.
+                If set to False, the method will raise a CogniteAPIError if any of the
+                specified principals were not found. Defaults to False.
+
         Returns:
             Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
         Examples:
@@ -93,11 +140,12 @@ class PrincipalsAPI(OrgAPI):
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
         """
         identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id)
+
         return self._retrieve_multiple(
             list_cls=PrincipalList,
             resource_cls=Principal,  # type: ignore[type-abstract]
             identifiers=identifier,
-            other_params={"ignoreUnknownIds": ignore_unknown_ids},
+            other_params={"ignoreUnknownIds": True if identifier.is_singleton() else ignore_unknown_ids},
         )
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
