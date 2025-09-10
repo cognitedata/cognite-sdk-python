@@ -268,8 +268,11 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource], _WithClientMixin
         self._id_to_item, self._external_id_to_item, self._instance_id_to_item = {}, {}, {}
         if not self.data:
             return
-        if hasattr(self.data[0], "external_id"):
-            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}
+        self._external_id_to_item = {
+            item.external_id: item
+            for item in self.data
+            if hasattr(item, "external_id") and item.external_id is not None
+        }
         if hasattr(self.data[0], "id"):
             self._id_to_item = {item.id: item for item in self.data if item.id is not None}
         if hasattr(self.data[0], "instance_id"):
