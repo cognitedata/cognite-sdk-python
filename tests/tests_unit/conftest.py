@@ -77,7 +77,7 @@ class DefaultResourceGenerator:
         uploaded_time: int | None = None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
-        name: str | None = None,
+        name: str = "default_name",
         source: str | None = None,
         mime_type: str | None = None,
         metadata: dict[str, str] | None = None,

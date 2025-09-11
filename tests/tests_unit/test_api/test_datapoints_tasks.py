@@ -178,7 +178,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__valid_inputs(
         self, start: int | None, end: int | str | None, query_validator: _DpsQueryValidator
     ) -> None:
-        gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
+        gran_dct: dict = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
             ts_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs).parse_into_queries()
             query_validator(ts_query)
@@ -201,7 +201,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__raises(
         self, start: int | str | datetime | None, end: int, query_validator: _DpsQueryValidator
     ) -> None:
-        gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
+        gran_dct: dict = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
             full_query = _FullDatapointsQuery(id=1, start=start, end=end, **kwargs)
             all_queries = full_query.parse_into_queries()

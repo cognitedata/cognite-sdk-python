@@ -30,17 +30,17 @@ def test_assert_no_root_init_file() -> None:
 
 
 @pytest.mark.parametrize("cls", [CogniteResource, CogniteResourceList])
-def test_ensure_all_to_pandas_methods_use_snake_case(cls) -> None:
+def test_ensure_all_to_pandas_methods_use_snake_case(cls: type) -> None:
     err_msg = "Class: '{}' for method to_pandas does not default camel_case parameter to False."
     for sub_cls in all_subclasses(cls):
         if not (cls_method := getattr(sub_cls, "to_pandas", False)):
             continue
-        if param := inspect.signature(cls_method).parameters.get("camel_case"):
+        if param := inspect.signature(cls_method).parameters.get("camel_case"):  # type: ignore[arg-type]
             assert param.default is False, err_msg.format(sub_cls.__name__)
 
 
 @pytest.fixture(scope="session")
-def apis_with_post_method_retry_set():
+def apis_with_post_method_retry_set() -> set[str]:
     all_paths = set()
     for api in filter(None, RETRYABLE_POST_ENDPOINT_REGEX_PATTERN.pattern.split("^/")):
         base_path = api.split("/")[0]
@@ -54,7 +54,7 @@ def apis_with_post_method_retry_set():
 
 
 @pytest.fixture(scope="session")
-def apis_that_should_not_have_post_retry_rule():
+def apis_that_should_not_have_post_retry_rule() -> set[str]:
     return set(
         [
             "groups",  # ☑️
@@ -71,7 +71,7 @@ def apis_that_should_not_have_post_retry_rule():
     ),
 )
 def test_all_base_api_paths_have_retry_or_specifically_no_set(
-    api, apis_with_post_method_retry_set, apis_that_should_not_have_post_retry_rule
+    api: str, apis_with_post_method_retry_set: set[str], apis_that_should_not_have_post_retry_rule: set[str]
 ) -> None:
     # So you've added a new API to the SDK, but suddenly this test is failing - what's the deal?!
     # Answer the following:
