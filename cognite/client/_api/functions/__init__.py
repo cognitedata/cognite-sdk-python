@@ -563,7 +563,7 @@ class FunctionsAPI(APIClient):
 
     def _zip_and_upload_folder(
         self,
-        folder: str,
+        folder: Path | str,
         name: str,
         external_id: str | None = None,
         data_set_id: int | None = None,
