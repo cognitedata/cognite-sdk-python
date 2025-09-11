@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import re
+from typing import Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -33,12 +34,12 @@ class TestSourceDef:
             ((ViewId("a", "b"), ("a", "b", "c")), [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP]),
             ([ViewId("a", "b"), ViewId("a", "b", "c")], [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP]),
             (
-                [make_test_view("a", "b", None), ViewId("a", "b", "c")],
+                [make_test_view("a", "b", None), ViewId("a", "b", "c")],  # type: ignore[arg-type]
                 [SINGLE_SRC_DUMP_NO_VERSION, SINGLE_SRC_DUMP],
             ),
         ),
     )
-    def test_instances_api_dump_instance_source(self, sources, expected) -> None:
+    def test_instances_api_dump_instance_source(self, sources: Any, expected: Any) -> None:
         # We need to support:
         # ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
         # ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]
@@ -48,9 +49,7 @@ class TestSourceDef:
 class TestAggregate:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
-    def test_aggregate_maximum(
-        self, limit: int | float | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient
-    ) -> None:
+    def test_aggregate_maximum(self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> None:
         url = re.compile(r".*/models/instances/aggregate$")
         response = {
             "items": [
@@ -82,9 +81,7 @@ class TestAggregate:
 class TestSearch:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
-    def test_search_maximum(
-        self, limit: int | float | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient
-    ) -> None:
+    def test_search_maximum(self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> None:
         url = re.compile(r".*/models/instances/search$")
         response = {
             "items": [

@@ -3,15 +3,20 @@ from __future__ import annotations
 import io
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
 import pytest
+from _pytest._py.path import LocalPath
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_httpx import HTTPXMock
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api.functions import (
+    FunctionsAPI,
     _extract_requirements_from_doc_string,
     _extract_requirements_from_file,
     _get_fn_docstring_requirements,
@@ -35,7 +40,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.functions import FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import get_url, jsgz_load
+from tests.utils import get_or_raise, get_url, jsgz_load
 
 FUNCTION_ID = 1234
 CALL_ID = 5678
@@ -98,27 +103,27 @@ CALL_SCHEDULED = {
 
 
 @pytest.fixture
-def mock_functions_filter_response(httpx_mock, cognite_client):
+def mock_functions_filter_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_FUNCTION]}
 
     url = get_url(cognite_client.functions, "/functions/list")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_retrieve_response(httpx_mock, cognite_client):
+def mock_functions_retrieve_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_FUNCTION]}
 
     url = get_url(cognite_client.functions, "/functions/byids")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_create_response(httpx_mock, cognite_client):
+def mock_functions_create_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     files_response_body = {
         "name": "myfunction",
         "id": FUNCTION_ID,
@@ -141,11 +146,11 @@ def mock_functions_create_response(httpx_mock, cognite_client):
         method="POST", url=functions_url, status_code=201, json={"items": [EXAMPLE_FUNCTION]}, is_optional=True
     )
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_file_not_uploaded(httpx_mock, cognite_client):
+def mock_file_not_uploaded(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     files_response_body = {
         "name": "myfunction",
         "id": FUNCTION_ID,
@@ -158,37 +163,39 @@ def mock_file_not_uploaded(httpx_mock, cognite_client):
     files_byids_url = get_url(cognite_client.files, "/files/byids")
 
     httpx_mock.add_response(method="POST", url=files_byids_url, status_code=201, json={"items": [files_response_body]})
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_delete_response(httpx_mock, cognite_client):
+def mock_functions_delete_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, "/functions/delete")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json={})
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_call_responses(httpx_mock, cognite_client):
+def mock_functions_call_responses(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/call")
     httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_RUNNING)
 
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_sessions_bad_request_response(httpx_mock, cognite_client):
+def mock_sessions_bad_request_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions) + "/sessions"
     httpx_mock.add_response(method="POST", url=url, status_code=403)
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_call_by_external_id_responses(mock_functions_retrieve_response, cognite_client):
+def mock_functions_call_by_external_id_responses(
+    mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+) -> HTTPXMock:
     httpx_mock = mock_functions_retrieve_response
 
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/call")
@@ -197,36 +204,36 @@ def mock_functions_call_by_external_id_responses(mock_functions_retrieve_respons
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_call_failed_response(httpx_mock, cognite_client):
+def mock_functions_call_failed_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/call")
     httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_FAILED)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_call_timeout_response(httpx_mock, cognite_client):
+def mock_functions_call_timeout_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/call")
     httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_TIMEOUT)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def function_handle():
-    def handle(data, client, secrets):
+def function_handle() -> Callable:
+    def handle(data: Any, client: Any, secrets: Any) -> None:
         pass
 
     return handle
 
 
 @pytest.fixture
-def function_handle_with_reqs():
-    def handle(data, client, secrets):
+def function_handle_with_reqs() -> Callable:
+    def handle(data: Any, client: Any, secrets: Any) -> None:
         """
         [requirements]
         pandas
@@ -237,34 +244,34 @@ def function_handle_with_reqs():
 
 
 @pytest.fixture
-def function_handle_illegal_name():
-    def func(data, client, secrets):
+def function_handle_illegal_name() -> Callable:
+    def func(data: Any, client: Any, secrets: Any) -> None:
         pass
 
     return func
 
 
 @pytest.fixture
-def function_handle_illegal_argument():
-    def handle(client, input):
+def function_handle_illegal_argument() -> Callable:
+    def handle(client: Any, input: Any) -> None:
         pass
 
     return handle
 
 
 @pytest.fixture
-def mock_function_calls_filter_response(httpx_mock, cognite_client):
+def mock_function_calls_filter_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"items": [CALL_COMPLETED, CALL_SCHEDULED]}
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/list")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def cognite_client_with_client_credentials_flow(httpx_mock):
+def cognite_client_with_client_credentials_flow(httpx_mock: HTTPXMock) -> CogniteClient:
     # We allow the mock to pass isinstance checks
-    (credentials := MagicMock()).__class__ = OAuthClientCredentials
+    (credentials := MagicMock()).__class__ = OAuthClientCredentials  # type: ignore[assignment]
 
     credentials.token_url = ("https://bla",)
     credentials.client_id = ("bla",)
@@ -276,21 +283,21 @@ def cognite_client_with_client_credentials_flow(httpx_mock):
 
 
 @pytest.fixture
-def cognite_client_with_token():
+def cognite_client_with_token() -> CogniteClient:
     return CogniteClient(ClientConfig(client_name="any", project="dummy", credentials=Token("aabbccddeeffgg")))
 
 
 @pytest.fixture
-def mock_function_calls_filter_response_with_limit(httpx_mock, cognite_client):
+def mock_function_calls_filter_response_with_limit(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"items": [CALL_COMPLETED, CALL_SCHEDULED]}
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/list")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_functions_limit_response(httpx_mock, cognite_client):
+def mock_functions_limit_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
     response_body = {
         "timeoutMinutes": 10,
         "cpuCores": {"min": 0.1, "max": 0.6, "default": 0.25},
@@ -301,21 +308,21 @@ def mock_functions_limit_response(httpx_mock, cognite_client):
     url = get_url(cognite_client.functions, "/functions/limits")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
 
-    yield response_body
+    return response_body
 
 
 @pytest.fixture
-def mock_functions_status_response(httpx_mock, cognite_client):
+def mock_functions_status_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
     response_body = {"status": "IN PROGRESS"}
     url = get_url(cognite_client.functions, "/functions/status")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
 
-    yield response_body
+    return response_body
 
 
 @pytest.fixture
-def mock_file_create_response(httpx_mock, cognite_client):
+def mock_file_create_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -341,7 +348,7 @@ def mock_file_create_response(httpx_mock, cognite_client):
     httpx_mock.add_response(
         method="PUT", url="https://upload.here", status_code=200, json=response_body, is_optional=True
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestFunctionsAPI:
@@ -354,7 +361,7 @@ class TestFunctionsAPI:
             ("bad_function_code2", "handler.py", TypeError),
         ],
     )
-    def test_validate_folder(self, function_folder, function_path, exception) -> None:
+    def test_validate_folder(self, function_folder: str, function_path: str, exception: type[Exception] | None) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path, skip_folder_validation=True)
@@ -371,7 +378,9 @@ class TestFunctionsAPI:
             ("relative_imports", "bad_relative_import.py", ImportError),
         ],
     )
-    def test_imports_in_validate_folder(self, function_folder, function_path, exception) -> None:
+    def test_imports_in_validate_folder(
+        self, function_folder: str, function_path: str, exception: type[Exception] | None
+    ) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path, skip_folder_validation=False)
@@ -387,182 +396,193 @@ class TestFunctionsAPI:
         ],
     )
     @pytest.mark.usefixtures("mock_file_create_response")
-    def test_zip_and_upload_folder(self, function_folder, function_name, cognite_client) -> None:
+    def test_zip_and_upload_folder(
+        self, function_folder: str, function_name: str, cognite_client: CogniteClient
+    ) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         cognite_client.functions._zip_and_upload_folder(folder, function_name)
 
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
-    def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client) -> None:
+    def test_create_function_with_file_not_uploaded(
+        self, mock_file_not_uploaded: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(RuntimeError):
             cognite_client.functions.create(name="myfunction", file_id=123)
 
-    def test_create_with_path(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_path(self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient) -> None:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", "function_code")
         res = cognite_client.functions.create(name="myfunction", folder=folder, function_path="handler.py")
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_file_id(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_file_id(
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.create(name="myfunction", file_id=1234)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_function_handle(self, mock_functions_create_response, function_handle, cognite_client) -> None:
+    def test_create_with_function_handle(
+        self, mock_functions_create_response: HTTPXMock, function_handle: Any, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.create(name="myfunction", function_handle=function_handle)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
     def test_create_with_function_handle_with_illegal_name_raises(
-        self, function_handle_illegal_name, cognite_client
+        self, function_handle_illegal_name: Any, cognite_client: CogniteClient
     ) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", function_handle=function_handle_illegal_name)
 
     def test_create_with_function_handle_with_illegal_argument_raises(
-        self, function_handle_illegal_argument, cognite_client
-    ):
+        self, function_handle_illegal_argument: Any, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", function_handle=function_handle_illegal_argument)
 
     def test_create_with_handle_function_and_file_id_raises(
-        self, mock_functions_create_response, function_handle, cognite_client
-    ):
+        self, mock_functions_create_response: HTTPXMock, function_handle: Any, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(name="myfunction", function_handle=function_handle, file_id=1234)
 
-    def test_create_with_path_and_file_id_raises(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_path_and_file_id_raises(
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(TypeError):
             cognite_client.functions.create(
                 name="myfunction", folder="some/folder", file_id=1234, function_path="handler.py"
             )
 
-    def test_create_with_cpu_and_memory(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_cpu_and_memory(
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.create(name="myfunction", file_id=1234, cpu=0.2, memory=1.0)
 
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_create_with_cpu_not_float_raises(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_cpu_not_float_raises(
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(TypeError):
-            cognite_client.functions.create(name="myfunction", file_id=1234, cpu="0.2")
+            cognite_client.functions.create(name="myfunction", file_id=1234, cpu="0.2")  # type: ignore[arg-type]
 
-    def test_create_with_memory_not_float_raises(self, mock_functions_create_response, cognite_client) -> None:
+    def test_create_with_memory_not_float_raises(
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(TypeError):
-            cognite_client.functions.create(name="myfunction", file_id=1234, memory="0.5")
+            cognite_client.functions.create(name="myfunction", file_id=1234, memory="0.5")  # type: ignore[arg-type]
 
     def test_create_upload_with_data_set_id(
-        self, mock_functions_create_response, cognite_client, function_handle
+        self, mock_functions_create_response: HTTPXMock, cognite_client: CogniteClient, function_handle: Callable
     ) -> None:
         cognite_client.files = MagicMock(spec=cognite_client.files)
 
-        def mock_upload_bytes(*args, **kwargs):
+        def mock_upload_bytes(*args: Any, **kwargs: Any) -> FileMetadata:
             assert kwargs.get("data_set_id") == 999
-            return FileMetadata(
-                id=FUNCTION_ID,
-                uploaded=False,
-                created_time=123,
-                last_updated_time=123,
-                uploaded_time=None,
-                external_id=None,
-                instance_id=None,
-                name=None,
-                source=None,
-                mime_type=None,
-                metadata=None,
-                directory=None,
-                asset_ids=None,
-                data_set_id=None,
-                labels=None,
-                geo_location=None,
-                source_created_time=None,
-                source_modified_time=None,
-                security_categories=None,
-                cognite_client=None,
-            )
+            return DefaultResourceGenerator.file_metadata(id=FUNCTION_ID)
 
         cognite_client.files.upload_bytes.side_effect = mock_upload_bytes
 
         cognite_client.functions.create(name="myfunction", function_handle=function_handle, data_set_id=999)
 
-    def test_delete_single_id(self, mock_functions_delete_response, cognite_client) -> None:
+    def test_delete_single_id(self, mock_functions_delete_response: HTTPXMock, cognite_client: CogniteClient) -> None:
         _ = cognite_client.functions.delete(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_functions_delete_response.get_requests()[0].content)
 
-    def test_delete_single_external_id(self, mock_functions_delete_response, cognite_client) -> None:
+    def test_delete_single_external_id(
+        self, mock_functions_delete_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         _ = cognite_client.functions.delete(external_id="func1")
         assert {"items": [{"externalId": "func1"}]} == jsgz_load(
             mock_functions_delete_response.get_requests()[0].content
         )
 
-    def test_delete_multiple_id_and_multiple_external_id(self, mock_functions_delete_response, cognite_client) -> None:
+    def test_delete_multiple_id_and_multiple_external_id(
+        self, mock_functions_delete_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         _ = cognite_client.functions.delete(id=[1, 2, 3], external_id=["func1", "func2"])
         assert {
             "items": [{"id": 1}, {"id": 2}, {"id": 3}, {"externalId": "func1"}, {"externalId": "func2"}]
         } == jsgz_load(mock_functions_delete_response.get_requests()[0].content)
 
-    def test_list(self, mock_functions_filter_response, cognite_client) -> None:
+    def test_list(self, mock_functions_filter_response: HTTPXMock, cognite_client: CogniteClient) -> None:
         res = cognite_client.functions.list()
 
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_list_with_limits(self, mock_functions_filter_response, cognite_client) -> None:
+    def test_list_with_limits(self, mock_functions_filter_response: HTTPXMock, cognite_client: CogniteClient) -> None:
         res = cognite_client.functions.list(limit=1)
         assert isinstance(res, FunctionList)
         assert len(res) == 1
 
-    def test_retrieve_by_id(self, mock_functions_retrieve_response, cognite_client) -> None:
+    def test_retrieve_by_id(self, mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient) -> None:
         res = cognite_client.functions.retrieve(id=1)
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_retrieve_by_external_id(self, mock_functions_retrieve_response, cognite_client) -> None:
+    def test_retrieve_by_external_id(
+        self, mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.retrieve(external_id="func1")
         assert isinstance(res, Function)
         assert EXAMPLE_FUNCTION == res.dump(camel_case=True)
 
-    def test_retrieve_by_id_and_external_id_raises(self, cognite_client) -> None:
+    def test_retrieve_by_id_and_external_id_raises(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError):
             cognite_client.functions.retrieve(id=1, external_id="func1")
 
-    def test_retrieve_multiple_by_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
+    def test_retrieve_multiple_by_ids(
+        self, mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.retrieve_multiple(ids=[1])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple_by_external_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
+    def test_retrieve_multiple_by_external_ids(
+        self, mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.retrieve_multiple(external_ids=["func1"])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple_by_ids_and_external_ids(self, mock_functions_retrieve_response, cognite_client) -> None:
+    def test_retrieve_multiple_by_ids_and_external_ids(
+        self, mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.retrieve_multiple(ids=[1], external_ids=["func1"])
         assert isinstance(res, FunctionList)
         assert [EXAMPLE_FUNCTION] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
     def test_function_call_with_failing_client_credentials_flow(
-        self, cognite_client_with_client_credentials_flow
+        self, cognite_client_with_client_credentials_flow: CogniteClient
     ) -> None:
         with pytest.raises(CogniteAPIError) as excinfo:
             cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
         assert excinfo.value.code == 403
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
-    def test_function_call_with_failing_token_exchange_flow(self, cognite_client_with_token) -> None:
+    def test_function_call_with_failing_token_exchange_flow(self, cognite_client_with_token: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as excinfo:
             cognite_client_with_token.functions.call(id=FUNCTION_ID)
         assert excinfo.value.code == 403
 
-    def test_functions_limits_endpoint(self, mock_functions_limit_response, cognite_client):
+    def test_functions_limits_endpoint(
+        self, mock_functions_limit_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.limits()
         assert isinstance(res, FunctionsLimits)
         assert mock_functions_limit_response == res.dump(camel_case=True)
 
-    def test_functions_status_endpoint(self, mock_functions_status_response, cognite_client) -> None:
+    def test_functions_status_endpoint(
+        self, mock_functions_status_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.activate()
         assert isinstance(res, FunctionsStatus)
         assert mock_functions_status_response == res.dump(camel_case=True)
@@ -586,7 +606,7 @@ class TestRequirementsParser:
                 _validate_and_parse_requirements(req)
 
     def test_get_requirements_handle(self) -> None:
-        def fn():
+        def fn() -> None:
             """
             [requirements]
             asyncio
@@ -597,13 +617,13 @@ class TestRequirementsParser:
         assert _get_fn_docstring_requirements(fn) == ["asyncio"]
 
     def test_get_requirements_handle_error(self) -> None:
-        def fn():
+        def fn() -> None:
             return None
 
         assert _get_fn_docstring_requirements(fn) == []
 
     def test_get_requirements_handle_no_docstr(self) -> None:
-        def fn():
+        def fn() -> None:
             """
             [requirements]
             asyncio=3.4.3
@@ -615,7 +635,7 @@ class TestRequirementsParser:
             _get_fn_docstring_requirements(fn)
 
     def test_get_requirements_handle_no_reqs(self) -> None:
-        def fn():
+        def fn() -> None:
             """
             [requirements]
             [/requirements]
@@ -624,7 +644,7 @@ class TestRequirementsParser:
 
         assert _get_fn_docstring_requirements(fn) == []
 
-    def test_extract_requirements_from_file(self, tmpdir) -> None:
+    def test_extract_requirements_from_file(self, tmpdir: LocalPath) -> None:
         req = "somepackage == 3.8.1"
         file = os.path.join(tmpdir, "requirements.txt")
         with open(file, "w+") as f:
@@ -650,25 +670,25 @@ class TestRequirementsParser:
 
 
 @pytest.fixture
-def mock_function_calls_retrieve_response(httpx_mock, cognite_client):
+def mock_function_calls_retrieve_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = CALL_COMPLETED
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [response_body]})
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_function_call_response_response(httpx_mock, cognite_client):
+def mock_function_call_response_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
     response_body = {"callId": CALL_ID, "functionId": 1234, "response": {"key": "value"}}
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/{CALL_ID}/response")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
 
-    yield response_body
+    return response_body
 
 
 @pytest.fixture
-def mock_function_call_logs_response(httpx_mock, cognite_client):
+def mock_function_call_logs_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> dict[str, Any]:
     response_body = {
         "items": [
             {"timestamp": 1585925306822, "message": "message 1"},
@@ -678,7 +698,7 @@ def mock_function_call_logs_response(httpx_mock, cognite_client):
     url = get_url(cognite_client.functions, f"/functions/{FUNCTION_ID}/calls/{CALL_ID}/logs")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
 
-    yield response_body
+    return response_body
 
 
 SCHEDULE_WITH_FUNCTION_EXTERNAL_ID = {
@@ -705,17 +725,17 @@ SCHEDULE_WITH_FUNCTION_ID_AND_SESSION = {
 
 
 @pytest.fixture
-def mock_filter_function_schedules_response(httpx_mock, cognite_client):
+def mock_filter_function_schedules_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, "/functions/schedules/list")
     httpx_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_function_schedules_response(httpx_mock, cognite_client):
+def mock_function_schedules_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, "/functions/schedules")
     httpx_mock.add_response(
         method="GET", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}, is_optional=True
@@ -723,11 +743,11 @@ def mock_function_schedules_response(httpx_mock, cognite_client):
     httpx_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_function_schedules_response_with_xid(httpx_mock, cognite_client):
+def mock_function_schedules_response_with_xid(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     # Creating a new schedule first needs a session (to pass the nonce):
     httpx_mock.add_response(
         method="POST",
@@ -744,59 +764,67 @@ def mock_function_schedules_response_with_xid(httpx_mock, cognite_client):
     retrieve_url = get_url(cognite_client.functions, "/functions/byids")
     httpx_mock.add_response(method="POST", url=retrieve_url, status_code=200, json={"items": [EXAMPLE_FUNCTION]})
 
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_function_schedules_retrieve_response(httpx_mock, cognite_client):
+def mock_function_schedules_retrieve_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, "/functions/schedules/byids")
     httpx_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_function_schedules_delete_response(httpx_mock, cognite_client):
+def mock_function_schedules_delete_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url = get_url(cognite_client.functions, "/functions/schedules/delete")
     httpx_mock.add_response(method="POST", url=url, status_code=200, json={})
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_schedule_get_data_response(httpx_mock, cognite_client):
+def mock_schedule_get_data_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     schedule_id = SCHEDULE_WITH_FUNCTION_ID_AND_SESSION["id"]
     url = get_url(cognite_client.functions, f"/functions/schedules/{schedule_id}/input_data")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id, "data": {"value": 2}})
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_schedule_no_data_response(httpx_mock, cognite_client):
+def mock_schedule_no_data_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     schedule_id = SCHEDULE_WITH_FUNCTION_ID_AND_SESSION["id"]
     url = get_url(cognite_client.functions, f"/functions/schedules/{schedule_id}/input_data")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id})
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestFunctionSchedulesAPI:
-    def test_retrieve_schedules(self, mock_function_schedules_retrieve_response, cognite_client) -> None:
-        res = cognite_client.functions.schedules.retrieve(id=SCHEDULE_WITH_FUNCTION_EXTERNAL_ID["id"])
+    def test_retrieve_schedules(
+        self, mock_function_schedules_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
+        res = cognite_client.functions.schedules.retrieve(id=cast(int, SCHEDULE_WITH_FUNCTION_EXTERNAL_ID["id"]))
         assert isinstance(res, FunctionSchedule)
         assert SCHEDULE_WITH_FUNCTION_EXTERNAL_ID == res.dump(camel_case=True)
 
-    def test_list_schedules(self, mock_filter_function_schedules_response, cognite_client) -> None:
+    def test_list_schedules(
+        self, mock_filter_function_schedules_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.schedules.list()
         assert isinstance(res, FunctionSchedulesList)
         assert [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID] == res.dump(camel_case=True)
 
-    def test_list_schedules_with_limit(self, mock_filter_function_schedules_response, cognite_client) -> None:
+    def test_list_schedules_with_limit(
+        self, mock_filter_function_schedules_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.schedules.list(limit=1)
 
         assert isinstance(res, FunctionSchedulesList)
         assert len(res) == 1
 
-    def test_list_schedules_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
+    def test_list_schedules_with_function_id_and_function_external_id_raises(
+        self, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.list(function_id=123, function_external_id="my-func")
         assert (
@@ -804,7 +832,9 @@ class TestFunctionSchedulesAPI:
             == excinfo.value.args[0]
         )
 
-    def test_create_schedules_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
+    def test_create_schedules_with_function_id_and_function_external_id_raises(
+        self, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.schedules.create(
                 function_id=123,
@@ -815,7 +845,7 @@ class TestFunctionSchedulesAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_schedules_response_with_xid")
-    def test_create_schedules_with_function_external_id(self, cognite_client) -> None:
+    def test_create_schedules_with_function_external_id(self, cognite_client: CogniteClient) -> None:
         with patch.object(
             cognite_client.functions.schedules, "_post", wraps=cognite_client.functions.schedules._post
         ) as post_mock:
@@ -831,7 +861,9 @@ class TestFunctionSchedulesAPI:
         assert "functionExternalId" not in call_args
         assert isinstance(res, FunctionSchedule)
 
-    def test_create_schedules_with_data(self, mock_function_schedules_response, cognite_client, monkeypatch):
+    def test_create_schedules_with_data(
+        self, mock_function_schedules_response: HTTPXMock, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
+    ) -> None:
         # @patch seems to conflict with httpx_mock, so we use monkeypatch instead:
         monkeypatch.setattr(
             "cognite.client._api.functions.create_session_and_return_nonce",
@@ -931,97 +963,122 @@ class TestFunctionSchedulesAPI:
 
         assert isinstance(result, FunctionSchedule)
 
-    def test_delete_schedules(self, mock_function_schedules_delete_response, cognite_client):
+    def test_delete_schedules(
+        self, mock_function_schedules_delete_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.schedules.delete(id=8012683333564363)
         assert res is None
 
-    def test_schedule_get_data__function_has_data(self, mock_schedule_get_data_response, cognite_client) -> None:
+    def test_schedule_get_data__function_has_data(
+        self, mock_schedule_get_data_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
 
         assert isinstance(res, dict)
         assert {"value": 2} == res
 
-    def test_schedule_get_data__function_is_missing_data(self, mock_schedule_no_data_response, cognite_client) -> None:
+    def test_schedule_get_data__function_is_missing_data(
+        self, mock_schedule_no_data_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
         assert res is None
 
 
 class TestFunctionCallsAPI:
     def test_list_calls_and_filter(
-        self, mock_function_calls_filter_response, mock_functions_retrieve_response, cognite_client
-    ):
-        filter_kwargs = {
-            "status": "Completed",
-            "schedule_id": 123,
-            "start_time": {"min": 1585925306822, "max": 1585925306823},
-            "end_time": {"min": 1585925310822, "max": 1585925310823},
-        }
-        res = cognite_client.functions.retrieve(id=FUNCTION_ID).list_calls(**filter_kwargs, limit=-1)
+        self,
+        mock_function_calls_filter_response: HTTPXMock,
+        mock_functions_retrieve_response: HTTPXMock,
+        cognite_client: CogniteClient,
+    ) -> None:
+        fn = get_or_raise(cognite_client.functions.retrieve(id=FUNCTION_ID))
+        res = fn.list_calls(
+            status="Completed",
+            schedule_id=123,
+            start_time={"min": 1585925306822, "max": 1585925306823},
+            end_time={"min": 1585925310822, "max": 1585925310823},
+            limit=-1,
+        )
 
         assert isinstance(res, FunctionCallList)
         assert [CALL_COMPLETED, CALL_SCHEDULED] == res.dump(camel_case=True)
 
-    def test_list_calls_by_function_id(self, mock_function_calls_filter_response, cognite_client) -> None:
-        filter_kwargs = {
-            "status": "Completed",
-            "schedule_id": 123,
-            "start_time": {"min": 1585925306822, "max": 1585925306823},
-            "end_time": {"min": 1585925310822, "max": 1585925310823},
-        }
-        res = cognite_client.functions.calls.list(function_id=FUNCTION_ID, **filter_kwargs, limit=-1)
+    def test_list_calls_by_function_id(
+        self, mock_function_calls_filter_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
+        res = cognite_client.functions.calls.list(
+            function_id=FUNCTION_ID,
+            status="Completed",
+            schedule_id=123,
+            start_time={"min": 1585925306822, "max": 1585925306823},
+            end_time={"min": 1585925306822, "max": 1585925306823},
+            limit=-1,
+        )
         assert isinstance(res, FunctionCallList)
         assert [CALL_COMPLETED, CALL_SCHEDULED] == res.dump(camel_case=True)
 
     def test_list_calls_by_function_id_with_limits(
-        self, mock_function_calls_filter_response_with_limit, cognite_client
-    ):
+        self, mock_function_calls_filter_response_with_limit: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.list(function_id=FUNCTION_ID, limit=2)
         assert isinstance(res, FunctionCallList)
         assert len(res) == 2
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_list_calls_by_function_external_id(self, mock_function_calls_filter_response, cognite_client) -> None:
+    def test_list_calls_by_function_external_id(
+        self, mock_function_calls_filter_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.list(function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCallList)
         assert [CALL_COMPLETED, CALL_SCHEDULED] == res.dump(camel_case=True)
 
-    def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
+    def test_list_calls_with_function_id_and_function_external_id_raises(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.list(function_id=123, function_external_id="my-function")
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
-    def test_retrieve_call_by_function_id(self, mock_function_calls_retrieve_response, cognite_client) -> None:
+    def test_retrieve_call_by_function_id(
+        self, mock_function_calls_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, FunctionCall)
         assert CALL_COMPLETED == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_retrieve_call_by_function_external_id(self, mock_function_calls_retrieve_response, cognite_client) -> None:
+    def test_retrieve_call_by_function_external_id(
+        self, mock_function_calls_retrieve_response: HTTPXMock, cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCall)
         assert CALL_COMPLETED == res.dump(camel_case=True)
 
-    def test_retrieve_call_with_function_id_and_function_external_id_raises(self, cognite_client) -> None:
+    def test_retrieve_call_with_function_id_and_function_external_id_raises(
+        self, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.retrieve(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
             )
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
-    def test_function_call_logs_by_function_id(self, mock_function_call_logs_response, cognite_client) -> None:
+    def test_function_call_logs_by_function_id(
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.get_logs(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_functions_retrieve_response")
-    def test_function_call_logs_by_function_external_id(self, mock_function_call_logs_response, cognite_client) -> None:
+    def test_function_call_logs_by_function_external_id(
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         res = cognite_client.functions.calls.get_logs(call_id=CALL_ID, function_external_id=f"func-no-{FUNCTION_ID}")
         assert isinstance(res, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == res.dump(camel_case=True)
 
     def test_function_call_logs_by_function_id_and_function_external_id_raises(
-        self, mock_function_call_logs_response, cognite_client
-    ):
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_logs(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
@@ -1029,39 +1086,49 @@ class TestFunctionCallsAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_calls_retrieve_response")
-    def test_get_logs_on_retrieved_call_object(self, mock_function_call_logs_response, cognite_client) -> None:
-        call = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
+    def test_get_logs_on_retrieved_call_object(
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
+        call = get_or_raise(cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID))
         logs = call.get_logs()
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == logs.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_function_calls_filter_response")
-    def test_get_logs_on_listed_call_object(self, mock_function_call_logs_response, cognite_client) -> None:
+    def test_get_logs_on_listed_call_object(
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         calls = cognite_client.functions.calls.list(function_id=FUNCTION_ID)
         logs = calls[0].get_logs()
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == logs.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_functions_call_responses")
-    def test_get_logs_on_created_call_object(self, mock_function_call_logs_response, cognite_client):
+    def test_get_logs_on_created_call_object(
+        self, mock_function_call_logs_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
         call = cognite_client.functions.call(id=FUNCTION_ID, nonce="or how to skip 'get nonce' hehe")
         logs = call.get_logs()
         assert isinstance(logs, FunctionCallLog)
         assert mock_function_call_logs_response["items"] == logs.dump(camel_case=True)
 
-    def test_function_call_response_by_function_id(self, mock_function_call_response_response, cognite_client) -> None:
-        res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
-        assert isinstance(res, dict)
-        assert mock_function_call_response_response["response"] == res
-
-    def test_function_call_response_by_function_external_id(
-        self, mock_function_call_response_response, cognite_client
+    def test_function_call_response_by_function_id(
+        self, mock_function_call_response_response: dict[str, Any], cognite_client: CogniteClient
     ) -> None:
         res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
         assert isinstance(res, dict)
         assert mock_function_call_response_response["response"] == res
 
-    def test_function_call_response_by_function_id_and_function_external_id_raises(self, cognite_client) -> None:
+    def test_function_call_response_by_function_external_id(
+        self, mock_function_call_response_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
+        res = cognite_client.functions.calls.get_response(call_id=CALL_ID, function_id=FUNCTION_ID)
+        assert isinstance(res, dict)
+        assert mock_function_call_response_response["response"] == res
+
+    def test_function_call_response_by_function_id_and_function_external_id_raises(
+        self, cognite_client: CogniteClient
+    ) -> None:
         with pytest.raises(ValueError) as excinfo:
             cognite_client.functions.calls.get_response(
                 call_id=CALL_ID, function_id=FUNCTION_ID, function_external_id=f"func-no-{FUNCTION_ID}"
@@ -1069,15 +1136,17 @@ class TestFunctionCallsAPI:
         assert "Exactly one of function_id and function_external_id must be specified" == excinfo.value.args[0]
 
     @pytest.mark.usefixtures("mock_function_calls_retrieve_response")
-    def test_get_response_on_retrieved_call_object(self, mock_function_call_response_response, cognite_client) -> None:
-        call = cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID)
+    def test_get_response_on_retrieved_call_object(
+        self, mock_function_call_response_response: dict[str, Any], cognite_client: CogniteClient
+    ) -> None:
+        call = get_or_raise(cognite_client.functions.calls.retrieve(call_id=CALL_ID, function_id=FUNCTION_ID))
         response = call.get_response()
         assert isinstance(response, dict)
         assert mock_function_call_response_response["response"] == response
 
 
 @pytest.fixture
-def fns_api_with_mock_client(cognite_client):
+def fns_api_with_mock_client(cognite_client: CogniteClient) -> FunctionsAPI:
     cognite_client.functions._cognite_client = MagicMock()
     return cognite_client.functions
 
@@ -1090,14 +1159,16 @@ def fns_api_with_mock_client(cognite_client):
         ("xid", True),
     ),
 )
-def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle) -> None:
+def test__zip_and_upload_handle__call_signature(
+    fns_api_with_mock_client: FunctionsAPI, xid: str | None, overwrite: bool, function_handle: Callable
+) -> None:
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
+    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)  # type: ignore[attr-defined]
     file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle, name="name", external_id=xid)
     assert file_id == 123
 
-    mock.files.upload_bytes.assert_called_once()
-    call = mock.files.upload_bytes.call_args
+    mock.files.upload_bytes.assert_called_once()  # type: ignore[attr-defined]
+    call = mock.files.upload_bytes.call_args  # type: ignore[attr-defined]
     assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
@@ -1111,9 +1182,9 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
     ),
 )
 def test__zip_and_upload_handle__zip_file_content(
-    fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs
+    fns_api_with_mock_client: FunctionsAPI, xid: str | None, overwrite: bool, function_handle_with_reqs: Callable
 ) -> None:
-    def validate_file_upload_call(*args, **kwargs):
+    def validate_file_upload_call(*args: Any, **kwargs: Any) -> FileMetadata:
         assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
@@ -1122,7 +1193,7 @@ def test__zip_and_upload_handle__zip_file_content(
             assert zip_file.namelist() == ["handler.py", "requirements.txt"]
             with zip_file.open("handler.py", "r") as py_file:
                 expected_lines = [
-                    "def handle(data, client, secrets):",
+                    "def handle(data: Any, client: Any, secrets: Any) -> None:",
                     '    """',
                     "    [requirements]",
                     "    pandas",
@@ -1134,7 +1205,7 @@ def test__zip_and_upload_handle__zip_file_content(
         return DefaultResourceGenerator.file_metadata(id=123)
 
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes = validate_file_upload_call
+    mock.files.upload_bytes = validate_file_upload_call  # type: ignore[method-assign]
 
     file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle_with_reqs, name="name", external_id=xid)
     assert file_id == 123
@@ -1148,16 +1219,18 @@ def test__zip_and_upload_handle__zip_file_content(
         ("xid", True),
     ),
 )
-def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite) -> None:
+def test__zip_and_upload_folder__call_signature(
+    fns_api_with_mock_client: FunctionsAPI, xid: str | None, overwrite: bool
+) -> None:
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)
+    mock.files.upload_bytes.return_value = DefaultResourceGenerator.file_metadata(id=123)  # type: ignore[attr-defined]
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
     assert file_id == 123
 
-    mock.files.upload_bytes.assert_called_once()
-    call = mock.files.upload_bytes.call_args
+    mock.files.upload_bytes.assert_called_once()  # type: ignore[attr-defined]
+    call = mock.files.upload_bytes.call_args  # type: ignore[attr-defined]
     assert len(call.args) == 1 and type(call.args[0]) is bytes
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
@@ -1170,8 +1243,10 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
         ("xid", True),
     ),
 )
-def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite) -> None:
-    def validate_file_upload_call(*args, **kwargs):
+def test__zip_and_upload_folder__zip_file_content(
+    fns_api_with_mock_client: FunctionsAPI, xid: str | None, overwrite: bool
+) -> None:
+    def validate_file_upload_call(*args: Any, **kwargs: Any) -> FileMetadata:
         assert len(args) == 1 and type(args[0]) is bytes
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite, "data_set_id": None}
 
@@ -1184,7 +1259,7 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
                     "from shared.util import shared_func",
                     "",
                     "",
-                    "def handle():",
+                    "def handle() -> int:",
                     "    return shared_func()",
                 ]
                 # We use splitlines to ignore line ending differences between OSs:
@@ -1192,7 +1267,7 @@ def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid,
         return DefaultResourceGenerator.file_metadata(id=123, data_set_id=None)
 
     mock = fns_api_with_mock_client._cognite_client
-    mock.files.upload_bytes = validate_file_upload_call
+    mock.files.upload_bytes = validate_file_upload_call  # type: ignore[method-assign]
 
     folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
     file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)

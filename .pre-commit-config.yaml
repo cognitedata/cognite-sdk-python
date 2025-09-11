@@ -34,6 +34,7 @@ repos:
           poetry run dmypy run -- cognite 
           
           tests/tests_integration
+          tests/tests_unit/test_api
           
           tests/tests_unit/test_data_classes
           tests/tests_unit/test_utils
@@ -44,20 +45,6 @@ repos:
           tests/tests_unit/test_credential_providers.py
           tests/tests_unit/test_docstring_examples.py
           tests/tests_unit/test_exceptions.py
-          
-          tests/tests_unit/test_api/test_assets.py
-          tests/tests_unit/test_api/test_datapoints.py
-          tests/tests_unit/test_api/test_events.py
-          tests/tests_unit/test_api/test_files.py
-          tests/tests_unit/test_api/test_data_sets.py
-          tests/tests_unit/test_api/test_geospatial.py
-          tests/tests_unit/test_api/test_raw.py
-          tests/tests_unit/test_api/test_time_series.py
-          tests/tests_unit/test_api/test_transformations.py
-          tests/tests_unit/test_api/test_vision_extract.py
-          tests/tests_unit/test_api/test_sequences.py
-          tests/tests_unit/test_api/test_simulators
-          tests/tests_unit/test_api/test_3d.py
 
         files: ^.*.(py|pyi)$
         language: system

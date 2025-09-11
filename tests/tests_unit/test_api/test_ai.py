@@ -3,13 +3,15 @@ from __future__ import annotations
 import re
 
 import pytest
+from pytest_httpx import HTTPXMock
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
 from tests.utils import get_url
 
 
 @pytest.fixture
-def mock_summarize_response(httpx_mock, cognite_client):
+def mock_summarize_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {
         "items": [
             {
@@ -23,11 +25,11 @@ def mock_summarize_response(httpx_mock, cognite_client):
     # ....assert_all_requests_are_fired = False  # TODO
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_ask_response(httpx_mock, cognite_client):
+def mock_ask_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {
         "content": [
             {
@@ -86,19 +88,19 @@ def mock_ask_response(httpx_mock, cognite_client):
     # ....assert_all_requests_are_fired = False  # TODO
 
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestAIAPI:
     @pytest.mark.usefixtures("mock_summarize_response")
-    def test_summarize(self, cognite_client) -> None:
+    def test_summarize(self, cognite_client: CogniteClient) -> None:
         summary = cognite_client.ai.tools.documents.summarize(id=1234)
         assert isinstance(summary, Summary)
         assert summary.id == 1234
         assert summary.summary == "Summary"
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_ask_question(self, cognite_client) -> None:
+    def test_ask_question(self, cognite_client: CogniteClient) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert len(answer.content) == 2
         content = answer.content[0]
@@ -118,7 +120,7 @@ class TestAIAPI:
         assert location.bottom == 1.0
 
     @pytest.mark.usefixtures("mock_ask_response")
-    def test_answer_methods(self, cognite_client) -> None:
+    def test_answer_methods(self, cognite_client: CogniteClient) -> None:
         answer = cognite_client.ai.tools.documents.ask_question(question="How is the weather?", id=[1234, 2345])
         assert answer.full_answer == "This is the answer."
         all_refs = answer.all_references
