@@ -53,6 +53,7 @@ class PrincipalsAPI(OrgAPI):
         Returns:
             Principal: The principal of the user running the code, i.e. the
                 principal *this* CogniteClient was instantiated with.
+
         Examples:
             Get your own principal:
                 >>> from cognite.client import CogniteClient
@@ -122,6 +123,7 @@ class PrincipalsAPI(OrgAPI):
         ignore_unknown_ids: bool = False,
     ) -> Principal | PrincipalList | None:
         """`Retrieve principal by reference in the organization <https://developer.cognite.com/api#tag/Principals/operation/getPrincipalsById>`_
+
         Args:
             id (str | SequenceNotStr[str] | None): The ID(s) of the principal(s) to retrieve.
             external_id (str | SequenceNotStr[str] | None): The external ID(s) of the principal to retrieve.
@@ -132,6 +134,7 @@ class PrincipalsAPI(OrgAPI):
 
         Returns:
             Principal | PrincipalList | None: The principal(s) with the specified ID(s) or external ID(s).
+
         Examples:
             Retrieve a principal by ID:
                 >>> from cognite.client import CogniteClient
@@ -139,6 +142,7 @@ class PrincipalsAPI(OrgAPI):
                 >>> res = client.iam.principals.retrieve(id="20u3of8-1234-5678-90ab-cdef12345678")
             Retrieve a principal by external ID:
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
+
         """
         identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id)
         if identifier.is_singleton() and ignore_unknown_ids:
@@ -153,16 +157,20 @@ class PrincipalsAPI(OrgAPI):
 
     def list(self, types: str | SequenceNotStr[str] | None = None, limit: int = DEFAULT_LIMIT_READ) -> PrincipalList:
         """`List principals in the organization <https://developer.cognite.com/api#tag/Principals/operation/listPrincipals>`_
+
         Args:
             types (str | SequenceNotStr[str] | None): Filter by principal type(s). Defaults to None, which means no filtering.
             limit (int): The maximum number of principals to return. Defaults to DEFAULT_LIMIT_READ.
+
         Returns:
             PrincipalList: The principal of the user running the code, i.e. the principal *this* CogniteClient was instantiated with.
+
         Examples:
             List principals in the organization:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.iam.principals.list(types="USER", limit=10)
+
         """
         other_params: dict[str, object] | None = None
         if isinstance(types, str):
