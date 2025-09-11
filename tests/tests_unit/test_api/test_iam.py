@@ -30,7 +30,7 @@ def mock_groups_response(httpx_mock, cognite_client):
 
 @pytest.fixture
 def group_with_attributes():
-     return {
+    return {
         "name": "Production Engineers",
         "sourceId": "b7c9a5a4-99c2-4785-bed3-5e6ad9a78603",
         "capabilities": [{"groupsAcl": {"actions": ["LIST"], "scope": {"all": {}}}}],
@@ -51,12 +51,8 @@ def mock_groups_with_attributes(group_with_attributes, httpx_mock, cognite_clien
     response_body = {"items": [group_with_attributes]}
 
     url_pattern = re.compile(re.escape(get_url(cognite_client.iam)) + "/groups.*")
-    httpx_mock.add_response(
-        method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True
-    )
-    httpx_mock.add_response(
-        method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True
-    )
+    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     yield httpx_mock
 
 
