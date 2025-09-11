@@ -32,8 +32,7 @@ class DebugParameters:
     def dump(self, camel_case: bool = True) -> dict[str, bool | int]:
         res = asdict(self)
         if camel_case:
-            if "emit_results" in res:
-                res["emitResults"] = res.pop("emit_results")
+            res["emitResults"] = res.pop("emit_results")
         if self.timeout is None:
             res.pop("timeout")
         return res
@@ -42,8 +41,8 @@ class DebugParameters:
 @dataclass
 class DebugNotice(ABC):
     """
-    A list of notices that provide insights into the query's execution. These can highlight potential performance
-    issues, offer optimization suggestions, or explain aspects of the query processing. Each notice falls into a
+    A notice that provides insight into the query's execution. It can highlight potential performance issues,
+    offer an optimization suggestion, or explain an aspect of the query processing. Each notice falls into a
     category, such as indexing, sorting, filtering, or cursoring, to help identify areas for improvement.
     """
 
@@ -87,8 +86,8 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
 
 
 @dataclass
-class NoTimeoutWithoutResultsNotice(InvalidDebugOptionsNotice):
-    code: Literal["noTimeoutWithoutResults"]
+class NoTimeoutWithResultsNotice(InvalidDebugOptionsNotice):
+    code: Literal["noTimeoutWithResults"]
     category: Literal["invalidDebugOptions"]
     level: Literal["warning"]
     hint: Literal["Ignoring timeout setting since emitResults=true"]
