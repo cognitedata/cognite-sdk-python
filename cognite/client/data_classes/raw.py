@@ -174,14 +174,14 @@ class Table(TableCore):
 
     Args:
         name (str): Unique name of the table
-        created_time (int): Time the table was created.
+        created_time (int | None): Time the table was created.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         name: str,
-        created_time: int,
+        created_time: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(name)
@@ -192,7 +192,7 @@ class Table(TableCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(name=resource["name"], created_time=resource["createdTime"], cognite_client=cognite_client)
+        return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> TableWrite:
         """Returns this Table as a TableWrite"""
@@ -274,14 +274,14 @@ class Database(DatabaseCore):
 
     Args:
         name (str): Unique name of a database.
-        created_time (int): Time the database was created.
+        created_time (int | None): Time the database was created.
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
         name: str,
-        created_time: int,
+        created_time: int | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(name)
@@ -290,7 +290,7 @@ class Database(DatabaseCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(name=resource["name"], created_time=resource["createdTime"], cognite_client=cognite_client)
+        return cls(name=resource["name"], created_time=resource.get("createdTime"), cognite_client=cognite_client)
 
     def as_write(self) -> DatabaseWrite:
         """Returns this Database as a DatabaseWrite"""
