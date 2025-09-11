@@ -6,20 +6,23 @@ from cognite.client.data_classes.filters import And, Filter, In, Or
 from tests.utils import FakeCogniteResourceGenerator
 
 
-def test_filters_raise_on_and_or_or() -> None:
-    # We've seen multiple users are trying to combine filters using `and` and `or`, which does not work,
-    # as the behavior can not be overloaded in Python (must use & and |).
+def test_filters_warn_in_boolean_contexts() -> None:
+    # We've seen multiple users using filters in boolean contexts (like 'if my_filter:' or 'flt1 and flt2'),
+    # which is not recommended. The proper way to combine filters is using & and | operators.
     fcrg = FakeCogniteResourceGenerator()
     # Create two random filters:
     flt1 = fcrg.create_instance(Filter)
     flt2 = fcrg.create_instance(Filter)
 
-    match_str = re.escape("You can not combine filters using 'and' or 'or', you must use the And filter (&)")
-    with pytest.raises(RuntimeError, match=match_str):
+    # Test that warnings are issued when using filters in boolean contexts
+    match_str = "^" + re.escape("You may be trying to combine two (or more) filters using 'and' or 'or'")
+    with pytest.warns(UserWarning, match=match_str):
         flt1 and flt2  # type: ignore[operator]
-    with pytest.raises(RuntimeError, match=match_str):
+
+    with pytest.warns(UserWarning, match=match_str):
         flt1 or flt2  # type: ignore[operator]
 
+    # Test that the proper filter combination operators still work correctly
     assert type(flt1 & flt2) is And
     assert type(flt1 | flt2) is Or
 
