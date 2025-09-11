@@ -32,23 +32,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-      # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling tests.
-        entry: |
-          poetry run dmypy run -- cognite
-
-          tests/tests_integration
-          tests/tests_unit/test_api
-
-          tests/tests_unit/test_data_classes
-          tests/tests_unit/test_utils
-          tests/tests_unit/test_api_client.py
-          tests/tests_unit/test_base.py
-          tests/tests_unit/test_cognite_client.py
-          tests/tests_unit/test_config.py
-          tests/tests_unit/test_credential_providers.py
-          tests/tests_unit/test_docstring_examples.py
-          tests/tests_unit/test_exceptions.py
-
+        entry: poetry run dmypy run -- cognite tests
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
