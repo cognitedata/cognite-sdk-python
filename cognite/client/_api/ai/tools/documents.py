@@ -55,7 +55,7 @@ class AIDocumentsAPI(APIClient):
         self,
         question: str,
         *,
-        id: int | None = None,
+        id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
         instance_id: NodeId | Sequence[NodeId] | None = None,
         language: AnswerLanguage
@@ -83,7 +83,7 @@ class AIDocumentsAPI(APIClient):
 
         Args:
             question (str): The question.
-            id (int | None): The ID(s) of the document(s)
+            id (int | Sequence[int] | None): The ID(s) of the document(s)
             external_id (str | Sequence[str] | None): The external ID(s) of the document(s)
             instance_id (NodeId | Sequence[NodeId] | None): The instance ID(s) of the document(s)
             language (AnswerLanguage | Literal['Chinese', 'Dutch', 'English', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Latvian', 'Norwegian', 'Portuguese', 'Spanish', 'Swedish']): The desired language of the answer, defaults to English.
