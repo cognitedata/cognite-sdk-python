@@ -18,6 +18,7 @@ from datetime import timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
@@ -43,6 +44,7 @@ from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
     _OBJECT_AGGREGATES,
     ALL_SORTED_DP_AGGS,
+    Aggregate,
     Datapoints,
     DatapointsArray,
 )
@@ -95,7 +97,7 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     """
     return sorted(
         filter(
-            lambda sub: sub.__module__.startswith("cognite.client"),
+            lambda sub: sub.__module__.startswith("cognite.client"),  # type: ignore[arg-type]
             cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
@@ -115,7 +117,7 @@ def all_concrete_subclasses(base: T_Type, exclude: set[type] | None = None) -> l
     ]
 
 
-def all_mock_children(mock, parent_name=()):
+def all_mock_children(mock: MagicMock, parent_name: tuple[str, ...] = ()) -> dict[str, MagicMock]:
     """Returns a dictionary with correct dotted names mapping to mocked classes."""
     dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
     for name, child in dct.copy().items():
@@ -123,7 +125,7 @@ def all_mock_children(mock, parent_name=()):
     return dct
 
 
-def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[APIClient]]:
+def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
     available_apis: dict[str, type[APIClient]] = {}
     for attr, obj in cls_.__dict__.items():
         if attr.startswith("_") or not isinstance(obj, APIClient):
@@ -135,7 +137,7 @@ def get_api_class_by_attribute(cls_: object, parent_name=()) -> dict[str, type[A
 
 
 @contextmanager
-def rng_context(seed: int | float | str):
+def rng_context(seed: int | float | str) -> typing.Iterator[None]:
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.
@@ -173,7 +175,7 @@ def random_cognite_external_ids(n: int, str_len: int = 50) -> list[str]:
     return [random_string(str_len) for _ in range(n)]
 
 
-def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
+def random_granularity(granularities: str = "smhd", lower_lim: int = 1, upper_lim: int = 100000) -> str:
     gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
     unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
@@ -184,7 +186,12 @@ INTEGER_AGGREGATES = set(map(to_snake_case, _INT_AGGREGATES))
 OBJECT_AGGREGATES = set(map(to_snake_case, _OBJECT_AGGREGATES))
 
 
-def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, exclude_object_aggregates=False):
+def random_aggregates(
+    n: int | None = None,
+    exclude: set[str] | None = None,
+    exclude_integer_aggregates: bool = False,
+    exclude_object_aggregates: bool = False,
+) -> list[Aggregate]:
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
@@ -199,7 +206,7 @@ def random_aggregates(n=None, exclude=None, exclude_integer_aggregates=False, ex
     return random.sample(agg_lst, k=n)
 
 
-def random_gamma_dist_integer(inclusive_max, max_tries=100):
+def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
     # "Smaller integers are more likely"
     for _ in range(max_tries):
         i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))
@@ -209,7 +216,7 @@ def random_gamma_dist_integer(inclusive_max, max_tries=100):
 
 
 @contextmanager
-def set_max_workers(cognite_client, new):
+def set_max_workers(cognite_client: CogniteClient, new: int) -> typing.Iterator[None]:
     from cognite.client import global_config
 
     old = global_config.max_workers
@@ -221,7 +228,7 @@ def set_max_workers(cognite_client, new):
 
 
 @contextmanager
-def tmp_set_envvar(envvar: str, value: str):
+def tmp_set_envvar(envvar: str, value: str) -> typing.Iterator[None]:
     old = os.getenv(envvar)
     os.environ[envvar] = value
     yield
@@ -231,12 +238,12 @@ def tmp_set_envvar(envvar: str, value: str):
         os.environ[envvar] = old
 
 
-def jsgz_load(s):
+def jsgz_load(s: Any) -> Any:
     return _json.loads(gzip.decompress(s).decode())
 
 
 @contextmanager
-def set_request_limit(client, limit):
+def set_request_limit(client: APIClient, limit: int) -> typing.Iterator[None]:
     limits = [
         "_CREATE_LIMIT",
         "_LIST_LIMIT",
@@ -364,7 +371,7 @@ class FakeCogniteResourceGenerator:
 
         signature = inspect.signature(resource_cls.__init__)
         try:
-            type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
+            type_hint_by_name: Mapping[str, Any] = get_type_hints(resource_cls.__init__, localns=self._type_checking)  # type: ignore[arg-type]
         except TypeError:
             # Python 3.10 Type hints cannot be evaluated with get_type_hints,
             # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
@@ -496,7 +503,7 @@ class FakeCogniteResourceGenerator:
         import numpy as np
 
         if isinstance(type_, typing.ForwardRef):
-            type_ = type_._evaluate(globals(), self._type_checking())
+            type_ = type_._evaluate(globals(), self._type_checking())  # type: ignore[call-arg]
 
         container_type = get_origin(type_)
         is_container = container_type is not None
@@ -580,7 +587,7 @@ class FakeCogniteResourceGenerator:
                     implementations.remove(LegacyCapability)
             if type_ is WorkflowTaskOutput:
                 # For Workflow Output has to match the input type
-                selected = FunctionTaskOutput
+                selected: type = FunctionTaskOutput
             elif type_ is WorkflowTaskParameters:
                 selected = FunctionTaskParameters
             else:
@@ -633,7 +640,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _get_type_hints_3_10(
-        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: dict[str, Any]
+        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature, local_vars: Mapping[str, Any]
     ) -> dict[str, Any]:
         return {
             name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars, local_vars)
@@ -643,7 +650,7 @@ class FakeCogniteResourceGenerator:
 
     @classmethod
     def _create_type_hint_3_10(
-        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: dict[str, Any]
+        cls, annotation: str, resource_module_vars: dict[str, Any], local_vars: Mapping[str, Any]
     ) -> Any:
         if annotation.endswith(" | None"):
             annotation = annotation[:-7]
@@ -653,7 +660,7 @@ class FakeCogniteResourceGenerator:
         except TypeError:
             # Python 3.10 Type Hint
             if annotation.startswith("Sequence[") and annotation.endswith("]"):
-                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]
+                return typing.Sequence[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars, local_vars)]  # type: ignore[misc]
 
 
 def get_or_raise(obj: T | None) -> T:
