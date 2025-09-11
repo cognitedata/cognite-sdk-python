@@ -4,27 +4,26 @@ import os
 import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
-from httpx import Response
+from httpx import Request, Response
+from pytest_httpx import HTTPXMock
 
-from cognite.client._api.files import FileMetadata, FileMetadataList, FileMetadataUpdate
-from cognite.client.data_classes import (
-    FileMetadataFilter,
-    FileMetadataWrite,
-    GeoLocation,
-    GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
-    Label,
-    LabelFilter,
-    TimestampRange,
-)
+from cognite.client import CogniteClient
+from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
 from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.files import (
+    FileMetadata,
+    FileMetadataFilter,
+    FileMetadataList,
+    FileMetadataUpdate,
+    FileMetadataWrite,
+)
+from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import get_url, jsgz_load, set_request_limit
+from tests.utils import get_or_raise, get_url, jsgz_load, set_request_limit
 
 
 @pytest.fixture
@@ -34,7 +33,9 @@ def mock_geo_location() -> GeoLocation:
 
 
 @pytest.fixture
-def mock_files_response(httpx_mock, cognite_client, mock_geo_location: GeoLocation) -> dict[str, Any]:
+def mock_files_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+) -> dict[str, Any]:
     response_body = {
         "items": [
             {
@@ -62,7 +63,7 @@ def mock_files_response(httpx_mock, cognite_client, mock_geo_location: GeoLocati
 
 
 @pytest.fixture
-def example_file(mock_geo_location):
+def example_file(mock_geo_location: GeoLocation) -> dict[str, Any]:
     return {
         "externalId": "string",
         "name": "string",
@@ -82,16 +83,24 @@ def example_file(mock_geo_location):
 
 
 @pytest.fixture
-def mock_file_upload_response(httpx_mock, cognite_client, example_file):
+def mock_file_upload_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, example_file: dict[str, Any]
+) -> Any:
     httpx_mock.add_response(
-        method="POST", url=get_url(cognite_client.files) + "/files?overwrite=false", status_code=200, json=example_file
+        method="POST",
+        url=get_url(cognite_client.files) + "/files?overwrite=false",
+        status_code=200,
+        json=example_file,
+        is_reusable=True,
     )
-    httpx_mock.add_response(method="PUT", url="https://upload.here", status_code=200)
+    httpx_mock.add_response(method="PUT", url="https://upload.here", status_code=200, is_reusable=True)
     yield example_file
 
 
 @pytest.fixture
-def mock_file_upload_response_without_netloc_in_upload_url(httpx_mock, cognite_client, mock_geo_location: GeoLocation):
+def mock_file_upload_response_without_netloc_in_upload_url(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+) -> Any:
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -118,7 +127,9 @@ def mock_file_upload_response_without_netloc_in_upload_url(httpx_mock, cognite_c
 
 
 @pytest.fixture
-def mock_file_create_response(httpx_mock, cognite_client, mock_geo_location: GeoLocation):
+def mock_file_create_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, mock_geo_location: GeoLocation
+) -> Any:
     response_body = {
         "externalId": "string",
         "name": "string",
@@ -142,7 +153,7 @@ def mock_file_create_response(httpx_mock, cognite_client, mock_geo_location: Geo
 
 
 @pytest.fixture
-def mock_file_download_response(httpx_mock, cognite_client):
+def mock_file_download_response(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     for _ in range(2):
         httpx_mock.add_response(
             method="POST",
@@ -164,7 +175,7 @@ def mock_file_download_response(httpx_mock, cognite_client):
             is_optional=True,
         )
 
-    def download_link_callback(request):
+    def download_link_callback(request: Request) -> Response:
         identifier = jsgz_load(request.content)["items"][0]
         response = {}
         if identifier.get("id") == 1:
@@ -193,11 +204,13 @@ def mock_file_download_response(httpx_mock, cognite_client):
     httpx_mock.add_response(
         method="GET", url="https://download.file2.here", status_code=200, text="content2", is_optional=True
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_file_download_response_with_folder_structure_same_name(httpx_mock, cognite_client):
+def mock_file_download_response_with_folder_structure_same_name(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient
+) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
         url=get_url(cognite_client.files) + "/files/byids",
@@ -224,7 +237,7 @@ def mock_file_download_response_with_folder_structure_same_name(httpx_mock, cogn
         },
     )
 
-    def download_link_callback(request):
+    def download_link_callback(request: Request) -> Response:
         identifier = jsgz_load(request.content)["items"][0]
         response = {}
         if identifier.get("id") == 1:
@@ -244,11 +257,11 @@ def mock_file_download_response_with_folder_structure_same_name(httpx_mock, cogn
         method="GET", url="https://download.fileFromSubdir.here", status_code=200, text="contentSubDir"
     )
     httpx_mock.add_response(method="GET", url="https://download.fileNoDir.here", status_code=200, text="contentNoDir")
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_file_download_response_one_fails(httpx_mock, cognite_client):
+def mock_file_download_response_one_fails(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     httpx_mock.add_response(
         method="POST",
         url=get_url(cognite_client.files) + "/files/byids",
@@ -275,7 +288,7 @@ def mock_file_download_response_one_fails(httpx_mock, cognite_client):
         },
     )
 
-    def download_link_callback(request):
+    def download_link_callback(request: Request) -> Response:
         identifier = jsgz_load(request.content)["items"][0]
         if identifier.get("id") == 1:
             return Response(status_code=200, json={"items": [{"id": 1, "downloadUrl": "https://download.file1.here"}]})
@@ -291,31 +304,35 @@ def mock_file_download_response_one_fails(httpx_mock, cognite_client):
             match_headers={"content-type": "application/json"},
         )
     httpx_mock.add_response(method="GET", url="https://download.file1.here", status_code=200, text="content1")
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestFilesAPI:
-    def test_create(self, cognite_client, mock_file_create_response) -> None:
+    def test_create(self, cognite_client: CogniteClient, mock_file_create_response: dict[str, Any]) -> None:
         file_metadata = FileMetadataWrite(name="bla")
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert FileMetadata.load(mock_file_create_response) == returned_file_metadata
         assert mock_file_create_response["uploadUrl"] == upload_url
 
-    def test_create_with_label(self, cognite_client, mock_file_create_response) -> None:
+    def test_create_with_label(self, cognite_client: CogniteClient, mock_file_create_response: dict[str, Any]) -> None:
         file_metadata = FileMetadataWrite(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert FileMetadata.load(mock_file_create_response) == returned_file_metadata
         assert mock_file_create_response["uploadUrl"] == upload_url
         assert mock_file_create_response["labels"][0]["externalId"] == "WELL LOG"
 
-    def test_create_with_label_request(self, cognite_client, mock_file_create_response, httpx_mock) -> None:
+    def test_create_with_label_request(
+        self, cognite_client: CogniteClient, mock_file_create_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         file_metadata = FileMetadataWrite(name="bla", labels=[Label(external_id="WELL LOG")])
         returned_file_metadata, _ = cognite_client.files.create(file_metadata)
         request_body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert FileMetadata.load(mock_file_create_response) == returned_file_metadata
         assert all(body["labels"][0]["externalId"] == "WELL LOG" for body in [request_body, mock_file_create_response])
 
-    def test_create_with_geoLocation(self, cognite_client, mock_file_create_response, mock_geo_location) -> None:
+    def test_create_with_geoLocation(
+        self, cognite_client: CogniteClient, mock_file_create_response: dict[str, Any], mock_geo_location: GeoLocation
+    ) -> None:
         file_metadata = FileMetadataWrite(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, upload_url = cognite_client.files.create(file_metadata)
         assert FileMetadata.load(mock_file_create_response) == returned_file_metadata
@@ -324,16 +341,20 @@ class TestFilesAPI:
     def test_create_geo_location_with_invalid_geometry_type(self) -> None:
         # TODO: Move? This is a test of the Geometry class
         with pytest.raises(ValueError):
-            Geometry(type="someInvalidType", coordinates=[1, 2])
+            Geometry(type="someInvalidType", coordinates=[1, 2])  # type: ignore[arg-type]
 
     def test_create_geo_location_with_invalid_geojson_type(self) -> None:
         # TODO: Move? This is a test of the GeoLocation class
         g = Geometry(type="Point", coordinates=[1, 2])
         with pytest.raises(ValueError):
-            GeoLocation(type="FeatureCollection", geometry=g)
+            GeoLocation(type="FeatureCollection", geometry=g)  # type: ignore[arg-type]
 
     def test_create_with_geo_location_request(
-        self, cognite_client, mock_file_create_response, mock_geo_location, httpx_mock
+        self,
+        cognite_client: CogniteClient,
+        mock_file_create_response: dict[str, Any],
+        mock_geo_location: GeoLocation,
+        httpx_mock: HTTPXMock,
     ) -> None:
         file_metadata = FileMetadataWrite(name="bla", geo_location=mock_geo_location)
         returned_file_metadata, _ = cognite_client.files.create(file_metadata)
@@ -342,24 +363,28 @@ class TestFilesAPI:
         assert request_body["geoLocation"] == mock_geo_location.dump(camel_case=True)
         assert mock_file_create_response["geoLocation"] == mock_geo_location.dump(camel_case=True)
 
-    def test_retrieve_single(self, cognite_client, mock_files_response) -> None:
+    def test_retrieve_single(self, cognite_client: CogniteClient, mock_files_response: dict[str, Any]) -> None:
         res = cognite_client.files.retrieve(id=1)
         assert isinstance(res, FileMetadata)
         assert mock_files_response["items"][0] == res.dump(camel_case=True)
 
-    def test_retrieve_multiple(self, cognite_client, mock_files_response) -> None:
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, mock_files_response: dict[str, Any]) -> None:
         res = cognite_client.files.retrieve_multiple(ids=[1])
         assert isinstance(res, FileMetadataList)
         assert mock_files_response["items"] == res.dump(camel_case=True)
 
-    def test_list(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_list(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.list(source="bla", limit=10)
         assert isinstance(res, FileMetadataList)
         assert mock_files_response["items"] == res.dump(camel_case=True)
         assert "bla" == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["source"]
         assert 10 == jsgz_load(httpx_mock.get_requests()[0].content)["limit"]
 
-    def test_list_params(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_list_params(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(data_set_external_ids=["x"], limit=10)
         calls = httpx_mock.get_requests()
         assert 1 == len(calls)
@@ -371,20 +396,26 @@ class TestFilesAPI:
         }
         assert expected == jsgz_load(calls[0].content)
 
-    def test_list_subtrees(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_list_subtrees(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(asset_subtree_ids=[1], asset_subtree_external_ids=["a"], limit=10)
         calls = httpx_mock.get_requests()
         assert 1 == len(calls)
         expected = {"limit": 10, "filter": {"assetSubtreeIds": [{"id": 1}, {"externalId": "a"}]}}
         assert expected == jsgz_load(calls[0].content)
 
-    def test_filter_directory(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_filter_directory(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(directory_prefix="/test", limit=10)
         calls = httpx_mock.get_requests()
         assert len(calls) == 1
         assert jsgz_load(calls[0].content) == {"filter": {"directoryPrefix": "/test"}, "limit": 10}
 
-    def test_filter_geo_location(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_filter_geo_location(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(
             geo_location=GeoLocationFilter(relation="within", shape=GeometryFilter(type="Point", coordinates=[35, 10])),
             limit=10,
@@ -396,43 +427,57 @@ class TestFilesAPI:
             "limit": 10,
         }
 
-    def test_list_with_time_dict(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_list_with_time_dict(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(created_time={"min": 20})
         assert 20 == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["createdTime"]
 
-    def test_list_with_timestamp_range(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_list_with_timestamp_range(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.list(created_time=TimestampRange(min=20))
         assert 20 == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["createdTime"]["min"]
         assert "max" not in jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["createdTime"]
 
-    def test_delete_single(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_delete_single(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.delete(id=1)
         expected = {"items": [{"id": 1}], "ignoreUnknownIds": False}
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)
         assert res is None
 
-    def test_delete_multiple(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_delete_multiple(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.delete(id=[1])
         assert res is None
         exp = {"items": [{"id": 1}], "ignoreUnknownIds": False}
         assert exp == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_update_with_resource_class(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_with_resource_class(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.update(DefaultResourceGenerator.file_metadata(source="bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
 
-    def test_update_with_update_class(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_with_update_class(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.update(FileMetadataUpdate(id=1).source.set("bla"))
         assert isinstance(res, FileMetadata)
         assert {"items": [{"id": 1, "update": {"source": {"set": "bla"}}}]} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
 
-    def test_update_with_update_class_using_instance_id(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_with_update_class_using_instance_id(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.update(FileMetadataUpdate(instance_id=NodeId("foo", "bar")).source.set("bla"))
         assert isinstance(res, FileMetadata)
         assert {
@@ -441,17 +486,25 @@ class TestFilesAPI:
 
     @pytest.mark.parametrize("extra_identifiers", (dict(id=1), dict(external_id="a"), dict(id=1, external_id="a")))
     def test_update_with_update_class_using_instance_id_and_other_identifier(
-        self, extra_identifiers, cognite_client, mock_files_response, httpx_mock
-    ):
-        with pytest.raises(ValueError, match=r"Exactly one of 'id', 'external_id' or 'instance_id' must be provided\."):
+        self,
+        extra_identifiers: dict[str, Any],
+        cognite_client: CogniteClient,
+        mock_files_response: dict[str, Any],
+        httpx_mock: HTTPXMock,
+    ) -> None:
+        with pytest.raises(ValueError, match="Exactly one of 'id', 'external_id' or 'instance_id' must be provided."):
             FileMetadataUpdate(instance_id=NodeId("foo", "bar"), **extra_identifiers)
 
-    def test_update_labels_single(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_labels_single(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.update([FileMetadataUpdate(id=1).labels.add("PUMP").labels.remove("WELL LOG")])
         expected = {"labels": {"add": [{"externalId": "PUMP"}], "remove": [{"externalId": "WELL LOG"}]}}
         assert jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"] == expected
 
-    def test_update_labels_multiple(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_labels_multiple(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.update(
             [FileMetadataUpdate(id=1).labels.add(["PUMP", "ROTATING_EQUIPMENT"]).labels.remove(["WELL LOG"])]
         )
@@ -463,28 +516,36 @@ class TestFilesAPI:
         }
         assert jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"] == expected
 
-    def test_update_labels_resource_class(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_labels_resource_class(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         cognite_client.files.update(
             DefaultResourceGenerator.file_metadata(id=1, labels=[Label(external_id="Pump")], external_id="newId")
         )
         expected = {"externalId": {"set": "newId"}, "labels": {"set": [{"externalId": "Pump"}]}}
         assert expected == jsgz_load(httpx_mock.get_requests()[0].content)["items"][0]["update"]
 
-    def test_labels_filter_contains_all(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_labels_filter_contains_all(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
         cognite_client.files.list(labels=my_label_filter)
         assert jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["labels"] == {
             "containsAll": [{"externalId": "WELL LOG"}, {"externalId": "VERIFIED"}]
         }
 
-    def test_labels_filter_contains_any(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_labels_filter_contains_any(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         my_label_filter = LabelFilter(contains_any=["WELL LOG", "WELL REPORT"])
         cognite_client.files.list(labels=my_label_filter)
         assert jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["labels"] == {
             "containsAny": [{"externalId": "WELL LOG"}, {"externalId": "WELL REPORT"}]
         }
 
-    def test_update_multiple(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_update_multiple(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.update(
             [FileMetadataUpdate(id=1).source.set(None), DefaultResourceGenerator.file_metadata(id=2, source="bla")]
         )
@@ -496,17 +557,23 @@ class TestFilesAPI:
             ]
         } == jsgz_load(httpx_mock.get_requests()[0].content)
 
-    def test_iter_single(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_iter_single(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         for file in cognite_client.files:
             assert isinstance(file, FileMetadata)
             assert mock_files_response["items"][0] == file.dump(camel_case=True)
 
-    def test_iter_chunk(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_iter_chunk(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         for file in cognite_client.files(chunk_size=1):
             assert isinstance(file, FileMetadataList)
             assert mock_files_response["items"] == file.dump(camel_case=True)
 
-    def test_search(self, cognite_client, mock_files_response, httpx_mock) -> None:
+    def test_search(
+        self, cognite_client: CogniteClient, mock_files_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response["items"] == res.dump(camel_case=True)
         assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
@@ -514,14 +581,22 @@ class TestFilesAPI:
         )
 
     @pytest.mark.parametrize("filter_field", ["external_id_prefix", "externalIdPrefix"])
-    def test_search_dict_filter(self, cognite_client, mock_files_response, filter_field, httpx_mock) -> None:
+    def test_search_dict_filter(
+        self,
+        cognite_client: CogniteClient,
+        mock_files_response: dict[str, Any],
+        filter_field: str,
+        httpx_mock: HTTPXMock,
+    ) -> None:
         res = cognite_client.files.search(filter={filter_field: "abc"})
         assert mock_files_response["items"] == res.dump(camel_case=True)
         assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             httpx_mock.get_requests()[0].content
         )
 
-    def test_upload(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
         res = cognite_client.files.upload(path, name="bla", directory=directory)
@@ -531,18 +606,22 @@ class TestFilesAPI:
         assert {"name": "bla", "directory": directory} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
 
-    def test_upload_with_external_id(self, cognite_client, mock_file_upload_response) -> None:
+    def test_upload_with_external_id(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any]
+    ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, external_id="blabla", name="bla", data_set_id=42)
 
-    def test_upload_with_label(self, cognite_client, mock_file_upload_response) -> None:
+    def test_upload_with_label(self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any]) -> None:
         """
         Uploading a file with a label gave a `ValueError: Could not parse label: {'external_id': 'foo-bar'}` from v7.0.0
         """
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, name="bla", labels=[Label("PUMP")])
 
-    def test_upload_no_name(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_no_name(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
         cognite_client.files.upload(path, directory=directory)
@@ -550,7 +629,9 @@ class TestFilesAPI:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_upload_set_directory(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_set_directory(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         set_dir = "/Some/custom/directory"
         directory = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         path = os.path.join(directory, "file_for_test_upload_1.txt")
@@ -559,7 +640,9 @@ class TestFilesAPI:
             httpx_mock.get_requests()[0].content
         )
 
-    def test_upload_from_directory(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_from_directory(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = cognite_client.files.upload(path=path, asset_ids=[1, 2])
         del mock_file_upload_response["uploadUrl"]
@@ -579,7 +662,7 @@ class TestFilesAPI:
                 assert payload["name"] in ["file_for_test_upload_1.txt", "file_for_test_upload_2.txt"]
         assert count == 2
 
-    def test_upload_from_directory_fails(self, cognite_client, httpx_mock) -> None:
+    def test_upload_from_directory_fails(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
         for _ in range(2):
             httpx_mock.add_response(
                 method="POST", url=get_url(cognite_client.files) + "/files?overwrite=false", status_code=400, json={}
@@ -592,7 +675,23 @@ class TestFilesAPI:
         assert "file_for_test_upload_1.txt" in e.value.failed
         assert "file_for_test_upload_2.txt" in e.value.failed
 
-    def test_upload_from_directory_recursively(self, cognite_client, httpx_mock, example_file) -> None:
+    def test_upload_from_directory_recursively(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, example_file: dict[str, Any]
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(r".*/files\?overwrite=false"),
+            status_code=200,
+            json=example_file,
+            is_reusable=True,
+        )
+        httpx_mock.add_response(
+            method="PUT",
+            url="https://upload.here",
+            status_code=200,
+            content=b"content",
+            is_reusable=True,
+        )
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload")
         res = cognite_client.files.upload(path=path, recursive=True, asset_ids=[1, 2])
         del example_file["uploadUrl"]
@@ -611,7 +710,9 @@ class TestFilesAPI:
                 assert [1, 2] == payload["assetIds"]
         assert count == 3
 
-    def test_upload_from_memory(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_from_memory(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         res = cognite_client.files.upload_bytes(content=b"content", name="bla")
         del mock_file_upload_response["uploadUrl"]
         assert FileMetadata.load(mock_file_upload_response) == res
@@ -619,19 +720,26 @@ class TestFilesAPI:
         assert {"name": "bla"} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert b"content" == httpx_mock.get_requests()[1].content
 
-    def test_upload_with_netloc(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_with_netloc(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         """When uploading a file, the upload URL should be used as-is if it contains a netloc."""
         cognite_client.files.upload_bytes(content=b"content", name="bla")
         assert httpx_mock.get_requests()[1].url == "https://upload.here"
 
     def test_upload_without_netloc(
-        self, cognite_client, mock_file_upload_response_without_netloc_in_upload_url, httpx_mock
+        self,
+        cognite_client: CogniteClient,
+        mock_file_upload_response_without_netloc_in_upload_url: dict[str, Any],
+        httpx_mock: HTTPXMock,
     ) -> None:
         """When uploading a file, the upload URL should be appended to the base URL if it does not contain a netloc."""
         cognite_client.files.upload_bytes(content=b"content", name="bla")
         assert httpx_mock.get_requests()[1].url == "https://api.cognitedata.com/upload/here/to/some/path"
 
-    def test_upload_using_file_handle(self, cognite_client, mock_file_upload_response, httpx_mock) -> None:
+    def test_upload_using_file_handle(
+        self, cognite_client: CogniteClient, mock_file_upload_response: dict[str, Any], httpx_mock: HTTPXMock
+    ) -> None:
         path = os.path.join(os.path.dirname(__file__), "files_for_test_upload", "file_for_test_upload_1.txt")
         with open(path, "rb") as fh:
             res = cognite_client.files.upload_bytes(fh, name="bla")
@@ -641,11 +749,11 @@ class TestFilesAPI:
         assert {"name": "bla"} == jsgz_load(httpx_mock.get_requests()[0].content)
         assert f"content1{os.linesep}".encode() == httpx_mock.get_requests()[1].content
 
-    def test_upload_path_does_not_exist(self, cognite_client) -> None:
+    def test_upload_path_does_not_exist(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="does not exist"):
             cognite_client.files.upload(path="/no/such/path")
 
-    def test_download(self, cognite_client, mock_file_download_response) -> None:
+    def test_download(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         with TemporaryDirectory() as tmpdir:  # TODO: Use tmp_path?
             res = cognite_client.files.download(directory=tmpdir, id=[1], external_id=["2"])
             assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
@@ -687,12 +795,17 @@ class TestFilesAPI:
             ),
         ],
     )
-    def test_create_unique_file_names(self, cognite_client, input_list, expected_output_list) -> None:
+    def test_create_unique_file_names(
+        self, cognite_client: CogniteClient, input_list: list[str], expected_output_list: list[str]
+    ) -> None:
         assert cognite_client.files._create_unique_file_names(input_list) == expected_output_list
 
     def test_download_with_duplicate_names(
-        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
-    ):
+        self,
+        tmp_path: Path,
+        cognite_client: CogniteClient,
+        mock_file_download_response_with_folder_structure_same_name: HTTPXMock,
+    ) -> None:
         cognite_client.files.download(
             directory=tmp_path,
             id=[1],
@@ -709,8 +822,11 @@ class TestFilesAPI:
         assert fp2.is_file()
 
     def test_download_with_folder_structure(
-        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure_same_name
-    ):
+        self,
+        tmp_path: Path,
+        cognite_client: CogniteClient,
+        mock_file_download_response_with_folder_structure_same_name: HTTPXMock,
+    ) -> None:
         cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
         assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
             mock_file_download_response_with_folder_structure_same_name.get_requests()[0].content
@@ -723,7 +839,9 @@ class TestFilesAPI:
         assert fp2.read_text() == "contentNoDir"
 
     @pytest.fixture
-    def mock_byids_response__file_with_double_dots(self, httpx_mock, cognite_client):
+    def mock_byids_response__file_with_double_dots(
+        self, httpx_mock: HTTPXMock, cognite_client: CogniteClient
+    ) -> HTTPXMock:
         filename = "../file1"
         httpx_mock.add_response(
             method="POST",
@@ -741,16 +859,18 @@ class TestFilesAPI:
                 ]
             },
         )
-        yield httpx_mock
+        return httpx_mock
 
     def test_download_file_outside_download_directory(
-        self, cognite_client, mock_byids_response__file_with_double_dots
+        self, cognite_client: CogniteClient, mock_byids_response__file_with_double_dots: HTTPXMock
     ) -> None:
         with TemporaryDirectory() as directory:
             with pytest.raises(RuntimeError, match="not inside download directory"):
                 cognite_client.files.download(directory=directory, id=[1])
 
-    def test_download_one_file_fails(self, cognite_client, mock_file_download_response_one_fails) -> None:
+    def test_download_one_file_fails(
+        self, cognite_client: CogniteClient, mock_file_download_response_one_fails: HTTPXMock
+    ) -> None:
         with TemporaryDirectory() as directory:
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.files.download(directory=directory, id=[1], external_id="fail")
@@ -762,8 +882,7 @@ class TestFilesAPI:
             ] == e.value.failed
             assert os.path.isfile(os.path.join(directory, "file1"))
 
-    def test_download_file_to_path(self, cognite_client, mock_file_download_response) -> None:
-        mock_file_download_response.assert_all_requests_are_fired = False
+    def test_download_file_to_path(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         with TemporaryDirectory() as directory:
             file_path = os.path.join(directory, "my_downloaded_file.txt")
             res = cognite_client.files.download_to_path(path=file_path, id=1)
@@ -772,13 +891,14 @@ class TestFilesAPI:
             with open(file_path, "rb") as f:
                 assert b"content1" == f.read()
 
-    def test_download_to_memory(self, cognite_client, mock_file_download_response) -> None:
-        mock_file_download_response.assert_all_requests_are_fired = False
+    def test_download_to_memory(self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock) -> None:
         res = cognite_client.files.download_bytes(id=1)
         assert {"items": [{"id": 1}]} == jsgz_load(mock_file_download_response.get_requests()[0].content)
         assert res == b"content1"
 
-    def test_download_ids_over_limit(self, cognite_client, mock_file_download_response) -> None:
+    def test_download_ids_over_limit(
+        self, cognite_client: CogniteClient, mock_file_download_response: HTTPXMock
+    ) -> None:
         with set_request_limit(cognite_client.files, 1):
             with TemporaryDirectory() as directory:
                 res = cognite_client.files.download(directory=directory, id=[1], external_id=["2"])
@@ -789,7 +909,7 @@ class TestFilesAPI:
                 assert os.path.isfile(os.path.join(directory, "file1"))
                 assert os.path.isfile(os.path.join(directory, "file2"))
 
-    def test_files_update_object(self) -> None:
+    def test_files_update_object(self, mock_geo_location: GeoLocation) -> None:
         update = (
             FileMetadataUpdate(1)
             .asset_ids.add([])
@@ -847,16 +967,16 @@ class TestFilesAPI:
     )
     def test_upload_bytes_post_error(
         self,
-        cognite_client,
+        cognite_client: CogniteClient,
         data_set_id: int,
         api_error: CogniteAPIError,
         expected_error: type[CogniteAPIError],
         expected_error_message: str,
-    ):
-        def raise_api_error(*args, **kwargs):
+    ) -> None:
+        def raise_api_error(*args: Any, **kwargs: Any) -> NoReturn:
             raise api_error
 
-        cognite_client.files._post = raise_api_error
+        cognite_client.files._post = raise_api_error  # type: ignore[method-assign]
 
         with pytest.raises(expected_error) as e:
             cognite_client.files.upload_bytes(content=b"content", name="bla", data_set_id=data_set_id)
@@ -867,15 +987,15 @@ class TestFilesAPI:
 
 
 @pytest.fixture
-def mock_files_empty(httpx_mock, cognite_client):
+def mock_files_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     url_pattern = re.compile(re.escape(get_url(cognite_client.files)) + "/.+")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.mark.dsl
 class TestPandasIntegration:
-    def test_file_list_to_pandas(self, cognite_client, mock_files_response) -> None:
+    def test_file_list_to_pandas(self, cognite_client: CogniteClient, mock_files_response: dict[str, Any]) -> None:
         import pandas as pd
 
         df = cognite_client.files.list().to_pandas()
@@ -883,17 +1003,18 @@ class TestPandasIntegration:
         assert 1 == df.shape[0]
         assert {"metadata-key": "metadata-value"} == df["metadata"][0]
 
-    def test_file_list_to_pandas_empty(self, cognite_client, mock_files_empty) -> None:
+    def test_file_list_to_pandas_empty(self, cognite_client: CogniteClient, mock_files_empty: HTTPXMock) -> None:
         import pandas as pd
 
         df = cognite_client.files.list().to_pandas()
         assert isinstance(df, pd.DataFrame)
         assert df.empty
 
-    def test_file_to_pandas(self, cognite_client, mock_files_response) -> None:
+    def test_file_to_pandas(self, cognite_client: CogniteClient, mock_files_response: dict[str, Any]) -> None:
         import pandas as pd
 
-        df = cognite_client.files.retrieve(id=1).to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
+        file = get_or_raise(cognite_client.files.retrieve(id=1))
+        df = file.to_pandas(expand_metadata=True, metadata_prefix="", camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.at["assetIds", "value"]
