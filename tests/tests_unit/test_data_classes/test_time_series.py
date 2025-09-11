@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.data_classes import Asset, Datapoint
+from tests.utils import get_url
 
 
 @pytest.fixture
-def mock_ts_by_ids_response(rsps, cognite_client):
+def mock_ts_by_ids_response(httpx_mock, cognite_client):
     res = {
         "items": [
             {
@@ -23,27 +26,27 @@ def mock_ts_by_ids_response(rsps, cognite_client):
             }
         ]
     }
-    rsps.add(
-        rsps.POST, cognite_client.time_series._get_base_url_with_base_path() + "/timeseries/byids", status=200, json=res
+    httpx_mock.add_response(
+        method="POST", url=get_url(cognite_client.time_series) + "/timeseries/byids", status_code=200, json=res
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
-def mock_asset_by_ids_response(rsps, cognite_client):
+def mock_asset_by_ids_response(httpx_mock, cognite_client):
     res = {"items": [{"id": 1, "externalId": "1", "name": "assetname"}]}
-    rsps.add(
-        rsps.POST, cognite_client.time_series._get_base_url_with_base_path() + "/assets/byids", status=200, json=res
+    httpx_mock.add_response(
+        method="POST", url=get_url(cognite_client.time_series) + "/assets/byids", status_code=200, json=res
     )
-    yield rsps
+    yield httpx_mock
 
 
 @pytest.fixture
 def mock_count_dps_in_ts(mock_ts_by_ids_response, cognite_client):
-    mock_ts_by_ids_response.add(
-        mock_ts_by_ids_response.POST,
-        cognite_client.time_series._get_base_url_with_base_path() + "/timeseries/data/list",
-        status=200,
+    mock_ts_by_ids_response.add_response(
+        method="POST",
+        url=get_url(cognite_client.time_series) + "/timeseries/data/list",
+        status_code=200,
         json={
             "items": [
                 {
@@ -61,10 +64,10 @@ def mock_count_dps_in_ts(mock_ts_by_ids_response, cognite_client):
 
 @pytest.fixture
 def mock_get_latest_dp_in_ts(mock_ts_by_ids_response, cognite_client):
-    mock_ts_by_ids_response.add(
-        mock_ts_by_ids_response.POST,
-        cognite_client.time_series._get_base_url_with_base_path() + "/timeseries/data/latest",
-        status=200,
+    mock_ts_by_ids_response.add_response(
+        method="POST",
+        url=get_url(cognite_client.time_series) + "/timeseries/data/latest",
+        status_code=200,
         json={
             "items": [
                 {
@@ -82,10 +85,10 @@ def mock_get_latest_dp_in_ts(mock_ts_by_ids_response, cognite_client):
 
 @pytest.fixture
 def mock_get_first_dp_in_ts(mock_ts_by_ids_response, cognite_client):
-    mock_ts_by_ids_response.add(
-        mock_ts_by_ids_response.POST,
-        cognite_client.time_series._get_base_url_with_base_path() + "/timeseries/data/list",
-        status=200,
+    mock_ts_by_ids_response.add_response(
+        method="POST",
+        url=get_url(cognite_client.time_series) + "/timeseries/data/list",
+        status_code=200,
         json={
             "items": [
                 {

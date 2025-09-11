@@ -1,32 +1,20 @@
 from __future__ import annotations
 
 import functools
-import gzip
 import itertools
 import logging
-import re
 import warnings
 from collections import UserList
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
-    ClassVar,
     Literal,
-    NoReturn,
     TypeVar,
     cast,
     overload,
 )
-from urllib.parse import urljoin
 
-import requests.utils
-from requests import Response
-from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
-from requests.structures import CaseInsensitiveDict
-
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import global_config
+from cognite.client._basic_api_client import BasicAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObject,
@@ -41,14 +29,11 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError, CogniteProjectAccessError
-from cognite.client.utils import _json
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
-    get_current_sdk_version,
-    get_user_agent,
-    interpolate_and_url_encode,
     is_unlimited,
     split_into_chunks,
+    unpack_items,
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import TaskExecutor, execute_tasks
@@ -59,14 +44,10 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
-from cognite.client.utils._json import JSONDecodeError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type, verify_limit
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-    from cognite.client.config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
@@ -75,232 +56,8 @@ T = TypeVar("T", bound=CogniteObject)
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
-class APIClient:
+class APIClient(BasicAPIClient):
     _RESOURCE_PATH: str
-    # TODO: When Cognite Experimental SDK is deprecated, remove frozenset in favour of re.compile:
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
-        [
-            r"|".join(
-                rf"^/{path}(\?.*)?$"
-                for path in (
-                    "(assets|events|files|timeseries|sequences|datasets|relationships|labels)/(list|byids|search|aggregate)",
-                    "files/downloadlink",
-                    "timeseries/(data(/(list|latest|delete))?|synthetic/query)",
-                    "sequences/data(/(list|delete))?",
-                    "raw/dbs/[^/]+/tables/[^/]+/rows(/delete)?",
-                    "context/entitymatching/(byids|list|jobs)",
-                    "sessions/revoke",
-                    "models/.*",
-                    ".*/graphql",
-                    "units/.*",
-                    "annotations/(list|byids|reverselookup)",
-                    r"functions/(list|byids|status|schedules/(list|byids)|\d+/calls/(list|byids))",
-                    r"3d/models/\d+/revisions/\d+/(mappings/list|nodes/(list|byids))",
-                    "documents/(aggregate|list|search|content|status|passages/search)",
-                    "profiles/(byids|search)",
-                    "geospatial/(compute|crs/byids|featuretypes/(byids|list))",
-                    "geospatial/featuretypes/[A-Za-z][A-Za-z0-9_]{0,31}/features/(aggregate|list|byids|search|search-streaming|[A-Za-z][A-Za-z0-9_]{0,255}/rasters/[A-Za-z][A-Za-z0-9_]{0,31})",
-                    "transformations/(filter|byids|jobs/byids|schedules/byids|query/run)",
-                    "simulators/list",
-                    "extpipes/(list|byids|runs/list)",
-                    "workflows/.*",
-                    "hostedextractors/.*",
-                    "postgresgateway/.*",
-                    "context/diagram/.*",
-                    "ai/tools/documents/(summarize|ask)",
-                    "ai/agents(/(byids|delete))?",
-                )
-            )
-        ]
-    )
-
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
-        self._config = config
-        self._api_version = api_version
-        self._api_subversion = config.api_subversion
-        self._cognite_client = cognite_client
-        self._init_http_clients()
-
-        self._CREATE_LIMIT = 1000
-        self._LIST_LIMIT = 1000
-        self._RETRIEVE_LIMIT = 1000
-        self._DELETE_LIMIT = 1000
-        self._UPDATE_LIMIT = 1000
-
-    def _init_http_clients(self) -> None:
-        session = get_global_requests_session()
-        self._http_client = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry={429},
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=0,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-        self._http_client_with_retry = HTTPClient(
-            config=HTTPClientConfig(
-                status_codes_to_retry=global_config.status_forcelist,
-                backoff_factor=0.5,
-                max_backoff_seconds=global_config.max_retry_backoff,
-                max_retries_total=global_config.max_retries,
-                max_retries_read=global_config.max_retries,
-                max_retries_connect=global_config.max_retries_connect,
-                max_retries_status=global_config.max_retries,
-            ),
-            session=session,
-            refresh_auth_header=self._refresh_auth_header,
-        )
-
-    def _delete(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _get(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _post(
-        self,
-        url_path: str,
-        json: dict[str, Any] | None = None,
-        params: dict[str, Any] | None = None,
-        headers: dict[str, Any] | None = None,
-        api_subversion: str | None = None,
-    ) -> Response:
-        return self._do_request(
-            "POST",
-            url_path,
-            json=json,
-            headers=headers,
-            params=params,
-            timeout=self._config.timeout,
-            api_subversion=api_subversion,
-        )
-
-    def _put(
-        self, url_path: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
-
-    def _do_request(
-        self,
-        method: str,
-        url_path: str,
-        accept: str = "application/json",
-        api_subversion: str | None = None,
-        **kwargs: Any,
-    ) -> Response:
-        is_retryable, full_url = self._resolve_url(method, url_path)
-        json_payload = kwargs.pop("json", None)
-        headers = self._configure_headers(
-            accept,
-            additional_headers=self._config.headers.copy(),
-            api_subversion=api_subversion,
-        )
-        headers.update(kwargs.get("headers") or {})
-
-        if json_payload is not None:
-            try:
-                data = _json.dumps(json_payload, allow_nan=False)
-            except ValueError as e:
-                # A lot of work to give a more human friendly error message when nans and infs are present:
-                msg = "Out of range float values are not JSON compliant"
-                if msg in str(e):  # exc. might e.g. contain an extra ": nan", depending on build (_json.make_encoder)
-                    raise ValueError(f"{msg}. Make sure your data does not contain NaN(s) or +/- Inf!").with_traceback(
-                        e.__traceback__
-                    ) from None
-                raise
-            kwargs["data"] = data
-            if method in ["PUT", "POST"] and not global_config.disable_gzip:
-                kwargs["data"] = gzip.compress(data.encode())
-                headers["Content-Encoding"] = "gzip"
-
-        kwargs["headers"] = headers
-
-        # requests will by default follow redirects. This can be an SSRF-hazard if
-        # the client can be tricked to request something with an open redirect, in
-        # addition to leaking the token, as requests will send the headers to the
-        # redirected-to endpoint.
-        # If redirects are to be followed in a call, this should be opted into instead.
-        kwargs.setdefault("allow_redirects", False)
-
-        if is_retryable:
-            res = self._http_client_with_retry.request(method=method, url=full_url, **kwargs)
-        else:
-            res = self._http_client.request(method=method, url=full_url, **kwargs)
-
-        match res.status_code:
-            case 200 | 201 | 202 | 204:
-                pass
-            case 401:
-                self._raise_no_project_access_error(res)
-            case _:
-                self._raise_api_error(res, payload=json_payload)
-
-        stream = kwargs.get("stream")
-        self._log_request(res, payload=json_payload, stream=stream)
-        return res
-
-    def _configure_headers(
-        self, accept: str, additional_headers: dict[str, str], api_subversion: str | None = None
-    ) -> MutableMapping[str, Any]:
-        headers: MutableMapping[str, Any] = CaseInsensitiveDict()
-        headers.update(requests.utils.default_headers())
-        self._refresh_auth_header(headers)
-        headers["content-type"] = "application/json"
-        headers["accept"] = accept
-        headers["x-cdp-sdk"] = f"CognitePythonSDK:{get_current_sdk_version()}"
-        headers["x-cdp-app"] = self._config.client_name
-        headers["cdf-version"] = api_subversion or self._api_subversion
-        if "User-Agent" in headers:
-            headers["User-Agent"] += f" {get_user_agent()}"
-        else:
-            headers["User-Agent"] = get_user_agent()
-        headers.update(additional_headers)
-        return headers
-
-    def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
-        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
-        headers[auth_header_name] = auth_header_value
-
-    def _resolve_url(self, method: str, url_path: str) -> tuple[bool, str]:
-        if not url_path.startswith("/"):
-            raise ValueError("URL path must start with '/'")
-        base_url = self._get_base_url_with_base_path()
-        full_url = base_url + url_path
-        is_retryable = self._is_retryable(method, full_url)
-        return is_retryable, full_url
-
-    def _get_base_url_with_base_path(self) -> str:
-        base_path = ""
-        if self._api_version:
-            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-        return urljoin(self._config.base_url, base_path)
-
-    def _is_retryable(self, method: str, path: str) -> bool:
-        valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-
-        if method not in valid_methods:
-            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
-
-        return method in ["GET", "PUT", "PATCH"] or (method == "POST" and self._url_is_retryable(path))
-
-    @classmethod
-    @functools.lru_cache(64)
-    def _url_is_retryable(cls, url: str) -> bool:
-        valid_url_pattern = r"^https?://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
-        match = re.match(valid_url_pattern, url)
-        if not match:
-            raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
-        path = match.group(1)
-        return any(re.match(pattern, path) for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS)
 
     def _retrieve(
         self,
@@ -388,7 +145,6 @@ class APIClient:
         tasks_summary = execute_tasks(
             functools.partial(self._post, api_subversion=api_subversion),
             tasks,
-            max_workers=self._config.max_workers,
             fail_fast=True,
             executor=executor,
         )
@@ -409,7 +165,7 @@ class APIClient:
             )
             return (loaded[0] if loaded else None) if identifiers.is_singleton() else loaded
 
-        retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        retrieved_items = tasks_summary.joined_results(unpack_items)
 
         if identifiers.is_singleton():
             if retrieved_items:
@@ -452,7 +208,10 @@ class APIClient:
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params.update(limit=current_limit, cursor=next_cursor)
+            params["limit"] = current_limit
+            if next_cursor is not None:
+                params["cursor"] = next_cursor
+
             if method == "GET":
                 res = self._get(url_path=url_path, params=params, headers=headers)
             else:
@@ -705,7 +464,7 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = execute_tasks(get_partition, tasks, max_workers=self._config.max_workers, fail_fast=True)
+        tasks_summary = execute_tasks(get_partition, tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
 
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
@@ -923,7 +682,6 @@ class APIClient:
         summary = execute_tasks(
             functools.partial(self._post, api_subversion=api_subversion),
             tasks,
-            max_workers=self._config.max_workers,
             executor=executor,
         )
 
@@ -936,7 +694,7 @@ class APIClient:
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task[1]["items"], task_list_element_unwrap_fn=unwrap_element
         )
-        created_resources = summary.joined_results(lambda res: res.json()["items"])
+        created_resources = summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
@@ -967,13 +725,13 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks, max_workers=self._config.max_workers, executor=executor)
+        summary = execute_tasks(self._post, tasks, executor=executor)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
-            return summary.joined_results(lambda res: res.json()["items"])
+            return summary.joined_results(unpack_items)
         else:
             return None
 
@@ -1052,14 +810,12 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = execute_tasks(
-            functools.partial(self._post, api_subversion=api_subversion), tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = execute_tasks(functools.partial(self._post, api_subversion=api_subversion), tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
-        updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
+        updated_items = tasks_summary.joined_results(unpack_items)
 
         if single_item:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
@@ -1095,7 +851,7 @@ class APIClient:
             items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
             try:
-                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.missing}
             except KeyError:
                 # There is a not found internal id, which means we cannot identify it.
                 raise not_found_error
@@ -1171,7 +927,7 @@ class APIClient:
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
+                    **Identifier.load(getattr(item, "id", None), item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )
@@ -1275,110 +1031,3 @@ class APIClient:
                 continue
             cleared[to_camel_case(prop.name)] = clear_with
         return cleared
-
-    def _raise_no_project_access_error(self, res: Response) -> NoReturn:
-        raise CogniteProjectAccessError(
-            client=self._cognite_client,
-            project=self._cognite_client._config.project,
-            x_request_id=res.headers.get("X-Request-Id"),
-            cluster=self._config.cdf_cluster,
-        )
-
-    def _raise_api_error(self, res: Response, payload: dict) -> NoReturn:
-        x_request_id = res.headers.get("X-Request-Id")
-        code = res.status_code
-        missing = None
-        duplicated = None
-        extra = {}
-        try:
-            error = res.json()["error"]
-            if isinstance(error, str):
-                msg = error
-            elif isinstance(error, dict):
-                msg = error["message"]
-                missing = error.get("missing")
-                duplicated = error.get("duplicated")
-                for k, v in error.items():
-                    if k not in ["message", "missing", "duplicated", "code"]:
-                        extra[k] = v
-            else:
-                msg = res.content.decode()
-        except Exception:
-            msg = res.content.decode()
-
-        error_details: dict[str, Any] = {"X-Request-ID": x_request_id}
-        if payload:
-            error_details["payload"] = payload
-        if missing:
-            error_details["missing"] = missing
-        if duplicated:
-            error_details["duplicated"] = duplicated
-        error_details["headers"] = res.request.headers.copy()
-        self._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        error_details["response_headers"] = res.headers
-
-        if res.history:
-            for res_hist in res.history:
-                logger.debug(
-                    f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
-                )
-        logger.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
-        # TODO: We should throw "CogniteNotFoundError" if missing is populated and CogniteDuplicatedError when duplicated...
-        raise CogniteAPIError(
-            message=msg,
-            code=code,
-            x_request_id=x_request_id,
-            missing=missing,
-            duplicated=duplicated,
-            extra=extra,
-            cluster=self._config.cdf_cluster,
-            project=self._config.project,
-        )
-
-    def _log_request(self, res: Response, **kwargs: Any) -> None:
-        method = res.request.method
-        url = res.request.url
-        status_code = res.status_code
-
-        extra = kwargs.copy()
-        extra["headers"] = res.request.headers.copy()
-        self._sanitize_headers(extra["headers"])
-        if extra["payload"] is None:
-            del extra["payload"]
-
-        stream = kwargs.get("stream")
-        if not stream and self._config.debug is True:
-            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
-        extra["response_headers"] = res.headers
-
-        try:
-            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
-        except AttributeError:
-            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
-            http_protocol = "XMLHTTP"
-
-        logger.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
-
-    @staticmethod
-    def _get_response_content_safe(res: Response) -> str:
-        try:
-            return _json.dumps(res.json())
-        except (JSONDecodeError, RequestsJSONDecodeError):
-            pass
-
-        try:
-            return res.content.decode()
-        except UnicodeDecodeError:
-            pass
-
-        return "<binary>"
-
-    @staticmethod
-    def _sanitize_headers(headers: dict[str, Any] | None) -> None:
-        if headers is None:
-            return None
-        if "api-key" in headers:
-            headers["api-key"] = "***"
-        if "Authorization" in headers:
-            headers["Authorization"] = "***"
