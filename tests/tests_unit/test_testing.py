@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
@@ -20,7 +22,7 @@ def test_ensure_all_apis_are_available_on_cognite_mock() -> None:
 
 
 def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock() -> None:
-    client = CogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))
+    client = CogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))  # type: ignore[arg-type]
     available_apis = {(attr, api_cls) for attr, api_cls in get_api_class_by_attribute(client).items()}
     mocked_apis = {(attr, api.__class__) for attr, api in all_mock_children(CogniteClientMock()).items()}
 
@@ -32,7 +34,7 @@ def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock() -> None:
 
 
 @pytest.mark.parametrize("api", list(all_mock_children(CogniteClientMock()).values()))
-def test_ensure_all_apis_are_specced_on_cognite_mock(api) -> None:
+def test_ensure_all_apis_are_specced_on_cognite_mock(api: MagicMock) -> None:
     # All APIs raise when trying to access a non-existing attribute:
     with pytest.raises(AttributeError):
         api.does_not_exist

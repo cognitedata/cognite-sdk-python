@@ -1360,7 +1360,7 @@ def test__zip_and_upload_folder__zip_file_content(
             assert set(zip_file.namelist()) >= expected_names
             with zip_file.open("my_functions/handler.py", "r") as py_file:
                 expected_lines = [
-                    "from shared.util import shared_func",
+                    "from shared.util import shared_func  # type: ignore[import-not-found]",
                     "",
                     "",
                     "def handle() -> int:",
