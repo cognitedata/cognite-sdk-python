@@ -50,7 +50,7 @@ from cognite.client.data_classes.data_modeling.data_types import DirectRelation,
 from cognite.client.data_classes.data_modeling.debug import (
     DebugNoticeList,
     DebugParameters,
-    NoTimeoutWithoutResultsNotice,
+    NoTimeoutWithResultsNotice,
 )
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
@@ -1397,7 +1397,7 @@ class TestInstancesAPI:
             assert isinstance(res.debug_notices, DebugNoticeList)
             assert len(res.debug_notices) == 1
             # Since we specify both emit_results and timeout, we should get...:
-            assert isinstance(res.debug_notices[0], NoTimeoutWithoutResultsNotice)
+            assert isinstance(res.debug_notices[0], NoTimeoutWithResultsNotice)
 
             if include_typing:
                 assert res.typing is not None
@@ -1424,7 +1424,7 @@ class TestInstancesAPI:
             assert isinstance(res.debug_notices, DebugNoticeList)
             assert len(res.debug_notices) == 1
             # Since we specify both emit_results and timeout, we should get...:
-            assert isinstance(res.debug_notices[0], NoTimeoutWithoutResultsNotice)
+            assert isinstance(res.debug_notices[0], NoTimeoutWithResultsNotice)
 
             for node_lst in res.values():
                 assert isinstance(node_lst, NodeList)
