@@ -1,7 +1,8 @@
 import re
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import ContainerApply, ContainerId, ContainerProperty, Text
@@ -49,17 +50,17 @@ EXAMPLE_CONTAINER = {
 
 
 @pytest.fixture
-def mock_containers_response(httpx_mock: Any, cognite_client: CogniteClient):
+def mock_containers_response(httpx_mock: Any, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_CONTAINER]}
     url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers$")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
     url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/byids$")
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient):
+def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {
         "items": [
             {
@@ -73,7 +74,7 @@ def mock_delete_index_response(httpx_mock: Any, cognite_client: CogniteClient):
         re.escape(get_url(cognite_client.data_modeling.containers)) + "/models/containers/indexes/delete$"
     )
     httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestContainersApi:
@@ -81,8 +82,8 @@ class TestContainersApi:
         self, cognite_client: CogniteClient, mock_containers_response: Any, mock_delete_index_response: Any
     ) -> None:
         new_container = ContainerApply(
-            space=EXAMPLE_CONTAINER["space"],
-            external_id=EXAMPLE_CONTAINER["externalId"],
+            space=cast(str, EXAMPLE_CONTAINER["space"]),
+            external_id=cast(str, EXAMPLE_CONTAINER["externalId"]),
             properties={
                 "prop1": ContainerProperty(
                     type=Text(), default_value="string", description="string", name="string", nullable=False

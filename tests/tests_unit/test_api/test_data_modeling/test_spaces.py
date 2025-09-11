@@ -14,7 +14,7 @@ class TestSpaces:
         response_body = {"error": "smth"}
         url_pattern = re.compile(re.escape(get_url(cognite_client.data_modeling.spaces)) + "/models/spaces/delete")
         httpx_mock.add_response(method="POST", url=url_pattern, status_code=400, json=response_body)
-        yield httpx_mock
+        return httpx_mock
 
     def test_failed_delete_task(self, cognite_client: CogniteClient, mock_spaces_delete_raise_error: HTTPXMock) -> None:
         some_space = "i-dont-actually-exist"

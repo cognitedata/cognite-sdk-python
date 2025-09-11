@@ -3,6 +3,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 from cognite.client import CogniteClient
 from cognite.client._api.diagrams import DiagramsAPI
@@ -17,9 +18,9 @@ class TestPNIDParsingUnit:
         mocked_diagrams_get: MagicMock,
         mocked_diagrams_post: MagicMock,
         cognite_client: CogniteClient,
-        monkeypatch,
-    ):
-        entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        entities: list[dict] = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
         file_ids = [1, 2, 3]
 
         mock_response = {
@@ -57,11 +58,10 @@ class TestPNIDParsingUnit:
         job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
             file_ids=file_ids, entities=entities, multiple_jobs=True
         )
+        assert job_bundle
         successes, failures = job_bundle.result
         assert len(successes) == 3
 
         monkeypatch.setattr(cognite_client.diagrams, "_DETECT_API_STATUS_JOB_LIMIT", 1)
         with pytest.raises(ValueError):
-            job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-                file_ids=file_ids, entities=entities, multiple_jobs=True
-            )
+            _, _unposted_jobs = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
