@@ -374,7 +374,7 @@ def permanent_data_modeling_trigger(
         external_id=f"data-modeling-trigger_{version.workflow_external_id}",
         trigger_rule=WorkflowDataModelingTriggerRule(
             data_modeling_query=WorkflowTriggerDataModelingQuery(
-                with_={"timeseries": NodeResultSetExpression()},
+                with_={"timeseries": NodeResultSetExpression(limit=500)},
                 select={
                     "timeseries": Select(
                         sources=[SourceSelector(ViewId("cdf_cdm", "CogniteTimeSeries", "v1"), ["name"])]
