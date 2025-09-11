@@ -23,13 +23,12 @@ class OrgAPI(APIClient, ABC):
     @cached_property
     def _organization(self) -> str:
         headers = self._configure_headers(
-            "application/json",
             additional_headers=self._config.headers.copy(),
             api_subversion=self._api_subversion,
         )
         # This is an internal endpoint, not part of the public API
         full_url = urljoin(self._config.base_url, f"/api/v1/projects/{self._config.project}")
-        response = self._http_client_with_retry.request(method="GET", url=full_url, headers=headers)
+        response = self._http_client_with_retry("GET", url=full_url, headers=headers)
         if response.status_code != 200:
             raise CogniteAPIError(
                 "Could not look-up organization", response.status_code, response.headers.get("x-request-id")
