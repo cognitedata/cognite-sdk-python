@@ -168,7 +168,7 @@ class PrincipalsAPI(OrgAPI):
         if isinstance(types, str):
             other_params = {"types": types.upper()}
         elif isinstance(types, Sequence):
-            other_params = {"types": ",".join(types).upper()}
+            other_params = {"types": [t.upper() for t in types]}
 
         return self._list(
             # The Principal is abstract, but calling load on it will return a concrete instance.
