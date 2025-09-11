@@ -45,9 +45,7 @@ class TestJobs:
             external_id=f"myJobForTesting-{random_string(10)}",
             destination_id=one_destination.external_id,
             source_id=one_event_hub_source.external_id,
-            format=CogniteFormat(
-                encoding="utf16",
-            ),
+            format=CogniteFormat(encoding="utf16"),
         )
         created: Job | None = None
         try:
