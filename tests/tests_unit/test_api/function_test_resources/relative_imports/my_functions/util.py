@@ -1,2 +1,2 @@
-def local_func():
+def local_func() -> int:
     return 42

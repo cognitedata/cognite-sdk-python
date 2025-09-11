@@ -4,6 +4,16 @@ import json
 import pytest
 
 from cognite.client._api import assets, data_sets, events, files, sequences, time_series
+from cognite.client._api_client import APIClient
+from cognite.client.data_classes import (
+    AssetFilter,
+    DataSetFilter,
+    EventFilter,
+    FileMetadataFilter,
+    FileMetadataWrite,
+    SequenceFilter,
+    TimeSeriesFilter,
+)
 
 
 class TestListAndIterSignatures:
@@ -12,7 +22,7 @@ class TestListAndIterSignatures:
         [
             (
                 assets.AssetsAPI,
-                assets.AssetFilter,
+                AssetFilter,
                 [
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
@@ -24,7 +34,7 @@ class TestListAndIterSignatures:
             ),
             (
                 events.EventsAPI,
-                events.EventFilter,
+                EventFilter,
                 [
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
@@ -35,7 +45,7 @@ class TestListAndIterSignatures:
             ),
             (
                 files.FilesAPI,
-                files.FileMetadataFilter,
+                FileMetadataFilter,
                 [
                     "data_set_external_ids",
                     "asset_subtree_external_ids",
@@ -44,7 +54,7 @@ class TestListAndIterSignatures:
             ),
             (
                 sequences.SequencesAPI,
-                sequences.SequenceFilter,
+                SequenceFilter,
                 [
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
@@ -55,7 +65,7 @@ class TestListAndIterSignatures:
             ),
             (
                 time_series.TimeSeriesAPI,
-                time_series.TimeSeriesFilter,
+                TimeSeriesFilter,
                 [
                     "asset_subtree_external_ids",
                     "data_set_external_ids",
@@ -64,13 +74,15 @@ class TestListAndIterSignatures:
                     "sort",
                 ],
             ),
-            (data_sets.DataSetsAPI, data_sets.DataSetFilter, []),
+            (data_sets.DataSetsAPI, DataSetFilter, []),
         ],
     )
-    def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore) -> None:
+    def test_list_and_iter_signatures_same_as_filter_signature(
+        self, api: type[APIClient], filter: type, ignore: list[str]
+    ) -> None:
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
-        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
-        filter_parameters = {p.name for p in inspect.signature(filter.__init__).parameters.values()}
+        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}  # type: ignore[attr-defined]
+        filter_parameters = {p.name for p in inspect.signature(filter.__init__).parameters.values()}  # type: ignore[misc]
 
         ignore_params = {
             *ignore,
@@ -96,16 +108,16 @@ class TestListAndIterSignatures:
             data_sets.DataSetsAPI,
         ],
     )
-    def test_list_and_iter_signatures_are_same(self, api) -> None:
+    def test_list_and_iter_signatures_are_same(self, api: type[APIClient]) -> None:
         ignore_params = {"chunk_size"}
         iter_parameters = {p.name for p in inspect.signature(api.__call__).parameters.values()}
-        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}
+        list_parameters = {p.name for p in inspect.signature(api.list).parameters.values()}  # type: ignore[attr-defined]
         assert ignore_params.issuperset(iter_parameters.symmetric_difference(list_parameters)), signature_error_msg(
             iter_parameters, list_parameters, ignore_params
         )
 
 
-def signature_error_msg(expected, actual, ignore=None):
+def signature_error_msg(expected: set[str], actual: set[str], ignore: set[str] | None = None) -> str:
     pretty_expected_params = json.dumps(sorted(expected), indent=4, sort_keys=True)
     pretty_actual_params = json.dumps(sorted(actual), indent=4, sort_keys=True)
     diff = actual.symmetric_difference(expected)
@@ -127,7 +139,7 @@ class TestFileMetadataUploadSignatures:
         del upload_from_memory_parameters["overwrite"]
         del upload_from_memory_parameters["name"]
         del upload_from_memory_parameters["security_categories"]
-        file_metadata_parameters = dict(inspect.signature(files.FileMetadataWrite.__init__).parameters)
+        file_metadata_parameters = dict(inspect.signature(FileMetadataWrite.__init__).parameters)
         del file_metadata_parameters["instance_id"]
         del file_metadata_parameters["name"]
         del file_metadata_parameters["security_categories"]
