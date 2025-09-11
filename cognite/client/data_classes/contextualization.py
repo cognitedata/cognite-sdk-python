@@ -92,14 +92,12 @@ class ContextualizationJob(CogniteResource, ABC):
         status: str,
         status_time: int,
         created_time: int,
-        start_time: int,
         error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
         self.job_id = job_id
         self.status = status
         self.created_time = created_time
-        self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -472,11 +470,11 @@ class DiagramConvertResults(ContextualizationJob):
             status=status,
             status_time=status_time,
             created_time=created_time,
-            start_time=start_time,
             error_message=error_message,
             cognite_client=cognite_client,
         )
         self.items = items
+        self.start_time = start_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -591,11 +589,11 @@ class DiagramDetectResults(ContextualizationJob):
             status=status,
             status_time=status_time,
             created_time=created_time,
-            start_time=start_time,
             error_message=error_message,
             cognite_client=cognite_client,
         )
         self.items: list[DiagramDetectItem] = items
+        self.start_time = start_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
@@ -1041,7 +1039,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
         status_time: int,
         created_time: int,
         items: list[VisionExtractItem],
-        start_time: int,
+        start_time: int | None,
         error_message: str | None,
         cognite_client: CogniteClient | None = None,
     ) -> None:
@@ -1050,11 +1048,11 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             status=status,
             status_time=status_time,
             created_time=created_time,
-            start_time=start_time,
             error_message=error_message,
             cognite_client=cognite_client,
         )
         self.items = items
+        self.start_time = start_time
 
     def _status_path(self) -> str:
         return f"/context/vision/extract/{self.job_id}"
@@ -1065,7 +1063,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             job_id=resource["jobId"],
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource["startTime"],
+            start_time=resource.get("startTime"),
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[VisionExtractItem._load(item, cognite_client=cognite_client) for item in resource["items"]],
@@ -1078,7 +1076,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
             job_id=resource["jobId"],
             status=resource["status"],
             created_time=resource["createdTime"],
-            start_time=resource["startTime"],
+            start_time=resource.get("startTime"),
             status_time=resource["statusTime"],
             error_message=resource.get("errorMessage"),
             items=[
@@ -1198,10 +1196,10 @@ class EntityMatchingPredictionResult(ContextualizationJob):
             status=status,
             status_time=status_time,
             created_time=created_time,
-            start_time=start_time,
             error_message=error_message,
             cognite_client=cognite_client,
         )
+        self.start_time = start_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
