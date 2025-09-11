@@ -1,5 +1,5 @@
 from .util import local_func
 
 
-def handle():
+def handle() -> object:
     return local_func

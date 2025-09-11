@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -7,9 +10,14 @@ from cognite.client.exceptions import ModelFailedException
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
+if TYPE_CHECKING:
+    from pytest_httpx import HTTPXMock
+
+    from cognite.client import CogniteClient
+
 
 @pytest.fixture
-def mock_fit(httpx_mock, cognite_client):
+def mock_fit(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"id": 123, "status": "Queued", "createdTime": 42}
     httpx_mock.add_response(
         method="POST",
@@ -17,11 +25,11 @@ def mock_fit(httpx_mock, cognite_client):
         status_code=200,
         json=response_body,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_status_ok(httpx_mock, cognite_client):
+def mock_status_ok(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}
     httpx_mock.add_response(
         method="GET",
@@ -31,11 +39,11 @@ def mock_status_ok(httpx_mock, cognite_client):
         status_code=200,
         json=response_body,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_retrieve(httpx_mock, cognite_client):
+def mock_retrieve(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {
         "items": [{"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}]
     }
@@ -47,11 +55,11 @@ def mock_retrieve(httpx_mock, cognite_client):
         status_code=200,
         json=response_body,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_status_failed(httpx_mock, cognite_client):
+def mock_status_failed(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"id": 123, "status": "Failed", "errorMessage": "error message"}
     httpx_mock.add_response(
         method="GET",
@@ -61,11 +69,11 @@ def mock_status_failed(httpx_mock, cognite_client):
         status_code=200,
         json=response_body,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 @pytest.fixture
-def mock_status_rules_ok(httpx_mock, cognite_client):
+def mock_status_rules_ok(httpx_mock: HTTPXMock, cognite_client: CogniteClient) -> HTTPXMock:
     response_body = {"jobId": 456, "status": "Completed", "items": [1]}
     httpx_mock.add_response(
         method="GET",
@@ -75,11 +83,11 @@ def mock_status_rules_ok(httpx_mock, cognite_client):
         status_code=200,
         json=response_body,
     )
-    yield httpx_mock
+    return httpx_mock
 
 
 class TestEntityMatching:
-    def test_fit(self, cognite_client, mock_fit, mock_status_ok) -> None:
+    def test_fit(self, cognite_client: CogniteClient, mock_fit: HTTPXMock, mock_status_ok: HTTPXMock) -> None:
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
         model = cognite_client.entity_matching.fit(
@@ -118,7 +126,7 @@ class TestEntityMatching:
         assert 1 == n_fit_calls
         assert 1 == n_status_calls
 
-    def test_ml_fit(self, cognite_client, mock_fit, mock_status_ok) -> None:
+    def test_ml_fit(self, cognite_client: CogniteClient, mock_fit: HTTPXMock, mock_status_ok: HTTPXMock) -> None:
         # fit_ml should produce the same output as fit. Will eventually be removed
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
@@ -132,7 +140,7 @@ class TestEntityMatching:
         assert "Completed" == model.status
         assert 123 == model.id
 
-    def test_fit_cognite_resource(self, cognite_client, mock_fit) -> None:
+    def test_fit_cognite_resource(self, cognite_client: CogniteClient, mock_fit: HTTPXMock) -> None:
         entities_from = [
             DefaultResourceGenerator.time_series(
                 id=1,
@@ -163,7 +171,7 @@ class TestEntityMatching:
             "classifier": None,
         } == jsgz_load(mock_fit.get_requests()[0].content)
 
-    def test_fit_fails(self, cognite_client, mock_fit, mock_status_failed) -> None:
+    def test_fit_fails(self, cognite_client: CogniteClient, mock_fit: HTTPXMock, mock_status_failed: HTTPXMock) -> None:
         entities_from = [{"id": 1, "name": "xx"}]
         entities_to = [{"id": 2, "name": "yy"}]
         model = cognite_client.entity_matching.fit(sources=entities_from, targets=entities_to)
@@ -174,7 +182,7 @@ class TestEntityMatching:
         assert "error message" == exc_info.value.error_message
         assert "EntityMatchingModel 123 failed with error 'error message'" == str(exc_info.value)
 
-    def test_retrieve(self, cognite_client, mock_retrieve) -> None:
+    def test_retrieve(self, cognite_client: CogniteClient, mock_retrieve: HTTPXMock) -> None:
         model = cognite_client.entity_matching.retrieve(id=123)
         assert isinstance(model, EntityMatchingModel)
         assert "Completed" == model.status
