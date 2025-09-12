@@ -24,7 +24,7 @@ class TestDebugNotices:
     def test_dump_load_roundtrip(
         self, debug_notice_subclass: type[DebugNotice], cognite_mock_client_placeholder: CogniteClient
     ) -> None:
-        instance_generator = FakeCogniteResourceGenerator(seed=12345, cognite_client=cognite_mock_client_placeholder)
+        instance_generator = FakeCogniteResourceGenerator(cognite_client=cognite_mock_client_placeholder)
         instance = instance_generator.create_instance(debug_notice_subclass)
 
         dumped = instance.dump(camel_case=True)
