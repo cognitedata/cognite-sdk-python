@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from collections import UserList
-from dataclasses import asdict, dataclass
-from types import MappingProxyType
-from typing import Any, Literal, get_args, get_type_hints
+from abc import ABC
+from dataclasses import dataclass
+from functools import cache
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast, get_args, get_type_hints
 
 from typing_extensions import Self
 
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.utils._auxiliary import all_concrete_subclasses
-from cognite.client.utils._importing import local_import
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass(kw_only=True)
@@ -30,35 +32,44 @@ class DebugParameters:
     profile: bool = False
 
     def dump(self, camel_case: bool = True) -> dict[str, bool | int]:
-        res = asdict(self)
-        if camel_case:
-            res["emitResults"] = res.pop("emit_results")
-        if self.timeout is None:
-            res.pop("timeout")
+        res: dict[str, bool | int] = {
+            "emitResults" if camel_case else "emit_results": self.emit_results,
+            "profile": self.profile,
+        }
+        if self.timeout is not None:
+            res["timeout"] = self.timeout
         return res
 
 
 @dataclass
-class DebugNotice(ABC):
+class DebugNotice(CogniteResource, ABC):
     """
     A notice that provides insight into the query's execution. It can highlight potential performance issues,
     offer an optimization suggestion, or explain an aspect of the query processing. Each notice falls into a
     category, such as indexing, sorting, filtering, or cursoring, to help identify areas for improvement.
     """
 
+    category: str
+    code: str
+    hint: str
+    level: str
+
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DebugNotice:
-        key = (data["code"], data["category"])
-        notice_cls = _DEBUG_NOTICE_BY_CODE_AND_CATEGORY.get(key, UnknownDebugNotice)
-        return notice_cls._load(data)
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> DebugNotice:
+        subclass_lookup = _create_debug_notice_subclass_map()
+        try:
+            key = (data["code"], data["category"])
+            return subclass_lookup[key]._load(data)
+        except KeyError:
+            return cast(DebugNotice, UnknownDebugNotice._load(data))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return asdict(self)
-
-    @classmethod
-    @abstractmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
-        raise NotImplementedError
+        return {
+            "category": self.category,
+            "code": self.code,
+            "hint": self.hint,
+            "level": self.level,
+        }
 
 
 @dataclass
@@ -75,7 +86,7 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
     timeout: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -83,6 +94,11 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
             hint=data["hint"],
             timeout=data["timeout"],
         )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        obj = super().dump(camel_case=camel_case)
+        obj["timeout"] = self.timeout
+        return obj
 
 
 @dataclass
@@ -93,7 +109,7 @@ class NoTimeoutWithResultsNotice(InvalidDebugOptionsNotice):
     hint: Literal["Ignoring timeout setting since emitResults=true"]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -119,7 +135,7 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
     result_expression: str
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -131,8 +147,8 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
+        obj["grade"] = self.grade
+        obj["resultExpression" if camel_case else "result_expression"] = self.result_expression
         return obj
 
 
@@ -154,7 +170,7 @@ class UnindexedThroughNotice(IndexingNotice):
     property: list[str]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -167,8 +183,13 @@ class UnindexedThroughNotice(IndexingNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
+        obj.update(
+            {
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "grade": self.grade,
+                "property": self.property,
+            }
+        )
         return obj
 
 
@@ -177,18 +198,18 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
     code: Literal["containersWithoutIndexesInvolved"]
     category: Literal["indexing"]
     level: Literal["warning"]
-    grade: Literal["C"] | None
+    grade: Literal["C"]
     hint: Literal["The query is using one or more containers that doesn't have any indexes declared."]
     result_expression: str | None
     containers: list[ContainerId]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
             level=data["level"],
-            grade=data.get("grade"),
+            grade=data["grade"],
             hint=data["hint"],
             result_expression=data.get("resultExpression"),
             containers=[ContainerId.load(c) for c in data["containers"]],
@@ -196,10 +217,13 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-        if self.containers:
-            obj["containers"] = [c.dump(camel_case=camel_case) for c in self.containers]
+        obj.update(
+            {
+                "grade": self.grade,
+                "containers": [c.dump(camel_case=camel_case) for c in self.containers],
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+            }
+        )
         return obj
 
 
@@ -219,7 +243,7 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
     via_from: str | None
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -232,9 +256,13 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-            obj["viaFrom"] = obj.pop("via_from")
+        obj.update(
+            {
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "viaFrom" if camel_case else "via_from": self.via_from,
+                "grade": self.grade,
+            }
+        )
         return obj
 
 
@@ -251,7 +279,7 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
     containers: list[ContainerId]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -264,10 +292,13 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-        if self.containers:
-            obj["containers"] = [c.dump(camel_case=camel_case) for c in self.containers]
+        obj.update(
+            {
+                "grade": self.grade,
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "containers": [c.dump(camel_case=camel_case) for c in self.containers],
+            }
+        )
         return obj
 
 
@@ -283,7 +314,7 @@ class SignificantPostFilteringNotice(FilteringNotice):
     max_involved_rows: int
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -297,9 +328,14 @@ class SignificantPostFilteringNotice(FilteringNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-            obj["maxInvolvedRows"] = obj.pop("max_involved_rows")
+        obj.update(
+            {
+                "grade": self.grade,
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "limit": self.limit,
+                "maxInvolvedRows" if camel_case else "max_involved_rows": self.max_involved_rows,
+            }
+        )
         return obj
 
 
@@ -321,7 +357,7 @@ class SortNotBackedByIndexNotice(SortingNotice):
     sort: list[InstanceSort]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -334,10 +370,13 @@ class SortNotBackedByIndexNotice(SortingNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-        if self.sort:
-            obj["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
+        obj.update(
+            {
+                "grade": self.grade,
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "sort": [s.dump(camel_case=camel_case) for s in self.sort],
+            }
+        )
         return obj
 
 
@@ -352,7 +391,7 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
     sort: list[InstanceSort]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(
             code=data["code"],
             category=data["category"],
@@ -365,19 +404,22 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if camel_case:
-            obj["resultExpression"] = obj.pop("result_expression")
-        if self.sort:
-            obj["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
+        obj.update(
+            {
+                "grade": self.grade,
+                "resultExpression" if camel_case else "result_expression": self.result_expression,
+                "sort": [s.dump(camel_case=camel_case) for s in self.sort],
+            }
+        )
         return obj
 
 
 @dataclass
-class UnknownDebugNotice(DebugNotice):
+class UnknownDebugNotice(CogniteResource):
     data: dict[str, Any]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
         return cls(data=data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -392,32 +434,28 @@ class UnknownDebugNotice(DebugNotice):
         return self.data.copy()
 
 
-class DebugNoticeList(UserList[DebugNotice]):
-    def __init__(self, initlist: list[DebugNotice]):
-        super().__init__(initlist or [])
-
-    @classmethod
-    def _load(cls, data: list[dict[str, Any]]) -> Self:
-        return cls([DebugNotice.load(item) for item in data])
-
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
-        return [notice.dump(camel_case=camel_case) for notice in self]
-
-    def _repr_html_(self) -> str:
-        pandas = local_import("pandas")
-        dumped = self.dump(camel_case=False)
-        return pandas.DataFrame(dumped)._repr_html_()
+# We need UnknownDebugNotice to pass isinstance(..., DebugNotice) checks or the resource list raises:
+DebugNotice.register(UnknownDebugNotice)
 
 
+class DebugNoticeList(CogniteResourceList[DebugNotice]):
+    _RESOURCE = DebugNotice
+
+    def get(self, *a: Any, **kw: Any) -> NoReturn:
+        raise NotImplementedError
+
+
+@cache
 def _create_debug_notice_subclass_map() -> dict[tuple[str, str], type[DebugNotice]]:
+    from cognite.client import CogniteClient
+
     lookup = {}
-    subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice, exclude={UnknownDebugNotice})  # type: ignore[type-abstract]
+    subclasses: set[type[DebugNotice]] = all_concrete_subclasses(DebugNotice)
     for sub_cls in subclasses:
-        annots = get_type_hints(sub_cls)
+        # When we do 'get_type_hints', we evaluate forward refs., and we reference InstanceSort in a file
+        # that only imports CogniteClient while TYPE_CHECKING, so it is not available at runtime which we need:
+        annots = get_type_hints(sub_cls, globalns=globals() | {"CogniteClient": CogniteClient})
         code = get_args(annots["code"])[0]
         category = get_args(annots["category"])[0]
         lookup[code, category] = sub_cls
     return lookup
-
-
-_DEBUG_NOTICE_BY_CODE_AND_CATEGORY = MappingProxyType(_create_debug_notice_subclass_map())

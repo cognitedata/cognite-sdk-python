@@ -29,7 +29,6 @@ from cognite.client.data_classes.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
-from cognite.client.data_classes.data_modeling.debug import DebugNoticeList, DebugParameters
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -82,6 +81,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+    from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
     {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
@@ -118,6 +118,8 @@ class _TypedNodeOrEdgeListAdapter:
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
+        from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
+
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug_notices = next((DebugNoticeList._load(r["debug"]["notices"]) for r in responses if "debug" in r), None)
         resources = [
