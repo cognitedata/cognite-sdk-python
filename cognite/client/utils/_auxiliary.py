@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import functools
 import math
 import platform
@@ -31,6 +32,22 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 K = TypeVar("K")
 THashable = TypeVar("THashable", bound=Hashable)
+
+
+def all_subclasses(base: type[T], exclude: set[type[T]] | None = None) -> set[type[T]]:
+    """Recursively find all subclasses of a given class."""
+    return set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)) - (
+        exclude or set()
+    )
+
+
+def all_concrete_subclasses(base: type[T], exclude: set[type[T]] | None = None) -> set[type[T]]:
+    """Recursively find all non-abstract subclasses of a given class."""
+    import inspect
+
+    return {
+        cls for cls in all_subclasses(base, exclude) if abc.ABC not in cls.__bases__ and not inspect.isabstract(cls)
+    }
 
 
 def no_op(x: T) -> T:
