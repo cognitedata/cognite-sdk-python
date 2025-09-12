@@ -6,6 +6,7 @@ from cognite.client.data_classes.filters import And, Filter, In, Or
 from tests.utils import FakeCogniteResourceGenerator
 
 
+@pytest.mark.dsl  # requirement when using FakeCogniteResourceGenerator
 def test_filters_warn_in_boolean_contexts() -> None:
     # We've seen multiple users using filters in boolean contexts (like 'if my_filter:' or 'flt1 and flt2'),
     # which is not recommended. The proper way to combine filters is using & and | operators.
