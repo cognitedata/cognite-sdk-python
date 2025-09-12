@@ -109,6 +109,7 @@ class APIClient:
                     "context/diagram/.*",
                     "ai/tools/documents/(summarize|ask)",
                     "ai/agents(/(byids|delete))?",
+                    "principals/.*",
                 )
             )
         ]

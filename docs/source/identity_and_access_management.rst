@@ -10,6 +10,21 @@ Compare capabilities
 ~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.IAMAPI.compare_capabilities
 
+Principals
+^^^^^^^^^^^
+
+Get the current caller's principal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.me
+
+Retrieve a principal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.retrieve
+
+List principals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.organization.PrincipalsAPI.list
+
 Tokens
 ^^^^^^
 Inspect the token currently used by the client
@@ -99,5 +114,9 @@ Data classes
     :show-inheritance:
 
 .. automodule:: cognite.client.data_classes.user_profiles
+    :members:
+    :show-inheritance:
+
+.. automodule:: cognite.client.data_classes.principals
     :members:
     :show-inheritance:
