@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -81,6 +82,18 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 
 class Filter(ABC):
     _filter_name: str
+
+    def __bool__(self) -> bool:
+        warnings.warn(
+            "You may be trying to combine two (or more) filters using 'and' or 'or' - this does not work! "
+            "To combine filters, use one of [And, Or] from 'cognite.client.data_classes.filters'. "
+            "You can also use the logical operators directly: 'flt1 & flt2' or 'flt1 | flt2'. "
+            "If you are evaluating the filter in a boolean context, e.g. 'if flt:', please use 'if flt is not None:' "
+            "to silence this warning.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return True
 
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         """
