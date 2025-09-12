@@ -145,6 +145,22 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
+    @overload
+    def create(
+        self,
+        name: str | ThreeDModelWrite,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModel: ...
+
+    @overload
+    def create(
+        self,
+        name: SequenceNotStr[str | ThreeDModelWrite],
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModelList: ...
+
     def create(
         self,
         name: str | ThreeDModelWrite | SequenceNotStr[str | ThreeDModelWrite],
@@ -754,7 +770,7 @@ class ThreeDAssetMappingAPI(APIClient):
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
         chunks = split_into_chunks(
-            [ThreeDAssetMapping(a.node_id, a.asset_id).dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
+            [{"nodeId": a.node_id, "assetId": a.asset_id} for a in asset_mapping], self._DELETE_LIMIT
         )
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
         summary = execute_tasks(self._post, tasks)

@@ -7,7 +7,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from io import BufferedReader
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, cast, overload
+from typing import Any, BinaryIO, Literal, overload
 from urllib.parse import urljoin, urlparse
 
 from cognite.client._api_client import APIClient
@@ -470,7 +470,7 @@ class FilesAPI(APIClient):
 
     def upload(
         self,
-        path: str,
+        path: str | Path,
         external_id: str | None = None,
         name: str | None = None,
         source: str | None = None,
@@ -490,7 +490,7 @@ class FilesAPI(APIClient):
         """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
 
         Args:
-            path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
+            path (str | Path): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             name (str | None): Name of the file.
             source (str | None): The source of the file.
@@ -538,8 +538,9 @@ class FilesAPI(APIClient):
                 >>> res = client.files.upload("/path/to/file", geo_location=GeoLocation(type="Feature", geometry=geometry))
 
         """
-        file_metadata = FileMetadata(
-            name=name,
+        file_metadata = FileMetadataWrite(
+            # If a file is provided, we set name below based on the file name
+            name=name,  # type: ignore[arg-type]
             directory=directory,
             external_id=external_id,
             source=source,
@@ -579,7 +580,7 @@ class FilesAPI(APIClient):
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
 
-    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
+    def _upload_file_from_path(self, file: FileMetadataWrite, file_path: str | Path, overwrite: bool) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
@@ -715,7 +716,7 @@ class FilesAPI(APIClient):
         if isinstance(content, str):
             content = content.encode("utf-8")
 
-        file_metadata = FileMetadata(
+        file_metadata = FileMetadataWrite(
             name=name,
             external_id=external_id,
             source=source,
@@ -808,7 +809,7 @@ class FilesAPI(APIClient):
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
         """
-        file_metadata = FileMetadata(
+        file_metadata = FileMetadataWrite(
             name=name,
             external_id=external_id,
             source=source,
@@ -1094,7 +1095,7 @@ class FilesAPI(APIClient):
 
             ids.append(identifier)
             file_directories.append(file_directory)
-            filepaths.append(file_directory / cast(str, metadata.name))
+            filepaths.append(file_directory / metadata.name)
 
         return ids, filepaths, file_directories
 
