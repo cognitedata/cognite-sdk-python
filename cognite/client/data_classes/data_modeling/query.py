@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from typing_extensions import Self, assert_never
 
 from cognite.client.data_classes._base import CogniteObject, UnknownCogniteObject
-from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -28,6 +27,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
 
 
 @dataclass
@@ -545,6 +545,8 @@ class QueryResult(UserDict):
         typing: dict[str, Any] | None = None,
         debug: list[dict[str, Any]] | None = None,
     ) -> QueryResult:
+        from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
+
         instance = cls()
         typing_nodes = TypeInformation._load(typing["nodes"]) if typing and "nodes" in typing else None
         typing_edges = TypeInformation._load(typing["edges"]) if typing and "edges" in typing else None
