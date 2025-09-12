@@ -396,3 +396,53 @@ def create_simulator_routine_revision(
         configuration=SIMULATOR_ROUTINE_REVISION_CONFIG,
         script=SIMULATOR_ROUTINE_REVISION_SCRIPT,
     )
+
+
+SIMULATOR_MODEL_REVISION_DATA_FLOWSHEET = [
+    {
+        "thermodynamics": {"propertyPackages": ["abcdef", "123456"], "components": ["abcdef", "123456"]},
+        "simulatorObjectEdges": [
+            {
+                "id": "edge-1",
+                "name": "edge-name",
+                "sourceId": "edge-1",
+                "targetId": "edge-2",
+                "connectionType": "Energy",
+            }
+        ],
+        "simulatorObjectNodes": [
+            {
+                "id": "node-1",
+                "name": "node-name",
+                "type": "input",
+                "properties": [
+                    {
+                        "name": "node-property-name-1",
+                        "referenceObject": {"a": "b"},
+                        "valueType": "STRING",
+                        "value": "node-property-value-1",
+                        "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
+                        "readOnly": True,
+                    },
+                    {
+                        "name": "node-property-name-1",
+                        "referenceObject": {"a": "b"},
+                        "valueType": "STRING",
+                        "value": "node-property-value-1",
+                        "unit": {"name": "node-property-unit-1", "quantity": "node-property-quantity-1"},
+                        "readOnly": True,
+                    },
+                ],
+                "graphicalObject": {
+                    "height": 50,
+                    "width": 100,
+                    "scaleX": 10,
+                    "scaleY": 8.73,
+                    "active": True,
+                    "angle": 90,
+                    "position": {"x": 100, "y": 100},
+                },
+            }
+        ],
+    }
+]
