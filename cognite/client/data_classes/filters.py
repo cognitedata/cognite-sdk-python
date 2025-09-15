@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty
 
-RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId
+RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId | DirectRelationReference
 
 
 @dataclass
