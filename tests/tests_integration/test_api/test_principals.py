@@ -70,7 +70,7 @@ class TestPrincipalsAPI:
         client = cognite_client_cog_idp
 
         retrieved = client.iam.principals.retrieve(
-            id=three_principals.as_ids(), external_id=["not_existing"], ignore_unknown_ids=True
+            id=[*three_principals.as_ids(), "not_existing"], ignore_unknown_ids=True
         )
         assert isinstance(retrieved, PrincipalList)
         assert len(retrieved) == len(three_principals)
