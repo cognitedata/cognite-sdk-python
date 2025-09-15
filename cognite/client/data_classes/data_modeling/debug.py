@@ -415,12 +415,21 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
 
 
 @dataclass
-class UnknownDebugNotice(CogniteResource):
+class UnknownDebugNotice(DebugNotice):
+    category: str | None  # type: ignore [assignment]
+    code: str | None  # type: ignore [assignment]
+    hint: str | None  # type: ignore [assignment]
+    level: str | None  # type: ignore [assignment]
     data: dict[str, Any]
 
     @classmethod
     def _load(cls, data: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(data=data)
+        data = data.copy()
+        category = data.pop("category", None)
+        code = data.pop("code", None)
+        hint = data.pop("hint", None)
+        level = data.pop("level", None)
+        return cls(category=category, code=code, hint=hint, level=level, data=data)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if camel_case is False:
@@ -431,11 +440,16 @@ class UnknownDebugNotice(CogniteResource):
                 "Please raise an issue on Github to add support for this debug notice type.",
                 stacklevel=2,
             )
-        return self.data.copy()
-
-
-# We need UnknownDebugNotice to pass isinstance(..., DebugNotice) checks or the resource list raises:
-DebugNotice.register(UnknownDebugNotice)
+        output = {}
+        if self.category is not None:
+            output["category"] = self.category
+        if self.code is not None:
+            output["code"] = self.code
+        if self.hint is not None:
+            output["hint"] = self.hint
+        if self.level is not None:
+            output["level"] = self.level
+        return output | self.data.copy()
 
 
 class DebugNoticeList(CogniteResourceList[DebugNotice]):

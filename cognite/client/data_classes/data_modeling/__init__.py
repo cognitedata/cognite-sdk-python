@@ -40,6 +40,10 @@ from cognite.client.data_classes.data_modeling.data_types import (
     TimeSeriesReference,
     Timestamp,
 )
+from cognite.client.data_classes.data_modeling.debug import (
+    DebugNotice,
+    DebugNoticeList,
+)
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     ContainerIdentifier,
@@ -127,6 +131,8 @@ __all__ = [
     "DataModelingId",
     "DataModelsSort",
     "Date",
+    "DebugNotice",
+    "DebugNoticeList",
     "DirectRelation",
     "DirectRelationReference",
     "Edge",
