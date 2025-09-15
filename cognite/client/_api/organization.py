@@ -78,14 +78,13 @@ class PrincipalsAPI(OrgAPI):
     def retrieve(
         self,
         id: str,
-        external_id: None = None,
+        *,
         ignore_unknown_ids: bool = False,
     ) -> Principal | None: ...
 
     @overload
     def retrieve(
         self,
-        id: None = None,
         *,
         external_id: str,
         ignore_unknown_ids: bool = False,
@@ -95,14 +94,13 @@ class PrincipalsAPI(OrgAPI):
     def retrieve(
         self,
         id: SequenceNotStr[str],
-        external_id: None = None,
+        *,
         ignore_unknown_ids: bool = False,
     ) -> PrincipalList: ...
 
     @overload
     def retrieve(
         self,
-        id: None = None,
         *,
         external_id: SequenceNotStr[str],
         ignore_unknown_ids: bool = False,
