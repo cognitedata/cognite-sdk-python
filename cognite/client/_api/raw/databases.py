@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.raw import Database, DatabaseList
 from cognite.client.utils._auxiliary import split_into_chunks, unpack_items_in_payload
-from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -16,14 +15,14 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
+    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Database]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
+    async def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatabaseList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Database] | Iterator[DatabaseList]:
+    ) -> AsyncIterator[Database] | AsyncIterator[DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -33,19 +32,19 @@ class RawDatabasesAPI(APIClient):
             limit (int | None): Maximum number of dbs to return. Defaults to return all items.
 
         Returns:
-            Iterator[Database] | Iterator[DatabaseList]: No description.
+            AsyncIterator[Database] | AsyncIterator[DatabaseList]: No description.
         """
         return self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
     @overload
-    def create(self, name: str) -> Database: ...
+    async def create(self, name: str) -> Database: ...
 
     @overload
-    def create(self, name: list[str]) -> DatabaseList: ...
+    async def create(self, name: list[str]) -> DatabaseList: ...
 
-    def create(self, name: str | list[str]) -> Database | DatabaseList:
+    async def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
@@ -67,9 +66,9 @@ class RawDatabasesAPI(APIClient):
             items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
+        return await self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
+    async def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
@@ -87,18 +86,20 @@ class RawDatabasesAPI(APIClient):
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
-        items = [{"name": n} for n in name]
-        chunks = split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [
-            {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
-            for chunk in chunks
+            AsyncSDKTask(
+                self._post,
+                url_path=self._RESOURCE_PATH + "/delete",
+                json={"items": [{"name": n} for n in chunk], "recursive": recursive},
+            )
+            for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
@@ -125,4 +126,4 @@ class RawDatabasesAPI(APIClient):
                 >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
-        return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
+        return await self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)

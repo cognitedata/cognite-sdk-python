@@ -56,7 +56,7 @@ class FunctionHandle(Protocol):
         object: Return value of the function. Any JSON serializable object is allowed.
     """
 
-    def __call__(
+    async def __call__(
         self,
         *,
         client: AsyncCogniteClient | None = None,
@@ -301,9 +301,9 @@ class Function(FunctionCore):
         """
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """Update the function object. Can be useful to check for the latest status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
-        latest = self._cognite_client.functions.retrieve(id=self.id)
+        latest = await self._cognite_client.functions.retrieve(id=self.id)
         if latest is None:
             return None
 
@@ -702,10 +702,10 @@ class FunctionCall(CogniteResource):
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
         return self._cognite_client.functions.calls.get_logs(call_id=call_id, function_id=function_id)
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False."""
         call_id, function_id = self._get_identifiers_or_raise(self.id, self.function_id)
-        latest = self._cognite_client.functions.calls.retrieve(call_id=call_id, function_id=function_id)
+        latest = await self._cognite_client.functions.calls.retrieve(call_id=call_id, function_id=function_id)
         if latest is None:
             raise RuntimeError("Unable to update the function call object (it was not found)")
         self.status = latest.status

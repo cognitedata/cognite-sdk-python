@@ -288,22 +288,22 @@ class SimulationRun(SimulationRunCore):
         """
         return self._cognite_client.simulators.logs.retrieve(ids=self.log_id)
 
-    def get_data(self) -> SimulationRunDataItem | None:
+    async def get_data(self) -> SimulationRunDataItem | None:
         """`Retrieve data associated with this simulation run. <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
 
         Returns:
             SimulationRunDataItem | None: Data for the simulation run.
         """
-        data = self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
+        data = await self._cognite_client.simulators.runs.list_run_data(run_id=self.id)
         if data:
             return data[0]
 
         return None
 
-    def update(self) -> None:
+    async def update(self) -> None:
         """Update the simulation run object to the latest state. Useful if the run was created with wait=False."""
         # same logic as Cognite Functions
-        latest = self._cognite_client.simulators.runs.retrieve(ids=self.id)
+        latest = await self._cognite_client.simulators.runs.retrieve(ids=self.id)
         if latest is None:
             raise RuntimeError("Unable to update the simulation run object (it was not found)")
         else:

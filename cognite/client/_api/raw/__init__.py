@@ -18,4 +18,3 @@ class RawAPI(APIClient):
         self.databases = RawDatabasesAPI(config, api_version, cognite_client)
         self.tables = RawTablesAPI(config, api_version, cognite_client)
         self.rows = RawRowsAPI(config, api_version, cognite_client)
-

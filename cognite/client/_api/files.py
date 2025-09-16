@@ -29,7 +29,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from cognite.client.utils._auxiliary import drop_none_values, find_duplicates, unpack_items
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -39,7 +39,7 @@ class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         name: str | None = None,
@@ -66,7 +66,7 @@ class FilesAPI(APIClient):
         partitions: int | None = None,
     ) -> Iterator[FileMetadata]: ...
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         name: str | None = None,
@@ -93,7 +93,7 @@ class FilesAPI(APIClient):
         partitions: int | None = None,
     ) -> Iterator[FileMetadataList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -174,7 +174,7 @@ class FilesAPI(APIClient):
             uploaded=uploaded,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             method="POST",
@@ -184,7 +184,7 @@ class FilesAPI(APIClient):
             partitions=partitions,
         )
 
-    def create(
+    async def create(
         self, file_metadata: FileMetadata | FileMetadataWrite, overwrite: bool = False
     ) -> tuple[FileMetadata, str]:
         """Create file without uploading content.
@@ -209,7 +209,7 @@ class FilesAPI(APIClient):
         """
         if isinstance(file_metadata, FileMetadata):
             file_metadata = file_metadata.as_write()
-        res = self._post(
+        res = await self._post(
             url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )
         returned_file_metadata = res.json()
@@ -217,7 +217,7 @@ class FilesAPI(APIClient):
         file_metadata = FileMetadata._load(returned_file_metadata)
         return file_metadata, upload_url
 
-    def retrieve(
+    async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
@@ -243,9 +243,11 @@ class FilesAPI(APIClient):
                 >>> res = client.files.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
-        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
+        return await self._retrieve_multiple(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers
+        )
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -276,14 +278,14 @@ class FilesAPI(APIClient):
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
@@ -301,9 +303,9 @@ class FilesAPI(APIClient):
                 >>> aggregate_uploaded = client.files.aggregate(filter={"uploaded": True})
         """
 
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate(filter=filter, cls=CountAggregate)
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -324,27 +326,27 @@ class FilesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: FileMetadata | FileMetadataWrite | FileMetadataUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[FileMetadata | FileMetadataWrite | FileMetadataUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadataList: ...
 
-    def update(
+    async def update(
         self,
         item: FileMetadata
         | FileMetadataWrite
@@ -390,7 +392,7 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.files.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             update_cls=FileMetadataUpdate,
@@ -399,7 +401,7 @@ class FilesAPI(APIClient):
             mode=mode,
         )
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         filter: FileMetadataFilter | dict[str, Any] | None = None,
@@ -429,9 +431,9 @@ class FilesAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = client.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
-        return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
+        return await self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
-    def upload_content(
+    async def upload_content(
         self,
         path: str,
         external_id: str | None = None,
@@ -452,13 +454,13 @@ class FilesAPI(APIClient):
                 if _RUNNING_IN_BROWSER:
                     # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                     fh = fh.read()
-                file_metadata = self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
+                file_metadata = await self.upload_content_bytes(fh, external_id=external_id, instance_id=instance_id)
             return file_metadata
-        if os.path.isdir(path):
+        elif os.path.isdir(path):
             raise IsADirectoryError(path)
         raise FileNotFoundError(path)
 
-    def upload(
+    async def upload(
         self,
         path: str | Path,
         external_id: str | None = None,
@@ -547,9 +549,10 @@ class FilesAPI(APIClient):
         if os.path.isfile(path):
             if not name:
                 file_metadata.name = os.path.basename(path)
-            return self._upload_file_from_path(file_metadata, path, overwrite)
+            return await self._upload_file_from_path(file_metadata, path, overwrite)
+
         elif os.path.isdir(path):
-            tasks = []
+            tasks: list[AsyncSDKTask] = []
             if recursive:
                 for root, _, files in os.walk(path):
                     for file in files:
@@ -557,29 +560,33 @@ class FilesAPI(APIClient):
                         basename = os.path.basename(file_path)
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = basename
-                        tasks.append((file_metadata, file_path, overwrite))
+                        tasks.append(AsyncSDKTask(self._upload_file_from_path, file_metadata, file_path, overwrite))
             else:
                 for file_name in os.listdir(path):
                     file_path = os.path.join(path, file_name)
                     if os.path.isfile(file_path):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
-                        tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = execute_tasks(self._upload_file_from_path, tasks)
-            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
-            return FileMetadataList(tasks_summary.results)
-        raise ValueError(f"The path '{path}' does not exist")
+                        tasks.append(AsyncSDKTask(self._upload_file_from_path, file_metadata, file_path, overwrite))
 
-    def _upload_file_from_path(self, file: FileMetadataWrite, file_path: str | Path, overwrite: bool) -> FileMetadata:
+            tasks_summary = await execute_async_tasks(tasks)
+            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda task: task.args[0].name)
+            # TODO: Why not tasks_summary.joined_results()?
+            return FileMetadataList(tasks_summary.results)
+        raise FileNotFoundError(path)
+
+    async def _upload_file_from_path(
+        self, file: FileMetadataWrite, file_path: str | Path, overwrite: bool
+    ) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
                 # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
                 fh = fh.read()
-            file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
+            file_metadata = await self.upload_bytes(fh, overwrite=overwrite, **file.dump(camel_case=False))
         return file_metadata
 
-    def upload_content_bytes(
+    async def upload_content_bytes(
         self,
         content: str | bytes | BinaryIO,
         external_id: str | None = None,
@@ -618,7 +625,7 @@ class FilesAPI(APIClient):
             content = content.encode("utf-8")
 
         try:
-            res = self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
+            res = await self._post(url_path=f"{self._RESOURCE_PATH}/uploadlink", json={"items": identifiers.as_dicts()})
         except CogniteAPIError as e:
             if e.code == 403:
                 raise CogniteAuthorizationError(
@@ -651,7 +658,7 @@ class FilesAPI(APIClient):
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
         return file_metadata
 
-    def upload_bytes(
+    async def upload_bytes(
         self,
         content: str | bytes | BinaryIO,
         name: str,
@@ -722,7 +729,7 @@ class FilesAPI(APIClient):
             security_categories=security_categories,
         )
         try:
-            res = self._post(
+            res = await self._post(
                 url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
             )
         except CogniteAPIError as e:
@@ -740,7 +747,7 @@ class FilesAPI(APIClient):
 
         return self._upload_bytes(content, res.json())
 
-    def multipart_upload_session(
+    async def multipart_upload_session(
         self,
         name: str,
         parts: int,
@@ -815,7 +822,7 @@ class FilesAPI(APIClient):
             security_categories=security_categories,
         )
         try:
-            res = self._post(
+            res = await self._post(
                 url_path=self._RESOURCE_PATH + "/initmultipartupload",
                 json=file_metadata.dump(camel_case=True),
                 params={"overwrite": overwrite, "parts": parts},
@@ -841,7 +848,7 @@ class FilesAPI(APIClient):
             FileMetadata._load(returned_file_metadata), upload_urls, upload_id, self._cognite_client
         )
 
-    def multipart_upload_content_session(
+    async def multipart_upload_content_session(
         self,
         parts: int,
         external_id: str | None = None,
@@ -878,7 +885,7 @@ class FilesAPI(APIClient):
         """
         identifiers = IdentifierSequence.load(external_ids=external_id, instance_ids=instance_id).as_singleton()
         try:
-            res = self._post(
+            res = await self._post(
                 url_path=f"{self._RESOURCE_PATH}/multiuploadlink",
                 json={"items": identifiers.as_dicts()},
                 params={"parts": parts},
@@ -924,18 +931,18 @@ class FilesAPI(APIClient):
         if not upload_response.is_success:
             raise CogniteFileUploadError(message=upload_response.text, code=upload_response.status_code)
 
-    def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
+    async def _complete_multipart_upload(self, session: FileMultipartUploadSession) -> None:
         """Complete a multipart upload. Once this returns the file can be downloaded.
 
         Args:
             session (FileMultipartUploadSession): Multipart upload session returned from
         """
-        self._post(
+        await self._post(
             self._RESOURCE_PATH + "/completemultipartupload",
             json={"id": session.file_metadata.id, "uploadId": session._upload_id},
         )
 
-    def retrieve_download_urls(
+    async def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -955,16 +962,16 @@ class FilesAPI(APIClient):
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
-        batch_size = 100
-        id_batches = [seq.as_dicts() for seq in identifiers.chunked(batch_size)]
         query_params = {}
         if extended_expiration:
             query_params["extendedExpiration"] = True
         tasks = [
-            {"url_path": "/files/downloadlink", "json": {"items": id_batch}, "params": query_params}
-            for id_batch in id_batches
+            AsyncSDKTask(
+                self._post, url_path="/files/downloadlink", json={"items": batch.as_dicts()}, params=query_params
+            )
+            for batch in identifiers.chunked(100)
         ]
-        tasks_summary = execute_tasks(self._post, tasks)
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unpack_items)
         return {
@@ -1000,7 +1007,7 @@ class FilesAPI(APIClient):
 
         return unique_created
 
-    def download(
+    async def download(
         self,
         directory: str | Path,
         id: int | Sequence[int] | None = None,
@@ -1050,7 +1057,7 @@ class FilesAPI(APIClient):
             raise NotADirectoryError(str(directory))
 
         all_identifiers = identifiers.as_dicts()
-        id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
+        id_to_metadata = await self._get_id_to_metadata_map(all_identifiers)
 
         all_ids, filepaths, directories = self._get_ids_filepaths_directories(
             directory, id_to_metadata, keep_directory_structure
@@ -1063,7 +1070,7 @@ class FilesAPI(APIClient):
             filepaths_str = self._create_unique_file_names(filepaths)
             filepaths = [Path(file_path) for file_path in filepaths_str]
 
-        self._download_files_to_directory(
+        await self._download_files_to_directory(
             directory=directory, all_ids=all_ids, id_to_metadata=id_to_metadata, filepaths=filepaths
         )
 
@@ -1101,13 +1108,13 @@ class FilesAPI(APIClient):
                 stacklevel=2,
             )
 
-    def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[int, FileMetadata]:
+    async def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
         instance_ids = [id["instanceId"] for id in all_ids if "instanceId" in id]
-        return self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)._id_to_item
+        return await self.retrieve_multiple(ids=ids, external_ids=external_ids, instance_ids=instance_ids)._id_to_item
 
-    def _download_files_to_directory(
+    async def _download_files_to_directory(
         self,
         directory: Path,
         all_ids: Sequence[int],
@@ -1116,17 +1123,20 @@ class FilesAPI(APIClient):
         headers: dict | None = None,
     ) -> None:
         self._warn_on_duplicate_filenames(filepaths)
-        tasks = [(directory, {"id": id}, filepath, headers) for id, filepath in zip(all_ids, filepaths)]
-        tasks_summary = execute_tasks(self._process_file_download, tasks)
+        tasks = [
+            AsyncSDKTask(self._process_file_download, directory, {"id": id_}, filepath, headers)
+            for id_, filepath in zip(all_ids, filepaths)
+        ]
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[task[1]["id"]]
         )
 
-    def _get_download_link(self, identifier: dict[str, int | str]) -> str:
-        (item,) = self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"]
-        return item["downloadUrl"]
+    async def _get_download_link(self, identifier: dict[str, int | str]) -> str:
+        response = await self._post(url_path="/files/downloadlink", json={"items": [identifier]})
+        return unpack_items(response)[0]["downloadUrl"]
 
-    def _process_file_download(
+    async def _process_file_download(
         self,
         directory: Path,
         identifier: dict[str, int | str],
@@ -1137,8 +1147,8 @@ class FilesAPI(APIClient):
         file_is_in_download_directory = directory.resolve() in file_path_absolute.parents
         if not file_is_in_download_directory:
             raise RuntimeError(f"Resolved file path '{file_path_absolute}' is not inside download directory")
-        download_link = self._get_download_link(identifier)
-        self._download_file_to_path(download_link, file_path_absolute)
+        download_link = await self._get_download_link(identifier)
+        await self._download_file_to_path(download_link, file_path_absolute)
 
     async def _download_file_to_path(self, download_link: str, path: Path) -> None:
         from cognite.client import global_config
@@ -1151,7 +1161,7 @@ class FilesAPI(APIClient):
                 async for chunk in response.aiter_bytes(chunk_size=global_config.file_download_chunk_size):
                     file.write(chunk)
 
-    def download_to_path(
+    async def download_to_path(
         self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> None:
         """Download a file to a specific target.
@@ -1175,10 +1185,10 @@ class FilesAPI(APIClient):
             raise NotADirectoryError(path.parent)
 
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        download_link = self._get_download_link(identifier)
-        self._download_file_to_path(download_link, path)
+        download_link = await self._get_download_link(identifier)
+        await self._download_file_to_path(download_link, path)
 
-    def download_bytes(
+    async def download_bytes(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> bytes:
         """Download a file as bytes.
@@ -1200,15 +1210,15 @@ class FilesAPI(APIClient):
             bytes: The file in binary format
         """
         identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        download_link = self._get_download_link(identifier)
-        return self._download_file(download_link)
+        download_link = await self._get_download_link(identifier)
+        return await self._download_file(download_link)
 
-    def _download_file(self, download_link: str) -> bytes:
-        return self._request(
+    async def _download_file(self, download_link: str) -> bytes:
+        return await self._request(
             "GET", full_url=download_link, headers={"accept": "*/*"}, timeout=self._config.file_transfer_timeout
         ).content
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         mime_type: str | None = None,
@@ -1316,7 +1326,7 @@ class FilesAPI(APIClient):
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
 
-        return self._list(
+        return await self._list(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             method="POST",

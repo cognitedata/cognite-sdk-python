@@ -51,7 +51,7 @@ class _GroupWriteAdapter(GroupWrite):
 class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
-    def list(self, all: bool = False) -> GroupList:
+    async def list(self, all: bool = False) -> GroupList:
         """`List groups. <https://developer.cognite.com/api#tag/Groups/operation/getGroups>`_
 
         Args:
@@ -72,18 +72,18 @@ class GroupsAPI(APIClient):
 
                 >>> all_groups = client.iam.groups.list(all=True)
         """
-        res = self._get(self._RESOURCE_PATH, params={"all": all})
+        res = await self._get(self._RESOURCE_PATH, params={"all": all})
         # Dev.note: We don't use public load method here (it is final) and we need to pass a magic keyword arg. to
         # not raise whenever new Acls/actions/scopes are added to the API. So we specifically allow the 'unknown':
         return GroupList._load(res.json()["items"], cognite_client=self._cognite_client, allow_unknown=True)
 
     @overload
-    def create(self, group: Group | GroupWrite) -> Group: ...
+    async def create(self, group: Group | GroupWrite) -> Group: ...
 
     @overload
-    def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
+    async def create(self, group: Sequence[Group] | Sequence[GroupWrite]) -> GroupList: ...
 
-    def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
+    async def create(self, group: Group | GroupWrite | Sequence[Group] | Sequence[GroupWrite]) -> Group | GroupList:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
 
         Args:
@@ -145,11 +145,11 @@ class GroupsAPI(APIClient):
                 >>> group = GroupWrite(name="Another group", capabilities=acls)
         """
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=_GroupListAdapter, resource_cls=_GroupAdapter, items=group, input_resource_cls=_GroupWriteAdapter
         )
 
-    def delete(self, id: int | Sequence[int]) -> None:
+    async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/deleteGroups>`_
 
         Args:
@@ -163,4 +163,4 @@ class GroupsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.iam.groups.delete(1)
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import gzip
 import logging
@@ -12,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 import httpx
 from typing_extensions import Self
 
-from cognite.client._http_client import HTTPClientWithRetry, HTTPClientWithRetryConfig
+from cognite.client._http_client import AsyncHTTPClientWithRetry, AsyncHTTPClientWithRetryConfig
 from cognite.client.config import global_config
 from cognite.client.exceptions import (
     CogniteAPIError,
@@ -47,8 +48,8 @@ class FailedRequestHandler:
     stream: bool
 
     def __post_init__(self) -> None:
-        self.headers = BasicAPIClient._sanitize_headers(self.headers)
-        self.response_headers = BasicAPIClient._sanitize_headers(self.response_headers)
+        self.headers = BasicAsyncAPIClient._sanitize_headers(self.headers)
+        self.response_headers = BasicAsyncAPIClient._sanitize_headers(self.response_headers)
 
     @classmethod
     async def from_status_error(cls, err: httpx.HTTPStatusError, stream: bool) -> Self:
@@ -145,6 +146,12 @@ class FailedRequestHandler:
             project=project,
         ) from None
 
+    @staticmethod
+    def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+        if isinstance(err, CogniteAPIError) and err.code >= 500:
+            return "unknown"
+        return "failed"
+
 
 @functools.cache
 def get_user_agent() -> str:
@@ -166,13 +173,13 @@ def get_user_agent() -> str:
     return f"{USER_AGENT} {sdk_version} {python_version} {operating_system}"
 
 
-class BasicAPIClient:
+class BasicAsyncAPIClient:
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
-        self._init_http_clients()
+        self._init_async_http_clients()
 
         self._CREATE_LIMIT = 1000
         self._LIST_LIMIT = 1000
@@ -180,20 +187,20 @@ class BasicAPIClient:
         self._DELETE_LIMIT = 1000
         self._UPDATE_LIMIT = 1000
 
-    def _init_http_clients(self) -> None:
-        self._http_client = HTTPClientWithRetry(
-            config=HTTPClientWithRetryConfig(status_codes_to_retry={429}, max_retries_read=0),
+    def _init_async_http_clients(self) -> None:
+        self._http_client = AsyncHTTPClientWithRetry(
+            config=AsyncHTTPClientWithRetryConfig(status_codes_to_retry={429}, max_retries_read=0),
             refresh_auth_header=self._refresh_auth_header,
         )
-        self._http_client_with_retry = HTTPClientWithRetry(
-            config=HTTPClientWithRetryConfig(),
+        self._http_client_with_retry = AsyncHTTPClientWithRetry(
+            config=AsyncHTTPClientWithRetryConfig(),
             refresh_auth_header=self._refresh_auth_header,
         )
 
-    def _select_http_client(self, is_retryable: bool) -> HTTPClientWithRetry:
+    def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
-    def _request(
+    async def _request(
         self,
         method: Literal["GET", "PUT", "HEAD"],
         /,
@@ -203,11 +210,13 @@ class BasicAPIClient:
         timeout: float | None = None,
     ) -> httpx.Response:
         """Make a request to something that is outside Cognite Data Fusion"""
-        client = self._select_http_client(method in {"GET", "PUT", "HEAD"})
+        client = self._select_async_http_client(method in {"GET", "PUT", "HEAD"})
         try:
-            res = client(method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout)
+            res = await client(
+                method, full_url, content=content, headers=headers, timeout=timeout or self._config.timeout
+            )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res)
         return res
@@ -241,34 +250,36 @@ class BasicAPIClient:
                 yield resp
 
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err, stream=True)
+            await self._handle_status_error(err, stream=True)
 
-    def _get(
+    async def _get(
         self,
         url_path: str,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
         api_subversion: str | None = None,
+        semaphore: asyncio.Semaphore | None = None,
     ) -> httpx.Response:
         _, full_url = resolve_url("GET", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         try:
-            res = self._http_client_with_retry(
+            res = await self._http_client_with_retry(
                 "GET",
                 full_url,
                 params=params,
                 headers=full_headers,
                 follow_redirects=follow_redirects,
                 timeout=self._config.timeout,
+                semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res)
         return res
 
-    def _post(
+    async def _post(
         self,
         url_path: str,
         json: dict[str, Any] | None = None,
@@ -276,15 +287,16 @@ class BasicAPIClient:
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
         api_subversion: str | None = None,
+        semaphore: asyncio.Semaphore | None = None,
     ) -> httpx.Response:
         is_retryable, full_url = resolve_url("POST", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
         content = self._handle_json_dump(json, full_headers)
 
-        http_client = self._select_http_client(is_retryable)
+        http_client = self._select_async_http_client(is_retryable)
         try:
-            res = http_client(
+            res = await http_client(
                 "POST",
                 full_url,
                 content=content,
@@ -292,14 +304,15 @@ class BasicAPIClient:
                 headers=full_headers,
                 follow_redirects=follow_redirects,
                 timeout=self._config.timeout,
+                semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res, payload=json)
         return res
 
-    def _put(
+    async def _put(
         self,
         url_path: str,
         content: str | bytes | Iterable[bytes] | None = None,
@@ -309,6 +322,7 @@ class BasicAPIClient:
         follow_redirects: bool = False,
         api_subversion: str | None = None,
         timeout: float | None = None,
+        semaphore: asyncio.BoundedSemaphore | None = None,
     ) -> httpx.Response:
         _, full_url = resolve_url("PUT", url_path, self._api_version, self._config)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
@@ -316,7 +330,7 @@ class BasicAPIClient:
             content = self._handle_json_dump(json, full_headers)
 
         try:
-            res = self._http_client_with_retry(
+            res = await self._http_client_with_retry(
                 "PUT",
                 full_url,
                 content=content,
@@ -324,9 +338,10 @@ class BasicAPIClient:
                 headers=full_headers,
                 follow_redirects=follow_redirects,
                 timeout=timeout or self._config.timeout,
+                semaphore=semaphore,
             )
         except httpx.HTTPStatusError as err:
-            self._handle_status_error(err)
+            await self._handle_status_error(err)
 
         self._log_successful_request(res, payload=json)
         return res
@@ -397,7 +412,7 @@ class BasicAPIClient:
     @staticmethod
     def _sanitize_headers(headers: httpx.Headers | dict[str, str]) -> dict[str, str]:
         sanitized = dict(headers)
-        for k, v in sanitized.items():
+        for k in sanitized.keys():
             if k.lower() in {"authorization", "proxy-authorization"}:
                 sanitized[k] = "***"
         return sanitized
