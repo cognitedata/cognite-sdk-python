@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
 from cognite.client._api_client import APIClient
@@ -13,6 +13,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -22,17 +23,17 @@ class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
 
     @overload
-    def __call__(
+    async def __call__(
         self, model_id: int, chunk_size: None = None, published: bool = False, limit: int | None = None
-    ) -> Iterator[ThreeDModelRevision]: ...
+    ) -> AsyncIterator[ThreeDModelRevision]: ...
     @overload
-    def __call__(
+    async def __call__(
         self, model_id: int, chunk_size: int, published: bool = False, limit: int | None = None
-    ) -> Iterator[ThreeDModelRevisionList]: ...
+    ) -> AsyncIterator[ThreeDModelRevisionList]: ...
 
-    def __call__(
+    async def __call__(
         self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
-    ) -> Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]:
+    ) -> AsyncIterator[ThreeDModelRevision] | AsyncIterator[ThreeDModelRevisionList]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
@@ -44,19 +45,19 @@ class ThreeDRevisionsAPI(APIClient):
             limit (int | None): Maximum number of 3d model revisions to return. Defaults to return all items.
 
         Returns:
-            Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
+            AsyncIterator[ThreeDModelRevision] | AsyncIterator[ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
             chunk_size=chunk_size,
-            filter=drop_none_values({"published": published}),
+            filter={"published": published},
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
+    async def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
         """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
 
         Args:
@@ -74,23 +75,23 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.retrieve(model_id=1, id=1)
         """
-        return self._retrieve(
+        return await self._retrieve(
             cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifier=InternalId(id),
         )
 
     @overload
-    def create(
+    async def create(
         self, model_id: int, revision: ThreeDModelRevision | ThreeDModelRevisionWrite
     ) -> ThreeDModelRevision: ...
 
     @overload
-    def create(
+    async def create(
         self, model_id: int, revision: Sequence[ThreeDModelRevision] | Sequence[ThreeDModelRevisionWrite]
     ) -> ThreeDModelRevisionList: ...
 
-    def create(
+    async def create(
         self,
         model_id: int,
         revision: ThreeDModelRevision
@@ -117,7 +118,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_revision = ThreeDModelRevisionWrite(file_id=1)
                 >>> res = client.three_d.revisions.create(model_id=1, revision=my_revision)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
@@ -125,7 +126,7 @@ class ThreeDRevisionsAPI(APIClient):
             input_resource_cls=ThreeDModelRevisionWrite,
         )
 
-    def list(
+    async def list(
         self, model_id: int, published: bool = False, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDModelRevisionList:
         """`List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
@@ -146,16 +147,16 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.list(model_id=1, published=True, limit=100)
         """
-        return self._list(
+        return await self._list(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             method="GET",
-            filter=drop_none_values({"published": published}),
+            filter={"published": published},
             limit=limit,
         )
 
-    def update(
+    async def update(
         self,
         model_id: int,
         item: ThreeDModelRevision
@@ -189,7 +190,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> my_update = ThreeDModelRevisionUpdate(id=1).published.set(False).metadata.add({"key": "value"})
                 >>> res = client.three_d.revisions.update(model_id=1, item=my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             update_cls=ThreeDModelRevisionUpdate,
@@ -198,7 +199,7 @@ class ThreeDRevisionsAPI(APIClient):
             mode=mode,
         )
 
-    def delete(self, model_id: int, id: int | Sequence[int]) -> None:
+    async def delete(self, model_id: int, id: int | Sequence[int]) -> None:
         """`Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
 
         Args:
@@ -207,19 +208,19 @@ class ThreeDRevisionsAPI(APIClient):
 
         Example:
 
-            Delete 3d model revision by id::
+            Delete 3d model revision by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.delete(model_id=1, id=1)
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
             identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 
-    def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
+    async def update_thumbnail(self, model_id: int, revision_id: int, file_id: int) -> None:
         """`Update a revision thumbnail. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/updateThumbnail>`_
 
         Args:
@@ -236,10 +237,9 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.update_thumbnail(model_id=1, revision_id=1, file_id=1)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/thumbnail", model_id, revision_id)
-        body = {"fileId": file_id}
-        self._post(resource_path, json=body)
+        await self._post(resource_path, json={"fileId": file_id})
 
-    def list_nodes(
+    async def list_nodes(
         self,
         model_id: int,
         revision_id: int,
@@ -268,14 +268,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Example:
 
-            List nodes from the hierarchy in the 3d model::
+            List nodes from the hierarchy in the 3d model:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.list_nodes(model_id=1, revision_id=1, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,
@@ -286,7 +286,7 @@ class ThreeDRevisionsAPI(APIClient):
             other_params={"sortByNodeId": sort_by_node_id},
         )
 
-    def filter_nodes(
+    async def filter_nodes(
         self,
         model_id: int,
         revision_id: int,
@@ -315,7 +315,7 @@ class ThreeDRevisionsAPI(APIClient):
                 >>> res = client.three_d.revisions.filter_nodes(model_id=1, revision_id=1, properties={ "PDMS": { "Area": ["AB76", "AB77", "AB78"], "Type": ["PIPE", "BEND", "PIPESUP"] } }, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,
@@ -325,7 +325,7 @@ class ThreeDRevisionsAPI(APIClient):
             partitions=partitions,
         )
 
-    def list_ancestor_nodes(
+    async def list_ancestor_nodes(
         self, model_id: int, revision_id: int, node_id: int | None = None, limit: int | None = DEFAULT_LIMIT_READ
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
@@ -341,14 +341,14 @@ class ThreeDRevisionsAPI(APIClient):
 
         Example:
 
-            Get a list of ancestor nodes of a given node::
+            Get a list of ancestor nodes of a given node:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> res = client.three_d.revisions.list_ancestor_nodes(model_id=1, revision_id=1, node_id=5, limit=10)
         """
         resource_path = interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/nodes", model_id, revision_id)
-        return self._list(
+        return await self._list(
             list_cls=ThreeDNodeList,
             resource_cls=ThreeDNode,
             resource_path=resource_path,

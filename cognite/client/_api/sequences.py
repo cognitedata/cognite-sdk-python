@@ -39,8 +39,6 @@ from cognite.client.utils._validation import (
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    import pandas
-
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
@@ -64,7 +62,7 @@ class SequencesAPI(APIClient):
         self.data = self.rows
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         name: str | None = None,
@@ -84,7 +82,7 @@ class SequencesAPI(APIClient):
     ) -> Iterator[Sequence]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         name: str | None = None,
@@ -103,7 +101,7 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[SequenceList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -162,7 +160,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -174,7 +172,7 @@ class SequencesAPI(APIClient):
             partitions=partitions,
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
@@ -197,9 +195,9 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve()
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
+        return await self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -228,11 +226,11 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
@@ -252,9 +250,9 @@ class SequencesAPI(APIClient):
         warnings.warn(
             "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate(filter=filter, cls=CountAggregate)
 
-    def aggregate_count(
+    async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
@@ -285,14 +283,14 @@ class SequencesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             filter=filter,
             advanced_filter=advanced_filter,
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -332,7 +330,7 @@ class SequencesAPI(APIClient):
                 ...     aggregate_filter=not_america)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -341,7 +339,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -369,7 +367,7 @@ class SequencesAPI(APIClient):
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -378,7 +376,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -428,7 +426,7 @@ class SequencesAPI(APIClient):
         """
         self._validate_filter(advanced_filter)
         if property == ["metadata"] or property is SequenceProperty.metadata:
-            return self._advanced_aggregate(
+            return await self._advanced_aggregate(
                 aggregate="uniqueProperties",
                 path=property,
                 filter=filter,
@@ -436,7 +434,7 @@ class SequencesAPI(APIClient):
                 aggregate_filter=aggregate_filter,
                 api_subversion="beta",
             )
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -445,7 +443,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -473,7 +471,7 @@ class SequencesAPI(APIClient):
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -483,12 +481,12 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
+    async def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
+    async def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
-    def create(
+    async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
         """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
@@ -519,11 +517,11 @@ class SequencesAPI(APIClient):
         """
         assert_type(sequence, "sequences", [typing.Sequence, SequenceCore])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -544,27 +542,27 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SequenceList: ...
 
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -644,7 +642,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.update(my_update)
         """
         cdf_item_by_id = self._get_cdf_item_by_id(item, "updating")
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=SequenceList,
             resource_cls=Sequence,
             update_cls=SequenceUpdate,
@@ -654,14 +652,14 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> SequenceList: ...
 
     @overload
-    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
+    async def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
-    def upsert(
+    async def upsert(
         self,
         item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
         mode: Literal["patch", "replace"] = "patch",
@@ -697,7 +695,7 @@ class SequencesAPI(APIClient):
         """
 
         cdf_item_by_id = self._get_cdf_item_by_id(item, "upserting")
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=SequenceList,
             resource_cls=Sequence,
@@ -793,7 +791,7 @@ class SequencesAPI(APIClient):
             update_obj["update"]["columns"]["modify"] = modify_list
         return update_obj
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -822,14 +820,14 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.sequences.search(name="some name")
         """
-        return self._search(
+        return await self._search(
             list_cls=SequenceList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
         )
 
-    def filter(
+    async def filter(
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
@@ -882,7 +880,7 @@ class SequencesAPI(APIClient):
         )
         self._validate_filter(filter)
 
-        return self._list(
+        return await self._list(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -895,7 +893,7 @@ class SequencesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         external_id_prefix: str | None = None,
@@ -1005,7 +1003,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",

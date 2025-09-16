@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import Any, Literal, TypeAlias, overload
 
 from cognite.client._api_client import APIClient
@@ -38,7 +38,7 @@ class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         start_time: dict[str, Any] | TimestampRange | None = None,
@@ -61,10 +61,10 @@ class EventsAPI(APIClient):
         limit: int | None = None,
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[Event]: ...
+    ) -> AsyncIterator[Event]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         start_time: dict[str, Any] | TimestampRange | None = None,
@@ -87,9 +87,9 @@ class EventsAPI(APIClient):
         limit: int | None = None,
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[EventList]: ...
+    ) -> AsyncIterator[EventList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         start_time: dict[str, Any] | TimestampRange | None = None,
@@ -112,7 +112,7 @@ class EventsAPI(APIClient):
         limit: int | None = None,
         partitions: int | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
-    ) -> Iterator[Event] | Iterator[EventList]:
+    ) -> AsyncIterator[Event] | AsyncIterator[EventList]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -141,7 +141,7 @@ class EventsAPI(APIClient):
             advanced_filter (Filter | dict[str, Any] | None): Advanced filter query using the filter DSL (Domain Specific Language). It allows defining complex filtering expressions that combine simple operations, such as equals, prefix, exists, etc., using boolean operators and, or, and not.
 
         Returns:
-            Iterator[Event] | Iterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
+            AsyncIterator[Event] | AsyncIterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -166,7 +166,7 @@ class EventsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, EventSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
@@ -178,7 +178,7 @@ class EventsAPI(APIClient):
             partitions=partitions,
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
 
         Args:
@@ -201,9 +201,9 @@ class EventsAPI(APIClient):
                 >>> res = client.events.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
+        return await self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -232,11 +232,11 @@ class EventsAPI(APIClient):
                 >>> res = client.events.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: EventFilter | dict[str, Any] | None = None) -> list[AggregateResult]:
+    async def aggregate(self, filter: EventFilter | dict[str, Any] | None = None) -> list[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
@@ -257,9 +257,9 @@ class EventsAPI(APIClient):
             "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
             DeprecationWarning,
         )
-        return self._aggregate(filter=filter, cls=AggregateResult)
+        return await self._aggregate(filter=filter, cls=AggregateResult)
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         filter: EventFilter | dict[str, Any] | None = None,
         property: EventPropertyLike | None = None,
@@ -310,7 +310,7 @@ class EventsAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -318,7 +318,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_count(
+    async def aggregate_count(
         self,
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -351,14 +351,14 @@ class EventsAPI(APIClient):
                 >>> workorder_count = client.events.aggregate_count(advanced_filter=is_workorder)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             properties=property,
             filter=filter,
             advanced_filter=advanced_filter,
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -394,7 +394,7 @@ class EventsAPI(APIClient):
         """
         self._validate_filter(advanced_filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -402,7 +402,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -431,7 +431,7 @@ class EventsAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -439,7 +439,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: EventPropertyLike,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -469,7 +469,7 @@ class EventsAPI(APIClient):
                 >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -478,12 +478,12 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList: ...
+    async def create(self, event: Sequence[Event] | Sequence[EventWrite]) -> EventList: ...
 
     @overload
-    def create(self, event: Event | EventWrite) -> Event: ...
+    async def create(self, event: Event | EventWrite) -> Event: ...
 
-    def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
+    async def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
 
         Args:
@@ -502,9 +502,11 @@ class EventsAPI(APIClient):
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = client.events.create(events)
         """
-        return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite)
+        return await self._create_multiple(
+            list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite
+        )
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -525,27 +527,27 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.events.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[Event | EventWrite | EventUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EventList: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Event | EventWrite | EventUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event: ...
 
-    def update(
+    async def update(
         self,
         item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -575,11 +577,11 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode
         )
 
-    def search(
+    async def search(
         self,
         description: str | None = None,
         filter: EventFilter | dict[str, Any] | None = None,
@@ -604,15 +606,19 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.events.search(description="some description")
         """
-        return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
+        return await self._search(
+            list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit
+        )
 
     @overload
-    def upsert(self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch") -> EventList: ...
+    async def upsert(
+        self, item: Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
+    ) -> EventList: ...
 
     @overload
-    def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
+    async def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
 
-    def upsert(
+    async def upsert(
         self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Event | EventList:
         """Upsert events, i.e., update if it exists, and create if it does not exist.
@@ -640,7 +646,7 @@ class EventsAPI(APIClient):
                 >>> new_event = EventWrite(external_id="new_event", description="New event")
                 >>> res = client.events.upsert([existing_event, new_event], mode="replace")
         """
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=EventList,
             resource_cls=Event,
@@ -649,7 +655,7 @@ class EventsAPI(APIClient):
             mode=mode,
         )
 
-    def filter(
+    async def filter(
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
@@ -702,7 +708,7 @@ class EventsAPI(APIClient):
         )
         self._validate_filter(filter)
 
-        return self._list(
+        return await self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
@@ -714,7 +720,7 @@ class EventsAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def list(
+    async def list(
         self,
         start_time: dict[str, Any] | TimestampRange | None = None,
         end_time: dict[str, Any] | EndTimeFilter | None = None,
@@ -842,7 +848,7 @@ class EventsAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, EventSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",

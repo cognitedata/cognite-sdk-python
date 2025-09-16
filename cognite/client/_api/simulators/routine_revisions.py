@@ -34,7 +34,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         self._RETRIEVE_LIMIT = 20
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         routine_external_ids: SequenceNotStr[str] | None = None,
@@ -49,7 +49,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
     ) -> Iterator[SimulatorRoutineRevisionList]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         routine_external_ids: SequenceNotStr[str] | None = None,
@@ -63,7 +63,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         sort: PropertySort | None = None,
     ) -> Iterator[SimulatorRoutineRevision]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         routine_external_ids: SequenceNotStr[str] | None = None,
@@ -104,7 +104,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             simulator_external_ids=simulator_external_ids,
             created_time=created_time,
         )
-        return self._list_generator(
+        return await self._list_generator(
             method="POST",
             limit=limit,
             url_path=self._RESOURCE_PATH + "/list",
@@ -117,18 +117,18 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...
+    async def retrieve(self, *, ids: int) -> SimulatorRoutineRevision | None: ...
 
     @overload
-    def retrieve(self, *, external_ids: str) -> SimulatorRoutineRevision | None: ...
+    async def retrieve(self, *, external_ids: str) -> SimulatorRoutineRevision | None: ...
 
     @overload
-    def retrieve(self, *, ids: Sequence[int]) -> SimulatorRoutineRevisionList: ...
+    async def retrieve(self, *, ids: Sequence[int]) -> SimulatorRoutineRevisionList: ...
 
     @overload
-    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorRoutineRevisionList: ...
+    async def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorRoutineRevisionList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         *,
         ids: int | Sequence[int] | None = None,
@@ -156,7 +156,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         """
         self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             resource_cls=SimulatorRoutineRevision,
             list_cls=SimulatorRoutineRevisionList,
             identifiers=identifiers,
@@ -164,12 +164,12 @@ class SimulatorRoutineRevisionsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
+    async def create(self, items: Sequence[SimulatorRoutineRevisionWrite]) -> SimulatorRoutineRevisionList: ...
 
     @overload
-    def create(self, items: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
+    async def create(self, items: SimulatorRoutineRevisionWrite) -> SimulatorRoutineRevision: ...
 
-    def create(
+    async def create(
         self,
         items: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite],
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList:
@@ -291,7 +291,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             [SimulatorRoutineRevisionWrite, Sequence],
         )
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulatorRoutineRevisionList,
             resource_cls=SimulatorRoutineRevision,
             items=items,
@@ -299,7 +299,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             resource_path=self._RESOURCE_PATH,
         )
 
-    def list(
+    async def list(
         self,
         routine_external_ids: SequenceNotStr[str] | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
@@ -353,7 +353,7 @@ class SimulatorRoutineRevisionsAPI(APIClient):
             simulator_external_ids=simulator_external_ids,
             created_time=created_time,
         )
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             url_path=self._RESOURCE_PATH + "/list",
