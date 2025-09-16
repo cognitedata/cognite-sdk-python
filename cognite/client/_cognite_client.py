@@ -39,16 +39,19 @@ if TYPE_CHECKING:
     import httpx
 
 
-class CogniteClient:
-    """Main entrypoint into Cognite Python SDK.
+class _BaseCogniteClient:
+    _API_VERSION = "v1"
 
-    All services are made available through this object. See examples below.
+
+class AsyncCogniteClient(_BaseCogniteClient):
+    """Main entrypoint into the Cognite Python SDK.
+
+    All Cognite Data Fusion APIs are accessible through this asynchronous client.
+    For the synchronous client, see :class:`~cognite.client._cognite_client.CogniteClient`.
 
     Args:
         config (ClientConfig | None): The configuration for this client.
     """
-
-    _API_VERSION = "v1"
 
     def __init__(self, config: ClientConfig | None = None) -> None:
         if (client_config := config or global_config.default_client_config) is None:
@@ -262,3 +265,14 @@ class CogniteClient:
         """
         loaded = load_resource_to_dict(config)
         return cls(config=ClientConfig.load(loaded))
+
+
+class CogniteClient(_BaseCogniteClient):
+    """Main entrypoint into the Cognite Python SDK.
+
+    All Cognite Data Fusion APIs are accessible through this synchronous client.
+    For the asynchronous client, see :class:`~cognite.client._cognite_client.AsyncCogniteClient`.
+
+    Args:
+        config (ClientConfig | None): The configuration for this client.
+    """

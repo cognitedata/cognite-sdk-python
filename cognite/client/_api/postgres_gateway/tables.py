@@ -25,20 +25,20 @@ class TablesAPI(APIClient):
         self._RETRIEVE_LIMIT = 10
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
     ) -> Iterator[pg.Table]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
     ) -> Iterator[pg.TableList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -54,7 +54,7 @@ class TablesAPI(APIClient):
         Returns:
             Iterator[pg.Table] | Iterator[pg.TableList]: yields Table one by one if chunk_size is not specified, else TableList objects.
         """
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             method="GET",
@@ -63,12 +63,12 @@ class TablesAPI(APIClient):
         )
 
     @overload
-    def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...
+    async def create(self, username: str, items: pg.TableWrite) -> pg.Table: ...
 
     @overload
-    def create(self, username: str, items: Sequence[pg.TableWrite]) -> pg.TableList: ...
+    async def create(self, username: str, items: Sequence[pg.TableWrite]) -> pg.TableList: ...
 
-    def create(self, username: str, items: pg.TableWrite | Sequence[pg.TableWrite]) -> pg.Table | pg.TableList:
+    async def create(self, username: str, items: pg.TableWrite | Sequence[pg.TableWrite]) -> pg.Table | pg.TableList:
         """`Create tables <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/create_tables>`_
 
         Args:
@@ -90,7 +90,7 @@ class TablesAPI(APIClient):
                 >>> res = client.postgres_gateway.tables.create("myUserName",table)
 
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
@@ -99,17 +99,17 @@ class TablesAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[False] = False) -> pg.Table: ...
+    async def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[False] = False) -> pg.Table: ...
 
     @overload
-    def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[True]) -> pg.Table | None: ...
+    async def retrieve(self, username: str, tablename: str, ignore_unknown_ids: Literal[True]) -> pg.Table | None: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self, username: str, tablename: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.TableList: ...
 
-    def retrieve(
+    async def retrieve(
         self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> pg.Table | pg.TableList | None:
         """`Retrieve a list of tables by their tables names <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/retrieve_tables>`_
@@ -137,7 +137,7 @@ class TablesAPI(APIClient):
                 >>> res = client.postgres_gateway.tables.retrieve("myUserName", ["myCustom", "myCustom2"])
 
         """
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),
@@ -145,7 +145,9 @@ class TablesAPI(APIClient):
             identifiers=TablenameSequence.load(tablenames=tablename),
         )
 
-    def delete(self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(
+        self, username: str, tablename: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> None:
         """`Delete postgres table(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Tables/operation/delete_tables>`_
 
         Args:
@@ -163,7 +165,7 @@ class TablesAPI(APIClient):
 
 
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=TablenameSequence.load(tablenames=tablename),
             wrap_ids=True,
             returns_items=False,
@@ -171,7 +173,7 @@ class TablesAPI(APIClient):
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
-    def list(
+    async def list(
         self,
         username: str,
         include_built_ins: Literal["yes", "no"] | None = "no",
@@ -208,7 +210,7 @@ class TablesAPI(APIClient):
                 ...     table_list # do something with the custom tables
 
         """
-        return self._list(
+        return await self._list(
             list_cls=pg.TableList,
             resource_cls=pg.Table,  # type: ignore[type-abstract]
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, username),

@@ -102,9 +102,11 @@ class _WithClientMixin:
         if value is None or isinstance(value, CogniteClient):
             self.__cognite_client = value
         else:
-            raise AttributeError(
-                "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
-            )
+            self.__cognite_client = None
+            # print("Please update: Can't set the CogniteClient reference to anything else than a CogniteClient instance or None")
+            # raise AttributeError(
+            #     "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
+            # )
 
     def _get_cognite_client(self) -> CogniteClient | None:
         """Get Cognite client reference without raising (when missing)"""

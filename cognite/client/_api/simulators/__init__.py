@@ -33,12 +33,12 @@ class SimulatorsAPI(APIClient):
         )
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
+    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Simulator]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorList]: ...
+    async def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[SimulatorList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
     ) -> Iterator[Simulator] | Iterator[SimulatorList]:
         """Iterate over simulators
@@ -52,7 +52,7 @@ class SimulatorsAPI(APIClient):
         Returns:
             Iterator[Simulator] | Iterator[SimulatorList]: yields Simulator one by one if chunk is not specified, else SimulatorList objects.
         """
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SimulatorList,
             resource_cls=Simulator,
             method="POST",
@@ -60,7 +60,7 @@ class SimulatorsAPI(APIClient):
             limit=limit,
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SimulatorList:
         """`List all simulators <https://developer.cognite.com/api#tag/Simulators/operation/filter_simulators_simulators_list_post>`_
 
         Args:
@@ -81,4 +81,4 @@ class SimulatorsAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)
+        return await self._list(method="POST", limit=limit, resource_cls=Simulator, list_cls=SimulatorList)

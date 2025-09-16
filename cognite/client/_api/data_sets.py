@@ -30,7 +30,7 @@ class DataSetsAPI(APIClient):
         self._CREATE_LIMIT = 10
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         metadata: dict[str, str] | None = None,
@@ -42,7 +42,7 @@ class DataSetsAPI(APIClient):
     ) -> Iterator[DataSet]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         metadata: dict[str, str] | None = None,
@@ -53,7 +53,7 @@ class DataSetsAPI(APIClient):
         limit: int | None = None,
     ) -> Iterator[DataSetList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         metadata: dict[str, str] | None = None,
@@ -86,17 +86,17 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=DataSetList, resource_cls=DataSet, method="POST", chunk_size=chunk_size, filter=filter, limit=limit
         )
 
     @overload
-    def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...
+    async def create(self, data_set: Sequence[DataSet] | Sequence[DataSetWrite]) -> DataSetList: ...
 
     @overload
-    def create(self, data_set: DataSet | DataSetWrite) -> DataSet: ...
+    async def create(self, data_set: DataSet | DataSetWrite) -> DataSet: ...
 
-    def create(
+    async def create(
         self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
     ) -> DataSet | DataSetList:
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
@@ -117,11 +117,11 @@ class DataSetsAPI(APIClient):
                 >>> data_sets = [DataSetWrite(name="1st level"), DataSetWrite(name="2nd level")]
                 >>> res = client.data_sets.create(data_sets)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=DataSetList, resource_cls=DataSet, items=data_set, input_resource_cls=DataSetWrite
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
@@ -144,9 +144,9 @@ class DataSetsAPI(APIClient):
                 >>> res = client.data_sets.retrieve(external_id="1")
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers)
+        return await self._retrieve_multiple(list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -175,11 +175,11 @@ class DataSetsAPI(APIClient):
                 >>> res = client.data_sets.retrieve_multiple(external_ids=["abc", "def"], ignore_unknown_ids=True)
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: DataSetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: DataSetFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
@@ -197,23 +197,23 @@ class DataSetsAPI(APIClient):
                 >>> aggregate_protected = client.data_sets.aggregate(filter={"write_protected": True})
         """
 
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate(filter=filter, cls=CountAggregate)
 
     @overload
-    def update(
+    async def update(
         self,
         item: DataSet | DataSetWrite | DataSetUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSet: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence[DataSet | DataSetWrite | DataSetUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSetList: ...
 
-    def update(
+    async def update(
         self,
         item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -243,11 +243,11 @@ class DataSetsAPI(APIClient):
                 >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
                 >>> res = client.data_sets.update(my_update)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item, mode=mode
         )
 
-    def list(
+    async def list(
         self,
         metadata: dict[str, str] | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
@@ -295,4 +295,4 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
+        return await self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)

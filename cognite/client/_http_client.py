@@ -63,7 +63,7 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
     )
 
 
-class HTTPClientWithRetryConfig:
+class AsyncHTTPClientWithRetryConfig:
     def __init__(
         self,
         status_codes_to_retry: set[int] | None = None,
@@ -121,7 +121,7 @@ class HTTPClientWithRetryConfig:
 
 
 class RetryTracker:
-    def __init__(self, config: HTTPClientWithRetryConfig) -> None:
+    def __init__(self, config: AsyncHTTPClientWithRetryConfig) -> None:
         self.config = config
         self.status = self.read = self.connect = 0
         self.last_failed_reason = ""
@@ -168,19 +168,19 @@ class RetryTracker:
         return self.should_retry_total and self.read <= self.config.max_retries_read
 
 
-class HTTPClientWithRetry:
+class AsyncHTTPClientWithRetry:
     def __init__(
         self,
-        config: HTTPClientWithRetryConfig,
+        config: AsyncHTTPClientWithRetryConfig,
         refresh_auth_header: Callable[[MutableMapping[str, str]], None],
-        httpx_client: httpx.AsyncClient | None = None,
+        httpx_async_client: httpx.AsyncClient | None = None,
     ) -> None:
         self.config = config
         self.refresh_auth_header = refresh_auth_header
-        self.httpx_client = httpx_client or get_global_async_httpx_client()
+        self.httpx_async_client = httpx_async_client or get_global_async_httpx_client()
         self._event_loop_executor = ConcurrencySettings._get_event_loop_executor()
 
-    def __call__(
+    async def __call__(
         self,
         method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
         /,
@@ -194,7 +194,7 @@ class HTTPClientWithRetry:
         follow_redirects: bool = False,
         timeout: float | None = None,
     ) -> httpx.Response:
-        fn: Coroutine[Any, Any, httpx.Response] = self.httpx_client.request(
+        fn: Coroutine[Any, Any, httpx.Response] = self.httpx_async_client.request(
             method,
             url,
             content=content,
@@ -205,7 +205,7 @@ class HTTPClientWithRetry:
             follow_redirects=follow_redirects,
             timeout=timeout,
         )
-        return self._with_retry(fn, url=url, headers=headers)
+        return await self._with_retry(fn, url=url, headers=headers)
 
     def stream(
         self,
@@ -219,11 +219,11 @@ class HTTPClientWithRetry:
     ) -> AbstractAsyncContextManager[httpx.Response]:
         # TODO: This requires some more thought...
         fn: Callable[..., AbstractContextManager[httpx.Response]] = functools.partial(
-            self.httpx_client.stream, method, url, json=json, headers=headers, timeout=timeout
+            self.httpx_async_client.stream, method, url, json=json, headers=headers, timeout=timeout
         )
         return self._with_retry(fn, url=url, headers=headers, stream=True)
 
-    def _with_retry(
+    async def _with_retry(
         self,
         coro: Coroutine[Any, Any, httpx.Response],
         *,
@@ -235,7 +235,7 @@ class HTTPClientWithRetry:
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
-                res = self._event_loop_executor.run_coro(coro)
+                res: httpx.Response = await coro
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     # TODO: Can this be removed now if we check the 'cdf-is-auto-retryable' header?

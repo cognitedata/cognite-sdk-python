@@ -4,7 +4,7 @@ import collections
 import math
 import typing
 import warnings
-from collections.abc import Iterator, Mapping
+from collections.abc import AsyncIterator, Iterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -31,8 +31,8 @@ from cognite.client.data_classes.sequences import (
     SortableSequenceProperty,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import handle_renamed_argument
-from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._auxiliary import handle_renamed_argument, split_into_chunks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import (
     assert_type,
@@ -68,7 +68,7 @@ class SequencesAPI(APIClient):
         self.data = self.rows
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         name: str | None = None,
@@ -88,7 +88,7 @@ class SequencesAPI(APIClient):
     ) -> Iterator[Sequence]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         name: str | None = None,
@@ -107,7 +107,7 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[SequenceList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -166,7 +166,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -178,7 +178,7 @@ class SequencesAPI(APIClient):
             partitions=partitions,
         )
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
@@ -201,9 +201,9 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve()
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
+        return await self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
@@ -232,11 +232,11 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
+    async def aggregate(self, filter: SequenceFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
@@ -256,9 +256,9 @@ class SequencesAPI(APIClient):
         warnings.warn(
             "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
         )
-        return self._aggregate(filter=filter, cls=CountAggregate)
+        return await self._aggregate(filter=filter, cls=CountAggregate)
 
-    def aggregate_count(
+    async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
@@ -289,14 +289,14 @@ class SequencesAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count",
             filter=filter,
             advanced_filter=advanced_filter,
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -336,7 +336,7 @@ class SequencesAPI(APIClient):
                 ...     aggregate_filter=not_america)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             filter=filter,
@@ -345,7 +345,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -373,7 +373,7 @@ class SequencesAPI(APIClient):
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             filter=filter,
@@ -382,7 +382,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -432,7 +432,7 @@ class SequencesAPI(APIClient):
         """
         self._validate_filter(advanced_filter)
         if property == ["metadata"] or property is SequenceProperty.metadata:
-            return self._advanced_aggregate(
+            return await self._advanced_aggregate(
                 aggregate="uniqueProperties",
                 path=property,
                 filter=filter,
@@ -440,7 +440,7 @@ class SequencesAPI(APIClient):
                 aggregate_filter=aggregate_filter,
                 api_subversion="beta",
             )
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             filter=filter,
@@ -449,7 +449,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -477,7 +477,7 @@ class SequencesAPI(APIClient):
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             path=path,
             filter=filter,
@@ -487,12 +487,12 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
+    async def create(self, sequence: Sequence | SequenceWrite) -> Sequence: ...
 
     @overload
-    def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
+    async def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
-    def create(
+    async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
         """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
@@ -523,11 +523,11 @@ class SequencesAPI(APIClient):
         """
         assert_type(sequence, "sequences", [typing.Sequence, SequenceCore])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
         )
 
-    def delete(
+    async def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -548,27 +548,27 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     @overload
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence: ...
 
     @overload
-    def update(
+    async def update(
         self,
         item: typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SequenceList: ...
 
-    def update(
+    async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -648,7 +648,7 @@ class SequencesAPI(APIClient):
                 >>> res = client.sequences.update(my_update)
         """
         cdf_item_by_id = self._get_cdf_item_by_id(item, "updating")
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=SequenceList,
             resource_cls=Sequence,
             update_cls=SequenceUpdate,
@@ -658,14 +658,14 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def upsert(
+    async def upsert(
         self, item: typing.Sequence[Sequence | SequenceWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> SequenceList: ...
 
     @overload
-    def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
+    async def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
-    def upsert(
+    async def upsert(
         self,
         item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
         mode: Literal["patch", "replace"] = "patch",
@@ -701,7 +701,7 @@ class SequencesAPI(APIClient):
         """
 
         cdf_item_by_id = self._get_cdf_item_by_id(item, "upserting")
-        return self._upsert_multiple(
+        return await self._upsert_multiple(
             item,
             list_cls=SequenceList,
             resource_cls=Sequence,
@@ -797,7 +797,7 @@ class SequencesAPI(APIClient):
             update_obj["update"]["columns"]["modify"] = modify_list
         return update_obj
 
-    def search(
+    async def search(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -826,14 +826,14 @@ class SequencesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.sequences.search(name="some name")
         """
-        return self._search(
+        return await self._search(
             list_cls=SequenceList,
             search={"name": name, "description": description, "query": query},
             filter=filter or {},
             limit=limit,
         )
 
-    def filter(
+    async def filter(
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
@@ -886,7 +886,7 @@ class SequencesAPI(APIClient):
         )
         self._validate_filter(filter)
 
-        return self._list(
+        return await self._list(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -899,7 +899,7 @@ class SequencesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         external_id_prefix: str | None = None,
@@ -1009,7 +1009,7 @@ class SequencesAPI(APIClient):
         prep_sort = prepare_filter_sort(sort, SequenceSort)
         self._validate_filter(advanced_filter)
 
-        return self._list(
+        return await self._list(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",
@@ -1030,7 +1030,7 @@ class SequencesDataAPI(APIClient):
         self._SEQ_POST_LIMIT_VALUES = 100_000
         self._SEQ_RETRIEVE_LIMIT = 10_000
 
-    def insert(
+    async def insert(
         self,
         rows: SequenceRows
         | dict[int, typing.Sequence[int | float | str]]
@@ -1088,7 +1088,7 @@ class SequencesDataAPI(APIClient):
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
         if isinstance(rows, dict):
-            all_rows: dict | typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+            all_rows: typing.Sequence = [{"rowNumber": k, "values": v} for k, v in rows.items()]
         elif isinstance(rows, typing.Sequence) and len(rows) > 0 and isinstance(rows[0], dict):
             all_rows = rows
         elif isinstance(rows, typing.Sequence) and (len(rows) == 0 or isinstance(rows[0], tuple)):
@@ -1106,12 +1106,14 @@ class SequencesDataAPI(APIClient):
         else:
             rows_per_request = self._SEQ_POST_LIMIT_ROWS
 
-        row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
-        tasks = [({**base_obj, **rows},) for rows in row_objs]
-        summary = execute_tasks(self._insert_data, tasks)
+        tasks = [
+            AsyncSDKTask(self._insert_data, task=base_obj | row_chunk)
+            for row_chunk in split_into_chunks(all_rows, rows_per_request)
+        ]
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(
+    async def insert_dataframe(
         self, dataframe: pandas.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
         """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
@@ -1140,12 +1142,12 @@ class SequencesDataAPI(APIClient):
         dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(row.Index, row[1:]) for row in dataframe.itertuples()]
         columns = list(dataframe.columns.astype(str))
-        self.insert(rows=data, columns=columns, id=id, external_id=external_id)
+        await self.insert(rows=data, columns=columns, id=id, external_id=external_id)
 
-    def _insert_data(self, task: dict[str, Any]) -> None:
-        self._post(url_path=self._DATA_PATH, json={"items": [task]})
+    async def _insert_data(self, task: dict[str, Any]) -> None:
+        await self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
-    def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
+    async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
@@ -1162,9 +1164,11 @@ class SequencesDataAPI(APIClient):
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
 
-        self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
+        await self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
-    def delete_range(self, start: int, end: int | None, id: int | None = None, external_id: str | None = None) -> None:
+    async def delete_range(
+        self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
+    ) -> None:
         """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
 
         Args:
@@ -1179,7 +1183,7 @@ class SequencesDataAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
         """
-        sequence = self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
+        sequence = await self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._wrap_columns(column_external_ids=sequence.column_external_ids))
@@ -1189,7 +1193,7 @@ class SequencesDataAPI(APIClient):
                 self.delete(rows=[r["rowNumber"] for r in rows], external_id=external_id, id=id)
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         *,
         external_id: str,
@@ -1200,7 +1204,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         *,
         external_id: SequenceNotStr[str],
@@ -1211,7 +1215,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRowsList: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         *,
         id: int,
@@ -1222,7 +1226,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         *,
         id: typing.Sequence[int],
@@ -1233,7 +1237,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRowsList: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         *,
         id: typing.Sequence[int] | int,
@@ -1244,7 +1248,7 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> SequenceRowsList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         external_id: str | SequenceNotStr[str] | None = None,
         id: int | typing.Sequence[int] | None = None,
@@ -1281,23 +1285,23 @@ class SequencesDataAPI(APIClient):
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
 
         ident_sequence = IdentifierSequence.load(id, external_id)
-        identifiers = ident_sequence.as_dicts()
 
-        def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
+        async def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
             post_obj.update(self._wrap_columns(column_external_ids=columns))
             post_obj.update({"start": start, "end": end, "limit": limit})
 
             row_response_iterator = self._fetch_data(post_obj)
             # Get the External ID and ID from the first response
-            sequence_rows = next(row_response_iterator)
-            for row_response in row_response_iterator:
+            sequence_rows = await anext(row_response_iterator)
+            async for row_response in row_response_iterator:
                 sequence_rows["rows"].extend(row_response["rows"])
 
             return SequenceRows._load(sequence_rows)
 
-        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)))
+        tasks = [AsyncSDKTask(_fetch_sequence, id_) for id_ in ident_sequence.as_dicts()]
+        tasks_summary = await execute_async_tasks(tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
+            task_list_element_unwrap_fn=lambda task: ident_sequence.extract_identifiers(task.args[0])
         )
         results = tasks_summary.joined_results()
         if ident_sequence.is_singleton():
@@ -1305,7 +1309,7 @@ class SequencesDataAPI(APIClient):
         else:
             return SequenceRowsList(results)
 
-    def retrieve_last_row(
+    async def retrieve_last_row(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -1335,10 +1339,10 @@ class SequencesDataAPI(APIClient):
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         identifier = Identifier.of_either(id, external_id).as_dict()
-        res = self._post(self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns})
+        res = await self._post(self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns})
         return SequenceRows._load(res.json())
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         start: int,
         end: int | None,
@@ -1374,19 +1378,18 @@ class SequencesDataAPI(APIClient):
             column_names_default = "columnExternalId"
 
         if external_id is not None and id is None:
-            return self.retrieve(
+            response = await self.retrieve(
                 external_id=external_id, start=start, end=end, limit=limit, columns=column_external_ids
-            ).to_pandas(
-                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
             )
+            return response.to_pandas(column_names=column_names or column_names_default)  # type: ignore  [arg-type]
+
         elif id is not None and external_id is None:
-            return self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids).to_pandas(
-                column_names=column_names or column_names_default,  # type: ignore  [arg-type]
-            )
+            response = await self.retrieve(id=id, start=start, end=end, limit=limit, columns=column_external_ids)
+            return response.to_pandas(column_names=column_names or column_names_default)  # type: ignore  [arg-type]
         else:
             raise ValueError("Either external_id or id must be specified")
 
-    def _fetch_data(self, task: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    async def _fetch_data(self, task: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
         remaining_limit = task.get("limit")
         cursor = None
         if task["end"] == -1:
@@ -1394,7 +1397,7 @@ class SequencesDataAPI(APIClient):
         while True:
             task["limit"] = min(self._SEQ_RETRIEVE_LIMIT, remaining_limit or self._SEQ_RETRIEVE_LIMIT)
             task["cursor"] = cursor
-            resp = self._post(url_path=self._DATA_PATH + "/list", json=task).json()
+            resp = (await self._post(url_path=self._DATA_PATH + "/list", json=task)).json()
             yield resp
             cursor = resp.get("nextCursor")
             if remaining_limit:

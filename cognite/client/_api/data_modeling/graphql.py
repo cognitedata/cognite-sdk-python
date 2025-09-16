@@ -12,8 +12,8 @@ from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class DataModelingGraphQLAPI(APIClient):
-    def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
-        res = self._post(url_path=url_path, json=json).json()
+    async def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
+        res = await self._post(url_path=url_path, json=json).json()
         # Errors can be passed both at top level and nested in the response:
         errors = res.get("errors", []) + ((res.get("data", {}).get(query_name) or {}).get("errors") or [])
         if errors:

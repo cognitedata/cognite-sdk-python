@@ -146,7 +146,7 @@ class DocumentPreviewAPI(APIClient):
         content = self.download_document_as_pdf_bytes(id)
         path.write_bytes(content)
 
-    def retrieve_pdf_link(self, id: int) -> TemporaryLink:
+    async def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
 
         Args:
@@ -163,7 +163,7 @@ class DocumentPreviewAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
-        res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
+        res = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())
 
 
@@ -175,7 +175,7 @@ class DocumentsAPI(APIClient):
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         filter: Filter | dict[str, Any] | None = None,
@@ -185,7 +185,7 @@ class DocumentsAPI(APIClient):
     ) -> Iterator[DocumentList]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: Literal[None] = None,
         filter: Filter | dict[str, Any] | None = None,
@@ -194,7 +194,7 @@ class DocumentsAPI(APIClient):
         partitions: int | None = None,
     ) -> Iterator[Document]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         filter: Filter | dict[str, Any] | None = None,
@@ -217,7 +217,7 @@ class DocumentsAPI(APIClient):
             Iterator[Document] | Iterator[DocumentList]: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
         self._validate_filter(filter)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
             sort=[DocumentSort.load(sort).dump()] if sort else None,
@@ -228,7 +228,7 @@ class DocumentsAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
+    async def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -264,11 +264,11 @@ class DocumentsAPI(APIClient):
                 ... )
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
         )
 
-    def aggregate_cardinality_values(
+    async def aggregate_cardinality_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -312,7 +312,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
@@ -320,7 +320,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_cardinality_properties(
+    async def aggregate_cardinality_properties(
         self,
         path: SourceFileProperty | list[str] = SourceFileProperty.metadata,
         query: str | None = None,
@@ -348,7 +348,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             "cardinalityProperties",
             path=path,
             query=query,
@@ -356,7 +356,7 @@ class DocumentsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
-    def aggregate_unique_values(
+    async def aggregate_unique_values(
         self,
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -404,7 +404,7 @@ class DocumentsAPI(APIClient):
                 >>> unique_mime_types = result.unique
         """
         self._validate_filter(filter)
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
             query=query,
@@ -413,7 +413,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def aggregate_unique_properties(
+    async def aggregate_unique_properties(
         self,
         path: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
@@ -444,7 +444,7 @@ class DocumentsAPI(APIClient):
         """
         self._validate_filter(filter)
 
-        return self._advanced_aggregate(
+        return await self._advanced_aggregate(
             aggregate="uniqueProperties",
             # There is a bug/inconsistency in the API where the path parameter is called properties for documents.
             # This has been reported to the API team, and will be fixed in the future.
@@ -517,7 +517,7 @@ class DocumentsAPI(APIClient):
                 buffer.write(chunk)
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[False] = False,
@@ -527,7 +527,7 @@ class DocumentsAPI(APIClient):
     ) -> DocumentList: ...
 
     @overload
-    def search(
+    async def search(
         self,
         query: str,
         highlight: Literal[True],
@@ -536,7 +536,7 @@ class DocumentsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentHighlightList: ...
 
-    def search(
+    async def search(
         self,
         query: str,
         highlight: bool = False,
@@ -596,7 +596,7 @@ class DocumentsAPI(APIClient):
         if highlight:
             body["highlight"] = highlight
 
-        response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
+        response = await self._post(f"{self._RESOURCE_PATH}/search", json=body)
         json_content = response.json()
         results = json_content["items"]
 
@@ -607,7 +607,7 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(
+    async def list(
         self,
         filter: Filter | dict[str, Any] | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
@@ -659,7 +659,7 @@ class DocumentsAPI(APIClient):
 
         """
         self._validate_filter(filter)
-        return self._list(
+        return await self._list(
             list_cls=DocumentList,
             resource_cls=Document,
             method="POST",
