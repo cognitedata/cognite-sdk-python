@@ -7,19 +7,17 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
-from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
 if TYPE_CHECKING:
+    from cognite.client.data_classes.data_modeling import DirectRelationReference
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
 PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty
-
-RawValue: TypeAlias = str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId | DirectRelationReference
 
 
 @dataclass
@@ -32,8 +30,12 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
-FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
+if TYPE_CHECKING:
+    RawValue: TypeAlias = (
+        str | float | bool | Sequence | Mapping[str, Any] | Label | InstanceId | DirectRelationReference
+    )
+    FilterValue: TypeAlias = RawValue | PropertyReferenceValue | ParameterValue
+    FilterValueList: TypeAlias = Sequence[RawValue] | PropertyReferenceValue | ParameterValue
 
 
 def _dump_filter_value(value: FilterValueList | FilterValue) -> Any:
