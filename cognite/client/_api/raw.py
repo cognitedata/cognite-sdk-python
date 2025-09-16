@@ -5,7 +5,7 @@ import random
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -18,9 +18,10 @@ from cognite.client.utils._auxiliary import (
     is_finite,
     is_unlimited,
     split_into_chunks,
+    unpack_items,
     unpack_items_in_payload,
 )
-from cognite.client.utils._concurrency import ConcurrencySettings, execute_tasks
+from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -48,14 +49,14 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Database]: ...
+    async def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Database]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatabaseList]: ...
+    async def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatabaseList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[Database] | Iterator[DatabaseList]:
+    ) -> AsyncIterator[Database] | AsyncIterator[DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -65,19 +66,19 @@ class RawDatabasesAPI(APIClient):
             limit (int | None): Maximum number of dbs to return. Defaults to return all items.
 
         Returns:
-            Iterator[Database] | Iterator[DatabaseList]: No description.
+            AsyncIterator[Database] | AsyncIterator[DatabaseList]: No description.
         """
         return self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
     @overload
-    def create(self, name: str) -> Database: ...
+    async def create(self, name: str) -> Database: ...
 
     @overload
-    def create(self, name: list[str]) -> DatabaseList: ...
+    async def create(self, name: list[str]) -> DatabaseList: ...
 
-    def create(self, name: str | list[str]) -> Database | DatabaseList:
+    async def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
@@ -99,9 +100,9 @@ class RawDatabasesAPI(APIClient):
             items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
-        return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
+        return await self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
+    async def delete(self, name: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
@@ -119,18 +120,20 @@ class RawDatabasesAPI(APIClient):
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
-        items = [{"name": n} for n in name]
-        chunks = split_into_chunks(items, self._DELETE_LIMIT)
         tasks = [
-            {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
-            for chunk in chunks
+            AsyncSDKTask(
+                self._post,
+                url_path=self._RESOURCE_PATH + "/delete",
+                json={"items": [{"name": n} for n in chunk], "recursive": recursive},
+            )
+            for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatabaseList:
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
@@ -157,21 +160,25 @@ class RawDatabasesAPI(APIClient):
                 >>> for db_list in client.raw.databases(chunk_size=2500):
                 ...     db_list # do something with the dbs
         """
-        return self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
+        return await self._list(list_cls=DatabaseList, resource_cls=Database, method="GET", limit=limit)
 
 
 class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     @overload
-    def __call__(self, db_name: str, chunk_size: None = None, limit: int | None = None) -> Iterator[raw.Table]: ...
+    async def __call__(
+        self, db_name: str, chunk_size: None = None, limit: int | None = None
+    ) -> AsyncIterator[raw.Table]: ...
 
     @overload
-    def __call__(self, db_name: str, chunk_size: int, limit: int | None = None) -> Iterator[raw.TableList]: ...
+    async def __call__(
+        self, db_name: str, chunk_size: int, limit: int | None = None
+    ) -> AsyncIterator[raw.TableList]: ...
 
-    def __call__(
+    async def __call__(
         self, db_name: str, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
+    ) -> AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -182,7 +189,7 @@ class RawTablesAPI(APIClient):
             limit (int | None): Maximum number of tables to return. Defaults to return all items.
 
         Returns:
-            Iterator[raw.Table] | Iterator[raw.TableList]: No description.
+            AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]: No description.
         """
         table_iterator = self._list_generator(
             list_cls=raw.TableList,
@@ -195,12 +202,12 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
-    def create(self, db_name: str, name: str) -> raw.Table: ...
+    async def create(self, db_name: str, name: str) -> raw.Table: ...
 
     @overload
-    def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
+    async def create(self, db_name: str, name: list[str]) -> raw.TableList: ...
 
-    def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
+    async def create(self, db_name: str, name: str | list[str]) -> raw.Table | raw.TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
@@ -232,7 +239,7 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, name: str | SequenceNotStr[str]) -> None:
         """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
@@ -250,16 +257,13 @@ class RawTablesAPI(APIClient):
         assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
-        items = [{"name": n} for n in name]
-        chunks = split_into_chunks(items, self._DELETE_LIMIT)
+
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete"
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name) + "/delete",
-                "json": {"items": chunk},
-            }
-            for chunk in chunks
+            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"name": n} for n in chunk]})
+            for chunk in split_into_chunks(name, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -274,13 +278,13 @@ class RawTablesAPI(APIClient):
             return tb
         raise TypeError("tb must be raw.Table or raw.TableList")
 
-    def _set_db_name_on_tables_generator(
-        self, table_iterator: Iterator[raw.Table] | Iterator[raw.TableList], db_name: str
-    ) -> Iterator[raw.Table] | Iterator[raw.TableList]:
-        for tbl in table_iterator:
+    async def _set_db_name_on_tables_generator(
+        self, table_iterator: AsyncIterator[raw.Table] | AsyncIterator[raw.TableList], db_name: str
+    ) -> AsyncIterator[raw.Table] | AsyncIterator[raw.TableList]:
+        async for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
+    async def list(self, db_name: str, limit: int | None = DEFAULT_LIMIT_READ) -> raw.TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
@@ -308,7 +312,7 @@ class RawTablesAPI(APIClient):
                 >>> for table_list in client.raw.tables(db_name="db1", chunk_size=25):
                 ...     table_list # do something with the tables
         """
-        tb = self._list(
+        tb = await self._list(
             list_cls=raw.TableList,
             resource_cls=raw.Table,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
@@ -327,7 +331,7 @@ class RawRowsAPI(APIClient):
         self._LIST_LIMIT = 10000
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -337,10 +341,10 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Row]: ...
+    ) -> AsyncIterator[Row]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -350,9 +354,9 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[RowList]: ...
+    ) -> AsyncIterator[RowList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         db_name: str,
         table_name: str,
@@ -362,7 +366,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
         partitions: int | None = None,
-    ) -> Iterator[Row] | Iterator[RowList]:
+    ) -> AsyncIterator[Row] | AsyncIterator[RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -381,7 +385,7 @@ class RawRowsAPI(APIClient):
                 problems and maximize read throughput, check out `concurrency limits in the API documentation. <https://developer.cognite.com/api#tag/Raw/#section/Request-and-concurrency-limits>`_
 
         Returns:
-            Iterator[Row] | Iterator[RowList]: An iterator yielding the requested row or rows.
+            AsyncIterator[Row] | AsyncIterator[RowList]: An iterator yielding the requested row or rows.
 
         Note:
             When iterating using partitions > 1, the memory usage is bounded at 2 x partitions x chunk_size. This is implemented
@@ -469,7 +473,8 @@ class RawRowsAPI(APIClient):
 
         quit_early = threading.Event()
         results: deque[RowList] = deque()  # fifo, not that ordering matters anyway...
-        pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
+        # TODO: Fix:
+        # pool = ConcurrencySettings.get_thread_pool_executor_or_raise()
         futures = [pool.submit(exhaust, task) for task in read_iterators]
 
         if finite_limit:
@@ -505,7 +510,7 @@ class RawRowsAPI(APIClient):
             if all(f.done() for f in futures) and not results:
                 return
 
-    def insert(
+    async def insert(
         self,
         db_name: str,
         table_name: str,
@@ -539,15 +544,17 @@ class RawRowsAPI(APIClient):
                 ... }
                 >>> client.raw.rows.insert("db1", "table1", rows)
         """
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name)
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
-                "json": {"items": chunk},
-                "params": {"ensureParent": ensure_parent},
-            }
+            AsyncSDKTask(
+                self._post,
+                url_path=url_path,
+                json={"items": chunk},
+                params={"ensureParent": ensure_parent},
+            )
             for chunk in self._process_row_input(row)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda row: row.get("key")
         )
@@ -631,7 +638,7 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
+    async def delete(self, db_name: str, table_name: str, key: str | SequenceNotStr[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
@@ -651,20 +658,19 @@ class RawRowsAPI(APIClient):
         assert_type(key, "key", [str, Sequence])
         if isinstance(key, str):
             key = [key]
-        to_delete = [{"key": k} for k in key]
+
+        url_path = interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete"
         tasks = [
-            {
-                "url_path": interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name) + "/delete",
-                "json": {"items": chunk},
-            }
-            for chunk in split_into_chunks(to_delete, self._DELETE_LIMIT)
+            AsyncSDKTask(self._post, url_path=url_path, json={"items": [{"key": k} for k in chunk]})
+            for chunk in split_into_chunks(key, self._DELETE_LIMIT)
         ]
-        summary = execute_tasks(self._post, tasks)
+        summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: el["key"]
+            task_unwrap_fn=lambda task: unpack_items_in_payload(task.kwargs),
+            task_list_element_unwrap_fn=lambda el: el["key"],
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
+    async def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
 
         Args:
@@ -689,7 +695,7 @@ class RawRowsAPI(APIClient):
                 >>> val2 = row.get("col2")
 
         """
-        return self._retrieve(
+        return await self._retrieve(
             cls=Row,
             resource_path=interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),
             identifier=Identifier(key),
@@ -705,7 +711,7 @@ class RawRowsAPI(APIClient):
         else:
             return ",".join(str(x) for x in columns)
 
-    def retrieve_dataframe(
+    async def retrieve_dataframe(
         self,
         db_name: str,
         table_name: str,
@@ -747,7 +753,9 @@ class RawRowsAPI(APIClient):
                 >>> df = client.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
         """
         pd = local_import("pandas")
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions)
+        rows = await self.list(
+            db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions
+        )
         if last_updated_time_in_index:
             idx = pd.MultiIndex.from_tuples(
                 [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
@@ -758,7 +766,7 @@ class RawRowsAPI(APIClient):
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx, dtype=object if not infer_dtypes else None)
 
-    def _get_parallel_cursors(
+    async def _get_parallel_cursors(
         self,
         db_name: str,
         table_name: str,
@@ -766,7 +774,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int | None,
         n_cursors: int,
     ) -> list[str]:
-        return self._get(
+        response = await self._get(
             url_path=interpolate_and_url_encode("/raw/dbs/{}/tables/{}/cursors", db_name, table_name),
             params=drop_none_values(
                 {
@@ -775,9 +783,10 @@ class RawRowsAPI(APIClient):
                     "numberOfCursors": n_cursors,
                 }
             ),
-        ).json()["items"]
+        )
+        return unpack_items(response)
 
-    def list(
+    async def list(
         self,
         db_name: str,
         table_name: str,
@@ -861,6 +870,6 @@ class RawRowsAPI(APIClient):
             partitions=partitions,
         )
         return RowList(
-            [row for row_list in cast(Iterator[RowList], rows_iterator) for row in row_list],
+            [row async for row_list in rows_iterator for row in row_list],
             cognite_client=self._cognite_client,
         )
