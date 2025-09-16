@@ -21,7 +21,7 @@ class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         name: str | None = None,
@@ -32,7 +32,7 @@ class LabelsAPI(APIClient):
     ) -> Iterator[LabelDefinition]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         name: str | None = None,
@@ -42,7 +42,7 @@ class LabelsAPI(APIClient):
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> Iterator[LabelDefinitionList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -69,7 +69,7 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=LabelDefinitionList,
             resource_cls=LabelDefinition,
             method="POST",
@@ -79,15 +79,17 @@ class LabelsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: Literal[True]) -> LabelDefinition | None: ...
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: Literal[False] = False) -> LabelDefinition: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: Literal[False] = False) -> LabelDefinition: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> LabelDefinitionList: ...
+    async def retrieve(
+        self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> LabelDefinitionList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
         """`Retrieve one or more label definitions by external id. <https://developer.cognite.com/api#tag/Labels/operation/byIdsLabels>`_
@@ -111,7 +113,7 @@ class LabelsAPI(APIClient):
         is_single = isinstance(external_id, str)
         external_ids = [external_id] if is_single else external_id
         identifiers = IdentifierSequence.load(external_ids=external_ids)  # type: ignore[arg-type]
-        result = self._retrieve_multiple(
+        result = await self._retrieve_multiple(
             list_cls=LabelDefinitionList,
             resource_cls=LabelDefinition,
             identifiers=identifiers,
@@ -121,7 +123,7 @@ class LabelsAPI(APIClient):
             return result[0] if result else None
         return result
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         external_id_prefix: str | None = None,
@@ -164,17 +166,17 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
-        return self._list(
+        return await self._list(
             list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter
         )
 
     @overload
-    def create(self, label: LabelDefinition | LabelDefinitionWrite) -> LabelDefinition: ...
+    async def create(self, label: LabelDefinition | LabelDefinitionWrite) -> LabelDefinition: ...
 
     @overload
-    def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList: ...
+    async def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList: ...
 
-    def create(
+    async def create(
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
@@ -204,9 +206,9 @@ class LabelsAPI(APIClient):
         elif not isinstance(label, LabelDefinitionCore):
             raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
 
-        return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
+        return await self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
-    def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
@@ -220,4 +222,4 @@ class LabelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)
+        await self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

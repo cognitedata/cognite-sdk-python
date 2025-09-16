@@ -43,7 +43,7 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
@@ -60,7 +60,7 @@ class SimulatorRunsAPI(APIClient):
     ) -> Iterator[SimulationRunList]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
@@ -76,7 +76,7 @@ class SimulatorRunsAPI(APIClient):
         simulation_time: TimestampRange | None = None,
     ) -> Iterator[SimulationRun]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -126,7 +126,7 @@ class SimulatorRunsAPI(APIClient):
             simulation_time=simulation_time,
         )
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SimulationRunList,
             resource_cls=SimulationRun,
             method="POST",
@@ -135,7 +135,7 @@ class SimulatorRunsAPI(APIClient):
             limit=limit,
         )
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         status: str | None = None,
@@ -206,7 +206,7 @@ class SimulatorRunsAPI(APIClient):
             simulation_time=simulation_time,
         )
         self._warning.warn()
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulationRun,
@@ -215,15 +215,15 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: int) -> SimulationRun | None: ...
+    async def retrieve(self, ids: int) -> SimulationRun | None: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         ids: Sequence[int],
     ) -> SimulationRunList | None: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulationRunList | None:
@@ -243,7 +243,7 @@ class SimulatorRunsAPI(APIClient):
         """
         self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             resource_cls=SimulationRun,
             list_cls=SimulationRunList,
             identifiers=identifiers,
@@ -251,12 +251,14 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: SimulationRunWrite) -> SimulationRun: ...
+    async def create(self, items: SimulationRunWrite) -> SimulationRun: ...
 
     @overload
-    def create(self, items: Sequence[SimulationRunWrite]) -> SimulationRunList: ...
+    async def create(self, items: Sequence[SimulationRunWrite]) -> SimulationRunList: ...
 
-    def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulationRunList:
+    async def create(
+        self, items: SimulationRunWrite | Sequence[SimulationRunWrite]
+    ) -> SimulationRun | SimulationRunList:
         """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
@@ -281,7 +283,7 @@ class SimulatorRunsAPI(APIClient):
         """
         assert_type(items, "simulation_run", [SimulationRunWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulationRunList,
             resource_cls=SimulationRun,
             items=items,
@@ -289,7 +291,7 @@ class SimulatorRunsAPI(APIClient):
             resource_path=self._RESOURCE_PATH_RUN,
         )
 
-    def list_run_data(
+    async def list_run_data(
         self,
         run_id: int,
     ) -> SimulationRunDataList:
@@ -315,7 +317,7 @@ class SimulatorRunsAPI(APIClient):
         """
         self._warning.warn()
 
-        req = self._post(
+        req = await self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             json={"items": [{"runId": run_id}]},
         )
