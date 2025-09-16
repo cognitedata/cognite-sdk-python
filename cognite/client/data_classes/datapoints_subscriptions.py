@@ -243,7 +243,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionNodeIdUpdate(self, "instanceIds")
 
     @property
-    def filter(self) -> _FilterDataPointSubscriptionUpdate:
+    async def filter(self) -> _FilterDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
 
     @classmethod

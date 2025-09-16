@@ -35,7 +35,7 @@ class SimulatorModelsAPI(APIClient):
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -76,7 +76,7 @@ class SimulatorModelsAPI(APIClient):
         """
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
         self._warning.warn()
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulatorModel,
@@ -86,18 +86,18 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, *, ids: int) -> SimulatorModel | None: ...
+    async def retrieve(self, *, ids: int) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(self, *, external_ids: str) -> SimulatorModel | None: ...
+    async def retrieve(self, *, external_ids: str) -> SimulatorModel | None: ...
 
     @overload
-    def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelList: ...
+    async def retrieve(self, *, ids: Sequence[int]) -> SimulatorModelList: ...
 
     @overload
-    def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelList: ...
+    async def retrieve(self, *, external_ids: SequenceNotStr[str]) -> SimulatorModelList: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         *,
         ids: int | Sequence[int] | None = None,
@@ -133,14 +133,14 @@ class SimulatorModelsAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
         )
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -149,7 +149,7 @@ class SimulatorModelsAPI(APIClient):
     ) -> Iterator[SimulatorModel]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -157,7 +157,7 @@ class SimulatorModelsAPI(APIClient):
         limit: int | None = None,
     ) -> Iterator[SimulatorModelList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         simulator_external_ids: str | SequenceNotStr[str] | None = None,
@@ -178,7 +178,7 @@ class SimulatorModelsAPI(APIClient):
             Iterator[SimulatorModel] | Iterator[SimulatorModelList]: yields SimulatorModel one by one if chunk is not specified, else SimulatorModelList objects.
         """
         model_filter = SimulatorModelsFilter(simulator_external_ids=simulator_external_ids)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             method="POST",
@@ -189,12 +189,14 @@ class SimulatorModelsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...
+    async def create(self, items: SimulatorModelWrite) -> SimulatorModel: ...
 
     @overload
-    def create(self, items: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
+    async def create(self, items: Sequence[SimulatorModelWrite]) -> SimulatorModelList: ...
 
-    def create(self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
+    async def create(
+        self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]
+    ) -> SimulatorModel | SimulatorModelList:
         """`Create simulator models <https://developer.cognite.com/api#tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
 
         Args:
@@ -222,7 +224,7 @@ class SimulatorModelsAPI(APIClient):
         """
         assert_type(items, "simulator_model", [SimulatorModelWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulatorModelList,
             resource_cls=SimulatorModel,
             items=items,
@@ -230,7 +232,7 @@ class SimulatorModelsAPI(APIClient):
             resource_path=self._RESOURCE_PATH,
         )
 
-    def delete(
+    async def delete(
         self,
         ids: int | Sequence[int] | None = None,
         external_ids: str | SequenceNotStr[str] | None = None,
@@ -247,25 +249,25 @@ class SimulatorModelsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.simulators.models.delete(ids=[1,2,3], external_ids="model_external_id")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             wrap_ids=True,
             resource_path=self._RESOURCE_PATH,
         )
 
     @overload
-    def update(
+    async def update(
         self,
         items: Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModelList: ...
 
     @overload
-    def update(
+    async def update(
         self,
         items: SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate,
     ) -> SimulatorModel: ...
 
-    def update(
+    async def update(
         self,
         items: SimulatorModel
         | SimulatorModelWrite
@@ -288,6 +290,6 @@ class SimulatorModelsAPI(APIClient):
                 >>> model.name = "new_name"
                 >>> res = client.simulators.models.update(model)
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             list_cls=SimulatorModelList, resource_cls=SimulatorModel, update_cls=SimulatorModelUpdate, items=items
         )

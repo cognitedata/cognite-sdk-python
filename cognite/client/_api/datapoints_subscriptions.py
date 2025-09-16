@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -31,14 +31,16 @@ class DatapointsSubscriptionAPI(APIClient):
         self._DELETE_LIMIT = 1
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[DatapointSubscription]: ...
+    async def __call__(
+        self, chunk_size: None = None, limit: int | None = None
+    ) -> AsyncIterator[DatapointSubscription]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[DatapointSubscriptionList]: ...
+    async def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[DatapointSubscriptionList]: ...
 
-    def __call__(
+    async def __call__(
         self, chunk_size: int | None = None, limit: int | None = None
-    ) -> Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]:
+    ) -> AsyncIterator[DatapointSubscription] | AsyncIterator[DatapointSubscriptionList]:
         """Iterate over all datapoint subscriptions.
 
         Args:
@@ -46,9 +48,9 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int | None): Maximum number of items to return. Defaults to return all datapoint subscriptions.
 
         Returns:
-            Iterator[DatapointSubscription] | Iterator[DatapointSubscriptionList]: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
+            AsyncIterator[DatapointSubscription] | AsyncIterator[DatapointSubscriptionList]: Yields datapoint subscriptions one by one if chunk is not specified, otherwise returns a list of datapoint subscriptions.
         """
-        return self._list_generator(
+        return await self._list_generator(
             method="GET",
             limit=limit,
             chunk_size=chunk_size,
@@ -56,7 +58,7 @@ class DatapointsSubscriptionAPI(APIClient):
             resource_cls=DatapointSubscription,
         )
 
-    def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
+    async def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """`Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
         Create a subscription that can be used to listen for changes in data points for a set of time series.
@@ -109,14 +111,14 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> created = client.time_series.subscriptions.create(sub)
         """
 
-        return self._create_multiple(
+        return await self._create_multiple(
             subscription,
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             input_resource_cls=DataPointSubscriptionWrite,
         )
 
-    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete subscription(s). This operation cannot be undone. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/deleteSubscriptions>`_
 
         Args:
@@ -132,13 +134,13 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> client.time_series.subscriptions.delete("my_subscription")
         """
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
             wrap_ids=True,
         )
 
-    def retrieve(self, external_id: str) -> DatapointSubscription | None:
+    async def retrieve(self, external_id: str) -> DatapointSubscription | None:
         """`Retrieve one subscription by external ID. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
@@ -156,7 +158,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> res = client.time_series.subscriptions.retrieve("my_subscription")
         """
 
-        result = self._retrieve_multiple(
+        result = await self._retrieve_multiple(
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             identifiers=IdentifierSequence.load(external_ids=[external_id]),
@@ -164,10 +166,11 @@ class DatapointsSubscriptionAPI(APIClient):
         )
         if result:
             return result[0]
-        else:
-            return None
+        return None
 
-    def list_member_time_series(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> TimeSeriesIDList:
+    async def list_member_time_series(
+        self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ
+    ) -> TimeSeriesIDList:
         """`List time series in a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionMembers>`_
 
         Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
@@ -190,7 +193,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> timeseries_external_ids = members.as_external_ids()
         """
 
-        return self._list(
+        return await self._list(
             method="GET",
             limit=limit,
             list_cls=TimeSeriesIDList,
@@ -199,7 +202,7 @@ class DatapointsSubscriptionAPI(APIClient):
             other_params={"externalId": external_id},
         )
 
-    def update(
+    async def update(
         self,
         update: DataPointSubscriptionUpdate | DataPointSubscriptionWrite,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -234,7 +237,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> updated = client.time_series.subscriptions.update(update)
         """
 
-        return self._update_multiple(
+        return await self._update_multiple(
             items=update,
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
@@ -242,7 +245,7 @@ class DatapointsSubscriptionAPI(APIClient):
             mode=mode,
         )
 
-    def iterate_data(
+    async def iterate_data(
         self,
         external_id: str,
         start: str | None = None,
@@ -253,7 +256,7 @@ class DatapointsSubscriptionAPI(APIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
-    ) -> Iterator[DatapointSubscriptionBatch]:
+    ) -> AsyncIterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
@@ -316,7 +319,7 @@ class DatapointsSubscriptionAPI(APIClient):
                 body["initializeCursors"] = start
                 start = None
 
-            res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
+            res = await self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
             batch = _DatapointSubscriptionBatchWithPartitions.load(
                 res.json(), include_status=include_status, ignore_bad_datapoints=ignore_bad_datapoints
             )
@@ -326,7 +329,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
             current_partitions = batch.partitions
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """`List data point subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
@@ -344,6 +347,6 @@ class DatapointsSubscriptionAPI(APIClient):
 
         """
 
-        return self._list(
+        return await self._list(
             method="GET", limit=limit, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
         )

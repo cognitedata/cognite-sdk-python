@@ -19,18 +19,18 @@ from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import ClientConfig, AsyncCogniteClient
     from cognite.client.data_classes import ClientCredentials
 
 
 class WorkflowTriggerAPI(APIClient):
     _RESOURCE_PATH = "/workflows/triggers"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._DELETE_LIMIT = 1
 
-    def upsert(
+    async def upsert(
         self,
         workflow_trigger: WorkflowTriggerUpsert,
         client_credentials: ClientCredentials | dict | None = None,
@@ -92,14 +92,14 @@ class WorkflowTriggerAPI(APIClient):
         )
         dumped = workflow_trigger.dump(camel_case=True)
         dumped["authentication"] = {"nonce": nonce}
-        response = self._post(
+        response = await self._post(
             url_path=self._RESOURCE_PATH,
             json={"items": [dumped]},
         )
         return WorkflowTrigger._load(response.json().get("items")[0])
 
     # TODO: remove method and associated data classes in next major release
-    def create(
+    async def create(
         self,
         workflow_trigger: WorkflowTriggerCreate,
         client_credentials: ClientCredentials | dict | None = None,
@@ -116,7 +116,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.upsert(workflow_trigger, client_credentials)
 
-    def delete(self, external_id: str | SequenceNotStr[str]) -> None:
+    async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """`Delete one or more triggers for a workflow. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/deleteTriggers>`_
 
         Args:
@@ -134,7 +134,7 @@ class WorkflowTriggerAPI(APIClient):
 
                 >>> client.workflows.triggers.delete(["my_trigger", "another_trigger"])
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
@@ -152,7 +152,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.list(limit)
 
-    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
+    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerList:
         """`List the workflow triggers. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggers>`_
 
         Args:
@@ -169,7 +169,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.list(limit=None)
         """
-        return self._list(
+        return await self._list(
             method="GET",
             url_path=self._RESOURCE_PATH,
             resource_cls=WorkflowTrigger,
@@ -192,7 +192,7 @@ class WorkflowTriggerAPI(APIClient):
         )
         return self.list_runs(external_id, limit)
 
-    def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
+    async def list_runs(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowTriggerRunList:
         """`List the history of runs for a trigger. <https://api-docs.cognite.com/20230101/tag/Workflow-triggers/operation/getTriggerHistory>`_
 
         Args:
@@ -210,7 +210,7 @@ class WorkflowTriggerAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.workflows.triggers.list_runs("my_trigger", limit=None)
         """
-        return self._list(
+        return await self._list(
             method="GET",
             url_path=interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/history", external_id),
             resource_cls=WorkflowTriggerRun,

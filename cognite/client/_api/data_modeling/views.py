@@ -12,7 +12,6 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
-from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -29,7 +28,7 @@ class ViewsAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
@@ -40,7 +39,7 @@ class ViewsAPI(APIClient):
     ) -> Iterator[View]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
@@ -50,7 +49,7 @@ class ViewsAPI(APIClient):
         include_global: bool = False,
     ) -> Iterator[ViewList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -75,7 +74,7 @@ class ViewsAPI(APIClient):
             Iterator[View] | Iterator[ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
             method="GET",
@@ -90,7 +89,7 @@ class ViewsAPI(APIClient):
             views_by_space_and_xid[(view.space, view.external_id)].append(view)
         return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
-    def retrieve(
+    async def retrieve(
         self,
         ids: ViewIdentifier | Sequence[ViewIdentifier],
         include_inherited_properties: bool = True,
@@ -117,19 +116,18 @@ class ViewsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "view")
-        views = self._retrieve_multiple(
+        views = await self._retrieve_multiple(
             list_cls=ViewList,
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
         if all_versions is True:
             return views
         else:
             return self._get_latest_views(views)
 
-    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
+    async def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
 
         Args:
@@ -146,16 +144,15 @@ class ViewsAPI(APIClient):
         """
         deleted_views = cast(
             list,
-            self._delete_multiple(
+            await self._delete_multiple(
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
-                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
-    def list(
+    async def list(
         self,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
@@ -195,7 +192,7 @@ class ViewsAPI(APIClient):
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
 
-        return self._list(
+        return await self._list(
             list_cls=ViewList, resource_cls=View, method="GET", limit=limit, filter=filter_.dump(camel_case=True)
         )
 
@@ -205,7 +202,7 @@ class ViewsAPI(APIClient):
     @overload
     def apply(self, view: ViewApply) -> View: ...
 
-    def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
+    async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
 
         Args:
@@ -287,10 +284,9 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,
             input_resource_cls=ViewApply,
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )

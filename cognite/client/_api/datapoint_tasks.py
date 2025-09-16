@@ -165,7 +165,7 @@ class _FullDatapointsQuery:
             # Lazy - we postpone evaluation:
             user_queries = [identifier]
 
-        elif isinstance(identifier, SequenceNotStr):
+        elif is_sequence_not_str(identifier):
             # We use Sequence because we require an ordering of elements
             user_queries = identifier
         else:

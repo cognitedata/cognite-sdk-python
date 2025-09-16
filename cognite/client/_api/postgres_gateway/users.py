@@ -32,20 +32,20 @@ class UsersAPI(APIClient):
         self._RETRIEVE_LIMIT = 10
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
     ) -> Iterator[User]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
     ) -> Iterator[UserList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -62,7 +62,7 @@ class UsersAPI(APIClient):
         Returns:
             Iterator[User] | Iterator[UserList]: yields User one by one if chunk_size is not specified, else UserList objects.
         """
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=UserList,
             resource_cls=User,
             method="GET",
@@ -71,12 +71,12 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    def create(self, user: UserWrite) -> UserCreated: ...
+    async def create(self, user: UserWrite) -> UserCreated: ...
 
     @overload
-    def create(self, user: Sequence[UserWrite]) -> UserCreatedList: ...
+    async def create(self, user: Sequence[UserWrite]) -> UserCreatedList: ...
 
-    def create(self, user: UserWrite | Sequence[UserWrite]) -> UserCreated | UserCreatedList:
+    async def create(self, user: UserWrite | Sequence[UserWrite]) -> UserCreated | UserCreatedList:
         """`Create Users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/create_users>`_
 
         Create postgres users.
@@ -104,7 +104,7 @@ class UsersAPI(APIClient):
                 >>> res = client.postgres_gateway.users.create(user)
 
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=UserCreatedList,
             resource_cls=UserCreated,
             items=user,
@@ -112,12 +112,12 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    def update(self, items: UserUpdate | UserWrite) -> User: ...
+    async def update(self, items: UserUpdate | UserWrite) -> User: ...
 
     @overload
-    def update(self, items: Sequence[UserUpdate | UserWrite]) -> UserList: ...
+    async def update(self, items: Sequence[UserUpdate | UserWrite]) -> UserList: ...
 
-    def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
+    async def update(self, items: UserUpdate | UserWrite | Sequence[UserUpdate | UserWrite]) -> User | UserList:
         """`Update users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/update_users>`_
 
         Update postgres users
@@ -145,14 +145,14 @@ class UsersAPI(APIClient):
                 >>> res = client.postgres_gateway.users.update(update)
 
         """
-        return self._update_multiple(
+        return await self._update_multiple(
             items=items,
             list_cls=UserList,
             resource_cls=User,
             update_cls=UserUpdate,
         )
 
-    def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
+    async def delete(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete postgres user(s) <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/delete_users>`_
 
         Delete postgres users
@@ -174,7 +174,7 @@ class UsersAPI(APIClient):
         """
         extra_body_fields = {"ignore_unknown_ids": ignore_unknown_ids}
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=UsernameSequence.load(usernames=username),
             wrap_ids=True,
             returns_items=False,
@@ -182,12 +182,12 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User: ...
+    async def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User: ...
 
     @overload
-    def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
+    async def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
-    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
+    async def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
         """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
@@ -208,14 +208,14 @@ class UsersAPI(APIClient):
                     >>> res = client.postgres_gateway.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=UserList,
             resource_cls=User,
             identifiers=UsernameSequence.load(usernames=username),
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
+    async def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
         """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_
 
         List all users in a given project.
@@ -245,7 +245,7 @@ class UsersAPI(APIClient):
                 ...     user_list # do something with the users
 
         """
-        return self._list(
+        return await self._list(
             list_cls=UserList,
             resource_cls=User,
             method="GET",

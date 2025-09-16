@@ -13,7 +13,6 @@ from cognite.client.data_classes.data_modeling.data_models import (
 )
 from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.utils._concurrency import ConcurrencySettings
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -30,7 +29,7 @@ class DataModelsAPI(APIClient):
         self._CREATE_LIMIT = 100
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
@@ -41,7 +40,7 @@ class DataModelsAPI(APIClient):
     ) -> Iterator[DataModel]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
@@ -51,7 +50,7 @@ class DataModelsAPI(APIClient):
         include_global: bool = False,
     ) -> Iterator[DataModelList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -77,7 +76,7 @@ class DataModelsAPI(APIClient):
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",
@@ -87,16 +86,16 @@ class DataModelsAPI(APIClient):
         )
 
     @overload
-    def retrieve(
+    async def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
     ) -> DataModelList[View]: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[False] = False
     ) -> DataModelList[ViewId]: ...
 
-    def retrieve(
+    async def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
         """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
@@ -115,15 +114,14 @@ class DataModelsAPI(APIClient):
                 >>> res = client.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
         """
         identifier = _load_identifier(ids, "data_model")
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=DataModelList,
             resource_cls=DataModel,
             identifiers=identifier,
             params={"inlineViews": inline_views},
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )
 
-    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
+    async def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
@@ -140,17 +138,16 @@ class DataModelsAPI(APIClient):
         """
         deleted_data_models = cast(
             list,
-            self._delete_multiple(
+            await self._delete_multiple(
                 identifiers=_load_identifier(ids, "data_model"),
                 wrap_ids=True,
                 returns_items=True,
-                executor=ConcurrencySettings.get_data_modeling_executor(),
             ),
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
     @overload
-    def list(
+    async def list(
         self,
         inline_views: Literal[True],
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
@@ -160,7 +157,7 @@ class DataModelsAPI(APIClient):
     ) -> DataModelList[View]: ...
 
     @overload
-    def list(
+    async def list(
         self,
         inline_views: Literal[False] = False,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
@@ -169,7 +166,7 @@ class DataModelsAPI(APIClient):
         include_global: bool = False,
     ) -> DataModelList[ViewId]: ...
 
-    def list(
+    async def list(
         self,
         inline_views: bool = False,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
@@ -209,7 +206,7 @@ class DataModelsAPI(APIClient):
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
-        return self._list(
+        return await self._list(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",
@@ -223,7 +220,7 @@ class DataModelsAPI(APIClient):
     @overload
     def apply(self, data_model: DataModelApply) -> DataModel: ...
 
-    def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
+    async def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
 
         Args:
@@ -244,10 +241,9 @@ class DataModelsAPI(APIClient):
                 ...     DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",views=[ViewId("mySpace","myView","v1")])]
                 >>> res = client.data_modeling.data_models.apply(data_models)
         """
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=DataModelList,
             resource_cls=DataModel,
             items=data_model,
             input_resource_cls=DataModelApply,
-            executor=ConcurrencySettings.get_data_modeling_executor(),
         )

@@ -37,7 +37,7 @@ class FunctionCallsAPI(APIClient):
     _RESOURCE_PATH_RESPONSE = "/functions/{}/calls/{}/response"
     _RESOURCE_PATH_LOGS = "/functions/{}/calls/{}/logs"
 
-    def list(
+    async def list(
         self,
         function_id: int | None = None,
         function_external_id: str | None = None,
@@ -84,7 +84,7 @@ class FunctionCallsAPI(APIClient):
             end_time=end_time,
         ).dump(camel_case=True)
         resource_path = self._RESOURCE_PATH.format(function_id)
-        return self._list(
+        return await self._list(
             method="POST",
             resource_path=resource_path,
             filter=filter,
@@ -93,7 +93,7 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def retrieve(
+    async def retrieve(
         self,
         call_id: int,
         function_id: int | None = None,
@@ -127,7 +127,7 @@ class FunctionCallsAPI(APIClient):
 
         resource_path = self._RESOURCE_PATH.format(function_id)
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(ids=call_id).as_singleton(),
             resource_cls=FunctionCall,

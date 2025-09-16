@@ -51,12 +51,12 @@ class UnitAPI(APIClient):
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
+    async def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Unit | UnitList | None:
         """`Retrieve one or more unit <https://developer.cognite.com/api#tag/Units/operation/byIdsUnits>`_
@@ -82,7 +82,7 @@ class UnitAPI(APIClient):
 
         """
         identifier = IdentifierSequence.load(external_ids=external_id)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             identifiers=identifier,
             list_cls=UnitList,
             resource_cls=Unit,
@@ -207,7 +207,7 @@ class UnitAPI(APIClient):
                 err_msg += f" Did you mean one of: {close_matches}?"
             raise ValueError(err_msg) from None
 
-    def list(self) -> UnitList:
+    async def list(self) -> UnitList:
         """`List all supported units <https://developer.cognite.com/api#tag/Units/operation/listUnits>`_
 
         Returns:
@@ -221,4 +221,4 @@ class UnitAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.units.list()
         """
-        return self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
+        return await self._list(method="GET", list_cls=UnitList, resource_cls=Unit)
