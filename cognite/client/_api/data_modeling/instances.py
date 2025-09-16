@@ -29,6 +29,7 @@ from cognite.client.data_classes.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
+from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -118,8 +119,6 @@ class _TypedNodeOrEdgeListAdapter:
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
     def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: CogniteClient) -> T_Node | T_Edge:
-        from cognite.client.data_classes.data_modeling.debug import DebugNoticeList
-
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         debug_notices = next((DebugNoticeList._load(r["debug"]["notices"]) for r in responses if "debug" in r), None)
         resources = [
@@ -184,6 +183,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Node]: ...
 
     @overload
@@ -197,6 +197,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Edge]: ...
 
     @overload
@@ -210,6 +211,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[NodeList]: ...
 
     @overload
@@ -223,6 +225,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[EdgeList]: ...
 
     def __call__(
@@ -235,6 +238,7 @@ class InstancesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        debug: DebugParameters | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
@@ -248,6 +252,7 @@ class InstancesAPI(APIClient):
             space (str | SequenceNotStr[str] | None): Only return instances in the given space (or list of spaces).
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict[str, Any] | None): Advanced filtering of instances.
+            debug (DebugParameters | None): Debug settings for profiling and troubleshooting.
 
         Returns:
             Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
@@ -255,7 +260,7 @@ class InstancesAPI(APIClient):
         self._validate_filter(filter)
         filter = self._merge_space_into_filter(instance_type, space, filter)
         other_params = self._create_other_params(
-            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources, debug=debug
         )
 
         if instance_type == "node":
@@ -265,7 +270,14 @@ class InstancesAPI(APIClient):
             resource_cls, list_cls = Edge, EdgeList
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
-        if not include_typing:
+
+        settings_forcing_raw_response_loading = []
+        if include_typing:
+            settings_forcing_raw_response_loading.append(f"{include_typing=}")
+        if debug:
+            settings_forcing_raw_response_loading.append(f"{debug=}")
+
+        if not settings_forcing_raw_response_loading:
             return cast(
                 Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList],
                 self._list_generator(
@@ -282,7 +294,7 @@ class InstancesAPI(APIClient):
             list_cls._load_raw_api_response([raw], self._cognite_client)  # type: ignore[attr-defined]
             for raw in self._list_generator_raw_responses(
                 method="POST",
-                settings_forcing_raw_response_loading=[f"{include_typing=}"],
+                settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 chunk_size=chunk_size,
                 limit=limit,
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
@@ -1504,6 +1516,7 @@ class InstancesAPI(APIClient):
                 ...     profile=True
                 ... )
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
+                >>> print(res.debug_notices)
         """
         query._validate_for_query()
         return self._query_or_sync(query, "query", include_typing=include_typing, debug=debug)
@@ -1560,6 +1573,7 @@ class InstancesAPI(APIClient):
                 ...     profile=True
                 ... )
                 >>> res = client.data_modeling.instances.query(query, debug=debug_params)
+                >>> print(res.debug_notices)
         """
         query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
@@ -1719,6 +1733,7 @@ class InstancesAPI(APIClient):
                 ...     ),
                 ...     sources=my_view,
                 ... )
+                >>> print(res.debug_notices)
         """
         self._validate_filter(filter)
         instance_type_str = self._to_instance_type_str(instance_type)

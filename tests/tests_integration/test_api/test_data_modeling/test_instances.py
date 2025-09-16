@@ -1372,7 +1372,9 @@ class TestInstancesAPI:
 
     @pytest.mark.parametrize("include_typing", [True, False])
     @pytest.mark.usefixtures("cognite_asset_nodes")
-    def test_instance_list_debug_notices(self, cognite_client: CogniteClient, include_typing: bool) -> None:
+    def test_instance_list__and___call___debug_notices(
+        self, cognite_client: CogniteClient, include_typing: bool
+    ) -> None:
         # Test that debug notices, which are returned at the root level of the response, are properly handled.
         # We also test with and without 'include_typing' which is returned the same way.
         debug_params = DebugParameters(emit_results=True, timeout=20 * 1000, profile=True)
@@ -1384,6 +1386,7 @@ class TestInstancesAPI:
             sources=None,
             include_typing=include_typing,
             debug=debug_params,
+            limit=10,
         )
         # Test by specifying a view:
         res2 = cognite_client.data_modeling.instances.list(
@@ -1391,8 +1394,20 @@ class TestInstancesAPI:
             sources=CogniteAsset.get_source(),
             include_typing=include_typing,
             debug=debug_params,
+            limit=10,
         )
-        for res in res1, res2:
+        # Test using __call__:
+        iterator = cognite_client.data_modeling.instances(
+            instance_type="node",
+            sources=CogniteAsset.get_source(),
+            include_typing=include_typing,
+            debug=debug_params,
+            limit=10,
+            chunk_size=5,
+        )
+        res3 = next(iterator)
+
+        for res in res1, res2, res3:
             assert isinstance(res, NodeList)
             assert isinstance(res.debug_notices, DebugNoticeList)
             assert len(res.debug_notices) == 1

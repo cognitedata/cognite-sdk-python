@@ -20,6 +20,7 @@ from types import UnionType
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, get_args, get_origin, get_type_hints
 from zoneinfo import ZoneInfo
 
+import cognite.client.utils._auxiliary
 from cognite.client import CogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
@@ -90,8 +91,7 @@ def all_subclasses(base: T_Type, exclude: set[type] | None = None) -> list[T_Typ
     return sorted(
         filter(
             lambda sub: sub.__module__.startswith("cognite.client"),
-            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c))
-            - (exclude or set()),
+            cognite.client.utils._auxiliary.all_subclasses(base, exclude=exclude),
         ),
         key=str,
     )
