@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import itertools
 import logging
 import random
 import time
@@ -72,8 +71,8 @@ from cognite.client.data_classes.data_modeling.query import (
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter, _validate_filter
-from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json
-from cognite.client.utils._concurrency import ConcurrencySettings
+from cognite.client.utils._auxiliary import is_unlimited, load_yaml_or_json, unpack_items
+from cognite.client.utils._concurrency import get_global_data_modeling_semaphore
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 from cognite.client.utils._retry import Backoff
@@ -118,7 +117,9 @@ class _TypedNodeOrEdgeListAdapter:
         data = load_yaml_or_json(data) if isinstance(data, str) else data
         return self._list_cls([self._instance_cls._load(item) for item in data], cognite_client=cognite_client)  # type: ignore[return-value, attr-defined]
 
-    def _load_raw_api_response(self, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient) -> T_Node | T_Edge:
+    def _load_raw_api_response(
+        self, responses: list[dict[str, Any]], cognite_client: AsyncCogniteClient
+    ) -> T_Node | T_Edge:
         from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
@@ -173,6 +174,7 @@ class InstancesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._AGGREGATE_LIMIT = 1000
         self._SEARCH_LIMIT = 1000
+        self.__dm_semaphore = get_global_data_modeling_semaphore()
 
         self._warn_on_alpha_debug_settings = FeaturePreviewWarning(
             api_maturity="alpha",
@@ -182,7 +184,7 @@ class InstancesAPI(APIClient):
         )
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         instance_type: Literal["node"] = "node",
@@ -196,7 +198,7 @@ class InstancesAPI(APIClient):
     ) -> Iterator[Node]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None,
         instance_type: Literal["edge"],
@@ -210,7 +212,7 @@ class InstancesAPI(APIClient):
     ) -> Iterator[Edge]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         instance_type: Literal["node"] = "node",
@@ -224,7 +226,7 @@ class InstancesAPI(APIClient):
     ) -> Iterator[NodeList]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         instance_type: Literal["edge"],
@@ -237,7 +239,7 @@ class InstancesAPI(APIClient):
         debug: DebugParameters | None = None,
     ) -> Iterator[EdgeList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         instance_type: Literal["node", "edge"] = "node",
@@ -302,6 +304,7 @@ class InstancesAPI(APIClient):
                     filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                     other_params=other_params,
                     headers=headers,
+                    semaphore=self.__dm_semaphore,
                 ),
             )
         return (
@@ -314,6 +317,7 @@ class InstancesAPI(APIClient):
                 filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
                 other_params=other_params,
                 headers=headers,
+                semaphore=self.__dm_semaphore,
             )
         )
 
@@ -527,7 +531,7 @@ class InstancesAPI(APIClient):
             return res.nodes[0] if res.nodes else None
         return res.nodes
 
-    def retrieve(
+    async def retrieve(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -572,11 +576,11 @@ class InstancesAPI(APIClient):
                 ...     EdgeId("mySpace", "myEdge"),
                 ...     sources=("myspace", "myView"))
         """
-        return self._retrieve_typed(
+        return await self._retrieve_typed(
             nodes=nodes, edges=edges, sources=sources, include_typing=include_typing, node_cls=Node, edge_cls=Edge
         )
 
-    def _retrieve_typed(
+    async def _retrieve_typed(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
@@ -630,13 +634,13 @@ class InstancesAPI(APIClient):
                 ]
                 return cls(resources, typing, cognite_client)  # type: ignore[arg-type]
 
-        res = self._retrieve_multiple(  # type: ignore[call-overload]
+        res = await self._retrieve_multiple(  # type: ignore[call-overload]
             list_cls=_NodeOrEdgeList,
             resource_cls=_NodeOrEdgeResourceAdapter(node_cls, edge_cls),
             identifiers=identifiers,
             other_params=other_params,
-            executor=ConcurrencySettings.get_data_modeling_executor(),
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
+            semaphore=self.__dm_semaphore,
         )
 
         return InstancesResult[T_Node, T_Edge](
@@ -682,7 +686,7 @@ class InstancesAPI(APIClient):
 
         return DataModelingIdentifierSequence(identifiers, is_singleton=False)
 
-    def delete(
+    async def delete(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -719,18 +723,18 @@ class InstancesAPI(APIClient):
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
             list,
-            self._delete_multiple(
+            await self._delete_multiple(
                 identifiers,
                 wrap_ids=True,
                 returns_items=True,
-                executor=ConcurrencySettings.get_data_modeling_executor(),
+                semaphore=self.__dm_semaphore,
             ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
 
-    def inspect(
+    async def inspect(
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
@@ -783,15 +787,15 @@ class InstancesAPI(APIClient):
         if not inspect_operations:
             raise ValueError("Must pass at least one of 'involved_views' or 'involved_containers'")
 
-        items = list(
-            itertools.chain.from_iterable(
-                self._post(
-                    self._RESOURCE_PATH + "/inspect",
-                    json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
-                ).json()["items"]
-                for chunk in identifiers.chunked(1000)
+        items = []
+        for chunk in identifiers.chunked(1000):
+            response = await self._post(
+                self._RESOURCE_PATH + "/inspect",
+                json={"items": chunk.as_dicts(), "inspectionOperations": inspect_operations},
+                semaphore=self.__dm_semaphore,
             )
-        )
+            items.extend(unpack_items(response))
+
         return InstanceInspectResults(
             nodes=InstanceInspectResultList._load([node for node in items if node["instanceType"] == "node"]),
             edges=InstanceInspectResultList._load([edge for edge in items if edge["instanceType"] == "edge"]),
@@ -814,6 +818,7 @@ class InstancesAPI(APIClient):
             callback (Callable[[QueryResult], None]): The callback function to call when the result set changes.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
+
         Returns:
             SubscriptionContext: An object that can be used to cancel the subscription.
 
@@ -1054,7 +1059,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
-            executor=ConcurrencySettings.get_data_modeling_executor(),
+            semaphore=self.__dm_semaphore,
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
@@ -1062,7 +1067,7 @@ class InstancesAPI(APIClient):
         )
 
     @overload
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1079,7 +1084,7 @@ class InstancesAPI(APIClient):
     ) -> NodeList[Node]: ...
 
     @overload
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1096,7 +1101,7 @@ class InstancesAPI(APIClient):
     ) -> EdgeList[Edge]: ...
 
     @overload
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1113,7 +1118,7 @@ class InstancesAPI(APIClient):
     ) -> NodeList[T_Node]: ...
 
     @overload
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1129,7 +1134,7 @@ class InstancesAPI(APIClient):
         operator: Literal["AND", "OR"] = "OR",
     ) -> EdgeList[T_Edge]: ...
 
-    def search(
+    async def search(
         self,
         view: ViewId,
         query: str | None = None,
@@ -1232,13 +1237,13 @@ class InstancesAPI(APIClient):
                     raise ValueError("nulls_first argument is not supported when sorting on instance search")
             body["sort"] = [self._dump_instance_sort(s) for s in sorts]
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
+        res = await self._post(url_path=self._RESOURCE_PATH + "/search", json=body, semaphore=self.__dm_semaphore)
         result = res.json()
         typing = TypeInformation._load(result["typing"]) if "typing" in result else None
         return list_cls([resource_cls._load(item) for item in result["items"]], typing, cognite_client=None)
 
     @overload
-    def aggregate(
+    async def aggregate(
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict,
@@ -1253,7 +1258,7 @@ class InstancesAPI(APIClient):
     ) -> AggregatedNumberedValue: ...
 
     @overload
-    def aggregate(
+    async def aggregate(
         self,
         view: ViewId,
         aggregates: Sequence[MetricAggregation | dict],
@@ -1268,7 +1273,7 @@ class InstancesAPI(APIClient):
     ) -> list[AggregatedNumberedValue]: ...
 
     @overload
-    def aggregate(
+    async def aggregate(
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
@@ -1282,7 +1287,7 @@ class InstancesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList: ...
 
-    def aggregate(
+    async def aggregate(
         self,
         view: ViewId,
         aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
@@ -1353,7 +1358,7 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
         result_list = InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
         if group_by is not None:
             return result_list
@@ -1391,7 +1396,7 @@ class InstancesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]: ...
 
-    def histogram(
+    async def histogram(
         self,
         view: ViewId,
         histograms: Histogram | Sequence[Histogram],
@@ -1460,7 +1465,7 @@ class InstancesAPI(APIClient):
         if target_units:
             body["targetUnits"] = [unit.dump(camel_case=True) for unit in target_units]
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
+        res = await self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body, semaphore=self.__dm_semaphore)
         if is_singleton:
             return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
         else:
@@ -1597,7 +1602,7 @@ class InstancesAPI(APIClient):
         query._validate_for_sync()
         return self._query_or_sync(query, "sync", include_typing=include_typing, debug=debug)
 
-    def _query_or_sync(
+    async def _query_or_sync(
         self, query: Query, endpoint: Literal["query", "sync"], include_typing: bool, debug: DebugParameters | None
     ) -> QueryResult:
         headers: None | dict[str, str] = None
@@ -1610,21 +1615,21 @@ class InstancesAPI(APIClient):
                 self._warn_on_alpha_debug_settings.warn()
                 headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
-        result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers)
-
-        json_payload = result.json()
+        response = await self._post(
+            url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body, headers=headers, semaphore=self.__dm_semaphore
+        )
+        json_payload = response.json()
         default_by_reference = query.instance_type_by_result_expression()
-        results = QueryResult.load(
+        return QueryResult.load(
             json_payload["items"],
             instance_list_type_by_result_expression_name=default_by_reference,
             cursors=json_payload["nextCursor"],
             typing=json_payload.get("typing"),
             debug=json_payload.get("debug"),
         )
-        return results
 
     @overload
-    def list(
+    async def list(
         self,
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
@@ -1637,7 +1642,7 @@ class InstancesAPI(APIClient):
     ) -> NodeList[Node]: ...
 
     @overload
-    def list(
+    async def list(
         self,
         instance_type: Literal["edge"],
         include_typing: bool = False,
@@ -1650,7 +1655,7 @@ class InstancesAPI(APIClient):
     ) -> EdgeList[Edge]: ...
 
     @overload
-    def list(
+    async def list(
         self,
         instance_type: type[T_Node],
         *,
@@ -1662,7 +1667,7 @@ class InstancesAPI(APIClient):
     ) -> NodeList[T_Node]: ...
 
     @overload
-    def list(
+    async def list(
         self,
         instance_type: type[T_Edge],
         *,
@@ -1673,7 +1678,7 @@ class InstancesAPI(APIClient):
         debug: DebugParameters | None = None,
     ) -> EdgeList[T_Edge]: ...
 
-    def list(
+    async def list(
         self,
         instance_type: Literal["node", "edge"] | type[T_Node] | type[T_Edge] = "node",
         include_typing: bool = False,
@@ -1801,7 +1806,7 @@ class InstancesAPI(APIClient):
 
         return cast(
             NodeList[T_Node] | EdgeList[T_Edge],
-            self._list(
+            await self._list(
                 list_cls=list_cls,
                 resource_cls=resource_cls,
                 method="POST",
@@ -1810,6 +1815,7 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
                 settings_forcing_raw_response_loading=settings_forcing_raw_response_loading,
                 headers=headers,
+                semaphore=self.__dm_semaphore,
             ),
         )
 

@@ -4,9 +4,7 @@ from pathlib import Path
 from typing import IO
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.documents import (
-    TemporaryLink,
-)
+from cognite.client.data_classes.documents import TemporaryLink
 
 
 class DocumentPreviewAPI(APIClient):
@@ -127,7 +125,7 @@ class DocumentPreviewAPI(APIClient):
         content = self.download_document_as_pdf_bytes(id)
         path.write_bytes(content)
 
-    def retrieve_pdf_link(self, id: int) -> TemporaryLink:
+    async def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
 
         Args:
@@ -144,5 +142,5 @@ class DocumentPreviewAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> link = client.documents.previews.retrieve_pdf_link(id=123)
         """
-        res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
+        res = await self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())

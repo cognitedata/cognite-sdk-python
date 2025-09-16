@@ -30,20 +30,20 @@ class SourcesAPI(APIClient):
         self._UPDATE_LIMIT = 10
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
     ) -> Iterator[Source]: ...
 
     @overload
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
     ) -> Iterator[SourceList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
@@ -61,7 +61,7 @@ class SourcesAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._list_generator(
+        return await self._list_generator(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             method="GET",
@@ -71,12 +71,12 @@ class SourcesAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
 
     @overload
-    def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
+    async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
 
-    def retrieve(
+    async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Source | SourceList:
         """`Retrieve one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/retrieve_sources>`_
@@ -100,7 +100,7 @@ class SourcesAPI(APIClient):
 
         """
         self._warning.warn()
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             identifiers=IdentifierSequence.load(external_ids=external_ids),
@@ -108,7 +108,7 @@ class SourcesAPI(APIClient):
             headers={"cdf-version": "beta"},
         )
 
-    def delete(
+    async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
         """`Delete one or more sources  <https://developer.cognite.com/api#tag/Sources/operation/delete_sources>`_
@@ -132,7 +132,7 @@ class SourcesAPI(APIClient):
         if force:
             extra_body_fields["force"] = True
 
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             headers={"cdf-version": "beta"},
@@ -140,12 +140,12 @@ class SourcesAPI(APIClient):
         )
 
     @overload
-    def create(self, items: SourceWrite) -> Source: ...
+    async def create(self, items: SourceWrite) -> Source: ...
 
     @overload
-    def create(self, items: Sequence[SourceWrite]) -> SourceList: ...
+    async def create(self, items: Sequence[SourceWrite]) -> SourceList: ...
 
-    def create(self, items: SourceWrite | Sequence[SourceWrite]) -> Source | SourceList:
+    async def create(self, items: SourceWrite | Sequence[SourceWrite]) -> Source | SourceList:
         """`Create one or more sources. <https://developer.cognite.com/api#tag/Sources/operation/create_sources>`_
 
         Args:
@@ -165,7 +165,7 @@ class SourcesAPI(APIClient):
                 >>> res = client.hosted_extractors.sources.create(source)
         """
         self._warning.warn()
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             items=items,  # type: ignore[arg-type]
@@ -174,20 +174,20 @@ class SourcesAPI(APIClient):
         )
 
     @overload
-    def update(
+    async def update(
         self,
         items: SourceWrite | SourceUpdate,
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Source: ...
 
     @overload
-    def update(
+    async def update(
         self,
         items: Sequence[SourceWrite | SourceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SourceList: ...
 
-    def update(
+    async def update(
         self,
         items: SourceWrite | SourceUpdate | Sequence[SourceWrite | SourceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
@@ -212,7 +212,7 @@ class SourcesAPI(APIClient):
                 >>> res = client.hosted_extractors.sources.update(source)
         """
         self._warning.warn()
-        return self._update_multiple(
+        return await self._update_multiple(
             items=items,  # type: ignore[arg-type]
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
@@ -234,7 +234,7 @@ class SourcesAPI(APIClient):
             output["type"] = resource._type
         return output
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SourceList:
@@ -265,7 +265,7 @@ class SourcesAPI(APIClient):
                 ...     source_list # do something with the sources
         """
         self._warning.warn()
-        return self._list(
+        return await self._list(
             list_cls=SourceList,
             resource_cls=Source,  # type: ignore[type-abstract]
             method="GET",
