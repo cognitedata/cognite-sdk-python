@@ -8,6 +8,7 @@ import re
 import warnings
 from collections import UserList
 from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -95,7 +96,9 @@ class APIClient:
         "geospatial/crs",
         "geospatial/featuretypes",
         "geospatial/featuretypes/[^/]+/features",
+        "hostedextractors",
         "labels",
+        "postgresgateway",
         "profiles",
         "raw/dbs$",
         "raw/dbs/[^/]+/tables$",
@@ -115,16 +118,18 @@ class APIClient:
         "3d/models/[^/]+/revisions/[^/]+/nodes",
     ]
 
-    _NON_RETRYABLE_POST_ENDPOINT_REGEX_PATTERN: ClassVar[str] = r"|".join(
-        rf"^/{path}(\?.*)?$"
-        for path in (
-            f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
-            "ai/tools/documents/task",
-            "annotations/suggest",
-            "extpipes/config/revert",
-            "transformations/cancel",
-            "transformations/notifications",
-            "transformations/run",
+    _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: ClassVar[Pattern[str]] = re.compile(
+        r"|".join(
+            rf"^/{path}(\?.*)?$"
+            for path in (
+                f"({r'|'.join(__NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS)})(/delete)?$",
+                "ai/tools/documents/task",
+                "annotations/suggest",
+                "extpipes/config/revert",
+                "transformations/cancel",
+                "transformations/notifications",
+                "transformations/run",
+            )
         )
     )
 
@@ -314,7 +319,7 @@ class APIClient:
         if not match:
             raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
-        return not re.match(cls._NON_RETRYABLE_POST_ENDPOINT_REGEX_PATTERN, path)
+        return not re.match(cls._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN, path)
 
     def _retrieve(
         self,

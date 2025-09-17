@@ -1,8 +1,11 @@
 import inspect
+import re
+import textwrap
 from pathlib import Path
 
 import pytest
 
+from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
@@ -70,3 +73,63 @@ def test_ensure_identifier_mixins(lst_cls):
         pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from InternalIdTransformerMixin")
     elif missing_external_id:
         pytest.fail(f"List class: '{lst_cls.__name__}' should inherit from ExternalIDTransformerMixin")
+
+
+@pytest.fixture(scope="session")
+def apis_matching_non_idempotent_POST_regex() -> set[str]:
+    regex = APIClient._NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
+    return {
+        re.sub(r"\([^)]*\)\?", "", part)  # remove optional groups
+        .replace("(", "")
+        .replace(")", "")  # remove parentheses
+        .replace("[^/]+", "")  # remove dynamic segments
+        .strip("^$/ ")
+        .split("/")[0]  # take first segment
+        for part in regex.pattern.split("|")
+        if part.strip("^$/ ")
+    }
+
+
+@pytest.mark.parametrize(
+    "api",
+    sorted(  # why sorted? xdist needs order to be consistent between test workers
+        set(api._RESOURCE_PATH.split("/")[1] for api in all_subclasses(APIClient) if hasattr(api, "_RESOURCE_PATH"))
+    ),
+)
+def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempotent_POST_regex: set[str]) -> None:
+    # So you've added a new API to the SDK, but suddenly this test is failing - what's the deal?!
+    # Answer the following:
+    # Is this new API fully idempotent, i.e. can all its POST endpoints be safely retried automatically?
+    # if yes  -> add the url base path allow list below... but always(!): add tests to TestRetryableEndpoints!
+    # if no -> look up '_NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN' and add a regex for the relevant url path(s)
+    idempotent_api_allow_list = {
+        "groups",
+        "models",
+        "securitycategories",
+        "sessions",  # TODO: Review this with the sessions team
+        "templategroups",  # Won't do: Deprecated API. TODO: remove when we remove the templates API
+        "workflows",
+        "units",
+    }
+    treated_as_idempotent = api not in apis_matching_non_idempotent_POST_regex
+    is_whitelisted_as_idempotent = api in idempotent_api_allow_list
+
+    if treated_as_idempotent and not is_whitelisted_as_idempotent:
+        pytest.fail(
+            textwrap.dedent(
+                f"""\
+            API '{api}' is treated as a fully idempotent API, but it's not whitelisted as idempotent.
+            If all the POST endpoints of this API are idempotent, you can whitelist it. If not you'll need to match
+            the endpoints in _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN and add tests to TestRetryableEndpoints!
+            """
+            )
+        )
+    if not treated_as_idempotent and is_whitelisted_as_idempotent:
+        pytest.fail(
+            textwrap.dedent(
+                f"""\
+            API '{api}' matches the non-idempotent regex, but it's also whitelisted as idempotent.
+            You'll need to either remove it from the whitelist or from _NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN.
+            """
+            )
+        )
