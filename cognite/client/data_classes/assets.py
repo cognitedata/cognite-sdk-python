@@ -10,7 +10,6 @@ from abc import ABC
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from enum import auto
-from functools import lru_cache
 from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import (
@@ -22,6 +21,8 @@ from typing import (
     TypeVar,
     cast,
 )
+
+from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -41,7 +42,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.labels import Label, LabelDefinition, LabelDefinitionWrite, LabelFilter
+from cognite.client.data_classes.labels import Label, LabelDefinitionWrite, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
 from cognite.client.utils._auxiliary import remove_duplicates_keep_order, split_into_chunks
@@ -71,14 +72,22 @@ class AggregateResultItem(CogniteObject):
 
     def __init__(
         self,
-        child_count: int | None = None,
-        depth: int | None = None,
-        path: list[dict[str, Any]] | None = None,
+        child_count: int | None,
+        depth: int | None,
+        path: list[dict[str, Any]] | None,
         **_: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
         self.path = path
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            child_count=resource.get("childCount"),
+            depth=resource.get("depth"),
+            path=resource.get("path"),
+        )
 
 
 class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
@@ -124,14 +133,6 @@ class AssetCore(WriteableCogniteResource["AssetWrite"], ABC):
         self.labels = labels
         self.geo_location = geo_location
 
-    @classmethod
-    def _load(cls: type[T_Asset], resource: dict, cognite_client: CogniteClient | None = None) -> T_Asset:
-        instance = super()._load(resource, cognite_client)
-        instance.labels = Label._load_list(instance.labels)
-        if isinstance(instance.geo_location, dict):
-            instance.geo_location = GeoLocation._load(instance.geo_location)
-        return instance
-
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
@@ -149,6 +150,9 @@ class Asset(AssetCore):
     is the read version of the Asset class, it is used when retrieving assets from the Cognite API.
 
     Args:
+        id (int): A server-generated ID for the object.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         name (str | None): The name of the asset.
         parent_id (int | None): The parent of the node, null if it is the root node.
@@ -157,34 +161,31 @@ class Asset(AssetCore):
         data_set_id (int | None): The id of the dataset this asset belongs to.
         metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str | None): The source of the asset.
-        labels (list[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        labels (list[Label] | None): A list of the labels associated with this resource item.
         geo_location (GeoLocation | None): The geographic metadata of the asset.
-        id (int | None): A server-generated ID for the object.
-        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         root_id (int | None): ID of the root asset.
-        aggregates (AggregateResultItem | dict[str, Any] | None): Aggregated metrics of the asset
+        aggregates (AggregateResultItem | None): Aggregated metrics of the asset
         cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: str | None = None,
-        name: str | None = None,
-        parent_id: int | None = None,
-        parent_external_id: str | None = None,
-        description: str | None = None,
-        data_set_id: int | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        labels: list[Label | str | LabelDefinition | dict] | None = None,
-        geo_location: GeoLocation | None = None,
-        id: int | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
-        root_id: int | None = None,
-        aggregates: AggregateResultItem | dict[str, Any] | None = None,
-        cognite_client: CogniteClient | None = None,
+        id: int,
+        created_time: int,
+        last_updated_time: int,
+        external_id: str | None,
+        name: str | None,
+        parent_id: int | None,
+        parent_external_id: str | None,
+        description: str | None,
+        data_set_id: int | None,
+        metadata: dict[str, str] | None,
+        source: str | None,
+        labels: list[Label] | None,
+        geo_location: GeoLocation | None,
+        root_id: int | None,
+        aggregates: AggregateResultItem | None,
+        cognite_client: CogniteClient | None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -195,27 +196,36 @@ class Asset(AssetCore):
             data_set_id=data_set_id,
             metadata=metadata,
             source=source,
-            labels=Label._load_list(labels),
+            labels=labels,
             geo_location=geo_location,
         )
-        # id/created_time/last_updated_time are required when using the class to read,
-        # but don't make sense passing in when creating a new object. So in order to make the typing
-        # correct here (i.e. int and not Optional[int]), we force the type to be int rather than
-        # Optional[int].
-        # TODO: In the next major version we can make these properties required in the constructor
-        self.id: int = id  # type: ignore
-        self.created_time: int = created_time  # type: ignore
-        self.last_updated_time: int = last_updated_time  # type: ignore
+        self.id: int = id
+        self.created_time: int = created_time
+        self.last_updated_time: int = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Asset:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.aggregates, dict):
-            instance.aggregates = AggregateResultItem._load(instance.aggregates)
-        return instance
+    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+        return cls(
+            id=resource["id"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            external_id=resource.get("externalId"),
+            name=resource.get("name"),
+            parent_id=resource.get("parentId"),
+            parent_external_id=resource.get("parentExternalId"),
+            description=resource.get("description"),
+            data_set_id=resource.get("dataSetId"),
+            metadata=resource.get("metadata"),
+            source=resource.get("source"),
+            labels=Label._load_list(resource.get("labels")),
+            geo_location=(geo_location := resource.get("geoLocation")) and GeoLocation._load(geo_location),
+            root_id=resource.get("rootId"),
+            aggregates=(aggregates := resource.get("aggregates")) and AggregateResultItem._load(aggregates),
+            cognite_client=cognite_client,
+        )
 
     def as_write(self) -> AssetWrite:
         """Returns this Asset in its writing version."""
@@ -427,6 +437,9 @@ class AssetWrite(AssetCore):
         """Returns self."""
         return self
 
+    def __hash__(self) -> int:
+        return hash(self.external_id)
+
 
 class AssetUpdate(CogniteUpdate):
     """Changes applied to asset
@@ -605,7 +618,7 @@ class AssetList(WriteableCogniteResourceList[AssetWrite, Asset], IdTransformerMi
                 return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
         tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(set(ids), chunk_size)]
-        res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
+        res_list = execute_tasks(retrieve_and_deduplicate, tasks).results
         return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
 
@@ -681,7 +694,7 @@ class AssetHierarchy:
     any asset providing a parent link by ID instead of external ID, are assumed valid.
 
     Args:
-        assets (Sequence[Asset | AssetWrite]): Sequence of assets to be inspected for validity.
+        assets (Sequence[AssetWrite]): Sequence of assets to be inspected for validity.
         ignore_orphans (bool): If true, orphan assets are assumed valid and won't raise.
 
     Examples:
@@ -719,28 +732,20 @@ class AssetHierarchy:
         ...     report = file_like.getvalue()
     """
 
-    def __init__(self, assets: Sequence[Asset | AssetWrite], ignore_orphans: bool = False) -> None:
-        self._assets = self._convert_to_read(assets)
-        self._roots: list[Asset] | None = None
-        self._orphans: list[Asset] | None = None
+    def __init__(self, assets: Sequence[AssetWrite], ignore_orphans: bool = False) -> None:
+        self._assets = list(assets)
+        self._roots: list[AssetWrite] | None = None
+        self._orphans: list[AssetWrite] | None = None
         self._ignore_orphans = ignore_orphans
-        self._invalid: list[Asset] | None = None
-        self._unsure_parents: list[Asset] | None = None
-        self._duplicates: dict[str, list[Asset]] | None = None
+        self._invalid: list[AssetWrite] | None = None
+        self._unsure_parents: list[AssetWrite] | None = None
+        self._duplicates: dict[str, list[AssetWrite]] | None = None
         self._cycles: list[list[str]] | None = None
 
         self.__validation_has_run = False
 
     def __len__(self) -> int:
         return len(self._assets)
-
-    @staticmethod
-    def _convert_to_read(assets: Sequence[Asset | AssetWrite]) -> Sequence[Asset]:
-        # TODO: AssetHierarchy doesn't work with AssetWrite (or more correctly, _AssetHierarchyCreator...)
-        #       and as we don't have a reverse of "as_write", we dump-load the write into a read:
-        return [
-            Asset._load(asset.dump(camel_case=True)) if isinstance(asset, AssetWrite) else asset for asset in assets
-        ]
 
     def is_valid(self, on_error: Literal["ignore", "warn", "raise"] = "ignore") -> bool:
         if not self.__validation_has_run:
@@ -754,34 +759,34 @@ class AssetHierarchy:
         return False
 
     @property
-    def roots(self) -> AssetList:
+    def roots(self) -> AssetWriteList:
         if self._roots is None:
             raise RuntimeError("Unable to list root assets before validation has run")
-        return AssetList(self._roots)
+        return AssetWriteList(self._roots)
 
     @property
-    def orphans(self) -> AssetList:
+    def orphans(self) -> AssetWriteList:
         if self._orphans is None:  # Note: The option 'ignore_orphans' has no impact on this
             raise RuntimeError("Unable to list orphan assets before validation has run")
-        return AssetList(self._orphans)
+        return AssetWriteList(self._orphans)
 
     @property
-    def invalid(self) -> AssetList:
+    def invalid(self) -> AssetWriteList:
         if self._invalid is None:
             raise RuntimeError("Unable to list assets invalid attributes before validation has run")
-        return AssetList(self._invalid)
+        return AssetWriteList(self._invalid)
 
     @property
-    def unsure_parents(self) -> AssetList:
+    def unsure_parents(self) -> AssetWriteList:
         if self._unsure_parents is None:
             raise RuntimeError("Unable to list assets with unsure parent link before validation has run")
-        return AssetList(self._unsure_parents)
+        return AssetWriteList(self._unsure_parents)
 
     @property
-    def duplicates(self) -> dict[str, list[Asset]]:
+    def duplicates(self) -> dict[str, list[AssetWrite]]:
         if self._duplicates is None:
             raise RuntimeError("Unable to list duplicate assets before validation has run")
-        # NB: Do not return AssetList (as it does not handle duplicates well):
+        # NB: Do not return AssetWriteList (as it does not handle duplicates well):
         return {xid: assets for xid, assets in self._duplicates.items()}
 
     @property
@@ -795,7 +800,7 @@ class AssetHierarchy:
     def validate(
         self,
         verbose: bool = False,
-        output_file: Path | None = None,
+        output_file: Path | TextIO | None = None,
         on_error: Literal["ignore", "warn", "raise"] = "warn",
     ) -> AssetHierarchy:
         self._roots, self._orphans, self._invalid, self._unsure_parents, self._duplicates = self._inspect_attributes()
@@ -815,10 +820,10 @@ class AssetHierarchy:
         self.is_valid(on_error=on_error)
         return self
 
-    def validate_and_report(self, output_file: Path | None = None) -> AssetHierarchy:
+    def validate_and_report(self, output_file: Path | TextIO | None = None) -> AssetHierarchy:
         return self.validate(verbose=True, output_file=output_file, on_error="ignore")
 
-    def groupby_parent_xid(self) -> dict[str | None, list[Asset]]:
+    def groupby_parent_xid(self) -> dict[str | None, list[AssetWrite]]:
         """Returns a mapping from parent external ID to a list of its direct children.
 
         Note:
@@ -828,14 +833,14 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
 
         Returns:
-            dict[str | None, list[Asset]]: No description."""
+            dict[str | None, list[AssetWrite]]: No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
         # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
         # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
 
-        def parent_sort_fn(asset: Asset) -> str:
+        def parent_sort_fn(asset: AssetWrite) -> str:
             # All assets using 'parent_id' will be grouped together with the root assets:
             if (pxid := asset.parent_external_id) is None:
                 return ""
@@ -859,11 +864,11 @@ class AssetHierarchy:
         )
         return mapping
 
-    def count_subtree(self, mapping: dict[str | None, list[Asset]]) -> dict[str, int]:
+    def count_subtree(self, mapping: dict[str | None, list[AssetWrite]]) -> dict[str, int]:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of children etc.).
 
         Args:
-            mapping (dict[str | None, list[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping (dict[str | None, list[AssetWrite]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
             dict[str, int]: Lookup from external ID to descendant count.
@@ -871,7 +876,7 @@ class AssetHierarchy:
         if mapping is None:
             mapping = self.groupby_parent_xid()
 
-        @lru_cache(None)
+        @functools.cache
         def _count_subtree(xid: str, count: int = 0) -> int:
             for child in mapping.get(xid, []):
                 count += 1 + _count_subtree(child.external_id)
@@ -898,14 +903,16 @@ class AssetHierarchy:
             self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
         )
 
-    def _inspect_attributes(self) -> tuple[list[Asset], list[Asset], list[Asset], list[Asset], dict[str, list[Asset]]]:
-        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[Asset], list[Asset], list[Asset], list[Asset]]
-        duplicates: defaultdict[str, list[Asset]] = defaultdict(list)
+    def _inspect_attributes(
+        self,
+    ) -> tuple[list[AssetWrite], list[AssetWrite], list[AssetWrite], list[AssetWrite], dict[str, list[AssetWrite]]]:
+        invalid, orphans, roots, unsure_parents = [], [], [], []  # type: tuple[list[AssetWrite], list[AssetWrite], list[AssetWrite], list[AssetWrite]]
+        duplicates: defaultdict[str, list[AssetWrite]] = defaultdict(list)
         xid_count = Counter(a.external_id for a in self._assets)
 
         for asset in self._assets:
-            id_, xid, name = asset.id, asset.external_id, asset.name
-            if xid is None or name is None or len(name) < 1 or id_ is not None:
+            xid, name = asset.external_id, asset.name
+            if xid is None or name is None or len(name) < 1:
                 invalid.append(asset)
                 continue  # Don't report invalid as part of any other group
 
@@ -925,7 +932,7 @@ class AssetHierarchy:
                 elif parent_xid not in xid_count:  # Only parent XID given, but not part of assets given
                     orphans.append(asset)
 
-            # Only case left is when parent is only given by ID, which we assume is valid
+            # else -> Only case left is when parent is only given by ID, which we assume is valid
 
         return roots, orphans, invalid, unsure_parents, dict(duplicates)
 
@@ -941,7 +948,7 @@ class AssetHierarchy:
         edges = cast(dict[str, str | None], {a.external_id: a.parent_external_id for a in self._assets})
 
         if self._ignore_orphans:
-            no_cycles |= {a.parent_external_id for a in cast(list[Asset], self._orphans)}
+            no_cycles |= {a.parent_external_id for a in self._orphans or []}
 
         for xid, parent in edges.items():
             if parent in no_cycles:
@@ -988,7 +995,7 @@ class AssetHierarchy:
             except Exception as e:
                 raise TypeError("Unable to write to `output_file`, a file-like object is required") from e
 
-    def _report_on_identifiers(self, output_file: Path | None) -> None:
+    def _report_on_identifiers(self, output_file: Path | TextIO | None) -> None:
         print_fn = functools.partial(self.print_to, output_file=output_file)
 
         def print_header(title: str, columns: list[str]) -> None:
@@ -999,7 +1006,7 @@ class AssetHierarchy:
                 DrawTables.XLINE.join(DrawTables.HLINE * 20 for _ in columns),
             )
 
-        def print_table(lst: list[Asset], columns: list[str]) -> None:
+        def print_table(lst: list[AssetWrite], columns: list[str]) -> None:
             for entry in lst:
                 cols = (f"{shorten(getattr(entry, col)):<20}" for col in columns)
                 print_fn(DrawTables.VLINE.join(cols))
@@ -1040,7 +1047,7 @@ class AssetHierarchy:
             for dupe_assets in self._duplicates.values():
                 print_table(dupe_assets, attrs_with_description)
 
-    def _report_on_cycles(self, output_file: Path | None, cycle_subtree_size: int) -> None:
+    def _report_on_cycles(self, output_file: Path | TextIO | None, cycle_subtree_size: int) -> None:
         if not (cycles := self._cycles):
             return
 

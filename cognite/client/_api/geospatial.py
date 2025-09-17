@@ -3,9 +3,8 @@ from __future__ import annotations
 import numbers
 import urllib.parse
 from collections.abc import Iterator, Sequence
-from typing import Any, cast, overload
-
-from requests.exceptions import ChunkedEncodingError
+from pathlib import Path
+from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -27,7 +26,6 @@ from cognite.client.data_classes.geospatial import (
     OrderSpec,
     RasterMetadata,
 )
-from cognite.client.exceptions import CogniteConnectionError
 from cognite.client.utils import _json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -389,24 +387,42 @@ class GeospatialAPI(APIClient):
             other_params={"output": {"properties": properties}},
         )
 
+    @overload
     def update_features(
         self,
         feature_type_external_id: str,
-        feature: Feature | Sequence[Feature],
+        feature: Feature | FeatureWrite,
         allow_crs_transformation: bool = False,
         chunk_size: int | None = None,
-    ) -> FeatureList:
+    ) -> Feature: ...
+
+    @overload
+    def update_features(
+        self,
+        feature_type_external_id: str,
+        feature: Sequence[Feature] | Sequence[FeatureWrite],
+        allow_crs_transformation: bool = False,
+        chunk_size: int | None = None,
+    ) -> FeatureList: ...
+
+    def update_features(
+        self,
+        feature_type_external_id: str,
+        feature: Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite],
+        allow_crs_transformation: bool = False,
+        chunk_size: int | None = None,
+    ) -> Feature | FeatureList:
         """`Update features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
 
         Args:
             feature_type_external_id (str): No description.
-            feature (Feature | Sequence[Feature]): feature or list of features.
+            feature (Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite]): feature or list of features.
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
             chunk_size (int | None): maximum number of items in a single request to the api
 
         Returns:
-            FeatureList: Updated features
+            Feature | FeatureList: Updated features
 
         Examples:
 
@@ -431,16 +447,13 @@ class GeospatialAPI(APIClient):
         # they are more like a replace so an update looks like a feature creation
         resource_path = self._feature_resource_path(feature_type_external_id) + "/update"
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}
-        return cast(
-            FeatureList,
-            self._create_multiple(
-                list_cls=FeatureList,
-                resource_cls=Feature,
-                items=feature,
-                resource_path=resource_path,
-                extra_body_fields=extra_body_fields,
-                limit=chunk_size,
-            ),
+        return self._create_multiple(
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            items=feature,
+            resource_path=resource_path,
+            extra_body_fields=extra_body_fields,
+            limit=chunk_size,
         )
 
     def list_features(
@@ -708,13 +721,8 @@ class GeospatialAPI(APIClient):
             "allowCrsTransformation": allow_crs_transformation,
             "allowDimensionalityMismatch": allow_dimensionality_mismatch,
         }
-        res = self._do_request("POST", url_path=resource_path, json=payload, timeout=self._config.timeout, stream=True)
-
-        try:
-            for line in res.iter_lines():
-                yield Feature._load(_json.loads(line))
-        except (ChunkedEncodingError, ConnectionError) as e:
-            raise CogniteConnectionError(e)
+        with self._stream("POST", url_path=resource_path, json=payload) as resp:
+            yield from (Feature._load(_json.loads(line)) for line in resp.iter_lines())
 
     def aggregate_features(
         self,
@@ -922,7 +930,7 @@ class GeospatialAPI(APIClient):
         raster_property_name: str,
         raster_format: str,
         raster_srid: int,
-        file: str,
+        file: str | Path,
         allow_crs_transformation: bool = False,
         raster_scale_x: float | None = None,
         raster_scale_y: float | None = None,
@@ -935,7 +943,7 @@ class GeospatialAPI(APIClient):
             raster_property_name (str): the raster property name
             raster_format (str): the raster input format
             raster_srid (int): the associated SRID for the raster
-            file (str): the path to the file of the raster
+            file (str | Path): the path to the file of the raster
             allow_crs_transformation (bool): When the parameter is false, requests with rasters in Coordinate Reference System different from the one defined in the feature type will result in bad request response code.
             raster_scale_x (float | None): the X component of the pixel width in units of coordinate reference system
             raster_scale_y (float | None): the Y component of the pixel height in units of coordinate reference system
@@ -968,13 +976,7 @@ class GeospatialAPI(APIClient):
         )
         with open(file, "rb") as fh:
             data = fh.read()
-        res = self._do_request(
-            "PUT",
-            url_path,
-            data=data,
-            headers={"Content-Type": "application/binary"},
-            timeout=self._config.timeout,
-        )
+        res = self._put(url_path, content=data, headers={"Content-Type": "application/binary"})
         return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
     def delete_raster(
@@ -1001,13 +1003,8 @@ class GeospatialAPI(APIClient):
                 >>> raster_property_name = ...
                 >>> client.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
         """
-        url_path = (
+        self._post(
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete"
-        )
-        self._do_request(
-            "POST",
-            url_path,
-            timeout=self._config.timeout,
         )
 
     def get_raster(
@@ -1051,10 +1048,8 @@ class GeospatialAPI(APIClient):
                 ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
         """
         url_path = self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
-        res = self._do_request(
-            "POST",
+        return self._post(
             url_path,
-            timeout=self._config.timeout,
             json={
                 "format": raster_format,
                 "options": raster_options,
@@ -1063,8 +1058,7 @@ class GeospatialAPI(APIClient):
                 "scaleX": raster_scale_x,
                 "scaleY": raster_scale_y,
             },
-        )
-        return res.content
+        ).content
 
     def compute(
         self,
@@ -1088,10 +1082,8 @@ class GeospatialAPI(APIClient):
                 >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
                 >>> compute_result = client.geospatial.compute(output = {"output": compute_function})
         """
-        res = self._do_request(
-            "POST",
+        res = self._post(
             f"{GeospatialAPI._RESOURCE_PATH}/compute",
-            timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
         return GeospatialComputedResponse._load(res.json(), cognite_client=self._cognite_client)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -19,7 +21,7 @@ from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def one_job(cognite_client: CogniteClient, one_event_hub_source: Source, one_destination: Destination) -> Job:
+def one_job(cognite_client: CogniteClient, one_event_hub_source: Source, one_destination: Destination) -> Iterator[Job]:
     my_job = JobWrite(
         external_id=f"myJobForTesting-{random_string(10)}",
         destination_id=one_destination.external_id,
@@ -43,9 +45,7 @@ class TestJobs:
             external_id=f"myJobForTesting-{random_string(10)}",
             destination_id=one_destination.external_id,
             source_id=one_event_hub_source.external_id,
-            format=CogniteFormat(
-                encoding="utf16",
-            ),
+            format=CogniteFormat(encoding="utf16"),
         )
         created: Job | None = None
         try:

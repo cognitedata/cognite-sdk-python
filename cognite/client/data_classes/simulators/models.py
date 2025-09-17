@@ -355,7 +355,7 @@ class SimulatorModelUpdate(CogniteUpdate):
 
 
 @dataclass
-class SimulatorModelDependencyFileReference(CogniteObject): ...
+class SimulatorModelDependencyFileReference(CogniteObject, ABC): ...
 
 
 @dataclass
@@ -364,9 +364,7 @@ class SimulatorModelDependencyFileId(SimulatorModelDependencyFileReference):
 
     @classmethod
     def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
-        return cls(
-            id=resource["id"],
-        )
+        return cls(id=resource["id"])
 
 
 @dataclass

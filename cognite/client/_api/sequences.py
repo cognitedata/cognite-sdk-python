@@ -521,8 +521,8 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
                 >>> column_def = [
-                ...     SequenceColumnWrite(value_type="String", external_id="user", description="some description"),
-                ...     SequenceColumnWrite(value_type="Double", external_id="amount")
+                ...     SequenceColumnWrite(value_type="STRING", external_id="user", description="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
                 ... ]
                 >>> seq = client.sequences.create(SequenceWrite(external_id="my_sequence", columns=column_def))
 
@@ -614,18 +614,21 @@ class SequencesAPI(APIClient):
 
             Add a single new column:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
-                >>> my_update = SequenceUpdate(id=1).columns.add(SequenceColumn(value_type ="String",external_id="user", description ="some description"))
+                >>> my_update = SequenceUpdate(id=1).columns.add(
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description")
+                ... )
                 >>> res = client.sequences.update(my_update)
 
             Add multiple new columns:
 
-                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnWrite
                 >>>
                 >>> column_def = [
-                ...     SequenceColumn(value_type ="String",external_id="user", description ="some description"),
-                ...     SequenceColumn(value_type="Double", external_id="amount")]
+                ...     SequenceColumnWrite(value_type ="STRING",external_id="user", description ="some description"),
+                ...     SequenceColumnWrite(value_type="DOUBLE", external_id="amount")
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.add(column_def)
                 >>> res = client.sequences.update(my_update)
 
@@ -702,7 +705,7 @@ class SequencesAPI(APIClient):
                 >>> new_sequence = SequenceWrite(
                 ...     external_id="new_sequence",
                 ...     description="New sequence",
-                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="String")]
+                ...     columns=[SequenceColumnWrite(external_id="col1", value_type="STRING")]
                 ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
@@ -1061,10 +1064,16 @@ class SequencesDataAPI(APIClient):
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Sequence, SequenceColumn
+                >>> from cognite.client.data_classes import SequenceWrite, SequenceColumnWrite
                 >>> client = CogniteClient()
-                >>> seq = client.sequences.create(Sequence(columns=[SequenceColumn(value_type="String", external_id="col_a"),
-                ...     SequenceColumn(value_type="Double", external_id ="col_b")]))
+                >>> seq = client.sequences.create(
+                ...     SequenceWrite(
+                ...         columns=[
+                ...             SequenceColumnWrite(value_type="STRING", external_id="col_a"),
+                ...             SequenceColumnWrite(value_type="DOUBLE", external_id ="col_b")
+                ...         ],
+                ...     )
+                ... )
                 >>> data = [(1, ['pi',3.14]), (2, ['e',2.72]) ]
                 >>> client.sequences.data.insert(columns=["col_a","col_b"], rows=data, id=1)
 
@@ -1109,7 +1118,7 @@ class SequencesDataAPI(APIClient):
 
         row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]
-        summary = execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
+        summary = execute_tasks(self._insert_data, tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(
@@ -1233,6 +1242,18 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> SequenceRowsList: ...
 
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: typing.Sequence[int] | int,
+        external_id: SequenceNotStr[str] | str,
+        start: int = 0,
+        end: int | None = None,
+        columns: SequenceNotStr[str] | None = None,
+        limit: int | None = None,
+    ) -> SequenceRowsList: ...
+
     def retrieve(
         self,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -1284,7 +1305,7 @@ class SequencesDataAPI(APIClient):
 
             return SequenceRows._load(sequence_rows)
 
-        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)), max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(_fetch_sequence, list(zip(identifiers)))
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_list_element_unwrap_fn=ident_sequence.extract_identifiers
         )
@@ -1324,10 +1345,8 @@ class SequencesDataAPI(APIClient):
         """
         columns = handle_renamed_argument(columns, "columns", "column_external_ids", "insert", kwargs, False)
         identifier = Identifier.of_either(id, external_id).as_dict()
-        res = self._do_request(
-            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns}
-        ).json()
-        return SequenceRows._load(res)
+        res = self._post(self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": columns})
+        return SequenceRows._load(res.json())
 
     def retrieve_dataframe(
         self,

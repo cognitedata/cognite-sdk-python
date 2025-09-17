@@ -22,9 +22,10 @@ from cognite.client.data_classes import (
     ThreeDNodeList,
 )
 from cognite.client.utils import _json
-from cognite.client.utils._auxiliary import interpolate_and_url_encode, split_into_chunks, unpack_items_in_payload
+from cognite.client.utils._auxiliary import drop_none_values, split_into_chunks, unpack_items_in_payload
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
+from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -75,7 +76,7 @@ class ThreeDModelsAPI(APIClient):
             resource_cls=ThreeDModel,
             method="GET",
             chunk_size=chunk_size,
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
 
@@ -140,9 +141,25 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
-            filter={"published": published},
+            filter=drop_none_values({"published": published}),
             limit=limit,
         )
+
+    @overload
+    def create(
+        self,
+        name: str | ThreeDModelWrite,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModel: ...
+
+    @overload
+    def create(
+        self,
+        name: SequenceNotStr[str | ThreeDModelWrite],
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> ThreeDModelList: ...
 
     def create(
         self,
@@ -524,7 +541,7 @@ class ThreeDRevisionsAPI(APIClient):
             resource_path=resource_path,
             method="GET",
             limit=limit,
-            filter={"depth": depth, "nodeId": node_id},
+            filter=drop_none_values({"depth": depth, "nodeId": node_id}),
             partitions=partitions,
             other_params={"sortByNodeId": sort_by_node_id},
         )
@@ -753,10 +770,10 @@ class ThreeDAssetMappingAPI(APIClient):
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
         chunks = split_into_chunks(
-            [ThreeDAssetMapping(a.node_id, a.asset_id).dump(camel_case=True) for a in asset_mapping], self._DELETE_LIMIT
+            [{"nodeId": a.node_id, "assetId": a.asset_id} for a in asset_mapping], self._DELETE_LIMIT
         )
         tasks = [{"url_path": path + "/delete", "json": {"items": chunk}} for chunk in chunks]
-        summary = execute_tasks(self._post, tasks, self._config.max_workers)
+        summary = execute_tasks(self._post, tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload, task_list_element_unwrap_fn=lambda el: ThreeDAssetMapping._load(el)
         )

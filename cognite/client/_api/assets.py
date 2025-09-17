@@ -572,7 +572,7 @@ class AssetsAPI(APIClient):
 
     def create_hierarchy(
         self,
-        assets: Sequence[Asset | AssetWrite] | AssetHierarchy,
+        assets: Sequence[AssetWrite] | AssetHierarchy,
         *,
         upsert: bool = False,
         upsert_mode: Literal["patch", "replace"] = "patch",
@@ -585,7 +585,7 @@ class AssetsAPI(APIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[Asset | AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            assets (Sequence[AssetWrite] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
             upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
             upsert_mode (Literal['patch', 'replace']): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
@@ -599,7 +599,7 @@ class AssetsAPI(APIClient):
 
                 - Missing external ID.
                 - Missing a valid name.
-                - Has an ID set.
+                - Has an ID set (note: you may not pass Asset, use AssetWrite)
             2. Any asset duplicates exist (category: ``duplicates``)
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
@@ -627,12 +627,12 @@ class AssetsAPI(APIClient):
             Create an asset hierarchy:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
                 >>> assets = [
-                ...     Asset(external_id="root", name="root"),
-                ...     Asset(external_id="child1", parent_external_id="root", name="child1"),
-                ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
+                ...     AssetWrite(external_id="root", name="root"),
+                ...     AssetWrite(external_id="child1", parent_external_id="root", name="child1"),
+                ...     AssetWrite(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = client.assets.create_hierarchy(assets)
 
             Create an asset hierarchy, but run update for existing assets:
@@ -830,11 +830,11 @@ class AssetsAPI(APIClient):
             Upsert for assets:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import Asset
+                >>> from cognite.client.data_classes import AssetWrite
                 >>> client = CogniteClient()
                 >>> existing_asset = client.assets.retrieve(id=1)
                 >>> existing_asset.description = "New description"
-                >>> new_asset = Asset(external_id="new_asset", description="New asset")
+                >>> new_asset = AssetWrite(external_id="new_asset", name="my asset", description="New asset")
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
         return self._upsert_multiple(
@@ -994,7 +994,7 @@ class AssetsAPI(APIClient):
     def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = [{"parent_ids": chunk, "limit": -1} for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
+        tasks_summary = execute_tasks(self.list, tasks=tasks)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
         children = []
@@ -1162,13 +1162,15 @@ class _TaskResult(NamedTuple):
 
 class _AssetHierarchyCreator:
     def __init__(self, hierarchy: AssetHierarchy, assets_api: AssetsAPI) -> None:
+        from cognite.client import global_config
+
         hierarchy.is_valid(on_error="raise")
         self.hierarchy = hierarchy
         self.n_assets = len(hierarchy)
         self.assets_api = assets_api
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
-        self.max_workers = assets_api._config.max_workers
+        self.max_workers = global_config.max_workers
         self.failed: list[Asset] = []
         self.unknown: list[Asset] = []
         # Each thread needs to store its latest exception:
@@ -1181,7 +1183,7 @@ class _AssetHierarchyCreator:
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
 
-        pool = ConcurrencySettings.get_executor(max_workers=self.max_workers)
+        pool = ConcurrencySettings.get_executor()
         created_assets = self._create(pool, insert_fn, insert_dct, subtree_count)  # type: ignore [arg-type]
 
         if all_exceptions := [exc for exc in self.latest_exception.values() if exc is not None]:
@@ -1429,15 +1431,15 @@ class _AssetHierarchyCreator:
                 cluster=self.assets_api._config.cdf_cluster,
                 project=self.assets_api._config.project,
                 extra=latest_exception.extra,
-                successful=AssetList(successful),
-                unknown=AssetList(self.unknown),
-                failed=AssetList(self.failed),
+                successful=successful,
+                unknown=self.unknown,
+                failed=self.failed,
             )
         # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
         # the underlying reason from the user. We do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
         raise CogniteMultiException(
-            successful=AssetList(successful),
-            unknown=AssetList(self.unknown),
-            failed=AssetList(self.failed),
+            successful=successful,
+            unknown=self.unknown,
+            failed=self.failed,
         ) from latest_exception

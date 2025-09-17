@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from requests import Response
+from typing import TYPE_CHECKING, Any
 
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
@@ -26,7 +24,6 @@ from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
 from cognite.client._api.simulators import SimulatorsAPI
-from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
@@ -36,7 +33,10 @@ from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
-from cognite.client.utils._auxiliary import get_current_sdk_version, load_resource_to_dict
+from cognite.client.utils._auxiliary import load_resource_to_dict
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class CogniteClient:
@@ -75,7 +75,6 @@ class CogniteClient:
         self.labels = LabelsAPI(self._config, self._API_VERSION, self)
         self.relationships = RelationshipsAPI(self._config, self._API_VERSION, self)
         self.entity_matching = EntityMatchingAPI(self._config, self._API_VERSION, self)
-        self.templates = TemplatesAPI(self._config, self._API_VERSION, self)
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, self._API_VERSION, self)
         self.hosted_extractors = HostedExtractorsAPI(self._config, self._API_VERSION, self)
@@ -92,27 +91,31 @@ class CogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
-    def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+    def get(
+        self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+    ) -> httpx.Response:
         """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
     def post(
         self,
         url: str,
-        json: dict[str, Any],
+        json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> Response:
+    ) -> httpx.Response:
         """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
+    def put(
+        self,
+        url: str,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> httpx.Response:
         """Perform a PUT request to an arbitrary path in the API."""
-        return self._api_client._put(url, json=json, headers=headers)
-
-    def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
-        """Perform a DELETE request to an arbitrary path in the API."""
-        return self._api_client._delete(url, params=params, headers=headers)
+        return self._api_client._put(url, json=json, params=params, headers=headers)
 
     @property
     def version(self) -> str:
@@ -121,7 +124,9 @@ class CogniteClient:
         Returns:
             str: The current SDK version
         """
-        return get_current_sdk_version()
+        from cognite.client import __version__
+
+        return __version__
 
     @property
     def config(self) -> ClientConfig:

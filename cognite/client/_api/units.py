@@ -94,24 +94,27 @@ class UnitAPI(APIClient):
     def from_alias(
         self,
         alias: str,
-        quantity: str | None,
-        return_ambiguous: Literal[False],
-        return_closest_matches: Literal[False],
+        quantity: str | None = None,
+        *,
+        return_ambiguous: Literal[False] = False,
+        return_closest_matches: Literal[False] = False,
     ) -> Unit: ...
 
     @overload
     def from_alias(
         self,
         alias: str,
-        quantity: str | None,
-        return_ambiguous: bool,
-        return_closest_matches: bool,
-    ) -> Unit | UnitList: ...
+        quantity: str | None = None,
+        *,
+        return_ambiguous: bool = False,
+        return_closest_matches: bool = False,
+    ) -> UnitList: ...
 
     def from_alias(
         self,
         alias: str,
         quantity: str | None = None,
+        *,
         return_ambiguous: bool = False,
         return_closest_matches: bool = False,
     ) -> Unit | UnitList:

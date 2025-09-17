@@ -11,8 +11,8 @@ from cognite.client.data_classes import (
     TransformationJobMetric,
     TransformationJobMetricList,
 )
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class TransformationJobsAPI(APIClient):

@@ -59,7 +59,7 @@ def chat_response_body() -> dict:
 class TestAgentChat:
     def test_chat_simple_message(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
         # Mock the API response
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
 
         # Test with simple string message
         response = cognite_client.agents.chat(agent_id="my_agent", messages=Message("What can you help me with?"))
@@ -99,13 +99,15 @@ class TestAgentChat:
         assert len(agent_msg.reasoning) == 1
         assert isinstance(agent_msg.reasoning[0], AgentReasoningItem)
         assert len(agent_msg.reasoning[0].content) == 1
-        assert agent_msg.reasoning[0].content[0].text == "The user is asking about capabilities"
+        content = agent_msg.reasoning[0].content[0]
+        assert isinstance(content, TextContent)
+        assert content.text == "The user is asking about capabilities"
 
         # Test convenience properties
         assert response.text == "I can help you with various tasks related to your industrial data."
 
     def test_chat_with_cursor(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
 
         # Test with cursor
         cognite_client.agents.chat(
@@ -119,7 +121,7 @@ class TestAgentChat:
         assert call_args[1]["json"]["cursor"] == "previous_cursor_123"
 
     def test_chat_multiple_messages(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
 
         # Test with multiple messages
         messages = [
@@ -153,7 +155,7 @@ class TestAgentChat:
             },
         }
 
-        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: minimal_response))
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: minimal_response))  # type: ignore[method-assign]
 
         response = cognite_client.agents.chat(agent_id="my_agent", messages=Message("Hello"))
 
@@ -174,4 +176,5 @@ class TestAgentChat:
         content = TextContent(text="Hello world")
         msg = Message(content=content)
         assert msg.content is content
+        assert isinstance(msg.content, TextContent)
         assert msg.content.text == "Hello world"

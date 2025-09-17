@@ -63,18 +63,6 @@ class Point(VisionResource):
         return cls(x=resource["x"], y=resource["y"])
 
 
-def _process_vertices(vertices: list[dict[str, float]] | list[Point]) -> list[Point]:
-    processed_vertices: list[Point] = []
-    for v in vertices:
-        if isinstance(v, Point):
-            processed_vertices.append(v)
-        elif isinstance(v, dict) and set(v) == set("xy"):
-            processed_vertices.append(Point._load(convert_all_keys_to_camel_case_recursive(v)))
-        else:
-            raise ValueError(f"{v} is an invalid point.")
-    return processed_vertices
-
-
 @dataclass
 class BoundingBox(VisionResource):
     x_min: float
@@ -103,9 +91,6 @@ class Polygon(VisionResource):
     # A valid polygon contains *at least* three vertices
     vertices: list[Point]
 
-    def __post_init__(self) -> None:
-        self.vertices = _process_vertices(self.vertices)
-
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Polygon:
         return cls(vertices=[Point._load(vertex) for vertex in resource["vertices"]])
@@ -115,9 +100,6 @@ class Polygon(VisionResource):
 class Polyline(VisionResource):
     # A valid polyline contains *at least* two vertices
     vertices: list[Point]
-
-    def __post_init__(self) -> None:
-        self.vertices = _process_vertices(self.vertices)
 
     @classmethod
     def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
