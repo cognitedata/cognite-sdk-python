@@ -509,7 +509,7 @@ class TestInstancesAPI:
         edge_type_class: type[NodeId, DirectRelationReference],
     ) -> None:
         edge_type = edge_type_class(
-            space=edge_type_filter_test_edge.space, external_id=edge_type_filter_test_edge.external_id
+            space=edge_type_filter_test_edge.type.space, external_id=edge_type_filter_test_edge.type.external_id
         )
 
         listed_edges = cognite_client.data_modeling.instances.list(
