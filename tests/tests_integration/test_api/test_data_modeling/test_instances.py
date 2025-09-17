@@ -45,6 +45,12 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
+    CogniteDescribableEdge,
+    CogniteDescribableEdgeApply,
+    CogniteDescribableNode,
+    CogniteDescribableNodeApply,
+)
 from cognite.client.data_classes.data_modeling.data_types import DirectRelation, Int64, UnitReference
 from cognite.client.data_classes.data_modeling.instances import (
     InstanceInspectResult,
@@ -66,7 +72,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Union,
     UnionAll,
 )
-from cognite.client.data_classes.filters import Prefix
+from cognite.client.data_classes.filters import In, Prefix
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import random_string
@@ -137,6 +143,41 @@ def node_with_1_1_pressure_in_bar(
     )
     _ = cognite_client.data_modeling.instances.apply(node)
     return node
+
+
+@pytest.fixture
+def edge_type_filter_test_node(cognite_client: CogniteClient, integration_test_space: Space) -> CogniteDescribableNode:
+    return cognite_client.data_modeling.instances.apply(
+        nodes=[
+            CogniteDescribableNodeApply(
+                space=integration_test_space.space,
+                external_id="edge_filter_test_node",
+                name="edge_filter_test_node",
+            )
+        ]
+    ).nodes[0]
+
+
+@pytest.fixture
+def edge_type_filter_test_edge(
+    cognite_client: CogniteClient, edge_type_filter_test_node: CogniteDescribableNode
+) -> CogniteDescribableEdge:
+    direct_relation_reference = DirectRelationReference(
+        edge_type_filter_test_node.space, edge_type_filter_test_node.external_id
+    )
+
+    return cognite_client.data_modeling.instances.apply(
+        edges=[
+            CogniteDescribableEdgeApply(
+                space=edge_type_filter_test_node.space,
+                external_id="edge_filter_test_edge",
+                name="edge_filter_test_edge",
+                start_node=direct_relation_reference,
+                end_node=direct_relation_reference,
+                type=direct_relation_reference,
+            )
+        ]
+    ).edges[0]
 
 
 class PrimitiveNullable(TypedNodeApply):
@@ -457,6 +498,27 @@ class TestInstancesAPI:
 
         listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge", filter=is_prefix)
         assert set(movie_edges.as_ids()) <= set(listed_edges.as_ids())
+
+    @pytest.mark.parametrize(
+        "edge_type_class", [NodeId, DirectRelationReference], ids=["NodeId", "DirectRelationReference"]
+    )
+    def test_filter_edges_by_type(
+        self,
+        cognite_client: CogniteClient,
+        edge_type_filter_test_edge: CogniteDescribableEdge,
+        edge_type_class: type[NodeId, DirectRelationReference],
+    ) -> None:
+        edge_type = edge_type_class(
+            space=edge_type_filter_test_edge.space, external_id=edge_type_filter_test_edge.external_id
+        )
+
+        listed_edges = cognite_client.data_modeling.instances.list(
+            instance_type=CogniteDescribableEdge,
+            filter=In(["edge", "type"], [edge_type]),
+        )
+
+        assert len(listed_edges) == 1
+        assert listed_edges[0].as_id() == edge_type_filter_test_edge.as_id()
 
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: View) -> None:
         person_nodes = cognite_client.data_modeling.instances.list(
