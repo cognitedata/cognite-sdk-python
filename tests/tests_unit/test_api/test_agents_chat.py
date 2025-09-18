@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.agents import Message
+from cognite.client.data_classes.agents import ClientTool, ClientToolParameters, Message
 from cognite.client.data_classes.agents.chat import (
     AgentChatResponse,
     AgentDataItem,
@@ -175,3 +175,110 @@ class TestAgentChat:
         msg = Message(content=content)
         assert msg.content is content
         assert msg.content.text == "Hello world"
+
+    def test_chat_with_single_action(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
+        # Mock the API response
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+
+        # Create a custom tool
+        custom_tool = ClientTool(
+            name="get_weather",
+            description="Get current weather for a location",
+            parameters=ClientToolParameters(
+                properties={"location": {"type": "string", "description": "City name"}}, required=["location"]
+            ),
+        )
+
+        # Test with single action
+        response = cognite_client.agents.chat(
+            agent_id="my_agent", messages=Message("What's the weather like?"), actions=custom_tool
+        )
+
+        # Verify the request
+        cognite_client.agents._post.assert_called_once()
+        call_args = cognite_client.agents._post.call_args
+        assert call_args[1]["url_path"] == "/ai/agents/chat"
+        assert call_args[1]["json"]["agentId"] == "my_agent"
+        assert "actions" in call_args[1]["json"]
+        assert len(call_args[1]["json"]["actions"]) == 1
+        assert call_args[1]["json"]["actions"][0]["name"] == "get_weather"
+        assert call_args[1]["json"]["actions"][0]["type"] == "clientTool"
+        assert call_args[1]["json"]["actions"][0]["parameters"]["properties"]["location"]["type"] == "string"
+
+        # Verify the response
+        assert isinstance(response, AgentChatResponse)
+
+    def test_chat_with_multiple_actions(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
+        # Mock the API response
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+
+        # Create multiple custom tools
+        weather_tool = ClientTool(
+            name="get_weather",
+            description="Get current weather for a location",
+            parameters=ClientToolParameters(
+                properties={"location": {"type": "string", "description": "City name"}}, required=["location"]
+            ),
+        )
+
+        calculator_tool = ClientTool(
+            name="calculate",
+            description="Perform mathematical calculations",
+            parameters=ClientToolParameters(
+                properties={"expression": {"type": "string", "description": "Mathematical expression to evaluate"}},
+                required=["expression"],
+            ),
+        )
+
+        # Test with multiple actions
+        response = cognite_client.agents.chat(
+            agent_id="my_agent",
+            messages=Message("Help me with weather and calculations"),
+            actions=[weather_tool, calculator_tool],
+        )
+
+        # Verify the request
+        cognite_client.agents._post.assert_called_once()
+        call_args = cognite_client.agents._post.call_args
+        assert call_args[1]["url_path"] == "/ai/agents/chat"
+        assert call_args[1]["json"]["agentId"] == "my_agent"
+        assert "actions" in call_args[1]["json"]
+        assert len(call_args[1]["json"]["actions"]) == 2
+        assert call_args[1]["json"]["actions"][0]["name"] == "get_weather"
+        assert call_args[1]["json"]["actions"][1]["name"] == "calculate"
+
+        # Verify the response
+        assert isinstance(response, AgentChatResponse)
+
+    def test_chat_with_actions_and_cursor(self, cognite_client: CogniteClient, chat_response_body: dict) -> None:
+        # Mock the API response
+        cognite_client.agents._post = MagicMock(return_value=MagicMock(json=lambda: chat_response_body))
+
+        # Create a custom tool
+        custom_tool = ClientTool(
+            name="get_weather",
+            description="Get current weather for a location",
+            parameters=ClientToolParameters(
+                properties={"location": {"type": "string", "description": "City name"}}, required=["location"]
+            ),
+        )
+
+        # Test with actions and cursor
+        response = cognite_client.agents.chat(
+            agent_id="my_agent",
+            messages=Message("What's the weather like?"),
+            cursor="previous_cursor",
+            actions=custom_tool,
+        )
+
+        # Verify the request
+        cognite_client.agents._post.assert_called_once()
+        call_args = cognite_client.agents._post.call_args
+        assert call_args[1]["url_path"] == "/ai/agents/chat"
+        assert call_args[1]["json"]["agentId"] == "my_agent"
+        assert call_args[1]["json"]["cursor"] == "previous_cursor"
+        assert "actions" in call_args[1]["json"]
+        assert len(call_args[1]["json"]["actions"]) == 1
+
+        # Verify the response
+        assert isinstance(response, AgentChatResponse)

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, overload
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
 from cognite.client.data_classes.agents.chat import AgentChatResponse, Message, MessageList
+from cognite.client.data_classes.agents.client_tools import ClientTool, ClientToolList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -245,6 +246,7 @@ class AgentsAPI(APIClient):
         agent_id: str,
         messages: Message | Sequence[Message],
         cursor: str | None = None,
+        actions: ClientTool | Sequence[ClientTool] | None = None,
     ) -> AgentChatResponse:
         """`Chat with an agent. <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_
 
@@ -256,6 +258,8 @@ class AgentsAPI(APIClient):
             messages (Message | Sequence[Message]): A list of one or many input messages to the agent.
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (ClientTool | Sequence[ClientTool] | None): Custom tool calls that a client can inject.
+                These tools will be available for the agent to use during the conversation.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -290,12 +294,35 @@ class AgentsAPI(APIClient):
                 ...         Message("Once you have found it, find related time series.")
                 ...     ]
                 ... )
+
+            Chat with custom tools:
+
+                >>> from cognite.client.data_classes.agents import ClientTool, ClientToolParameters
+                >>> custom_tool = ClientTool(
+                ...     name="get_weather",
+                ...     description="Get current weather for a location",
+                ...     parameters=ClientToolParameters(
+                ...         properties={
+                ...             "location": {"type": "string", "description": "City name"}
+                ...         },
+                ...         required=["location"]
+                ...     )
+                ... )
+                >>> response = client.agents.chat(
+                ...     agent_id="my_agent",
+                ...     messages=Message("What's the weather like?"),
+                ...     actions=custom_tool
+                ... )
         """
         self._warnings.warn()
 
         # Convert single message to list
         if isinstance(messages, Message):
             messages = [messages]
+
+        # Convert single action to list
+        if actions is not None and isinstance(actions, ClientTool):
+            actions = [actions]
 
         # Build request body
         body = {
@@ -305,6 +332,9 @@ class AgentsAPI(APIClient):
 
         if cursor is not None:
             body["cursor"] = cursor
+
+        if actions is not None:
+            body["actions"] = ClientToolList(list(actions)).dump(camel_case=True)
 
         # Make the API call
         response = self._post(
