@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
 
 class ClientToolParameters(CogniteResource):
@@ -100,18 +100,7 @@ class ClientTool(CogniteResource):
         )
 
 
-class ClientToolList:
+class ClientToolList(CogniteResourceList[ClientTool]):
     """List of client tools."""
 
-    def __init__(self, tools: list[ClientTool]) -> None:
-        self.tools = tools
-
-    def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
-        """Dump the client tools to a list of dictionaries."""
-        return [tool.dump(camel_case=camel_case) for tool in self.tools]
-
-    @classmethod
-    def _load(cls, data: list[dict[str, Any]], cognite_client: Any = None) -> ClientToolList:
-        """Load client tools from a list of dictionaries."""
-        tools = [ClientTool._load(tool_data) for tool_data in data]
-        return cls(tools=tools)
+    _RESOURCE = ClientTool

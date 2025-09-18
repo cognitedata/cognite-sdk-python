@@ -212,7 +212,7 @@ class TestClientToolList:
         tools = [tool1, tool2]
 
         tool_list = ClientToolList(tools)
-        assert tool_list.tools == tools
+        assert list(tool_list) == tools
 
     def test_dump_camel_case(self) -> None:
         """Test dumping ClientToolList with camel case."""
@@ -259,8 +259,8 @@ class TestClientToolList:
         ]
 
         tool_list = ClientToolList._load(data)
-        assert len(tool_list.tools) == 2
-        assert tool_list.tools[0].name == "tool1"
-        assert tool_list.tools[1].name == "tool2"
-        assert isinstance(tool_list.tools[0], ClientTool)
-        assert isinstance(tool_list.tools[1], ClientTool)
+        assert len(tool_list) == 2
+        assert tool_list[0].name == "tool1"
+        assert tool_list[1].name == "tool2"
+        assert isinstance(tool_list[0], ClientTool)
+        assert isinstance(tool_list[1], ClientTool)
