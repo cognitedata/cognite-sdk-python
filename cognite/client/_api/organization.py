@@ -110,6 +110,13 @@ class PrincipalsAPI(OrgAPI):
     def retrieve(
         self,
         id: None = None,
+        *,
+        ignore_unknown_ids: bool = False,
+    ) -> PrincipalList: ...
+    @overload
+    def retrieve(
+        self,
+        *,
         external_id: None = None,
         ignore_unknown_ids: bool = False,
     ) -> PrincipalList: ...
